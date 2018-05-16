@@ -1,23 +1,26 @@
 """
-model_zoo.py 
+dc_model_zoo.py
 
 Assortment of CNN architectures for single cell segmentation
 
 @author: David Van Valen
 """
 
-import numpy as np
-import tensorflow as tf
+from __future__ import print_function
+
 import keras_resnet
+import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Sequential, Model
-from tensorflow.python.keras.layers import Add, Conv2D, MaxPool2D, AvgPool2D, Conv3D, Activation, Lambda 
+from tensorflow.python.keras.layers import Add, Conv2D, MaxPool2D, AvgPool2D, Conv3D, Activation, Lambda
 from tensorflow.python.keras.layers import Softmax, Flatten, Dense, BatchNormalization, Permute, Input, Concatenate
 from tensorflow.python.keras.regularizers import l2
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.python.keras.activations import softmax
 from tensorflow.python.keras import initializers
-from deepcell import dilated_MaxPool2D, TensorProd2D, TensorProd3D, Resize, axis_softmax, Location, Location3D
+
+from deepcell import dilated_MaxPool2D, TensorProd2D, TensorProd3D, Resize, \
+					 axis_softmax, Location, Location3D
 
 """
 Batch normalized conv-nets
