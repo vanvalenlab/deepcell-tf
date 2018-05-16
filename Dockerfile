@@ -42,9 +42,7 @@ RUN echo "backend : Agg" > /usr/local/lib/python3.5/dist-packages/matplotlib/mpl
 
 # Change keras configuration file so that channels are first
 #RUN mkdir $HOME/.keras
-#RUN echo '{"image_data_format": "channels_first", "epsilon": 1e-07, "floatx": "float32", "backend": "tensorflow"}' > $HOME/.keras/keras.json 
+#RUN echo '{"image_data_format": "channels_first", "epsilon": 1e-07, "floatx": "float32", "backend": "tensorflow"}' > $HOME/.keras/keras.json
 
 # Make port 80 available to the world outside this container
 EXPOSE 80
-
-
