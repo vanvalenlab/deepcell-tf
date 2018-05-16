@@ -6,9 +6,7 @@ Functions for making training data
 @author: David Van Valen
 """
 
-"""
-Import python packages
-"""
+from __future__ import print_function
 
 import numpy as np
 from numpy import array
