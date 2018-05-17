@@ -31,7 +31,7 @@ class ImageSampleArrayIterator(Iterator):
                  data_format=None,
                  save_to_dir=None, save_prefix='', save_format='png'):
 
-        if train_dict["labels"] and len(train_dict["pixels_x"]) != len(train_dict["labels"]):
+        if train_dict["labels"].size > 0 and len(train_dict["pixels_x"]) != len(train_dict["labels"]):
             raise Exception('Number of sampled pixels and y (labels) '
                             'should have the same length. '
                             'Found: Number of sampled pixels = %s, y.shape = %s' % (len(train_dict["pixels_x"]), np.asarray(train_dict["labels"]).shape))

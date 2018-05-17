@@ -114,7 +114,7 @@ def sample_label_matrix(feature_mask, edge_feature, window_size_x = 30, window_s
                 feature_rows_temp, feature_cols_temp = np.where(feature_mask[direc, k, :, :] == 1)
 
                 # Check to make sure the features are actually present
-                if feature_rows_temp:
+                if feature_rows_temp.size > 0:
                     # Randomly permute index vector
                     non_rand_ind = np.arange(len(feature_rows_temp))
                     rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows_temp), replace=False)
