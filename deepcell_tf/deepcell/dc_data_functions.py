@@ -207,7 +207,6 @@ def relabel_movie(feature_mask):
 
     return new_feature_mask
 
-
 def reshape_movie(channels, feature_mask, reshaped_size=256):
     image_size_x, image_size_y = channels.shape[3:]
     rep_number = np.int(np.ceil(np.float(image_size_x)/np.float(reshaped_size)))
@@ -243,36 +242,43 @@ def reshape_movie(channels, feature_mask, reshaped_size=256):
 
     return new_channels, new_feature_mask
 
-def make_training_data(max_training_examples=1e7, window_size_x=30, window_size_y=30,
-					   direc_name="/home/vanvalen/Data/RAW_40X_tube",
-					   file_name_save=os.path.join("/home/vanvalen/DeepCell/training_data_npz/RAW40X_tube/", "RAW_40X_tube_61x61.npz"),
-					   training_direcs=["set2/", "set3/", "set4/", "set5/", "set6/"],
-					   channel_names=["channel004", "channel001"],
-					   num_of_features=2,
-					   edge_feature=[1, 0, 0],
-					   dilation_radius=1,
-					   display=False,
-					   max_plotted=5,
-					   verbose=False,
-					   process=True,
-					   process_std=False,
-					   process_remove_zeros=False,
-					   reshape_size=None,
-					   border_mode="valid",
-					   sample_mode="subsample",
-					   output_mode="sample"):
+def make_training_data(direc_name, file_name_save, channel_names,
+                       training_direcs=None,
+                       max_training_examples=1e7,
+                       window_size_x=30,
+                       window_size_y=30,
+                       num_of_features=2,
+                       edge_feature=[1, 0, 0],
+                       dilation_radius=1,
+                       display=False,
+                       max_plotted=5,
+                       verbose=False,
+                       process=True,
+                       process_std=False,
+                       process_remove_zeros=False,
+                       reshape_size=None,
+                       border_mode="valid",
+                       sample_mode="subsample",
+                       output_mode="sample"):
 
     if np.sum(edge_feature) > 1:
         raise ValueError("Only one edge feature is allowed")
 
-    if border_mode not in ["valid", "same"]:
-        raise Exception("border_mode should be set to either valid or same")
+    if border_mode not in {"valid", "same"}:
+        raise ValueError("border_mode should be set to either valid or same")
 
-    if sample_mode not in ["subsample", "all"]:
-        raise Exception("sample_mode should be set to either subsample or all")
+    if sample_mode not in {"subsample", "all"}:
+        raise ValueError("sample_mode should be set to either subsample or all")
 
-    if output_mode not in ["sample", "conv", "disc"]:
-        raise Exception("output_mode should be set to either sample, conv, or disc")
+    if output_mode not in {"sample", "conv", "disc"}:
+        raise ValueError("output_mode should be set to either sample, conv, or disc")
+
+    if not isinstance(channel_names, list):
+        raise ValueError('channel_names should be a list of strings (e.g. ["DAPI"]). '
+                         'Found {}'.format(type(channel_names).__name__))
+
+    if training_direcs is None:
+        training_direcs = get_immediate_subdirs(direc_name)
 
     num_direcs = len(training_direcs)
     num_channels = len(channel_names)
@@ -436,27 +442,39 @@ def make_training_data(max_training_examples=1e7, window_size_x=30, window_size_
         else:
             plot_training_data(channels, feature_mask, max_plotted=max_plotted)
 
-def make_training_data_movie(window_size_x=30, window_size_y=30,
-                             direc_name='/data/HeLa/set2/movie',
-                             file_name_save=os.path.join('/home/vanvalen/DeepCell/training_data_npz/HeLa_movie/', 'HeLa_movie_61x61.npz'),
-                             training_direcs=["set1", "set2"],
                              channel_names=["DAPI"],
+    return None
+
+def make_training_data_movie(direc_name, file_name_save, channel_names,
+                             training_direcs=None,
                              annotation_name="corrected",
                              raw_image_direc="RawImages",
                              annotation_direc="Annotation",
+                             window_size_x=30,
+                             window_size_y=30,
                              border_mode="same",
                              output_mode="disc",
                              reshaped_size=None,
                              process=True,
                              num_frames=50,
-                             sub_sample=False,
                              display=True,
                              num_of_frames_to_display=5,
                              verbose=True):
+    if border_mode not in {"valid", "same"}:
+        raise ValueError("border_mode should be set to either valid or same")
+
+    if output_mode not in {"sample", "conv", "disc"}:
+        raise ValueError("output_mode should be set to either sample, conv, or disc")
+
+    if not isinstance(channel_names, list):
+        raise ValueError('channel_names should be a list of strings (e.g. ["DAPI"]). '
+                         'Found {}'.format(type(channel_names).__name__))
+
+    if training_direcs is None:
+        training_direcs = get_immediate_subdirs(direc_name)
 
     num_direcs = len(training_direcs)
     num_channels = len(channel_names)
-    num_frames = num_frames
 
     # Load one file to get image sizes
     image_size_x, image_size_y = get_image_sizes(os.path.join(direc_name, training_direcs[0], raw_image_direc), channel_names)

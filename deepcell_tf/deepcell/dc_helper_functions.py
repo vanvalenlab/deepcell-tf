@@ -28,6 +28,16 @@ from . import tifffile as tiff
 Helper functions
 """
 
+def get_immediate_subdirs(directory):
+	"""
+	Get all DIRECTORIES that are immediate children of a given directory
+	# args
+		dir: a filepath to a directory
+	# returns:
+		a sorted list of child directories of given dir.  Will not return files.
+	"""
+	return sorted([d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))])
+
 def cf(x,y,sample_image):
 	numrows, numcols = sample_image.shape
 	col = int(x+0.5)
