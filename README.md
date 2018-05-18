@@ -1,7 +1,7 @@
 # deepcell-tf
 
 
-### NVIDIA GPU command
+### NVIDIA GPU activity monitor
 nvidia-smi
 
 ### Docker Commands
