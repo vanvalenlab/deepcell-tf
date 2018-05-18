@@ -14,6 +14,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import skimage as sk
+from skimage.morphology import disk, binary_dilation
 from skimage.measure import label
 from sklearn.utils import class_weight
 from tensorflow.python.keras import backend as K
@@ -58,7 +59,7 @@ def sample_label_matrix(feature_mask, edge_feature, window_size_x = 30, window_s
                 feature_rows_temp, feature_cols_temp = np.where(feature_mask[direc, k, :, :] == 1)
 
                 # Check to make sure the features are actually present
-                if feature_rows_temp:
+                if feature_rows_temp.size > 0:
                     # Randomly permute index vector
                     non_rand_ind = np.arange(len(feature_rows_temp))
                     rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows_temp), replace=False)
@@ -311,8 +312,8 @@ def make_training_data(max_training_examples=1e7, window_size_x=30, window_size_
                         feature_img /= np.amax(feature_img)
 
                     if edge_feature[j] == 1 and dilation_radius is not None:
-                        strel = sk.morphology.disk(dilation_radius)
-                        feature_img = sk.morphology.binary_dilation(feature_img, selem=strel)
+                        strel = disk(dilation_radius)
+                        feature_img = binary_dilation(feature_img, selem=strel)
 
                     feature_mask[direc_counter, j, :, :] = feature_img
 
