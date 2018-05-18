@@ -13,7 +13,6 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
-import skimage as sk
 from skimage.morphology import disk, binary_dilation
 from skimage.measure import label
 from sklearn.utils import class_weight
@@ -168,10 +167,10 @@ def plot_training_data(channels, feature_mask, max_plotted=5):
             ax[j, k].axes.get_yaxis().set_visible(False)
     plt.show()
 
-def reshape_matrix(channels, feature_mask, reshaped_size = 256):
+def reshape_matrix(channels, feature_mask, reshaped_size=256):
     image_size_x, image_size_y = channels.shape[2:]
-    rep_number = np.int(np.ceil(np.float(image_size_x)/np.float(reshaped_size)))
-    new_batch_size = channels.shape[0] * (rep_number)**2
+    rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshaped_size)))
+    new_batch_size = channels.shape[0] * (rep_number) ** 2
 
     new_channels = np.zeros((new_batch_size, channels.shape[1], reshaped_size, reshaped_size), dtype=K.floatx())
     new_feature_mask = np.zeros((new_batch_size, feature_mask.shape[1], reshaped_size, reshaped_size), dtype="int32")
@@ -335,7 +334,9 @@ def make_training_data(direc_name, file_name_save, channel_names,
                     channel_file = os.path.join(direc_name, direc, img)
                     channel_img = np.asarray(get_image(channel_file), dtype=K.floatx())
                     if process:
-                        channel_img = process_image(channel_img, window_size_x, window_size_y, std=process_std, remove_zeros=process_remove_zeros)
+                        channel_img = process_image(channel_img, window_size_x, window_size_y,
+                                                    remove_zeros=process_remove_zeros,
+                                                    std=process_std)
                     # Overwrites if multiple images in one set with same channel
                     channels[direc_counter, channel_counter, :, :] = channel_img
 
@@ -378,8 +379,8 @@ def make_training_data(direc_name, file_name_save, channel_names,
     # Sample pixels from the label matrix
     if output_mode == "sample":
         feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
-			feature_mask, edge_feature, output_mode=output_mode, sample_mode=sample_mode,
-			border_mode=border_mode, window_size_x=window_size_x, window_size_y=window_size_y)
+            feature_mask, edge_feature, output_mode=output_mode, sample_mode=sample_mode,
+            border_mode=border_mode, window_size_x=window_size_x, window_size_y=window_size_y)
 
         # Compute weights for each class
         weights = class_weight.compute_class_weight('balanced', y=feature_label,
@@ -402,11 +403,11 @@ def make_training_data(direc_name, file_name_save, channel_names,
 
     if output_mode == "conv":
         # Create mask of sampled pixels
-        feature_mask_sample = np.zeros(feature_mask.shape, dtype='int32')
         feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
-			feature_mask, edge_feature, output_mode="sample", sample_mode=sample_mode,
-			border_mode=border_mode, window_size_x=window_size_x, window_size_y=window_size_y)
+            feature_mask, edge_feature, output_mode="sample", sample_mode=sample_mode,
+            border_mode=border_mode, window_size_x=window_size_x, window_size_y=window_size_y)
 
+        feature_mask_sample = np.zeros(feature_mask.shape, dtype='int32')
         for b, r, c, l in zip(feature_batch, feature_rows, feature_cols, feature_label):
             feature_mask_sample[b, l, r, c] = 1
 
@@ -418,9 +419,8 @@ def make_training_data(direc_name, file_name_save, channel_names,
             feature_mask = feature_mask_trimmed
 
         # Save training data in npz format
-        np.savez(file_name_save, class_weights=weights, channels=channels,
-                 y=feature_mask, y_sample=feature_mask_sample,
-                 win_x=window_size_x, win_y=window_size_y)
+        np.savez(file_name_save, class_weights=weights, channels=channels, y=feature_mask,
+                 y_sample=feature_mask_sample, win_x=window_size_x, win_y=window_size_y)
 
     if output_mode == "disc":
 
@@ -432,7 +432,8 @@ def make_training_data(direc_name, file_name_save, channel_names,
                         window_size_x=window_size_x, window_size_y=window_size_y)
 
         # Compute weights for each class
-        weights = class_weight.compute_class_weight('balanced', classes=np.unique(feature_label), y=feature_label)
+        weights = class_weight.compute_class_weight('balanced', y=feature_label,
+                                                    classes=np.unique(feature_label))
 
         # Create mask with labeled cells
         feature_mask_label = np.zeros((feature_mask.shape[0], 1, feature_mask.shape[2], feature_mask.shape[3]), dtype='int32')
@@ -469,14 +470,11 @@ def make_training_data(direc_name, file_name_save, channel_names,
     if display:
         if output_mode == "conv":
             plot_training_data(channels, feature_mask_sample, max_plotted=max_plotted)
-
-        if output_mode == "disc":
+        elif output_mode == "disc":
             plot_training_data(channels, feature_mask_label, max_plotted=max_plotted)
-
         else:
             plot_training_data(channels, feature_mask, max_plotted=max_plotted)
 
-                             channel_names=["DAPI"],
     return None
 
 def make_training_data_movie(direc_name, file_name_save, channel_names,
