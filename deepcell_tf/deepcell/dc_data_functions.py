@@ -82,28 +82,30 @@ def sample_label_matrix(feature_mask, edge_feature, window_size_x=30, window_siz
                 feature_rows_temp, feature_cols_temp = np.where(feature_mask[direc, k, :, :] == 1)
 
                 # Check to make sure the features are actually present
-                if feature_rows_temp.size > 0:
-                    # Randomly permute index vector
-                    non_rand_ind = np.arange(len(feature_rows_temp))
-                    rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows_temp), replace=False)
+                if not feature_rows_temp.size > 0:
+                    continue
 
-                    for i in rand_ind:
-                        if pixel_counter < max_num_of_pixels:
-                            if border_mode == "same":
-                                condition = True
+                # Randomly permute index vector
+                non_rand_ind = np.arange(len(feature_rows_temp))
+                rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows_temp), replace=False)
+                pixel_counter = 0
+                for i in rand_ind:
+                    if pixel_counter < list_of_max_sample_numbers[direc]:
+                        if border_mode == "same":
+                            condition = True
 
-                            elif border_mode == "valid":
-                                condition = feature_rows_temp[i] - window_size_x > 0 and \
-                                            feature_rows_temp[i] + window_size_x < image_size_x and \
-                                            feature_cols_temp[i] - window_size_y > 0 and \
-                                            feature_cols_temp[i] + window_size_y < image_size_y
+                        elif border_mode == "valid":
+                            condition = feature_rows_temp[i] - window_size_x > 0 and \
+                                        feature_rows_temp[i] + window_size_x < image_size_x and \
+                                        feature_cols_temp[i] - window_size_y > 0 and \
+                                        feature_cols_temp[i] + window_size_y < image_size_y
 
-                            if condition:
-                                feature_rows += [feature_rows_temp[i]]
-                                feature_cols += [feature_cols_temp[i]]
-                                feature_batch += [direc]
-                                feature_label += [k]
-                                pixel_counter += 1
+                        if condition:
+                            feature_rows += [feature_rows_temp[i]]
+                            feature_cols += [feature_cols_temp[i]]
+                            feature_batch += [direc]
+                            feature_label += [k]
+                            pixel_counter += 1
 
         # Randomize
         feature_rows = np.array(feature_rows, dtype='int32')
