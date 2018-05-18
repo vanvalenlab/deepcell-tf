@@ -39,6 +39,7 @@ def sample_label_matrix(feature_mask, edge_feature, window_size_x = 30, window_s
     feature_label = []
 
     list_of_max_sample_numbers = []
+    # for each set of images
     for j in range(feature_mask.shape[0]):
         if sample_mode == "subsample":
             for k, edge_feat in enumerate(edge_feature):
@@ -193,8 +194,8 @@ def reshape_matrix(channels, feature_mask, reshaped_size = 256):
                     new_feature_mask[counter, :, :, :] = feature_mask[batch, :, -reshaped_size:, -reshaped_size:]
 
                 counter += 1
-
-    print(new_channels.shape, new_feature_mask.shape)
+    print('Reshaped feature mask from {} to {}'.format(feature_mask.shape, new_feature_mask.shape))
+    print('Reshaped channels from {} to {}'.format(channels.shape, new_channels.shape))
     return new_channels, new_feature_mask
 
 def relabel_movie(feature_mask):
@@ -260,6 +261,35 @@ def make_training_data(direc_name, file_name_save, channel_names,
                        border_mode="valid",
                        sample_mode="subsample",
                        output_mode="sample"):
+    """
+    Read all images in training directories and save as npz file
+    # args
+        direc_name: directory containing folders of training data
+        file_name_save: full filepath for npz file where the data will be saved
+        training_direcs: directories of images located inside direc_name.
+                         If not provided, all directories in direc_name are used.
+        channel_names: List of particular channel name of images to find.
+                       channel_name should be in the filename (e.g. "DAPI")
+                       If not provided, all images in the training directories
+                       without "feature" in their name are used.
+        num_of_features: number of classes (e.g. cell interior, cell edge, background)
+        edge_feature: List which determines the cell edge feature (usually [1, 0, 0])
+                      There can be a single 1 in the list, indicating the index of the feature.
+        max_training_examples: max number of samples to be given to model
+        window_size_x: number of pixels to +/- x direction to be sampled in sample mode
+        window_size_y: number of pixels to +/- y direction to be sampled in sample mode
+        dilation_radius: radius for dilating cell edges
+        display: whether or not to plot the training data
+        max_plotted: how many points to plot if display is True
+        verbose:  print more output to screen, similar to DEBUG mode
+        process: if True, call process_image on each image
+        process_std:  passed to process_image if process is True
+        process_remove_zeros:  passed to process_image if process is True
+        reshape_size: If provided, will reshape the images to the given size
+        border_mode:  "valid" or "same"
+        sample_mode:  "subsample" or "all"
+        output_mode:  "sample", "conv", or "disc"
+    """
 
     if np.sum(edge_feature) > 1:
         raise ValueError("Only one edge feature is allowed")
@@ -285,6 +315,7 @@ def make_training_data(direc_name, file_name_save, channel_names,
     max_training_examples = int(max_training_examples)
 
     # Load one file to get image sizes
+    # All images should be same size bc they are from the same microscope
     image_size_x, image_size_y = get_image_sizes(os.path.join(direc_name, training_direcs[0]), channel_names)
 
     # Initialize arrays for the training images and the feature masks
@@ -299,11 +330,13 @@ def make_training_data(direc_name, file_name_save, channel_names,
         # Load channels
         for channel_counter, channel in enumerate(channel_names):
             for img in imglist:
+                # Regex for matching channel in filename?
                 if fnmatch.fnmatch(img, r'*' + channel + r'*'):
                     channel_file = os.path.join(direc_name, direc, img)
                     channel_img = np.asarray(get_image(channel_file), dtype=K.floatx())
                     if process:
                         channel_img = process_image(channel_img, window_size_x, window_size_y, std=process_std, remove_zeros=process_remove_zeros)
+                    # Overwrites if multiple images in one set with same channel
                     channels[direc_counter, channel_counter, :, :] = channel_img
 
         # Load feature mask
@@ -318,6 +351,7 @@ def make_training_data(direc_name, file_name_save, channel_names,
                         feature_img /= np.amax(feature_img)
 
                     if edge_feature[j] == 1 and dilation_radius is not None:
+                        # thicken cell edges to be more pronounced
                         strel = disk(dilation_radius)
                         feature_img = binary_dilation(feature_img, selem=strel)
 
@@ -338,10 +372,10 @@ def make_training_data(direc_name, file_name_save, channel_names,
     if reshape_size is not None:
         channels, feature_mask = reshape_matrix(channels, feature_mask, reshaped_size=reshape_size)
 
+    # Trim the feature mask so that each window does not overlap with the border of the image
     feature_mask_trimmed = feature_mask[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
 
     # Sample pixels from the label matrix
-
     if output_mode == "sample":
         feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
 			feature_mask, edge_feature, output_mode=output_mode, sample_mode=sample_mode,
@@ -460,6 +494,35 @@ def make_training_data_movie(direc_name, file_name_save, channel_names,
                              display=True,
                              num_of_frames_to_display=5,
                              verbose=True):
+    """
+    Read all images in training directories and save as npz file.
+    # args
+        direc_name: directory containing folders of training data
+        file_name_save: full filepath for npz file where the data will be saved
+        training_direcs: directories of images located inside direc_name
+                         If not provided, all directories in direc_name are used.
+        channel_names: List of particular channel name of images to find.
+                       channel_name should be in the filename (e.g. "DAPI")
+        annotation_direc: name of folder with annotated images
+        raw_image_direc:  name of folder with raw images
+        window_size_x: number of pixels to +/- x direction to be sampled in sample mode
+        window_size_y: number of pixels to +/- y direction to be sampled in sample mode
+        border_mode:  "valid" or "same"
+        output_mode:  "sample", "conv", or "disc"
+        reshaped_size: If provided, will reshape the images to the given size.
+        num_of_features: number of classes (e.g. cell interior, cell edge, background)
+        edge_feature: List which determines the cell edge feature (usually [1, 0, 0])
+                   There can be a single 1 in the list, indicating the index of the feature.
+        max_training_examples: max number of samples to be given to model
+        dilation_radius:
+        verbose:  print more output to screen, similar to DEBUG mode.
+        process:  if True, calls process_image on each image
+        num_frames:
+        sub_sample: whether or not to subsamble the training data
+        display: whether or not to plot the training data
+        num_of_frames_to_display:
+    """
+
     if border_mode not in {"valid", "same"}:
         raise ValueError("border_mode should be set to either valid or same")
 
