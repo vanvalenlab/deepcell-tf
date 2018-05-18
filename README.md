@@ -1,6 +1,9 @@
 # deepcell-tf
 
 
+### NVIDIA GPU activity monitor
+nvidia-smi
+
 ### Docker Commands
 
 ##### Python 2.7 deepcell
@@ -12,7 +15,7 @@ nvcr.io/vvlab/deepcell:0.1
 
 
 ##### Python 3 deepcell
-sudo NV_GPU='1' nvidia-docker run -i -t \
+sudo NV_GPU='1,2' nvidia-docker run -i -t \
 -v /home/vanvalen/deepcell-tf/deepcell_tf/deepcell:/usr/local/lib/python3.5/dist-packages/deepcell/ \
 -v /home/vanvalen/deepcell-tf/deepcell_scripts:/deepcell-tf/deepcell_scripts \
 -v /home/vanvalen/data/old_training_data:/data \
