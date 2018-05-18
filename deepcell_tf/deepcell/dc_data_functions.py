@@ -349,13 +349,11 @@ def make_training_data(direc_name, file_name_save, channel_names,
     # Load training images
     for direc_counter, direc in enumerate(training_direcs):
         imglist = os.listdir(os.path.join(direc_name, direc))
-        channel_counter = 0
 
         # Load channels
         for channel_counter, channel in enumerate(channel_names):
             for img in imglist:
-                # Regex for matching channel in filename?
-                if fnmatch.fnmatch(img, r'*' + channel + r'*'):
+                if fnmatch.fnmatch(img, '*{}*'.format(channel)):
                     channel_file = os.path.join(direc_name, direc, img)
                     channel_img = np.asarray(get_image(channel_file), dtype=K.floatx())
                     if process:
@@ -378,8 +376,7 @@ def make_training_data(direc_name, file_name_save, channel_names,
 
                     if edge_feature[j] == 1 and dilation_radius is not None:
                         # thicken cell edges to be more pronounced
-                        strel = disk(dilation_radius)
-                        feature_img = binary_dilation(feature_img, selem=strel)
+                        feature_img = binary_dilation(feature_img, selem=disk(dilation_radius))
 
                     feature_mask[direc_counter, j, :, :] = feature_img
 
@@ -401,16 +398,17 @@ def make_training_data(direc_name, file_name_save, channel_names,
     # Trim the feature mask so that each window does not overlap with the border of the image
     feature_mask_trimmed = feature_mask[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
 
+    # Create mask of sampled pixels
+    feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
+        feature_mask, edge_feature, output_mode=output_mode, sample_mode=sample_mode,
+        border_mode=border_mode, window_size_x=window_size_x, window_size_y=window_size_y)
+
+    # Compute weights for each class
+    weights = class_weight.compute_class_weight('balanced', y=feature_label,
+                                                classes=np.unique(feature_label))
+
     # Sample pixels from the label matrix
     if output_mode == "sample":
-        feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
-            feature_mask, edge_feature, output_mode=output_mode, sample_mode=sample_mode,
-            border_mode=border_mode, window_size_x=window_size_x, window_size_y=window_size_y)
-
-        # Compute weights for each class
-        weights = class_weight.compute_class_weight('balanced', y=feature_label,
-                                                    classes=np.unique(feature_label))
-
         # Randomly select training points if there are too many
         if len(feature_rows) > max_training_examples:
             non_rand_ind = np.arange(len(feature_rows), dtype='int')
@@ -426,19 +424,10 @@ def make_training_data(direc_name, file_name_save, channel_names,
                  batch=feature_batch, pixels_x=feature_rows, pixels_y=feature_cols,
                  win_x=window_size_x, win_y=window_size_y)
 
-    if output_mode == "conv":
-        # Create mask of sampled pixels
-        feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
-            feature_mask, edge_feature, output_mode="sample", sample_mode=sample_mode,
-            border_mode=border_mode, window_size_x=window_size_x, window_size_y=window_size_y)
-
+    elif output_mode == "conv":
         feature_mask_sample = np.zeros(feature_mask.shape, dtype='int32')
         for b, r, c, l in zip(feature_batch, feature_rows, feature_cols, feature_label):
             feature_mask_sample[b, l, r, c] = 1
-
-        # Compute weights for each class
-        weights = class_weight.compute_class_weight('balanced', y=feature_label,
-                                                    classes=np.unique(feature_label))
 
         if border_mode == "valid":
             feature_mask = feature_mask_trimmed
@@ -447,18 +436,9 @@ def make_training_data(direc_name, file_name_save, channel_names,
         np.savez(file_name_save, class_weights=weights, channels=channels, y=feature_mask,
                  y_sample=feature_mask_sample, win_x=window_size_x, win_y=window_size_y)
 
-    if output_mode == "disc":
-
+    elif output_mode == "disc":
         if feature_mask.shape[1] > 3:
             raise ValueError("Only one interior feature is allowed for disc output mode")
-
-        feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(feature_mask, edge_feature, output_mode="sample",
-                        sample_mode="all", border_mode=border_mode,
-                        window_size_x=window_size_x, window_size_y=window_size_y)
-
-        # Compute weights for each class
-        weights = class_weight.compute_class_weight('balanced', y=feature_label,
-                                                    classes=np.unique(feature_label))
 
         # Create mask with labeled cells
         feature_mask_label = np.zeros((feature_mask.shape[0], 1, feature_mask.shape[2], feature_mask.shape[3]), dtype='int32')
