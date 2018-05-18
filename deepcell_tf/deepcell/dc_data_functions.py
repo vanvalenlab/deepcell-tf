@@ -24,19 +24,21 @@ from .dc_helper_functions import *
 Functions to create training data
 """
 
-def sample_label_matrix(feature_mask, edge_feature, window_size_x = 30, window_size_y = 30, sample_mode = "subsample", border_mode = "valid", output_mode = "sample"):
-    # Create a list of the maximum pixels to sample from each freature in each data set.
-    # If sample_mode is "subsample", then this will be set to the number of edge pixels.
-    # If not, then it will be set to np.Inf, i.e. sampling everything.
-
-    image_size_x, image_size_y = feature_mask.shape[2:]
+def get_max_sample_num_list(feature_mask, edge_feature=[1, 0, 0],
+                            sample_mode="subsample", border_mode="valid",
+                            window_size_x=30, window_size_y=30):
+    """
+    For each set of images and each feature, find the maximum number of samples
+    for to be used.  This will be used to balance class sampling.
+    # args
+        feature_mask: mask to indicate which pixels belong to which class
+        edge_feature: [1, 0, 0], the 1 indicates the feature is the cell edge
+        sample_mode:  "subsample" or "all"
+        border_mode:  "valid" or "same"
+    # returnsf
+        list_of_max_sample_numbers: list of maximum sample size for all classes
+    """
     feature_mask_trimmed = feature_mask[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
-
-    feature_rows = []
-    feature_cols = []
-    feature_batch = []
-    feature_label = []
-
     list_of_max_sample_numbers = []
     # for each set of images
     for j in range(feature_mask.shape[0]):
@@ -51,11 +53,32 @@ def sample_label_matrix(feature_mask, edge_feature, window_size_x = 30, window_s
         elif sample_mode == "all":
             list_of_max_sample_numbers += [np.Inf]
 
+    return list_of_max_sample_numbers
+
+def sample_label_matrix(feature_mask, edge_feature, window_size_x=30, window_size_y=30,
+                        sample_mode="subsample", border_mode="valid", output_mode="sample"):
+    """
+    Create a list of the maximum pixels to sample from each feature in each data set.
+    If sample_mode is "subsample", then this will be set to the number of edge pixels.
+    If not, then it will be set to np.Inf, i.e. sampling everything.
+    """
+    num_dirs, num_features, image_size_x, image_size_y = feature_mask.shape
+    feature_mask_trimmed = feature_mask[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
+
+    list_of_max_sample_numbers = get_max_sample_num_list(
+        feature_mask=feature_mask, edge_feature=edge_feature,
+        window_size_x=window_size_x, window_size_y=window_size_y,
+        sample_mode=sample_mode, border_mode=border_mode
+    )
+
+    feature_rows = []
+    feature_cols = []
+    feature_batch = []
+    feature_label = []
+
     if output_mode == "sample":
-        for direc in range(feature_mask.shape[0]):
-            for k in range(feature_mask.shape[1]):
-                max_num_of_pixels = list_of_max_sample_numbers[direc]
-                pixel_counter = 0
+        for direc in range(num_dirs):
+            for k in range(num_features):
                 feature_rows_temp, feature_cols_temp = np.where(feature_mask[direc, k, :, :] == 1)
 
                 # Check to make sure the features are actually present
