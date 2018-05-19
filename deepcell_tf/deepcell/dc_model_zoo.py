@@ -8,7 +8,6 @@ Assortment of CNN architectures for single cell segmentation
 
 from __future__ import print_function
 
-import keras_resnet
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Sequential, Model
