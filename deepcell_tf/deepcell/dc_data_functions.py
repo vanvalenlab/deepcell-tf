@@ -272,7 +272,6 @@ def make_training_data(direc_name, file_name_save, channel_names,
                        max_training_examples=1e7,
                        window_size_x=30,
                        window_size_y=30,
-                       num_of_features=2,
                        edge_feature=[1, 0, 0],
                        dilation_radius=1,
                        display=False,
@@ -296,7 +295,6 @@ def make_training_data(direc_name, file_name_save, channel_names,
                        channel_name should be in the filename (e.g. "DAPI")
                        If not provided, all images in the training directories
                        without "feature" in their name are used.
-        num_of_features: number of classes (e.g. cell interior, cell edge, background)
         edge_feature: List which determines the cell edge feature (usually [1, 0, 0])
                       There can be a single 1 in the list, indicating the index of the feature.
         max_training_examples: max number of samples to be given to model
@@ -336,6 +334,7 @@ def make_training_data(direc_name, file_name_save, channel_names,
 
     num_direcs = len(training_direcs)
     num_channels = len(channel_names)
+    num_features = len(edge_feature) - 1 # not counting "background" as a feature.
     max_training_examples = int(max_training_examples)
 
     # Load one file to get image sizes
@@ -344,7 +343,7 @@ def make_training_data(direc_name, file_name_save, channel_names,
 
     # Initialize arrays for the training images and the feature masks
     channels = np.zeros((num_direcs, num_channels, image_size_x, image_size_y), dtype='float32')
-    feature_mask = np.zeros((num_direcs, num_of_features + 1, image_size_x, image_size_y))
+    feature_mask = np.zeros((num_direcs, num_features + 1, image_size_x, image_size_y))
 
     # Load training images
     for direc_counter, direc in enumerate(training_direcs):
@@ -364,7 +363,7 @@ def make_training_data(direc_name, file_name_save, channel_names,
                     channels[direc_counter, channel_counter, :, :] = channel_img
 
         # Load feature mask
-        for j in range(num_of_features):
+        for j in range(num_features):
             feature_name = "feature_" + str(j) + r".*"
             for img in imglist:
                 if fnmatch.fnmatch(img, feature_name):
@@ -381,16 +380,16 @@ def make_training_data(direc_name, file_name_save, channel_names,
                     feature_mask[direc_counter, j, :, :] = feature_img
 
         # Thin the augmented edges by subtracting the interior features.
-        for j in range(num_of_features):
+        for j in range(num_features):
             if edge_feature[j] == 1:
-                for k in range(num_of_features):
+                for k in range(num_features):
                     if edge_feature[k] == 0:
                         feature_mask[direc_counter, j, :, :] -= feature_mask[direc_counter, k, :, :]
                 feature_mask[direc_counter, j, :, :] = feature_mask[direc_counter, j, :, :] > 0
 
         # Compute the mask for the background
         feature_mask_sum = np.sum(feature_mask[direc_counter, :, :, :], axis=0)
-        feature_mask[direc_counter, num_of_features, :, :] = 1 - feature_mask_sum
+        feature_mask[direc_counter, num_features, :, :] = 1 - feature_mask_sum
 
     if reshape_size is not None:
         channels, feature_mask = reshape_matrix(channels, feature_mask, reshaped_size=reshape_size)
