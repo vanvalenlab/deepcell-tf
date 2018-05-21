@@ -22,7 +22,7 @@ import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import activations
 
-from . import tifffile as tiff
+import tifffile as tiff
 
 """
 Helper functions
