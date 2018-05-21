@@ -365,13 +365,13 @@ def discriminative_instance_loss_3D(y_true, y_pred, delta_v=0.5, delta_d=1.5, or
 
     return L
 
-def data_generator(channels, batch, feature_dict=None, mode='sample',
+def data_generator(X, batch, feature_dict=None, mode='sample',
                    labels=None, pixel_x=None, pixel_y=None, win_x=30, win_y=30):
     if mode == 'sample':
         img_list = []
         l_list = []
         for b, x, y, l in zip(batch, pixel_x, pixel_y, labels):
-            img = channels[b, :, x-win_x:x+win_x+1, y-win_y:y+win_y+1]
+            img = X[b, :, x-win_x:x+win_x+1, y-win_y:y+win_y+1]
             img_list += [img]
             l_list += [l]
         return np.stack(tuple(img_list), axis=0), np.array(l_list)
@@ -380,7 +380,7 @@ def data_generator(channels, batch, feature_dict=None, mode='sample',
         img_list = []
         l_list = []
         for b in batch:
-            img_list += [channels[b, :, :, :]]
+            img_list += [X[b, :, :, :]]
             l_list += [labels[b, :, :, :]]
         img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
         l_list = np.stack(tuple(l_list), axis=0)
@@ -394,7 +394,7 @@ def data_generator(channels, batch, feature_dict=None, mode='sample',
         col_list = []
         feature_dict_new = {}
         for b_new, b in enumerate(batch):
-            img_list += [channels[b, :, :, :]]
+            img_list += [X[b, :, :, :]]
             l_list += [labels[b, :, :, :]]
             batch_list = feature_dict[b][0] - np.amin(feature_dict[b][0])
             row_list = feature_dict[b][1]
@@ -409,7 +409,7 @@ def data_generator(channels, batch, feature_dict=None, mode='sample',
         img_list = []
         l_list = []
         for b in batch:
-            img_list += [channels[b, :, :, :, :]]
+            img_list += [X[b, :, :, :, :]]
             l_list += [labels[b, :, :, :, :]]
         img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
         l_list = np.stack(tuple(l_list), axis=0)
@@ -421,36 +421,36 @@ def data_generator(channels, batch, feature_dict=None, mode='sample',
 def get_data(file_name, mode='sample'):
     if mode == 'sample':
         training_data = np.load(file_name)
-        channels = training_data['channels']
+        X = training_data['X']
+        y = training_data['y']
         batch = training_data['batch']
-        labels = training_data['y']
         pixels_x = training_data['pixels_x']
         pixels_y = training_data['pixels_y']
         win_x = training_data['win_x']
         win_y = training_data['win_y']
 
-        total_batch_size = len(labels)
+        total_batch_size = len(y)
         num_test = np.int32(np.floor(np.float(total_batch_size)/10))
         num_train = np.int32(total_batch_size - num_test)
         full_batch_size = np.int32(num_test + num_train)
 
         # Split data set into training data and validation data
-        arr = np.arange(len(labels))
+        arr = np.arange(len(y))
         arr_shuff = np.random.permutation(arr)
 
         train_ind = arr_shuff[0:num_train]
         test_ind = arr_shuff[num_train:num_train+num_test]
 
-        X_test, y_test = data_generator(channels.astype(K.floatx()), batch[test_ind],
+        X_test, y_test = data_generator(X.astype(K.floatx()), batch[test_ind],
                                         pixel_x=pixels_x[test_ind], pixel_y=pixels_y[test_ind],
-                                        labels=labels[test_ind], win_x=win_x, win_y=win_y)
+                                        labels=y[test_ind], win_x=win_x, win_y=win_y)
 
         train_dict = {
-            'channels': channels.astype(K.floatx()),
+            'X': X.astype(K.floatx()),
+            'y': y[train_ind],
             'batch': batch[train_ind],
             'pixels_x': pixels_x[train_ind],
             'pixels_y': pixels_y[train_ind],
-            'labels': labels[train_ind],
             'win_x': win_x,
             'win_y': win_y
         }
@@ -459,10 +459,10 @@ def get_data(file_name, mode='sample'):
 
     elif mode == 'conv' or mode == 'conv_sample' or mode == 'movie':
         training_data = np.load(file_name)
-        channels = training_data['channels']
-        labels = training_data['y']
+        X = training_data['X']
+        y = training_data['y']
         if mode == 'conv_sample':
-            labels = training_data['y_sample']
+            y = training_data['y_sample']
         if mode == 'conv' or mode == 'conv_sample':
             class_weights = training_data['class_weights']
         elif mode == 'movie':
@@ -470,7 +470,7 @@ def get_data(file_name, mode='sample'):
         win_x = training_data['win_x']
         win_y = training_data['win_y']
 
-        total_batch_size = channels.shape[0]
+        total_batch_size = X.shape[0]
         num_test = np.int32(np.ceil(np.float(total_batch_size)/10))
         num_train = np.int32(total_batch_size - num_test)
         full_batch_size = np.int32(num_test + num_train)
@@ -484,33 +484,33 @@ def get_data(file_name, mode='sample'):
         train_ind = arr_shuff[0:num_train]
         test_ind = arr_shuff[num_train:]
 
-        train_imgs, train_labels = data_generator(channels, train_ind, labels=labels, mode=mode)
-        test_imgs, test_labels = data_generator(channels, test_ind, labels=labels, mode=mode)
+        X_train, y_train = data_generator(X, train_ind, labels=y, mode=mode)
+        X_test, y_test = data_generator(X, test_ind, labels=y, mode=mode)
 
-        # test_labels = np.moveaxis(test_labels, 1, 3)
+        # y_test = np.moveaxis(y_test, 1, 3)
         train_dict = {
-            'channels': train_imgs,
-            'labels': train_labels,
+            'X': X_train,
+            'y': y_train,
             'class_weights': class_weights,
             'win_x': win_x,
             'win_y': win_y
         }
 
-        # fig,ax = plt.subplots(labels.shape[0], labels.shape[1] + 1, squeeze = False)
-        # max_plotted = labels.shape[0]
+        # fig,ax = plt.subplots(y.shape[0], y.shape[1] + 1, squeeze = False)
+        # max_plotted = y.shape[0]
 
-        return train_dict, (test_imgs, test_labels)
+        return train_dict, (X_test, y_test)
 
     elif mode == 'conv_gather':
         training_data = np.load(file_name)
-        channels = training_data['channels']
-        labels = training_data['y']
+        X = training_data['X']
+        y = training_data['y']
         win_x = training_data['win_x']
         win_y = training_data['win_y']
         feature_dict = training_data['feature_dict']
         class_weights = training_data['class_weights']
 
-        total_batch_size = channels.shape[0]
+        total_batch_size = X.shape[0]
         num_test = np.int32(np.ceil(np.float(total_batch_size)/10))
         num_train = np.int32(total_batch_size - num_test)
         full_batch_size = np.int32(num_test + num_train)
@@ -524,11 +524,12 @@ def get_data(file_name, mode='sample'):
         train_ind = arr_shuff[0:num_train]
         test_ind = arr_shuff[num_train:]
 
-        train_imgs, train_gather_dict = data_generator(
-            channels, train_ind, feature_dict=feature_dict, labels=labels, mode=mode)
+        # TODO: conv_gather is not yet finished
+        X_train, train_gather_dict = data_generator(
+            X, train_ind, feature_dict=feature_dict, labels=y, mode=mode)
 
-        test_imgs, test_gather_dict = data_generator(
-            channels, test_ind, feature_dict=feature_dict, labels=labels, mode=mode)
+        X_test, test_gather_dict = data_generator(
+            X, test_ind, feature_dict=feature_dict, labels=y, mode=mode)
 
 
 def transform_matrix_offset_center(matrix, x, y):

@@ -410,7 +410,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
             feature_label = feature_label[rand_ind]
 
         # Save training data in npz format
-        np.savez(file_name_save, class_weights=weights, channels=X, y=feature_label,
+        np.savez(file_name_save, class_weights=weights, X=X, y=feature_label,
                  batch=feature_batch, pixels_x=feature_rows, pixels_y=feature_cols,
                  win_x=window_size_x, win_y=window_size_y)
 
@@ -423,7 +423,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
             y = y_trimmed
 
         # Save training data in npz format
-        np.savez(file_name_save, class_weights=weights, channels=X, y=y,
+        np.savez(file_name_save, class_weights=weights, X=X, y=y,
                  y_sample=y_sample, win_x=window_size_x, win_y=window_size_y)
 
     elif output_mode == 'disc':
@@ -451,7 +451,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
             y_binary = y_binary_trimmed
 
         # Save training data in npz format
-        np.savez(file_name_save, class_weights=weights, channels=X, y=y_binary,
+        np.savez(file_name_save, class_weights=weights, X=X, y=y_binary,
                  win_x=window_size_x, win_y=window_size_y)
 
     if verbose:
@@ -607,7 +607,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
             print('Number of cells: {}'.format(max_cells))
 
     # Save training data in npz format
-    np.savez(file_name_save, channels=X, y=y, win_x=window_size_x, win_y=window_size_y)
+    np.savez(file_name_save, X=X, y=y, win_x=window_size_x, win_y=window_size_y)
 
     if display:
         plot_training_data_3d(X, y, len(training_direcs), num_of_frames_to_display)
