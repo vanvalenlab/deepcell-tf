@@ -15,7 +15,7 @@ import numpy as np
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 
-from . import tifffile as tiff
+import tifffile as tiff
 from .dc_helper_functions import *
 from .dc_image_generators import *
 
