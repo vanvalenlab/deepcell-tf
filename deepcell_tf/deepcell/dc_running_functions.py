@@ -13,7 +13,7 @@ import os
 import numpy as np
 from tensorflow.python.keras import backend as K
 
-from . import tifffile as tiff
+import tifffile as tiff
 from .dc_helper_functions import *
 
 """
