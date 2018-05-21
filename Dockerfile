@@ -19,19 +19,12 @@ WORKDIR /deepcell-tf/lib/Mask_RCNN
 RUN pip install -r requirements.txt
 RUN python setup.py install
 
-# Set the working directory to /deepcell-tf
-
 # Mount the contents of the deepcell-tf package and
 # Install Deepcell and its requirements
 WORKDIR /deepcell-tf
 ADD ./deepcell_tf ./lib/deepcell_tf
 WORKDIR /deepcell-tf/lib/deepcell_tf
-RUN pip install -r requirements.txt
-RUN python setup.py install
-
-# Apparently, Python won't use tensorflow-gpu unless
-# its version number is >= tensorflow?
-RUN pip install --upgrade tensorflow-gpu
+RUN pip install .
 
 # Mount the deepcell_scripts
 WORKDIR /deepcell-tf
