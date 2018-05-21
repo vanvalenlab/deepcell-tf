@@ -678,7 +678,7 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
 
     elif dimensionality == 3:
         make_training_data_3d(direc_name, file_name_save, channel_names,
-                              training_direcs=None,
+                              training_direcs=training_direcs,
                               annotation_name=kwargs.get('annotation_name', 'corrected'),
                               raw_image_direc=kwargs.get('raw_image_direc', 'RawImages'),
                               annotation_direc=kwargs.get('annotation_direc', 'Annotation'),
