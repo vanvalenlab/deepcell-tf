@@ -27,35 +27,34 @@ Custom image generators
 
 class ImageSampleArrayIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
-                 batch_size=32, shuffle=False, seed=None,
-                 data_format=None,
+                 batch_size=32, shuffle=False, seed=None, data_format=None,
                  save_to_dir=None, save_prefix='', save_format='png'):
 
-        if train_dict["labels"].size > 0 and len(train_dict["pixels_x"]) != len(train_dict["labels"]):
-            raise Exception('Number of sampled pixels and y (labels) '
-                            'should have the same length. '
-                            'Found: Number of sampled pixels = %s, y.shape = %s' % (len(train_dict["pixels_x"]), np.asarray(train_dict["labels"]).shape))
+        if train_dict['y'].size > 0 and len(train_dict['pixels_x']) != len(train_dict['y']):
+            raise Exception('Number of sampled pixels and y (labels) should have the same length. '
+                            'Found: Number of sampled pixels = {}, y.shape = {}'.format(
+                                len(train_dict['pixels_x']), np.asarray(train_dict['y']).shape))
         if data_format is None:
             data_format = K.image_dim_ordering()
-        self.x = np.asarray(train_dict["channels"], dtype=K.floatx())
+        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
 
         if self.x.ndim != 4:
             raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
                              'You passed an array with shape', self.x.shape)
         channel_axis = 3 if data_format == 'channels_last' else 1
         self.channel_axis = channel_axis
-        self.y = train_dict["labels"]
-        self.b = train_dict["batch"]
-        self.pixels_x = train_dict["pixels_x"]
-        self.pixels_y = train_dict["pixels_y"]
-        self.win_x = train_dict["win_x"]
-        self.win_y = train_dict["win_y"]
+        self.y = train_dict['y']
+        self.b = train_dict['batch']
+        self.pixels_x = train_dict['pixels_x']
+        self.pixels_y = train_dict['pixels_y']
+        self.win_x = train_dict['win_x']
+        self.win_y = train_dict['win_y']
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        super(ImageSampleArrayIterator, self).__init__(len(train_dict["labels"]), batch_size, shuffle, seed)
+        super(ImageSampleArrayIterator, self).__init__(len(train_dict['y']), batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
@@ -110,8 +109,7 @@ class SampleDataGenerator(ImageDataGenerator):
                     save_to_dir=None, save_prefix='', save_format='png'):
         return ImageSampleArrayIterator(
             train_dict, self,
-            batch_size=batch_size, shuffle=shuffle, seed=seed,
-            data_format=self.data_format,
+            batch_size=batch_size, shuffle=shuffle, seed=seed, data_format=self.data_format,
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
 class ImageFullyConvIterator(Iterator):
@@ -120,20 +118,20 @@ class ImageFullyConvIterator(Iterator):
                  data_format=None, target_format=None,
                  save_to_dir=None, save_prefix='', save_format='png'):
         print(list(train_dict.keys()))
-        self.x = np.asarray(train_dict["channels"], dtype=K.floatx())
-        self.win_x = train_dict["win_x"]
-        self.win_y = train_dict["win_y"]
+        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.win_x = train_dict['win_x']
+        self.win_y = train_dict['win_y']
 
         if data_format is None:
             data_format = K.image_dim_ordering()
 
         if self.x.ndim != 4:
             raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
-                             'You passed an array with shape', self.x.shape)
+                             'You passed an array with shape {}'.format(self.x.shape))
 
         channel_axis = -1 if data_format == 'channels_last' else 1
         self.channel_axis = channel_axis
-        self.y = train_dict["labels"]
+        self.y = train_dict['y']
 
         self.image_data_generator = image_data_generator
         self.data_format = data_format
@@ -227,12 +225,12 @@ class ImageFullyConvIterator(Iterator):
                 img.save(os.path.join(self.save_to_dir, fname))
 
                 if self.target_format == 'direction' or self.target_format == 'watershed':
-                    img_y = np.expand_dims(batch_y[i,:,:,0], -1)
+                    img_y = np.expand_dims(batch_y[i, :, :, 0], -1)
                     img = array_to_img(img_y, self.data_format, scale=True)
                     fname = 'y_' + '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-	                                                                         index=j,
-	                                                                         hash=np.random.randint(1e4),
-	                                                                         format=self.save_format)
+                                                                             index=j,
+                                                                             hash=np.random.randint(1e4),
+                                                                             format=self.save_format)
                     img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
@@ -261,16 +259,17 @@ class ImageFullyConvGatherIterator(Iterator):
                  batch_size=1, training_examples=1e5, shuffle=False, seed=None,
                  data_format=None, save_to_dir=None, save_prefix='', save_format='png'):
         print(list(train_dict.keys()))
-        self.x = np.asarray(train_dict["channels"], dtype=K.floatx())
-        self.y = train_dict["labels"]
-        self.win_x = train_dict["win_x"]
-        self.win_y = train_dict["win_y"]
+        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.y = train_dict['y']
+        self.win_x = train_dict['win_x']
+        self.win_y = train_dict['win_y']
 
         if training_examples != len(self.row_index):
-            raise Exception('The number of training examples should match the size of the training data')
+            raise Exception('The number of training examples should match '
+                            'the size of the training data')
 
         # Reorganize the batch, row, and col indices
-        different_batches = list(np.arange(train_dict["channels"].shape[0]))
+        different_batches = list(np.arange(train_dict['X'].shape[0]))
         rows_to_sample = {}
         cols_to_sample = {}
         for batch_id in different_batches:
@@ -279,19 +278,19 @@ class ImageFullyConvGatherIterator(Iterator):
 
         #Subsample the pixel coordinates
 
-        expected_label_size = (self.x.shape[0], train_dict["labels"].shape[1], self.x.shape[2]-2*self.win_x, self.x.shape[3] - 2*self.win_y)
-        if train_dict["labels"] is not None and train_dict["labels"].shape != expected_label_size:
-            raise Exception('The expected conv-net output and label image'
-                            'should have the same size. '
-                            'Found: expected conv-net output shape = %s, label image shape = %s' % expected_label_size, train_dict["labels"].shape)
+        expected_label_size = (self.x.shape[0], train_dict['y'].shape[1], self.x.shape[2]-2*self.win_x, self.x.shape[3] - 2*self.win_y)
+        if train_dict['y'] is not None and train_dict['y'].shape != expected_label_size:
+            raise Exception('The expected conv-net output and label image '
+                            'should have the same size. Found: '
+                            'expected conv-net output shape = {}, label image shape = {}'.format(
+                                expected_label_size, train_dict['y'].shape))
 
         if data_format is None:
             data_format = K.image_dim_ordering()
 
         if self.x.ndim != 4:
-            raise ValueError('Input data in `NumpyArrayIterator` '
-                             'should have rank 4. You passed an array '
-                             'with shape', self.x.shape)
+            raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
+                             'You passed an array with shape {}'.format(self.x.shape))
 
         channel_axis = 3 if data_format == 'channels_last' else 1
         self.channel_axis = channel_axis
@@ -442,7 +441,7 @@ class ImageFullyConvDataGenerator(object):
         if data_format not in {'channels_last', 'channels_first'}:
             raise ValueError('`data_format` should be `"channels_last"` (channel after row and '
                              'column) or `"channels_first"` (channel before row and column). '
-                             'Received arg: ', data_format)
+                             'Received arg: {}'.format(data_format))
         self.data_format = data_format
         if data_format == 'channels_first':
             self.channel_axis = 1
@@ -462,12 +461,11 @@ class ImageFullyConvDataGenerator(object):
         elif len(zoom_range) == 2:
             self.zoom_range = [zoom_range[0], zoom_range[1]]
         else:
-            raise ValueError('`zoom_range` should be a float or '
-                             'a tuple or list of two floats. '
-                             'Received arg: ', zoom_range)
+            raise ValueError('`zoom_range` should be a float or a tuple or list of two floats. '
+                             'Received arg: {}'.format(zoom_range))
 
     def flow(self, train_dict, batch_size=1, shuffle=True, seed=None,
-            save_to_dir=None, save_prefix='', save_format='png', target_format = None ):
+             save_to_dir=None, save_prefix='', save_format='png', target_format=None):
         return ImageFullyConvIterator(
             train_dict, self,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
@@ -496,18 +494,16 @@ class ImageFullyConvDataGenerator(object):
             if self.mean is not None:
                 x -= self.mean
             else:
-                warnings.warn('This ImageDataGenerator specifies '
-                              '`featurewise_center`, but it hasn\'t'
-                              'been fit on any training data. Fit it '
-                              'first by calling `.fit(numpy_data)`.')
+                warnings.warn('This ImageDataGenerator specifies `featurewise_center`, '
+                              'but it has not been fit on any training data. '
+                              'Fit it first by calling `.fit(numpy_data)`.')
         if self.featurewise_std_normalization:
             if self.std is not None:
                 x /= (self.std + 1e-7)
             else:
-                warnings.warn('This ImageDataGenerator specifies '
-                              '`featurewise_std_normalization`, but it hasn\'t'
-                              'been fit on any training data. Fit it '
-                              'first by calling `.fit(numpy_data)`.')
+                warnings.warn('This ImageDataGenerator specifies `featurewise_std_normalization`, '
+                              'but it has not been fit on any training data. '
+                              'Fit it first by calling `.fit(numpy_data)`.')
 
         return x
 
@@ -568,15 +564,19 @@ class ImageFullyConvDataGenerator(object):
             transform_matrix = shift_matrix if transform_matrix is None else np.dot(transform_matrix, shift_matrix)
 
         if shear != 0:
-            shear_matrix = np.array([[1, -np.sin(shear), 0],
-                                    [0, np.cos(shear), 0],
-                                    [0, 0, 1]])
+            shear_matrix = np.array([
+                [1, -np.sin(shear), 0],
+                [0, np.cos(shear), 0],
+                [0, 0, 1]
+            ])
             transform_matrix = shear_matrix if transform_matrix is None else np.dot(transform_matrix, shear_matrix)
 
         if zx != 1 or zy != 1:
-            zoom_matrix = np.array([[zx, 0, 0],
-                                    [0, zy, 0],
-                                    [0, 0, 1]])
+            zoom_matrix = np.array([
+                [zx, 0, 0],
+                [0, zy, 0],
+                [0, 0, 1]
+            ])
             transform_matrix = zoom_matrix if transform_matrix is None else np.dot(transform_matrix, zoom_matrix)
 
         if labels is not None:
@@ -610,8 +610,7 @@ class ImageFullyConvDataGenerator(object):
 
         if labels is not None:
             return x, y.astype('int')
-        else:
-            return x
+        return x
 
     def fit(self, x, augment=False, rounds=1, seed=None):
         """Fits internal statistics to some sample data.
@@ -693,7 +692,7 @@ def apply_transform_to_movie(x, transform_matrix, channel_axis=0, fill_mode='nea
                     final_affine_matrix,
                     final_offset,
                     order=0,
-                    mode= fill_mode,
+                    mode=fill_mode,
                     cval=cval)
                 frames += [channel_image]
             frames = np.stack(frames, axis=0)
@@ -751,8 +750,9 @@ class MovieDataGenerator(object):
             The function should take one argument:
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
-        data_format: 'channels_first' or 'channels_last'. In 'channels_first' mode, the channels dimension
-            (the depth) is at index 1, in 'channels_last' mode it is at index 4.
+        data_format: 'channels_first' or 'channels_last'. In 'channels_first' mode,
+            the channels dimension (the depth) is at index 1,
+            in 'channels_last' mode it is at index 4.
             It defaults to the `image_data_format` value found in your
             Keras config file at `~/.keras/keras.json`.
             If you never set it, then it will be "channels_last".
@@ -820,12 +820,11 @@ class MovieDataGenerator(object):
         elif len(zoom_range) == 2:
             self.zoom_range = [zoom_range[0], zoom_range[1]]
         else:
-            raise ValueError('`zoom_range` should be a float or '
-                             'a tuple or list of two floats. '
-                             'Received arg: ', zoom_range)
+            raise ValueError('`zoom_range` should be a float or a tuple or list of two floats. '
+                             'Received arg: {}'.format(zoom_range))
 
-    def flow(self, train_dict, batch_size=1, number_of_frames = 10, shuffle=True, seed=None,
-            save_to_dir=None, save_prefix='', save_format='png'):
+    def flow(self, train_dict, batch_size=1, number_of_frames=10, shuffle=True, seed=None,
+             save_to_dir=None, save_prefix='', save_format='png'):
         return MovieArrayIterator(
             train_dict, self,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
@@ -854,18 +853,16 @@ class MovieDataGenerator(object):
             if self.mean is not None:
                 x -= self.mean
             else:
-                warnings.warn('This ImageDataGenerator specifies '
-                              '`featurewise_center`, but it hasn\'t'
-                              'been fit on any training data. Fit it '
-                              'first by calling `.fit(numpy_data)`.')
+                warnings.warn('This ImageDataGenerator specifies `featurewise_center`, '
+                              'but it has not been fit on any training data. '
+                              'Fit it first by calling `.fit(numpy_data)`.')
         if self.featurewise_std_normalization:
             if self.std is not None:
                 x /= (self.std + 1e-7)
             else:
-                warnings.warn('This ImageDataGenerator specifies '
-                              '`featurewise_std_normalization`, but it hasn\'t'
-                              'been fit on any training data. Fit it '
-                              'first by calling `.fit(numpy_data)`.')
+                warnings.warn('This ImageDataGenerator specifies `featurewise_std_normalization`, '
+                              'but it has not been fit on any training data. '
+                              'Fit it first by calling `.fit(numpy_data)`.')
 
         return x
 
@@ -926,15 +923,19 @@ class MovieDataGenerator(object):
             transform_matrix = shift_matrix if transform_matrix is None else np.dot(transform_matrix, shift_matrix)
 
         if shear != 0:
-            shear_matrix = np.array([[1, -np.sin(shear), 0],
-                                    [0, np.cos(shear), 0],
-                                    [0, 0, 1]])
+            shear_matrix = np.array([
+                [1, -np.sin(shear), 0],
+                [0, np.cos(shear), 0],
+                [0, 0, 1]
+            ])
             transform_matrix = shear_matrix if transform_matrix is None else np.dot(transform_matrix, shear_matrix)
 
         if zx != 1 or zy != 1:
-            zoom_matrix = np.array([[zx, 0, 0],
-                                    [0, zy, 0],
-                                    [0, 0, 1]])
+            zoom_matrix = np.array([
+                [zx, 0, 0],
+                [0, zy, 0],
+                [0, 0, 1]
+            ])
             transform_matrix = zoom_matrix if transform_matrix is None else np.dot(transform_matrix, zoom_matrix)
 
         if label_movie is not None:
@@ -947,7 +948,7 @@ class MovieDataGenerator(object):
             h, w = x.shape[img_row_axis], x.shape[img_col_axis]
             transform_matrix = transform_matrix_offset_center(transform_matrix, h, w)
             x = apply_transform_to_movie(x, transform_matrix, img_channel_axis,
-                                fill_mode=self.fill_mode, cval=self.cval)
+                                         fill_mode=self.fill_mode, cval=self.cval)
 
         if self.channel_shift_range != 0:
             x = random_channel_shift(x, self.channel_shift_range, img_channel_axis)
@@ -966,8 +967,7 @@ class MovieDataGenerator(object):
 
         if label_movie is not None:
             return x, y
-        else:
-            return x
+        return x
 
     def fit(self, x, augment=False, rounds=1, seed=None):
         """Fits internal statistics to some sample data.
@@ -1028,35 +1028,34 @@ class MovieArrayIterator(Iterator):
         # The label movie is the same dimension as the channel movie with each pixel
         # having its corresponding prediction
 
-        if train_dict["labels"] is not None and train_dict["channels"].shape[0] != train_dict["labels"].shape[0]:
-            raise Exception('Data movie and label movie should have the same size'
-                            'Found data movie size = %s and and label movie size = %s' % (train_dict["channels"].shape, train_dict["labels"].shape)
-                )
+        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+            raise Exception('Data movie and label movie should have the same size. '
+                            'Found data movie size = {} and and label movie size = {}'.format(
+                                train_dict['X'].shape, train_dict['y'].shape))
         if data_format is None:
             data_format = K.image_dim_ordering()
-        self.x = np.asarray(train_dict["channels"], dtype=K.floatx())
+        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
 
         if self.x.ndim != 5:
-            raise ValueError('Input data in `MovieArrayIterator` '
-                            'should have rank 5. You passed an array '
-                            'with shape', self.x.shape)
+            raise ValueError('Input data in `MovieArrayIterator` should have rank 5. '
+                             'You passed an array with shape {}.'.format(self.x.shape))
         channels_axis = 4 if data_format == 'channels_last' else 1
         time_axis = 1 if data_format == 'channels_last' else 2
 
         if self.x.shape[time_axis] - number_of_frames < 0:
             raise Exception('The number of frames used in each training batch should'
-                'be less than the number of frames in the training data!')
+                            'be less than the number of frames in the training data!')
 
         self.channels_axis = channels_axis
         self.time_axis = time_axis
         self.number_of_frames = number_of_frames
-        self.y = train_dict["labels"]
+        self.y = train_dict['y']
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        super(MovieArrayIterator, self).__init__(len(train_dict["labels"]), batch_size, shuffle, seed)
+        super(MovieArrayIterator, self).__init__(len(train_dict['y']), batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         # Note to self - Make sure the exact same transformation is applied to every frame in each movie
@@ -1117,9 +1116,8 @@ class MovieArrayIterator(Iterator):
 
         if self.y is None:
             return batch_x
-        else:
-            batch_y = np.rollaxis(batch_y, 1, 5)
-            return batch_x, batch_y
+        batch_y = np.rollaxis(batch_y, 1, 5)
+        return batch_x, batch_y
 
     def __next__(self):
         """For python 2.x.
@@ -1144,21 +1142,20 @@ class BoundingBoxIterator(Iterator):
                  data_format=None,
                  save_to_dir=None, save_prefix='', save_format='png'):
         print(list(train_dict.keys()))
-        self.x = np.asarray(train_dict["channels"], dtype=K.floatx())
-        self.win_x = train_dict["win_x"]
-        self.win_y = train_dict["win_y"]
+        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.win_x = train_dict['win_x']
+        self.win_y = train_dict['win_y']
 
         if data_format is None:
             data_format = K.image_dim_ordering()
 
         if self.x.ndim != 4:
-            raise ValueError('Input data in `NumpyArrayIterator` '
-                            'should have rank 4. You passed an array '
-                            'with shape', self.x.shape)
+            raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
+                             'You passed an array with shape {}'.format(self.x.shape))
 
         channels_axis = 3 if data_format == 'channels_last' else 1
         self.channels_axis = channels_axis
-        self.y = train_dict["labels"]
+        self.y = train_dict['y']
 
         if self.channel_axis == 3:
             self.num_features = self.y.shape[-1]
@@ -1171,7 +1168,7 @@ class BoundingBoxIterator(Iterator):
             self.image_shape = self.x.shape[2:]
 
         bbox_list = []
-        for b in range(channels.shape[0]):
+        for b in range(self.x.shape[0]):
             for l in range(1, self.num_features-1):
                 if self.channel_axis == 3:
                     mask = self.y[b, :, :, l]
@@ -1202,22 +1199,24 @@ class BoundingBoxIterator(Iterator):
         return bboxes
 
     def anchor_targets(
-        self,
-        image_shape,
-        annotations,
-        num_classes,
-        mask_shape=None,
-        negative_overlap=0.4,
-        positive_overlap=0.5,
-        **kwargs):
-        return self.anchor_targets_bbox(image_shape, annotations, num_classes, mask_shape, negative_overlap, positive_overlap, **kwargs)
+            self,
+            image_shape,
+            annotations,
+            num_classes,
+            mask_shape=None,
+            negative_overlap=0.4,
+            positive_overlap=0.5,
+            **kwargs):
+        return self.anchor_targets_bbox(image_shape, annotations, num_classes,
+                                        mask_shape, negative_overlap, positive_overlap, **kwargs)
 
     def compute_target(self, annotation):
-        labels, annotations, anchors = self.anchor_targets(self.image_shape, annotation, self.num_features)
+        labels, annotations, anchors = self.anchor_targets(
+            self.image_shape, annotation, self.num_features)
         regression = self.bbox_transform(anchors, annotation)
 
         # append anchor state to regression targets
-        anchor_states = np.max(labels, axis=1, keepdims = True)
+        anchor_states = np.max(labels, axis=1, keepdims=True)
         regression = np.append(regression, anchor_states, axis=1)
         return [regression, labels]
 
@@ -1257,13 +1256,14 @@ class BoundingBoxIterator(Iterator):
 
                 # Get the bounding boxes from the transformed masks!
 
-                annotations = self.get_annotations[y]
+                annotations = self.get_annotations(y)
                 regressions, labels = self.compute_target(annotations)
                 regressions_list += [regressions]
                 labels_list += [labels]
 
             if self.channels_axis == 3:
-                raise NotImplementedError('Bounding box generator does not work for channels last yet')
+                raise NotImplementedError('Bounding box generator does not work '
+                                          'for channels last yet')
 
             regressions = np.stack(regressions_list, axis=0)
             labels = np.stack(labels_list, axis=0)
@@ -1272,17 +1272,16 @@ class BoundingBoxIterator(Iterator):
             for i, j in enumerate(index_array):
                 img = array_to_img(batch_x[i], self.data_format, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-                                                                    index=j,
-                                                                    hash=np.random.randint(1e4),
-                                                                    format=self.save_format)
+                                                                  index=j,
+                                                                  hash=np.random.randint(1e4),
+                                                                  format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
 
         if self.y is None:
             return batch_x
-        else:
-            batch_y = np.rollaxis(batch_y, 1, 4)
-            return batch_x, [regressions_list, labels_list]
+        batch_y = np.rollaxis(batch_y, 1, 4)
+        return batch_x, [regressions_list, labels_list]
 
     def __next__(self):
         """For python 2.x.
