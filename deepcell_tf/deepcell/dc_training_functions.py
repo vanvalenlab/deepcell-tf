@@ -45,9 +45,9 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
         X_test = np.rollaxis(X_test, 1, 4)
 
     # the data, shuffled and split between train and test sets
-    print(('X_train shape:', train_dict['X'].shape))
-    print((train_dict["pixels_x"].shape[0], 'train samples'))
-    print((X_test.shape[0], 'test samples'))
+    print('X_train shape:', train_dict['X'].shape)
+    print('train samples:', train_dict['pixels_x'].shape[0])
+    print('test samples', X_test.shape[0])
 
     # determine the number of classes
     output_shape = model.layers[-1].output_shape
@@ -101,11 +101,11 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
     class_weights = None #class_weight #train_dict["class_weights"]
 
     # the data, shuffled and split between train and test sets
-    print(('Training data shape:', train_dict['X'].shape))
-    print(('Training labels shape:', train_dict['y'].shape))
+    print('Training data shape:', train_dict['X'].shape)
+    print('Training labels shape:', train_dict['y'].shape)
 
-    print(('Testing data shape:', X_test.shape))
-    print(('Testing labels shape:', Y_test.shape))
+    print('Testing data shape:', X_test.shape)
+    print('Testing labels shape:', Y_test.shape)
 
     # determine the number of classes
     output_shape = model.layers[-1].output_shape
@@ -168,11 +168,11 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
     class_weights = None #class_weight #train_dict["class_weights"]
 
     # the data, shuffled and split between train and test sets
-    print(('Training data shape:', train_dict['X'].shape))
-    print(('Training labels shape:', train_dict['y'].shape))
+    print('Training data shape:', train_dict['X'].shape)
+    print('Training labels shape:', train_dict['y'].shape)
 
-    print(('Testing data shape:', X_test.shape))
-    print(('Testing labels shape:', Y_test.shape))
+    print('Testing data shape:', X_test.shape)
+    print('Testing labels shape:', Y_test.shape)
 
     # determine the number of classes
     output_shape = model.layers[-1].output_shape
