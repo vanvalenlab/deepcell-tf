@@ -7,6 +7,7 @@ Functions for making training data
 """
 
 from __future__ import print_function
+from __future__ import division
 
 import os
 import re
@@ -102,7 +103,7 @@ def window_stdev(arr, radius, epsilon=1e-7):
 def process_image(channel_img, win_x, win_y, std=False, remove_zeros=False):
     if std:
         avg_kernel = np.ones((2*win_x + 1, 2*win_y + 1))
-        channel_img -= ndimage.convolve(channel_img, avg_kernel)/avg_kernel.size
+        channel_img -= ndimage.convolve(channel_img, avg_kernel) / avg_kernel.size
         # std = np.std(channel_img)
         std = window_stdev(channel_img, win_x)
         channel_img /= std
@@ -111,14 +112,14 @@ def process_image(channel_img, win_x, win_y, std=False, remove_zeros=False):
     if remove_zeros:
         channel_img /= np.amax(channel_img)
         avg_kernel = np.ones((2*win_x + 1, 2*win_y + 1))
-        channel_img -= ndimage.convolve(channel_img, avg_kernel)/avg_kernel.size
+        channel_img -= ndimage.convolve(channel_img, avg_kernel) / avg_kernel.size
         return channel_img
 
     else:
         p50 = np.percentile(channel_img, 50)
         channel_img /= p50
         avg_kernel = np.ones((2*win_x + 1, 2*win_y + 1))
-        channel_img -= ndimage.convolve(channel_img, avg_kernel)/avg_kernel.size
+        channel_img -= ndimage.convolve(channel_img, avg_kernel) / avg_kernel.size
         return channel_img
 
 def get_image(file_name):
@@ -430,7 +431,7 @@ def get_data(file_name, mode='sample'):
         win_y = training_data['win_y']
 
         total_batch_size = len(y)
-        num_test = np.int32(np.floor(np.float(total_batch_size)/10))
+        num_test = np.int32(np.floor(np.float(total_batch_size) / 10))
         num_train = np.int32(total_batch_size - num_test)
         full_batch_size = np.int32(num_test + num_train)
 
@@ -471,7 +472,7 @@ def get_data(file_name, mode='sample'):
         win_y = training_data['win_y']
 
         total_batch_size = X.shape[0]
-        num_test = np.int32(np.ceil(np.float(total_batch_size)/10))
+        num_test = np.int32(np.ceil(np.float(total_batch_size) / 10))
         num_train = np.int32(total_batch_size - num_test)
         full_batch_size = np.int32(num_test + num_train)
 
@@ -511,7 +512,7 @@ def get_data(file_name, mode='sample'):
         class_weights = training_data['class_weights']
 
         total_batch_size = X.shape[0]
-        num_test = np.int32(np.ceil(np.float(total_batch_size)/10))
+        num_test = np.int32(np.ceil(np.float(total_batch_size) / 10))
         num_train = np.int32(total_batch_size - num_test)
         full_batch_size = np.int32(num_test + num_train)
 
