@@ -2,40 +2,44 @@
 FROM nvcr.io/vvlab/tensorflow:18.04-py3
 
 # System maintenance
-RUN apt update
-RUN apt-get install -y python3-tk
+RUN apt update && apt-get install -y python3-tk
+RUN pip install --upgrade pip
+
+# Set working directory
+WORKDIR /deepcell-tf
 
 # Install Retinanet
-WORKDIR /deepcell-tf/lib
-RUN git clone https://www.github.com/vanvalenlab/keras-retinanet
-WORKDIR /deepcell-tf/lib/keras-retinanet
-RUN git checkout tags/0.2
-RUN pip install .
+RUN git clone https://www.github.com/vanvalenlab/keras-retinanet /deepcell-tf/lib/keras-retinanet && \
+    cd lib/keras-retinanet && \
+    git checkout tags/0.2 && \
+    pip install . && \
+    cd /deepcell-tf
 
 # Install Mask R-CNN
-WORKDIR /deepcell-tf/lib
-RUN git clone https://www.github.com/vanvalenlab/Mask_RCNN
-WORKDIR /deepcell-tf/lib/Mask_RCNN
-RUN pip install -r requirements.txt
-RUN python setup.py install
+RUN git clone https://www.github.com/vanvalenlab/Mask_RCNN /deepcell-tf/lib/Mask_RCNN && \
+    cd /deepcell-tf/lib/Mask_RCNN && \
+    pip install -r requirements.txt && \
+    python setup.py install && \
+    cd /deepcell-tf
 
-# Mount the contents of the deepcell-tf package and
-# Install Deepcell and its requirements
-WORKDIR /deepcell-tf
-ADD ./deepcell_tf ./lib/deepcell_tf
-WORKDIR /deepcell-tf/lib/deepcell_tf
-RUN pip install .
+# Copy the deepcell-tf requirements.txt and install its dependencies
+COPY ./deepcell_tf/requirements.txt /deepcell-tf/lib/deepcell_tf/requirements.txt
+RUN pip install -r /deepcell-tf/lib/deepcell_tf/requirements.txt
 
-# Mount the deepcell_scripts
-WORKDIR /deepcell-tf
-ADD ./deepcell_scripts ./deepcell_scripts
+# Copy the rest of the package code and its scripts
+COPY ./deepcell_tf /deepcell-tf/lib/deepcell_tf
+COPY ./deepcell_scripts /deepcell-tf/deepcell_scripts
+
+# Install using setup.py
+RUN cd /deepcell-tf/lib/deepcell_tf && \
+    python setup.py install
 
 # Change matplotlibrc file to use the Agg backend
 RUN echo "backend : Agg" > /usr/local/lib/python3.5/dist-packages/matplotlib/mpl-data/matplotlibrc
 
 # Change keras configuration file so that channels are first
-#RUN mkdir $HOME/.keras
-#RUN echo '{"image_data_format": "channels_first", "epsilon": 1e-07, "floatx": "float32", "backend": "tensorflow"}' > $HOME/.keras/keras.json
+#RUN mkdir $HOME/.keras && \
+#     echo '{"image_data_format": "channels_first", "epsilon": 1e-07, "floatx": "float32", "backend": "tensorflow"}' > $HOME/.keras/keras.json
 
 # Make port 80 available to the world outside this container
 EXPOSE 80
