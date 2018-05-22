@@ -1,13 +1,13 @@
 """
 make_training_data.py
 
-Executing functions for creating npz files containing the training data 
+Executing functions for creating npz files containing the training data
 Functions will create training data for either
 	- Patchwise sampling
 	- Fully convolutional training of single image conv-nets
 	- Fully convolutional training of movie conv-nets
 
-Files should be plased in training directories with each separate 
+Files should be plased in training directories with each separate
 dataset getting its own folder
 
 @author: David Van Valen
@@ -34,7 +34,7 @@ import matplotlib.pyplot as plt
 from skimage.transform import resize
 
 
-from deepcell import make_training_data_movie as make_training_data
+from deepcell import make_training_data_2d as make_training_data
 
 # Define maximum number of training examples
 window_size = 30
@@ -50,7 +50,7 @@ channel_names = ["DAPI"]
 pathlib.Path( output_directory ).mkdir( parents=True, exist_ok=True )
 
 # Create the training data
-make_training_data(window_size_x = 30, window_size_y = 30, 
+make_training_data(window_size_x = 30, window_size_y = 30,
 		direc_name = direc_name,
 		file_name_save = file_name_save,
 		training_direcs = training_direcs,
@@ -65,4 +65,3 @@ make_training_data(window_size_x = 30, window_size_y = 30,
 		display = False,
 		num_of_frames_to_display = 5,
 		verbose = True)
-
