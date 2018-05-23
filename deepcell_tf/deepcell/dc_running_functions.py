@@ -7,6 +7,7 @@ Functions for running convolutional neural networks
 """
 
 from __future__ import print_function
+from __future__ import division
 
 import os
 
@@ -28,8 +29,8 @@ def run_model(image, model, win_x=30, win_y=30, std=False, split=True, process=T
             image[0, j, :, :] = process_image(image[0, j, :, :], win_x, win_y, std)
 
     if split:
-        image_size_x = image.shape[2]/2
-        image_size_y = image.shape[3]/2
+        image_size_x = image.shape[2] // 2
+        image_size_y = image.shape[3] // 2
     else:
         image_size_x = image.shape[2]
         image_size_y = image.shape[3]
@@ -87,7 +88,7 @@ def run_model_on_directory(data_location, channel_names, output_location, model,
 def run_models_on_directory(data_location, channel_names, output_location, model_fn, list_of_weights, n_features = 3, image_size_x = 1080, image_size_y = 1280, win_x = 30, win_y = 30, std = False, split = True, process = True, save = True):
 
     if split:
-        input_shape = (len(channel_names), image_size_x/2+win_x, image_size_y/2+win_y)
+        input_shape = (len(channel_names), image_size_x // 2 + win_x, image_size_y // 2 + win_y)
     else:
         input_shape = (len(channel_names), image_size_x, image_size_y)
 

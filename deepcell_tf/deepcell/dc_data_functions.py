@@ -7,6 +7,7 @@ Functions for making training data
 """
 
 from __future__ import print_function
+from __future__ import division
 
 from fnmatch import fnmatch
 import os
