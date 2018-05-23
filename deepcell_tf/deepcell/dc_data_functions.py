@@ -475,7 +475,8 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         plot_training_data_2d(X, display_mask, max_plotted=max_plotted)
 
 def load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
-                            image_size, window_size, num_frames, process=True):
+                            image_size, window_size, num_frames, process=True,
+                            process_std=False, process_remove_zeros=False):
     """
     Iterate over every image in the training directories and load
     each into a numpy array.
@@ -502,7 +503,8 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
                     k, np.sum(image_data.flatten())))
 
                 if process:
-                    image_data = process_image(image_data, window_size_x, window_size_y)
+                    image_data = process_image(image_data, window_size_x, window_size_y,
+                                               std=process_std, remove_zeros=process_remove_zeros)
 
                 X[i, j, k, :, :] = image_data
 
@@ -540,12 +542,20 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
                           output_mode='disc',
                           reshape_size=None,
                           process=True,
+                          process_std=False,
+                          process_remove_zeros=False,
                           num_frames=50,
                           display=True,
                           num_of_frames_to_display=5,
                           verbose=True):
     """
     Read all images in training directories and save as npz file.
+    3D image sets are "stacks" of images.  For annotation purposes, these images
+    have been sliced into "montages", where a section of each stack has been sliced
+    so they can be efficiently annotated by human users. In this case, the raw_image_direc
+    should be a specific montage (e.g. montage_0_0) and the annotation is the corresponding
+    annotated montage.  Each montage must maintain the full stack, but can be processed
+    independently.
     # Arguments
         direc_name: directory containing folders of training data
         file_name_save: full filepath for npz file where the data will be saved
@@ -579,7 +589,8 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
 
     X = load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
                                 image_size, window_size=(window_size_x, window_size_y),
-                                num_frames=num_frames, process=process)
+                                num_frames=num_frames, process=process, process_std=process_std,
+                                process_remove_zeros=process_remove_zeros)
 
     y = load_annotated_images_3d(direc_name, training_direcs, annotation_direc,
                                  annotation_name, num_frames, image_size)
@@ -625,6 +636,8 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                        sample_mode='subsample',
                        verbose=False,
                        process=True,
+                       process_std=False,
+                       process_remove_zeros=False,
                        reshape_size=None,
                        display=False,
                        **kwargs):
@@ -671,8 +684,8 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               sample_mode=sample_mode,
                               output_mode=output_mode,
                               process=process,
-                              process_std=kwargs.get('process_std', False),
-                              process_remove_zeros=kwargs.get('process_remove_zeros', False),
+                              process_std=process_std,
+                              process_remove_zeros=process_remove_zeros,
                               dilation_radius=kwargs.get('dilation_radius', 1),
                               max_plotted=kwargs.get('max_plotted', 5),
                               max_training_examples=kwargs.get('max_training_examples', 1e7))
@@ -689,6 +702,8 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               output_mode=output_mode,
                               reshape_size=reshape_size,
                               process=process,
+                              process_std=process_std,
+                              process_remove_zeros=process_remove_zeros,
                               verbose=verbose,
                               display=display,
                               num_frames=kwargs.get('num_frames', 50),

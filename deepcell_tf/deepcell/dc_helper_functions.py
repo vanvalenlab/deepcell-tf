@@ -11,6 +11,7 @@ from __future__ import division
 
 import os
 import re
+import warnings
 
 import numpy as np
 from scipy import ndimage
@@ -105,11 +106,11 @@ def process_image(channel_img, win_x, win_y, std=False, remove_zeros=False):
         avg_kernel = np.ones((2*win_x + 1, 2*win_y + 1))
         channel_img -= ndimage.convolve(channel_img, avg_kernel) / avg_kernel.size
         # std = np.std(channel_img)
-        std = window_stdev(channel_img, win_x)
-        channel_img /= std
+        std_val = window_stdev(channel_img, win_x)
+        channel_img /= std_val
         return channel_img
 
-    if remove_zeros:
+    elif remove_zeros:
         channel_img /= np.amax(channel_img)
         avg_kernel = np.ones((2*win_x + 1, 2*win_y + 1))
         channel_img -= ndimage.convolve(channel_img, avg_kernel) / avg_kernel.size
@@ -117,6 +118,9 @@ def process_image(channel_img, win_x, win_y, std=False, remove_zeros=False):
 
     else:
         p50 = np.percentile(channel_img, 50)
+        if p50 == 0:
+            warnings.warn('The median pixel value is 0, consider '
+                          'using std=True for image normalization.', Warning)
         channel_img /= p50
         avg_kernel = np.ones((2*win_x + 1, 2*win_y + 1))
         channel_img -= ndimage.convolve(channel_img, avg_kernel) / avg_kernel.size
