@@ -6,6 +6,9 @@ Functions for plotting data for visual inspection
 @author: David Van Valen
 """
 
+from __future__ import print_function
+from __future__ import division
+
 import matplotlib.pyplot as plt
 
 def cf(x_coord, y_coord, sample_image):
