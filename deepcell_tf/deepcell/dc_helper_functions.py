@@ -22,6 +22,7 @@ import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import activations
 
+from .dc_settings import CHANNELS_FIRST
 
 """
 Helper functions
@@ -167,9 +168,8 @@ def get_images_from_directory(data_location, channel_names):
     n_channels = len(channel_names)
     all_images = []
 
-    image_data_format = K.image_data_format()
     for stack_iteration in range(len(img_list_channels[0])):
-        if image_data_format == 'channels_first':
+        if CHANNELS_FIRST:
             shape = (1, n_channels, img_temp.shape[0], img_temp.shape[1])
         else:
             shape = (1, img_temp.shape[0], img_temp.shape[1], n_channels)
@@ -179,12 +179,12 @@ def get_images_from_directory(data_location, channel_names):
         for j in range(n_channels):
             img_path = os.path.join(data_location, img_list_channels[j][stack_iteration])
             channel_img = get_image(img_path)
-            if image_data_format == 'channels_first':
+            if CHANNELS_FIRST:
                 all_channels[0, j, :, :] = channel_img
             else:
                 all_channels[0, :, :, j] = channel_img
 
-        all_images += [all_channels]
+        all_images.append(all_channels)
 
     return all_images
 
