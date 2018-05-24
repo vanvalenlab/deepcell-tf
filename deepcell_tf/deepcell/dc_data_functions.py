@@ -48,12 +48,12 @@ def get_max_sample_num_list(y, edge_feature, sample_mode='subsample',
             for k, edge_feat in enumerate(edge_feature):
                 if edge_feat == 1:
                     if border_mode == 'same':
-                        list_of_max_sample_numbers += [np.sum(y[j, k, :, :])]
+                        list_of_max_sample_numbers.append(np.sum(y[j, k, :, :]))
                     elif border_mode == 'valid':
-                        list_of_max_sample_numbers += [np.sum(y_trimmed[j, k, :, :])]
+                        list_of_max_sample_numbers.append(np.sum(y_trimmed[j, k, :, :]))
 
         elif sample_mode == 'all':
-            list_of_max_sample_numbers += [np.Inf]
+            list_of_max_sample_numbers.append(np.Inf)
 
     return list_of_max_sample_numbers
 
@@ -98,10 +98,10 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
                                         feature_cols_temp[i] + window_size_y < image_size_y
 
                         if condition:
-                            feature_rows += [feature_rows_temp[i]]
-                            feature_cols += [feature_cols_temp[i]]
-                            feature_batch += [direc]
-                            feature_label += [k]
+                            feature_rows.append(feature_rows_temp[i])
+                            feature_cols.append(feature_cols_temp[i])
+                            feature_batch.append(direc)
+                            feature_label.append(k)
                             pixel_counter += 1
 
         # Randomize
@@ -144,10 +144,10 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
 
                 for i in rand_ind:
                     if pixel_counter < max_num_of_pixels:
-                        feature_rows += [feature_rows_temp[i]]
-                        feature_cols += [feature_cols_temp[i]]
-                        feature_batch += [direc]
-                        feature_label += [k]
+                        feature_rows.append(feature_rows_temp[i])
+                        feature_cols.append(feature_cols_temp[i])
+                        feature_batch.append(direc)
+                        feature_label.append(k)
                         pixel_counter += 1
 
             # Randomize
