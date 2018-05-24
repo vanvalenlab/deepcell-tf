@@ -695,9 +695,9 @@ def apply_transform_to_movie(x, transform_matrix, channel_axis=0, fill_mode='nea
                     order=0,
                     mode=fill_mode,
                     cval=cval)
-                frames += [channel_image]
+                frames.append(channel_image)
             frames = np.stack(frames, axis=0)
-            channel_images += [frames]
+            channel_images.append(frames)
         x = np.stack(channel_images, axis=0)
         x = np.rollaxis(x, 0, channel_axis + 1)
 
@@ -1178,7 +1178,7 @@ class BoundingBoxIterator(Iterator):
                 props = regionprops(label(mask))
                 bboxes = [np.array(list(prop.bbox) + list(l)) for prop in props]
                 bboxes = np.concatenate(bboxes, axis=0)
-            bbox_list += [bboxes]
+            bbox_list.append(bboxes)
         self.bbox_list = bbox_list
 
         self.image_data_generator = image_data_generator
@@ -1259,8 +1259,8 @@ class BoundingBoxIterator(Iterator):
 
                 annotations = self.get_annotations(y)
                 regressions, labels = self.compute_target(annotations)
-                regressions_list += [regressions]
-                labels_list += [labels]
+                regressions_list.append(regressions)
+                labels_list.append(labels)
 
             if self.channels_axis == 3:
                 raise NotImplementedError('Bounding box generator does not work '
