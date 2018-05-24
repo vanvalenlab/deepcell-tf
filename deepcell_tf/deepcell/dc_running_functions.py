@@ -73,7 +73,7 @@ def run_model_on_directory(data_location, channel_names, output_location, model,
         print("Processing image " + str(counter + 1) + " of " + str(len(image_list)))
         processed_image = run_model(image, model, win_x=win_x, win_y=win_y,
                                     std=std, split=split, process=process)
-        processed_image_list += [processed_image]
+        processed_image_list.append(processed_image)
 
         # Save images
         if save:
@@ -108,7 +108,7 @@ def run_models_on_directory(data_location, channel_names, output_location, model
                                                       save=False, std=std, split=split,
                                                       process=process)
 
-        model_outputs += [np.stack(processed_image_list, axis=0)]
+        model_outputs.append(np.stack(processed_image_list, axis=0))
 
     # Average all images
     model_output = np.stack(model_outputs, axis=0)
