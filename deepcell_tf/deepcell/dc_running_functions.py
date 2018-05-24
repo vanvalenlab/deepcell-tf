@@ -13,11 +13,10 @@ import os
 import warnings
 
 import numpy as np
+import tifffile as tiff
 from tensorflow.python.keras import backend as K
 
-import tifffile as tiff
-
-from .dc_helper_functions import *
+from .dc_helper_functions import get_images_from_directory, process_image
 from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
 
 """
