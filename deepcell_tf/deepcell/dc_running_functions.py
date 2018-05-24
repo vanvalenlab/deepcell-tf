@@ -10,6 +10,7 @@ from __future__ import print_function
 from __future__ import division
 
 import os
+import warnings
 
 import numpy as np
 from tensorflow.python.keras import backend as K
@@ -24,8 +25,8 @@ Running convnets
 """
 
 def run_model(image, model, win_x=30, win_y=30, std=False, split=True, process=True):
-    # image = np.pad(image, pad_width = ((0,0), (0,0), (win_x, win_x),(win_y,win_y)), mode = 'constant', constant_values = 0)
-    image_data_format = K.image_data_format()
+    # pad_width = ((0, 0), (0, 0), (win_x, win_x), (win_y, win_y))
+    # image = np.pad(image, pad_width=pad_width , mode='constant', constant_values=0)
     channels_axis = 1 if CHANNELS_FIRST else -1
     x_axis = 2 if CHANNELS_FIRST else 1
     y_axis = 3 if CHANNELS_FIRST else 2
@@ -37,13 +38,6 @@ def run_model(image, model, win_x=30, win_y=30, std=False, split=True, process=T
             else:
                 image[0, :, :, j] = process_image(image[0, :, :, j], win_x, win_y, std)
 
-    if split:
-        image_size_x = image.shape[x_index] // 2
-        image_size_y = image.shape[y_index] // 2
-    else:
-        image_size_x = image.shape[x_index]
-        image_size_y = image.shape[y_index]
-
     evaluate_model = K.function(
         [model.layers[0].input, K.learning_phase()],
         [model.layers[-1].output])
@@ -51,6 +45,12 @@ def run_model(image, model, win_x=30, win_y=30, std=False, split=True, process=T
     n_features = model.layers[-1].output_shape[channels_axis]
 
     if split:
+        warnings.warn('The split flag is deprecated and is designed to account '
+                      'for a maximum tensor size.')
+
+        image_size_x = image.shape[x_axis] // 2
+        image_size_y = image.shape[y_axis] // 2
+
         if CHANNELS_FIRST:
             shape = (n_features, 2*image_size_x-win_x*2, 2*image_size_y-win_y*2)
         else:
