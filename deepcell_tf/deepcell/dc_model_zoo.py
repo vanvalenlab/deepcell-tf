@@ -1283,10 +1283,10 @@ def bn_dense_multires_feature_net_3D(batch_shape = (1, 1, 10, 256, 256), n_block
 
 	input1 = Input(batch_shape = batch_shape)
 	list_of_blocks = []
-	list_of_blocks += [multires_block(input1, init = init, reg = reg)]
+	list_of_blocks.append(multires_block(input1, init = init, reg = reg))
 
 	for _ in range(n_blocks-1):
-		list_of_blocks += [multires_block(list_of_blocks[-1], init = init, reg = reg)]
+		list_of_blocks.append(multires_block(list_of_blocks[-1], init = init, reg = reg))
 
 	tensor_prod1 = TensorProd3D(n_blocks*6 + batch_shape[1], 64, kernel_initializer = init, kernel_regularizer = l2(reg))(list_of_blocks[-1])
 	norm1 = BatchNormalization(axis = channel_axis)(tensor_prod1)
