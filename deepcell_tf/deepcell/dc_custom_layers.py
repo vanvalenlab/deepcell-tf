@@ -112,7 +112,7 @@ class Location3D(Layer):
 
         location_list = []
         for _ in range(number_of_frames):
-            location_list += [tf.identity(location)]
+            location_list.append(tf.identity(location))
 
         if self.data_format == 'channels_last':
             location_concat = tf.concat(location_list, axis=0)

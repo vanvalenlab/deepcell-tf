@@ -23,6 +23,7 @@ import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import activations
 
+from .dc_settings import CHANNELS_FIRST
 
 """
 Helper functions
@@ -157,14 +158,14 @@ def nikon_getfiles(direc_name, channel_name):
 def get_image_sizes(data_location, channel_names):
     img_list_channels = []
     for channel in channel_names:
-        img_list_channels += [nikon_getfiles(data_location, channel)]
+        img_list_channels.append(nikon_getfiles(data_location, channel))
     img_temp = np.asarray(get_image(os.path.join(data_location, img_list_channels[0][0])))
     return img_temp.shape
 
 def get_images_from_directory(data_location, channel_names):
     img_list_channels = []
     for channel in channel_names:
-        img_list_channels += [nikon_getfiles(data_location, channel)]
+        img_list_channels.append(nikon_getfiles(data_location, channel))
 
     img_temp = np.asarray(get_image(os.path.join(data_location, img_list_channels[0][0])))
 
@@ -172,11 +173,22 @@ def get_images_from_directory(data_location, channel_names):
     all_images = []
 
     for stack_iteration in range(len(img_list_channels[0])):
-        all_channels = np.zeros((1, n_channels, img_temp.shape[0], img_temp.shape[1]), dtype='float32')
+        if CHANNELS_FIRST:
+            shape = (1, n_channels, img_temp.shape[0], img_temp.shape[1])
+        else:
+            shape = (1, img_temp.shape[0], img_temp.shape[1], n_channels)
+
+        all_channels = np.zeros(shape, dtype='float32')
+
         for j in range(n_channels):
-            channel_img = get_image(os.path.join(data_location, img_list_channels[j][stack_iteration]))
-            all_channels[0, j, :, :] = channel_img
-        all_images += [all_channels]
+            img_path = os.path.join(data_location, img_list_channels[j][stack_iteration])
+            channel_img = get_image(img_path)
+            if CHANNELS_FIRST:
+                all_channels[0, j, :, :] = channel_img
+            else:
+                all_channels[0, :, :, j] = channel_img
+
+        all_images.append(all_channels)
 
     return all_images
 
@@ -377,16 +389,16 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
         l_list = []
         for b, x, y, l in zip(batch, pixel_x, pixel_y, labels):
             img = X[b, :, x-win_x:x+win_x+1, y-win_y:y+win_y+1]
-            img_list += [img]
-            l_list += [l]
+            img_list.append(img)
+            l_list.append(l)
         return np.stack(tuple(img_list), axis=0), np.array(l_list)
 
     elif mode == 'conv' or mode == 'conv_sample':
         img_list = []
         l_list = []
         for b in batch:
-            img_list += [X[b, :, :, :]]
-            l_list += [labels[b, :, :, :]]
+            img_list.append(X[b, :, :, :])
+            l_list.append(labels[b, :, :, :])
         img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
         l_list = np.stack(tuple(l_list), axis=0)
         return img_list, l_list
@@ -399,8 +411,8 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
         col_list = []
         feature_dict_new = {}
         for b_new, b in enumerate(batch):
-            img_list += [X[b, :, :, :]]
-            l_list += [labels[b, :, :, :]]
+            img_list.append(X[b, :, :, :])
+            l_list.append(labels[b, :, :, :])
             batch_list = feature_dict[b][0] - np.amin(feature_dict[b][0])
             row_list = feature_dict[b][1]
             col_list = feature_dict[b][2]
@@ -414,8 +426,8 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
         img_list = []
         l_list = []
         for b in batch:
-            img_list += [X[b, :, :, :, :]]
-            l_list += [labels[b, :, :, :, :]]
+            img_list.append(X[b, :, :, :, :])
+            l_list.append(labels[b, :, :, :, :])
         img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
         l_list = np.stack(tuple(l_list), axis=0)
         return img_list, l_list
