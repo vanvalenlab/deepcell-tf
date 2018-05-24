@@ -11,6 +11,7 @@ from __future__ import division
 
 from fnmatch import fnmatch
 import os
+import random
 
 import numpy as np
 from skimage.morphology import disk, binary_dilation
@@ -374,7 +375,8 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
     window_size = (window_size_x, window_size_y)
 
     # Load one file to get image sizes (all images same size as they are from same microscope)
-    image_size = get_image_sizes(os.path.join(direc_name, training_direcs[0]), channel_names)
+    image_path = os.path.join(direc_name, random.choice(training_direcs))
+    image_size = get_image_sizes(image_path, channel_names)
 
     X = load_training_images_2d(direc_name, training_direcs, channel_names,
                                 image_size=image_size, window_size=window_size,
@@ -584,8 +586,9 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
     """
 
     # Load one file to get image sizes
-    raw_path = os.path.join(direc_name, training_direcs[0], raw_image_direc)
-    image_size = get_image_sizes(raw_path, channel_names)
+    raw_path = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
+    random_montage_dir = os.path.join(raw_path, random.choice(os.listdir(raw_path)))
+    image_size = get_image_sizes(random_montage_dir, channel_names)
 
     X = load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
                                 image_size, window_size=(window_size_x, window_size_y),
