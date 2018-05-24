@@ -19,6 +19,7 @@ from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateSched
 import tifffile as tiff
 from .dc_helper_functions import *
 from .dc_image_generators import *
+from .dc_settings import CHANNELS_LAST
 
 """
 Training convnets
@@ -41,7 +42,7 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
     train_dict, (X_test, Y_test) = get_data(training_data_file_name)
 
     # move the channels to the last dimension if needed
-    if K.image_data_format() == 'channels_last':
+    if CHANNELS_LAST:
         X_test = np.rollaxis(X_test, 1, 4)
 
     # the data, shuffled and split between train and test sets
@@ -129,7 +130,7 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
         vertical_flip=flip)  # randomly flip images
 
     # move the channels to the last dimension if needed
-    if K.image_data_format() == 'channels_last':
+    if CHANNELS_LAST:
         X_test = np.rollaxis(X_test, 1, 4)
 
     Y_test = np.rollaxis(Y_test, 1, 4)
@@ -196,7 +197,7 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
         vertical_flip=flip)  # randomly flip images
 
     # move the channels to the last dimension if needed
-    if K.image_data_format() == 'channels_last':
+    if CHANNELS_LAST:
         X_test = np.rollaxis(X_test, 1, 4)
 
     Y_test = np.rollaxis(Y_test, 1, 4)
