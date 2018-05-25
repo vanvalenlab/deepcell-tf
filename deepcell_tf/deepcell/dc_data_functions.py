@@ -581,7 +581,7 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
             imglist = nikon_getfiles(direc, channel)
 
             for i, img in enumerate(imglist):
-                if i > num_frames:
+                if i >= num_frames:
                     print('Skipping final {} frames, as num_frames is {} but '
                           'there are {} total frames'.format(
                               len(imglist) - num_frames, num_frames, len(imglist)))
@@ -628,7 +628,7 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
             imglist = nikon_getfiles(direc, name)
 
             for z, img_file in enumerate(imglist):
-                if z > num_frames:
+                if z >= num_frames:
                     print('Skipping final {} frames, as num_frames is {} but '
                           'there are {} total frames'.format(
                               len(imglist) - num_frames, num_frames, len(imglist)))
