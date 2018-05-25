@@ -39,7 +39,7 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
     file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
 
     train_dict, (X_test, y_test) = get_data(training_data_file_name)
-
+    n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
     # move the channels to the last dimension if needed
     if CHANNELS_LAST:
         X_test = np.rollaxis(X_test, 1, 4)
@@ -49,7 +49,7 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
     print('pixels_x shape:', train_dict['pixels_x'].shape[0])
     print('X_test shape:', X_test.shape[0])
     print('Output Shape:', model.layers[-1].output_shape)
-    print('Number of Classes:', model.layers[-1].output_shape[-1])
+    print('Number of Classes:', n_classes)
 
     # convert class vectors to binary class matrices
     train_dict['y'] = to_categorical(train_dict['y'], n_classes)
@@ -97,20 +97,16 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='conv')
 
     class_weights = train_dict['class_weights']
-
+    n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
     print('y_train shape:', train_dict['y'].shape)
     print('X_test shape:', X_test.shape)
     print('y_test shape:', y_test.shape)
     print('Output Shape:', model.layers[-1].output_shape)
-    print('Number of Classes:', model.layers[-1].output_shape[-1])
-
-    # determine the number of classes
-    output_shape = model.layers[-1].output_shape
+    print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        n_classes = model.layers[-1].output_shape[-1]
         return weighted_categorical_crossentropy(y_true, y_pred,
                                                  n_classes=n_classes,
                                                  from_logits=False)
@@ -164,14 +160,14 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='conv')
 
     class_weights = train_dict['class_weights']
-
+    n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
     print('y_train shape:', train_dict['y'].shape)
     print('X_test shape:', X_test.shape)
     print('y_test shape:', y_test.shape)
     print('Output Shape:', model.layers[-1].output_shape)
-    print('Number of Classes:', model.layers[-1].output_shape[-1])
+    print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
         return direction_loss(y_true, y_pred)
@@ -223,14 +219,14 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
     file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
 
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='conv')
-
+    n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
     print('y_train shape:', train_dict['y'].shape)
     print('X_test shape:', X_test.shape)
     print('y_test shape:', y_test.shape)
     print('Output Shape:', model.layers[-1].output_shape)
-    print('Number of Classes:', model.layers[-1].output_shape[-1])
+    print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
         return discriminative_instance_loss(y_true, y_pred)
@@ -264,7 +260,6 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
 
     return model
 
-
 def train_model_conv_sample(model=None, dataset=None, optimizer=None,
                             expt='', it=0, batch_size=1, n_epoch=100,
                             direc_save='/home/vanvalen/ImageAnalysis/DeepCell2/trained_networks/',
@@ -281,13 +276,14 @@ def train_model_conv_sample(model=None, dataset=None, optimizer=None,
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='conv_sample')
 
     class_weights = train_dict['class_weights']
+    n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
     print('y_train shape:', train_dict['y'].shape)
     print('X_test shape:', X_test.shape)
     print('y_test shape:', y_test.shape)
     print('Output Shape:', model.layers[-1].output_shape)
-    print('Number of Classes:', model.layers[-1].output_shape[-1])
+    print('Number of Classes:', n_classes)
 
     class_weights = np.array([1, 1, 1], dtype=K.floatx())
     def loss_function(y_true, y_pred):
@@ -335,7 +331,7 @@ def train_model_conv_sample(model=None, dataset=None, optimizer=None,
 
     pred = model.predict(image)
     for j in range(3):
-        save_name = 'feature_' + str(j) + '.tiff'
+        save_name = 'feature_{}.tiff'.format(j)
         tiff.imsave(save_name, pred[0, :, :, j])
 
     return model
@@ -357,13 +353,14 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='movie')
 
     class_weights = train_dict['class_weights']
+    n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
     print('y_train shape:', train_dict['y'].shape)
     print('X_test shape:', X_test.shape)
     print('y_test shape:', y_test.shape)
     print('Output Shape:', model.layers[-1].output_shape)
-    print('Number of Classes:', model.layers[-1].output_shape[-1])
+    print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
         return discriminative_instance_loss_3D(y_true, y_pred)

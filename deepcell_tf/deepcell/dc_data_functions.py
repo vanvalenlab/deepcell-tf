@@ -19,6 +19,7 @@ from skimage.measure import label
 from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.python.keras import backend as K
 
+from .dc_settings import CHANNELS_FIRST
 from .dc_plotting_functions import plot_training_data_2d, plot_training_data_3d
 from .dc_helper_functions import get_image, process_image, get_image_sizes, \
                                  nikon_getfiles, get_immediate_subdirs
@@ -42,16 +43,21 @@ def get_max_sample_num_list(y, edge_feature, sample_mode='subsample',
     """
     list_of_max_sample_numbers = []
 
-    y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
+    if CHANNELS_FIRST:
+        y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
+    else:
+        y_trimmed = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
     # for each set of images
     for j in range(y.shape[0]):
         if sample_mode == 'subsample':
             for k, edge_feat in enumerate(edge_feature):
                 if edge_feat == 1:
                     if border_mode == 'same':
-                        list_of_max_sample_numbers.append(np.sum(y[j, k, :, :]))
+                        y_sum = np.sum(y[j, k, :, :]) if CHANNELS_FIRST else np.sum(y[j, :, :, k])
+                        list_of_max_sample_numbers.append(y_sum)
                     elif border_mode == 'valid':
-                        list_of_max_sample_numbers.append(np.sum(y_trimmed[j, k, :, :]))
+                        y_sum = np.sum(y_trimmed[j, k, :, :]) if CHANNELS_FIRST else np.sum(y_trimmed[j, :, :, k])
+                        list_of_max_sample_numbers.append(y_sum)
 
         elif sample_mode == 'all':
             list_of_max_sample_numbers.append(np.Inf)
@@ -77,7 +83,10 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     if output_mode == 'sample':
         for direc in range(num_dirs):
             for k in range(num_features):
-                feature_rows_temp, feature_cols_temp = np.where(y[direc, k, :, :] == 1)
+                if CHANNELS_FIRST:
+                    feature_rows_temp, feature_cols_temp = np.where(y[direc, k, :, :] == 1)
+                else:
+                    feature_rows_temp, feature_cols_temp = np.where(y[direc, :, :, k] == 1)
 
                 # Check to make sure the features are actually present
                 if not feature_rows_temp.size > 0:
@@ -133,7 +142,10 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
                 max_num_of_pixels = list_of_max_sample_numbers[direc]
                 pixel_counter = 0
 
-                feature_rows_temp, feature_cols_temp = np.where(y[direc, k, :, :] == 1)
+                if CHANNELS_FIRST:
+                    feature_rows_temp, feature_cols_temp = np.where(y[direc, k, :, :] == 1)
+                else:
+                    feature_rows_temp, feature_cols_temp = np.where(y[direc, :, :, k] == 1)
 
                 # If features are not present, skip it
                 if not feature_rows_temp.size > 0:
@@ -169,29 +181,40 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
         return feature_dict
 
 def reshape_matrix(X, y, reshape_size=256):
-    image_size_x, image_size_y = X.shape[2:]
+    image_size_x, image_size_y = X.shape[2:] if CHANNELS_FIRST else X.shape[1:3]
     rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
     new_batch_size = X.shape[0] * (rep_number) ** 2
 
-    new_X = np.zeros((new_batch_size, X.shape[1], reshape_size, reshape_size), dtype=K.floatx())
-    new_y = np.zeros((new_batch_size, y.shape[1], reshape_size, reshape_size), dtype='int32')
+    if CHANNELS_FIRST:
+        new_X_shape = (new_batch_size, X.shape[1], reshape_size, reshape_size)
+        new_y_shape = (new_batch_size, y.shape[1], reshape_size, reshape_size)
+    else:
+        new_X_shape = (new_batch_size, reshape_size, reshape_size, X.shape[3])
+        new_y_shape = (new_batch_size, reshape_size, reshape_size, y.shape[3])
+
+    new_X = np.zeros(new_X_shape, dtype=K.floatx())
+    new_y = np.zeros(new_y_shape, dtype='int32')
 
     counter = 0
-    for batch in range(X.shape[0]):
+    for b in range(X.shape[0]):
         for i in range(rep_number):
             for j in range(rep_number):
-                if i != rep_number - 1 and j != rep_number - 1:
-                    new_X[counter, :, :, :] = X[batch, :, i*reshape_size:(i+1)*reshape_size, j*reshape_size:(j+1)*reshape_size]
-                    new_y[counter, :, :, :] = y[batch, :, i*reshape_size:(i+1)*reshape_size, j*reshape_size:(j+1)*reshape_size]
-                if i == rep_number - 1 and j != rep_number - 1:
-                    new_X[counter, :, :, :] = X[batch, :, -reshape_size:, j*reshape_size:(j+1)*reshape_size]
-                    new_y[counter, :, :, :] = y[batch, :, -reshape_size:, j*reshape_size:(j+1)*reshape_size]
-                if i != rep_number - 1 and j == rep_number - 1:
-                    new_X[counter, :, :, :] = X[batch, :, i*reshape_size:(i+1)*reshape_size, -reshape_size:]
-                    new_y[counter, :, :, :] = y[batch, :, i*reshape_size:(i+1)*reshape_size, -reshape_size:]
-                if i == rep_number - 1 and j == rep_number - 1:
-                    new_X[counter, :, :, :] = X[batch, :, -reshape_size:, -reshape_size:]
-                    new_y[counter, :, :, :] = y[batch, :, -reshape_size:, -reshape_size:]
+                if i != rep_number - 1:
+                    x_start, x_end = i * reshape_size, (i + 1) * reshape_size
+                else:
+                    x_start, x_end = -reshape_size, X.shape[2 if CHANNELS_FIRST else 1]
+
+                if j != rep_number - 1:
+                    y_start, y_end = j * reshape_size, (j + 1) * reshape_size
+                else:
+                    y_start, y_end = -reshape_size, y.shape[3 if CHANNELS_FIRST else 2]
+
+                if CHANNELS_FIRST:
+                    new_X[counter, :, :, :] = X[b, :, x_start:x_end, y_start:y_end]
+                    new_y[counter, :, :, :] = y[b, :, x_start:x_end, y_start:y_end]
+                else:
+                    new_X[counter, :, :, :] = X[b, x_start:x_end, y_start:y_end, :]
+                    new_y[counter, :, :, :] = y[b, x_start:x_end, y_start:y_end, :]
 
                 counter += 1
 
@@ -210,37 +233,45 @@ def relabel_movie(y):
     return new_y
 
 def reshape_movie(X, y, reshape_size=256):
-    image_size_x, image_size_y = X.shape[3:]
+    image_size_x, image_size_y = X.shape[3:] if CHANNELS_FIRST else X.shape[2:4]
     rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
     new_batch_size = X.shape[0] * (rep_number) ** 2
 
-    new_X = np.zeros((new_batch_size, X.shape[1], X.shape[2], reshape_size, reshape_size), dtype=K.floatx())
-    new_y = np.zeros((new_batch_size, y.shape[1], reshape_size, reshape_size), dtype='int32')
+    if CHANNELS_FIRST:
+        new_X_shape = (new_batch_size, X.shape[1], X.shape[2], reshape_size, reshape_size)
+        new_y_shape = (new_batch_size, y.shape[1], y.shape[2], reshape_size, reshape_size)
+    else:
+        new_X_shape = (new_batch_size, reshape_size, reshape_size, X.shape[3], X.shape[4])
+        new_y_shape = (new_batch_size, reshape_size, reshape_size, y.shape[3], y.shape[4])
 
+    new_X = np.zeros(new_X_shape, dtype=K.floatx())
+    new_y = np.zeros(new_y_shape, dtype='int32')
 
     counter = 0
-    for batch in range(X.shape[0]):
+    for b in range(X.shape[0]):
         for i in range(rep_number):
             for j in range(rep_number):
-                if i != rep_number - 1 and j != rep_number - 1:
-                    new_X[counter, :, :, :, :] = X[batch, :, :, i*reshape_size:(i+1)*reshape_size, j*reshape_size:(j+1)*reshape_size]
-                    y_temp = relabel_movie(y[batch, :, i*reshape_size:(i+1)*reshape_size, j*reshape_size:(j+1)*reshape_size])
-                    new_y[counter, :, :, :] = y_temp
-                if i == rep_number - 1 and j != rep_number - 1:
-                    new_X[counter, :, :, :, :] = X[batch, :, :, -reshape_size:, j*reshape_size:(j+1)*reshape_size]
-                    y_temp = relabel_movie(y[batch, :, -reshape_size:, j*reshape_size:(j+1)*reshape_size])
-                    new_y[counter, :, :, :] = y_temp
-                if i != rep_number - 1 and j == rep_number - 1:
-                    new_X[counter, :, :, :, :] = X[batch, :, :, i*reshape_size:(i+1)*reshape_size, -reshape_size:]
-                    y_temp = relabel_movie(y[batch, :, i*reshape_size:(i+1)*reshape_size, -reshape_size:])
-                    new_y[counter, :, :, :] = y_temp
-                if i == rep_number - 1 and j == rep_number - 1:
-                    new_X[counter, :, :, :, :] = X[batch, :, :, -reshape_size:, -reshape_size:]
-                    y_temp = relabel_movie(y[batch, :, -reshape_size:, -reshape_size:])
-                    new_y[counter, :, :, :] = y_temp
+                if i != rep_number - 1:
+                    x_start, x_end = i * reshape_size, (i + 1) * reshape_size
+                else:
+                    x_start, x_end = -reshape_size, X.shape[2 if CHANNELS_FIRST else 1]
+
+                if j != rep_number - 1:
+                    y_start, y_end = j * reshape_size, (j + 1) * reshape_size
+                else:
+                    y_start, y_end = -reshape_size, y.shape[3 if CHANNELS_FIRST else 2]
+
+                if CHANNELS_FIRST:
+                    new_X[counter, :, :, :, :] = X[b, :, :, x_start:x_end, y_start:y_end]
+                    new_y[counter, :, :, :, :] = relabel_movie(y[b, :, :, x_start:x_end, y_start:y_end])
+                else:
+                    new_X[counter, :, :, :, :] = X[b, :, x_start:x_end, y_start:y_end, :]
+                    new_y[counter, :, :, :, :] = relabel_movie(y[b, :, x_start:x_end, y_start:y_end, :])
 
                 counter += 1
 
+    print('Reshaped feature data from {} to {}'.format(y.shape, new_y.shape))
+    print('Reshaped training data from {} to {}'.format(X.shape, new_X.shape))
     return new_X, new_y
 
 def load_training_images_2d(direc_name, training_direcs, channel_names, image_size, window_size,
@@ -254,14 +285,18 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
     image_size_x, image_size_y = image_size
 
     # Initialize training data array
-    X_shape = (len(training_direcs), len(channel_names), image_size_x, image_size_y)
-    X = np.zeros(X_shape, dtype='float32')
+    if CHANNELS_FIRST:
+        X_shape = (len(training_direcs), len(channel_names), image_size_x, image_size_y)
+    else:
+        X_shape = (len(training_direcs), image_size_x, image_size_y, len(channel_names))
+
+    X = np.zeros(X_shape, dtype=K.floatx())
 
     # Load training images
-    for i, direc in enumerate(training_direcs):
+    for b, direc in enumerate(training_direcs):
         imglist = os.listdir(os.path.join(direc_name, direc))
 
-        for j, channel in enumerate(channel_names):
+        for c, channel in enumerate(channel_names):
             for img in imglist:
                 # if channel string is NOT in image file name, skip it.
                 if not fnmatch(img, '*{}*'.format(channel)):
@@ -273,8 +308,10 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
                     image_data = process_image(image_data, window_size_x, window_size_y,
                                                remove_zeros=process_remove_zeros, std=process_std)
 
-                # Overwrites if multiple images in one set with same channel
-                X[i, j, :, :] = image_data
+                if CHANNELS_FIRST:
+                    X[b, c, :, :] = image_data
+                else:
+                    X[b, :, :, c] = image_data
 
     return X
 
@@ -287,16 +324,20 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
     image_size_x, image_size_y = image_size
 
     # Initialize feature mask array
-    y_shape = (len(training_direcs), len(edge_feature), image_size_x, image_size_y)
+    if CHANNELS_FIRST:
+        y_shape = (len(training_direcs), len(edge_feature), image_size_x, image_size_y)
+    else:
+        y_shape = (len(training_direcs), image_size_x, image_size_y, len(edge_feature))
+
     y = np.zeros(y_shape)
 
-    for i, direc in enumerate(training_direcs):
+    for b, direc in enumerate(training_direcs):
         imglist = os.listdir(os.path.join(direc_name, direc))
 
-        for j, edge in enumerate(edge_feature):
+        for l, edge in enumerate(edge_feature):
             for img in imglist:
                 # if feature string is NOT in image file name, skip it.
-                if not fnmatch(img, '*feature_{}*'.format(j)):
+                if not fnmatch(img, '*feature_{}*'.format(l)):
                     continue
 
                 image_data = get_image(os.path.join(direc_name, direc, img))
@@ -308,20 +349,34 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
                     # thicken cell edges to be more pronounced
                     image_data = binary_dilation(image_data, selem=disk(dilation_radius))
 
-                y[i, j, :, :] = image_data
+                if CHANNELS_FIRST:
+                    y[b, l, :, :] = image_data
+                else:
+                    y[b, :, :, l] = image_data
 
         # Thin the augmented edges by subtracting the interior features.
-        for j, edge in enumerate(edge_feature):
-            if edge == 1:
-                for k, non_edge in enumerate(edge_feature):
-                    if non_edge == 0:
-                        y[i, j, :, :] -= y[i, k, :, :]
+        for l, edge in enumerate(edge_feature):
+            if edge != 1:
+                continue
 
-                y[i, j, :, :] = y[i, j, :, :] > 0
+            for k, non_edge in enumerate(edge_feature):
+                if non_edge == 0:
+                    if CHANNELS_FIRST:
+                        y[b, l, :, :] -= y[b, k, :, :]
+                    else:
+                        y[b, :, :, l] -= y[b, :, :, k]
+
+            if CHANNELS_FIRST:
+                y[b, l, :, :] = y[b, l, :, :] > 0
+            else:
+                y[b, :, :, l] = y[b, :, :, l] > 0
 
         # Compute the mask for the background
-        y_sum = np.sum(y[i, :, :, :], axis=0)
-        y[i, len(edge_feature) - 1, :, :] = 1 - y_sum
+        y_sum = np.sum(y[b, :, :, :], axis=0)
+        if CHANNELS_FIRST:
+            y[b, len(edge_feature) - 1, :, :] = 1 - y_sum
+        else:
+            y[b, :, :, len(edge_feature) - 1] = 1 - y_sum
 
     return y
 
@@ -390,7 +445,10 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         X, y = reshape_matrix(X, y, reshape_size=reshape_size)
 
     # Trim the feature mask so that each window does not overlap with the border of the image
-    y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
+    if CHANNELS_FIRST:
+        y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
+    else:
+        y_trimmed = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
 
     # Create mask of sampled pixels
     feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
@@ -419,7 +477,10 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
     elif output_mode == 'conv':
         y_sample = np.zeros(y.shape, dtype='int32')
         for b, r, c, l in zip(feature_batch, feature_rows, feature_cols, feature_label):
-            y_sample[b, l, r, c] = 1
+            if CHANNELS_FIRST:
+                y_sample[b, l, r, c] = 1
+            else:
+                y_sample[b, r, c, l] = 1
 
         if border_mode == 'valid':
             y = y_trimmed
@@ -429,28 +490,42 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
                  y_sample=y_sample, win_x=window_size_x, win_y=window_size_y)
 
     elif output_mode == 'disc':
-        if y.shape[1] > 3:
+        if y.shape[1 if CHANNELS_FIRST else -1] > 3:
             raise ValueError('Only one interior feature is allowed for disc output mode')
 
         # Create mask with labeled cells
-        y_label = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3]), dtype='int32')
+        if CHANNELS_FIRST:
+            y_label = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3]), dtype='int32')
+        else:
+            y_label = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1), dtype='int32')
+
         for b in range(y.shape[0]):
-            interior_mask = y[b, 1, :, :]
+            interior_mask = y[b, 1, :, :] if CHANNELS_FIRST else y[b, :, :, 1]
             y_label[b, :, :, :] = label(interior_mask)
 
         max_cells = np.amax(y_label)
-        y_binary = np.zeros((y.shape[0], max_cells+1, y.shape[2], y.shape[3]), dtype='int32')
+        if CHANNELS_FIRST:
+            y_binary = np.zeros((y.shape[0], max_cells + 1, y.shape[2], y.shape[3]), dtype='int32')
+        else:
+            y_binary = np.zeros((y.shape[0], y.shape[2], y.shape[3], max_cells + 1), dtype='int32')
+
         for b in range(y.shape[0]):
             label_mask = y_label[b, :, :, :]
             for l in range(max_cells + 1):
-                y_binary[b, l, :, :] = label_mask == l
+                if CHANNELS_FIRST:
+                    y_binary[b, l, :, :] = label_mask == l
+                else:
+                    y_binary[b, :, :, l] = label_mask == l
 
+        # Trim the sides of the mask to ensure a sliding window does not slide
+        # past before or after the boundary of y_label or y_binary
         if border_mode == 'valid':
-            y_label_trimmed = y_label[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
-            y_label = y_label_trimmed
-
-            y_binary_trimmed = y_binary[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
-            y_binary = y_binary_trimmed
+            if CHANNELS_FIRST:
+                y_label = y_label[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
+                y_binary = y_binary[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
+            else:
+                y_label = y_label[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
+                y_binary = y_binary[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
 
         # Save training data in npz format
         np.savez(file_name_save, class_weights=weights, X=X, y=y_binary,
@@ -507,7 +582,10 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
                     image_data = process_image(image_data, window_size_x, window_size_y,
                                                std=process_std, remove_zeros=process_remove_zeros)
 
-                X[i, j, k, :, :] = image_data
+                if CHANNELS_FIRST:
+                    X[b, c, i, :, :] = image_data
+                else:
+                    X[b, i, :, :, c] = image_data
 
     return X
 
@@ -599,7 +677,10 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
 
     # Trim annotation images
     if border_mode == 'valid':
-        y = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
+        if CHANNELS_FIRST:
+            y = y[:, :, : window_size_x:-window_size_x, window_size_y:-window_size_y]
+        else:
+            y = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
 
     # Reshape X and y
     if reshape_size is not None:
@@ -608,12 +689,18 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
     # Convert training data to format compatible with discriminative loss function
     if output_mode == 'disc':
         max_cells = np.int(np.amax(y))
-        binary_mask_shape = (y.shape[0], max_cells+1, y.shape[1], y.shape[2], y.shape[3])
+        if CHANNELS_FIRST:
+            binary_mask_shape = (y.shape[0], max_cells + 1, y.shape[1], y.shape[2], y.shape[3])
+        else:
+            binary_mask_shape = (y.shape[0], y.shape[1], y.shape[2], y.shape[3], max_cells + 1)
         y_binary = np.zeros(binary_mask_shape, dtype='int32')
         for b in range(y.shape[0]):
             label_mask = y[b, :, :, :]
             for l in range(max_cells + 1):
-                y_binary[b, l, :, :, :] = label_mask == l
+                if CHANNELS_FIRST:
+                    y_binary[b, l, :, :, :] = label_mask == l
+                else:
+                    y_binary[b, :, :, :, l] = label_mask == l
 
         y = y_binary
 
