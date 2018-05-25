@@ -82,10 +82,11 @@ class ImageSampleArrayIterator(Iterator):
         if self.save_to_dir:
             for i, j in enumerate(index_array):
                 img = array_to_img(batch_x[i], self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-                                                                  index=j,
-                                                                  hash=np.random.randint(1e4),
-                                                                  format=self.save_format)
+                fname = '{prefix}_{index}_{hash}.{format}'.format(
+                    prefix=self.save_prefix,
+                    index=j,
+                    hash=np.random.randint(1e4),
+                    format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
         if self.y is None:
             return batch_x
@@ -167,12 +168,10 @@ class ImageFullyConvIterator(Iterator):
                 batch_y = np.zeros(tuple([len(index_array)] + [self.y.shape[2], self.y.shape[3]] + [y_channel_shape]))
 
         for i, j in enumerate(index_array):
-            batch = j
-
-            x = self.x[batch, :, :, :]
+            x = self.x[j, :, :, :]
 
             if self.y is not None:
-                y = self.y[batch, :, :, :]
+                y = self.y[j, :, :, :]
 
             if self.y is not None:
                 x, y = self.image_data_generator.random_transform(x.astype(K.floatx()), y)
@@ -215,22 +214,23 @@ class ImageFullyConvIterator(Iterator):
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
-                print(batch_x.shape)
                 img_x = np.expand_dims(batch_x[i, :, :, 0], -1)
                 img = array_to_img(img_x, self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-                                                                  index=j,
-                                                                  hash=np.random.randint(1e4),
-                                                                  format=self.save_format)
+                fname = '{prefix}_{index}_{hash}.{format}'.format(
+                    prefix=self.save_prefix,
+                    index=j,
+                    hash=np.random.randint(1e4),
+                    format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
                 if self.target_format == 'direction' or self.target_format == 'watershed':
                     img_y = np.expand_dims(batch_y[i, :, :, 0], -1)
                     img = array_to_img(img_y, self.data_format, scale=True)
-                    fname = 'y_{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-                                                                        index=j,
-                                                                        hash=np.random.randint(1e4),
-                                                                        format=self.save_format)
+                    fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
+                        prefix=self.save_prefix,
+                        index=j,
+                        hash=np.random.randint(1e4),
+                        format=self.save_format)
                     img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
@@ -312,12 +312,10 @@ class ImageFullyConvGatherIterator(Iterator):
                 batch_y = np.zeros(tuple([len(index_array)] + [self.y.shape[2], self.y.shape[3]] + self.y.shape[1]))
 
         for i, j in enumerate(index_array):
-            batch = j
-
-            x = self.x[batch, :, :, :]
+            x = self.x[j, :, :, :]
 
             if self.y is not None:
-                y = self.y[batch, :, :, :]
+                y = self.y[j, :, :, :]
 
             if self.y is not None:
                 x, y = self.image_data_generator.random_transform(x.astype(K.floatx()), y)
@@ -336,10 +334,11 @@ class ImageFullyConvGatherIterator(Iterator):
         if self.save_to_dir:
             for i, j in enumerate(index_array):
                 img = array_to_img(batch_x[i], self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-                                                                  index=j,
-                                                                  hash=np.random.randint(1e4),
-                                                                  format=self.save_format)
+                fname = '{prefix}_{index}_{hash}.{format}'.format(
+                    prefix=self.save_prefix,
+                    index=j,
+                    hash=np.random.randint(1e4),
+                    format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
@@ -1064,35 +1063,36 @@ class MovieArrayIterator(Iterator):
         # and the label movie
 
         index_array = index_array[0]
-        if self.channel_axis == 1:
-            batch_x = np.zeros((len(index_array), self.x.shape[1], self.number_of_frames, *self.x.shape[3:]))
+        if self.data_format == 'channels_first':
+            batch_x = np.zeros(tuple([len(index_array), self.x.shape[1], self.number_of_frames] + list(self.x.shape[3:])))
             if self.y is not None:
-                batch_y = np.zeros((len(index_array), self.y.shape[1], self.number_of_frames, *self.y.shape[3:]))
+                batch_y = np.zeros(tuple([len(index_array), self.y.shape[1], self.number_of_frames] + list(self.y.shape[3:])))
 
         else:
-            batch_x = np.zeros((len(index_array), self.number_of_frames, *self.x.shape[2:]))
+            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.x.shape[2:])))
             if self.y is not None:
-                batch_y = np.zeros((len(index_array), self.number_of_frames, *self.y.shape[2:]))
+                batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.y.shape[2:])))
 
-        for i, batch in enumerate(index_array):
-
+        for i, j in enumerate(index_array):
             if self.y is not None:
-                y = self.y[batch, :, :, :, :]
+                y = self.y[j, :, :, :, :]
 
             # Sample along the time axis
             time_start = np.random.randint(0, high=self.x.shape[self.time_axis] - self.number_of_frames)
+            time_end = time_start + self.number_of_frames
             if self.time_axis == 1:
-                x = self.x[batch, time_start:time_start+self.number_of_frames, :, :, :]
+                x = self.x[j, time_start:time_end, :, :, :]
                 if self.y is not None:
-                    y = self.y[batch, time_start:time_start+self.number_of_frames, :, :, :]
+                    y = self.y[j, time_start:time_end, :, :, :]
 
             elif self.time_axis == 2:
-                x = self.x[batch, :, time_start:time_start+self.number_of_frames, :, :]
+                x = self.x[j, :, time_start:time_end, :, :]
                 if self.y is not None:
-                    y = self.y[batch, :, time_start:time_start+self.number_of_frames, :, :]
+                    y = self.y[j, :, time_start:time_end, :, :]
 
             if self.y is not None:
-                x, y = self.movie_data_generator.random_transform(x.astype(K.floatx()), label_movie=y)
+                x, y = self.movie_data_generator.random_transform(
+                    x.astype(K.floatx()), label_movie=y)
                 x = self.movie_data_generator.standardize(x)
                 batch_y[i] = y
             else:
@@ -1107,10 +1107,11 @@ class MovieArrayIterator(Iterator):
         if self.save_to_dir:
             for i, j in enumerate(index_array):
                 img = array_to_img(batch_x[i], self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-                                                                  index=j,
-                                                                  hash=np.random.randint(1e4),
-                                                                  format=self.save_format)
+                fname = '{prefix}_{index}_{hash}.{format}'.format(
+                    prefix=self.save_prefix,
+                    index=j,
+                    hash=np.random.randint(1e4),
+                    format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
@@ -1265,10 +1266,11 @@ class BoundingBoxIterator(Iterator):
         if self.save_to_dir:
             for i, j in enumerate(index_array):
                 img = array_to_img(batch_x[i], self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-                                                                  index=j,
-                                                                  hash=np.random.randint(1e4),
-                                                                  format=self.save_format)
+                fname = '{prefix}_{index}_{hash}.{format}'.format(
+                    prefix=self.save_prefix,
+                    index=j,
+                    hash=np.random.randint(1e4),
+                    format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
