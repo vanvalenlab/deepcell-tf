@@ -1064,15 +1064,15 @@ class MovieArrayIterator(Iterator):
         # and the label movie
 
         index_array = index_array[0]
-        if self.channel_axis == 1:
-            batch_x = np.zeros((len(index_array), self.x.shape[1], self.number_of_frames, *self.x.shape[3:]))
+        if self.data_format == 'channels_first':
+            batch_x = np.zeros(tuple([len(index_array), self.x.shape[1], self.number_of_frames] + list(self.x.shape[3:])))
             if self.y is not None:
-                batch_y = np.zeros((len(index_array), self.y.shape[1], self.number_of_frames, *self.y.shape[3:]))
+                batch_y = np.zeros(tuple([len(index_array), self.y.shape[1], self.number_of_frames] + list(self.y.shape[3:])))
 
         else:
-            batch_x = np.zeros((len(index_array), self.number_of_frames, *self.x.shape[2:]))
+            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.x.shape[2:])))
             if self.y is not None:
-                batch_y = np.zeros((len(index_array), self.number_of_frames, *self.y.shape[2:]))
+                batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.y.shape[2:])))
 
         for i, batch in enumerate(index_array):
 
@@ -1107,10 +1107,11 @@ class MovieArrayIterator(Iterator):
         if self.save_to_dir:
             for i, j in enumerate(index_array):
                 img = array_to_img(batch_x[i], self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-                                                                  index=j,
-                                                                  hash=np.random.randint(1e4),
-                                                                  format=self.save_format)
+                fname = '{prefix}_{index}_{hash}.{format}'.format(
+                    prefix=self.save_prefix,
+                    index=j,
+                    hash=np.random.randint(1e4),
+                    format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
