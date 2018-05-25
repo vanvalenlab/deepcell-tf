@@ -71,8 +71,12 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     If sample_mode is 'subsample', then this will be set to the number of edge pixels.
     If not, then it will be set to np.Inf, i.e. sampling everything.
     """
-    num_dirs, num_features, image_size_x, image_size_y = y.shape
-    y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
+    if CHANNELS_FIRST:
+        num_dirs, num_features, image_size_x, image_size_y = y.shape
+        y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
+    else:
+        num_dirs, image_size_x, image_size_y, num_features = y.shape
+        y_trimmed = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
 
     list_of_max_sample_numbers = get_max_sample_num_list(
         y=y, edge_feature=edge_feature, sample_mode=sample_mode, border_mode=border_mode,
@@ -372,11 +376,10 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
                 y[b, :, :, l] = y[b, :, :, l] > 0
 
         # Compute the mask for the background
-        y_sum = np.sum(y[b, :, :, :], axis=0)
         if CHANNELS_FIRST:
-            y[b, len(edge_feature) - 1, :, :] = 1 - y_sum
+            y[b, len(edge_feature) - 1, :, :] = 1 - np.sum(y[b, :, :, :], axis=0)
         else:
-            y[b, :, :, len(edge_feature) - 1] = 1 - y_sum
+            y[b, :, :, len(edge_feature) - 1] = 1 - np.sum(y[b, :, :, :], axis=2)
 
     return y
 

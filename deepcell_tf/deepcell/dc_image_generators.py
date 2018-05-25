@@ -42,8 +42,7 @@ class ImageSampleArrayIterator(Iterator):
         if self.x.ndim != 4:
             raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
                              'You passed an array with shape', self.x.shape)
-        channel_axis = 3 if data_format == 'channels_last' else 1
-        self.channel_axis = channel_axis
+        self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.y = train_dict['y']
         self.b = train_dict['batch']
         self.pixels_x = train_dict['pixels_x']
@@ -59,9 +58,9 @@ class ImageSampleArrayIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
-            batch_x = np.zeros(tuple([len(index_array)] + [self.x.shape[1]] + [2*self.win_x + 1, 2*self.win_y + 1]))
+            batch_x = np.zeros((len(index_array), self.x.shape[self.channel_axis], 2*self.win_x + 1, 2*self.win_y + 1))
         else:
-            batch_x = np.zeros(tuple([len(index_array)] + [2*self.win_x + 1, 2*self.win_y + 1] + [self.x.shape[1]]))
+            batch_x = np.zeros((len(index_array), 2*self.win_x + 1, 2*self.win_y + 1, self.x.shape[self.channel_axis]))
 
         for i, j in enumerate(index_array):
             batch = self.b[j]
@@ -70,14 +69,15 @@ class ImageSampleArrayIterator(Iterator):
             win_x = self.win_x
             win_y = self.win_y
 
-            x = self.x[batch, :, pixel_x-win_x:pixel_x+win_x+1, pixel_y-win_y:pixel_y+win_y+1]
+            if self.channel_axis == 1:
+                x = self.x[batch, :, pixel_x-win_x:pixel_x+win_x+1, pixel_y-win_y:pixel_y+win_y+1]
+            else:
+                x = self.x[batch, pixel_x-win_x:pixel_x+win_x+1, pixel_y-win_y:pixel_y+win_y+1, :]
+
             x = self.image_data_generator.random_transform(x.astype(K.floatx()))
             x = self.image_data_generator.standardize(x)
 
-            if self.channel_axis == 1:
-                batch_x[i] = x
-            if self.channel_axis == 3:
-                batch_x[i] = np.moveaxis(x, 0, -1)
+            batch_x[i] = x
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
@@ -148,7 +148,10 @@ class ImageFullyConvIterator(Iterator):
             y_channel_shape = 2
         elif self.target_format == 'watershed':
             epsilon = 1e-8
-            interior = self.y[0, 1, :, :]
+            if self.channel_axis == 1:
+                interior = self.y[0, 1, :, :]
+            else:
+                interior = self.y[0, :, :, 1]
             distance = ndi.distance_transform_edt(interior)
             min_dist = np.amin(distance.flatten())
             max_dist = np.amax(distance.flatten())
@@ -192,28 +195,31 @@ class ImageFullyConvIterator(Iterator):
                 y = direction
 
             if self.target_format == 'watershed':
-                interior = y[1, :, :]
+                if self.channel_axis == 1:
+                    interior = y[1, :, :]
+                else:
+                    interior = y[:, :, 1]
                 distance = ndi.distance_transform_edt(interior)
                 min_dist = np.amin(distance.flatten())
                 max_dist = np.amax(distance.flatten())
                 bins = np.linspace(min_dist - epsilon, max_dist + epsilon, num=16)
                 distance = np.digitize(distance, bins)
 
-                 # convert to one hot notation
-                y = np.zeros((np.amax(distance.flatten()) + 1, self.y.shape[2], self.y.shape[3]))
+                # convert to one hot notation
+                if self.channel_axis == 1:
+                    y_shape = (np.amax(distance.flatten()) + 1, self.y.shape[2], self.y.shape[3])
+                else:
+                    y_shape = (self.y.shape[1], self.y.shape[2], np.amax(distance.flatten()) + 1)
+                y = np.zeros(y_shape)
                 for label_val in range(np.amax(distance.flatten()) + 1):
                     y[label_val, :, :] = distance == label_val
 
-            if self.channel_axis == 1:
-                batch_x[i] = x
-                batch_y[i] = y
-
-            if self.channel_axis == -1:
-                batch_x[i] = np.moveaxis(x, 0, -1)
-                batch_y[i] = np.moveaxis(y, 0, -1)
+            batch_x[i] = x
+            batch_y[i] = y
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
+                # TODO: handle channel_axis?
                 img_x = np.expand_dims(batch_x[i, :, :, 0], -1)
                 img = array_to_img(img_x, self.data_format, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(
@@ -224,6 +230,7 @@ class ImageFullyConvIterator(Iterator):
                 img.save(os.path.join(self.save_to_dir, fname))
 
                 if self.target_format == 'direction' or self.target_format == 'watershed':
+                    # TODO: handle channel_axis?
                     img_y = np.expand_dims(batch_y[i, :, :, 0], -1)
                     img = array_to_img(img_y, self.data_format, scale=True)
                     fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
@@ -235,11 +242,10 @@ class ImageFullyConvIterator(Iterator):
 
         if self.y is None:
             return batch_x
-        else:
-            if self.channel_axis == 1:
-                batch_y = np.moveaxis(batch_y, 1, -1)
+        # if self.channel_axis == 1:
+        #     batch_y = np.moveaxis(batch_y, 1, -1)
 
-            return batch_x, batch_y
+        return batch_x, batch_y
 
     def __next__(self):
         """For python 2.x.
@@ -276,8 +282,10 @@ class ImageFullyConvGatherIterator(Iterator):
             cols_to_sample[batch_id] = self.col_index[self.batch_index == batch_id]
 
         #Subsample the pixel coordinates
-
-        expected_label_size = (self.x.shape[0], train_dict['y'].shape[1], self.x.shape[2]-2*self.win_x, self.x.shape[3] - 2*self.win_y)
+        if self.channel_axis == 1:
+            expected_label_size = (self.x.shape[0], train_dict['y'].shape[1], self.x.shape[2]-2*self.win_x, self.x.shape[3] - 2*self.win_y)
+        else:
+            expected_label_size = (self.x.shape[0], self.x.shape[1]-2*self.win_x, self.x.shape[2] - 2*self.win_y, train_dict['y'].shape[-1])
         if train_dict['y'] is not None and train_dict['y'].shape != expected_label_size:
             raise Exception('The expected conv-net output and label image '
                             'should have the same size. Found: '
@@ -324,12 +332,8 @@ class ImageFullyConvGatherIterator(Iterator):
 
             x = self.image_data_generator.standardize(x)
 
-            if self.channel_axis == 1:
-                batch_x[i] = x
-                batch_y[i] = y
-            if self.channel_axis == 3:
-                batch_x[i] = np.moveaxis(x, 1, 3)
-                batch_y[i] = np.moveaxis(y, 1, 3)
+            batch_x[i] = x
+            batch_y[i] = y
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
@@ -346,7 +350,7 @@ class ImageFullyConvGatherIterator(Iterator):
         else:
             if self.channel_axis == 1:
                 batch_y = np.moveaxis(batch_y, 1, 3)
-            return [batch_x, batch, self.pixels_x, self.pixels_y], [batch_y]
+            return [batch_x, j, self.pixels_x, self.pixels_y], [batch_y]
 
     def __next__(self):
         """For python 2.x.
@@ -784,10 +788,14 @@ class MovieDataGenerator(object):
                              'column) or `"channels_first"` (channel before row and column). '
                              'Received arg: ', data_format)
         self.data_format = data_format
-        self.channel_axis = 1 if data_format == 'channels_first' else 4
-        self.time_axis = 2 if data_format == 'channels_first' else 1
-        self.row_axis = 3 if data_format == 'channels_first' else 2
-        self.col_axis = 4 if data_format == 'channels_first' else 3
+        if data_format == 'channels_first':
+            self.channel_axis = 1
+            self.row_axis = 2
+            self.col_axis = 3
+        if data_format == 'channels_last':
+            self.channel_axis = 3
+            self.row_axis = 1
+            self.col_axis = 2
         self.featurewise_center = featurewise_center
         self.samplewise_center = samplewise_center
         self.featurewise_std_normalization = featurewise_std_normalization

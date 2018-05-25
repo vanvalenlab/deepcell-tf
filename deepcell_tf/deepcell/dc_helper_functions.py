@@ -388,7 +388,10 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
         img_list = []
         l_list = []
         for b, x, y, l in zip(batch, pixel_x, pixel_y, labels):
-            img = X[b, :, x-win_x:x+win_x+1, y-win_y:y+win_y+1]
+            if CHANNELS_FIRST:
+                img = X[b, :, x-win_x:x+win_x+1, y-win_y:y+win_y+1]
+            else:
+                img = X[b, x-win_x:x+win_x+1, y-win_y:y+win_y+1, :]
             img_list.append(img)
             l_list.append(l)
         return np.stack(tuple(img_list), axis=0), np.array(l_list)
