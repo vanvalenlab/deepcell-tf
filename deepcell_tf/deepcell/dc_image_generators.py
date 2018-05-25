@@ -17,8 +17,8 @@ from skimage.measure import label, regionprops
 from skimage.filters import sobel_h, sobel_v
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.preprocessing.image import random_channel_shift, apply_transform, \
-                                                        flip_axis, array_to_img, \
-                                                        ImageDataGenerator, Iterator, NumpyArrayIterator
+                                                        flip_axis, array_to_img, Iterator, \
+                                                        ImageDataGenerator, NumpyArrayIterator
 
 from .dc_helper_functions import *
 
@@ -96,7 +96,6 @@ class ImageSampleArrayIterator(Iterator):
         """For python 2.x.
         # Returns the next batch.
         """
-
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
         with self.lock:
@@ -203,8 +202,8 @@ class ImageFullyConvIterator(Iterator):
 
                  # convert to one hot notation
                 y = np.zeros((np.amax(distance.flatten()) + 1, self.y.shape[2], self.y.shape[3]))
-                for label in range(np.amax(distance.flatten()) + 1):
-                    y[label, :, :] = distance == label
+                for label_val in range(np.amax(distance.flatten()) + 1):
+                    y[label_val, :, :] = distance == label_val
 
             if self.channel_axis == 1:
                 batch_x[i] = x
@@ -228,10 +227,10 @@ class ImageFullyConvIterator(Iterator):
                 if self.target_format == 'direction' or self.target_format == 'watershed':
                     img_y = np.expand_dims(batch_y[i, :, :, 0], -1)
                     img = array_to_img(img_y, self.data_format, scale=True)
-                    fname = 'y_' + '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-                                                                             index=j,
-                                                                             hash=np.random.randint(1e4),
-                                                                             format=self.save_format)
+                    fname = 'y_{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
+                                                                        index=j,
+                                                                        hash=np.random.randint(1e4),
+                                                                        format=self.save_format)
                     img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
@@ -246,7 +245,6 @@ class ImageFullyConvIterator(Iterator):
         """For python 2.x.
         # Returns the next batch.
         """
-
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
         with self.lock:
@@ -355,7 +353,6 @@ class ImageFullyConvGatherIterator(Iterator):
         """For python 2.x.
         # Returns the next batch.
         """
-
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
         with self.lock:
@@ -553,15 +550,19 @@ class ImageFullyConvDataGenerator(object):
 
         transform_matrix = None
         if theta != 0:
-            rotation_matrix = np.array([[np.cos(theta), -np.sin(theta), 0],
-                                        [np.sin(theta), np.cos(theta), 0],
-                                        [0, 0, 1]])
+            rotation_matrix = np.array([
+                [np.cos(theta), -np.sin(theta), 0],
+                [np.sin(theta), np.cos(theta), 0],
+                [0, 0, 1]
+            ])
             transform_matrix = rotation_matrix
 
         if tx != 0 or ty != 0:
-            shift_matrix = np.array([[1, 0, tx],
-                                     [0, 1, ty],
-                                     [0, 0, 1]])
+            shift_matrix = np.array([
+                [1, 0, tx],
+                [0, 1, ty],
+                [0, 0, 1]
+            ])
             transform_matrix = shift_matrix if transform_matrix is None else np.dot(transform_matrix, shift_matrix)
 
         if shear != 0:
@@ -779,6 +780,15 @@ class MovieDataGenerator(object):
                  data_format=None):
         if data_format is None:
             data_format = K.image_data_format()
+        if data_format not in {'channels_last', 'channels_first'}:
+            raise ValueError('`data_format` should be `"channels_last"` (channel after row and '
+                             'column) or `"channels_first"` (channel before row and column). '
+                             'Received arg: ', data_format)
+        self.data_format = data_format
+        self.channel_axis = 1 if data_format == 'channels_first' else 4
+        self.time_axis = 2 if data_format == 'channels_first' else 1
+        self.row_axis = 3 if data_format == 'channels_first' else 2
+        self.col_axis = 4 if data_format == 'channels_first' else 3
         self.featurewise_center = featurewise_center
         self.samplewise_center = samplewise_center
         self.featurewise_std_normalization = featurewise_std_normalization
@@ -795,23 +805,6 @@ class MovieDataGenerator(object):
         self.vertical_flip = vertical_flip
         self.rescale = rescale
         self.preprocessing_function = preprocessing_function
-
-        if data_format not in {'channels_last', 'channels_first'}:
-            raise ValueError('`data_format` should be `"channels_last"` (channel after row and '
-                             'column) or `"channels_first"` (channel before row and column). '
-                             'Received arg: ', data_format)
-        self.data_format = data_format
-        if data_format == 'channels_first':
-            self.channel_axis = 1
-            self.time_axis = 2
-            self.row_axis = 3
-            self.col_axis = 4
-        if data_format == 'channels_last':
-            self.channel_axis = 4
-            self.time_axis = 1
-            self.row_axis = 2
-            self.col_axis = 3
-
         self.mean = None
         self.std = None
         self.principal_components = None
@@ -912,15 +905,19 @@ class MovieDataGenerator(object):
 
         transform_matrix = None
         if theta != 0:
-            rotation_matrix = np.array([[np.cos(theta), -np.sin(theta), 0],
-                                        [np.sin(theta), np.cos(theta), 0],
-                                        [0, 0, 1]])
+            rotation_matrix = np.array([
+                [np.cos(theta), -np.sin(theta), 0],
+                [np.sin(theta), np.cos(theta), 0],
+                [0, 0, 1]
+            ])
             transform_matrix = rotation_matrix
 
         if tx != 0 or ty != 0:
-            shift_matrix = np.array([[1, 0, tx],
-                                     [0, 1, ty],
-                                     [0, 0, 1]])
+            shift_matrix = np.array([
+                [1, 0, tx],
+                [0, 1, ty],
+                [0, 0, 1]
+            ])
             transform_matrix = shift_matrix if transform_matrix is None else np.dot(transform_matrix, shift_matrix)
 
         if shear != 0:
@@ -1018,39 +1015,42 @@ class MovieDataGenerator(object):
 
 
 class MovieArrayIterator(Iterator):
+    """
+    The movie array iterator takes in a dictionary containing the training data
+    Each data set contains a data movie (X) and a label movie (y)
+    The label movie is the same dimension as the channel movie with each pixel
+    having its corresponding prediction
+    """
 
     def __init__(self, train_dict, movie_data_generator,
                  batch_size=32, shuffle=False, seed=None,
                  data_format=None, number_of_frames=10,
                  save_to_dir=None, save_prefix='', save_format='png'):
 
-        # The movie array iterator takes in a dictionary containing the training data
-        # Each data set contains a data movie (channels) and a label movie (labels)
-        # The label movie is the same dimension as the channel movie with each pixel
-        # having its corresponding prediction
-
         if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
             raise Exception('Data movie and label movie should have the same size. '
                             'Found data movie size = {} and and label movie size = {}'.format(
                                 train_dict['X'].shape, train_dict['y'].shape))
         if data_format is None:
-            data_format = K.image_dim_ordering()
+            data_format = K.image_data_format()
+
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.y = np.asarray(train_dict['y'], dtype=K.floatx())
 
         if self.x.ndim != 5:
             raise ValueError('Input data in `MovieArrayIterator` should have rank 5. '
                              'You passed an array with shape {}.'.format(self.x.shape))
+
         channels_axis = 4 if data_format == 'channels_last' else 1
         time_axis = 1 if data_format == 'channels_last' else 2
 
         if self.x.shape[time_axis] - number_of_frames < 0:
-            raise Exception('The number of frames used in each training batch should'
+            raise Exception('The number of frames used in each training batch should '
                             'be less than the number of frames in the training data!')
 
         self.channels_axis = channels_axis
         self.time_axis = time_axis
         self.number_of_frames = number_of_frames
-        self.y = train_dict['y']
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -1065,18 +1065,16 @@ class MovieArrayIterator(Iterator):
 
         index_array = index_array[0]
         if self.channels_axis == 1:
-            batch_x = np.zeros(tuple([len(index_array), self.x.shape[1], self.number_of_frames] + list(self.x.shape[3:])))
+            batch_x = np.zeros((len(index_array), self.x.shape[1], self.number_of_frames, *self.x.shape[3:]))
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.y.shape[1], self.number_of_frames] + list(self.y.shape[3:])))
+                batch_y = np.zeros((len(index_array), self.y.shape[1], self.number_of_frames, *self.y.shape[3:]))
 
-        elif self.channels_axis == 4:
-            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.x.shape[2:])))
+        else:
+            batch_x = np.zeros((len(index_array), self.number_of_frames, *self.x.shape[2:]))
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.y.shape[2:])))
+                batch_y = np.zeros((len(index_array), self.number_of_frames, *self.y.shape[2:]))
 
-
-        for i, j in enumerate(index_array):
-            batch = j
+        for i, batch in enumerate(index_array):
 
             if self.y is not None:
                 y = self.y[batch, :, :, :, :]
@@ -1124,7 +1122,6 @@ class MovieArrayIterator(Iterator):
         """For python 2.x.
         # Returns the next batch.
         """
-
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
         with self.lock:
@@ -1221,7 +1218,6 @@ class BoundingBoxIterator(Iterator):
         regression = np.append(regression, anchor_states, axis=1)
         return [regression, labels]
 
-
     def _get_batches_of_transformed_samples(self, index_array):
         index_array = index_array[0]
         if self.channels_axis == 1:
@@ -1236,9 +1232,7 @@ class BoundingBoxIterator(Iterator):
         regressions_list = []
         labels_list = []
 
-        for i, j in enumerate(index_array):
-            batch = j
-
+        for i, batch in enumerate(index_array):
             x = self.x[batch, :, :, :]
 
             if self.y is not None:
@@ -1256,7 +1250,6 @@ class BoundingBoxIterator(Iterator):
                 batch_y[i] = y
 
                 # Get the bounding boxes from the transformed masks!
-
                 annotations = self.get_annotations(y)
                 regressions, labels = self.compute_target(annotations)
                 regressions_list.append(regressions)
@@ -1278,7 +1271,6 @@ class BoundingBoxIterator(Iterator):
                                                                   format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
-
         if self.y is None:
             return batch_x
         batch_y = np.rollaxis(batch_y, 1, 4)
@@ -1288,7 +1280,6 @@ class BoundingBoxIterator(Iterator):
         """For python 2.x.
         # Returns the next batch.
         """
-
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
         with self.lock:

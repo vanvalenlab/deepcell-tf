@@ -492,7 +492,8 @@ def get_data(file_name, mode='sample'):
         num_train = np.int32(total_batch_size - num_test)
         full_batch_size = np.int32(num_test + num_train)
 
-        print(total_batch_size, num_test, num_train)
+        print('Batch Size: {}\nNum Test: {}\nNum Train: {}'.format(
+            total_batch_size, num_test, num_train))
 
         # Split data set into training data and validation data
         arr = np.arange(total_batch_size)

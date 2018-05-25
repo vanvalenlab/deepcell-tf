@@ -217,14 +217,13 @@ def reshape_movie(X, y, reshape_size=256):
     new_X = np.zeros((new_batch_size, X.shape[1], X.shape[2], reshape_size, reshape_size), dtype=K.floatx())
     new_y = np.zeros((new_batch_size, y.shape[1], reshape_size, reshape_size), dtype='int32')
 
-    print(new_X.shape, new_y.shape)
 
     counter = 0
     for batch in range(X.shape[0]):
         for i in range(rep_number):
             for j in range(rep_number):
                 if i != rep_number - 1 and j != rep_number - 1:
-                    new_X[counter, :, :,:, :] = X[batch, :, :, i*reshape_size:(i+1)*reshape_size, j*reshape_size:(j+1)*reshape_size]
+                    new_X[counter, :, :, :, :] = X[batch, :, :, i*reshape_size:(i+1)*reshape_size, j*reshape_size:(j+1)*reshape_size]
                     y_temp = relabel_movie(y[batch, :, i*reshape_size:(i+1)*reshape_size, j*reshape_size:(j+1)*reshape_size])
                     new_y[counter, :, :, :] = y_temp
                 if i == rep_number - 1 and j != rep_number - 1:
