@@ -560,27 +560,34 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
     window_size_x, window_size_y = window_size
     image_size_x, image_size_y = image_size
 
+    # flatten list of lists
+    X_dirs = [os.path.join(direc_name, t, raw_image_direc) for t in training_direcs]
+    X_dirs = [os.path.join(t, p) for t in X_dirs for p in os.listdir(t)]
+
     # Initialize training data array
-    X_shape = (len(training_direcs), len(channel_names), num_frames, image_size_x, image_size_y)
-    X = np.zeros(X_shape, dtype='float32')
+    if CHANNELS_FIRST:
+        X_shape = (len(X_dirs), len(channel_names), num_frames, image_size_x, image_size_y)
+    else:
+        X_shape = (len(X_dirs), num_frames, image_size_x, image_size_y, len(channel_names))
+
+    X = np.zeros(X_shape, dtype=K.floatx())
 
     # Load 3D training images
-    for i, direc in enumerate(training_direcs):
-        print('Training Directory {}: {}'.format(i, direc))
+    for b, direc in enumerate(X_dirs):
+        print('Training Directory {}: {}'.format(b + 1, direc))
 
-        for j, channel in enumerate(channel_names):
-            raw_path = os.path.join(direc_name, direc, raw_image_direc)
-            print('Channel: {}\nFilepath: {}'.format(channel, raw_path))
-            imglist = nikon_getfiles(raw_path, channel)
+        for c, channel in enumerate(channel_names):
+            print('Channel: {}\nFilepath: {}'.format(channel, direc))
+            imglist = nikon_getfiles(direc, channel)
 
-            for k, img in enumerate(imglist):
-                image_data = np.asarray(get_image(os.path.join(raw_path, img)))
-                print('Frame: {}\tPixel Sum: {}'.format(
-                    k, np.sum(image_data.flatten())))
+            for i, img in enumerate(imglist):
+                image_data = np.asarray(get_image(os.path.join(direc, img)))
+                print('Frame: {}\tPixel Sum: {}'.format(i, np.sum(image_data.flatten())))
 
                 if process:
-                    image_data = process_image(image_data, window_size_x, window_size_y,
-                                               std=process_std, remove_zeros=process_remove_zeros)
+                    image_data = process_image(
+                        image_data, window_size_x, window_size_y,
+                        remove_zeros=process_remove_zeros, std=process_std)
 
                 if CHANNELS_FIRST:
                     X[b, c, i, :, :] = image_data
@@ -597,16 +604,30 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
     """
     image_size_x, image_size_y = image_size
 
-    y_shape = (len(training_direcs), num_frames, image_size_x, image_size_y)
+    # wrapping single annotation name in list for consistency
+    if not isinstance(annotation_name, list):
+        annotation_name = [annotation_name]
+
+    y_dirs = [os.path.join(direc_name, t, annotation_direc) for t in training_direcs]
+    y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
+
+    if CHANNELS_FIRST:
+        y_shape = (len(y_dirs), len(annotation_name), num_frames, image_size_x, image_size_y)
+    else:
+        y_shape = (len(y_dirs), num_frames, image_size_x, image_size_y, len(annotation_name))
+
     y = np.zeros(y_shape)
 
-    for i, direc in enumerate(training_direcs):
-        annotation_path = os.path.join(direc_name, direc, annotation_direc)
-        imglist = nikon_getfiles(annotation_path, annotation_name)
+    for b, direc in enumerate(y_dirs):
+        for c, name in enumerate(annotation_name):
+            imglist = nikon_getfiles(direc, name)
 
-        for j, img_file in enumerate(imglist):
-            annotation_img = get_image(os.path.join(annotation_path, img_file))
-            y[i, j, :, :] = annotation_img
+            for z, img_file in enumerate(imglist):
+                annotation_img = get_image(os.path.join(direc, img_file))
+                if CHANNELS_FIRST:
+                    y[b, c, z, :, :] = annotation_img
+                else:
+                    y[b, z, :, :, c] = annotation_img
 
     return y
 
