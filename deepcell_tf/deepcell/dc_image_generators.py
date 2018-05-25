@@ -954,13 +954,13 @@ class MovieDataGenerator(object):
             if np.random.random() < 0.5:
                 x = flip_axis(x, img_col_axis)
                 if label_movie is not None:
-                    y = flip_axis(y, img_col_axis-1)
+                    y = flip_axis(y, img_col_axis - 1) # TODO: ensure that it should be -1
 
         if self.vertical_flip:
             if np.random.random() < 0.5:
                 x = flip_axis(x, img_row_axis)
                 if label_movie is not None:
-                    y = flip_axis(y, img_row_axis - 1)
+                    y = flip_axis(y, img_row_axis - 1) # TODO: ensure that it should be -1
 
         if label_movie is not None:
             return x, y
@@ -1062,7 +1062,7 @@ class MovieArrayIterator(Iterator):
         # Note to self - Also make sure that the exact same transformation is applied to the data movie
         # and the label movie
 
-        index_array = index_array[0]
+        # index_array = index_array[0] # index_array[0] is an integer
         if self.data_format == 'channels_first':
             batch_x = np.zeros(tuple([len(index_array), self.x.shape[1], self.number_of_frames] + list(self.x.shape[3:])))
             if self.y is not None:
@@ -1098,11 +1098,13 @@ class MovieArrayIterator(Iterator):
             else:
                 x = self.movie_data_generator.random_transform(x.astype(K.floatx()))
 
-            if self.channel_axis == 1:
-                batch_x[i] = x
+            # if self.channel_axis == 1:
+            #     batch_x[i] = x
+            #
+            # elif self.channel_axis == 4:
+            #     batch_x[i] = np.moveaxis(x, 1, 4)
 
-            if self.channel_axis == 4:
-                batch_x[i] = np.moveaxis(x, 1, 4)
+            batch_x[i] = x
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
@@ -1116,7 +1118,7 @@ class MovieArrayIterator(Iterator):
 
         if self.y is None:
             return batch_x
-        batch_y = np.rollaxis(batch_y, 1, 5)
+        # batch_y = np.rollaxis(batch_y, 1, 5)
         return batch_x, batch_y
 
     def __next__(self):
