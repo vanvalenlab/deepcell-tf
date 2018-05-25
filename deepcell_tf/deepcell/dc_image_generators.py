@@ -347,7 +347,7 @@ class ImageFullyConvGatherIterator(Iterator):
         else:
             if self.channel_axis == 1:
                 batch_y = np.moveaxis(batch_y, 1, 3)
-            return [batch_x, batch, pixels_x, pixels_y], [batch_y]
+            return [batch_x, batch, self.pixels_x, self.pixels_y], [batch_y]
 
     def __next__(self):
         """For python 2.x.
