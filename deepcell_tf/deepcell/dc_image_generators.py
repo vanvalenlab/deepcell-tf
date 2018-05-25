@@ -1233,11 +1233,11 @@ class BoundingBoxIterator(Iterator):
         regressions_list = []
         labels_list = []
 
-        for i, batch in enumerate(index_array):
-            x = self.x[batch, :, :, :]
+        for i, j in enumerate(index_array):
+            x = self.x[j, :, :, :]
 
             if self.y is not None:
-                y = self.y[batch, :, :, :]
+                y = self.y[j, :, :, :]
 
             if self.y is not None:
                 x, y = self.image_data_generator.random_transform(x.astype(K.floatx()), y)
