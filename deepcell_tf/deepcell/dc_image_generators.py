@@ -1041,14 +1041,14 @@ class MovieArrayIterator(Iterator):
             raise ValueError('Input data in `MovieArrayIterator` should have rank 5. '
                              'You passed an array with shape {}.'.format(self.x.shape))
 
-        channels_axis = 4 if data_format == 'channels_last' else 1
+        channel_axis = 4 if data_format == 'channels_last' else 1
         time_axis = 1 if data_format == 'channels_last' else 2
 
         if self.x.shape[time_axis] - number_of_frames < 0:
             raise Exception('The number of frames used in each training batch should '
                             'be less than the number of frames in the training data!')
 
-        self.channels_axis = channels_axis
+        self.channel_axis = channel_axis
         self.time_axis = time_axis
         self.number_of_frames = number_of_frames
         self.movie_data_generator = movie_data_generator
@@ -1064,7 +1064,7 @@ class MovieArrayIterator(Iterator):
         # and the label movie
 
         index_array = index_array[0]
-        if self.channels_axis == 1:
+        if self.channel_axis == 1:
             batch_x = np.zeros((len(index_array), self.x.shape[1], self.number_of_frames, *self.x.shape[3:]))
             if self.y is not None:
                 batch_y = np.zeros((len(index_array), self.y.shape[1], self.number_of_frames, *self.y.shape[3:]))
@@ -1098,10 +1098,10 @@ class MovieArrayIterator(Iterator):
             else:
                 x = self.movie_data_generator.random_transform(x.astype(K.floatx()))
 
-            if self.channels_axis == 1:
+            if self.channel_axis == 1:
                 batch_x[i] = x
 
-            if self.channels_axis == 4:
+            if self.channel_axis == 4:
                 batch_x[i] = np.moveaxis(x, 1, 4)
 
         if self.save_to_dir:
@@ -1151,8 +1151,8 @@ class BoundingBoxIterator(Iterator):
             raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
                              'You passed an array with shape {}'.format(self.x.shape))
 
-        channels_axis = 3 if data_format == 'channels_last' else 1
-        self.channels_axis = channels_axis
+        channel_axis = 3 if data_format == 'channels_last' else 1
+        self.channel_axis = channel_axis
         self.y = train_dict['y']
 
         if self.channel_axis == 3:
@@ -1220,7 +1220,7 @@ class BoundingBoxIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         index_array = index_array[0]
-        if self.channels_axis == 1:
+        if self.channel_axis == 1:
             batch_x = np.zeros(tuple([len(index_array)] + [self.x.shape[1], self.x.shape[2], self.x.shape[3]]))
             if self.y is not None:
                 batch_y = np.zeros(tuple([len(index_array)] + [self.y.shape[1], self.y.shape[2], self.y.shape[3]]))
@@ -1245,7 +1245,7 @@ class BoundingBoxIterator(Iterator):
 
             x = self.image_data_generator.standardize(x)
 
-            if self.channels_axis == 1:
+            if self.channel_axis == 1:
                 batch_x[i] = x
                 batch_y[i] = y
 
@@ -1255,7 +1255,7 @@ class BoundingBoxIterator(Iterator):
                 regressions_list.append(regressions)
                 labels_list.append(labels)
 
-            if self.channels_axis == 3:
+            if self.channel_axis == 3:
                 raise NotImplementedError('Bounding box generator does not work '
                                           'for channels last yet')
 

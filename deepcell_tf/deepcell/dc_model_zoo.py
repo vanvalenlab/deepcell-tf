@@ -1209,7 +1209,7 @@ def dilated_bn_feature_net_gather_61x61(input_shape = (2, 1080, 1280), training_
 	tensorprod2 = TensorProd2D(200, n_features, kernel_initializer = init, kernel_regularizer = l2(reg))(act8)
 	act9 = Softmax(axis = channel_axis)(tensorprod2)
 
-	if channels_axis == 1:
+	if channel_axis == 1:
 		permute1 = Permute((2,3,1))(act9)
 	else:
 		permute1 = act9
@@ -1424,7 +1424,7 @@ def bn_dense_feature_net_lstm(input_shape = (1, 60, 256, 256), batch_shape = Non
 
 	tensorprod1 = TensorProd2D(64*6, 256, kernel_initializer = init, kernel_regularizer = l2(reg))(merge6)
 
-	if channels_axis == 1:
+	if channel_axis == 1:
 		permute1 = Permute((2, 1, 3, 4))(tensorprod1)
 
 	lstm1 = ConvLSTM2D(64, (3, 3), dilation_rate = (1, 1), kernel_initializer = init, padding = 'same', kernel_regularizer = l2(reg), return_sequences = True)(permute1)
