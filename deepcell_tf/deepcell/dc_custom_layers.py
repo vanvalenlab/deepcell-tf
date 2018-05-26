@@ -73,13 +73,16 @@ class Location3D(Layer):
     def __init__(self, in_shape, data_format=None, **kwargs):
         super(Location3D, self).__init__(**kwargs)
         self.in_shape = in_shape
-        self.data_format = data_format
+        if data_format is None:
+            self.data_format = K.image_data_format()
+        else:
+            self.data_format = data_format
 
     def compute_output_shape(self, input_shape):
         if self.data_format == 'channels_first':
             return (input_shape[0], 2, input_shape[2], input_shape[3], input_shape[4])
 
-        if self.data_format == 'channels_last':
+        elif self.data_format == 'channels_last':
             return (input_shape[0], input_shape[1], input_shape[2], input_shape[3], 2)
 
     def call(self, inputs):
@@ -110,9 +113,7 @@ class Location3D(Layer):
 
         number_of_frames = input_shape[1] if self.data_format == 'channels_last' else input_shape[2]
 
-        location_list = []
-        for _ in range(number_of_frames):
-            location_list.append(tf.identity(location))
+        location_list = [tf.identity(location) for _ in range(number_of_frames)]
 
         if self.data_format == 'channels_last':
             location_concat = tf.concat(location_list, axis=0)
