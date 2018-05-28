@@ -142,7 +142,7 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
         for direc in range(y.shape[0]):
             feature_rows, feature_cols, feature_label, feature_batch = [], [], [], []
 
-            for k in range(y.shape[1]):
+            for k in range(y.shape[1 if CHANNELS_FIRST else -1]):
                 max_num_of_pixels = list_of_max_sample_numbers[direc]
                 pixel_counter = 0
 
