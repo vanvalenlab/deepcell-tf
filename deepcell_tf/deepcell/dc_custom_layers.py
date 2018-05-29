@@ -15,8 +15,6 @@ from tensorflow.python.keras.layers import Layer, InputSpec
 from tensorflow.python.keras import activations, initializers, regularizers, constraints
 from tensorflow.python.keras._impl.keras.utils import conv_utils
 
-from .dc_helper_functions import *
-
 """
 Custom layers
 """
