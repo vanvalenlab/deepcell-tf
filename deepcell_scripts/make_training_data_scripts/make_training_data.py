@@ -3,9 +3,9 @@ make_training_data.py
 
 Executing functions for creating npz files containing the training data
 Functions will create training data for either
-	- Patchwise sampling
-	- Fully convolutional training of single image conv-nets
-	- Fully convolutional training of movie conv-nets
+    - Patchwise sampling
+    - Fully convolutional training of single image conv-nets
+    - Fully convolutional training of movie conv-nets
 
 Files should be plased in training directories with each separate
 dataset getting its own folder
@@ -13,9 +13,6 @@ dataset getting its own folder
 @author: David Van Valen
 """
 
-"""
-Import packages
-"""
 import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
@@ -34,8 +31,7 @@ from skimage import morphology as morph
 import matplotlib.pyplot as plt
 from skimage.transform import resize
 
-
-from deepcell import make_training_data_2d as make_training_data
+from deepcell import make_training_data
 
 # Define maximum number of training examples
 max_training_examples = 1e6
@@ -54,15 +50,18 @@ num_of_features = 2
 edge_feature = [1,0,0]
 
 # Create the training data
-make_training_data(max_training_examples = max_training_examples, window_size_x = window_size, window_size_y = window_size,
-		direc_name = direc_name,
-		file_name_save = file_name_save,
-		training_direcs = training_direcs,
-		channel_names = channel_names,
-		num_of_features = 2,
-		edge_feature = edge_feature,
-		dilation_radius = 1,
-		sub_sample = True,
-		display = False,
-		verbose = True,
-		process_std = True)
+make_training_data(
+	dimensionality = 2,
+    max_training_examples = max_training_examples,
+    window_size_x = window_size,
+    window_size_y = window_size,
+    direc_name = direc_name,
+    file_name_save = file_name_save,
+    training_direcs = training_direcs,
+    channel_names = channel_names,
+    num_of_features = 2,
+    edge_feature = edge_feature,
+    dilation_radius = 1,
+    display = False,
+    verbose = True,
+    process_std = True)
