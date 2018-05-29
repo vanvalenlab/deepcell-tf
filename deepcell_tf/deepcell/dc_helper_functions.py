@@ -32,9 +32,9 @@ Helper functions
 def get_immediate_subdirs(directory):
     """
     Get all DIRECTORIES that are immediate children of a given directory
-    # args
+    # Arguments
         dir: a filepath to a directory
-    # returns:
+    # Returns:
         a sorted list of child directories of given dir.  Will not return files.
     """
     return sorted([d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))])
@@ -236,7 +236,6 @@ def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, fr
     """Categorical crossentropy between an output tensor and a target tensor.
     Automatically computes the class weights from the target image and uses
     them to weight the cross entropy
-
     # Arguments
         target: A tensor of the same shape as `output`.
         output: A tensor resulting from a softmax
