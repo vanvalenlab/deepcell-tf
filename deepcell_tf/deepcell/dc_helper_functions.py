@@ -11,6 +11,7 @@ from __future__ import division
 
 import os
 import re
+import warnings
 
 import numpy as np
 from scipy import ndimage
@@ -31,9 +32,9 @@ Helper functions
 def get_immediate_subdirs(directory):
     """
     Get all DIRECTORIES that are immediate children of a given directory
-    # args
+    # Arguments
         dir: a filepath to a directory
-    # returns:
+    # Returns:
         a sorted list of child directories of given dir.  Will not return files.
     """
     return sorted([d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))])
@@ -106,11 +107,11 @@ def process_image(channel_img, win_x, win_y, std=False, remove_zeros=False):
         avg_kernel = np.ones((2*win_x + 1, 2*win_y + 1))
         channel_img -= ndimage.convolve(channel_img, avg_kernel) / avg_kernel.size
         # std = np.std(channel_img)
-        std = window_stdev(channel_img, win_x)
-        channel_img /= std
+        std_val = window_stdev(channel_img, win_x)
+        channel_img /= std_val
         return channel_img
 
-    if remove_zeros:
+    elif remove_zeros:
         channel_img /= np.amax(channel_img)
         avg_kernel = np.ones((2*win_x + 1, 2*win_y + 1))
         channel_img -= ndimage.convolve(channel_img, avg_kernel) / avg_kernel.size
@@ -118,6 +119,9 @@ def process_image(channel_img, win_x, win_y, std=False, remove_zeros=False):
 
     else:
         p50 = np.percentile(channel_img, 50)
+        if p50 == 0:
+            warnings.warn('The median pixel value is 0, consider '
+                          'using std=True for image normalization.', Warning)
         channel_img /= p50
         avg_kernel = np.ones((2*win_x + 1, 2*win_y + 1))
         channel_img -= ndimage.convolve(channel_img, avg_kernel) / avg_kernel.size
@@ -232,7 +236,6 @@ def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, fr
     """Categorical crossentropy between an output tensor and a target tensor.
     Automatically computes the class weights from the target image and uses
     them to weight the cross entropy
-
     # Arguments
         target: A tensor of the same shape as `output`.
         output: A tensor resulting from a softmax
@@ -245,20 +248,18 @@ def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, fr
     """
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
+    if from_logits:
+        raise Exception('weighted_categorical_crossentropy cannot take logits')
     if axis is None:
         axis = len(output.get_shape()) - 1
-    if not from_logits:
-        # scale preds so that the class probas of each sample sum to 1
-        output /= tf.reduce_sum(output, axis=axis, keepdims=True)
-        # manual computation of crossentropy
-        _epsilon = _to_tensor(K.epsilon(), output.dtype.base_dtype)
-        output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
-        target_cast = tf.cast(target, K.floatx())
-        class_weights = 1.0 / np.float(n_classes) * tf.divide(tf.reduce_sum(target_cast), tf.reduce_sum(target_cast, axis=[0, 1, 2]))
-        print(class_weights.get_shape())
-        return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
-    else:
-        raise Exception('weighted_categorical_crossentropy cannot take logits')
+    # scale preds so that the class probas of each sample sum to 1
+    output /= tf.reduce_sum(output, axis=axis, keepdims=True)
+    # manual computation of crossentropy
+    _epsilon = _to_tensor(K.epsilon(), output.dtype.base_dtype)
+    output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
+    target_cast = tf.cast(target, K.floatx())
+    class_weights = 1.0 / np.float(n_classes) * tf.divide(tf.reduce_sum(target_cast), tf.reduce_sum(target_cast, axis=[0, 1, 2]))
+    return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
 
 def sample_categorical_crossentropy(target, output, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor. Only the sampled
@@ -384,7 +385,10 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
         img_list = []
         l_list = []
         for b, x, y, l in zip(batch, pixel_x, pixel_y, labels):
-            img = X[b, :, x-win_x:x+win_x+1, y-win_y:y+win_y+1]
+            if CHANNELS_FIRST:
+                img = X[b, :, x-win_x:x+win_x+1, y-win_y:y+win_y+1]
+            else:
+                img = X[b, x-win_x:x+win_x+1, y-win_y:y+win_y+1, :]
             img_list.append(img)
             l_list.append(l)
         return np.stack(tuple(img_list), axis=0), np.array(l_list)
@@ -488,7 +492,8 @@ def get_data(file_name, mode='sample'):
         num_train = np.int32(total_batch_size - num_test)
         full_batch_size = np.int32(num_test + num_train)
 
-        print(total_batch_size, num_test, num_train)
+        print('Batch Size: {}\nNum Test: {}\nNum Train: {}'.format(
+            total_batch_size, num_test, num_train))
 
         # Split data set into training data and validation data
         arr = np.arange(total_batch_size)

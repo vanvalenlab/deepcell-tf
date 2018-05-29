@@ -26,12 +26,12 @@ Running convnets
 def run_model(image, model, win_x=30, win_y=30, std=False, split=True, process=True):
     # pad_width = ((0, 0), (0, 0), (win_x, win_x), (win_y, win_y))
     # image = np.pad(image, pad_width=pad_width , mode='constant', constant_values=0)
-    channels_axis = 1 if CHANNELS_FIRST else -1
+    channel_axis = 1 if CHANNELS_FIRST else -1
     x_axis = 2 if CHANNELS_FIRST else 1
     y_axis = 3 if CHANNELS_FIRST else 2
 
     if process:
-        for j in range(image.shape[channels_axis]):
+        for j in range(image.shape[channel_axis]):
             if CHANNELS_FIRST:
                 image[0, j, :, :] = process_image(image[0, j, :, :], win_x, win_y, std)
             else:
@@ -41,7 +41,7 @@ def run_model(image, model, win_x=30, win_y=30, std=False, split=True, process=T
         [model.layers[0].input, K.learning_phase()],
         [model.layers[-1].output])
 
-    n_features = model.layers[-1].output_shape[channels_axis]
+    n_features = model.layers[-1].output_shape[channel_axis]
 
     if split:
         warnings.warn('The split flag is deprecated and is designed to account '
@@ -87,8 +87,8 @@ def run_model(image, model, win_x=30, win_y=30, std=False, split=True, process=T
 def run_model_on_directory(data_location, channel_names, output_location, model,
                            win_x=30, win_y=30, std=False, split=True, process=True, save=True):
 
-    channels_axis = 1 if CHANNELS_FIRST else -1
-    n_features = model.layers[-1].output_shape[channels_axis]
+    channel_axis = 1 if CHANNELS_FIRST else -1
+    n_features = model.layers[-1].output_shape[channel_axis]
 
     image_list = get_images_from_directory(data_location, channel_names)
     model_outputs = []
@@ -128,8 +128,8 @@ def run_models_on_directory(data_location, channel_names, output_location, model
     for layer in model.layers:
         print(layer.name)
 
-    channels_axis = 1 if CHANNELS_FIRST else -1
-    n_features = model.layers[-1].output_shape[channels_axis]
+    channel_axis = 1 if CHANNELS_FIRST else -1
+    n_features = model.layers[-1].output_shape[channel_axis]
 
     model_outputs = []
     for weights_path in list_of_weights:
