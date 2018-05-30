@@ -156,16 +156,14 @@ class ImageFullyConvIterator(Iterator):
             distance = np.digitize(distance, bins)
             y_channel_shape = np.amax(distance.flatten()) + 1
         else:
-            y_channel_shape = self.y.shape[1]
+            y_channel_shape = self.y.shape[self.channel_axis]
 
-        if self.channel_axis == 1:
-            batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:4]))
-            if self.y is not None:
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:4]))
+        if self.y is not None:
+            if self.channel_axis == 1:
                 batch_y = np.zeros(tuple([len(index_array), y_channel_shape] + list(self.y.shape)[2:4]))
-        else:
-            batch_x = np.zeros(tuple([len(index_array), self.x.shape[2], self.x.shape[3], self.x.shape[1]]))
-            if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.y.shape[2], self.y.shape[3], y_channel_shape]))
+            else:
+                batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:3] + [y_channel_shape]))
 
         for i, j in enumerate(index_array):
             x = self.x[j, :, :, :]
@@ -179,7 +177,10 @@ class ImageFullyConvIterator(Iterator):
             x = self.image_data_generator.standardize(x)
 
             if self.target_format == 'direction':
-                interior = y[1, :, :]
+                if self.channel_axis == 1:
+                    interior = y[1, :, :]
+                else:
+                    interior = y[:, :, 1]
                 distance = ndi.distance_transform_edt(interior)
                 gradient_x = sobel_h(distance)
                 gradient_y = sobel_v(distance)
@@ -236,7 +237,6 @@ class ImageFullyConvIterator(Iterator):
 
         if self.y is None:
             return batch_x
-
         return batch_x, batch_y
 
     def __next__(self):
