@@ -28,15 +28,15 @@ from .dc_helper_functions import get_image, process_image, get_image_sizes, \
 Functions to create training data
 """
 
-def get_max_sample_num_list(y, edge_feature, sample_mode='subsample',
-                            border_mode='valid', window_size_x=30, window_size_y=30):
+def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='valid',
+                            window_size_x=30, window_size_y=30):
     """
     For each set of images and each feature, find the maximum number of samples
     for to be used.  This will be used to balance class sampling.
     # Arguments
         y: mask to indicate which pixels belong to which class
         edge_feature: [1, 0, 0], the 1 indicates the feature is the cell edge
-        sample_mode:  'subsample' or 'all'
+        output_mode:  'sample', 'conv', or 'disc'
         border_mode:  'valid' or 'same'
     # Returns
         list_of_max_sample_numbers: list of maximum sample size for all classes
@@ -49,7 +49,7 @@ def get_max_sample_num_list(y, edge_feature, sample_mode='subsample',
         y_trimmed = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
     # for each set of images
     for j in range(y.shape[0]):
-        if sample_mode == 'subsample':
+        if output_mode.lower() == 'sample':
             for k, edge_feat in enumerate(edge_feature):
                 if edge_feat == 1:
                     if border_mode == 'same':
@@ -59,130 +59,79 @@ def get_max_sample_num_list(y, edge_feature, sample_mode='subsample',
                         y_sum = np.sum(y_trimmed[j, k, :, :]) if CHANNELS_FIRST else np.sum(y_trimmed[j, :, :, k])
                         list_of_max_sample_numbers.append(y_sum)
 
-        elif sample_mode == 'all':
+        elif output_mode.lower() in {'conv', 'disc'}:
             list_of_max_sample_numbers.append(np.Inf)
 
     return list_of_max_sample_numbers
 
 def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
-                        sample_mode='subsample', border_mode='valid', output_mode='sample'):
+                        border_mode='valid', output_mode='sample'):
     """
     Create a list of the maximum pixels to sample from each feature in each data set.
-    If sample_mode is 'subsample', then this will be set to the number of edge pixels.
+    If output_mode is 'sample', then this will be set to the number of edge pixels.
     If not, then it will be set to np.Inf, i.e. sampling everything.
     """
     if CHANNELS_FIRST:
         num_dirs, num_features, image_size_x, image_size_y = y.shape
-        y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
+        # y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
     else:
         num_dirs, image_size_x, image_size_y, num_features = y.shape
-        y_trimmed = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
+        # y_trimmed = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
 
     list_of_max_sample_numbers = get_max_sample_num_list(
-        y=y, edge_feature=edge_feature, sample_mode=sample_mode, border_mode=border_mode,
+        y=y, edge_feature=edge_feature, output_mode=output_mode, border_mode=border_mode,
         window_size_x=window_size_x, window_size_y=window_size_y)
 
     feature_rows, feature_cols, feature_batch, feature_label = [], [], [], []
 
-    if output_mode == 'sample':
-        for direc in range(num_dirs):
-            for k in range(num_features):
-                if CHANNELS_FIRST:
-                    feature_rows_temp, feature_cols_temp = np.where(y[direc, k, :, :] == 1)
-                else:
-                    feature_rows_temp, feature_cols_temp = np.where(y[direc, :, :, k] == 1)
+    for direc in range(num_dirs):
+        for k in range(num_features):
+            if CHANNELS_FIRST:
+                feature_rows_temp, feature_cols_temp = np.where(y[direc, k, :, :] == 1)
+            else:
+                feature_rows_temp, feature_cols_temp = np.where(y[direc, :, :, k] == 1)
 
-                # Check to make sure the features are actually present
-                if not feature_rows_temp.size > 0:
-                    continue
+            # Check to make sure the features are actually present
+            if not feature_rows_temp.size > 0:
+                continue
 
-                # Randomly permute index vector
-                non_rand_ind = np.arange(len(feature_rows_temp))
-                rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows_temp), replace=False)
-                pixel_counter = 0
-                for i in rand_ind:
-                    if pixel_counter < list_of_max_sample_numbers[direc]:
-                        if border_mode == 'same':
-                            condition = True
+            # Randomly permute index vector
+            non_rand_ind = np.arange(len(feature_rows_temp))
+            rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows_temp), replace=False)
+            pixel_counter = 0
+            for i in rand_ind:
+                if pixel_counter < list_of_max_sample_numbers[direc]:
+                    if border_mode == 'same':
+                        condition = True
 
-                        elif border_mode == 'valid':
-                            condition = feature_rows_temp[i] - window_size_x > 0 and \
-                                        feature_rows_temp[i] + window_size_x < image_size_x and \
-                                        feature_cols_temp[i] - window_size_y > 0 and \
-                                        feature_cols_temp[i] + window_size_y < image_size_y
+                    elif border_mode == 'valid':
+                        condition = feature_rows_temp[i] - window_size_x > 0 and \
+                                    feature_rows_temp[i] + window_size_x < image_size_x and \
+                                    feature_cols_temp[i] - window_size_y > 0 and \
+                                    feature_cols_temp[i] + window_size_y < image_size_y
 
-                        if condition:
-                            feature_rows.append(feature_rows_temp[i])
-                            feature_cols.append(feature_cols_temp[i])
-                            feature_batch.append(direc)
-                            feature_label.append(k)
-                            pixel_counter += 1
-
-        # Randomize
-        feature_rows = np.array(feature_rows, dtype='int32')
-        feature_cols = np.array(feature_cols, dtype='int32')
-        feature_batch = np.array(feature_batch, dtype='int32')
-        feature_label = np.array(feature_label, dtype='int32')
-
-        non_rand_ind = np.arange(len(feature_rows), dtype='int')
-        rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows), replace=False)
-
-        feature_rows = feature_rows[rand_ind]
-        feature_cols = feature_cols[rand_ind]
-        feature_batch = feature_batch[rand_ind]
-        feature_label = feature_label[rand_ind]
-
-        return feature_rows, feature_cols, feature_batch, feature_label
-
-    if output_mode == 'conv':
-        feature_dict = {}
-        if border_mode == 'valid':
-            y = y_trimmed
-
-        for direc in range(y.shape[0]):
-            feature_rows, feature_cols, feature_label, feature_batch = [], [], [], []
-
-            for k in range(y.shape[1 if CHANNELS_FIRST else -1]):
-                max_num_of_pixels = list_of_max_sample_numbers[direc]
-                pixel_counter = 0
-
-                if CHANNELS_FIRST:
-                    feature_rows_temp, feature_cols_temp = np.where(y[direc, k, :, :] == 1)
-                else:
-                    feature_rows_temp, feature_cols_temp = np.where(y[direc, :, :, k] == 1)
-
-                # If features are not present, skip it
-                if not feature_rows_temp.size > 0:
-                    continue
-
-                # Randomly permute index vector
-                non_rand_ind = np.arange(len(feature_rows_temp))
-                rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows_temp), replace=False)
-
-                for i in rand_ind:
-                    if pixel_counter < max_num_of_pixels:
+                    if condition:
                         feature_rows.append(feature_rows_temp[i])
                         feature_cols.append(feature_cols_temp[i])
                         feature_batch.append(direc)
                         feature_label.append(k)
                         pixel_counter += 1
 
-            # Randomize
-            non_rand_ind = np.arange(len(feature_rows), dtype='int')
-            rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows), replace=False)
+    # Randomize
+    feature_rows = np.array(feature_rows, dtype='int32')
+    feature_cols = np.array(feature_cols, dtype='int32')
+    feature_batch = np.array(feature_batch, dtype='int32')
+    feature_label = np.array(feature_label, dtype='int32')
 
-            feature_rows = np.array(feature_rows, dtype='int32')
-            feature_cols = np.array(feature_cols, dtype='int32')
-            feature_batch = np.array(feature_batch, dtype='int32')
-            feature_label = np.array(feature_label, dtype='int32')
+    non_rand_ind = np.arange(len(feature_rows), dtype='int')
+    rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows), replace=False)
 
-            feature_rows = feature_rows[rand_ind]
-            feature_cols = feature_cols[rand_ind]
-            feature_batch = feature_batch[rand_ind]
-            feature_label = feature_label[rand_ind]
+    feature_rows = feature_rows[rand_ind]
+    feature_cols = feature_cols[rand_ind]
+    feature_batch = feature_batch[rand_ind]
+    feature_label = feature_label[rand_ind]
 
-            feature_dict[direc] = (feature_rows, feature_cols, feature_batch, feature_label)
-        return feature_dict
+    return feature_rows, feature_cols, feature_batch, feature_label
 
 def reshape_matrix(X, y, reshape_size=256):
     image_size_x, image_size_y = X.shape[2:] if CHANNELS_FIRST else X.shape[1:3]
@@ -398,7 +347,6 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
                           process_remove_zeros=False,
                           reshape_size=None,
                           border_mode='valid',
-                          sample_mode='subsample',
                           output_mode='sample'):
     """
     Read all images in training directories and save as npz file
@@ -425,7 +373,6 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         process_remove_zeros:  passed to process_image if process is True
         reshape_size: If provided, will reshape the images to the given size
         border_mode:  'valid' or 'same'
-        sample_mode:  'subsample' or 'all'
         output_mode:  'sample', 'conv', or 'disc'
     """
     max_training_examples = int(max_training_examples)
@@ -455,8 +402,8 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
     # Create mask of sampled pixels
     feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
-        y, edge_feature, output_mode=output_mode, sample_mode=sample_mode,
-        border_mode=border_mode, window_size_x=window_size_x, window_size_y=window_size_y)
+        y, edge_feature, output_mode=output_mode, border_mode=border_mode,
+        window_size_x=window_size_x, window_size_y=window_size_y)
 
     weights = compute_class_weight('balanced', y=feature_label, classes=np.unique(feature_label))
 
@@ -757,7 +704,6 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                        edge_feature=[1, 0, 0],
                        border_mode='valid',
                        output_mode='sample',
-                       sample_mode='subsample',
                        verbose=False,
                        process=True,
                        process_std=False,
@@ -779,9 +725,6 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
 
     if border_mode not in {'valid', 'same'}:
         raise ValueError('border_mode should be set to either valid or same')
-
-    if sample_mode not in {'subsample', 'all'}:
-        raise ValueError('sample_mode should be set to either subsample or all')
 
     if output_mode not in {'sample', 'conv', 'disc'}:
         raise ValueError('output_mode should be set to either sample, conv, or disc')
@@ -805,7 +748,6 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               verbose=verbose,
                               reshape_size=reshape_size,
                               border_mode=border_mode,
-                              sample_mode=sample_mode,
                               output_mode=output_mode,
                               process=process,
                               process_std=process_std,
