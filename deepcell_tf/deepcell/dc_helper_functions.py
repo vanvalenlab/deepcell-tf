@@ -220,7 +220,7 @@ def categorical_crossentropy(target, output, class_weights=None, axis=None, from
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
     if axis is None:
-        axis = len(output.get_shape()) - 1
+        axis = 1 if CHANNELS_FIRST else len(output.get_shape()) - 1
     if not from_logits:
         # scale preds so that the class probas of each sample sum to 1
         output /= tf.reduce_sum(output, axis=axis, keep_dims=True)
@@ -251,7 +251,7 @@ def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, fr
     if from_logits:
         raise Exception('weighted_categorical_crossentropy cannot take logits')
     if axis is None:
-        axis = len(output.get_shape()) - 1
+        axis = 1 if CHANNELS_FIRST else len(output.get_shape()) - 1
     # scale preds so that the class probas of each sample sum to 1
     output /= tf.reduce_sum(output, axis=axis, keepdims=True)
     # manual computation of crossentropy
@@ -277,7 +277,7 @@ def sample_categorical_crossentropy(target, output, class_weights=None, axis=Non
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
     if axis is None:
-        axis = len(output.get_shape()) - 1
+        axis = 1 if CHANNELS_FIRST else len(output.get_shape()) - 1
     if not from_logits:
         # scale preds so that the class probabilities of each sample sum to 1
         output /= tf.reduce_sum(output, axis=axis, keep_dims=True)
