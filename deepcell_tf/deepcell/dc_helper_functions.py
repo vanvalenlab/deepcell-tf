@@ -260,7 +260,7 @@ def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, fr
     output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
     target_cast = tf.cast(target, K.floatx())
     total_sum = tf.reduce_sum(target_cast)
-    class_sum = tf.reduce_sum(target_cast, axis=reduce_axis)
+    class_sum = tf.reduce_sum(target_cast, axis=reduce_axis, keepdims=True)
     class_weights = 1.0 / np.float(n_classes) * tf.divide(total_sum, class_sum + 1.)
     return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
 
