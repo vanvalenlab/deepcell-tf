@@ -62,7 +62,6 @@ make_training_data(max_training_examples = max_training_examples, window_size_x 
 		num_of_features = 2,
 		edge_feature = edge_feature,
 		dilation_radius = 1,
-		sub_sample = True,
 		display = False,
 		verbose = True,
 		process_std = True)
