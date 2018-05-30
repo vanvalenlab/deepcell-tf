@@ -65,7 +65,6 @@ make_training_data(max_training_examples = max_training_examples, window_size_x 
 		edge_feature = edge_feature,
 		dilation_radius = 0,
 		border_mode = "valid",
-		sample_mode = "subsample",
 		output_mode = "sample",
 		reshape_size = None,
 		display = False,
