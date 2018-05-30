@@ -220,7 +220,7 @@ def categorical_crossentropy(target, output, class_weights=None, axis=None, from
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
     if axis is None:
-        axis = len(output.get_shape()) - 1
+        axis = 1 if CHANNELS_FIRST else len(output.get_shape()) - 1
     if not from_logits:
         # scale preds so that the class probas of each sample sum to 1
         output /= tf.reduce_sum(output, axis=axis, keep_dims=True)
@@ -251,14 +251,17 @@ def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, fr
     if from_logits:
         raise Exception('weighted_categorical_crossentropy cannot take logits')
     if axis is None:
-        axis = len(output.get_shape()) - 1
+        axis = 1 if CHANNELS_FIRST else len(output.get_shape()) - 1
+    reduce_axis = [x for x in list(range(len(output.get_shape()))) if x != axis]
     # scale preds so that the class probas of each sample sum to 1
     output /= tf.reduce_sum(output, axis=axis, keepdims=True)
     # manual computation of crossentropy
     _epsilon = _to_tensor(K.epsilon(), output.dtype.base_dtype)
     output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
     target_cast = tf.cast(target, K.floatx())
-    class_weights = 1.0 / np.float(n_classes) * tf.divide(tf.reduce_sum(target_cast), tf.reduce_sum(target_cast, axis=[0, 1, 2]))
+    total_sum = tf.reduce_sum(target_cast)
+    class_sum = tf.reduce_sum(target_cast, axis=reduce_axis, keepdims=True)
+    class_weights = 1.0 / np.float(n_classes) * tf.divide(total_sum, class_sum + 1.)
     return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
 
 def sample_categorical_crossentropy(target, output, class_weights=None, axis=None, from_logits=False):
@@ -277,7 +280,7 @@ def sample_categorical_crossentropy(target, output, class_weights=None, axis=Non
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
     if axis is None:
-        axis = len(output.get_shape()) - 1
+        axis = 1 if CHANNELS_FIRST else len(output.get_shape()) - 1
     if not from_logits:
         # scale preds so that the class probabilities of each sample sum to 1
         output /= tf.reduce_sum(output, axis=axis, keep_dims=True)
