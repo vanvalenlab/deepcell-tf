@@ -576,7 +576,8 @@ class ImageFullyConvDataGenerator(object):
             if transform_matrix is not None:
                 h, w = y.shape[img_row_axis], y.shape[img_col_axis]
                 transform_matrix_y = transform_matrix_offset_center(transform_matrix, h, w)
-                y = apply_transform(y, transform_matrix_y, 0, fill_mode='constant', cval=0)
+                y = apply_transform(y, transform_matrix_y, img_channel_axis,
+                                    fill_mode='constant', cval=0)
 
         if transform_matrix is not None:
             h, w = x.shape[img_row_axis], x.shape[img_col_axis]
