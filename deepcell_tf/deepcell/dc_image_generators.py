@@ -938,7 +938,10 @@ class MovieDataGenerator(object):
             y = label_movie
 
             if transform_matrix is not None:
-                y = apply_transform_to_movie(label_movie, transform_matrix)
+                h, w = y.shape[img_row_axis], y.shape[img_col_axis]
+                transform_matrix = transform_matrix_offset_center(transform_matrix, h, w)
+                y = apply_transform_to_movie(y, transform_matrix, img_channel_axis,
+                                             fill_mode='constant', cval=0)
 
         if transform_matrix is not None:
             h, w = x.shape[img_row_axis], x.shape[img_col_axis]
