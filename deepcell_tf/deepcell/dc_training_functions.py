@@ -351,7 +351,7 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
     def loss_function(y_true, y_pred):
         return discriminative_instance_loss_3D(y_true, y_pred)
 
-    model.compile(loss=loss_function, optimizer=optimizer)
+    model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     print('Using real-time data augmentation.')
 
