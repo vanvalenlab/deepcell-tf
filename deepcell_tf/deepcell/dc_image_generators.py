@@ -913,7 +913,8 @@ class MovieDataGenerator(object):
                 [0, 1, ty],
                 [0, 0, 1]
             ])
-            transform_matrix = shift_matrix if transform_matrix is None else np.dot(transform_matrix, shift_matrix)
+            transform_matrix = shift_matrix if transform_matrix is None else np.dot(
+                transform_matrix, shift_matrix)
 
         if shear != 0:
             shear_matrix = np.array([
@@ -921,7 +922,8 @@ class MovieDataGenerator(object):
                 [0, np.cos(shear), 0],
                 [0, 0, 1]
             ])
-            transform_matrix = shear_matrix if transform_matrix is None else np.dot(transform_matrix, shear_matrix)
+            transform_matrix = shear_matrix if transform_matrix is None else np.dot(
+                transform_matrix, shear_matrix)
 
         if zx != 1 or zy != 1:
             zoom_matrix = np.array([
@@ -929,7 +931,8 @@ class MovieDataGenerator(object):
                 [0, zy, 0],
                 [0, 0, 1]
             ])
-            transform_matrix = zoom_matrix if transform_matrix is None else np.dot(transform_matrix, zoom_matrix)
+            transform_matrix = zoom_matrix if transform_matrix is None else np.dot(
+                transform_matrix, zoom_matrix)
 
         if label_movie is not None:
             y = label_movie
