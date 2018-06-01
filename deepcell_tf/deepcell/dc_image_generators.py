@@ -787,7 +787,8 @@ class SiameseIterator(Iterator):
             bbox = prop.bbox
 
             # Extract images from bounding boxes
-            appearance = X[frame, bbox[0]:bbox[1], bbox[2]:bbox[3], :]
+            # TODO: is this too large?
+            appearance = X[frame, bbox[1]:bbox[3], bbox[0]:bbox[2], :]
 
             # Resize images from bounding box
             import pdb; pdb.set_trace()
