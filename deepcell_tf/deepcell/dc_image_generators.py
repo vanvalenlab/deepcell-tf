@@ -658,7 +658,7 @@ class SiameseDataGenerator(ImageDataGenerator):
                      batch_size=32, shuffle=True, seed=None, data_format=None,
                      save_to_dir=None, save_prefix='', save_format='png'):
         return SiameseIterator(train_dict, self, crop_dim=crop_dim, min_track_length=min_track_length,
-                               batch_size=batch_size, shuffle=shuffle, seed=seed, data_format=self.data_format,
+                               batch_size=batch_size, shuffle=shuffle, seed=seed, data_format=data_format,
                                save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
 
@@ -673,7 +673,7 @@ class SiameseIterator(Iterator):
         if data_format is None:
             data_format = K.image_dim_ordering()
 
-        channel_axis = -1 if data_format == 'channel_last' else 1
+        channel_axis = -1 if data_format == 'channels_last' else 1
         self.channel_axis = channel_axis
         self.X = np.asarray(train_dict['X'], dtype=K.floatx())
         self.y = np.int32(train_dict['y'])[:, :, :, :, 0]
