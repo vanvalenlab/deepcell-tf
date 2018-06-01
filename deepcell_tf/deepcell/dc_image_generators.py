@@ -30,8 +30,8 @@ Custom image generators
 
 class ImageSampleArrayIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
-             batch_size=32, shuffle=False, seed=None, data_format=None,
-             save_to_dir=None, save_prefix='', save_format='png'):
+                 batch_size=32, shuffle=False, seed=None, data_format=None,
+                 save_to_dir=None, save_prefix='', save_format='png'):
 
         if train_dict['y'].size > 0 and len(train_dict['pixels_x']) != len(train_dict['y']):
             raise Exception('Number of sampled pixels and y (labels) should have the same length. '
@@ -654,20 +654,20 @@ Custom siamese generators
 """
 
 class SiameseDataGenerator(ImageDataGenerator):
-    def siamese_flow(self, train_dict, crop_dim = 14, min_track_length = 5,
+    def siamese_flow(self, train_dict, crop_dim=14, min_track_length=5,
                      batch_size=32, shuffle=True, seed=None, data_format=None,
                      save_to_dir=None, save_prefix='', save_format='png'):
-        return SiameseIterator(train_dict, self, crop_dim=crop_dim, min_track_length=min_track_length,
-                               batch_size=batch_size, shuffle=shuffle, seed=seed, data_format=data_format,
-                               save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
-
+        return SiameseIterator(train_dict, self, crop_dim=crop_dim,
+                               min_track_length=min_track_length, batch_size=batch_size,
+                               shuffle=shuffle, seed=seed, data_format=data_format,
+                               save_to_dir=save_to_dir, save_prefix=save_prefix,
+                               save_format=save_format)
 
 class SiameseIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
                  crop_dim=14, min_track_length=5, batch_size=32, shuffle=False,
                  seed=None, data_format=None, save_to_dir=None, save_prefix='',
                  save_format='png'):
-
         # Identify the channel axis so the code works regardless of what dimension
         # we are using for channels - the data in the train_dict should be channels last
         if data_format is None:
@@ -806,10 +806,8 @@ class SiameseIterator(Iterator):
         """For python 2.x.
         # Returns the next batch.
         """
-
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
-
         with self.lock:
             index_array = next(self.index_generator)
             # The transformation of images is not under thread lock
@@ -917,23 +915,23 @@ class MovieDataGenerator(object):
     """
 
     def __init__(self,
-             featurewise_center=False,
-             samplewise_center=False,
-             featurewise_std_normalization=False,
-             samplewise_std_normalization=False,
-             rotation_range=0.,
-             width_shift_range=0.,
-             height_shift_range=0.,
-             shear_range=0.,
-             zoom_range=0.,
-             channel_shift_range=0.,
-             fill_mode='nearest',
-             cval=0.,
-             horizontal_flip=False,
-             vertical_flip=False,
-             rescale=None,
-             preprocessing_function=None,
-             data_format=None):
+                 featurewise_center=False,
+                 samplewise_center=False,
+                 featurewise_std_normalization=False,
+                 samplewise_std_normalization=False,
+                 rotation_range=0.,
+                 width_shift_range=0.,
+                 height_shift_range=0.,
+                 shear_range=0.,
+                 zoom_range=0.,
+                 channel_shift_range=0.,
+                 fill_mode='nearest',
+                 cval=0.,
+                 horizontal_flip=False,
+                 vertical_flip=False,
+                 rescale=None,
+                 preprocessing_function=None,
+                 data_format=None):
         if data_format is None:
             data_format = K.image_data_format()
         if data_format not in {'channels_last', 'channels_first'}:
@@ -980,7 +978,7 @@ class MovieDataGenerator(object):
                              'Received arg: {}'.format(zoom_range))
 
     def flow(self, train_dict, batch_size=1, number_of_frames=10, shuffle=True, seed=None,
-         save_to_dir=None, save_prefix='', save_format='png'):
+             save_to_dir=None, save_prefix='', save_format='png'):
         return MovieArrayIterator(
             train_dict, self,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
@@ -1185,9 +1183,9 @@ class MovieArrayIterator(Iterator):
     """
 
     def __init__(self, train_dict, movie_data_generator,
-             batch_size=32, shuffle=False, seed=None,
-             data_format=None, number_of_frames=10,
-             save_to_dir=None, save_prefix='', save_format='png'):
+                 batch_size=32, shuffle=False, seed=None,
+                 data_format=None, number_of_frames=10,
+                 save_to_dir=None, save_prefix='', save_format='png'):
 
         if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
             raise Exception('Data movie and label movie should have the same size. '
@@ -1293,9 +1291,9 @@ Bounding box generators adapted from retina net library
 
 class BoundingBoxIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
-             batch_size=1, shuffle=False, seed=None,
-             data_format=None,
-             save_to_dir=None, save_prefix='', save_format='png'):
+                 batch_size=1, shuffle=False, seed=None,
+                 data_format=None,
+                 save_to_dir=None, save_prefix='', save_format='png'):
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
@@ -1350,15 +1348,13 @@ class BoundingBoxIterator(Iterator):
             bboxes = np.concatenate(bboxes, axis=0)
         return bboxes
 
-    def anchor_targets(
-        self,
-        image_shape,
-        annotations,
-        num_classes,
-        mask_shape=None,
-        negative_overlap=0.4,
-        positive_overlap=0.5,
-        **kwargs):
+    def anchor_targets(image_shape,
+                       annotations,
+                       num_classes,
+                       mask_shape=None,
+                       negative_overlap=0.4,
+                       positive_overlap=0.5,
+                       **kwargs):
         return self.anchor_targets_bbox(image_shape, annotations, num_classes,
                                         mask_shape, negative_overlap, positive_overlap, **kwargs)
 
