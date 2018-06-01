@@ -690,8 +690,11 @@ class SiameseIterator(Iterator):
         super(SiameseIterator, self).__init__(self.X.shape[0], batch_size, shuffle, seed)
 
     def _get_track_ids(self):
-        # This function builds the track id's. It returns a dictionary that
-        # contains the batch number and label number of each each track
+        """
+        This function builds the track id's. It returns a dictionary that
+        contains the batch number and label number of each each track.
+        Creates unique cell IDs, as cell labels are NOT unique across batches.
+        """
         track_counter = 0
         track_ids = {}
         for batch in range(self.y.shape[0]):
