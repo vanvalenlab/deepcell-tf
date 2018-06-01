@@ -570,7 +570,7 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
     if CHANNELS_FIRST:
         y_shape = (len(y_dirs), num_frames, image_size_x, image_size_y)
     else:
-        y_shape = (len(y_dirs), image_size_x, image_size_y, num_frames)
+        y_shape = (len(y_dirs), num_frames, image_size_x, image_size_y)
 
     y = np.zeros(y_shape)
 
@@ -662,7 +662,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
         if CHANNELS_FIRST:
             y = y[:, : window_size_x:-window_size_x, window_size_y:-window_size_y]
         else:
-            y = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
+            y = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
 
     # Reshape X and y
     if reshape_size is not None:
