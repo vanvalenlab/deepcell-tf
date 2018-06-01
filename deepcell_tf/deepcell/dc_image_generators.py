@@ -718,11 +718,11 @@ class SiameseIterator(Iterator):
         return track_ids
 
     def _get_batches_of_transformed_samples(self, index_array):
-
-        #initialize batch_x_1, batch_x_2, and batch_y
-        batch_x_1 = np.zeros((len(index_array), self.crop_dim, self.crop_dim, self.X.shape[self.channel_axis]), dtype = K.floatx())
-        batch_x_2 = np.zeros((len(index_array), self.crop_dim, self.crop_dim, self.X.shape[self.channel_axis]), dtype = K.floatx())
-        batch_y = np.zeros((len(index_array), 2), dtype = np.int32)
+        # initialize batch_x_1, batch_x_2, and batch_y
+        batch_shape = (len(index_array), self.crop_dim, self.crop_dim, self.X.shape[self.channel_axis])
+        batch_x_1 = np.zeros(batch_shape, dtype=K.floatx())
+        batch_x_2 = np.zeros(batch_shape, dtype=K.floatx())
+        batch_y = np.zeros((len(index_array), 2), dtype=np.int32)
 
         for i, j in enumerate(index_array):
             # Identify which tracks are going to be selected
@@ -781,7 +781,8 @@ class SiameseIterator(Iterator):
         return [batch_x_1, batch_x_2], batch_y
 
     def _get_appearances(self, X, y, frames, labels):
-        appearances = np.zeros((len(frames), self.crop_dim, self.crop_dim, X.shape[-1]), dtype = K.floatx())
+        appearance_shape = (len(frames), self.crop_dim, self.crop_dim, X.shape[-1])
+        appearances = np.zeros(appearance_shape, dtype=K.floatx())
         counter = 0
         for frame, label in zip(frames, labels):
             # Get the bounding box
