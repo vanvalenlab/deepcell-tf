@@ -14,10 +14,86 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer, InputSpec
 from tensorflow.python.keras import activations, initializers, regularizers, constraints
 from tensorflow.python.keras._impl.keras.utils import conv_utils
+from .dc_settings import CHANNELS_FIRST
 
 """
 Custom layers
 """
+
+class ImageNormalization2D(Layer):
+    def __init(self, norm_method=None, filter_size=61, **kwargs):
+        super(ImageNormalization, self).__init__(**kwargs)
+        self.norm_method = norm_method
+        self.data_format = K.image_data_format()
+
+        if CHANNELS_FIRST:
+            self.channel_axis = 1
+        else:
+            self.channel_axis = -1
+
+    def compute_output_shape(self, input_shape):
+        return input_shape
+
+    def _window_std_filter(self, inputs, epsilon = K.epsilon()):
+        c1 = self._average_filter(inputs)
+        c2 = self._average_filter(tf.square(inputs))
+        output = tf.sqrt(c2 - c1 * c1) + epsilon
+        return output
+
+    def _average_filter(self, inputs):
+        input_shape = tf.shape(inputs)
+        if CHANNELS_FIRST:
+            in_channels = input_shape[1]
+        else:
+            in_channels  = input_shape[-1]
+
+        W = np.ones((filter_size, filter_size, in_channels, 1))
+        W /= W.size
+        kernel = tf.Variable(W.astype(K.floatx()))
+
+        outputs = tf.nn.depthwise_conv2d(inputs, kernel, [1,1,1,1], 'SAME')
+
+        return outputs
+
+    def _reduce_median(self, inputs, axes = None):
+        rank = tf.rank(inputs)
+        reduce_axes = axes
+        axes_to_keep = [axis if axis not in reduce_axes for axis in range(rank)]
+        input_shape = tf.shape(inputs)
+
+        new_shape = [input_shape[axis] for axis in axes_to_keep]
+        new_shape.append(-1)
+
+        reshaped_inputs = tf.reshape(inputs, new_shape)
+
+        median_index = reshaped_inputs.get_shape()[-1] // 2
+
+        median = tf.nn.top_k(reshaped_inputs, k = median_index)
+
+        return median
+
+    def call(self, inputs):
+
+        if self.norm_method == 'std':
+            outputs = inputs - self._average_filter(inputs)
+            outputs /= self._window_std(outputs)
+
+        elif self.norm_method == 'max':
+            outputs = inputs / tf.reduce_max(inputs)
+            outputs -= self._average_filter(outputs)
+
+        else:
+            reduce_axes = [1,2,3]
+            reduce_axes.remove(self.channel_axis)
+            mean = tf.reduce_median(inputs, axes = reduce_axes)
+            outputs = inputs / mean
+            outputs -= self._average_filter(outputs)
+
+        return outputs
+
+    def get_config(self):
+        config = {'process_std': self.process_std,
+                    'data_format': self.data_format}
 
 class Location(Layer):
     def __init__(self, in_shape, data_format=None, **kwargs):

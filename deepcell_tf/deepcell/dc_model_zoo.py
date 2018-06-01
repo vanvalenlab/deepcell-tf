@@ -256,7 +256,8 @@ def bn_feature_net_61x61(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_
 
 def dilated_bn_feature_net_61x61(input_shape = (2, 1080, 1280), batch_size = None, n_features = 3, reg = 1e-5, init = 'he_normal', weights_path = None, permute = False):
 	print("Using dilated feature net 61x61 with batch normalization")
-
+	print(input_shape)
+	print(K.image_data_format())
 	if K.image_data_format() == 'channels_first':
 		channel_axis = 1
 	else:
