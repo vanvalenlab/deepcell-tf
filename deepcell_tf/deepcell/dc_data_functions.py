@@ -568,9 +568,9 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
     y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
 
     if CHANNELS_FIRST:
-        y_shape = (len(y_dirs), len(annotation_name), num_frames, image_size_x, image_size_y)
+        y_shape = (len(y_dirs), len(annotation_name), image_size_x, image_size_y)
     else:
-        y_shape = (len(y_dirs), num_frames, image_size_x, image_size_y, len(annotation_name))
+        y_shape = (len(y_dirs), image_size_x, image_size_y, len(annotation_name))
 
     y = np.zeros(y_shape)
 
@@ -586,9 +586,9 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
                     break
                 annotation_img = get_image(os.path.join(direc, img_file))
                 if CHANNELS_FIRST:
-                    y[b, c, z, :, :] = annotation_img
+                    y[b, z, :, :] = annotation_img
                 else:
-                    y[b, z, :, :, c] = annotation_img
+                    y[b, z, :, :] = annotation_img
 
     return y
 
@@ -660,9 +660,9 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
     # Trim annotation images
     if border_mode == 'valid':
         if CHANNELS_FIRST:
-            y = y[:, :, : window_size_x:-window_size_x, window_size_y:-window_size_y]
+            y = y[:, : window_size_x:-window_size_x, window_size_y:-window_size_y]
         else:
-            y = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
+            y = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
 
     # Reshape X and y
     if reshape_size is not None:
