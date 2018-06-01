@@ -403,6 +403,16 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
         l_list = np.stack(tuple(l_list), axis=0)
         return img_list, l_list
 
+    elif mode == 'siamese':
+        img_list = []
+        l_list = []
+        for b in batch:
+            img_list.append(X[b, :, :, :, :])
+            l_list.append(labels[b, :, :, :])
+        img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
+        l_list = np.stack(tuple(l_list), axis=0)
+        return img_list, l_list
+
     elif mode == 'conv_gather':
         img_list = []
         l_list = []
@@ -474,7 +484,7 @@ def get_data(file_name, mode='sample'):
 
         return train_dict, (X_test, y_test)
 
-    elif mode == 'conv' or mode == 'conv_sample' or mode == 'movie':
+    elif mode == 'conv' or mode == 'conv_sample' or mode == 'movie' or mode == 'siamese':
         training_data = np.load(file_name)
         X = training_data['X']
         y = training_data['y']
@@ -482,7 +492,7 @@ def get_data(file_name, mode='sample'):
             y = training_data['y_sample']
         if mode == 'conv' or mode == 'conv_sample':
             class_weights = training_data['class_weights']
-        elif mode == 'movie':
+        elif mode == 'movie' or mode == 'siamese':
             class_weights = None
         win_x = training_data['win_x']
         win_y = training_data['win_y']

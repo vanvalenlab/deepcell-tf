@@ -194,12 +194,12 @@ def reshape_movie(X, y, reshape_size=256):
         new_X_shape = (new_batch_size, X.shape[1], X.shape[2], reshape_size, reshape_size)
         new_y_shape = (new_batch_size, y.shape[1], y.shape[2], reshape_size, reshape_size)
     else:
-        new_X_shape = (new_batch_size, reshape_size, reshape_size, X.shape[3], X.shape[4])
-        new_y_shape = (new_batch_size, reshape_size, reshape_size, y.shape[3], y.shape[4])
+        new_X_shape = (new_batch_size, X.shape[1], reshape_size, reshape_size, X.shape[4])
+        new_y_shape = (new_batch_size, y.shape[1], reshape_size, reshape_size)
 
     new_X = np.zeros(new_X_shape, dtype=K.floatx())
     new_y = np.zeros(new_y_shape, dtype='int32')
-
+    import pdb; pdb.set_trace()
     counter = 0
     for b in range(X.shape[0]):
         for i in range(rep_number):
@@ -207,19 +207,19 @@ def reshape_movie(X, y, reshape_size=256):
                 if i != rep_number - 1:
                     x_start, x_end = i * reshape_size, (i + 1) * reshape_size
                 else:
-                    x_start, x_end = -reshape_size, X.shape[2 if CHANNELS_FIRST else 1]
+                    x_start, x_end = -reshape_size, X.shape[2 if CHANNELS_FIRST else 2]
 
                 if j != rep_number - 1:
                     y_start, y_end = j * reshape_size, (j + 1) * reshape_size
                 else:
-                    y_start, y_end = -reshape_size, y.shape[3 if CHANNELS_FIRST else 2]
+                    y_start, y_end = -reshape_size, y.shape[3 if CHANNELS_FIRST else 3]
 
                 if CHANNELS_FIRST:
                     new_X[counter, :, :, :, :] = X[b, :, :, x_start:x_end, y_start:y_end]
                     new_y[counter, :, :, :, :] = relabel_movie(y[b, :, :, x_start:x_end, y_start:y_end])
                 else:
                     new_X[counter, :, :, :, :] = X[b, :, x_start:x_end, y_start:y_end, :]
-                    new_y[counter, :, :, :, :] = relabel_movie(y[b, :, x_start:x_end, y_start:y_end, :])
+                    new_y[counter, :, :, :] = relabel_movie(y[b, :, x_start:x_end, y_start:y_end,0])
 
                 counter += 1
 
@@ -513,7 +513,7 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
 
     # flatten list of lists
     X_dirs = [os.path.join(direc_name, t, raw_image_direc) for t in training_direcs]
-    X_dirs = [os.path.join(t, p) for t in X_dirs for p in os.listdir(t)]
+    #X_dirs = [os.path.join(t, p) for t in X_dirs for p in os.listdir(t)]
 
     # Initialize training data array
     if CHANNELS_FIRST:
@@ -565,7 +565,7 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
         annotation_name = [annotation_name]
 
     y_dirs = [os.path.join(direc_name, t, annotation_direc) for t in training_direcs]
-    y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
+    #y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
 
     if CHANNELS_FIRST:
         y_shape = (len(y_dirs), len(annotation_name), num_frames, image_size_x, image_size_y)
@@ -645,8 +645,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
     """
 
     # Load one file to get image sizes
-    raw_path = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
-    random_montage_dir = os.path.join(raw_path, random.choice(os.listdir(raw_path)))
+    random_montage_dir = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
     image_size = get_image_sizes(random_montage_dir, channel_names)
 
     X = load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
@@ -665,6 +664,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
             y = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
 
     # Reshape X and y
+    import pdb; pdb.set_trace()
     if reshape_size is not None:
         X, y = reshape_movie(X, y, reshape_size=reshape_size)
 
