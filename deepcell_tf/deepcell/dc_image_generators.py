@@ -38,7 +38,7 @@ class ImageSampleArrayIterator(Iterator):
                             'Found: Number of sampled pixels = {}, y.shape = {}'.format(
                                 len(train_dict['pixels_x']), np.asarray(train_dict['y']).shape))
         if data_format is None:
-            data_format = K.image_dim_ordering()
+            data_format = K.image_data_foramt()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
 
         if self.x.ndim != 4:
@@ -122,7 +122,7 @@ class ImageFullyConvIterator(Iterator):
                  data_format=None, target_format=None,
                  save_to_dir=None, save_prefix='', save_format='png'):
         if data_format is None:
-            data_format = K.image_dim_ordering()
+            data_format = K.image_data_foramt()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
         self.win_x = train_dict['win_x']
         self.win_y = train_dict['win_y']
@@ -257,7 +257,7 @@ class ImageFullyConvGatherIterator(Iterator):
                  batch_size=1, training_examples=1e5, shuffle=False, seed=None,
                  data_format=None, save_to_dir=None, save_prefix='', save_format='png'):
         if data_format is None:
-            data_format = K.image_dim_ordering()
+            data_format = K.image_data_foramt()
         self.channel_axis = -1 if data_format == 'channels_last' else 1
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
         self.y = train_dict['y']
@@ -671,7 +671,7 @@ class SiameseIterator(Iterator):
         # Identify the channel axis so the code works regardless of what dimension
         # we are using for channels - the data in the train_dict should be channels last
         if data_format is None:
-            data_format = K.image_dim_ordering()
+            data_format = K.image_data_foramt()
 
         channel_axis = -1 if data_format == 'channels_last' else 1
         self.channel_axis = channel_axis
@@ -1297,7 +1297,7 @@ class BoundingBoxIterator(Iterator):
              data_format=None,
              save_to_dir=None, save_prefix='', save_format='png'):
         if data_format is None:
-            data_format = K.image_dim_ordering()
+            data_format = K.image_data_foramt()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
         self.win_x = train_dict['win_x']
         self.win_y = train_dict['win_y']
