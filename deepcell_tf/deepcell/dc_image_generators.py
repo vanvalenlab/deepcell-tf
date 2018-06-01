@@ -793,9 +793,10 @@ class SiameseIterator(Iterator):
             appearance = X[frame, bbox[1]:bbox[3], bbox[0]:bbox[2], :]
 
             # Resize images from bounding box
-            import pdb; pdb.set_trace()
-            appearance /= 1000
+            max_value = np.amax([np.absolute(np.amax(appearance)), np.absolute(np.amin(appearance))])
+            appearance /= max_value
             appearance = resize(appearance, (self.crop_dim, self.crop_dim, X.shape[-1]))
+            appearance *= max_value
             appearances[counter, :, :, :] = appearance
             counter += 1
 
