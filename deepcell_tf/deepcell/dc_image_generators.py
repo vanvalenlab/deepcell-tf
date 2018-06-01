@@ -735,18 +735,18 @@ class SiameseIterator(Iterator):
             y = self.y[batch, :, :, :]
 
             # Determine what class the track will be - different (0), same (1)
-            same_or_different = np.random.random_integers(0,1)
+            is_same_cell = np.random.random_integers(0, 1)
 
             # Select one frame from the track
             frame = np.random.random_integers(start, stop)
 
             # Select another frame from the same track
-            if same_or_different == 1:
+            if is_same_cell:
                 label_2 = label
                 frame_2 = np.random.random_integers(start, stop)
 
             # Select another frame from a different track
-            if same_or_different == 0:
+            if not is_same_cell:
                 all_labels = np.arange(1, np.amax(y) + 1)
                 acceptable_labels = np.delete(all_labels, np.where(all_labels == label))
                 label_2 = np.random.choice(acceptable_labels)
@@ -758,8 +758,6 @@ class SiameseIterator(Iterator):
                 start_2 = np.amin(y_index)
                 stop_2 = np.amax(y_index)
                 frame_2 = np.random.random_integers(start_2, stop_2)
-
-
 
             # Get appearances
             frames = [frame, frame_2]
@@ -774,9 +772,9 @@ class SiameseIterator(Iterator):
                 appearance = self.image_data_generator.standardize(appearance)
                 appearances[k] = appearance
 
-            batch_y[i,same_or_different] = 1
             batch_x_1[i, :, :, :] = appearances[0]
             batch_x_2[i, :, :, :] = appearances[1]
+            batch_y[i, is_same_cell] = 1
 
         return [batch_x_1, batch_x_2], batch_y
 
