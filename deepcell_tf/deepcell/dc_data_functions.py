@@ -608,6 +608,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
                           num_frames=50,
                           display=True,
                           num_of_frames_to_display=5,
+                          montage_mode=True,
                           verbose=True):
     """
     Read all images in training directories and save as npz file.
@@ -642,11 +643,16 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
         sub_sample: whether or not to subsamble the training data
         display: whether or not to plot the training data
         num_of_frames_to_display:
+        montage_mode: data is broken into several "montage"
+                      sub-directories for easier annoation
     """
 
     # Load one file to get image sizes
-    random_montage_dir = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
-    image_size = get_image_sizes(random_montage_dir, channel_names)
+    random_train_dir = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
+    if montage_mode:
+        random_train_dir = os.path.join(random_train_dir, random.choice(os.listdir(random_train_dir)))
+
+    image_size = get_image_sizes(random_train_dir, channel_names)
 
     X = load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
                                 image_size, window_size=(window_size_x, window_size_y),
