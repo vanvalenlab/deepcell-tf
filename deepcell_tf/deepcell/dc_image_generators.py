@@ -734,11 +734,12 @@ class SiameseIterator(Iterator):
             X = self.X[batch, :, :, :, :]
             y = self.y[batch, :, :, :]
 
-            # Determine what class the track will be - different (0), same (1)
-            is_same_cell = np.random.random_integers(0, 1)
-
             # Select one frame from the track
             frame = np.random.random_integers(start, stop)
+
+            # Choose comparison cell
+            # Determine what class the track will be - different (0), same (1)
+            is_same_cell = np.random.random_integers(0, 1)
 
             # Select another frame from the same track
             if is_same_cell:
@@ -751,10 +752,7 @@ class SiameseIterator(Iterator):
                 acceptable_labels = np.delete(all_labels, np.where(all_labels == label))
                 label_2 = np.random.choice(acceptable_labels)
                 # count number of pixels cell occupies in each frame
-                y_true = np.sum(y == label, axis=(-1, -2))
-                # y_true = list(y_true)
-                # y_ones = [1 if i > 0 else 0 for i in y_true]
-                # y_ones = np.array(y_ones)
+                y_true = np.sum(y == label_2, axis=(-1, -2))
                 # get indices of frames where cell is present
                 y_index = np.where(y_true > 0)[0]
                 start_2 = np.amin(y_index)
