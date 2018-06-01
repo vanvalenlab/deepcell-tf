@@ -685,7 +685,7 @@ class SiameseIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        self._get_track_ids()
+        self.track_ids = self._get_track_ids()
 
         super(SiameseIterator, self).__init__(self.X.shape[0], batch_size, shuffle, seed)
 
@@ -698,14 +698,14 @@ class SiameseIterator(Iterator):
         track_counter = 0
         track_ids = {}
         for batch in range(self.y.shape[0]):
-            for label in range(1, np.amax(y_batch)):
-                y_true = np.sum(y_batch == label, axis = (-1,-2))
-                y_true = list(y_true)
-                y_ones = [1 if i > 0 else 0 for i in y_true]
-                y_ones = np.array(y_ones)
-                y_index = np.where(y_ones == 1)[0]
-                if len(y_index) > 0:
             y_batch = self.y[batch, :, :, :]
+            num_cells = np.amax(y_batch)
+            for cell in range(1, num_cells + 1):
+                # count number of pixels cell occupies in each frame
+                y_true = np.sum(y_batch == cell, axis=(-1, -2))
+                # get indices of frames where cell is present
+                y_index = np.where(y_true > 0)[0]
+                if y_index.size > 0: # if cell is present at all
                     start_frame = np.amin(y_index)
                     stop_frame = np.amax(y_index)
                     track_ids[track_counter] = {
@@ -715,7 +715,7 @@ class SiameseIterator(Iterator):
                         'stop': stop_frame
                     }
                     track_counter += 1
-        self.track_ids = track_ids
+        return track_ids
 
     def _get_batches_of_transformed_samples(self, index_array):
 
