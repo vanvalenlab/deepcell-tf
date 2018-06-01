@@ -655,18 +655,18 @@ Custom siamese generators
 
 class SiameseDataGenerator(ImageDataGenerator):
     def siamese_flow(self, train_dict, crop_dim = 14, min_track_length = 5,
-            batch_size=32, shuffle=True, seed=None, data_format=None,
-            save_to_dir=None, save_prefix='', save_format='png'):
+                     batch_size=32, shuffle=True, seed=None, data_format=None,
+                     save_to_dir=None, save_prefix='', save_format='png'):
         return SiameseIterator(train_dict, self, crop_dim=crop_dim, min_track_length=min_track_length,
-            batch_size=batch_size, shuffle=shuffle, seed=seed, data_format=self.data_format,
-            save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
+                               batch_size=batch_size, shuffle=shuffle, seed=seed, data_format=self.data_format,
+                               save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
 
 class SiameseIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
-                crop_dim = 14, min_track_length = 5, batch_size=32, shuffle=False,
-                seed=None, data_format=None,  save_to_dir=None, save_prefix='',
-                save_format='png'):
+                 crop_dim=14, min_track_length=5, batch_size=32, shuffle=False,
+                 seed=None, data_format=None, save_to_dir=None, save_prefix='',
+                 save_format='png'):
 
         # Identify the channel axis so the code works regardless of what dimension
         # we are using for channels - the data in the train_dict should be channels last
@@ -675,8 +675,8 @@ class SiameseIterator(Iterator):
 
         channel_axis = -1 if data_format == 'channel_last' else 1
         self.channel_axis = channel_axis
-        self.X = np.asarray(train_dict['X'], dtype = K.floatx())
-        self.y = np.int32(train_dict['y'])[:,:,:,:,0]
+        self.X = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.y = np.int32(train_dict['y'])[:, :, :, :, 0]
         self.crop_dim = crop_dim
         self.min_track_length = min_track_length
         self.image_data_generator = image_data_generator
@@ -695,7 +695,6 @@ class SiameseIterator(Iterator):
         track_counter = 0
         track_ids = {}
         for batch in range(self.y.shape[0]):
-            y_batch = self.y[batch,:,:,:]
             for label in range(1, np.amax(y_batch)):
                 y_true = np.sum(y_batch == label, axis = (-1,-2))
                 y_true = list(y_true)
@@ -703,9 +702,15 @@ class SiameseIterator(Iterator):
                 y_ones = np.array(y_ones)
                 y_index = np.where(y_ones == 1)[0]
                 if len(y_index) > 0:
+            y_batch = self.y[batch, :, :, :]
                     start_frame = np.amin(y_index)
                     stop_frame = np.amax(y_index)
-                    track_ids[track_counter] = {'batch': batch, 'label': label, 'start': start_frame, 'stop': stop_frame}
+                    track_ids[track_counter] = {
+                        'batch': batch,
+                        'label': cell,
+                        'start': start_frame,
+                        'stop': stop_frame
+                    }
                     track_counter += 1
         self.track_ids = track_ids
 
@@ -716,15 +721,15 @@ class SiameseIterator(Iterator):
         batch_x_2 = np.zeros((len(index_array), self.crop_dim, self.crop_dim, self.X.shape[self.channel_axis]), dtype = K.floatx())
         batch_y = np.zeros((len(index_array), 2), dtype = np.int32)
 
-        for i,j in enumerate(index_array):
+        for i, j in enumerate(index_array):
             # Identify which tracks are going to be selected
             track_id = self.track_ids[j]
             batch = track_id['batch']
             label = track_id['label']
             start = track_id['start']
             stop = track_id['stop']
-            X = self.X[batch,:,:,:,:]
-            y = self.y[batch,:,:,:]
+            X = self.X[batch, :, :, :, :]
+            y = self.y[batch, :, :, :]
 
             # Determine what class the track will be - different (0), same (1)
             same_or_different = np.random.random_integers(0,1)
@@ -758,7 +763,7 @@ class SiameseIterator(Iterator):
             labels = [label, label_2]
 
             appearances = self._get_appearances(X, y, frames, labels)
-            appearances = [appearances[0,:,:,:], appearances[1,:,:,:]]
+            appearances = [appearances[0, :, :, :], appearances[1, :, :, :]]
 
             # Apply random transformations
             for k, appearance in enumerate(appearances):
@@ -766,9 +771,9 @@ class SiameseIterator(Iterator):
                 appearance = self.image_data_generator.standardize(appearance)
                 appearances[k] = appearance
 
-            batch_x_1[i,:,:,:] = appearances[0]
-            batch_x_2[i,:,:,:] = appearances[1]
             batch_y[i,same_or_different] = 1
+            batch_x_1[i, :, :, :] = appearances[0]
+            batch_x_2[i, :, :, :] = appearances[1]
 
         return [batch_x_1, batch_x_2], batch_y
 
@@ -776,9 +781,8 @@ class SiameseIterator(Iterator):
         appearances = np.zeros((len(frames), self.crop_dim, self.crop_dim, X.shape[-1]), dtype = K.floatx())
         counter = 0
         for frame, label in zip(frames, labels):
-
             # Get the bounding box
-            y_frame = y[frame,:,:]
+            y_frame = y[frame, :, :]
             prop = regionprops(np.int32(y_frame == label))[0]
             bbox = prop.bbox
 
@@ -789,7 +793,7 @@ class SiameseIterator(Iterator):
             import pdb; pdb.set_trace()
             appearance /= 1000
             appearance = resize(appearance, (self.crop_dim, self.crop_dim, X.shape[-1]))
-            appearances[counter,:,:,:] = appearance
+            appearances[counter, :, :, :] = appearance
             counter += 1
 
         return appearances
