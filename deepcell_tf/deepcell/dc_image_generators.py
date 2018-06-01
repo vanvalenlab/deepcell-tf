@@ -750,11 +750,13 @@ class SiameseIterator(Iterator):
                 all_labels = np.arange(1, np.amax(y) + 1)
                 acceptable_labels = np.delete(all_labels, np.where(all_labels == label))
                 label_2 = np.random.choice(acceptable_labels)
-                y_true = np.sum(y == label, axis = (-1,-2))
-                y_true = list(y_true)
-                y_ones = [1 if i > 0 else 0 for i in y_true]
-                y_ones = np.array(y_ones)
-                y_index = np.where(y_ones == 1)[0]
+                # count number of pixels cell occupies in each frame
+                y_true = np.sum(y == label, axis=(-1, -2))
+                # y_true = list(y_true)
+                # y_ones = [1 if i > 0 else 0 for i in y_true]
+                # y_ones = np.array(y_ones)
+                # get indices of frames where cell is present
+                y_index = np.where(y_true > 0)[0]
                 start_2 = np.amin(y_index)
                 stop_2 = np.amax(y_index)
                 frame_2 = np.random.random_integers(start_2, stop_2)
