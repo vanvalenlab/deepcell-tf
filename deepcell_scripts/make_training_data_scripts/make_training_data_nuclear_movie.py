@@ -34,7 +34,7 @@ import matplotlib.pyplot as plt
 from skimage.transform import resize
 
 
-from deepcell import make_training_data_2d as make_training_data
+from deepcell import make_training_data
 
 # Define maximum number of training examples
 window_size = 30
@@ -42,7 +42,7 @@ window_size = 30
 # Load data
 direc_name = '/data/DL_Training_Data/nuclear_movie'
 output_directory = '/data/training_data/training_data_npz/nuclear_movie/'
-file_name_save = os.path.join( output_directory, 'nuclear_movie_disc_same.npz')
+file_name_save = os.path.join( output_directory, 'nuclear_movie_same.npz')
 training_direcs = ["set1", "set2"]
 channel_names = ["DAPI"]
 
@@ -55,13 +55,13 @@ make_training_data(window_size_x = 30, window_size_y = 30,
 		file_name_save = file_name_save,
 		training_direcs = training_direcs,
 		channel_names = channel_names,
+		dimensionality = 3,
 		annotation_name = "corrected",
 		raw_image_direc = "RawImages",
 		annotation_direc = "Annotation",
 		border_mode = "same",
-		output_mode = "disc",
 		num_frames = 60,
-		reshaped_size = 256,
+		reshape_size = None,
 		display = False,
 		num_of_frames_to_display = 5,
 		verbose = True)
