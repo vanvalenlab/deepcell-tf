@@ -670,7 +670,6 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
             y = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
 
     # Reshape X and y
-    import pdb; pdb.set_trace()
     if reshape_size is not None:
         X, y = reshape_movie(X, y, reshape_size=reshape_size)
 
