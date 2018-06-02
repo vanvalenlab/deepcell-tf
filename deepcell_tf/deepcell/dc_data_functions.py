@@ -503,7 +503,8 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
 def load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
                             image_size, window_size, num_frames, process=True,
-                            process_std=False, process_remove_zeros=False):
+                            process_std=False, process_remove_zeros=False,
+                            montage_mode=False):
     """
     Iterate over every image in the training directories and load
     each into a numpy array.
@@ -513,7 +514,8 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
 
     # flatten list of lists
     X_dirs = [os.path.join(direc_name, t, raw_image_direc) for t in training_direcs]
-    #X_dirs = [os.path.join(t, p) for t in X_dirs for p in os.listdir(t)]
+    if montage_mode:
+        X_dirs = [os.path.join(t, p) for t in X_dirs for p in os.listdir(t)]
 
     # Initialize training data array
     if CHANNELS_FIRST:
@@ -553,7 +555,7 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
     return X
 
 def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, annotation_name,
-                             num_frames, image_size):
+                             num_frames, image_size, montage_mode=False):
     """
     Iterate over every annotated image in the training directories and load
     each into a numpy array.
@@ -565,7 +567,8 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
         annotation_name = [annotation_name]
 
     y_dirs = [os.path.join(direc_name, t, annotation_direc) for t in training_direcs]
-    #y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
+    if montage_mode:
+        y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
 
     if CHANNELS_FIRST:
         y_shape = (len(y_dirs), len(annotation_name), num_frames, image_size_x, image_size_y)
@@ -648,19 +651,21 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
     """
 
     # Load one file to get image sizes
-    random_train_dir = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
+    rand_train_dir = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
     if montage_mode:
-        random_train_dir = os.path.join(random_train_dir, random.choice(os.listdir(random_train_dir)))
+        rand_train_dir = os.path.join(rand_train_dir, random.choice(os.listdir(rand_train_dir)))
 
-    image_size = get_image_sizes(random_train_dir, channel_names)
+    image_size = get_image_sizes(rand_train_dir, channel_names)
 
     X = load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
                                 image_size, window_size=(window_size_x, window_size_y),
                                 num_frames=num_frames, process=process, process_std=process_std,
-                                process_remove_zeros=process_remove_zeros)
+                                process_remove_zeros=process_remove_zeros,
+                                montage_mode=montage_mode)
 
     y = load_annotated_images_3d(direc_name, training_direcs, annotation_direc,
-                                 annotation_name, num_frames, image_size)
+                                 annotation_name, num_frames, image_size,
+                                 montage_mode=montage_mode)
 
     # Trim annotation images
     if border_mode == 'valid':
