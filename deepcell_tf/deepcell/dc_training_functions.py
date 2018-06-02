@@ -349,7 +349,10 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        return discriminative_instance_loss_3D(y_true, y_pred)
+        # return discriminative_instance_loss_3D(y_true, y_pred)
+        return weighted_categorical_crossentropy(y_true, y_pred,
+                                                 n_classes=n_classes,
+                                                 from_logits=False)
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
