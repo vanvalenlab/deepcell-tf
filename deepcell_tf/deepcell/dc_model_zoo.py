@@ -12,7 +12,7 @@ from __future__ import division
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Sequential, Model
-from tensorflow.python.keras.layers import Add, Conv2D, MaxPool2D, AvgPool2D, Conv3D, Activation, Lambda
+from tensorflow.python.keras.layers import Add, Conv2D, MaxPool2D, AvgPool2D, Conv3D, Activation, Lambda, Dropout
 from tensorflow.python.keras.layers import Softmax, Flatten, Dense, BatchNormalization, Permute, Input, Concatenate
 from tensorflow.python.keras.regularizers import l2
 from tensorflow.python.keras.callbacks import ModelCheckpoint
@@ -1453,3 +1453,46 @@ def bn_dense_feature_net_lstm(input_shape = (1, 60, 256, 256), batch_shape = Non
 	model = Model(inputs = input1, outputs = final_layer)
 
 	return model
+
+def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal', permute=False, softmax=True):
+
+	if K.image_data_format() == 'channels_first':
+		channel_axis = 1
+	else:
+		channel_axis = -1
+
+	input_1 = Input(shape=input_shape)
+	input_2 = Input(shape=input_shape)
+	# Sequential interface for siamese portion of model
+	feature_extractor = Sequential()
+	feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), input_shape=input_shape ))
+	feature_extractor.add(BatchNormalization(axis=channel_axis))
+	feature_extractor.add(Activation('relu'))
+	feature_extractor.add(MaxPool2D(pool_size=(2, 2)))
+
+	#feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
+	#feature_extractor.add(BatchNormalization(axis=channel_axis))
+	#feature_extractor.add(Activation('relu'))
+	#feature_extractor.add(MaxPool2D(pool_size = (2, 2)))
+
+	# Create two instances of feature_extractor
+	output_1 = feature_extractor(input_1)
+	output_2 = feature_extractor(input_2)
+	
+	# Concatenate outputs from both feature_extractor instances
+	merged_outputs = Concatenate(axis=channel_axis)([output_1, output_2])
+	flat1 = Flatten()(merged_outputs)
+	
+	# Implement dense net (or call preexisting one?) with the two outputs as inputs
+	dense1 = Dense( 32, activation='relu')(flat1)
+	dropout1 = Dropout(0.1)(dense1)
+	dense2 = Dense( 16, activation='relu')(dropout1)
+	dropout2 = Dropout(0.1)(dense2)
+	dense3 = Dense( 2, activation='softmax')(dropout2)
+
+	# Instantiate model
+	final_layer = dense3
+	model = Model(inputs=[input_1, input_2], outputs=final_layer)
+
+	return model
+
