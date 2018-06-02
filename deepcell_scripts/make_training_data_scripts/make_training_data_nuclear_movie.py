@@ -52,6 +52,7 @@ pathlib.Path( output_directory ).mkdir( parents=True, exist_ok=True )
 # Create the training data
 make_training_data(window_size_x = 30, window_size_y = 30,
 		direc_name = direc_name,
+                montage_mode=False,
 		file_name_save = file_name_save,
 		training_direcs = training_direcs,
 		channel_names = channel_names,
