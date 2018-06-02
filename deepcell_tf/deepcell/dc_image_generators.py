@@ -750,11 +750,19 @@ class SiameseIterator(Iterator):
             if not is_same_cell:
                 all_labels = np.arange(1, np.amax(y) + 1)
                 acceptable_labels = np.delete(all_labels, np.where(all_labels == label))
-                label_2 = np.random.choice(acceptable_labels)
-                # count number of pixels cell occupies in each frame
-                y_true = np.sum(y == label_2, axis=(-1, -2))
-                # get indices of frames where cell is present
-                y_index = np.where(y_true > 0)[0]
+                is_valid_label = False
+                while not is_valid_label:
+                    # get a random cell label from our acceptable list
+                    label_2 = np.random.choice(acceptable_labels)
+                    # count number of pixels cell occupies in each frame
+                    y_true = np.sum(y == label_2, axis=(-1, -2))
+                    # get indices of frames where cell is present
+                    y_index = np.where(y_true > 0)[0]
+                    is_valid_label = y_index.any() # label_2 is in a frame
+                    if not is_valid_label:
+                        acceptable_labels = np.delete(
+                            acceptable_labels, np.where(acceptable_labels == label_2))
+                # now label_2 is valid, get a random frame it is in
                 start_2 = np.amin(y_index)
                 stop_2 = np.amax(y_index)
                 frame_2 = np.random.random_integers(start_2, stop_2)
@@ -781,24 +789,21 @@ class SiameseIterator(Iterator):
     def _get_appearances(self, X, y, frames, labels):
         appearance_shape = (len(frames), self.crop_dim, self.crop_dim, X.shape[-1])
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
-        counter = 0
-        for frame, label in zip(frames, labels):
+        for counter, (frame, label) in enumerate(zip(frames, labels)):
             # Get the bounding box
             y_frame = y[frame, :, :]
-            prop = regionprops(np.int32(y_frame == label))[0]
-            bbox = prop.bbox
+            props = regionprops(np.int32(y_frame == label))
+            minr, minc, maxr, maxc = props[0].bbox
 
             # Extract images from bounding boxes
-            # TODO: is this too large?
-            appearance = X[frame, bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+            appearance = X[frame, minr:maxr, minc:maxc, :]
 
             # Resize images from bounding box
-            max_value = np.amax([np.absolute(np.amax(appearance)), np.absolute(np.amin(appearance))])
+            max_value = np.amax([np.amax(appearance), np.absolute(np.amin(appearance))])
             appearance /= max_value
             appearance = resize(appearance, (self.crop_dim, self.crop_dim, X.shape[-1]))
             appearance *= max_value
             appearances[counter, :, :, :] = appearance
-            counter += 1
 
         return appearances
 
