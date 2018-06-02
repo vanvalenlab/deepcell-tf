@@ -728,14 +728,14 @@ class SiameseIterator(Iterator):
             # Identify which tracks are going to be selected
             track_id = self.track_ids[j]
             batch = track_id['batch']
-            label = track_id['label']
+            label_1 = track_id['label']
             start = track_id['start']
             stop = track_id['stop']
             X = self.X[batch, :, :, :, :]
             y = self.y[batch, :, :, :]
 
             # Select one frame from the track
-            frame = np.random.random_integers(start, stop)
+            frame_1 = np.random.random_integers(start, stop)
 
             # Choose comparison cell
             # Determine what class the track will be - different (0), same (1)
@@ -743,13 +743,13 @@ class SiameseIterator(Iterator):
 
             # Select another frame from the same track
             if is_same_cell:
-                label_2 = label
+                label_2 = label_1
                 frame_2 = np.random.random_integers(start, stop)
 
             # Select another frame from a different track
             if not is_same_cell:
                 all_labels = np.arange(1, np.amax(y) + 1)
-                acceptable_labels = np.delete(all_labels, np.where(all_labels == label))
+                acceptable_labels = np.delete(all_labels, np.where(all_labels == label_1))
                 is_valid_label = False
                 while not is_valid_label:
                     # get a random cell label from our acceptable list
@@ -760,16 +760,18 @@ class SiameseIterator(Iterator):
                     y_index = np.where(y_true > 0)[0]
                     is_valid_label = y_index.any() # label_2 is in a frame
                     if not is_valid_label:
+                        # remove invalid label from list of acceptable labels
                         acceptable_labels = np.delete(
                             acceptable_labels, np.where(acceptable_labels == label_2))
+
                 # now label_2 is valid, get a random frame it is in
                 start_2 = np.amin(y_index)
                 stop_2 = np.amax(y_index)
                 frame_2 = np.random.random_integers(start_2, stop_2)
 
             # Get appearances
-            frames = [frame, frame_2]
-            labels = [label, label_2]
+            frames = [frame_1, frame_2]
+            labels = [label_1, label_2]
 
             appearances = self._get_appearances(X, y, frames, labels)
             appearances = [appearances[0, :, :, :], appearances[1, :, :, :]]
@@ -789,10 +791,10 @@ class SiameseIterator(Iterator):
     def _get_appearances(self, X, y, frames, labels):
         appearance_shape = (len(frames), self.crop_dim, self.crop_dim, X.shape[-1])
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
-        for counter, (frame, label) in enumerate(zip(frames, labels)):
+        for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
             # Get the bounding box
             y_frame = y[frame, :, :]
-            props = regionprops(np.int32(y_frame == label))
+            props = regionprops(np.int32(y_frame == cell_label))
             minr, minc, maxr, maxc = props[0].bbox
 
             # Extract images from bounding boxes
