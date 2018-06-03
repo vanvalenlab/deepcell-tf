@@ -199,7 +199,7 @@ def reshape_movie(X, y, reshape_size=256):
 
     new_X = np.zeros(new_X_shape, dtype=K.floatx())
     new_y = np.zeros(new_y_shape, dtype='int32')
-    import pdb; pdb.set_trace()
+
     counter = 0
     for b in range(X.shape[0]):
         for i in range(rep_number):
