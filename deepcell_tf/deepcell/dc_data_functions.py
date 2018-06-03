@@ -192,23 +192,17 @@ def reshape_movie(X, y, reshape_size=256):
 
     if CHANNELS_FIRST:
         new_X_shape = (new_batch_size, X.shape[1], X.shape[2], reshape_size, reshape_size)
-        if len(y.shape) == 4: # check if y has channels
-            new_y_shape = (new_batch_size, y.shape[1], reshape_size, reshape_size)
-        else:
-            new_y_shape = (new_batch_size, y.shape[1], y.shape[2], reshape_size, reshape_size)
+        new_y_shape = (new_batch_size, y.shape[1], y.shape[2], reshape_size, reshape_size)
     else:
         new_X_shape = (new_batch_size, X.shape[1], reshape_size, reshape_size, X.shape[4])
-        if len(y.shape) == 4: # check if y has channels
-            new_y_shape = (new_batch_size, y.shape[1], reshape_size, reshape_size)
-        else:
-            new_y_shape = (new_batch_size, y.shape[1], reshape_size, reshape_size, y.shape[4])
+        new_y_shape = (new_batch_size, y.shape[1], reshape_size, reshape_size, y.shape[4])
 
     new_X = np.zeros(new_X_shape, dtype=K.floatx())
     new_y = np.zeros(new_y_shape, dtype='int32')
 
     counter = 0
     row_axis = 3 if CHANNELS_FIRST else 2
-    col_axis = 3 if CHANNELS_LAST or len(y.shape) == 4 else 4
+    col_axis = 4 if CHANNELS_FIRST else 3
     for b in range(X.shape[0]):
         for i in range(rep_number):
             for j in range(rep_number):
@@ -223,18 +217,10 @@ def reshape_movie(X, y, reshape_size=256):
 
                 if CHANNELS_FIRST:
                     new_X[counter, :, :, :, :] = X[b, :, :, x_start:x_end, y_start:y_end]
-                    if len(y.shape) == 4: # check if y has channels
-                        resized_y = y[b, :, x_start:x_end, y_start:y_end]
-                    else:
-                        resized_y = y[b, :, :, x_start:x_end, y_start:y_end]
-                    new_y[counter, :, :, :] = relabel_movie(resized_y)
+                    new_y[counter, :, :, :] = relabel_movie(y[b, :, :, x_start:x_end, y_start:y_end])
                 else:
                     new_X[counter, :, :, :, :] = X[b, :, x_start:x_end, y_start:y_end, :]
-                    if len(y.shape) == 4:
-                        resized_y = y[b, :, x_start:x_end, y_start:y_end]
-                    else:
-                        resized_y = y[b, :, x_start:x_end, y_start:y_end, :]
-                    new_y[counter, :, :, :] = relabel_movie(resized_y)
+                    new_y[counter, :, :, :] = relabel_movie(y[b, :, x_start:x_end, y_start:y_end, :])
 
                 counter += 1
 
