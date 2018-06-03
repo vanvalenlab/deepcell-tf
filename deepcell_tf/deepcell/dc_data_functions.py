@@ -584,9 +584,9 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
 
     # TODO: movie training data with channels?
     if CHANNELS_FIRST:
-        y_shape = (len(y_dirs), num_frames, image_size_x, image_size_y)
+        y_shape = (len(y_dirs), len(annotation_name), num_frames, image_size_x, image_size_y)
     else:
-        y_shape = (len(y_dirs), num_frames, image_size_x, image_size_y)
+        y_shape = (len(y_dirs), num_frames, image_size_x, image_size_y, len(annotation_name))
 
     y = np.zeros(y_shape)
 
@@ -603,9 +603,9 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
                 annotation_img = get_image(os.path.join(direc, img_file))
                 # TODO: movie training data with channels?
                 if CHANNELS_FIRST:
-                    y[b, z, :, :] = annotation_img
+                    y[b, c, z, :, :] = annotation_img
                 else:
-                    y[b, z, :, :] = annotation_img
+                    y[b, z, :, :, c] = annotation_img
 
     return y
 
