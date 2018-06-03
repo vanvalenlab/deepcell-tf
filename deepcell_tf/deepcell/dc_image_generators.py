@@ -673,10 +673,16 @@ class SiameseIterator(Iterator):
         if data_format is None:
             data_format = K.image_data_format()
 
-        channel_axis = -1 if data_format == 'channels_last' else 1
-        self.channel_axis = channel_axis
+        if data_format == 'channels_first':
+            self.channel_axis = 1
+            self.row_axis = 3
+            self.col_axis = 4
+        elif data_format == 'channels_last':
+            self.channel_axis = 4
+            self.row_axis = 2
+            self.col_axis = 3
         self.X = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.y = np.int32(train_dict['y'])[:, :, :, :, 0]
+        self.y = np.int32(train_dict['y'])
         self.crop_dim = crop_dim
         self.min_track_length = min_track_length
         self.image_data_generator = image_data_generator
@@ -698,11 +704,11 @@ class SiameseIterator(Iterator):
         track_counter = 0
         track_ids = {}
         for batch in range(self.y.shape[0]):
-            y_batch = self.y[batch, :, :, :]
+            y_batch = self.y[batch]
             num_cells = np.amax(y_batch)
             for cell in range(1, num_cells + 1):
                 # count number of pixels cell occupies in each frame
-                y_true = np.sum(y_batch == cell, axis=(-1, -2))
+                y_true = np.sum(y_batch == cell, axis=(self.row_axis - 1, self.col_axis - 1))
                 # get indices of frames where cell is present
                 y_index = np.where(y_true > 0)[0]
                 if y_index.size > 0: # if cell is present at all
@@ -731,8 +737,8 @@ class SiameseIterator(Iterator):
             label_1 = track_id['label']
             start = track_id['start']
             stop = track_id['stop']
-            X = self.X[batch, :, :, :, :]
-            y = self.y[batch, :, :, :]
+            X = self.X[batch]
+            y = self.y[batch]
 
             # Select one frame from the track
             frame_1 = np.random.random_integers(start, stop)
@@ -755,7 +761,7 @@ class SiameseIterator(Iterator):
                     # get a random cell label from our acceptable list
                     label_2 = np.random.choice(acceptable_labels)
                     # count number of pixels cell occupies in each frame
-                    y_true = np.sum(y == label_2, axis=(-1, -2))
+                    y_true = np.sum(y == label_2, axis=(self.row_axis - 1, self.col_axis - 1))
                     # get indices of frames where cell is present
                     y_index = np.where(y_true > 0)[0]
                     is_valid_label = y_index.any() # label_2 is in a frame
@@ -774,7 +780,7 @@ class SiameseIterator(Iterator):
             labels = [label_1, label_2]
 
             appearances = self._get_appearances(X, y, frames, labels)
-            appearances = [appearances[0, :, :, :], appearances[1, :, :, :]]
+            appearances = [appearances[0], appearances[1]]
 
             # Apply random transformations
             for k, appearance in enumerate(appearances):
@@ -805,7 +811,7 @@ class SiameseIterator(Iterator):
             appearance /= max_value
             appearance = resize(appearance, (self.crop_dim, self.crop_dim, X.shape[-1]))
             appearance *= max_value
-            appearances[counter, :, :, :] = appearance
+            appearances[counter] = appearance
 
         return appearances
 
