@@ -195,7 +195,7 @@ def reshape_movie(X, y, reshape_size=256):
         new_y_shape = (new_batch_size, y.shape[1], y.shape[2], reshape_size, reshape_size)
     else:
         new_X_shape = (new_batch_size, X.shape[1], reshape_size, reshape_size, X.shape[4])
-        new_y_shape = (new_batch_size, y.shape[1], reshape_size, reshape_size)
+        new_y_shape = (new_batch_size, y.shape[1], reshape_size, reshape_size, y.shape[4])
 
     new_X = np.zeros(new_X_shape, dtype=K.floatx())
     new_y = np.zeros(new_y_shape, dtype='int32')
@@ -219,7 +219,7 @@ def reshape_movie(X, y, reshape_size=256):
                     new_y[counter, :, :, :, :] = relabel_movie(y[b, :, :, x_start:x_end, y_start:y_end])
                 else:
                     new_X[counter, :, :, :, :] = X[b, :, x_start:x_end, y_start:y_end, :]
-                    new_y[counter, :, :, :] = relabel_movie(y[b, :, x_start:x_end, y_start:y_end,0])
+                    new_y[counter, :, :, :, :] = relabel_movie(y[b, :, x_start:x_end, y_start:y_end, :])
 
                 counter += 1
 
