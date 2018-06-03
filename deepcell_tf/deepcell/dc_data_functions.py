@@ -782,6 +782,7 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               process_remove_zeros=process_remove_zeros,
                               verbose=verbose,
                               display=display,
+                              montage_mode=kwargs.get('montage_mode', False),
                               num_frames=kwargs.get('num_frames', 50),
                               num_of_frames_to_display=kwargs.get('num_of_frames_to_display', 5))
 
