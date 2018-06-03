@@ -177,12 +177,12 @@ def reshape_matrix(X, y, reshape_size=256):
 
 def relabel_movie(y):
     new_y = np.zeros(y.shape)
-    unique_cells = list(np.unique(y))
-    relabel_ids = list(np.arange(len(unique_cells)) + 1)
+    unique_cells = np.unique(y) # get all unique values of y
+    unique_cells = np.delete(unique_cells, 0) # remove 0, as it is background
+    relabel_ids = np.arange(1, len(unique_cells) + 1)
     for cell_id, relabel_id in zip(unique_cells, relabel_ids):
         cell_loc = np.where(y == cell_id)
         new_y[cell_loc] = relabel_id
-
     return new_y
 
 def reshape_movie(X, y, reshape_size=256):
