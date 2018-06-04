@@ -677,10 +677,12 @@ class SiameseIterator(Iterator):
             self.channel_axis = 1
             self.row_axis = 3
             self.col_axis = 4
+            self.time_axis = 2
         elif data_format == 'channels_last':
             self.channel_axis = 4
             self.row_axis = 2
             self.col_axis = 3
+            self.time_axis = 1
         self.X = np.asarray(train_dict['X'], dtype=K.floatx())
         self.y = np.int32(train_dict['y'])
         self.crop_dim = crop_dim
@@ -725,7 +727,11 @@ class SiameseIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         # initialize batch_x_1, batch_x_2, and batch_y
-        batch_shape = (len(index_array), self.crop_dim, self.crop_dim, self.X.shape[self.channel_axis])
+        if self.data_format == 'channels_first':
+            batch_shape = (len(index_array), self.X.shape[self.channel_axis], self.crop_dim, self.crop_dim)
+        else:
+            batch_shape = (len(index_array), self.crop_dim, self.crop_dim, self.X.shape[self.channel_axis])
+
         batch_x_1 = np.zeros(batch_shape, dtype=K.floatx())
         batch_x_2 = np.zeros(batch_shape, dtype=K.floatx())
         batch_y = np.zeros((len(index_array), 2), dtype=np.int32)
@@ -760,10 +766,12 @@ class SiameseIterator(Iterator):
                 while not is_valid_label:
                     # get a random cell label from our acceptable list
                     label_2 = np.random.choice(acceptable_labels)
+
                     # count number of pixels cell occupies in each frame
-                    y_true = np.sum(y == label_2, axis=(self.row_axis - 1, self.col_axis - 1))
-                    # get indices of frames where cell is present
-                    y_index = np.where(y_true > 0)[0]
+                    y_true = np.sum(y == label_2, axis=(
+                        self.row_axis - 1, self.col_axis - 1, self.channel_axis - 1))
+
+                    y_index = np.where(y_true > 0)[0] # get frames where cell is present
                     is_valid_label = y_index.any() # label_2 is in a frame
                     if not is_valid_label:
                         # remove invalid label from list of acceptable labels
@@ -780,7 +788,10 @@ class SiameseIterator(Iterator):
             labels = [label_1, label_2]
 
             appearances = self._get_appearances(X, y, frames, labels)
-            appearances = [appearances[0], appearances[1]]
+            if self.data_format == 'channels_first':
+                appearances = [appearances[:, 0], appearances[:, 1]]
+            else:
+                appearances = [appearances[0], appearances[1]]
 
             # Apply random transformations
             for k, appearance in enumerate(appearances):
@@ -788,30 +799,42 @@ class SiameseIterator(Iterator):
                 appearance = self.image_data_generator.standardize(appearance)
                 appearances[k] = appearance
 
-            batch_x_1[i, :, :, :] = appearances[0]
-            batch_x_2[i, :, :, :] = appearances[1]
+            batch_x_1[i] = appearances[0]
+            batch_x_2[i] = appearances[1]
             batch_y[i, is_same_cell] = 1
 
         return [batch_x_1, batch_x_2], batch_y
 
     def _get_appearances(self, X, y, frames, labels):
-        appearance_shape = (len(frames), self.crop_dim, self.crop_dim, X.shape[-1])
+        channel_axis = self.channel_axis - 1
+        if self.data_format == 'channels_first':
+            appearance_shape = (X.shape[channel_axis], len(frames), self.crop_dim, self.crop_dim)
+        else:
+            appearance_shape = (len(frames), self.crop_dim, self.crop_dim, X.shape[channel_axis])
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
         for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
             # Get the bounding box
-            y_frame = y[frame, :, :]
+            y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
             props = regionprops(np.int32(y_frame == cell_label))
             minr, minc, maxr, maxc = props[0].bbox
 
             # Extract images from bounding boxes
-            appearance = X[frame, minr:maxr, minc:maxc, :]
+            if self.data_format == 'channels_first':
+                appearance = X[:, frame, minr:maxr, minc:maxc]
+                resize_shape = (X.shape[channel_axis], self.crop_dim, self.crop_dim)
+            else:
+                appearance = X[frame, minr:maxr, minc:maxc, :]
+                resize_shape = (self.crop_dim, self.crop_dim, X.shape[channel_axis])
 
             # Resize images from bounding box
             max_value = np.amax([np.amax(appearance), np.absolute(np.amin(appearance))])
             appearance /= max_value
-            appearance = resize(appearance, (self.crop_dim, self.crop_dim, X.shape[-1]))
+            appearance = resize(appearance, resize_shape)
             appearance *= max_value
-            appearances[counter] = appearance
+            if self.data_format == 'channels_first':
+                appearances[:, counter] = appearance
+            else:
+                appearances[counter] = appearance
 
         return appearances
 
