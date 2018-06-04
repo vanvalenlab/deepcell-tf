@@ -719,8 +719,7 @@ class SiameseIterator(Iterator):
                     track_ids[track_counter] = {
                         'batch': batch,
                         'label': cell,
-                        'start': start_frame,
-                        'stop': stop_frame
+                        'frames': y_index
                     }
                     track_counter += 1
         return track_ids
@@ -741,13 +740,11 @@ class SiameseIterator(Iterator):
             track_id = self.track_ids[j]
             batch = track_id['batch']
             label_1 = track_id['label']
-            start = track_id['start']
-            stop = track_id['stop']
+            tracked_frames = track_id['frames']
+            frame_1 = np.random.choice(tracked_frames) # Select a frame from the track
+
             X = self.X[batch]
             y = self.y[batch]
-
-            # Select one frame from the track
-            frame_1 = np.random.random_integers(start, stop)
 
             # Choose comparison cell
             # Determine what class the track will be - different (0), same (1)
@@ -756,11 +753,12 @@ class SiameseIterator(Iterator):
             # Select another frame from the same track
             if is_same_cell:
                 label_2 = label_1
-                frame_2 = np.random.random_integers(start, stop)
+                frame_2 = np.random.choice(track_id['frames'])
 
             # Select another frame from a different track
             if not is_same_cell:
-                all_labels = np.arange(1, np.amax(y) + 1)
+                # all_labels = np.arange(1, np.amax(y) + 1)
+                all_labels = np.delete(np.unique(y), 0) # all labels in y but 0 (background)
                 acceptable_labels = np.delete(all_labels, np.where(all_labels == label_1))
                 is_valid_label = False
                 while not is_valid_label:
@@ -778,10 +776,7 @@ class SiameseIterator(Iterator):
                         acceptable_labels = np.delete(
                             acceptable_labels, np.where(acceptable_labels == label_2))
 
-                # now label_2 is valid, get a random frame it is in
-                start_2 = np.amin(y_index)
-                stop_2 = np.amax(y_index)
-                frame_2 = np.random.random_integers(start_2, stop_2)
+                frame_2 = np.random.choice(y_index) # get random frame with label_2
 
             # Get appearances
             frames = [frame_1, frame_2]
