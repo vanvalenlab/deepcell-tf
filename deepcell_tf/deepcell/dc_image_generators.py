@@ -156,16 +156,14 @@ class ImageFullyConvIterator(Iterator):
             distance = np.digitize(distance, bins)
             y_channel_shape = np.amax(distance.flatten()) + 1
         else:
-            y_channel_shape = self.y.shape[1]
+            y_channel_shape = self.y.shape[self.channel_axis]
 
-        if self.channel_axis == 1:
-            batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:4]))
-            if self.y is not None:
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:4]))
+        if self.y is not None:
+            if self.channel_axis == 1:
                 batch_y = np.zeros(tuple([len(index_array), y_channel_shape] + list(self.y.shape)[2:4]))
-        else:
-            batch_x = np.zeros(tuple([len(index_array), self.x.shape[2], self.x.shape[3], self.x.shape[1]]))
-            if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.y.shape[2], self.y.shape[3], y_channel_shape]))
+            else:
+                batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:3] + [y_channel_shape]))
 
         for i, j in enumerate(index_array):
             x = self.x[j, :, :, :]
@@ -179,7 +177,10 @@ class ImageFullyConvIterator(Iterator):
             x = self.image_data_generator.standardize(x)
 
             if self.target_format == 'direction':
-                interior = y[1, :, :]
+                if self.channel_axis == 1:
+                    interior = y[1, :, :]
+                else:
+                    interior = y[:, :, 1]
                 distance = ndi.distance_transform_edt(interior)
                 gradient_x = sobel_h(distance)
                 gradient_y = sobel_v(distance)
@@ -236,7 +237,6 @@ class ImageFullyConvIterator(Iterator):
 
         if self.y is None:
             return batch_x
-
         return batch_x, batch_y
 
     def __next__(self):
@@ -552,7 +552,8 @@ class ImageFullyConvDataGenerator(object):
                 [0, 1, ty],
                 [0, 0, 1]
             ])
-            transform_matrix = shift_matrix if transform_matrix is None else np.dot(transform_matrix, shift_matrix)
+            transform_matrix = shift_matrix if transform_matrix is None else np.dot(
+                transform_matrix, shift_matrix)
 
         if shear != 0:
             shear_matrix = np.array([
@@ -560,7 +561,8 @@ class ImageFullyConvDataGenerator(object):
                 [0, np.cos(shear), 0],
                 [0, 0, 1]
             ])
-            transform_matrix = shear_matrix if transform_matrix is None else np.dot(transform_matrix, shear_matrix)
+            transform_matrix = shear_matrix if transform_matrix is None else np.dot(
+                transform_matrix, shear_matrix)
 
         if zx != 1 or zy != 1:
             zoom_matrix = np.array([
@@ -568,7 +570,8 @@ class ImageFullyConvDataGenerator(object):
                 [0, zy, 0],
                 [0, 0, 1]
             ])
-            transform_matrix = zoom_matrix if transform_matrix is None else np.dot(transform_matrix, zoom_matrix)
+            transform_matrix = zoom_matrix if transform_matrix is None else np.dot(
+                transform_matrix, zoom_matrix)
 
         if labels is not None:
             y = labels #np.expand_dims(labels, axis = 0)
@@ -576,7 +579,8 @@ class ImageFullyConvDataGenerator(object):
             if transform_matrix is not None:
                 h, w = y.shape[img_row_axis], y.shape[img_col_axis]
                 transform_matrix_y = transform_matrix_offset_center(transform_matrix, h, w)
-                y = apply_transform(y, transform_matrix_y, 0, fill_mode='constant', cval=0)
+                y = apply_transform(y, transform_matrix_y, img_channel_axis,
+                                    fill_mode='constant', cval=0)
 
         if transform_matrix is not None:
             h, w = x.shape[img_row_axis], x.shape[img_col_axis]
