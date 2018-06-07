@@ -163,11 +163,11 @@ def reshape_matrix(X, y, reshape_size=256):
                     y_start, y_end = -reshape_size, y.shape[3 if CHANNELS_FIRST else 2]
 
                 if CHANNELS_FIRST:
-                    new_X[counter, :, :, :] = X[b, :, x_start:x_end, y_start:y_end]
-                    new_y[counter, :, :, :] = y[b, :, x_start:x_end, y_start:y_end]
+                    new_X[counter] = X[b, :, x_start:x_end, y_start:y_end]
+                    new_y[counter] = y[b, :, x_start:x_end, y_start:y_end]
                 else:
-                    new_X[counter, :, :, :] = X[b, x_start:x_end, y_start:y_end, :]
-                    new_y[counter, :, :, :] = y[b, x_start:x_end, y_start:y_end, :]
+                    new_X[counter] = X[b, x_start:x_end, y_start:y_end, :]
+                    new_y[counter] = y[b, x_start:x_end, y_start:y_end, :]
 
                 counter += 1
 
@@ -215,11 +215,11 @@ def reshape_movie(X, y, reshape_size=256):
                     y_start, y_end = -reshape_size, y.shape[3 if CHANNELS_FIRST else 3]
 
                 if CHANNELS_FIRST:
-                    new_X[counter, :, :, :, :] = X[b, :, :, x_start:x_end, y_start:y_end]
-                    new_y[counter, :, :, :, :] = relabel_movie(y[b, :, :, x_start:x_end, y_start:y_end])
+                    new_X[counter] = X[b, :, :, x_start:x_end, y_start:y_end]
+                    new_y[counter] = relabel_movie(y[b, :, :, x_start:x_end, y_start:y_end])
                 else:
-                    new_X[counter, :, :, :, :] = X[b, :, x_start:x_end, y_start:y_end, :]
-                    new_y[counter, :, :, :, :] = relabel_movie(y[b, :, x_start:x_end, y_start:y_end, :])
+                    new_X[counter] = X[b, :, x_start:x_end, y_start:y_end, :]
+                    new_y[counter] = relabel_movie(y[b, :, x_start:x_end, y_start:y_end, :])
 
                 counter += 1
 
@@ -326,9 +326,9 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
 
         # Compute the mask for the background
         if CHANNELS_FIRST:
-            y[b, len(edge_feature) - 1, :, :] = 1 - np.sum(y[b, :, :, :], axis=0)
+            y[b, len(edge_feature) - 1, :, :] = 1 - np.sum(y[b], axis=0)
         else:
-            y[b, :, :, len(edge_feature) - 1] = 1 - np.sum(y[b, :, :, :], axis=2)
+            y[b, :, :, len(edge_feature) - 1] = 1 - np.sum(y[b], axis=2)
 
     return y
 
@@ -451,7 +451,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
         for b in range(y.shape[0]):
             interior_mask = y[b, 1, :, :] if CHANNELS_FIRST else y[b, :, :, 1]
-            y_label[b, :, :, :] = label(interior_mask)
+            y_label[b] = label(interior_mask)
 
         max_cells = np.amax(y_label)
         if CHANNELS_FIRST:
@@ -460,7 +460,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
             y_binary = np.zeros((y.shape[0], y.shape[2], y.shape[3], max_cells + 1), dtype='int32')
 
         for b in range(y.shape[0]):
-            label_mask = y_label[b, :, :, :]
+            label_mask = y_label[b]
             for l in range(max_cells + 1):
                 if CHANNELS_FIRST:
                     y_binary[b, l, :, :] = label_mask == l
@@ -488,8 +488,8 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         # TODO: 3D data
         data_axes = (1, 2) if CHANNELS_FIRST else (0, 1)
         for j in range(y.shape[0]):
-            sum_3_axis = np.sum(y[j, :, :, :].astype(K.floatx()), axis=(0, 1, 2))
-            sum_2_axis = np.sum(y[j, :, :, :].astype(K.floatx()), axis=data_axes)
+            sum_3_axis = np.sum(y[j].astype(K.floatx()), axis=(0, 1, 2))
+            sum_2_axis = np.sum(y[j].astype(K.floatx()), axis=data_axes)
             print(1.0 / 3.0 * sum_3_axis / sum_2_axis)
 
     if display:
@@ -687,7 +687,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
             binary_mask_shape = (y.shape[0], y.shape[1], y.shape[2], y.shape[3], max_cells + 1)
         y_binary = np.zeros(binary_mask_shape, dtype='int32')
         for b in range(y.shape[0]):
-            label_mask = y[b, :, :, :]
+            label_mask = y[b]
             for l in range(max_cells + 1):
                 if CHANNELS_FIRST:
                     y_binary[b, l, :, :, :] = label_mask == l

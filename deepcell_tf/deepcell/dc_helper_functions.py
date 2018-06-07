@@ -400,8 +400,8 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
         img_list = []
         l_list = []
         for b in batch:
-            img_list.append(X[b, :, :, :])
-            l_list.append(labels[b, :, :, :])
+            img_list.append(X[b])
+            l_list.append(labels[b])
         img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
         l_list = np.stack(tuple(l_list), axis=0)
         return img_list, l_list
@@ -410,8 +410,8 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
         img_list = []
         l_list = []
         for b in batch:
-            img_list.append(X[b, :, :, :, :])
-            l_list.append(labels[b, :, :, :])
+            img_list.append(X[b])
+            l_list.append(labels[b])
         img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
         l_list = np.stack(tuple(l_list), axis=0)
         return img_list, l_list
@@ -424,8 +424,8 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
         col_list = []
         feature_dict_new = {}
         for b_new, b in enumerate(batch):
-            img_list.append(X[b, :, :, :])
-            l_list.append(labels[b, :, :, :])
+            img_list.append(X[b])
+            l_list.append(labels[b])
             batch_list = feature_dict[b][0] - np.amin(feature_dict[b][0])
             row_list = feature_dict[b][1]
             col_list = feature_dict[b][2]
@@ -439,8 +439,8 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
         img_list = []
         l_list = []
         for b in batch:
-            img_list.append(X[b, :, :, :, :])
-            l_list.append(labels[b, :, :, :, :])
+            img_list.append(X[b])
+            l_list.append(labels[b])
         img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
         l_list = np.stack(tuple(l_list), axis=0)
         return img_list, l_list

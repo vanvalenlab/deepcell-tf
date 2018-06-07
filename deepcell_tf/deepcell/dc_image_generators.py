@@ -169,10 +169,10 @@ class ImageFullyConvIterator(Iterator):
                 batch_y = np.zeros(tuple([len(index_array), self.y.shape[2], self.y.shape[3], y_channel_shape]))
 
         for i, j in enumerate(index_array):
-            x = self.x[j, :, :, :]
+            x = self.x[j]
 
             if self.y is not None:
-                y = self.y[j, :, :, :]
+                y = self.y[j]
                 x, y = self.image_data_generator.random_transform(x.astype(K.floatx()), y)
             else:
                 x = self.image_data_generator.random_transform(x.astype(K.floatx()))
@@ -310,10 +310,10 @@ class ImageFullyConvGatherIterator(Iterator):
                 batch_y = np.zeros(tuple([len(index_array)] + [self.y.shape[2], self.y.shape[3], self.y.shape[1]]))
 
         for i, j in enumerate(index_array):
-            x = self.x[j, :, :, :]
+            x = self.x[j]
 
             if self.y is not None:
-                y = self.y[j, :, :, :]
+                y = self.y[j]
                 x, y = self.image_data_generator.random_transform(x.astype(K.floatx()), y)
             else:
                 x = self.image_data_generator.random_transform(x.astype(K.floatx()))
@@ -1264,7 +1264,7 @@ class MovieArrayIterator(Iterator):
 
         for i, j in enumerate(index_array):
             if self.y is not None:
-                y = self.y[j, :, :, :, :]
+                y = self.y[j]
 
             # Sample along the time axis
             time_start = np.random.randint(0, high=self.x.shape[self.time_axis] - self.number_of_frames)
@@ -1414,10 +1414,10 @@ class BoundingBoxIterator(Iterator):
         labels_list = []
 
         for i, j in enumerate(index_array):
-            x = self.x[j, :, :, :]
+            x = self.x[j]
 
             if self.y is not None:
-                y = self.y[j, :, :, :]
+                y = self.y[j]
                 x, y = self.image_data_generator.random_transform(x.astype(K.floatx()), y)
             else:
                 x = self.image_data_generator.random_transform(x.astype(K.floatx()))
