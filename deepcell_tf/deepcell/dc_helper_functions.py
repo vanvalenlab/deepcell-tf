@@ -178,7 +178,7 @@ def get_images_from_directory(data_location, channel_names):
         else:
             shape = (1, img_temp.shape[0], img_temp.shape[1], n_channels)
 
-        all_channels = np.zeros(shape, dtype='float32')
+        all_channels = np.zeros(shape, dtype=K.floatx())
 
         for j in range(n_channels):
             img_path = os.path.join(data_location, img_list_channels[j][stack_iteration])
