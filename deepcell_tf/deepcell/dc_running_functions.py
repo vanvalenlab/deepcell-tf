@@ -55,7 +55,7 @@ def run_model(image, model, win_x=30, win_y=30, std=False, split=True, process=T
         else:
             shape = (2*image_size_x-win_x*2, 2*image_size_y-win_y*2, n_features)
 
-        model_output = np.zeros(shape, dtype='float32')
+        model_output = np.zeros(shape, dtype=K.floatx())
 
         if CHANNELS_FIRST:
             img_0 = image[:, :, 0:image_size_x+win_x, 0:image_size_y+win_y]
