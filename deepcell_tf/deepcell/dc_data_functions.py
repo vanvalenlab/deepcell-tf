@@ -227,9 +227,9 @@ def reshape_movie(X, y, reshape_size=256):
     print('Reshaped training data from {} to {}'.format(X.shape, new_X.shape))
     return new_X, new_y
 
-def load_training_images_2d(direc_name, training_direcs, channel_names, image_size, window_size,
-                            raw_image_direc='RawImages', process=True, process_std=False,
-                            process_remove_zeros=False):
+def load_training_images_2d(direc_name, training_direcs, channel_names, image_size,
+                            window_size, raw_image_direc,
+                            process=True, process_std=False, process_remove_zeros=False):
     """
     Iterate over every image in the training directories and load
     each into a numpy array.
@@ -271,7 +271,7 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
     return X
 
 def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_feature,
-                             dilation_radius, annotation_direc='Annotation'):
+                             dilation_radius, annotation_direc):
     """
     Iterate over every annotated image in the training directories and load
     each into a numpy array.
@@ -336,8 +336,8 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
     return y
 
 def make_training_data_2d(direc_name, file_name_save, channel_names,
-                          raw_image_direc='RawImages',
-                          annotation_direc='Annotation',
+                          raw_image_direc='raw',
+                          annotation_direc='annotated',
                           training_direcs=None,
                           max_training_examples=1e7,
                           window_size_x=30,
@@ -603,8 +603,8 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
 def make_training_data_3d(direc_name, file_name_save, channel_names,
                           training_direcs=None,
                           annotation_name='corrected',
-                          raw_image_direc='RawImages',
-                          annotation_direc='Annotation',
+                          raw_image_direc='raw',
+                          annotation_direc='annotated',
                           window_size_x=30,
                           window_size_y=30,
                           border_mode='same',
@@ -712,8 +712,8 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                        edge_feature=[1, 0, 0],
                        border_mode='valid',
                        output_mode='sample',
-                       raw_image_direc='RawImages',
-                       annotation_direc='Annotation',
+                       raw_image_direc='raw',
+                       annotation_direc='annotated',
                        verbose=False,
                        process=True,
                        process_std=False,
