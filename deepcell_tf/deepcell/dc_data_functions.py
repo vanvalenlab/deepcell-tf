@@ -257,7 +257,7 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
                 if not fnmatch(img, '*{}*'.format(channel)):
                     continue
 
-                image_file = os.path.join(direc_name, direc, img)
+                image_file = os.path.join(direc_name, direc, raw_image_direc, img)
                 image_data = np.asarray(get_image(image_file), dtype=K.floatx())
                 if process:
                     image_data = process_image(image_data, window_size_x, window_size_y,
@@ -296,7 +296,7 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
                 if not fnmatch(img, '*feature_{}*'.format(l)):
                     continue
 
-                image_data = get_image(os.path.join(direc_name, direc, img))
+                image_data = get_image(os.path.join(direc_name, direc, annotation_direc, img))
 
                 if np.sum(image_data) > 0:
                     image_data /= np.amax(image_data)
