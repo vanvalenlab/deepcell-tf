@@ -58,7 +58,7 @@ class ImageNormalization2D(Layer):
     def _reduce_median(self, inputs, axes = None):
         rank = tf.rank(inputs)
         reduce_axes = axes
-        axes_to_keep = [axis if axis not in reduce_axes for axis in range(rank)]
+        axes_to_keep = [axis for axis in range(rank) if axis not in reduce_axes ]
         input_shape = tf.shape(inputs)
 
         new_shape = [input_shape[axis] for axis in axes_to_keep]
