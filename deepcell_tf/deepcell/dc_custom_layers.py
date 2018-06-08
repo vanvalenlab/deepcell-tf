@@ -68,10 +68,9 @@ class ImageNormalization2D(Layer):
         return median
 
     def call(self, inputs):
-
         if self.norm_method == 'std':
             outputs = inputs - self._average_filter(inputs)
-            outputs /= self._window_std(outputs)
+            outputs /= self._window_std_filter(outputs)
 
         elif self.norm_method == 'max':
             outputs = inputs / tf.reduce_max(inputs)
@@ -80,7 +79,7 @@ class ImageNormalization2D(Layer):
         else:
             reduce_axes = [1, 2, 3]
             reduce_axes.remove(self.channel_axis)
-            mean = tf.reduce_median(inputs, axes=reduce_axes)
+            mean = self._reduce_median(inputs, axes=reduce_axes)
             outputs = inputs / mean
             outputs -= self._average_filter(outputs)
 
