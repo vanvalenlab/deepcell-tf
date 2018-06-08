@@ -202,7 +202,7 @@ def dilated_bn_feature_net_31x31(n_features = 3, n_channels = 1, reg = 1e-5, ini
 
 	return model
 
-def bn_feature_net_61x61(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_normal'):
+def bn_feature_net_61x61(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_normal', norm_method=None):
 	print("Using feature net 61x61 with batch normalization")
 
 	if K.image_data_format() == 'channels_first':
