@@ -20,7 +20,7 @@ from tensorflow.python.keras.activations import softmax
 from tensorflow.python.keras import initializers
 
 from deepcell import dilated_MaxPool2D, TensorProd2D, TensorProd3D, Resize, \
-					 axis_softmax, Location, Location3D
+					 axis_softmax, Location, Location3D, ImageNormalization2D
 
 """
 Batch normalized conv-nets
@@ -212,7 +212,8 @@ def bn_feature_net_61x61(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_
 
 	input_shape = (n_channels, 61, 61) if channel_axis == 1 else (61, 61, n_channels)
 	model = Sequential()
-	model.add(Conv2D(64, (3, 3), kernel_initializer = init, padding = 'valid', input_shape = input_shape, kernel_regularizer = l2(reg)))
+	model.add(ImageNormalization2D(norm_method=norm_method, kernel_initializer = init, padding = 'valid', input_shape = input_shape, kernel_regularizer = l2(reg)))
+	model.add(Conv2D(64, (3, 3), kernel_initializer = init, padding = 'valid', kernel_regularizer = l2(reg)))
 	model.add(BatchNormalization(axis = channel_axis))
 	model.add(Activation('relu'))
 
