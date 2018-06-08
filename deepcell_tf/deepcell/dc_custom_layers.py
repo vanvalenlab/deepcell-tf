@@ -14,7 +14,6 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer, InputSpec
 from tensorflow.python.keras import activations, initializers, regularizers, constraints
 from tensorflow.python.keras._impl.keras.utils import conv_utils
-from .dc_settings import CHANNELS_FIRST
 
 """
 Custom layers
@@ -24,9 +23,9 @@ class ImageNormalization2D(Layer):
     def __init(self, norm_method=None, filter_size=61, **kwargs):
         super(ImageNormalization, self).__init__(**kwargs)
         self.norm_method = norm_method
-        self.data_format = K.image_data_format()
+        self.data_format = kwargs.get('data_format', K.image_data_format())
 
-        if CHANNELS_FIRST:
+        if self.data_format == 'channels_first':
             self.channel_axis = 1
         else:
             self.channel_axis = -1
@@ -42,7 +41,7 @@ class ImageNormalization2D(Layer):
 
     def _average_filter(self, inputs):
         input_shape = tf.shape(inputs)
-        if CHANNELS_FIRST:
+        if self.data_format == 'channels_first':
             in_channels = input_shape[1]
         else:
             in_channels  = input_shape[-1]
