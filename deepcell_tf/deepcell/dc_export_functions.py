@@ -24,7 +24,9 @@ from tensorflow.python.saved_model import tag_constants, signature_constants, si
 from .dc_helper_functions import get_images_from_directory, process_image
 from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
 
-def export_model(keras_model, export_path, weights_path = None):
+FLAGS = tf.app.flags.FLAGS
+
+def export_model(keras_model, export_path, model_version = 0, weights_path = None):
     
     # Start the tensorflow session
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8, allow_growth=False)
@@ -35,13 +37,14 @@ def export_model(keras_model, export_path, weights_path = None):
     K.set_learning_phase(0)
 
     # Load the model and the weights
-    if path_to_weights is not None:
+    if weights_path is not None:
         keras_model.load_weights(weights_path)
 
     # Define prediction signature
     prediction_signature = tf.saved_model.signature_def_utils.predict_signature_def({"image": keras_model.input}, {"prediction":keras_model.output})
 
     # Create export path if it doesn't exist
+    export_path = os.path.join(export_path, str(model_version))
     builder = saved_model_builder.SavedModelBuilder(export_path)
     legacy_init_op = tf.group(tf.tables_initializer(), name='legacy_init_op')
 
