@@ -228,7 +228,8 @@ def reshape_movie(X, y, reshape_size=256):
     return new_X, new_y
 
 def load_training_images_2d(direc_name, training_direcs, channel_names, image_size, window_size,
-                            process=True, process_std=False, process_remove_zeros=False):
+                            raw_image_direc='RawImages', process=True, process_std=False,
+                            process_remove_zeros=False):
     """
     Iterate over every image in the training directories and load
     each into a numpy array.
@@ -247,7 +248,8 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
 
     # Load training images
     for b, direc in enumerate(training_direcs):
-        imglist = os.listdir(os.path.join(direc_name, direc))
+        # e.g. "/data/ecoli/kc", "set1", "RawImages",
+        imglist = os.listdir(os.path.join(direc_name, direc, raw_image_direc))
 
         for c, channel in enumerate(channel_names):
             for img in imglist:
@@ -268,7 +270,8 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
 
     return X
 
-def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_feature, dilation_radius):
+def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_feature,
+                             dilation_radius, annotation_direc='Annotation'):
     """
     Iterate over every annotated image in the training directories and load
     each into a numpy array.
@@ -285,7 +288,7 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
     y = np.zeros(y_shape)
 
     for b, direc in enumerate(training_direcs):
-        imglist = os.listdir(os.path.join(direc_name, direc))
+        imglist = os.listdir(os.path.join(direc_name, direc, annotation_direc))
 
         for l, edge in enumerate(edge_feature):
             for img in imglist:
@@ -333,6 +336,8 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
     return y
 
 def make_training_data_2d(direc_name, file_name_save, channel_names,
+                          raw_image_direc='RawImages',
+                          annotation_direc='Annotation',
                           training_direcs=None,
                           max_training_examples=1e7,
                           window_size_x=30,
@@ -379,10 +384,11 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
     window_size = (window_size_x, window_size_y)
 
     # Load one file to get image sizes (all images same size as they are from same microscope)
-    image_path = os.path.join(direc_name, random.choice(training_direcs))
+    image_path = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
     image_size = get_image_sizes(image_path, channel_names)
 
     X = load_training_images_2d(direc_name, training_direcs, channel_names,
+                                raw_image_direc=raw_image_direc,
                                 image_size=image_size, window_size=window_size,
                                 process=process, process_std=process_std,
                                 process_remove_zeros=process_remove_zeros)
