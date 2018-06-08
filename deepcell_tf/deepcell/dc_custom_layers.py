@@ -77,7 +77,7 @@ class ImageNormalization2D(Layer):
             outputs -= self._average_filter(outputs)
 
         else:
-            reduce_axes = [1, 2, 3]
+            reduce_axes = list(range(len(inputs.shape)))[1:]
             reduce_axes.remove(self.channel_axis)
             mean = self._reduce_median(inputs, axes=reduce_axes)
             outputs = inputs / mean
