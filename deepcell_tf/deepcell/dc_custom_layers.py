@@ -22,7 +22,8 @@ Custom layers
 
 class ImageNormalization2D(Layer):
     def __init(self, norm_method=None, filter_size=61, **kwargs):
-        super(ImageNormalization, self).__init__(**kwargs)
+        super(ImageNormalization2D, self).__init__(**kwargs)
+        self.filter_size = filter_size
         self.norm_method = norm_method
         self.data_format = kwargs.get('data_format', K.image_data_format())
 
@@ -47,7 +48,7 @@ class ImageNormalization2D(Layer):
         else:
             in_channels  = input_shape[-1]
 
-        W = np.ones((filter_size, filter_size, in_channels, 1))
+        W = np.ones((self.filter_size, self.filter_size, in_channels, 1))
         W /= W.size
         kernel = tf.Variable(W.astype(K.floatx()))
 
@@ -93,7 +94,9 @@ class ImageNormalization2D(Layer):
 
     def get_config(self):
         config = {'process_std': self.process_std,
-                    'data_format': self.data_format}
+                  'data_format': self.data_format}
+        base_config = super(ImageNormalization2D, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
 
 class Location(Layer):
     def __init__(self, in_shape, data_format=None, **kwargs):
