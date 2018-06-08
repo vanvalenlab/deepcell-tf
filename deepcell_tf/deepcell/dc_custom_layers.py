@@ -9,6 +9,7 @@ Custom layers for convolutional neural networks
 from __future__ import print_function
 from __future__ import division
 
+import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer, InputSpec
