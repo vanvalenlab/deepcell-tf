@@ -30,7 +30,7 @@ class ImageNormalization2D(Layer):
         if self.data_format == 'channels_first':
             self.channel_axis = 1
         else:
-            self.channel_axis = -1
+            self.channel_axis = 3 # hardcoded for 2D data
 
     def compute_output_shape(self, input_shape):
         return input_shape
