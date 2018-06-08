@@ -1113,7 +1113,8 @@ class MovieDataGenerator(object):
                 [0, 1, ty],
                 [0, 0, 1]
             ])
-            transform_matrix = shift_matrix if transform_matrix is None else np.dot(transform_matrix, shift_matrix)
+            transform_matrix = shift_matrix if transform_matrix is None else np.dot(
+                transform_matrix, shift_matrix)
 
         if shear != 0:
             shear_matrix = np.array([
@@ -1121,7 +1122,8 @@ class MovieDataGenerator(object):
                 [0, np.cos(shear), 0],
                 [0, 0, 1]
             ])
-            transform_matrix = shear_matrix if transform_matrix is None else np.dot(transform_matrix, shear_matrix)
+            transform_matrix = shear_matrix if transform_matrix is None else np.dot(
+                transform_matrix, shear_matrix)
 
         if zx != 1 or zy != 1:
             zoom_matrix = np.array([
@@ -1129,13 +1131,17 @@ class MovieDataGenerator(object):
                 [0, zy, 0],
                 [0, 0, 1]
             ])
-            transform_matrix = zoom_matrix if transform_matrix is None else np.dot(transform_matrix, zoom_matrix)
+            transform_matrix = zoom_matrix if transform_matrix is None else np.dot(
+                transform_matrix, zoom_matrix)
 
         if label_movie is not None:
             y = label_movie
 
             if transform_matrix is not None:
-                y = apply_transform_to_movie(label_movie, transform_matrix)
+                h, w = y.shape[img_row_axis], y.shape[img_col_axis]
+                transform_matrix = transform_matrix_offset_center(transform_matrix, h, w)
+                y = apply_transform_to_movie(y, transform_matrix, img_channel_axis,
+                                             fill_mode='constant', cval=0)
 
         if transform_matrix is not None:
             h, w = x.shape[img_row_axis], x.shape[img_col_axis]

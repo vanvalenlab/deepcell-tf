@@ -19,7 +19,7 @@ from skimage.measure import label
 from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.python.keras import backend as K
 
-from .dc_settings import CHANNELS_FIRST
+from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
 from .dc_plotting_functions import plot_training_data_2d, plot_training_data_3d
 from .dc_helper_functions import get_image, process_image, get_image_sizes, \
                                  nikon_getfiles, get_immediate_subdirs
@@ -201,18 +201,19 @@ def reshape_movie(X, y, reshape_size=256):
     new_y = np.zeros(new_y_shape, dtype='int32')
 
     counter = 0
+    row_axis = 3 if CHANNELS_FIRST else 2
+    col_axis = 4 if CHANNELS_FIRST else 3
     for b in range(X.shape[0]):
         for i in range(rep_number):
             for j in range(rep_number):
                 if i != rep_number - 1:
                     x_start, x_end = i * reshape_size, (i + 1) * reshape_size
                 else:
-                    x_start, x_end = -reshape_size, X.shape[2 if CHANNELS_FIRST else 2]
-
+                    x_start, x_end = -reshape_size, X.shape[row_axis]
                 if j != rep_number - 1:
                     y_start, y_end = j * reshape_size, (j + 1) * reshape_size
                 else:
-                    y_start, y_end = -reshape_size, y.shape[3 if CHANNELS_FIRST else 3]
+                    y_start, y_end = -reshape_size, y.shape[col_axis]
 
                 if CHANNELS_FIRST:
                     new_X[counter] = X[b, :, :, x_start:x_end, y_start:y_end]
@@ -570,6 +571,7 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
     if montage_mode:
         y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
 
+    # TODO: movie training data with channels?
     if CHANNELS_FIRST:
         y_shape = (len(y_dirs), len(annotation_name), num_frames, image_size_x, image_size_y)
     else:
@@ -588,6 +590,7 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
                               len(imglist) - num_frames, num_frames, len(imglist)))
                     break
                 annotation_img = get_image(os.path.join(direc, img_file))
+                # TODO: movie training data with channels?
                 if CHANNELS_FIRST:
                     y[b, c, z, :, :] = annotation_img
                 else:
