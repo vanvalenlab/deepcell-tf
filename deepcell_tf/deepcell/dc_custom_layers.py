@@ -21,7 +21,7 @@ Custom layers
 """
 
 class ImageNormalization2D(Layer):
-    def __init(self, norm_method=None, filter_size=61, data_format=None, **kwargs):
+    def __init__(self, norm_method=None, filter_size=61, data_format=None, **kwargs):
         super(ImageNormalization2D, self).__init__(**kwargs)
         self.filter_size = filter_size
         self.norm_method = norm_method
