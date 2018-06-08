@@ -35,7 +35,7 @@ class ImageNormalization2D(Layer):
     def compute_output_shape(self, input_shape):
         return input_shape
 
-    def _window_std_filter(self, inputs, epsilon = K.epsilon()):
+    def _window_std_filter(self, inputs, epsilon=K.epsilon()):
         c1 = self._average_filter(inputs)
         c2 = self._average_filter(tf.square(inputs))
         output = tf.sqrt(c2 - c1 * c1) + epsilon
@@ -46,20 +46,20 @@ class ImageNormalization2D(Layer):
         if self.data_format == 'channels_first':
             in_channels = input_shape[1]
         else:
-            in_channels  = input_shape[-1]
+            in_channels = input_shape[-1]
 
         W = np.ones((self.filter_size, self.filter_size, in_channels, 1))
         W /= W.size
         kernel = tf.Variable(W.astype(K.floatx()))
 
-        outputs = tf.nn.depthwise_conv2d(inputs, kernel, [1,1,1,1], 'SAME')
+        outputs = tf.nn.depthwise_conv2d(inputs, kernel, [1, 1, 1, 1], 'SAME')
 
         return outputs
 
-    def _reduce_median(self, inputs, axes = None):
+    def _reduce_median(self, inputs, axes=None):
         rank = tf.rank(inputs)
         reduce_axes = axes
-        axes_to_keep = [axis for axis in range(rank) if axis not in reduce_axes ]
+        axes_to_keep = [axis for axis in range(rank) if axis not in reduce_axes]
         input_shape = tf.shape(inputs)
 
         new_shape = [input_shape[axis] for axis in axes_to_keep]
@@ -69,7 +69,7 @@ class ImageNormalization2D(Layer):
 
         median_index = reshaped_inputs.get_shape()[-1] // 2
 
-        median = tf.nn.top_k(reshaped_inputs, k = median_index)
+        median = tf.nn.top_k(reshaped_inputs, k=median_index)
 
         return median
 
@@ -84,9 +84,9 @@ class ImageNormalization2D(Layer):
             outputs -= self._average_filter(outputs)
 
         else:
-            reduce_axes = [1,2,3]
+            reduce_axes = [1, 2, 3]
             reduce_axes.remove(self.channel_axis)
-            mean = tf.reduce_median(inputs, axes = reduce_axes)
+            mean = tf.reduce_median(inputs, axes=reduce_axes)
             outputs = inputs / mean
             outputs -= self._average_filter(outputs)
 
