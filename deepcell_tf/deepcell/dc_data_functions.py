@@ -394,7 +394,9 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
                                 process_remove_zeros=process_remove_zeros)
 
     y = load_annotated_images_2d(direc_name, training_direcs,
-                                 image_size=image_size, edge_feature=edge_feature,
+                                 image_size=image_size,
+                                 edge_feature=edge_feature,
+                                 annotation_direc=annotation_direc,
                                  dilation_radius=dilation_radius)
 
     if reshape_size is not None:
