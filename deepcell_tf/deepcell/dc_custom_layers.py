@@ -35,26 +35,20 @@ class ImageNormalization2D(Layer):
     def compute_output_shape(self, input_shape):
         return input_shape
 
-    def _window_std_filter(self, inputs, epsilon=K.epsilon()):
-        c1 = self._average_filter(inputs)
-        c2 = self._average_filter(tf.square(inputs))
-        output = tf.sqrt(c2 - c1 * c1) + epsilon
-        return output
-
     def _average_filter(self, inputs):
-        input_shape = tf.shape(inputs)
-        if self.data_format == 'channels_first':
-            in_channels = input_shape[1]
-        else:
-            in_channels = input_shape[-1]
-
+        in_channels = inputs.shape[self.channel_axis]
         W = np.ones((self.filter_size, self.filter_size, in_channels, 1))
         W /= W.size
         kernel = tf.Variable(W.astype(K.floatx()))
 
         outputs = tf.nn.depthwise_conv2d(inputs, kernel, [1, 1, 1, 1], 'SAME')
-
         return outputs
+
+    def _window_std_filter(self, inputs, epsilon=K.epsilon()):
+        c1 = self._average_filter(inputs)
+        c2 = self._average_filter(tf.square(inputs))
+        output = tf.sqrt(c2 - c1 * c1) + epsilon
+        return output
 
     def _reduce_median(self, inputs, axes=None):
         rank = tf.rank(inputs)
