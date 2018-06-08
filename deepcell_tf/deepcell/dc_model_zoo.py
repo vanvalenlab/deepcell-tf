@@ -212,7 +212,7 @@ def bn_feature_net_61x61(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_
 
 	input_shape = (n_channels, 61, 61) if channel_axis == 1 else (61, 61, n_channels)
 	model = Sequential()
-	model.add(ImageNormalization2D(norm_method=norm_method, kernel_initializer = init, padding = 'valid', input_shape = input_shape, kernel_regularizer = l2(reg)))
+	model.add(ImageNormalization2D(norm_method=norm_method, filter_size=61, input_shape=input_shape))
 	model.add(Conv2D(64, (3, 3), kernel_initializer = init, padding = 'valid', kernel_regularizer = l2(reg)))
 	model.add(BatchNormalization(axis = channel_axis))
 	model.add(Activation('relu'))
