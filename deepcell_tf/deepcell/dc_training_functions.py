@@ -379,7 +379,7 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
         datagen.flow(train_dict, batch_size=batch_size, number_of_frames=number_of_frames),
         steps_per_epoch=train_dict['y'].shape[0] // batch_size,
         epochs=n_epoch,
-        validation_data=datagen.flow(validation_dict, batch_size=batch_size, number_of_frames=number_of_frames),
+        validation_data=datagen_val.flow(validation_dict, batch_size=batch_size, number_of_frames=number_of_frames),
         validation_steps=X_test.shape[0] // batch_size,
         callbacks=[
             ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
