@@ -21,11 +21,11 @@ Custom layers
 """
 
 class ImageNormalization2D(Layer):
-    def __init(self, norm_method=None, filter_size=61, **kwargs):
+    def __init(self, norm_method=None, filter_size=61, data_format=None, **kwargs):
         super(ImageNormalization2D, self).__init__(**kwargs)
         self.filter_size = filter_size
         self.norm_method = norm_method
-        self.data_format = kwargs.get('data_format', K.image_data_format())
+        self.data_format = K.image_data_format() if data_format is None else data_format
 
         if self.data_format == 'channels_first':
             self.channel_axis = 1
@@ -93,7 +93,8 @@ class ImageNormalization2D(Layer):
         return outputs
 
     def get_config(self):
-        config = {'process_std': self.process_std,
+        config = {'norm_method': self.norm_method,
+                  'filter_size': self.filter_size,
                   'data_format': self.data_format}
         base_config = super(ImageNormalization2D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
