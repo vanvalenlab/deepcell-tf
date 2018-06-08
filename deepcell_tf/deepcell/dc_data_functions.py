@@ -257,9 +257,9 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
 
                 image_file = os.path.join(direc_name, direc, img)
                 image_data = np.asarray(get_image(image_file), dtype=K.floatx())
-                if process:
-                    image_data = process_image(image_data, window_size_x, window_size_y,
-                                               remove_zeros=process_remove_zeros, std=process_std)
+                # if process:
+                #     image_data = process_image(image_data, window_size_x, window_size_y,
+                #                                remove_zeros=process_remove_zeros, std=process_std)
 
                 if CHANNELS_FIRST:
                     X[b, c, :, :] = image_data
@@ -540,10 +540,10 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
                 image_data = np.asarray(get_image(os.path.join(direc, img)))
                 print('Frame: {}\tPixel Sum: {}'.format(i, np.sum(image_data.flatten())))
 
-                if process:
-                    image_data = process_image(
-                        image_data, window_size_x, window_size_y,
-                        remove_zeros=process_remove_zeros, std=process_std)
+                # if process:
+                #     image_data = process_image(
+                #         image_data, window_size_x, window_size_y,
+                #         remove_zeros=process_remove_zeros, std=process_std)
 
                 if CHANNELS_FIRST:
                     X[b, c, i, :, :] = image_data
