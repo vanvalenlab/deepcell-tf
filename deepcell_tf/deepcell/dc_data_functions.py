@@ -227,7 +227,8 @@ def reshape_movie(X, y, reshape_size=256):
     print('Reshaped training data from {} to {}'.format(X.shape, new_X.shape))
     return new_X, new_y
 
-def load_training_images_2d(direc_name, training_direcs, channel_names, image_size, window_size,
+def load_training_images_2d(direc_name, training_direcs, channel_names, image_size,
+                            window_size, raw_image_direc,
                             process=True, process_std=False, process_remove_zeros=False):
     """
     Iterate over every image in the training directories and load
@@ -247,7 +248,8 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
 
     # Load training images
     for b, direc in enumerate(training_direcs):
-        imglist = os.listdir(os.path.join(direc_name, direc))
+        # e.g. "/data/ecoli/kc", "set1", "RawImages",
+        imglist = os.listdir(os.path.join(direc_name, direc, raw_image_direc))
 
         for c, channel in enumerate(channel_names):
             for img in imglist:
@@ -255,7 +257,7 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
                 if not fnmatch(img, '*{}*'.format(channel)):
                     continue
 
-                image_file = os.path.join(direc_name, direc, img)
+                image_file = os.path.join(direc_name, direc, raw_image_direc, img)
                 image_data = np.asarray(get_image(image_file), dtype=K.floatx())
                 # if process:
                 #     image_data = process_image(image_data, window_size_x, window_size_y,
@@ -268,7 +270,8 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
 
     return X
 
-def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_feature, dilation_radius):
+def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_feature,
+                             dilation_radius, annotation_direc):
     """
     Iterate over every annotated image in the training directories and load
     each into a numpy array.
@@ -285,7 +288,7 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
     y = np.zeros(y_shape)
 
     for b, direc in enumerate(training_direcs):
-        imglist = os.listdir(os.path.join(direc_name, direc))
+        imglist = os.listdir(os.path.join(direc_name, direc, annotation_direc))
 
         for l, edge in enumerate(edge_feature):
             for img in imglist:
@@ -293,7 +296,7 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
                 if not fnmatch(img, '*feature_{}*'.format(l)):
                     continue
 
-                image_data = get_image(os.path.join(direc_name, direc, img))
+                image_data = get_image(os.path.join(direc_name, direc, annotation_direc, img))
 
                 if np.sum(image_data) > 0:
                     image_data /= np.amax(image_data)
@@ -333,6 +336,8 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
     return y
 
 def make_training_data_2d(direc_name, file_name_save, channel_names,
+                          raw_image_direc='raw',
+                          annotation_direc='annotated',
                           training_direcs=None,
                           max_training_examples=1e7,
                           window_size_x=30,
@@ -379,16 +384,19 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
     window_size = (window_size_x, window_size_y)
 
     # Load one file to get image sizes (all images same size as they are from same microscope)
-    image_path = os.path.join(direc_name, random.choice(training_direcs))
+    image_path = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
     image_size = get_image_sizes(image_path, channel_names)
 
     X = load_training_images_2d(direc_name, training_direcs, channel_names,
+                                raw_image_direc=raw_image_direc,
                                 image_size=image_size, window_size=window_size,
                                 process=process, process_std=process_std,
                                 process_remove_zeros=process_remove_zeros)
 
     y = load_annotated_images_2d(direc_name, training_direcs,
-                                 image_size=image_size, edge_feature=edge_feature,
+                                 image_size=image_size,
+                                 edge_feature=edge_feature,
+                                 annotation_direc=annotation_direc,
                                  dilation_radius=dilation_radius)
 
     if reshape_size is not None:
@@ -595,8 +603,8 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
 def make_training_data_3d(direc_name, file_name_save, channel_names,
                           training_direcs=None,
                           annotation_name='corrected',
-                          raw_image_direc='RawImages',
-                          annotation_direc='Annotation',
+                          raw_image_direc='raw',
+                          annotation_direc='annotated',
                           window_size_x=30,
                           window_size_y=30,
                           border_mode='same',
@@ -704,6 +712,8 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                        edge_feature=[1, 0, 0],
                        border_mode='valid',
                        output_mode='sample',
+                       raw_image_direc='raw',
+                       annotation_direc='annotated',
                        verbose=False,
                        process=True,
                        process_std=False,
@@ -751,6 +761,8 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               output_mode=output_mode,
                               process=process,
                               process_std=process_std,
+                              raw_image_direc=raw_image_direc,
+                              annotation_direc=annotation_direc,
                               process_remove_zeros=process_remove_zeros,
                               dilation_radius=kwargs.get('dilation_radius', 1),
                               max_plotted=kwargs.get('max_plotted', 5),
@@ -760,8 +772,8 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
         make_training_data_3d(direc_name, file_name_save, channel_names,
                               training_direcs=training_direcs,
                               annotation_name=kwargs.get('annotation_name', 'corrected'),
-                              raw_image_direc=kwargs.get('raw_image_direc', 'RawImages'),
-                              annotation_direc=kwargs.get('annotation_direc', 'Annotation'),
+                              raw_image_direc=raw_image_direc,
+                              annotation_direc=annotation_direc,
                               window_size_x=window_size_x,
                               window_size_y=window_size_y,
                               border_mode=border_mode,
