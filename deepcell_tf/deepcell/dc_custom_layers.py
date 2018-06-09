@@ -37,7 +37,10 @@ class ImageNormalization2D(Layer):
 
     def _average_filter(self, inputs):
         in_channels = inputs.shape[self.channel_axis]
-        W = np.ones((self.filter_size, self.filter_size, in_channels, 1))
+        if self.data_format == 'channels_first':
+            W = np.ones((in_channels, self.filter_size, self.filter_size, 1))
+        else:
+            W = np.ones((self.filter_size, self.filter_size, in_channels, 1))
         W /= W.size
         kernel = tf.Variable(W.astype(K.floatx()))
 
