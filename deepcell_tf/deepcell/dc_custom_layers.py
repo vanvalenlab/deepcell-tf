@@ -54,11 +54,11 @@ class ImageNormalization2D(Layer):
         return output
 
     def _reduce_median(self, inputs, axes=None):
-        input_shape = inputs.get_shape() # tf.shape(inputs)
-        rank = len(input_shape) # tf.rank(inputs)
+        input_shape = tf.shape(inputs)
+        rank = tf.rank(inputs)
 
         new_shape = [input_shape[axis] for axis in range(rank) if axis not in axes]
-        new_shape.append(-1) # why?
+        new_shape.append(-1)
 
         reshaped_inputs = tf.reshape(inputs, new_shape)
         median_index = reshaped_inputs.get_shape()[-1] // 2
@@ -78,7 +78,8 @@ class ImageNormalization2D(Layer):
         else:
             reduce_axes = list(range(len(inputs.shape)))[1:]
             reduce_axes.remove(self.channel_axis)
-            mean = self._reduce_median(inputs, axes=reduce_axes)
+            # mean = self._reduce_median(inputs, axes=reduce_axes)
+            mean = tf.contrib.distributions.percentile(inputs, 50.)
             outputs = inputs / mean
             outputs -= self._average_filter(outputs)
 
