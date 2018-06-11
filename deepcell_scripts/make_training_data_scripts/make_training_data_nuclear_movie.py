@@ -40,8 +40,8 @@ from deepcell import make_training_data
 window_size = 30
 
 # Load data
-direc_name = '/data/data/diffuse/nuclear_movie'
-output_directory = '/data/npz_data/diffuse/nuclear_movie/'
+direc_name = '/data/data/cells/unspecified_nuclear_data/nuclear_movie'
+output_directory = '/data/npz_data/cells/unspecified_nuclear_data/nuclear_movie/'
 file_name_save = os.path.join( output_directory, 'nuclear_movie_same.npz')
 training_direcs = ["set1", "set2"]
 channel_names = ["DAPI"]

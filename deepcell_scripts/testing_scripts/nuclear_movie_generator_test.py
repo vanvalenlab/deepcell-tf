@@ -5,7 +5,7 @@ from deepcell import train_model_siamese, rate_scheduler
 from deepcell import siamese_model as the_model
 
 def main():
-    direc_data = '/data/npz_data/diffuse/nuclear_movie/'
+    direc_data = '/data/npz_data/cells/unspecified_nuclear_data/nuclear_movie/'
     dataset = 'nuclear_movie_same'
 
     training_data = np.load('{}{}.npz'.format(direc_data, dataset))
@@ -22,8 +22,8 @@ def main():
                         it=0,
                         batch_size=1,
                         n_epoch=100,
-                        direc_save='/data/models/diffuse/nuclear_movie',
-                        direc_data='/data/npz_data/diffuse/nuclear_movie/',
+                        direc_save='/data/models/cells/unspecified_nuclear_data/nuclear_movie',
+                        direc_data='/data/npz_data/cells/unspecified_nuclear_data/nuclear_movie/',
                         lr_sched=lr_sched,
                         rotation_range=0,
                         flip=True,
