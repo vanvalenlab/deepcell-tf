@@ -26,7 +26,7 @@ from deepcell import dilated_MaxPool2D, TensorProd2D, TensorProd3D, Resize, \
 Batch normalized conv-nets
 """
 
-def bn_feature_net_21x21(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_normal'):
+def bn_feature_net_21x21(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_normal', norm_method='std'):
 	print("Using feature net 21x21 with batch normalization")
 
 	if K.image_data_format() == 'channels_first':
@@ -35,7 +35,8 @@ def bn_feature_net_21x21(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_
 		channel_axis = -1
 
 	model = Sequential()
-	model.add(Conv2D(32, (4, 4), kernel_initializer = init, padding = 'valid', input_shape = (n_channels, 21, 21), kernel_regularizer = l2(reg)))
+	model.add(ImageNormalization2D(norm_method=norm_method, filter_size=21, input_shape=(n_channels, 21, 21)))
+	model.add(Conv2D(32, (4, 4), kernel_initializer = init, padding = 'valid', kernel_regularizer = l2(reg)))
 	model.add(BatchNormalization(axis = channel_axis))
 	model.add(Activation('relu'))
 
@@ -113,7 +114,7 @@ def dilated_bn_feature_net_21x21(input_shape = (2, 1080, 1280), n_features = 3, 
 
 	return model
 
-def bn_feature_net_31x31(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_normal'):
+def bn_feature_net_31x31(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_normal', norm_method='std'):
 	print("Using feature net 31x31 with batch normalization")
 
 	if K.image_data_format() == 'channels_first':
@@ -122,7 +123,8 @@ def bn_feature_net_31x31(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_
 		channel_axis = -1
 
 	model = Sequential()
-	model.add(Conv2D(32, (4, 4), kernel_initializer = init, padding = 'valid', input_shape = (n_channels, 31, 31), kernel_regularizer = l2(reg)))
+	model.add(ImageNormalization2D(norm_method=norm_method, filter_size=31, input_shape=(n_channels, 31, 31)))
+	model.add(Conv2D(32, (4, 4), kernel_initializer = init, padding = 'valid', kernel_regularizer = l2(reg)))
 	model.add(BatchNormalization(axis = channel_axis))
 	model.add(Activation('relu'))
 	model.add(MaxPool2D(pool_size =(2,2)))
@@ -315,7 +317,7 @@ def dilated_bn_feature_net_61x61(input_shape = (2, 1080, 1280), batch_size = Non
 
 	return model
 
-def bn_feature_net_81x81(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_normal'):
+def bn_feature_net_81x81(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_normal', norm_method='std'):
 	print("Using feature net 81x81 with batch normalization")
 
 	if K.image_data_format() == 'channels_first':
@@ -324,7 +326,8 @@ def bn_feature_net_81x81(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_
 		channel_axis = -1
 
 	model = Sequential()
-	model.add(Conv2D(64, (3, 3), kernel_initializer = init, padding='valid', input_shape=(n_channels, 81, 81), kernel_regularizer = l2(reg)))
+	model.add(ImageNormalization2D(norm_method=norm_method, filter_size=81, input_shape=(n_channels, 81, 81)))
+	model.add(Conv2D(64, (3, 3), kernel_initializer = init, padding='valid', kernel_regularizer = l2(reg)))
 	model.add(BatchNormalization(axis = channel_axis))
 	model.add(Activation('relu'))
 
@@ -443,7 +446,7 @@ def dilated_bn_feature_net_81x81(input_shape = (2, 1080, 1280), n_features = 3, 
 Multi-resolution batch normalized conv-nets
 """
 
-def bn_multires_feature_net_61x61(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_normal'):
+def bn_multires_feature_net_61x61(n_features = 3, n_channels = 1, reg = 1e-5, init = 'he_normal', norm_method='std'):
 	print("Using multi-resolution feature net 61x61 with batch normalization")
 
 	if K.image_data_format() == 'channels_first':
@@ -452,7 +455,8 @@ def bn_multires_feature_net_61x61(n_features = 3, n_channels = 1, reg = 1e-5, in
 		channel_axis = -1
 
 	inputs = Input(shape = (n_channels, 61, 61))
-	conv1 = Conv2D(64, (3, 3), kernel_initializer = init, padding='valid', input_shape=(n_channels, 61, 61), kernel_regularizer = l2(reg))(inputs)
+	img_norm = ImageNormalization2D(norm_method=norm_method, filter_size=61)(inputs)
+	conv1 = Conv2D(64, (3, 3), kernel_initializer = init, padding='valid', kernel_regularizer = l2(reg))(img_norm)
 	norm1 = BatchNormalization(axis = channel_axis)(conv1)
 	act1 = Activation('relu')(norm1)
 
