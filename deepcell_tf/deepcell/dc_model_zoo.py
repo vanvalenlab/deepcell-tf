@@ -527,7 +527,8 @@ def dilated_bn_multires_feature_net_61x61(input_shape = (2, 1080, 1280), n_featu
 
 	d = 1
 	inputs = Input(shape = input_shape)
-	conv1 = Conv2D(64, (3, 3), dilation_rate = d, kernel_initializer = init, padding='valid', kernel_regularizer = l2(reg))(inputs)
+	img_norm = ImageNormalization2D(norm_method=norm_method, filter_size=61)(inputs)
+	conv1 = Conv2D(64, (3, 3), dilation_rate = d, kernel_initializer = init, padding='valid', kernel_regularizer = l2(reg))(img_norm)
 	norm1 = BatchNormalization(axis = channel_axis)(conv1)
 	act1 = Activation('relu')(norm1)
 
@@ -617,7 +618,7 @@ def bn_multires_feature_net(input_shape = (2,1080,1280), batch_shape = None, n_f
 		input2 = Concatenate(axis = 1)([input1, loc0])
 	else:
 		input2 = input1
-
+	# TODO: ImageNormalization2D layer filter size?
 	conv1 = Conv2D(32, (3,3), dilation_rate = 1, kernel_initializer = init, padding = 'same', kernel_regularizer = l2(reg))(input2)
 	norm1 = BatchNormalization(axis = channel_axis)(conv1)
 	act1 = Activation('relu')(norm1)
@@ -701,6 +702,7 @@ def bn_multires_pool_feature_net(input_shape = (2,1080,1280), n_features = 3, re
 		channel_axis = -1
 
 	input1 = Input(shape = input_shape)
+	# TODO: ImageNormalization2D layer filter size?
 	conv1 = Conv2D(32, (3,3), dilation_rate = 1, kernel_initializer = init, padding = 'same', kernel_regularizer = l2(reg))(input1)
 	norm1 = BatchNormalization(axis = channel_axis)(conv1)
 	act1 = Activation('relu')(norm1)
@@ -800,7 +802,7 @@ def bn_dense_feature_net(input_shape = (2,1080,1280), batch_shape = None, n_feat
 		input2 = Concatenate(axis = channel_axis)([input1, loc0])
 	else:
 		input2 = input1
-
+	# TODO: ImageNormalization2D layer filter size?
 	conv1 = Conv2D(48, (3,3), dilation_rate = 1, kernel_initializer = init, padding = 'same', kernel_regularizer = l2(reg))(input2)
 	norm1 = BatchNormalization(axis = channel_axis)(conv1)
 	act1 = Activation('relu')(norm1)
@@ -1089,7 +1091,7 @@ def resnet_custom(input_shape = (2,512,512), batch_shape = None, n_features = 3,
 
 	return model
 
-def dilated_bn_res_feature_net_61x61(input_shape = (2, 1080, 1280), n_features = 3, reg = 1e-5, init = 'he_normal', permute = False, weights_path = None, from_logits = False):
+def dilated_bn_res_feature_net_61x61(input_shape = (2, 1080, 1280), n_features = 3, reg = 1e-5, init = 'he_normal', permute = False, weights_path = None, from_logits = False, norm_method='std'):
 	print("Using dilated multi-resolution feature net 61x61 with batch normalization")
 
 	if K.image_data_format() == 'channels_first':
@@ -1099,7 +1101,8 @@ def dilated_bn_res_feature_net_61x61(input_shape = (2, 1080, 1280), n_features =
 
 	d = 1
 	inputs = Input(shape = input_shape)
-	conv1 = Conv2D(64, (3, 3), dilation_rate = d, kernel_initializer = init, padding='valid', kernel_regularizer = l2(reg))(inputs)
+	img_norm = ImageNormalization2D(norm_method=norm_method, filter_size=61)(inputs)
+	conv1 = Conv2D(64, (3, 3), dilation_rate = d, kernel_initializer = init, padding='valid', kernel_regularizer = l2(reg))(img_norm)
 	norm1 = BatchNormalization(axis = channel_axis)(conv1)
 	act1 = Activation('relu')(norm1)
 
@@ -1166,7 +1169,7 @@ def dilated_bn_res_feature_net_61x61(input_shape = (2, 1080, 1280), n_features =
 Multiple input conv-nets for fully convolutional training
 """
 
-def dilated_bn_feature_net_gather_61x61(input_shape = (2, 1080, 1280), training_examples = 1e5, batch_size = None, n_features = 3, reg = 1e-5, init = 'he_normal', weights_path = None, permute = False):
+def dilated_bn_feature_net_gather_61x61(input_shape = (2, 1080, 1280), training_examples = 1e5, batch_size = None, n_features = 3, reg = 1e-5, init = 'he_normal', weights_path = None, permute = False, norm_method='std'):
 	print("Using dilated feature net 61x61 with batch normalization")
 
 	if K.image_data_format() == 'channels_first':
@@ -1177,7 +1180,8 @@ def dilated_bn_feature_net_gather_61x61(input_shape = (2, 1080, 1280), training_
 	input1 = Input(shape = input_shape)
 
 	d = 1
-	conv1 = Conv2D(64, (3, 3), dilation_rate = d, kernel_initializer = init, padding='valid', batch_size = batch_size, kernel_regularizer = l2(reg))(input1)
+	img_norm = ImageNormalization2D(norm_method=norm_method, filter_size=61)(input1)
+	conv1 = Conv2D(64, (3, 3), dilation_rate = d, kernel_initializer = init, padding='valid', batch_size = batch_size, kernel_regularizer = l2(reg))(img_norm)
 	norm1 = BatchNormalization(axis = channel_axis)(conv1)
 	act1 = Activation('relu')(norm1)
 
@@ -1291,6 +1295,7 @@ def bn_dense_multires_feature_net_3D(batch_shape = (1, 1, 10, 256, 256), n_block
 		channel_axis = -1
 
 	input1 = Input(batch_shape = batch_shape)
+	# TODO: ImageNormalization2D layer filter size?
 	list_of_blocks = []
 	list_of_blocks.append(multires_block(input1, init = init, reg = reg))
 
@@ -1329,7 +1334,7 @@ def bn_dense_feature_net_3D(batch_shape = (1, 1, 5, 256, 256), n_features = 3, r
 
 	input1 = Input(batch_shape = batch_shape)
 	input_shape = batch_shape[1:]
-
+	# TODO: ImageNormalization2D layer filter size?
 	if location:
 		loc0 = Location3D(in_shape = batch_shape)(input1)
 		input2 = Concatenate(axis = channel_axis)([input1, loc0])
@@ -1400,7 +1405,7 @@ def bn_dense_feature_net_lstm(input_shape = (1, 60, 256, 256), batch_shape = Non
 	else:
 		input1 = Input(batch_shape = batch_shape)
 		input_shape = batch_shape[1:]
-
+	# TODO: ImageNormalization2D layer filter size?
 	conv1 = Conv3D(64, (1, 3, 3), dilation_rate = (1, 1, 1), kernel_initializer = init, padding = 'same', kernel_regularizer = l2(reg))(input1)
 	norm1 = BatchNormalization(axis = channel_axis)(conv1)
 	act1 = Activation('relu')(norm1)
