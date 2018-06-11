@@ -21,7 +21,7 @@ Custom layers
 """
 
 class ImageNormalization2D(Layer):
-    def __init__(self, norm_method=None, filter_size=61, data_format=None, **kwargs):
+    def __init__(self, norm_method='std', filter_size=61, data_format=None, **kwargs):
         super(ImageNormalization2D, self).__init__(**kwargs)
         self.filter_size = filter_size
         self.norm_method = norm_method
@@ -32,6 +32,9 @@ class ImageNormalization2D(Layer):
         else:
             self.channel_axis = 3 # hardcoded for 2D data
 
+        if isinstance(self.norm_method, str):
+            self.norm_method = self.norm_method.lower()
+
     def compute_output_shape(self, input_shape):
         return input_shape
 
@@ -41,6 +44,7 @@ class ImageNormalization2D(Layer):
             W = np.ones((in_channels, self.filter_size, self.filter_size, 1))
         else:
             W = np.ones((self.filter_size, self.filter_size, in_channels, 1))
+
         W /= W.size
         kernel = tf.Variable(W.astype(K.floatx()))
 
@@ -67,7 +71,10 @@ class ImageNormalization2D(Layer):
         return median
 
     def call(self, inputs):
-        if self.norm_method == 'std':
+        if self.norm_method is None:
+            outputs = inputs
+
+        elif self.norm_method == 'std':
             outputs = inputs - self._average_filter(inputs)
             outputs /= self._window_std_filter(outputs)
 
@@ -75,7 +82,7 @@ class ImageNormalization2D(Layer):
             outputs = inputs / tf.reduce_max(inputs)
             outputs -= self._average_filter(outputs)
 
-        else:
+        elif self.norm_method == 'median':
             reduce_axes = list(range(len(inputs.shape)))[1:]
             reduce_axes.remove(self.channel_axis)
             # mean = self._reduce_median(inputs, axes=reduce_axes)
