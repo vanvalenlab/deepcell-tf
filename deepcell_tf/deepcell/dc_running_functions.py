@@ -78,7 +78,7 @@ def run_model(image, model, win_x=30, win_y=30, split=True):
     return model_output
 
 def run_model_on_directory(data_location, channel_names, output_location, model,
-                           win_x=30, win_y=30, std=False, split=True, save=True):
+                           win_x=30, win_y=30, split=True, save=True):
 
     channel_axis = 1 if CHANNELS_FIRST else -1
     n_features = model.layers[-1].output_shape[channel_axis]
