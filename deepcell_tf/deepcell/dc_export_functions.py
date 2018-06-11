@@ -18,16 +18,16 @@ import tifffile as tiff
 import tensorflow as tf
 
 from tensorflow.python.keras import backend as K
-from tensorflow.python.saved_model import builder as saved_model_builder 
+from tensorflow.python.saved_model import builder as saved_model_builder
 from tensorflow.python.saved_model import tag_constants, signature_constants, signature_def_utils_impl
 
-from .dc_helper_functions import get_images_from_directory, process_image
+from .dc_helper_functions import get_images_from_directory
 from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
 
 FLAGS = tf.app.flags.FLAGS
 
 def export_model(keras_model, export_path, model_version = 0, weights_path = None):
-    
+
     # Start the tensorflow session
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8, allow_growth=False)
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
@@ -56,12 +56,10 @@ def export_model(keras_model, export_path, model_version = 0, weights_path = Non
     builder.add_meta_graph_and_variables(
         sess, [tag_constants.SERVING],
         signature_def_map={
-            signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: 
+            signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
                 prediction_signature
         },
         legacy_init_op=legacy_init_op)
 
     # Save the graph
     builder.save()
-
-

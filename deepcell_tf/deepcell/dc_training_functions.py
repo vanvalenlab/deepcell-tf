@@ -18,7 +18,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 
 from .dc_helper_functions import rate_scheduler, get_data, get_images_from_directory, \
-                                 to_categorical, process_image, \
+                                 to_categorical, \
                                  sample_categorical_crossentropy, \
                                  weighted_categorical_crossentropy, \
                                  discriminative_instance_loss, discriminative_instance_loss_3D
@@ -312,8 +312,8 @@ def train_model_conv_sample(model=None, dataset=None, optimizer=None,
     channel_names = ['channel004', 'channel001']
     image_list = get_images_from_directory(data_location, channel_names)
     image = image_list[0]
-    for j in range(image.shape[1]):
-        image[0, j, :, :] = process_image(image[0, j, :, :], 30, 30, False)
+    # for j in range(image.shape[1]):
+    #     image[0, j, :, :] = process_image(image[0, j, :, :], 30, 30, False)
 
     pred = model.predict(image)
     for j in range(3):
