@@ -14,7 +14,7 @@ from tensorflow.python.keras.optimizers import SGD, RMSprop, Adam
 
 from deepcell import rate_scheduler, train_model_conv as train_model
 from deepcell import bn_dense_feature_net as the_model
-from deepcell import get_images_from_directory, process_image
+from deepcell import get_images_from_directory
 
 import os
 import pathlib
@@ -46,8 +46,8 @@ for iterate in range(1):
 
 	model = the_model(input_shape = (512,512,2), n_features = 3, reg = 1e-5, location=False, permute = False)
 
-	trained_model = train_model(model = model, dataset = dataset, optimizer = optimizer, 
+	trained_model = train_model(model = model, dataset = dataset, optimizer = optimizer,
 		expt = expt, it = iterate, batch_size = batch_size, n_epoch = n_epoch,
-		direc_save = direc_save, direc_data = direc_data, 
+		direc_save = direc_save, direc_data = direc_data,
 		lr_sched = lr_sched, class_weight = class_weights,
 		rotation_range = 180, flip = True, shear = False)
