@@ -21,7 +21,7 @@ from tensorflow.python.keras import backend as K
 
 from .dc_settings import CHANNELS_FIRST
 from .dc_plotting_functions import plot_training_data_2d, plot_training_data_3d
-from .dc_helper_functions import get_image, process_image, get_image_sizes, \
+from .dc_helper_functions import get_image, get_image_sizes, \
                                  nikon_getfiles, get_immediate_subdirs
 
 """
@@ -228,8 +228,7 @@ def reshape_movie(X, y, reshape_size=256):
     return new_X, new_y
 
 def load_training_images_2d(direc_name, training_direcs, channel_names, image_size,
-                            window_size, raw_image_direc,
-                            process=True, process_std=False, process_remove_zeros=False):
+                            window_size, raw_image_direc):
     """
     Iterate over every image in the training directories and load
     each into a numpy array.
@@ -259,9 +258,6 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
 
                 image_file = os.path.join(direc_name, direc, raw_image_direc, img)
                 image_data = np.asarray(get_image(image_file), dtype=K.floatx())
-                # if process:
-                #     image_data = process_image(image_data, window_size_x, window_size_y,
-                #                                remove_zeros=process_remove_zeros, std=process_std)
 
                 if CHANNELS_FIRST:
                     X[b, c, :, :] = image_data
@@ -347,9 +343,6 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
                           display=False,
                           max_plotted=5,
                           verbose=False,
-                          process=True,
-                          process_std=False,
-                          process_remove_zeros=False,
                           reshape_size=None,
                           border_mode='valid',
                           output_mode='sample'):
@@ -373,9 +366,6 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         display: whether or not to plot the training data
         max_plotted: how many points to plot if display is True
         verbose:  print more output to screen, similar to DEBUG mode
-        process: if True, call process_image on each image
-        process_std:  passed to process_image if process is True
-        process_remove_zeros:  passed to process_image if process is True
         reshape_size: If provided, will reshape the images to the given size
         border_mode:  'valid' or 'same'
         output_mode:  'sample', 'conv', or 'disc'
@@ -389,9 +379,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
     X = load_training_images_2d(direc_name, training_direcs, channel_names,
                                 raw_image_direc=raw_image_direc,
-                                image_size=image_size, window_size=window_size,
-                                process=process, process_std=process_std,
-                                process_remove_zeros=process_remove_zeros)
+                                image_size=image_size, window_size=window_size)
 
     y = load_annotated_images_2d(direc_name, training_direcs,
                                  image_size=image_size,
@@ -510,8 +498,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         plot_training_data_2d(X, display_mask, max_plotted=max_plotted)
 
 def load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
-                            image_size, window_size, num_frames, process=True,
-                            process_std=False, process_remove_zeros=False):
+                            image_size, window_size, num_frames):
     """
     Iterate over every image in the training directories and load
     each into a numpy array.
@@ -547,11 +534,6 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
                     break
                 image_data = np.asarray(get_image(os.path.join(direc, img)))
                 print('Frame: {}\tPixel Sum: {}'.format(i, np.sum(image_data.flatten())))
-
-                # if process:
-                #     image_data = process_image(
-                #         image_data, window_size_x, window_size_y,
-                #         remove_zeros=process_remove_zeros, std=process_std)
 
                 if CHANNELS_FIRST:
                     X[b, c, i, :, :] = image_data
@@ -610,9 +592,6 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
                           border_mode='same',
                           output_mode='disc',
                           reshape_size=None,
-                          process=True,
-                          process_std=False,
-                          process_remove_zeros=False,
                           num_frames=50,
                           display=True,
                           num_of_frames_to_display=5,
@@ -645,7 +624,6 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
         max_training_examples: max number of samples to be given to model
         dilation_radius:
         verbose:  print more output to screen, similar to DEBUG mode.
-        process:  if True, calls process_image on each image
         num_frames:
         sub_sample: whether or not to subsamble the training data
         display: whether or not to plot the training data
@@ -659,8 +637,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
 
     X = load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
                                 image_size, window_size=(window_size_x, window_size_y),
-                                num_frames=num_frames, process=process, process_std=process_std,
-                                process_remove_zeros=process_remove_zeros)
+                                num_frames=num_frames)
 
     y = load_annotated_images_3d(direc_name, training_direcs, annotation_direc,
                                  annotation_name, num_frames, image_size)
@@ -715,9 +692,6 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                        raw_image_direc='raw',
                        annotation_direc='annotated',
                        verbose=False,
-                       process=True,
-                       process_std=False,
-                       process_remove_zeros=False,
                        reshape_size=None,
                        display=False,
                        **kwargs):
@@ -759,11 +733,8 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               reshape_size=reshape_size,
                               border_mode=border_mode,
                               output_mode=output_mode,
-                              process=process,
-                              process_std=process_std,
                               raw_image_direc=raw_image_direc,
                               annotation_direc=annotation_direc,
-                              process_remove_zeros=process_remove_zeros,
                               dilation_radius=kwargs.get('dilation_radius', 1),
                               max_plotted=kwargs.get('max_plotted', 5),
                               max_training_examples=kwargs.get('max_training_examples', 1e7))
@@ -779,9 +750,6 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               border_mode=border_mode,
                               output_mode=output_mode,
                               reshape_size=reshape_size,
-                              process=process,
-                              process_std=process_std,
-                              process_remove_zeros=process_remove_zeros,
                               verbose=verbose,
                               display=display,
                               num_frames=kwargs.get('num_frames', 50),
