@@ -23,19 +23,12 @@ from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
 Running convnets
 """
 
-def run_model(image, model, win_x=30, win_y=30, std=False, split=True):
+def run_model(image, model, win_x=30, win_y=30, split=True):
     # pad_width = ((0, 0), (0, 0), (win_x, win_x), (win_y, win_y))
     # image = np.pad(image, pad_width=pad_width , mode='constant', constant_values=0)
     channel_axis = 1 if CHANNELS_FIRST else -1
     x_axis = 2 if CHANNELS_FIRST else 1
     y_axis = 3 if CHANNELS_FIRST else 2
-
-    # if process:
-    #     for j in range(image.shape[channel_axis]):
-    #         if CHANNELS_FIRST:
-    #             image[0, j, :, :] = process_image(image[0, j, :, :], win_x, win_y, std)
-    #         else:
-    #             image[0, :, :, j] = process_image(image[0, :, :, j], win_x, win_y, std)
 
     evaluate_model = K.function(
         [model.layers[0].input, K.learning_phase()],
