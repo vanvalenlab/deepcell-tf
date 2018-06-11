@@ -1275,8 +1275,6 @@ class MovieArrayIterator(Iterator):
         for i, j in enumerate(index_array):
             if self.y is not None:
                 y = self.y[j]
-                # set all cell IDs to 1.  We care about is/is not a cell, not the ID
-                y[y > 0] = 1
 
             # Sample along the time axis
             time_start = np.random.randint(0, high=self.x.shape[self.time_axis] - self.number_of_frames)

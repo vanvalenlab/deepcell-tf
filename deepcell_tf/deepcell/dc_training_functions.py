@@ -15,6 +15,7 @@ import os
 import numpy as np
 import tifffile as tiff
 from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.utils import to_categorical as keras_to_categorical
 from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 
 from .dc_helper_functions import rate_scheduler, get_data, get_images_from_directory, \
@@ -441,6 +442,14 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
         shear_range=0,
         horizontal_flip=0,
         vertical_flip=0)
+
+    # set all cell IDs to 1.  We care about is/is not a cell, not the ID
+    train_dict['y'][train_dict['y'] > 0] = 1
+    y_test[y_test > 0] = 1
+
+    # keras to_categorical will not work with channels_first data.
+    train_dict['y'] = keras_to_categorical(train_dict['y'])
+    y_test = keras_to_categorical(y_test)
 
     validation_dict = {'X': X_test, 'y': y_test}
 
