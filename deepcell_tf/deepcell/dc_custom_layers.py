@@ -71,7 +71,7 @@ class ImageNormalization2D(Layer):
         return median
 
     def call(self, inputs):
-        if self.norm_method is None:
+        if not self.norm_method:
             outputs = inputs
 
         elif self.norm_method == 'std':
@@ -89,6 +89,8 @@ class ImageNormalization2D(Layer):
             mean = tf.contrib.distributions.percentile(inputs, 50.)
             outputs = inputs / mean
             outputs -= self._average_filter(outputs)
+        else:
+            raise NotImplementedError('"{}" is not a valid norm_method'.format(self.norm_method))
 
         return outputs
 
