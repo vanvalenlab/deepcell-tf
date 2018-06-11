@@ -97,36 +97,6 @@ def rate_scheduler(lr=.001, decay=0.95):
         return new_lr
     return output_fn
 
-def window_stdev(arr, radius, epsilon=1e-7):
-    c1 = uniform_filter(arr, radius*2+1, mode='constant', origin=-radius)
-    c2 = uniform_filter(arr*arr, radius*2+1, mode='constant', origin=-radius)
-    return ((c2 - c1*c1)**.5) + epsilon
-
-def process_image(channel_img, win_x, win_y, std=False, remove_zeros=False):
-    if std:
-        avg_kernel = np.ones((2*win_x + 1, 2*win_y + 1))
-        channel_img -= ndimage.convolve(channel_img, avg_kernel) / avg_kernel.size
-        # std = np.std(channel_img)
-        std_val = window_stdev(channel_img, win_x)
-        channel_img /= std_val
-        return channel_img
-
-    elif remove_zeros:
-        channel_img /= np.amax(channel_img)
-        avg_kernel = np.ones((2*win_x + 1, 2*win_y + 1))
-        channel_img -= ndimage.convolve(channel_img, avg_kernel) / avg_kernel.size
-        return channel_img
-
-    else:
-        p50 = np.percentile(channel_img, 50)
-        if p50 == 0:
-            warnings.warn('The median pixel value is 0, consider '
-                          'using std=True for image normalization.', Warning)
-        channel_img /= p50
-        avg_kernel = np.ones((2*win_x + 1, 2*win_y + 1))
-        channel_img -= ndimage.convolve(channel_img, avg_kernel) / avg_kernel.size
-        return channel_img
-
 def get_image(file_name):
     if os.path.splitext(file_name.lower())[-1] == '.tif':
         return np.float32(TiffFile(file_name).asarray())
