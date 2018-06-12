@@ -15,10 +15,9 @@ from deepcell import make_training_data
 from deepcell import bn_dense_feature_net_3D as the_model
 #from deepcell import siamese_model as the_model
 from deepcell import rate_scheduler, train_model_movie as train_model
-from deepcell import nikon_getfiles
-from deepcell import get_image
-from deepcell import run_models_on_directory
-from deepcell import get_image_sizes
+from deepcell import load_training_images_3d
+from deepcell import run_model
+import tifffile as tiff
 
 # data options
 DATA_OUTPUT_MODE = 'conv'
@@ -107,28 +106,57 @@ def train_model_on_training_data():
 
 
 def run_model_on_dir():
+    save_output_images = True
     channel_names = ['slice']
-    data_location = os.path.join(DATA_DIR, PREFIX, 'set0', 'set_0_x_0_y_0')
-
-    image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
+    data_location = os.path.join(DATA_DIR, PREFIX, 'set0', 'stacked', 'set_0_x_0_y_0')
 
     # Define the model
     model_name = '2018-06-12_MouseBrain_channels_last_conv__0.h5'
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
-    predictions = run_models_on_directory(
-        data_location, channel_names, os.path.join(RESULTS_DIR, PREFIX),
-        n_features=2,
-        model_fn=the_model,
-        list_of_weights=[weights],
-        image_size_x=image_size_x,
-        image_size_y=image_size_y,
-        win_x=30,
-        win_y=30,
-        std=True,
-        split=False)
+    number_of_frames = 10
+    batch_size = 1
+    win_x, win_y = 30, 30
+    n_features = 2
 
-    import pdb; pdb.set_trace()
+    images = load_training_images_3d(
+        direc_name=os.path.join(DATA_DIR, PREFIX),
+        training_direcs=['set0'],
+        channel_names=channel_names,
+        raw_image_direc=os.path.join('stacked', 'set_0_x_0_y_0'),
+        image_size=(256, 256),
+        window_size=(win_x, win_y),
+        num_frames=number_of_frames,
+        process=True,
+        process_std=True)
+
+    if K.image_data_format() == 'channels_first':
+        row_size, col_size = images.shape[3:]
+        batch_shape = (batch_size, images.shape[1], number_of_frames, row_size, col_size)
+    else:
+        row_size, col_size = images.shape[2:4]
+        batch_shape = (batch_size, number_of_frames, row_size, col_size, images.shape[4])
+
+    model = the_model(batch_shape=batch_shape, n_features=n_features,
+                      permute=False, location=False)
+
+    model_outputs = []
+    model_output = run_model(images, model, win_x=30, win_y=30,
+                             std=False, split=False, process=False)
+    model_outputs.append(model_output)
+
+    # Save images
+    if save_output_images:
+        for i in range(model_output.shape[0]):
+            for f in range(n_features):
+                if K.image_data_format() == 'channels_first':
+                    feature = model_output[i, f, :, :]
+                else:
+                    feature = model_output[i, :, :, f]
+                cnnout_name = 'feature_{}_frame_{}.tif'.format(f, i)
+                out_file_path = os.path.join(RESULTS_DIR, PREFIX, 'set_0_x_0_y_0', cnnout_name)
+                tiff.imsave(out_file_path, feature)
+    print('Done!')
 
 
 if __name__ == '__main__':
