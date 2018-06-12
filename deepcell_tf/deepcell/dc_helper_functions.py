@@ -40,24 +40,66 @@ def get_immediate_subdirs(directory):
     return sorted([d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))])
 
 def axis_softmax(x, axis=1):
-    return activations.softmax(x, axis=axis)
+    '''
+    This is the built-in Tensorflow softmax activation layer, 
+    but with the default softmax dimension changed from -1 to 1.
+    Is this function a vestige of the CHANNELS_FIRST/LAST chaos?
+    # Arguments:
+        x: Tensorflow tensor
+        axis: axis over which to perform the softmax calculation
+    # Returns
+        softmaxed_tensor: the tesnor x, but with all values on the axis'th dimension being softmaxed
+    '''
+    softmaxed_tensor = activations.softmax(x, axis=axis)
+    return softmaxed_tensor
 
 def rotate_array_0(arr):
+    '''
+    Take in a Numpy array and return it unrotated.
+    # Arguments
+        arr: a Numpy array
+    # Returns
+        arr: a Numpy array
+    '''
     return arr
 
 def rotate_array_90(arr):
+    '''
+    Take in a Numpy array and return its values rotated 90 degrees counter-clockwise.
+    # Arguments
+        arr: a Numpy array
+    # Returns
+        arr_rotated: a Numpy array
+    '''
     axes_order = list(range(arr.ndim - 2)) + [arr.ndim-1, arr.ndim-2]
     slices = [slice(None) for _ in range(arr.ndim-2)] + [slice(None), slice(None, None, -1)]
-    return arr[tuple(slices)].transpose(axes_order)
+    arr_rotated = arr[tuple(slices)].transpose(axes_order)
+    return arr_rotated
 
 def rotate_array_180(arr):
+    '''
+    Take in a Numpy array and return its values rotated 180 degrees.
+    # Arguments
+        arr: a Numpy array
+    # Returns
+        arr_inverted: a Numpy array
+    '''
     slices = [slice(None) for _ in range(arr.ndim-2)] + [slice(None, None, -1), slice(None, None, -1)]
-    return arr[tuple(slices)]
+    arr_inverted = arr[tuple(slices)]
+    return arr_inverted
 
 def rotate_array_270(arr):
+    '''
+    Take in a Numpy array and return its values rotated 270 degrees counter-clockwise.
+    # Arguments
+        arr: a Numpy array
+    # Returns
+        arr_rotated: a Numpy array
+    '''
     axes_order = list(range(arr.ndim-2)) + [arr.ndim-1, arr.ndim-2]
     slices = [slice(None) for _ in range(arr.ndim-2)] + [slice(None, None, -1), slice(None)]
-    return arr[tuple(slices)].transpose(axes_order)
+    arr_rotated = arr[tuple(slices)].transpose(axes_order)
+    return arr_rotated
 
 def to_categorical(y, num_classes=None):
     """Converts a class vector (integers) to binary class matrix.
