@@ -5,14 +5,19 @@ Test dc_helper_functions.py
 import os
 import sys
 import numpy as np
-import numpy.testing and np_test
+import numpy.testing as np_test
 import cv2
 import pytest
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from deepcell.dc_helper_functions import to_categorical
 from deepcell.dc_helper_functions import get_immediate_subdirs
+from deepcell.dc_helper_functions import axis_softmax
+from deepcell.dc_helper_functions import rotate_array_0
+from deepcell.dc_helper_functions import rotate_array_90
+from deepcell.dc_helper_functions import rotate_array_180
+from deepcell.dc_helper_functions import rotate_array_270
+from deepcell.dc_helper_functions import to_categorical
 
 
 ### Import gloabl resources
