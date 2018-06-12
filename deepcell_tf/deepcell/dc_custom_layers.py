@@ -40,15 +40,14 @@ class ImageNormalization2D(Layer):
 
     def _average_filter(self, inputs):
         in_channels = inputs.shape[self.channel_axis]
-        if self.data_format == 'channels_first':
-            W = np.ones((in_channels, self.filter_size, self.filter_size, 1))
-        else:
-            W = np.ones((self.filter_size, self.filter_size, in_channels, 1))
+        W = np.ones((self.filter_size, self.filter_size, in_channels, 1))
 
         W /= W.size
         kernel = tf.Variable(W.astype(K.floatx()))
 
-        outputs = tf.nn.depthwise_conv2d(inputs, kernel, [1, 1, 1, 1], 'SAME')
+        data_format = 'NCHW' if self.data_format == 'channels_first' else 'NHWC'
+        outputs = tf.nn.depthwise_conv2d(inputs, kernel, [1, 1, 1, 1],
+                                         padding='SAME', data_format=data_format)
         return outputs
 
     def _window_std_filter(self, inputs, epsilon=K.epsilon()):
@@ -58,6 +57,7 @@ class ImageNormalization2D(Layer):
         return output
 
     def _reduce_median(self, inputs, axes=None):
+        # TODO: top_k cannot take None as batch dimension, and tf.rank cannot be iterated
         input_shape = tf.shape(inputs)
         rank = tf.rank(inputs)
 
