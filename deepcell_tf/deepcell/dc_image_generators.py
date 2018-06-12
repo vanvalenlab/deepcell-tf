@@ -1156,13 +1156,13 @@ class MovieDataGenerator(object):
             if np.random.random() < 0.5:
                 x = flip_axis(x, img_col_axis)
                 if label_movie is not None:
-                    y = flip_axis(y, img_col_axis - 1) # TODO: ensure that it should be -1
+                    y = flip_axis(y, img_col_axis)
 
         if self.vertical_flip:
             if np.random.random() < 0.5:
                 x = flip_axis(x, img_row_axis)
                 if label_movie is not None:
-                    y = flip_axis(y, img_row_axis - 1) # TODO: ensure that it should be -1
+                    y = flip_axis(y, img_row_axis)
 
         if label_movie is not None:
             return x, y
