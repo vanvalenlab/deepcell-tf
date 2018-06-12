@@ -23,17 +23,16 @@ from deepcell.dc_helper_functions import to_categorical
 ### Import gloabl resources
 
 # Set global resource locations
-test_image_location = "/home/linus/projects/deepcell_permanent_resources/phase.tif"
-rotated_90_location = "/home/linus/projects/deepcell_permanent_resources/rotated_90.tif"
-rotated_180_location = "/home/linus/projects/deepcell_permanent_resources/rotated_180.tif"
-rotated_270_location = "/home/linus/projects/deepcell_permanent_resources/rotated_270.tif"
+test_image_location = "./resources/phase.tif"
+rotated_90_location = "./resources/rotated_90.tif"
+rotated_180_location = "./resources/rotated_180.tif"
+rotated_270_location = "./resources/rotated_270.tif"
 
 # Load images
 test_image = cv2.imread( test_image_location, 0 )
 rotated_90 = cv2.imread( rotated_90_location, 0 )
 rotated_180 = cv2.imread( rotated_180_location, 0 )
 rotated_270 = cv2.imread( rotated_270_location, 0 )
-
 
 
 ### Begin tests
