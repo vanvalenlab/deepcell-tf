@@ -22,7 +22,7 @@ from tensorflow.python.keras import backend as K
 from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
 from .dc_plotting_functions import plot_training_data_2d, plot_training_data_3d
 from .dc_helper_functions import get_image, process_image, get_image_sizes, \
-                                 nikon_getfiles, get_immediate_subdirs
+                                 nikon_getfiles, get_immediate_subdirs, sorted_nicely
 
 """
 Functions to create training data
@@ -525,6 +525,7 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
     X_dirs = [os.path.join(direc_name, t, raw_image_direc) for t in training_direcs]
     if montage_mode:
         X_dirs = [os.path.join(t, p) for t in X_dirs for p in os.listdir(t)]
+        X_dirs = sorted_nicely(X_dirs)
 
     # Initialize training data array
     if CHANNELS_FIRST:
@@ -578,6 +579,7 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
     y_dirs = [os.path.join(direc_name, t, annotation_direc) for t in training_direcs]
     if montage_mode:
         y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
+        y_dirs = sorted_nicely(y_dirs)
 
     # TODO: movie training data with channels?
     if CHANNELS_FIRST:

@@ -143,15 +143,14 @@ def format_coord(x, y, sample_image):
         formatted = 'x=%1.4f, y=1.4%f' % (x, y)
     return formatted
 
+def sorted_nicely(l):
+    convert = lambda text: int(text) if text.isdigit() else text
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return sorted(l, key=alphanum_key)
+
 def nikon_getfiles(direc_name, channel_name):
     imglist = os.listdir(direc_name)
     imgfiles = [i for i in imglist if channel_name in i]
-
-    def sorted_nicely(l):
-        convert = lambda text: int(text) if text.isdigit() else text
-        alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-        return sorted(l, key=alphanum_key)
-
     imgfiles = sorted_nicely(imgfiles)
     return imgfiles
 
