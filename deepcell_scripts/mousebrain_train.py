@@ -15,23 +15,32 @@ from deepcell import make_training_data
 from deepcell import bn_dense_feature_net_3D as the_model
 #from deepcell import siamese_model as the_model
 from deepcell import rate_scheduler, train_model_movie as train_model
+from deepcell import nikon_getfiles
+from deepcell import get_image
+from deepcell import run_models_on_directory
+from deepcell import get_image_sizes
 
+# data options
 DATA_OUTPUT_MODE = 'conv'
-ON_SERVER = platform.system() == 'Linux'
-DATA_DIR = '/data/data/cells/' if ON_SERVER else '/Users/Will/vanvalenlab/data'
-NPZ_DIR = '/data/npz_data/cells/'
-DATA_FILE = 'MouseBrain_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
 RESIZE = False
 RESHAPE_SIZE = 128
-
 NUM_FRAMES = 30
 
+# filepath constants
+DATA_DIR = '/data/data'
+MODEL_DIR = '/data/models'
+NPZ_DIR = '/data/npz_data'
+RESULTS_DIR = '/data/results'
+PREFIX = 'cells/MouseBrain/generic'
+DATA_FILE = 'MouseBrain_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
+
+
 def generate_training_data():
-    direc_name = os.path.join(DATA_DIR, 'MouseBrain/generic')
+    direc_name = os.path.join(DATA_DIR, PREFIX)
     training_direcs = ['set6'] # only set6 from MouseBrain has been annotated
     raw_image_direc = 'stacked'
     annotation_direc = 'annotated/all_montages'
-    file_name_save = os.path.join(NPZ_DIR, 'MouseBrain/generic', DATA_FILE)
+    file_name_save = os.path.join(NPZ_DIR, PREFIX, DATA_FILE)
 
     # Create the training data
     make_training_data(
@@ -58,9 +67,8 @@ def generate_training_data():
 
 
 def train_model_on_training_data():
-    dataset = 'MouseBrain/generic'
-    direc_save = os.path.join(DATA_DIR, dataset)
-    direc_data = os.path.join(NPZ_DIR, dataset)
+    direc_save = os.path.join(MODEL_DIR, PREFIX)
+    direc_data = os.path.join(NPZ_DIR, PREFIX)
     batch_size = 1
     n_epoch = 50
     number_of_frames = 10
@@ -79,7 +87,8 @@ def train_model_on_training_data():
         batch_shape = (batch_size, number_of_frames, row_size, col_size, X.shape[4])
 
     n_features = 2 # np.unique(y).size
-    model = the_model(batch_shape=batch_shape, n_features=n_features, permute=False, location=False)
+    model = the_model(batch_shape=batch_shape, n_features=n_features,
+                      permute=False, location=False)
 
     train_model(
         model=model,
@@ -96,13 +105,47 @@ def train_model_on_training_data():
         shear=0
     )
 
+
+def run_model_on_dir():
+    channel_names = ['slice']
+    data_location = os.path.join(DATA_DIR, PREFIX, 'set0', 'set_0_x_0_y_0')
+
+    image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
+
+    # Define the model
+    model_name = '2018-06-12_MouseBrain_channels_last_conv__0.h5'
+    weights = os.path.join(MODEL_DIR, PREFIX, model_name)
+
+    predictions = run_models_on_directory(
+        data_location, channel_names, os.path.join(RESULTS_DIR, PREFIX),
+        n_features=2,
+        model_fn=the_model,
+        list_of_weights=[weights],
+        image_size_x=image_size_x,
+        image_size_y=image_size_y,
+        win_x=30,
+        win_y=30,
+        std=True,
+        split=False)
+
+    import pdb; pdb.set_trace()
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('command', type=str, choices=['train', 'run'], nargs='?',
+                        default='train', help='train or run models')
     parser.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
                         help='force re-write of training data npz files')
 
     args = parser.parse_args()
-    write_data = not os.path.isfile(os.path.join(NPZ_DIR, 'MouseBrain/generic', DATA_FILE + '.npz')) or args.overwrite
-    if write_data:
-        generate_training_data()
-    train_model_on_training_data()
+    data_file_exists = os.path.isfile(os.path.join(NPZ_DIR, PREFIX, DATA_FILE + '.npz'))
+
+    if args.command == 'train':
+        if args.overwrite or not data_file_exists:
+            generate_training_data()
+
+        train_model_on_training_data()
+
+    elif args.command == 'run':
+        run_model_on_dir()
