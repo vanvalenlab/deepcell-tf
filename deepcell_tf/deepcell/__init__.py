@@ -13,3 +13,4 @@ from .dc_image_generators import *
 from .dc_running_functions import *
 from .dc_training_functions import *
 from .dc_model_zoo import *
+from .dc_export_functions import *

@@ -68,5 +68,4 @@ make_training_data(max_training_examples = max_training_examples, window_size_x 
 		output_mode = "sample",
 		reshape_size = None,
 		display = False,
-		verbose = True,
-		process_std = False)
+		verbose = True)

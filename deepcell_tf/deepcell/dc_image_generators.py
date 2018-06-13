@@ -159,12 +159,8 @@ class ImageFullyConvIterator(Iterator):
         else:
             y_channel_shape = self.y.shape[self.channel_axis]
 
-        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:4]))
-        if self.y is not None:
-            if self.channel_axis == 1:
-                batch_y = np.zeros(tuple([len(index_array), y_channel_shape] + list(self.y.shape)[2:4]))
-            else:
-                batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:3] + [y_channel_shape]))
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
+        batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:]))
 
         for i, j in enumerate(index_array):
             x = self.x[j]

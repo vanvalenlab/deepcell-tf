@@ -16,26 +16,19 @@ import numpy as np
 import tifffile as tiff
 from tensorflow.python.keras import backend as K
 
-from .dc_helper_functions import get_images_from_directory, process_image
+from .dc_helper_functions import get_images_from_directory
 from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
 
 """
 Running convnets
 """
 
-def run_model(image, model, win_x=30, win_y=30, std=False, split=True, process=True):
+def run_model(image, model, win_x=30, win_y=30, split=True):
     # pad_width = ((0, 0), (0, 0), (win_x, win_x), (win_y, win_y))
     # image = np.pad(image, pad_width=pad_width , mode='constant', constant_values=0)
     channel_axis = 1 if CHANNELS_FIRST else -1
     x_axis = 2 if CHANNELS_FIRST else 1
     y_axis = 3 if CHANNELS_FIRST else 2
-
-    if process:
-        for j in range(image.shape[channel_axis]):
-            if CHANNELS_FIRST:
-                image[0, j, :, :] = process_image(image[0, j, :, :], win_x, win_y, std)
-            else:
-                image[0, :, :, j] = process_image(image[0, :, :, j], win_x, win_y, std)
 
     evaluate_model = K.function(
         [model.layers[0].input, K.learning_phase()],
@@ -85,7 +78,7 @@ def run_model(image, model, win_x=30, win_y=30, std=False, split=True, process=T
     return model_output
 
 def run_model_on_directory(data_location, channel_names, output_location, model,
-                           win_x=30, win_y=30, std=False, split=True, process=True, save=True):
+                           win_x=30, win_y=30, split=True, save=True):
 
     channel_axis = 1 if CHANNELS_FIRST else -1
     n_features = model.layers[-1].output_shape[channel_axis]
@@ -95,8 +88,7 @@ def run_model_on_directory(data_location, channel_names, output_location, model,
 
     for i, image in enumerate(image_list):
         print('Processing image {} of {}'.format(i + 1, len(image_list)))
-        model_output = run_model(image, model, win_x=win_x, win_y=win_y,
-                                 std=std, split=split, process=process)
+        model_output = run_model(image, model, win_x=win_x, win_y=win_y, split=split)
         model_outputs.append(model_output)
 
         # Save images
@@ -110,8 +102,7 @@ def run_model_on_directory(data_location, channel_names, output_location, model,
 
 def run_models_on_directory(data_location, channel_names, output_location, model_fn,
                             list_of_weights, n_features=3, win_x=30, win_y=30,
-                            image_size_x=1080, image_size_y=1280, save=True,
-                            process=True, std=False, split=True):
+                            image_size_x=1080, image_size_y=1280, save=True, split=True):
     if split:
         input_shape = (len(channel_names), image_size_x // 2 + win_x, image_size_y // 2 + win_y)
     else:
@@ -136,8 +127,7 @@ def run_models_on_directory(data_location, channel_names, output_location, model
         model.load_weights(weights_path)
         processed_image_list = run_model_on_directory(
             data_location, channel_names, output_location, model,
-            win_x=win_x, win_y=win_y, save=False, split=split,
-            std=std, process=process)
+            win_x=win_x, win_y=win_y, save=False, split=split)
 
         model_outputs.append(np.stack(processed_image_list, axis=0))
 
