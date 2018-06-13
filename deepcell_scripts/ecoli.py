@@ -163,7 +163,7 @@ def export():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', type=str, choices=['train', 'run'], nargs='?',
+    parser.add_argument('command', type=str, choices=['train', 'run', 'export'], nargs='?',
                         default='train', help='train or run models')
     parser.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
                         help='force re-write of training data npz files')
