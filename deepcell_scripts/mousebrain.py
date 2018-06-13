@@ -124,7 +124,6 @@ def train_model_on_training_data():
 def run_model_on_dir():
     save_output_images = True
     channel_names = ['slice']
-    data_location = os.path.join(DATA_DIR, PREFIX, 'set0', 'stacked', 'set_0_x_0_y_0')
 
     # Define the model
     model_name = '2018-06-13_MouseBrain_channels_last_conv__0.h5'
@@ -154,9 +153,8 @@ def run_model_on_dir():
     model = the_model(batch_shape=batch_shape, n_features=n_features,
                       permute=False, location=False)
 
-    model_outputs = []
+    model.load_weights(weights)
     model_output = run_model(images, model, win_x=30, win_y=30, split=False)
-    model_outputs.append(model_output)
 
     # Save images
     if save_output_images:
@@ -192,8 +190,6 @@ def export():
 
     frames_per_batch = 10
     batch_size = 1
-    win_x, win_y = 30, 30
-    n_features = 2
 
     nrow, ncol = X.shape[row_axis:col_axis + 1] if not RESIZE else (RESHAPE_SIZE, RESHAPE_SIZE)
     if data_format == 'channels_first':
