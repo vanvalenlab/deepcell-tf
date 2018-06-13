@@ -28,6 +28,7 @@ DATA_DIR = '/data/data'
 MODEL_DIR = '/data/models'
 NPZ_DIR = '/data/npz_data'
 RESULTS_DIR = '/data/results'
+EXPORT_DIR = '/data/exports'
 PREFIX = 'cells/ecoli/kc_polaris'
 DATA_FILE = 'ecoli_kc_polaris_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
 
@@ -189,7 +190,7 @@ def export():
 
     model_name = '2018-06-13_ecoli_kc_polaris_channels_last_sample__0.h5'
     weights_path = os.path.join(MODEL_DIR, PREFIX, model_name)
-    export_path = '/tmp/ecoli/kc_polaris'
+    export_path = os.path.join(EXPORT_DIR, PREFIX)
     export_model(model, export_path, model_version=0, weights_path=weights_path)
 
 if __name__ == '__main__':

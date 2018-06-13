@@ -31,6 +31,7 @@ DATA_DIR = '/data/data'
 MODEL_DIR = '/data/models'
 NPZ_DIR = '/data/npz_data'
 RESULTS_DIR = '/data/results'
+EXPORT_DIR = '/data/exports'
 PREFIX = 'cells/MouseBrain/generic'
 DATA_FILE = 'MouseBrain_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
 
@@ -205,7 +206,7 @@ def export():
 
     model_name = '2018-06-13_MouseBrain_channels_last_conv__0.h5'
     weights_path = os.path.join(MODEL_DIR, PREFIX, model_name)
-    export_path = '/tmp/MouseBrain/generic'
+    export_path = os.path.join(EXPORT_DIR, PREFIX)
     export_model(model, export_path, model_version=0, weights_path=weights_path)
 
 
