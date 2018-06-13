@@ -17,6 +17,7 @@ from deepcell import rate_scheduler
 from deepcell import train_model_movie as train_model
 from deepcell import load_training_images_3d
 from deepcell import run_model
+from deepcell import export_model
 
 # data options
 DATA_OUTPUT_MODE = 'conv'
@@ -125,7 +126,7 @@ def run_model_on_dir():
     data_location = os.path.join(DATA_DIR, PREFIX, 'set0', 'stacked', 'set_0_x_0_y_0')
 
     # Define the model
-    model_name = '2018-06-12_MouseBrain_channels_last_conv__0.h5'
+    model_name = '2018-06-13_MouseBrain_channels_last_conv__0.h5'
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
     number_of_frames = 10
@@ -170,6 +171,13 @@ def run_model_on_dir():
     print('Done!')
 
 
+def export():
+    model_name = '2018-06-13_MouseBrain_channels_last_conv__0.h5'
+    weights_path = os.path.join(MODEL_DIR, PREFIX, model_name)
+    export_path = '/tmp/MouseBrain/generic'
+    export_model(the_model, export_path, model_version=0, weights_path=weights_path)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('command', type=str, choices=['train', 'run'], nargs='?',
@@ -188,3 +196,6 @@ if __name__ == '__main__':
 
     elif args.command == 'run':
         run_model_on_dir()
+
+    elif args.command == 'export':
+        export()

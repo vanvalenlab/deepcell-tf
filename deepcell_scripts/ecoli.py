@@ -14,6 +14,7 @@ from deepcell import bn_dense_feature_net
 from deepcell import rate_scheduler
 from deepcell import train_model_disc, train_model_conv, train_model_sample
 from deepcell import run_models_on_directory
+from deepcell import export_model
 
 # data options
 DATA_OUTPUT_MODE = 'conv'
@@ -132,7 +133,7 @@ def run_model_on_dir():
     channel_names = ['phase']
     image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
 
-    model_name = '2018-05-21_ecoli_kc_polaris_61x61__0.h5'
+    model_name = '2018-06-13_ecoli_kc_polaris_channels_last_sample__0.h5'
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
     n_features = 3
@@ -153,6 +154,13 @@ def run_model_on_dir():
         win_y=window_size[1],
         split=False)
 
+def export():
+    model_fn = bn_feature_net_61x61 if DATA_OUTPUT_MODE == 'sample' else bn_dense_feature_net
+    model_name = '2018-06-13_ecoli_kc_polaris_channels_last_sample__0.h5'
+    weights_path = os.path.join(MODEL_DIR, PREFIX, model_name)
+    export_path = '/tmp/ecoli/kc_polaris'
+    export_model(model_fn, export_path, model_version=0, weights_path=weights_path)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('command', type=str, choices=['train', 'run'], nargs='?',
@@ -171,3 +179,6 @@ if __name__ == '__main__':
 
     elif args.command == 'run':
         run_model_on_dir()
+
+    elif args.command == 'export':
+        export_model()
