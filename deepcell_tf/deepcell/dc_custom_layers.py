@@ -127,8 +127,9 @@ class ImageNormalization3D(Layer):
         W /= W.size
         kernel = tf.Variable(W.astype(K.floatx()))
 
-        outputs = tf.nn.conv3d(inputs, kernel, [1, 1, 1, 1],
         data_format = 'NCDHW' if self.data_format == 'channels_first' else 'NDHWC'
+        # TODO: conv3d vs depthwise_conv2d?
+        outputs = tf.nn.conv3d(inputs, kernel, [1, 1, 1, 1, 1],
                                padding='SAME', data_format=data_format)
         return outputs
 
