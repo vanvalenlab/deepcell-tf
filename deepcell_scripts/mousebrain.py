@@ -155,8 +155,7 @@ def run_model_on_dir():
                       permute=False, location=False)
 
     model_outputs = []
-    model_output = run_model(images, model, win_x=30, win_y=30,
-                             std=False, split=False, process=False)
+    model_output = run_model(images, model, win_x=30, win_y=30, split=False)
     model_outputs.append(model_output)
 
     # Save images
