@@ -140,9 +140,7 @@ def run_model_on_dir():
         raw_image_direc=os.path.join('stacked', 'set_0_x_0_y_0'),
         image_size=(256, 256),
         window_size=(win_x, win_y),
-        num_frames=number_of_frames,
-        process=True,
-        process_std=True)
+        num_frames=number_of_frames)
 
     if K.image_data_format() == 'channels_first':
         row_size, col_size = images.shape[3:]
