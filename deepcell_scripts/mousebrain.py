@@ -172,10 +172,41 @@ def run_model_on_dir():
 
 
 def export():
+    model_args = {
+        'n_features': 2, # np.unique(y).size
+        'permute': False,
+        'location': False
+    }
+
+    data_format = K.image_data_format()
+    row_axis = 3 if data_format == 'channels_first' else 2
+    col_axis = 4 if data_format == 'channels_first' else 3
+    channel_axis = 1 if data_format == 'channels_first' else 4
+
+    direc_data = os.path.join(NPZ_DIR, PREFIX)
+    training_data = np.load(os.path.join(direc_data, DATA_FILE + '.npz'))
+
+    X, y = training_data['X'], training_data['y']
+    print('X.shape: {}\ny.shape: {}'.format(X.shape, y.shape))
+
+    frames_per_batch = 10
+    batch_size = 1
+    win_x, win_y = 30, 30
+    n_features = 2
+
+    nrow, ncol = X.shape[row_axis:col_axis + 1] if not RESIZE else (RESHAPE_SIZE, RESHAPE_SIZE)
+    if data_format == 'channels_first':
+        batch_shape = (batch_size, X.shape[channel_axis], frames_per_batch, nrow, ncol)
+    else:
+        batch_shape = (batch_size, frames_per_batch, nrow, ncol, X.shape[channel_axis])
+    model_args['batch_shape'] = batch_shape
+
+    model = the_model(**model_args)
+
     model_name = '2018-06-13_MouseBrain_channels_last_conv__0.h5'
     weights_path = os.path.join(MODEL_DIR, PREFIX, model_name)
     export_path = '/tmp/MouseBrain/generic'
-    export_model(the_model, export_path, model_version=0, weights_path=weights_path)
+    export_model(model, export_path, model_version=0, weights_path=weights_path)
 
 
 if __name__ == '__main__':
