@@ -155,11 +155,42 @@ def run_model_on_dir():
         split=False)
 
 def export():
-    model_fn = bn_feature_net_61x61 if DATA_OUTPUT_MODE == 'sample' else bn_dense_feature_net
+    model_args = {
+        'norm_method': 'median',
+        'reg': 1e-5,
+        'n_features': 3
+    }
+
+    direc_data = os.path.join(NPZ_DIR, PREFIX)
+    training_data = np.load(os.path.join(direc_data, DATA_FILE + '.npz'))
+    X, y = training_data['X'], training_data['y']
+
+    data_format = K.image_data_format()
+    row_axis = 2 if data_format == 'channels_first' else 1
+    col_axis = 3 if data_format == 'channels_first' else 2
+    channel_axis = 1 if data_format == 'channels_first' else 3
+
+    if DATA_OUTPUT_MODE == 'sample':
+        the_model = bn_feature_net_61x61
+        model_args['n_channels'] = 1
+
+    elif DATA_OUTPUT_MODE == 'conv' or DATA_OUTPUT_MODE == 'disc':
+        the_model = bn_dense_feature_net
+        model_args['location'] = False
+
+        size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[row_axis:col_axis + 1]
+        if data_format == 'channels_first':
+            model_args['input_shape'] = (X.shape[channel_axis], size[0], size[1])
+        else:
+            model_args['input_shape'] = (size[0], size[1], X.shape[channel_axis])
+
+    the_model = bn_feature_net_61x61 if DATA_OUTPUT_MODE == 'sample' else bn_dense_feature_net
+    model = the_model(**model_args)
+
     model_name = '2018-06-13_ecoli_kc_polaris_channels_last_sample__0.h5'
     weights_path = os.path.join(MODEL_DIR, PREFIX, model_name)
     export_path = '/tmp/ecoli/kc_polaris'
-    export_model(model_fn, export_path, model_version=0, weights_path=weights_path)
+    export_model(model, export_path, model_version=0, weights_path=weights_path)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
