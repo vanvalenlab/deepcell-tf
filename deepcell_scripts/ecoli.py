@@ -212,4 +212,4 @@ if __name__ == '__main__':
         run_model_on_dir()
 
     elif args.command == 'export':
-        export_model()
+        export()
