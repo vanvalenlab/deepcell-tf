@@ -35,7 +35,7 @@ DATA_FILE = 'MouseBrain_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
 
 for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
     try:
-        os.makedirs(d)
+        os.makedirs(os.path.join(d, PREFIX))
     except OSError as exc: # Guard against race condition
         if exc.errno != errno.EEXIST:
             raise
