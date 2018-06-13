@@ -1,6 +1,6 @@
 ## Generate training data
 import os
-import pdb
+import errno
 import argparse
 
 import numpy as np
@@ -20,6 +20,7 @@ from deepcell import run_model
 
 # data options
 DATA_OUTPUT_MODE = 'conv'
+BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
 RESIZE = False
 RESHAPE_SIZE = 128
 NUM_FRAMES = 30 # get first N frames from each training folder
@@ -32,6 +33,12 @@ RESULTS_DIR = '/data/results'
 PREFIX = 'cells/MouseBrain/generic'
 DATA_FILE = 'MouseBrain_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
 
+for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
+    try:
+        os.makedirs(d)
+    except OSError as exc: # Guard against race condition
+        if exc.errno != errno.EEXIST:
+            raise
 
 def generate_training_data():
     direc_name = os.path.join(DATA_DIR, PREFIX)
@@ -50,7 +57,7 @@ def generate_training_data():
         output_mode=DATA_OUTPUT_MODE,
         window_size_x=30,
         window_size_y=30,
-        border_mode='valid' if DATA_OUTPUT_MODE == 'sample' else 'same',
+        border_mode=BORDER_MODE,
         reshape_size=None if not RESIZE else RESHAPE_SIZE,
         process=True,
         process_std=True,
@@ -89,7 +96,7 @@ def train_model_on_training_data():
     channel_axis = 1 if data_format == 'channels_first' else 4
 
     nrow, ncol = X.shape[row_axis:col_axis + 1] if not RESIZE else (RESHAPE_SIZE, RESHAPE_SIZE)
-    if K.image_data_format() == 'channels_first':
+    if data_format == 'channels_first':
         batch_shape = (batch_size, X.shape[channel_axis], frames_per_batch, nrow, ncol)
     else:
         batch_shape = (batch_size, frames_per_batch, nrow, ncol, X.shape[channel_axis])
