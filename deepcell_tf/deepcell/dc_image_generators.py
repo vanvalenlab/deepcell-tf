@@ -863,47 +863,24 @@ def apply_transform_to_movie(x, transform_matrix, channel_axis=0, fill_mode='nea
     # Returns
         The transformed version of the input.
     """
-
-    if channel_axis is not None:
-        x = np.rollaxis(x, channel_axis, 0)
-        final_affine_matrix = transform_matrix[:2, :2]
-        final_offset = transform_matrix[:2, 2]
-
-        channel_images = []
-        for n_channel in range(x.shape[0]):
-            frames = []
-            for n_frame in range(x.shape[1]):
-                x_frame = x[n_channel, n_frame, :, :]
-                channel_image = ndi.interpolation.affine_transform(
-                    x_frame,
-                    final_affine_matrix,
-                    final_offset,
-                    order=0,
-                    mode=fill_mode,
-                    cval=cval)
-                frames.append(channel_image)
-            frames = np.stack(frames, axis=0)
-            channel_images.append(frames)
-        x = np.stack(channel_images, axis=0)
-        x = np.rollaxis(x, 0, channel_axis + 1)
-
-    if channel_axis is None:
-        final_affine_matrix = transform_matrix[:2, :2]
-        final_offset = transform_matrix[:2, 2]
-
-        frames = []
-        for n_frame in range(x.shape[1]):
-            x_frame = x[n_frame, :, :]
-            channel_image = ndi.interpolation.affine_transform(
-                x_frame,
+    x = np.rollaxis(x, channel_axis, 0)
+    final_affine_matrix = transform_matrix[:2, :2]
+    final_offset = transform_matrix[:2, 2]
+    channel_images = []
+    for n_channel in range(x.shape[0]):
+        frames = [
+            ndi.interpolation.affine_transform(
+                x[n_channel, n_frame, :, :],
                 final_affine_matrix,
                 final_offset,
                 order=0,
                 mode=fill_mode,
-                cval=cval)
-            frames.append(channel_image)
-        x = np.stack(frames, axis=0)
-
+                cval=cval) for n_frame in range(x.shape[1])
+        ]
+        frames = np.stack(frames, axis=0)
+        channel_images.append(frames)
+    x = np.stack(channel_images, axis=0)
+    x = np.rollaxis(x, 0, channel_axis + 1)
     return x
 
 class MovieDataGenerator(object):
