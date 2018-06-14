@@ -8,6 +8,7 @@ Package for single cell image segmentation with convolutional neural networks
 from __future__ import absolute_import
 
 from .layers import *
+from .losses import *
 from .dc_data_functions import *
 from .dc_helper_functions import *
 from .dc_image_generators import *

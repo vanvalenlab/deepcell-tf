@@ -18,11 +18,11 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.utils import to_categorical as keras_to_categorical
 from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 
-from .dc_helper_functions import rate_scheduler, get_data, get_images_from_directory, \
-                                 to_categorical, \
-                                 sample_categorical_crossentropy, \
-                                 weighted_categorical_crossentropy, \
-                                 discriminative_instance_loss, discriminative_instance_loss_3D
+from .losses import sample_categorical_crossentropy
+from .losses import weighted_categorical_crossentropy
+from .losses import discriminative_instance_loss
+from .losses import discriminative_instance_loss_3D
+from .dc_helper_functions import rate_scheduler, get_data, get_images_from_directory, to_categorical
 from .dc_image_generators import SampleDataGenerator, MovieDataGenerator, \
                                  ImageFullyConvDataGenerator, SiameseDataGenerator
 from .dc_settings import CHANNELS_FIRST
