@@ -1296,14 +1296,16 @@ class MovieArrayIterator(Iterator):
             batch_x[i] = x
 
         if self.save_to_dir:
+            time_axis = 2 if self.data_format == 'channels_first' else 1
             for i, j in enumerate(index_array):
-                img = array_to_img(batch_x[i], self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(
-                    prefix=self.save_prefix,
-                    index=j,
-                    hash=np.random.randint(1e4),
-                    format=self.save_format)
-                img.save(os.path.join(self.save_to_dir, fname))
+                for frame in range(batch_x.shape[time_axis]):
+                    img = array_to_img(batch_x[i, frame], self.data_format, scale=True)
+                    fname = '{prefix}_{index}_{hash}.{format}'.format(
+                        prefix=self.save_prefix,
+                        index=j,
+                        hash=np.random.randint(1e4),
+                        format=self.save_format)
+                    img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
             return batch_x
