@@ -19,10 +19,10 @@ from skimage.measure import label
 from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.python.keras import backend as K
 
-from .dc_settings import CHANNELS_FIRST
+from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
 from .dc_plotting_functions import plot_training_data_2d, plot_training_data_3d
 from .dc_helper_functions import get_image, get_image_sizes, \
-                                 nikon_getfiles, get_immediate_subdirs
+                                 nikon_getfiles, get_immediate_subdirs, sorted_nicely
 
 """
 Functions to create training data
@@ -163,11 +163,11 @@ def reshape_matrix(X, y, reshape_size=256):
                     y_start, y_end = -reshape_size, y.shape[3 if CHANNELS_FIRST else 2]
 
                 if CHANNELS_FIRST:
-                    new_X[counter, :, :, :] = X[b, :, x_start:x_end, y_start:y_end]
-                    new_y[counter, :, :, :] = y[b, :, x_start:x_end, y_start:y_end]
+                    new_X[counter] = X[b, :, x_start:x_end, y_start:y_end]
+                    new_y[counter] = y[b, :, x_start:x_end, y_start:y_end]
                 else:
-                    new_X[counter, :, :, :] = X[b, x_start:x_end, y_start:y_end, :]
-                    new_y[counter, :, :, :] = y[b, x_start:x_end, y_start:y_end, :]
+                    new_X[counter] = X[b, x_start:x_end, y_start:y_end, :]
+                    new_y[counter] = y[b, x_start:x_end, y_start:y_end, :]
 
                 counter += 1
 
@@ -177,12 +177,12 @@ def reshape_matrix(X, y, reshape_size=256):
 
 def relabel_movie(y):
     new_y = np.zeros(y.shape)
-    unique_cells = list(np.unique(y))
-    relabel_ids = list(np.arange(len(unique_cells)) + 1)
+    unique_cells = np.unique(y) # get all unique values of y
+    unique_cells = np.delete(unique_cells, 0) # remove 0, as it is background
+    relabel_ids = np.arange(1, len(unique_cells) + 1)
     for cell_id, relabel_id in zip(unique_cells, relabel_ids):
         cell_loc = np.where(y == cell_id)
         new_y[cell_loc] = relabel_id
-
     return new_y
 
 def reshape_movie(X, y, reshape_size=256):
@@ -194,32 +194,33 @@ def reshape_movie(X, y, reshape_size=256):
         new_X_shape = (new_batch_size, X.shape[1], X.shape[2], reshape_size, reshape_size)
         new_y_shape = (new_batch_size, y.shape[1], y.shape[2], reshape_size, reshape_size)
     else:
-        new_X_shape = (new_batch_size, reshape_size, reshape_size, X.shape[3], X.shape[4])
-        new_y_shape = (new_batch_size, reshape_size, reshape_size, y.shape[3], y.shape[4])
+        new_X_shape = (new_batch_size, X.shape[1], reshape_size, reshape_size, X.shape[4])
+        new_y_shape = (new_batch_size, y.shape[1], reshape_size, reshape_size, y.shape[4])
 
     new_X = np.zeros(new_X_shape, dtype=K.floatx())
     new_y = np.zeros(new_y_shape, dtype='int32')
 
     counter = 0
+    row_axis = 3 if CHANNELS_FIRST else 2
+    col_axis = 4 if CHANNELS_FIRST else 3
     for b in range(X.shape[0]):
         for i in range(rep_number):
             for j in range(rep_number):
                 if i != rep_number - 1:
                     x_start, x_end = i * reshape_size, (i + 1) * reshape_size
                 else:
-                    x_start, x_end = -reshape_size, X.shape[2 if CHANNELS_FIRST else 1]
-
+                    x_start, x_end = -reshape_size, X.shape[row_axis]
                 if j != rep_number - 1:
                     y_start, y_end = j * reshape_size, (j + 1) * reshape_size
                 else:
-                    y_start, y_end = -reshape_size, y.shape[3 if CHANNELS_FIRST else 2]
+                    y_start, y_end = -reshape_size, y.shape[col_axis]
 
                 if CHANNELS_FIRST:
-                    new_X[counter, :, :, :, :] = X[b, :, :, x_start:x_end, y_start:y_end]
-                    new_y[counter, :, :, :, :] = relabel_movie(y[b, :, :, x_start:x_end, y_start:y_end])
+                    new_X[counter] = X[b, :, :, x_start:x_end, y_start:y_end]
+                    new_y[counter] = relabel_movie(y[b, :, :, x_start:x_end, y_start:y_end])
                 else:
-                    new_X[counter, :, :, :, :] = X[b, :, x_start:x_end, y_start:y_end, :]
-                    new_y[counter, :, :, :, :] = relabel_movie(y[b, :, x_start:x_end, y_start:y_end, :])
+                    new_X[counter] = X[b, :, x_start:x_end, y_start:y_end, :]
+                    new_y[counter] = relabel_movie(y[b, :, x_start:x_end, y_start:y_end, :])
 
                 counter += 1
 
@@ -325,9 +326,9 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
 
         # Compute the mask for the background
         if CHANNELS_FIRST:
-            y[b, len(edge_feature) - 1, :, :] = 1 - np.sum(y[b, :, :, :], axis=0)
+            y[b, len(edge_feature) - 1, :, :] = 1 - np.sum(y[b], axis=0)
         else:
-            y[b, :, :, len(edge_feature) - 1] = 1 - np.sum(y[b, :, :, :], axis=2)
+            y[b, :, :, len(edge_feature) - 1] = 1 - np.sum(y[b], axis=2)
 
     return y
 
@@ -447,7 +448,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
         for b in range(y.shape[0]):
             interior_mask = y[b, 1, :, :] if CHANNELS_FIRST else y[b, :, :, 1]
-            y_label[b, :, :, :] = label(interior_mask)
+            y_label[b] = label(interior_mask)
 
         max_cells = np.amax(y_label)
         if CHANNELS_FIRST:
@@ -456,7 +457,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
             y_binary = np.zeros((y.shape[0], y.shape[2], y.shape[3], max_cells + 1), dtype='int32')
 
         for b in range(y.shape[0]):
-            label_mask = y_label[b, :, :, :]
+            label_mask = y_label[b]
             for l in range(max_cells + 1):
                 if CHANNELS_FIRST:
                     y_binary[b, l, :, :] = label_mask == l
@@ -481,12 +482,6 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         print('Number of features: {}'.format(y.shape[1 if CHANNELS_FIRST else -1]))
         print('Number of training data points: {}'.format(len(feature_label)))
         print('Class weights: {}'.format(weights))
-        # TODO: 3D data
-        data_axes = (1, 2) if CHANNELS_FIRST else (0, 1)
-        for j in range(y.shape[0]):
-            sum_3_axis = np.sum(y[j, :, :, :].astype(K.floatx()), axis=(0, 1, 2))
-            sum_2_axis = np.sum(y[j, :, :, :].astype(K.floatx()), axis=data_axes)
-            print(1.0 / 3.0 * sum_3_axis / sum_2_axis)
 
     if display:
         if output_mode == 'conv':
@@ -498,7 +493,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         plot_training_data_2d(X, display_mask, max_plotted=max_plotted)
 
 def load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
-                            image_size, window_size, num_frames):
+                            image_size, window_size, num_frames, montage_mode=False):
     """
     Iterate over every image in the training directories and load
     each into a numpy array.
@@ -508,7 +503,9 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
 
     # flatten list of lists
     X_dirs = [os.path.join(direc_name, t, raw_image_direc) for t in training_direcs]
-    X_dirs = [os.path.join(t, p) for t in X_dirs for p in os.listdir(t)]
+    if montage_mode:
+        X_dirs = [os.path.join(t, p) for t in X_dirs for p in os.listdir(t)]
+        X_dirs = sorted_nicely(X_dirs)
 
     # Initialize training data array
     if CHANNELS_FIRST:
@@ -520,10 +517,11 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
 
     # Load 3D training images
     for b, direc in enumerate(X_dirs):
-        print('Training Directory {}: {}'.format(b + 1, direc))
 
         for c, channel in enumerate(channel_names):
-            print('Channel: {}\nFilepath: {}'.format(channel, direc))
+            print('Loading {} channel data from training dir {}: {}'.format(
+                channel, b + 1, direc))
+
             imglist = nikon_getfiles(direc, channel)
 
             for i, img in enumerate(imglist):
@@ -533,7 +531,6 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
                               len(imglist) - num_frames, num_frames, len(imglist)))
                     break
                 image_data = np.asarray(get_image(os.path.join(direc, img)))
-                print('Frame: {}\tPixel Sum: {}'.format(i, np.sum(image_data.flatten())))
 
                 if CHANNELS_FIRST:
                     X[b, c, i, :, :] = image_data
@@ -543,7 +540,7 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
     return X
 
 def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, annotation_name,
-                             num_frames, image_size):
+                             num_frames, image_size, montage_mode=False):
     """
     Iterate over every annotated image in the training directories and load
     each into a numpy array.
@@ -555,8 +552,11 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
         annotation_name = [annotation_name]
 
     y_dirs = [os.path.join(direc_name, t, annotation_direc) for t in training_direcs]
-    y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
+    if montage_mode:
+        y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
+        y_dirs = sorted_nicely(y_dirs)
 
+    # TODO: movie training data with channels?
     if CHANNELS_FIRST:
         y_shape = (len(y_dirs), len(annotation_name), num_frames, image_size_x, image_size_y)
     else:
@@ -575,6 +575,7 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
                               len(imglist) - num_frames, num_frames, len(imglist)))
                     break
                 annotation_img = get_image(os.path.join(direc, img_file))
+                # TODO: movie training data with channels?
                 if CHANNELS_FIRST:
                     y[b, c, z, :, :] = annotation_img
                 else:
@@ -595,6 +596,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
                           num_frames=50,
                           display=True,
                           num_of_frames_to_display=5,
+                          montage_mode=True,
                           verbose=True):
     """
     Read all images in training directories and save as npz file.
@@ -628,19 +630,24 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
         sub_sample: whether or not to subsamble the training data
         display: whether or not to plot the training data
         num_of_frames_to_display:
+        montage_mode: data is broken into several "montage"
+                      sub-directories for easier annoation
     """
 
     # Load one file to get image sizes
-    raw_path = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
-    random_montage_dir = os.path.join(raw_path, random.choice(os.listdir(raw_path)))
-    image_size = get_image_sizes(random_montage_dir, channel_names)
+    rand_train_dir = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
+    if montage_mode:
+        rand_train_dir = os.path.join(rand_train_dir, random.choice(os.listdir(rand_train_dir)))
+
+    image_size = get_image_sizes(rand_train_dir, channel_names)
 
     X = load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
                                 image_size, window_size=(window_size_x, window_size_y),
-                                num_frames=num_frames)
+                                num_frames=num_frames, montage_mode=montage_mode)
 
     y = load_annotated_images_3d(direc_name, training_direcs, annotation_direc,
-                                 annotation_name, num_frames, image_size)
+                                 annotation_name, num_frames, image_size,
+                                 montage_mode=montage_mode)
 
     # Trim annotation images
     if border_mode == 'valid':
@@ -662,7 +669,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
             binary_mask_shape = (y.shape[0], y.shape[1], y.shape[2], y.shape[3], max_cells + 1)
         y_binary = np.zeros(binary_mask_shape, dtype='int32')
         for b in range(y.shape[0]):
-            label_mask = y[b, :, :, :]
+            label_mask = y[b]
             for l in range(max_cells + 1):
                 if CHANNELS_FIRST:
                     y_binary[b, l, :, :, :] = label_mask == l
@@ -752,6 +759,7 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               reshape_size=reshape_size,
                               verbose=verbose,
                               display=display,
+                              montage_mode=kwargs.get('montage_mode', False),
                               num_frames=kwargs.get('num_frames', 50),
                               num_of_frames_to_display=kwargs.get('num_of_frames_to_display', 5))
 

@@ -34,15 +34,15 @@ import matplotlib.pyplot as plt
 from skimage.transform import resize
 
 
-from deepcell import make_training_data_2d as make_training_data
+from deepcell import make_training_data
 
 # Define maximum number of training examples
 window_size = 30
 
 # Load data
-direc_name = '/data/DL_Training_Data/nuclear_movie'
-output_directory = '/data/training_data/training_data_npz/nuclear_movie/'
-file_name_save = os.path.join( output_directory, 'nuclear_movie_disc_same.npz')
+direc_name = '/data/data/cells/unspecified_nuclear_data/nuclear_movie'
+output_directory = '/data/npz_data/cells/unspecified_nuclear_data/nuclear_movie/'
+file_name_save = os.path.join( output_directory, 'nuclear_movie_same.npz')
 training_direcs = ["set1", "set2"]
 channel_names = ["DAPI"]
 
@@ -51,17 +51,18 @@ pathlib.Path( output_directory ).mkdir( parents=True, exist_ok=True )
 
 # Create the training data
 make_training_data(window_size_x = 30, window_size_y = 30,
-		direc_name = direc_name,
-		file_name_save = file_name_save,
-		training_direcs = training_direcs,
-		channel_names = channel_names,
-		annotation_name = "corrected",
-		raw_image_direc = "RawImages",
-		annotation_direc = "Annotation",
-		border_mode = "same",
-		output_mode = "disc",
-		num_frames = 60,
-		reshaped_size = 256,
-		display = False,
-		num_of_frames_to_display = 5,
-		verbose = True)
+	direc_name = direc_name,
+    montage_mode=False,
+	file_name_save = file_name_save,
+	training_direcs = training_direcs,
+	channel_names = channel_names,
+	dimensionality = 3,
+	annotation_name = "corrected",
+	raw_image_direc = "RawImages",
+	annotation_direc = "Annotation",
+	border_mode = "same",
+	num_frames = 60,
+	reshape_size = None,
+	display = False,
+	num_of_frames_to_display = 5,
+	verbose = True)
