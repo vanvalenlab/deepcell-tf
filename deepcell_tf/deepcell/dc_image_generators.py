@@ -1277,7 +1277,10 @@ class MovieArrayIterator(Iterator):
             time_axis = 2 if self.data_format == 'channels_first' else 1
             for i, j in enumerate(index_array):
                 for frame in range(batch_x.shape[time_axis]):
-                    img = array_to_img(batch_x[i, frame], self.data_format, scale=True)
+                    if time_axis == 2:
+                        img = array_to_img(batch_x[i, :, frame], self.data_format, scale=True)
+                    else:
+                        img = array_to_img(batch_x[i, frame], self.data_format, scale=True)
                     fname = '{prefix}_{index}_{hash}.{format}'.format(
                         prefix=self.save_prefix,
                         index=j,
