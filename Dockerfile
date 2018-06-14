@@ -23,7 +23,7 @@ RUN git clone https://www.github.com/vanvalenlab/Mask_RCNN /deepcell-tf/lib/Mask
     cd /deepcell-tf
 
 # Copy the setup.py and requirements.txt and install the deepcell-tf dependencies
-COPY setup.py requirements.txt /deepcell-tf/lib/deepcell-tf
+COPY setup.py requirements.txt /deepcell-tf/lib/deepcell-tf/
 RUN pip install -r /deepcell-tf/lib/deepcell-tf/requirements.txt
 
 # Copy the rest of the package code and its scripts
