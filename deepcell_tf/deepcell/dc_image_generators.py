@@ -849,40 +849,6 @@ class SiameseIterator(Iterator):
 Custom movie generators
 """
 
-def apply_transform_to_movie(x, transform_matrix, channel_axis=0, fill_mode='nearest', cval=0.):
-    """Apply the image transformation specified by a matrix.
-    # Arguments
-        x: 4D numpy array, single image.
-        transform_matrix: Numpy array specifying the geometric transformation.
-        channel_axis: Index of axis for channels in the input tensor.
-        fill_mode: Points outside the boundaries of the input
-            are filled according to the given mode
-            (one of `{'constant', 'nearest', 'reflect', 'wrap'}`).
-        cval: Value used for points outside the boundaries
-            of the input if `mode='constant'`.
-    # Returns
-        The transformed version of the input.
-    """
-    x = np.rollaxis(x, channel_axis, 0)
-    final_affine_matrix = transform_matrix[:2, :2]
-    final_offset = transform_matrix[:2, 2]
-    channel_images = []
-    for n_channel in range(x.shape[0]):
-        frames = [
-            ndi.interpolation.affine_transform(
-                x[n_channel, n_frame, :, :],
-                final_affine_matrix,
-                final_offset,
-                order=0,
-                mode=fill_mode,
-                cval=cval) for n_frame in range(x.shape[1])
-        ]
-        frames = np.stack(frames, axis=0)
-        channel_images.append(frames)
-    x = np.stack(channel_images, axis=0)
-    x = np.rollaxis(x, 0, channel_axis + 1)
-    return x
-
 class MovieDataGenerator(object):
     """Generate minibatches of movie data with real-time data augmentation.
     # Arguments
@@ -1113,15 +1079,17 @@ class MovieDataGenerator(object):
 
             if transform_matrix is not None:
                 h, w = y.shape[img_row_axis], y.shape[img_col_axis]
-                transform_matrix = transform_matrix_offset_center(transform_matrix, h, w)
-                y = apply_transform_to_movie(y, transform_matrix, img_channel_axis,
-                                             fill_mode='constant', cval=0)
+                transform_matrix_y = transform_matrix_offset_center(transform_matrix, h, w)
+                for frame in range(x.shape[self.time_axis - 1]):
+                    y[frame] = apply_transform(y[frame], transform_matrix_y, img_channel_axis - 1,
+                                               fill_mode='constant', cval=0)
 
         if transform_matrix is not None:
             h, w = x.shape[img_row_axis], x.shape[img_col_axis]
-            transform_matrix = transform_matrix_offset_center(transform_matrix, h, w)
-            x = apply_transform_to_movie(x, transform_matrix, img_channel_axis,
-                                         fill_mode=self.fill_mode, cval=self.cval)
+            transform_matrix_x = transform_matrix_offset_center(transform_matrix, h, w)
+            for frame in range(x.shape[self.time_axis - 1]):
+                x[frame] = apply_transform(x[frame], transform_matrix_x, img_channel_axis - 1,
+                                           fill_mode=self.fill_mode, cval=self.cval)
 
         if self.channel_shift_range != 0:
             x = random_channel_shift(x, self.channel_shift_range, img_channel_axis)
