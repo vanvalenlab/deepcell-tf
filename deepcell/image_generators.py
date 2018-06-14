@@ -1,5 +1,5 @@
 """
-dc_image_generators.py
+image_generators.py
 
 Image generators for training convolutional neural networks
 
