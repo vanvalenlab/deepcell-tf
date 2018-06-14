@@ -31,7 +31,7 @@ COPY deepcell /deepcell-tf/lib/deepcell-tf/deepcell
 COPY deepcell_scripts /deepcell-tf/deepcell_scripts
 
 # Install using setup.py
-RUN cd /deepcell-tf/lib/deepcell/ && \
+RUN cd /deepcell-tf/lib/deepcell-tf/ && \
     python setup.py install
 
 # Change matplotlibrc file to use the Agg backend
