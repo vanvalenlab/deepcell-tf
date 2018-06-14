@@ -5,26 +5,28 @@ Assortment of CNN architectures for single cell segmentation
 
 @author: David Van Valen
 """
-
+from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import Sequential, Model
-from tensorflow.python.keras.layers import Add, Conv2D, MaxPool2D, AvgPool2D, Conv3D, Activation, Lambda, Dropout
-from tensorflow.python.keras.layers import Softmax, Flatten, Dense, BatchNormalization, Permute, Input, Concatenate
-from tensorflow.python.keras.regularizers import l2
-from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.python.keras.activations import softmax
-from tensorflow.python.keras import initializers
+from tensorflow.python.keras.callbacks import ModelCheckpoint
+from tensorflow.python.keras.models import Sequential, Model
+from tensorflow.python.keras.layers import Add, Permute, Input, Concatenate
+from tensorflow.python.keras.layers import Conv2D, Conv3D, MaxPool2D, AvgPool2D
+from tensorflow.python.keras.layers import Flatten, Dense, Dropout
+from tensorflow.python.keras.layers import Activation, Softmax
+from tensorflow.python.keras.layers import BatchNormalization
+from tensorflow.python.keras.regularizers import l2
 
-from deepcell import axis_softmax
-from deepcell.layers import dilated_MaxPool2D
-from deepcell.layers import TensorProd2D, TensorProd3D
-from deepcell.layers import Resize
-from deepcell.layers import Location, Location3D
-from deepcell.layers import ImageNormalization2D, ImageNormalization3D
+from .layers import Resize
+from .layers import dilated_MaxPool2D
+from .layers import TensorProd2D, TensorProd3D
+from .layers import Location, Location3D
+from .layers import ImageNormalization2D, ImageNormalization3D
+from .utils.train_utils import axis_softmax
 
 """
 Batch normalized conv-nets

@@ -16,7 +16,7 @@ import numpy as np
 import tifffile as tiff
 from tensorflow.python.keras import backend as K
 
-from .dc_helper_functions import get_images_from_directory
+from .utils.io_utils import get_images_from_directory
 from .settings import CHANNELS_FIRST, CHANNELS_LAST
 
 """
