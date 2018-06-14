@@ -22,7 +22,7 @@ from tensorflow.python.saved_model import builder as saved_model_builder
 from tensorflow.python.saved_model import tag_constants, signature_constants, signature_def_utils_impl
 
 from .dc_helper_functions import get_images_from_directory
-from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
+from .settings import CHANNELS_FIRST, CHANNELS_LAST
 
 FLAGS = tf.app.flags.FLAGS
 

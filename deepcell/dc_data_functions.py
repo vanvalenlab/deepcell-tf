@@ -19,7 +19,7 @@ from skimage.measure import label
 from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.python.keras import backend as K
 
-from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
+from .settings import CHANNELS_FIRST, CHANNELS_LAST
 from .dc_plotting_functions import plot_training_data_2d, plot_training_data_3d
 from .dc_helper_functions import get_image, get_image_sizes, \
                                  nikon_getfiles, get_immediate_subdirs, sorted_nicely

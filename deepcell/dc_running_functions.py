@@ -17,7 +17,7 @@ import tifffile as tiff
 from tensorflow.python.keras import backend as K
 
 from .dc_helper_functions import get_images_from_directory
-from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
+from .settings import CHANNELS_FIRST, CHANNELS_LAST
 
 """
 Running convnets

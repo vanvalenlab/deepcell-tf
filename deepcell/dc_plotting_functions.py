@@ -11,7 +11,7 @@ from __future__ import division
 
 import matplotlib.pyplot as plt
 
-from .dc_settings import CHANNELS_FIRST
+from .settings import CHANNELS_FIRST
 
 def cf(x_coord, y_coord, sample_image):
     numrows, numcols = sample_image.shape
