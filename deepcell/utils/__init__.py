@@ -4,6 +4,7 @@ from . import export_utils
 from . import io_utils
 from . import misc_utils
 from . import plot_utils
+from . import train_utils
 
 # Globally-importable utils.
 from .data_utils import data_generator
@@ -18,3 +19,5 @@ from .export_utils import export_model
 from .misc_utils import sorted_nicely
 from .plot_utils import plot_training_data_2d
 from .plot_utils import plot_training_data_3d
+from .train_utils import axis_softmax
+from .train_utils import rate_scheduler
