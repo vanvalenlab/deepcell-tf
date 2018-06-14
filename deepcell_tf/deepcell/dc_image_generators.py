@@ -1000,6 +1000,7 @@ class MovieDataGenerator(object):
         # Returns
             The inputs, normalized.
         """
+        # TODO: standardize each image, not all frames at once
         if self.preprocessing_function:
             x = self.preprocessing_function(x)
         if self.rescale:
