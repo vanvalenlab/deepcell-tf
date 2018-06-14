@@ -517,10 +517,11 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
 
     # Load 3D training images
     for b, direc in enumerate(X_dirs):
-        print('Training Directory {}: {}'.format(b + 1, direc))
 
         for c, channel in enumerate(channel_names):
-            print('Loading {} channel data from: {}'.format(channel, direc))
+            print('Loading {} channel data from training dir {}: {}'.format(
+                channel, b + 1, direc))
+
             imglist = nikon_getfiles(direc, channel)
 
             for i, img in enumerate(imglist):
