@@ -6,7 +6,7 @@ written in Keras to Tensorflow serving
 
 @author: David Van Valen
 """
-
+from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
@@ -21,7 +21,6 @@ from tensorflow.python.saved_model import signature_constants
 from tensorflow.python.saved_model import signature_def_utils
 from tensorflow.python.saved_model import signature_def_utils_impl
 from tensorflow.python.saved_model.builder import SavedModelBuilder
-
 
 def export_model(keras_model, export_path, model_version = 0, weights_path = None):
 

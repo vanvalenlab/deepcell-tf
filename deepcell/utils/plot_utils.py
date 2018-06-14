@@ -5,12 +5,12 @@ Functions for plotting data
 
 @author: David Van Valen
 """
+from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
 import matplotlib.pyplot as plt
 from tensorflow.python.keras import backend as K
-
 
 def cf(x_coord, y_coord, sample_image):
     numrows, numcols = sample_image.shape
