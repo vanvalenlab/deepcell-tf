@@ -22,16 +22,16 @@ RUN git clone https://www.github.com/vanvalenlab/Mask_RCNN /deepcell-tf/lib/Mask
     python setup.py install && \
     cd /deepcell-tf
 
-# Copy the deepcell-tf requirements.txt and install its dependencies
-COPY ./requirements.txt /deepcell-tf/requirements.txt
-RUN pip install -r /deepcell-tf/requirements.txt
+# Copy the setup.py and requirements.txt and install the deepcell-tf dependencies
+COPY setup.py requirements.txt /deepcell-tf/lib/deepcell-tf
+RUN pip install -r /deepcell-tf/lib/deepcell-tf/requirements.txt
 
 # Copy the rest of the package code and its scripts
-COPY ./ /deepcell-tf/
-COPY ./deepcell_scripts /deepcell-tf/deepcell_scripts
+COPY deepcell /deepcell-tf/lib/deepcell-tf/deepcell
+COPY deepcell_scripts /deepcell-tf/deepcell_scripts
 
 # Install using setup.py
-RUN cd /deepcell-tf && \
+RUN cd /deepcell-tf/lib/deepcell/ && \
     python setup.py install
 
 # Change matplotlibrc file to use the Agg backend
