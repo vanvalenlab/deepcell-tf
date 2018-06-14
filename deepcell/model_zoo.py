@@ -1,5 +1,5 @@
 """
-dc_model_zoo.py
+model_zoo.py
 
 Assortment of CNN architectures for single cell segmentation
 
