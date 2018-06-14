@@ -5,8 +5,9 @@ Package for single cell image segmentation with convolutional neural networks
 
 @author: David Van Valen
 """
+from __future__ import absolute_import
 
-from .dc_custom_layers import *
+from .layers import *
 from .dc_data_functions import *
 from .dc_helper_functions import *
 from .dc_image_generators import *

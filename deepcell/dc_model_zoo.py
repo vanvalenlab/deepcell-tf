@@ -19,8 +19,12 @@ from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.python.keras.activations import softmax
 from tensorflow.python.keras import initializers
 
-from deepcell import dilated_MaxPool2D, TensorProd2D, TensorProd3D, Resize, axis_softmax, \
-					 Location, Location3D, ImageNormalization2D, ImageNormalization3D
+from deepcell import axis_softmax
+from deepcell.layers import dilated_MaxPool2D
+from deepcell.layers import TensorProd2D, TensorProd3D
+from deepcell.layers import Resize
+from deepcell.layers import Location, Location3D
+from deepcell.layers import ImageNormalization2D, ImageNormalization3D
 
 """
 Batch normalized conv-nets
