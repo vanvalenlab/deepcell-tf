@@ -482,12 +482,6 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         print('Number of features: {}'.format(y.shape[1 if CHANNELS_FIRST else -1]))
         print('Number of training data points: {}'.format(len(feature_label)))
         print('Class weights: {}'.format(weights))
-        # TODO: 3D data
-        data_axes = (1, 2) if CHANNELS_FIRST else (0, 1)
-        for j in range(y.shape[0]):
-            sum_3_axis = np.sum(y[j].astype(K.floatx()), axis=(0, 1, 2))
-            sum_2_axis = np.sum(y[j].astype(K.floatx()), axis=data_axes)
-            print(1.0 / 3.0 * sum_3_axis / sum_2_axis)
 
     if display:
         if output_mode == 'conv':
@@ -526,7 +520,7 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
         print('Training Directory {}: {}'.format(b + 1, direc))
 
         for c, channel in enumerate(channel_names):
-            print('Channel: {}\nFilepath: {}'.format(channel, direc))
+            print('Loading {} channel data from: {}'.format(channel, direc))
             imglist = nikon_getfiles(direc, channel)
 
             for i, img in enumerate(imglist):
@@ -536,7 +530,6 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
                               len(imglist) - num_frames, num_frames, len(imglist)))
                     break
                 image_data = np.asarray(get_image(os.path.join(direc, img)))
-                print('Frame: {}\tPixel Sum: {}'.format(i, np.sum(image_data.flatten())))
 
                 if CHANNELS_FIRST:
                     X[b, c, i, :, :] = image_data
