@@ -11,7 +11,6 @@ from .layers import *
 from .losses import *
 from .image_generators import *
 from .model_zoo import *
+from .running import *
 from .training import *
 from .utils import *
-
-from .dc_running_functions import *
