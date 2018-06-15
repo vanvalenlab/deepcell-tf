@@ -116,8 +116,8 @@ def train_model_on_training_data():
         direc_save=direc_save,
         direc_data=direc_data,
         lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-        rotation_range=0,
-        flip=False,
+        rotation_range=180,
+        flip=True,
         shear=0)
 
 
@@ -126,10 +126,10 @@ def run_model_on_dir():
     channel_names = ['slice']
 
     # Define the model
-    model_name = '2018-06-13_MouseBrain_channels_last_conv__0.h5'
+    model_name = '2018-06-15_MouseBrain_channels_last_conv__0.h5'
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
-    number_of_frames = 10
+    number_of_frames = 30
     batch_size = 1
     win_x, win_y = 30, 30
     n_features = 2
