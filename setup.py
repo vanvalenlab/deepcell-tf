@@ -1,9 +1,10 @@
-from distutils.core import setup
+from setuptools import setup
+from setuptools import findpackages
 
 setup(
     name='DeepCell',
     version='0.1',
-    packages=['deepcell',],
+    packages=findpackages(),
     install_requires=[
         'scikit-image>=0.13.1,<1',
         'scikit-learn>=0.19.1,<1',
