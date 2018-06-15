@@ -95,7 +95,7 @@ def run_model_on_directory(data_location, channel_names, output_location, model,
         if save:
             for f in range(n_features):
                 feature = model_output[f, :, :] if CHANNELS_FIRST else model_output[:, :, f]
-                cnnout_name = 'feature_{}_frame_{}.tif'.format(f, i)
+                cnnout_name = 'feature_{}_frame_{}.tif'.format(f, str(i).zfill(3))
                 tiff.imsave(os.path.join(output_location, cnnout_name), feature)
 
     return model_outputs
