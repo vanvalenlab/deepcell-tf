@@ -81,7 +81,7 @@ def train_model_on_training_data():
     X, y = training_data['X'], training_data['y']
     print('X.shape: {}\ny.shape: {}'.format(X.shape, y.shape))
 
-    n_epoch = 50
+    n_epoch = 16
     batch_size = 1
     sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     frames_per_batch = 10
