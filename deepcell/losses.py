@@ -13,7 +13,6 @@ import tensorflow as tf
 
 from tensorflow.python.keras import backend as K
 
-
 def _to_tensor(x, dtype):
     """Convert the input `x` to a tensor of type `dtype`.
     # Arguments

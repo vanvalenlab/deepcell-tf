@@ -147,7 +147,6 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
 
     return model
 
-
 def train_model_siamese(model=None, dataset=None, optimizer=None,
                         expt='', it=0, batch_size=1, n_epoch=100,
                         direc_save='/home/vanvalen/ImageAnalysis/DeepCell2/trained_networks/',
