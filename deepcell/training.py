@@ -38,8 +38,7 @@ Training convnets
 
 def train_model_sample(model=None, dataset=None, optimizer=None,
                        expt='', it=0, batch_size=32, n_epoch=100,
-                       direc_save='/home/vanvalen/ImageAnalysis/DeepCell2/trained_networks/',
-                       direc_data='/home/vanvalen/ImageAnalysis/DeepCell2/training_data_npz/',
+                       direc_save='/data/models', direc_data='/data/npz_data',
                        lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                        rotation_range=0, flip=True, shear=0, class_weight=None):
 
@@ -91,8 +90,7 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
 
 def train_model_conv(model=None, dataset=None, optimizer=None,
                      expt='', it=0, batch_size=1, n_epoch=100,
-                     direc_save='/home/vanvalen/ImageAnalysis/DeepCell2/trained_networks/',
-                     direc_data='/home/vanvalen/ImageAnalysis/DeepCell2/training_data_npz/',
+                     direc_save='/data/models', direc_data='/data/npz_data',
                      lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                      rotation_range=0, flip=True, shear=0, class_weight=None):
 
@@ -149,8 +147,7 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
 
 def train_model_siamese(model=None, dataset=None, optimizer=None,
                         expt='', it=0, batch_size=1, n_epoch=100,
-                        direc_save='/home/vanvalen/ImageAnalysis/DeepCell2/trained_networks/',
-                        direc_data='/home/vanvalen/ImageAnalysis/DeepCell2/training_data_npz/',
+                        direc_save='/data/models', direc_data='/data/npz_data',
                         lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                         rotation_range=0, flip=True, shear=0, class_weight=None):
 
@@ -218,8 +215,7 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
 
 def train_model_watershed(model=None, dataset=None, optimizer=None,
                           expt='', it=0, batch_size=1, n_epoch=100,
-                          direc_save='/home/vanvalen/ImageAnalysis/DeepCell2/trained_networks/',
-                          direc_data='/home/vanvalen/ImageAnalysis/DeepCell2/training_data_npz/',
+                          direc_save='/data/models', direc_data='/data/npz_data',
                           lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                           rotation_range=0, flip=True, shear=0, class_weight=None):
 
@@ -274,8 +270,7 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
 
 def train_model_disc(model=None, dataset=None, optimizer=None,
                      expt='', it=0, batch_size=1, n_epoch=100,
-                     direc_save='/home/vanvalen/ImageAnalysis/DeepCell2/trained_networks/',
-                     direc_data='/home/vanvalen/ImageAnalysis/DeepCell2/training_data_npz/',
+                     direc_save='/data/models', direc_data='/data/npz_data',
                      lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                      rotation_range=0, flip=True, shear=0, class_weight=None):
 
@@ -327,8 +322,7 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
 
 def train_model_conv_sample(model=None, dataset=None, optimizer=None,
                             expt='', it=0, batch_size=1, n_epoch=100,
-                            direc_save='/home/vanvalen/ImageAnalysis/DeepCell2/trained_networks/',
-                            direc_data='/home/vanvalen/ImageAnalysis/DeepCell2/training_data_npz/',
+                            direc_save='/data/models', direc_data='/data/npz_data',
                             lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                             rotation_range=0, flip=True, shear=0, class_weight=None):
 
@@ -399,11 +393,10 @@ def train_model_conv_sample(model=None, dataset=None, optimizer=None,
 
 def train_model_movie(model=None, dataset=None, optimizer=None,
                       expt='', it=0, batch_size=1, n_epoch=100,
-                      direc_save='/data/trained_networks/nuclear_movie',
-                      direc_data='/data/training_data_npz/nuclear_movie',
+                      direc_save='/data/models', direc_data='/data/npz_data',
                       lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-                      number_of_frames=10,
-                      rotation_range=0, flip=True, shear=0, class_weight=None):
+                      number_of_frames=10, rotation_range=0, flip=True,
+                      shear=0, class_weight=None):
 
     training_data_file_name = os.path.join(direc_data, '{}.npz'.format(dataset))
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
