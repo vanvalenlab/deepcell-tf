@@ -28,7 +28,7 @@ RUN pip install -r /deepcell-tf/lib/deepcell-tf/requirements.txt
 
 # Copy the rest of the package code and its scripts
 COPY deepcell /deepcell-tf/lib/deepcell-tf/deepcell
-COPY deepcell_scripts /deepcell-tf/deepcell_scripts
+COPY scripts /deepcell-tf/scripts
 
 # Install using setup.py
 RUN cd /deepcell-tf/lib/deepcell-tf/ && \

@@ -10,7 +10,7 @@
 ```bash
 nvidia-docker run -i -t \
 -v $HOME/deepcell-tf/deepcell:/usr/local/lib/python2.7/dist-packages/deepcell/ \
--v $HOME/deepcell-tf/deepcell_scripts:/deepcell-tf/deepcell_scripts \
+-v $HOME/deepcell-tf/scripts:/deepcell-tf/scripts \
 -v /home/vanvalen/data/training_data:/data \
 nvcr.io/vvlab/deepcell:0.1
 ```
@@ -19,7 +19,7 @@ nvcr.io/vvlab/deepcell:0.1
 ```bash
 NV_GPU='1,2' nvidia-docker run -i -t \
 -v $HOME/deepcell-tf/deepcell:/usr/local/lib/python3.5/dist-packages/deepcell/ \
--v $HOME/deepcell-tf/deepcell_scripts:/deepcell-tf/deepcell_scripts \
+-v $HOME/deepcell-tf/scripts:/deepcell-tf/scripts \
 -v /home/vanvalen/data/training_data:/data \
 nvcr.io/vvlab/deepcell:0.1
 ```
@@ -28,7 +28,7 @@ nvcr.io/vvlab/deepcell:0.1
 ```bash
 NV_GPU='1,2' nvidia-docker run -i -t -p 80:8888 \
 -v $HOME/deepcell-tf/deepcell:/usr/local/lib/python3.5/dist-packages/deepcell/ \
--v $HOME/deepcell-tf/deepcell_scripts:/deepcell-tf/deepcell_scripts \
+-v $HOME/deepcell-tf/scripts:/deepcell-tf/scripts \
 -v /home/vanvalen/data/training_data:/data \
 --entrypoint /usr/local/bin/jupyter \
 nvcr.io/vvlab/deepcell:0.1 \
