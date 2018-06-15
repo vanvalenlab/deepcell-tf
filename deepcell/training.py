@@ -14,6 +14,7 @@ import os
 
 import numpy as np
 import tifffile as tiff
+from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.utils import to_categorical as keras_to_categorical
 from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateScheduler
@@ -442,6 +443,12 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
     y_train[y_train > 0] = 1
     y_test[y_test > 0] = 1
 
+    if class_weights is None:
+        class_weights = compute_class_weight(
+            'balanced',
+            y=y_train.reshape(y_train.size),
+            classes=np.unique(y_train))
+
     # keras to_categorical will not work with channels_first data.
     # if channels_first, convert to channels_last
     if K.image_data_format() == 'channels_first':
@@ -467,6 +474,7 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
         datagen.flow(train_dict, batch_size=batch_size, number_of_frames=number_of_frames),
         steps_per_epoch=train_steps,
         epochs=n_epoch,
+        # class_weight=class_weights,
         validation_data=datagen_val.flow(validation_dict, batch_size=batch_size, number_of_frames=number_of_frames),
         validation_steps=val_steps,
         callbacks=[
