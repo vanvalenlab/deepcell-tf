@@ -164,7 +164,7 @@ def run_model_on_dir():
                     feature = model_output[i, f, :, :]
                 else:
                     feature = model_output[i, :, :, f]
-                cnnout_name = 'feature_{}_frame_{}.tif'.format(f, i)
+                cnnout_name = 'feature_{}_frame_{}.tif'.format(f, str(i).zfill(3))
                 out_file_path = os.path.join(RESULTS_DIR, PREFIX, 'set_0_x_0_y_0', cnnout_name)
                 tiff.imsave(out_file_path, feature)
     print('Done!')
