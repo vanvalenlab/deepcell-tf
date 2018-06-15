@@ -1,8 +1,7 @@
 """
 export_utils.py
 
-Functions for exporting convolutional neural networks
-written in Keras to Tensorflow serving
+Functions for exporting convolutional neural networks for TF serving
 
 @author: David Van Valen
 """
