@@ -138,7 +138,7 @@ def run_model_on_dir():
         direc_name=os.path.join(DATA_DIR, PREFIX),
         training_direcs=['set0'],
         channel_names=channel_names,
-        raw_image_direc=os.path.join('stacked', 'set_0_x_0_y_0'),
+        raw_image_direc=os.path.join('stacked', 'set_0_x_2_y_2'),
         image_size=(256, 256),
         window_size=(win_x, win_y),
         num_frames=number_of_frames)
@@ -165,7 +165,7 @@ def run_model_on_dir():
                 else:
                     feature = model_output[i, :, :, f]
                 cnnout_name = 'feature_{}_frame_{}.tif'.format(f, str(i).zfill(3))
-                out_file_path = os.path.join(RESULTS_DIR, PREFIX, 'set_0_x_0_y_0', cnnout_name)
+                out_file_path = os.path.join(RESULTS_DIR, PREFIX, 'set_0_x_2_y_2', cnnout_name)
                 tiff.imsave(out_file_path, feature)
     print('Done!')
 
