@@ -1,5 +1,5 @@
 """
-dc_training_functions.py
+training.py
 
 Functions for training convolutional neural networks
 

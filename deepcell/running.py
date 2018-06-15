@@ -1,5 +1,5 @@
 """
-dc_running_functions.py
+running.py
 
 Functions for running convolutional neural networks
 
