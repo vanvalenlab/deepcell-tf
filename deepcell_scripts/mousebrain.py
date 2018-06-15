@@ -15,7 +15,7 @@ from deepcell import bn_dense_feature_net_lstm
 from deepcell import siamese_model
 from deepcell import rate_scheduler
 from deepcell import train_model_movie as train_model
-from deepcell import load_training_images_3d
+from deepcell.utils import load_training_images_3d
 from deepcell import run_model
 from deepcell import export_model
 
