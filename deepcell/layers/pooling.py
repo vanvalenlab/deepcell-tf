@@ -9,7 +9,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
@@ -17,10 +16,10 @@ from tensorflow.python.keras.layers import InputSpec
 from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 
-class dilated_MaxPool2D(Layer):
-    def __init__(self, pool_size=(2, 2), strides=None, dilation_rate=1, padding='valid',
-                 data_format=None, **kwargs):
-        super(dilated_MaxPool2D, self).__init__(**kwargs)
+class DilatedMaxPool2D(Layer):
+    def __init__(self, pool_size=(2, 2), strides=None, dilation_rate=1,
+                 padding='valid', data_format=None, **kwargs):
+        super(DilatedMaxPool2D, self).__init__(**kwargs)
         data_format = conv_utils.normalize_data_format(data_format)
         if dilation_rate != 1:
             strides = (1, 1)
@@ -37,7 +36,7 @@ class dilated_MaxPool2D(Layer):
         if self.data_format == 'channels_first':
             rows = input_shape[2]
             cols = input_shape[3]
-        elif self.data_format == 'channels_last':
+        else:
             rows = input_shape[1]
             cols = input_shape[2]
 
@@ -48,48 +47,35 @@ class dilated_MaxPool2D(Layer):
                                              stride=self.strides[1], dilation=self.dilation_rate)
 
         if self.data_format == 'channels_first':
-            return (input_shape[0], input_shape[1], rows, cols)
-        elif self.data_format == 'channels_last':
-            return (input_shape[0], rows, cols, input_shape[3])
+            output_shape = (input_shape[0], input_shape[1], rows, cols)
+        else:
+            output_shape = (input_shape[0], rows, cols, input_shape[3])
 
-    def  _pooling_function(self, inputs, pool_size, dilation_rate, strides, padding, data_format):
-        backend = K.backend()
-
-        #dilated pooling for tensorflow backend
-        if backend == "theano":
-            Exception('This version of DeepCell only works with the tensorflow backend')
-
-        if data_format == 'channels_first':
-            df = 'NCHW'
-        elif data_format == 'channels_last':
-            df = 'NHWC'
-
-        if self.padding == "valid":
-            padding_input = "VALID"
-
-        if self.padding == "same":
-            padding_input = "SAME"
-
-        output = tf.nn.pool(inputs, window_shape=pool_size, pooling_type="MAX",
-                            padding=padding_input, dilation_rate=(dilation_rate, dilation_rate),
-                            strides=strides, data_format=df)
-
-        return output
+        return output_shape
 
     def call(self, inputs):
-        output = self._pooling_function(inputs=inputs,
-                                        pool_size=self.pool_size,
-                                        strides=self.strides,
-                                        dilation_rate=self.dilation_rate,
-                                        padding=self.padding,
-                                        data_format=self.data_format)
+        # dilated pooling for tensorflow backend
+        if K.backend() == 'theano':
+            Exception('This version of DeepCell only works with the tensorflow backend')
+
+        df = 'NCHW' if self.data_format == 'channels_first' else 'NHWC'
+
+        padding_input = self.padding.upper()
+        dilation_rate = (self.dilation_rate, self.dilation_rate)
+
+        output = tf.nn.pool(inputs, window_shape=self.pool_size, pooling_type='MAX',
+                            padding=padding_input, dilation_rate=dilation_rate,
+                            strides=self.strides, data_format=df)
+
         return output
 
     def get_config(self):
-        config = {'pool_size': self.pool_size,
-                  'padding': self.padding,
-                  'dilation_rate': self.dilation_rate,
-                  'strides': self.strides,
-                  'data_format': self.data_format}
-        base_config = super(dilated_MaxPool2D, self).get_config()
+        config = {
+            'pool_size': self.pool_size,
+            'padding': self.padding,
+            'dilation_rate': self.dilation_rate,
+            'strides': self.strides,
+            'data_format': self.data_format
+        }
+        base_config = super(DilatedMaxPool2D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

@@ -25,10 +25,10 @@ class Location(Layer):
 
     def compute_output_shape(self, input_shape):
         if self.data_format == 'channels_first':
-            return (input_shape[0], 2, input_shape[2], input_shape[3])
-
-        if self.data_format == 'channels_last':
-            return (input_shape[0], input_shape[1], input_shape[2], 2)
+            output_shape = (input_shape[0], 2, input_shape[2], input_shape[3])
+        else:
+            output_shape = (input_shape[0], input_shape[1], input_shape[2], 2)
+        return output_shape
 
     def call(self, inputs):
         input_shape = self.in_shape
@@ -51,14 +51,15 @@ class Location(Layer):
         else:
             loc = tf.stack([loc_x, loc_y], axis=0)
 
-
         location = tf.expand_dims(loc, 0)
 
         return location
 
     def get_config(self):
-        config = {'in_shape': self.in_shape,
-                  'data_format': self.data_format}
+        config = {
+            'in_shape': self.in_shape,
+            'data_format': self.data_format
+        }
         base_config = super(Location, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
@@ -74,10 +75,10 @@ class Location3D(Layer):
 
     def compute_output_shape(self, input_shape):
         if self.data_format == 'channels_first':
-            return (input_shape[0], 2, input_shape[2], input_shape[3], input_shape[4])
-
-        elif self.data_format == 'channels_last':
-            return (input_shape[0], input_shape[1], input_shape[2], input_shape[3], 2)
+            output_shape = (input_shape[0], 2, input_shape[2], input_shape[3], input_shape[4])
+        else:
+            output_shape = (input_shape[0], input_shape[1], input_shape[2], input_shape[3], 2)
+        return output_shape
 
     def call(self, inputs):
         input_shape = self.in_shape
@@ -85,7 +86,6 @@ class Location3D(Layer):
         if self.data_format == 'channels_last':
             x = tf.range(0, input_shape[2], dtype=K.floatx())
             y = tf.range(0, input_shape[3], dtype=K.floatx())
-
         else:
             x = tf.range(0, input_shape[3], dtype=K.floatx())
             y = tf.range(0, input_shape[4], dtype=K.floatx())
@@ -119,7 +119,9 @@ class Location3D(Layer):
         return location_output
 
     def get_config(self):
-        config = {'in_shape': self.in_shape,
-                  'data_format': self.data_format}
+        config = {
+            'in_shape': self.in_shape,
+            'data_format': self.data_format
+        }
         base_config = super(Location3D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

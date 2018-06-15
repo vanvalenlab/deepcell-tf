@@ -9,7 +9,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
@@ -38,9 +37,11 @@ class Resize(Layer):
         cols *= self.scale
 
         if self.data_format == 'channels_first':
-            return (input_shape[0], input_shape[1], rows, cols)
-        elif self.data_format == 'channels_last':
-            return (input_shape[0], rows, cols, input_shape[3])
+            output_shape = (input_shape[0], input_shape[1], rows, cols)
+        else:
+            output_shape = (input_shape[0], rows, cols, input_shape[3])
+
+        return output_shape
 
     def call(self, inputs):
         if self.data_format == 'channels_first':
@@ -63,7 +64,9 @@ class Resize(Layer):
         return output
 
     def get_config(self):
-        config = {'scale': self.scale,
-                  'data_format': self.data_format}
+        config = {
+            'scale': self.scale,
+            'data_format': self.data_format
+        }
         base_config = super(Resize, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

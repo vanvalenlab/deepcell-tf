@@ -22,7 +22,7 @@ from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.regularizers import l2
 
 from .layers import Resize
-from .layers import dilated_MaxPool2D
+from .layers import DilatedMaxPool2D
 from .layers import TensorProd2D, TensorProd3D
 from .layers import Location, Location3D
 from .layers import ImageNormalization2D, ImageNormalization3D
@@ -92,7 +92,7 @@ def dilated_bn_feature_net_21x21(input_shape=(2, 1080, 1280), n_features=3, reg=
     model.add(Conv2D(32, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
-    model.add(dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2)))
+    model.add(DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2)))
     d *= 2
 
     model.add(Conv2D(32, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
@@ -178,7 +178,7 @@ def dilated_bn_feature_net_31x31(n_features=3, n_channels=1, reg=1e-5, init='he_
     model.add(Conv2D(32, (4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
-    model.add(dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2)))
+    model.add(DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2)))
     d *= 2
 
     model.add(Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
@@ -188,7 +188,7 @@ def dilated_bn_feature_net_31x31(n_features=3, n_channels=1, reg=1e-5, init='he_
     model.add(Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
-    model.add(dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2)))
+    model.add(DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2)))
     d *= 2
 
     model.add(Conv2D(128, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
@@ -283,7 +283,7 @@ def dilated_bn_feature_net_61x61(input_shape=(2, 1080, 1280), batch_size=None, n
     model.add(Conv2D(64, (4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
-    model.add(dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2)))
+    model.add(DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2)))
     d *= 2
 
     model.add(Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
@@ -293,7 +293,7 @@ def dilated_bn_feature_net_61x61(input_shape=(2, 1080, 1280), batch_size=None, n
     model.add(Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
-    model.add(dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2)))
+    model.add(DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2)))
     d *= 2
 
     model.add(Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
@@ -303,7 +303,7 @@ def dilated_bn_feature_net_61x61(input_shape=(2, 1080, 1280), batch_size=None, n
     model.add(Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
-    model.add(dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2)))
+    model.add(DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2)))
     d *= 2
 
     model.add(Conv2D(200, (4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
@@ -404,7 +404,7 @@ def dilated_bn_feature_net_81x81(input_shape=(2, 1080, 1280), n_features=3, reg=
     model.add(Conv2D(64, (4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
-    model.add(dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2)))
+    model.add(DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2)))
     d *= 2
 
     model.add(Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
@@ -418,7 +418,7 @@ def dilated_bn_feature_net_81x81(input_shape=(2, 1080, 1280), n_features=3, reg=
     model.add(Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
-    model.add(dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2)))
+    model.add(DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2)))
     d *= 2
 
     model.add(Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
@@ -428,7 +428,7 @@ def dilated_bn_feature_net_81x81(input_shape=(2, 1080, 1280), n_features=3, reg=
     model.add(Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
-    model.add(dilated_MaxPool2D(pool_size=(2, 2)))
+    model.add(DilatedMaxPool2D(pool_size=(2, 2)))
     d *= 2
 
     model.add(Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
@@ -541,7 +541,7 @@ def dilated_bn_multires_feature_net_61x61(input_shape=(2, 1080, 1280), n_feature
     conv2 = Conv2D(64, (4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(act1)
     norm2 = BatchNormalization(axis=channel_axis)(conv2)
     act2 = Activation('relu')(norm2)
-    pool1 = dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2))(act2)
+    pool1 = DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2))(act2)
     d *= 2
 
     conv3 = Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(pool1)
@@ -551,7 +551,7 @@ def dilated_bn_multires_feature_net_61x61(input_shape=(2, 1080, 1280), n_feature
     conv4 = Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(act3)
     norm4 = BatchNormalization(axis=channel_axis)(conv4)
     act4 = Activation('relu')(norm4)
-    pool2 = dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2))(act4)
+    pool2 = DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2))(act4)
     d *= 2
 
     conv5 = Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(pool2)
@@ -561,7 +561,7 @@ def dilated_bn_multires_feature_net_61x61(input_shape=(2, 1080, 1280), n_feature
     conv6 = Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(act5)
     norm6 = BatchNormalization(axis=channel_axis)(conv6)
     act6 = Activation('relu')(norm6)
-    pool3 = dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2))(act6)
+    pool3 = DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2))(act6)
     d *= 2
 
     # side_conv0 = Conv2D(64, (59, 59), dilation_rate=1, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(conv1)
@@ -1119,7 +1119,7 @@ def dilated_bn_res_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, 
     conv2 = Conv2D(64, (4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(act1)
     norm2 = BatchNormalization(axis=channel_axis)(conv2)
     act2 = Activation('relu')(norm2)
-    pool1 = dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2))(act2)
+    pool1 = DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2))(act2)
     d *= 2
 
     conv3 = Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(pool1)
@@ -1129,7 +1129,7 @@ def dilated_bn_res_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, 
     conv4 = Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(act3)
     norm4 = BatchNormalization(axis=channel_axis)(conv4)
     act4 = Activation('relu')(norm4)
-    pool2 = dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2))(act4)
+    pool2 = DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2))(act4)
     d *= 2
 
     conv5 = Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(pool2)
@@ -1139,7 +1139,7 @@ def dilated_bn_res_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, 
     conv6 = Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(act5)
     norm6 = BatchNormalization(axis=channel_axis)(conv6)
     act6 = Activation('relu')(norm6)
-    pool3 = dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2))(act6)
+    pool3 = DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2))(act6)
     d *= 2
 
     side_conv3 = Conv2D(64, (4, 4), dilation_rate=8, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(pool3)
@@ -1198,7 +1198,7 @@ def dilated_bn_feature_net_gather_61x61(input_shape=(2, 1080, 1280), training_ex
     conv2 = Conv2D(64, (4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(act1)
     norm2 = BatchNormalization(axis=channel_axis)(conv2)
     act2 = Activation('relu')(norm2)
-    pool1 = dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2))(act2)
+    pool1 = DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2))(act2)
     d *= 2
 
     conv3 = Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(pool1)
@@ -1208,7 +1208,7 @@ def dilated_bn_feature_net_gather_61x61(input_shape=(2, 1080, 1280), training_ex
     conv4 = Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(act3)
     norm4 = BatchNormalization(axis=channel_axis)(conv4)
     act4 = Activation('relu')(norm4)
-    pool2 = dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2))(act4)
+    pool2 = DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2))(act4)
     d *= 2
 
     conv5 = Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(pool2)
@@ -1218,7 +1218,7 @@ def dilated_bn_feature_net_gather_61x61(input_shape=(2, 1080, 1280), training_ex
     conv6 = Conv2D(64, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(act5)
     norm6 = BatchNormalization(axis=channel_axis)(conv6)
     act6 = Activation('relu')(norm6)
-    pool3 = dilated_MaxPool2D(dilation_rate=d, pool_size=(2, 2))(act6)
+    pool3 = DilatedMaxPool2D(dilation_rate=d, pool_size=(2, 2))(act6)
     d *= 2
 
     conv7 = Conv2D(200, (4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(pool3)

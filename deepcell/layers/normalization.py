@@ -90,9 +90,11 @@ class ImageNormalization2D(Layer):
         return outputs
 
     def get_config(self):
-        config = {'norm_method': self.norm_method,
-                  'filter_size': self.filter_size,
-                  'data_format': self.data_format}
+        config = {
+            'norm_method': self.norm_method,
+            'filter_size': self.filter_size,
+            'data_format': self.data_format
+        }
         base_config = super(ImageNormalization2D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
@@ -174,8 +176,10 @@ class ImageNormalization3D(Layer):
         return outputs
 
     def get_config(self):
-        config = {'norm_method': self.norm_method,
-                  'filter_size': self.filter_size,
-                  'data_format': self.data_format}
+        config = {
+            'norm_method': self.norm_method,
+            'filter_size': self.filter_size,
+            'data_format': self.data_format
+        }
         base_config = super(ImageNormalization3D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

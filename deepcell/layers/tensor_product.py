@@ -9,7 +9,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import activations
@@ -105,8 +104,7 @@ class TensorProd2D(Layer):
 
         if self.data_format == 'channels_first':
             output_shape = tuple(input_shape[0], self.output_dim, input_shape[2], input_shape[3])
-
-        elif self.data_format == 'channels_last':
+        else:
             output_shape = tuple(input_shape[0], input_shape[1], input_shape[2], self.output_dim)
 
         return output_shape
@@ -211,8 +209,7 @@ class TensorProd3D(Layer):
     def compute_output_shape(self, input_shape):
         if self.data_format == 'channels_first':
             output_shape = tuple(input_shape[0], self.output_dim, input_shape[2], input_shape[3], input_shape[4])
-
-        elif self.data_format == 'channels_last':
+        else:
             output_shape = tuple(input_shape[0], input_shape[1], input_shape[2], input_shape[3], self.output_dim)
 
         return output_shape
