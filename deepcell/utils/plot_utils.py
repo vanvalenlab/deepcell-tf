@@ -19,7 +19,7 @@ def cf(x_coord, y_coord, sample_image):
     if col >= 0 and col < numcols and row >= 0 and row < numrows:
         z_coord = sample_image[row, col]
         return 'x=%1.4f, y=%1.4f, z=%1.4f' % (x_coord, y_coord, z_coord)
-    return 'x=%1.4f, y=1.4%f' % (x_coord, y_coord)
+    return 'x=%1.4f, y=%1.4f' % (x_coord, y_coord)
 
 def plot_training_data_2d(X, y, max_plotted=5):
     data_format = K.image_data_format()
