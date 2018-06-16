@@ -1,11 +1,11 @@
 """
-dc_running_functions.py
+running.py
 
 Functions for running convolutional neural networks
 
 @author: David Van Valen
 """
-
+from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
@@ -16,8 +16,8 @@ import numpy as np
 import tifffile as tiff
 from tensorflow.python.keras import backend as K
 
-from .dc_helper_functions import get_images_from_directory
-from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
+from .utils.io_utils import get_images_from_directory
+from .settings import CHANNELS_FIRST, CHANNELS_LAST
 
 """
 Running convnets

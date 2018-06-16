@@ -1,11 +1,11 @@
 """
-dc_image_generators.py
+image_generators.py
 
 Image generators for training convolutional neural networks
 
 @author: David Van Valen
 """
-
+from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
@@ -14,15 +14,20 @@ import warnings
 
 import numpy as np
 from scipy import ndimage as ndi
-from skimage.measure import label, regionprops
-from skimage.filters import sobel_h, sobel_v
+from skimage.filters import sobel_h
+from skimage.filters import sobel_v
+from skimage.measure import label
+from skimage.measure import regionprops
 from skimage.transform import resize
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.preprocessing.image import random_channel_shift, apply_transform, \
-                                                        flip_axis, array_to_img, Iterator, \
-                                                        ImageDataGenerator, NumpyArrayIterator
+from tensorflow.python.keras.preprocessing.image import random_channel_shift
+from tensorflow.python.keras.preprocessing.image import apply_transform
+from tensorflow.python.keras.preprocessing.image import flip_axis
+from tensorflow.python.keras.preprocessing.image import array_to_img
+from tensorflow.python.keras.preprocessing.image import Iterator
+from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
-from .dc_helper_functions import transform_matrix_offset_center
+from .utils.transform_utils import transform_matrix_offset_center
 
 """
 Custom image generators

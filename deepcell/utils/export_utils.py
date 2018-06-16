@@ -1,30 +1,25 @@
 """
-dc_running_functions.py
+export_utils.py
 
-Functions for exporting convolutional neural networks
-written in Keras to Tensorflow serving
+Functions for exporting convolutional neural networks for TF serving
 
 @author: David Van Valen
 """
-
+from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
 import os
-import warnings
 
-import numpy as np
 import tifffile as tiff
 import tensorflow as tf
 
 from tensorflow.python.keras import backend as K
-from tensorflow.python.saved_model import builder as saved_model_builder
-from tensorflow.python.saved_model import tag_constants, signature_constants, signature_def_utils_impl
-
-from .dc_helper_functions import get_images_from_directory
-from .dc_settings import CHANNELS_FIRST, CHANNELS_LAST
-
-FLAGS = tf.app.flags.FLAGS
+from tensorflow.python.saved_model import tag_constants
+from tensorflow.python.saved_model import signature_constants
+from tensorflow.python.saved_model import signature_def_utils
+from tensorflow.python.saved_model import signature_def_utils_impl
+from tensorflow.python.saved_model.builder import SavedModelBuilder
 
 def export_model(keras_model, export_path, model_version = 0, weights_path = None):
 
@@ -41,11 +36,14 @@ def export_model(keras_model, export_path, model_version = 0, weights_path = Non
         keras_model.load_weights(weights_path)
 
     # Define prediction signature
-    prediction_signature = tf.saved_model.signature_def_utils.predict_signature_def({"image": keras_model.input}, {"prediction":keras_model.output})
+    prediction_signature = tf.saved_model.signature_def_utils.predict_signature_def(
+        {'image': keras_model.input},
+        {'prediction':keras_model.output}
+    )
 
     # Create export path if it doesn't exist
     export_path = os.path.join(export_path, str(model_version))
-    builder = saved_model_builder.SavedModelBuilder(export_path)
+    builder = SavedModelBuilder(export_path)
     legacy_init_op = tf.group(tf.tables_initializer(), name='legacy_init_op')
 
     #Initialize global variables and the model

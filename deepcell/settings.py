@@ -1,5 +1,5 @@
 """
-dc_settings.py
+settings.py
 
 Settings file for saving shared constants
 """

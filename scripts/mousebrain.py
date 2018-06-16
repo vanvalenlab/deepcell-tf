@@ -15,7 +15,7 @@ from deepcell import bn_dense_feature_net_lstm
 from deepcell import siamese_model
 from deepcell import rate_scheduler
 from deepcell import train_model_movie as train_model
-from deepcell import load_training_images_3d
+from deepcell.utils.data_utils import load_training_images_3d
 from deepcell import run_model
 from deepcell import export_model
 
@@ -81,7 +81,7 @@ def train_model_on_training_data():
     X, y = training_data['X'], training_data['y']
     print('X.shape: {}\ny.shape: {}'.format(X.shape, y.shape))
 
-    n_epoch = 50
+    n_epoch = 16
     batch_size = 1
     sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     frames_per_batch = 10
@@ -116,8 +116,8 @@ def train_model_on_training_data():
         direc_save=direc_save,
         direc_data=direc_data,
         lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-        rotation_range=0,
-        flip=False,
+        rotation_range=180,
+        flip=True,
         shear=0)
 
 
@@ -126,10 +126,10 @@ def run_model_on_dir():
     channel_names = ['slice']
 
     # Define the model
-    model_name = '2018-06-13_MouseBrain_channels_last_conv__0.h5'
+    model_name = '2018-06-15_MouseBrain_channels_last_conv__0.h5'
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
-    number_of_frames = 10
+    number_of_frames = 30
     batch_size = 1
     win_x, win_y = 30, 30
     n_features = 2
@@ -138,7 +138,7 @@ def run_model_on_dir():
         direc_name=os.path.join(DATA_DIR, PREFIX),
         training_direcs=['set0'],
         channel_names=channel_names,
-        raw_image_direc=os.path.join('stacked', 'set_0_x_0_y_0'),
+        raw_image_direc=os.path.join('stacked', 'set_0_x_2_y_2'),
         image_size=(256, 256),
         window_size=(win_x, win_y),
         num_frames=number_of_frames)
@@ -165,7 +165,7 @@ def run_model_on_dir():
                 else:
                     feature = model_output[i, :, :, f]
                 cnnout_name = 'feature_{}_frame_{}.tif'.format(f, str(i).zfill(3))
-                out_file_path = os.path.join(RESULTS_DIR, PREFIX, 'set_0_x_0_y_0', cnnout_name)
+                out_file_path = os.path.join(RESULTS_DIR, PREFIX, 'set_0_x_2_y_2', cnnout_name)
                 tiff.imsave(out_file_path, feature)
     print('Done!')
 
@@ -208,8 +208,8 @@ def export():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', type=str, choices=['train', 'run', 'export'], nargs='?',
-                        default='train', help='train or run models')
+    parser.add_argument('command', type=str, choices=['train', 'run', 'export'],
+                        help='train or run models')
     parser.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
                         help='force re-write of training data npz files')
 
