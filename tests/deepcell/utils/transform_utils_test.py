@@ -1,0 +1,73 @@
+import cv2
+import pytest
+import numpy as np
+import numpy.testing as np_test
+from tensorflow.python import keras
+from tensorflow.python.platform.test import TestCase
+
+from deepcell.utils.transform_utils import to_categorical
+from deepcell.utils.transform_utils import rotate_array_0
+from deepcell.utils.transform_utils import rotate_array_90
+from deepcell.utils.transform_utils import rotate_array_180
+from deepcell.utils.transform_utils import rotate_array_270
+
+
+# Set global resource locations
+test_image_location = '../resources/phase.tif'
+rotated_90_location = '../resources/rotated_90.tif'
+rotated_180_location = '../resources/rotated_180.tif'
+rotated_270_location = '../resources/rotated_270.tif'
+
+# Load images
+test_image = cv2.imread(test_image_location, 0)
+rotated_90 = cv2.imread(rotated_90_location, 0)
+rotated_180 = cv2.imread(rotated_180_location, 0)
+rotated_270 = cv2.imread(rotated_270_location, 0)
+
+
+def test_to_categorical():
+    num_classes = 5
+    shapes = [(1,), (3,), (4, 3), (5, 4, 3), (3, 1), (3, 2, 1)]
+    expected_shapes = [(1, num_classes),
+                       (3, num_classes),
+                       (12, num_classes),
+                       (60, num_classes),
+                       (3, num_classes),
+                       (6, num_classes)]
+    labels = [np.random.randint(0, num_classes, shape) for shape in shapes]
+    one_hots = [to_categorical(label, num_classes) for label in labels]
+    for label, one_hot, expected_shape in zip(labels, one_hots, expected_shapes):
+        # Check shape
+        assert one_hot.shape == expected_shape
+        # Make sure there are only 0s and 1s
+        assert np.array_equal(one_hot, one_hot.astype(bool))
+        # Make sure there is exactly one 1 in a row
+        assert np.all(one_hot.sum(axis=-1) == 1)
+        # Get original labels back from one hots
+        assert np.all(np.argmax(one_hot, -1).reshape(label.shape) == label)
+
+
+def test_rotate_array_0():
+    unrotated_image = rotate_array_0(test_image)
+    np_test.assert_array_equal(unrotated_image, test_image)
+
+def test_rotate_array_90():
+    rotated_image = rotate_array_90(test_image)
+    np_test.assert_array_equal(rotated_image, rotated_90)
+
+def test_rotate_array_180():
+    rotated_image = rotate_array_180(test_image)
+    np_test.assert_array_equal(rotated_image, rotated_180)
+
+def test_rotate_array_270():
+    rotated_image = rotate_array_270(test_image)
+    np_test.assert_array_equal(rotated_image, rotated_270)
+
+def test_rotate_array_90_and_180():
+    rotated_image1 = rotate_array_90(test_image)
+    rotated_image1 = rotate_array_90(rotated_image1)
+    rotated_image2 = rotate_array_180(test_image)
+    np_test.assert_array_equal(rotated_image1, rotated_image2)
+
+if __name__ == '__main__':
+    pytest.main([__file__])
