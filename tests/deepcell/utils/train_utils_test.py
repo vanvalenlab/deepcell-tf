@@ -1,14 +1,12 @@
 import cv2
 import pytest
 import numpy as np
-import numpy.testing as np_test
-
 from tensorflow.python import keras
 from tensorflow.python.platform.test import TestCase
 
 from deepcell.utils.train_utils import axis_softmax
 
-test_image_location = './resources/phase.tif'
+test_image_location = '../resources/phase.tif'
 test_image = cv2.imread(test_image_location, 0)
 
 def test_axis_softmax():
