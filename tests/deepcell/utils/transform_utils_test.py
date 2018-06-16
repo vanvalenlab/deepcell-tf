@@ -1,7 +1,9 @@
-import cv2
+import os
+
 import pytest
 import numpy as np
 import numpy.testing as np_test
+from skimage.io import imread
 from tensorflow.python import keras
 from tensorflow.python.platform.test import TestCase
 
@@ -11,19 +13,14 @@ from deepcell.utils.transform_utils import rotate_array_90
 from deepcell.utils.transform_utils import rotate_array_180
 from deepcell.utils.transform_utils import rotate_array_270
 
-
-# Set global resource locations
-test_image_location = '../resources/phase.tif'
-rotated_90_location = '../resources/rotated_90.tif'
-rotated_180_location = '../resources/rotated_180.tif'
-rotated_270_location = '../resources/rotated_270.tif'
+TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+RES_DIR = os.path.join(TEST_DIR, 'deepcell', 'resources')
 
 # Load images
-test_image = cv2.imread(test_image_location, 0)
-rotated_90 = cv2.imread(rotated_90_location, 0)
-rotated_180 = cv2.imread(rotated_180_location, 0)
-rotated_270 = cv2.imread(rotated_270_location, 0)
-
+TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
+TEST_IMG_90 = imread(os.path.join(RES_DIR, 'rotated_90.tif'))
+TEST_IMG_180 = imread(os.path.join(RES_DIR, 'rotated_180.tif'))
+TEST_IMG_270 = imread(os.path.join(RES_DIR, 'rotated_270.tif'))
 
 def test_to_categorical():
     num_classes = 5
@@ -48,25 +45,25 @@ def test_to_categorical():
 
 
 def test_rotate_array_0():
-    unrotated_image = rotate_array_0(test_image)
-    np_test.assert_array_equal(unrotated_image, test_image)
+    unrotated_image = rotate_array_0(TEST_IMG)
+    np_test.assert_array_equal(unrotated_image, TEST_IMG)
 
 def test_rotate_array_90():
-    rotated_image = rotate_array_90(test_image)
-    np_test.assert_array_equal(rotated_image, rotated_90)
+    rotated_image = rotate_array_90(TEST_IMG)
+    np_test.assert_array_equal(rotated_image, TEST_IMG_90)
 
 def test_rotate_array_180():
-    rotated_image = rotate_array_180(test_image)
-    np_test.assert_array_equal(rotated_image, rotated_180)
+    rotated_image = rotate_array_180(TEST_IMG)
+    np_test.assert_array_equal(rotated_image, TEST_IMG_180)
 
 def test_rotate_array_270():
-    rotated_image = rotate_array_270(test_image)
-    np_test.assert_array_equal(rotated_image, rotated_270)
+    rotated_image = rotate_array_270(TEST_IMG)
+    np_test.assert_array_equal(rotated_image, TEST_IMG_270)
 
 def test_rotate_array_90_and_180():
-    rotated_image1 = rotate_array_90(test_image)
+    rotated_image1 = rotate_array_90(TEST_IMG)
     rotated_image1 = rotate_array_90(rotated_image1)
-    rotated_image2 = rotate_array_180(test_image)
+    rotated_image2 = rotate_array_180(TEST_IMG)
     np_test.assert_array_equal(rotated_image1, rotated_image2)
 
 if __name__ == '__main__':
