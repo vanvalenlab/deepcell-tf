@@ -12,6 +12,9 @@ setup(
         'tensorflow-gpu>=1.8.0,<2',
         'tifffile>=0.14.0,<1'
     ],
+    extras_require={
+        'tests': ['pytest'],
+    },
     license='LICENSE.txt',
     author='David Van Valen',
     author_email='vanvalen@caltech.edu',
