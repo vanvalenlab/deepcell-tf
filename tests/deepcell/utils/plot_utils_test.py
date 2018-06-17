@@ -6,7 +6,7 @@ from skimage.io import imread
 from deepcell.utils.plot_utils import cf
 
 TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-RES_DIR = os.path.join(TEST_DIR, 'deepcell', 'resources')
+RES_DIR = os.path.join(TEST_DIR, 'resources')
 TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
 
 def test_cf():

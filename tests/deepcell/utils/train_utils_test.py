@@ -1,13 +1,16 @@
-import cv2
+import os
+
 import pytest
 import numpy as np
+from skimage.io import imread
 from tensorflow.python import keras
 from tensorflow.python.platform.test import TestCase
 
 from deepcell.utils.train_utils import axis_softmax
 
-test_image_location = '../resources/phase.tif'
-test_image = cv2.imread(test_image_location, 0)
+TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+RES_DIR = os.path.join(TEST_DIR, 'resources')
+TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
 
 def test_axis_softmax():
     """
@@ -36,11 +39,11 @@ def test_axis_softmax():
 
     # Testing that the axis_softmax function fails when passed a NumPy array.
     with pytest.raises(AttributeError) as e_info:
-        axis_softmax(test_image, 0)
+        axis_softmax(TEST_IMG, 0)
     with pytest.raises(AttributeError) as e_info:
-        axis_softmax(test_image, 1)
+        axis_softmax(TEST_IMG, 1)
     with pytest.raises(AttributeError) as e_info:
-        axis_softmax(test_image)
+        axis_softmax(TEST_IMG)
 
 if __name__ == '__main__':
     pytest.main([__file__])

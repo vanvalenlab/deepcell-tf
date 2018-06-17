@@ -1,8 +1,8 @@
 import os
 import shutil
 
-import numpy as np
 import pytest
+import numpy as np
 from skimage.io import imread
 
 from deepcell.utils.io_utils import get_immediate_subdirs
@@ -12,7 +12,7 @@ from deepcell.utils.io_utils import get_image_sizes
 from deepcell.utils.io_utils import get_images_from_directory
 
 TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-RES_DIR = os.path.join(TEST_DIR, 'deepcell', 'resources')
+RES_DIR = os.path.join(TEST_DIR, 'resources')
 TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
 
 def test_get_immediate_subdirs():

@@ -14,7 +14,7 @@ from deepcell.utils.transform_utils import rotate_array_180
 from deepcell.utils.transform_utils import rotate_array_270
 
 TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-RES_DIR = os.path.join(TEST_DIR, 'deepcell', 'resources')
+RES_DIR = os.path.join(TEST_DIR, 'resources')
 
 # Load images
 TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
