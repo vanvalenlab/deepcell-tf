@@ -439,6 +439,22 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
         horizontal_flip=0,
         vertical_flip=0)
 
+
+
+    X = train_dict['X']
+    y = train_dict['y']
+
+    for batch in range(X.shape[0]):
+        for frame in range(X.shape[1]):
+            X[batch,frame,:,:,0] = np.rot90(X[batch,frame,:,:,0])
+
+    for batch in range(y.shape[0]):
+        for frame in range(y.shape[1]):
+            y[batch,frame,:,:,0] = np.rint(np.rot90(y[batch,frame,:,:,0]))
+
+    train_dict['X'] = X
+    train_dict['y'] = y
+
     # set all cell IDs to 1.  We care about is/is not a cell, not the ID
     train_dict['y'][train_dict['y'] > 0] = 1
     y_test[y_test > 0] = 1
