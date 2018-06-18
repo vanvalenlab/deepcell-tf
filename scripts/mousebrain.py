@@ -9,7 +9,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.optimizers import SGD, Adam
 
 from deepcell import make_training_data
-from deepcell import bn_dense_feature_net_3D as the_model
+from deepcell import bn_feature_net_3D as the_model
 from deepcell import bn_dense_multires_feature_net_3D
 from deepcell import bn_dense_feature_net_lstm
 from deepcell import siamese_model
@@ -45,7 +45,7 @@ for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
 def generate_training_data():
     direc_name = os.path.join(DATA_DIR, PREFIX)
     training_direcs = ['set6'] # only set6 from MouseBrain has been annotated
-    raw_image_direc = 'stacked'
+    raw_image_direc = 'stacked_raw'
     annotation_direc = 'annotated/all_montages'
     file_name_save = os.path.join(NPZ_DIR, PREFIX, DATA_FILE)
 
@@ -89,7 +89,8 @@ def train_model_on_training_data():
     model_args = {
         'n_features': 2, # np.unique(y).size
         'permute': False,
-        'location': False
+        'location': False,
+        'norm_method': 'whole_image'
     }
 
     data_format = K.image_data_format()
@@ -126,7 +127,7 @@ def run_model_on_dir():
     channel_names = ['slice']
 
     # Define the model
-    model_name = '2018-06-15_MouseBrain_channels_last_conv__0.h5'
+    model_name = '2018-06-17_MouseBrain_channels_last_conv__0.h5'
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
     number_of_frames = 30
@@ -138,7 +139,7 @@ def run_model_on_dir():
         direc_name=os.path.join(DATA_DIR, PREFIX),
         training_direcs=['set0'],
         channel_names=channel_names,
-        raw_image_direc=os.path.join('stacked', 'set_0_x_2_y_2'),
+        raw_image_direc=os.path.join('stacked_raw', 'set_0_x_3_y_2'),
         image_size=(256, 256),
         window_size=(win_x, win_y),
         num_frames=number_of_frames)
@@ -151,7 +152,7 @@ def run_model_on_dir():
         batch_shape = (batch_size, number_of_frames, row_size, col_size, images.shape[4])
 
     model = the_model(batch_shape=batch_shape, n_features=n_features,
-                      permute=False, location=False)
+                      permute=False, location=False, norm_method='whole_image')
 
     model.load_weights(weights)
     model_output = run_model(images, model, win_x=30, win_y=30, split=False)
