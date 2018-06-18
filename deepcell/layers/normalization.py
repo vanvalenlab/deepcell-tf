@@ -155,6 +155,11 @@ class ImageNormalization3D(Layer):
         if not self.norm_method:
             outputs = inputs
 
+        elif self.norm_method == 'whole_image':
+            reduce_axes = [3, 4] if self.data_format == 'channels_first' else [2, 3]
+            outputs = inputs - tf.reduce_mean(inputs, axis=reduce_axes, keepdims=True)
+            outputs /= K.std(inputs, axis=reduce_axes, keepdims=True)
+
         elif self.norm_method == 'std':
             outputs = inputs - self._average_filter(inputs)
             outputs /= self._window_std_filter(outputs)
