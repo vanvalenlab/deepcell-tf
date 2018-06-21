@@ -13,7 +13,7 @@ import datetime
 import os
 
 import numpy as np
-import tifffile as tiff
+from skimage.external import tifffile as tiff
 from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.utils import to_categorical as keras_to_categorical

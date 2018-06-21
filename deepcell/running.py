@@ -13,7 +13,7 @@ import os
 import warnings
 
 import numpy as np
-import tifffile as tiff
+from skimage.external import tifffile as tiff
 from tensorflow.python.keras import backend as K
 
 from .utils.io_utils import get_images_from_directory
