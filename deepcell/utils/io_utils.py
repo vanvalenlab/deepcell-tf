@@ -32,7 +32,8 @@ def get_image(file_name):
     """
     Read image from file and load into numpy array
     """
-    if os.path.splitext(file_name.lower())[-1] == '.tif':
+    ext = os.path.splitext(file_name.lower())[-1]
+    if ext == '.tif' or ext == '.tiff':
         return np.float32(TiffFile(file_name).asarray())
     return np.float32(imread(file_name))
 
