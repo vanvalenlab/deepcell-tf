@@ -10,6 +10,7 @@ from tensorflow.python.keras import backend as K
 from deepcell import get_image_sizes
 from deepcell import make_training_data
 from deepcell import bn_feature_net_61x61
+from deepcell import dilated_bn_feature_net_61x61
 from deepcell import bn_dense_feature_net
 from deepcell import rate_scheduler
 from deepcell import train_model_disc, train_model_conv, train_model_sample
@@ -129,18 +130,27 @@ def train_model_on_training_data():
 
 
 def run_model_on_dir():
-    data_location = os.path.join(DATA_DIR, PREFIX, 'set1')
+    raw_dir = 'raw'
+    data_location = os.path.join(DATA_DIR, PREFIX, 'set1', raw_dir)
     output_location = os.path.join(RESULTS_DIR, PREFIX)
-    channel_names = ['phase']
+    channel_names = ['Phase']
     image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
 
-    model_name = '2018-06-13_ecoli_kc_polaris_channels_last_sample__0.h5'
+    model_name = '2018-06-13_ecoli_kc_polaris_{}_{}__0.h5'.format(
+        K.image_data_format(), DATA_OUTPUT_MODE)
+
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
     n_features = 3
     window_size = (30, 30)
 
-    model_fn = bn_feature_net_61x61 if DATA_OUTPUT_MODE == 'sample' else bn_dense_feature_net
+    if DATA_OUTPUT_MODE == 'sample':
+        model_fn = dilated_bn_feature_net_61x61
+    elif DATA_OUTPUT_MODE == 'conv':
+        model_fn = bn_dense_feature_net
+    else:
+        raise ValueError('{} is not a valid training mode for 2D images (yet).'.format(
+            DATA_OUTPUT_MODE))
 
     predictions = run_models_on_directory(
         data_location=data_location,
@@ -172,8 +182,11 @@ def export():
     channel_axis = 1 if data_format == 'channels_first' else 3
 
     if DATA_OUTPUT_MODE == 'sample':
-        the_model = bn_feature_net_61x61
-        model_args['n_channels'] = 1
+        the_model = dilated_bn_feature_net_61x61
+        if K.image_data_format() == 'channels_first':
+            model_args['input_shape'] = (1, 1080, 1280)
+        else:
+            model_args['input_shape'] = (1080, 1280, 1)
 
     elif DATA_OUTPUT_MODE == 'conv' or DATA_OUTPUT_MODE == 'disc':
         the_model = bn_dense_feature_net
@@ -185,10 +198,11 @@ def export():
         else:
             model_args['input_shape'] = (size[0], size[1], X.shape[channel_axis])
 
-    the_model = bn_feature_net_61x61 if DATA_OUTPUT_MODE == 'sample' else bn_dense_feature_net
     model = the_model(**model_args)
 
-    model_name = '2018-06-13_ecoli_kc_polaris_channels_last_sample__0.h5'
+    model_name = '2018-06-13_ecoli_kc_polaris_{}_{}__0.h5'.format(
+        K.image_data_format(), DATA_OUTPUT_MODE)
+
     weights_path = os.path.join(MODEL_DIR, PREFIX, model_name)
     export_path = os.path.join(EXPORT_DIR, PREFIX)
     export_model(model, export_path, model_version=0, weights_path=weights_path)
