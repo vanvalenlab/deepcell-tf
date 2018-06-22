@@ -13,7 +13,7 @@ import os
 
 import numpy as np
 from skimage.io import imread
-from tifffile import TiffFile
+from skimage.external.tifffile import TiffFile
 from tensorflow.python.keras import backend as K
 
 from .misc_utils import sorted_nicely

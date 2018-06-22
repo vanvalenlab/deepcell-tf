@@ -1011,6 +1011,7 @@ class MovieDataGenerator(object):
         # x is a single image, so it doesn't have image number at index 0
         img_row_axis = self.row_axis - 1
         img_col_axis = self.col_axis - 1
+        img_time_axis = self.time_axis - 1
         img_channel_axis = self.channel_axis - 1
 
         if seed is not None:
@@ -1083,18 +1084,23 @@ class MovieDataGenerator(object):
             y = label_movie
 
             if transform_matrix is not None:
+                y_new = []
                 h, w = y.shape[img_row_axis], y.shape[img_col_axis]
                 transform_matrix_y = transform_matrix_offset_center(transform_matrix, h, w)
-                for frame in range(x.shape[self.time_axis - 1]):
-                    y[frame] = apply_transform(y[frame], transform_matrix_y, img_channel_axis - 1,
-                                               fill_mode='constant', cval=0)
+                for frame in range(y.shape[img_time_axis]):
+                    y_trans = apply_transform(y[frame], transform_matrix_y, img_channel_axis - 1,
+                                              fill_mode='constant', cval=0)
+                    y_new.append(np.rint(y_trans))
+                y = np.stack(y_new, axis=0)
 
         if transform_matrix is not None:
+            x_new = []
             h, w = x.shape[img_row_axis], x.shape[img_col_axis]
             transform_matrix_x = transform_matrix_offset_center(transform_matrix, h, w)
-            for frame in range(x.shape[self.time_axis - 1]):
-                x[frame] = apply_transform(x[frame], transform_matrix_x, img_channel_axis - 1,
-                                           fill_mode=self.fill_mode, cval=self.cval)
+            for frame in range(x.shape[img_time_axis]):
+                x_new.append(apply_transform(x[frame], transform_matrix_x, img_channel_axis - 1,
+                                             fill_mode=self.fill_mode, cval=self.cval))
+            x = np.stack(x_new)
 
         if self.channel_shift_range != 0:
             x = random_channel_shift(x, self.channel_shift_range, img_channel_axis)
@@ -1113,6 +1119,7 @@ class MovieDataGenerator(object):
 
         if label_movie is not None:
             return x, y
+
         return x
 
     def fit(self, x, augment=False, rounds=1, seed=None):

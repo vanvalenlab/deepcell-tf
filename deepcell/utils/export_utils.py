@@ -11,9 +11,7 @@ from __future__ import division
 
 import os
 
-import tifffile as tiff
 import tensorflow as tf
-
 from tensorflow.python.keras import backend as K
 from tensorflow.python.saved_model import tag_constants
 from tensorflow.python.saved_model import signature_constants
