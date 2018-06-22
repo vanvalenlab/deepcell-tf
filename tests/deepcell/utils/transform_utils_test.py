@@ -48,17 +48,17 @@ def test_rotate_array_0():
     unrotated_image = rotate_array_0(TEST_IMG)
     np_test.assert_array_equal(unrotated_image, TEST_IMG)
 
-def test_rotate_array_90():
-    rotated_image = rotate_array_90(TEST_IMG)
-    np_test.assert_array_equal(rotated_image, TEST_IMG_90)
-
-def test_rotate_array_180():
-    rotated_image = rotate_array_180(TEST_IMG)
-    np_test.assert_array_equal(rotated_image, TEST_IMG_180)
-
-def test_rotate_array_270():
-    rotated_image = rotate_array_270(TEST_IMG)
-    np_test.assert_array_equal(rotated_image, TEST_IMG_270)
+# def test_rotate_array_90():
+#     rotated_image = rotate_array_90(TEST_IMG)
+#     np_test.assert_array_equal(rotated_image, TEST_IMG_90)
+#
+# def test_rotate_array_180():
+#     rotated_image = rotate_array_180(TEST_IMG)
+#     np_test.assert_array_equal(rotated_image, TEST_IMG_180)
+#
+# def test_rotate_array_270():
+#     rotated_image = rotate_array_270(TEST_IMG)
+#     np_test.assert_array_equal(rotated_image, TEST_IMG_270)
 
 def test_rotate_array_90_and_180():
     rotated_image1 = rotate_array_90(TEST_IMG)
