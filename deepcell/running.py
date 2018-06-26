@@ -56,10 +56,10 @@ def run_model(image, model, win_x=30, win_y=30, split=True):
             img_2 = image[:, :, image_size_x-win_x:, 0:image_size_y+win_y]
             img_3 = image[:, :, image_size_x-win_x:, image_size_y-win_y:]
 
-            model_output[:, 0:image_size_x-win_x, 0:image_size_y-win_y] = model.predict(img_0)[0]
-            model_output[:, 0:image_size_x-win_x, image_size_y-win_y:] = model.predict(img_1)[0]
-            model_output[:, image_size_x-win_x:, 0:image_size_y-win_y] = model.predict(img_2)[0]
-            model_output[:, image_size_x-win_x:, image_size_y-win_y:] = model.predict(img_3)[0]
+            model_output[:, 0:image_size_x-win_x, 0:image_size_y-win_y] = model.predict(img_0)
+            model_output[:, 0:image_size_x-win_x, image_size_y-win_y:] = model.predict(img_1)
+            model_output[:, image_size_x-win_x:, 0:image_size_y-win_y] = model.predict(img_2)
+            model_output[:, image_size_x-win_x:, image_size_y-win_y:] = model.predict(img_3)
         else:
             img_0 = image[:, 0:image_size_x+win_x, 0:image_size_y+win_y, :]
             img_1 = image[:, 0:image_size_x+win_x, image_size_y-win_y:, :]
