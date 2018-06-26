@@ -30,10 +30,6 @@ def run_model(image, model, win_x=30, win_y=30, split=True):
     x_axis = 2 if CHANNELS_FIRST else 1
     y_axis = 3 if CHANNELS_FIRST else 2
 
-    # evaluate_model = K.function(
-    #     [model.layers[0].input, K.learning_phase()],
-    #     [model.layers[-1].output])
-
     n_features = model.layers[-1].output_shape[channel_axis]
 
     if split:
