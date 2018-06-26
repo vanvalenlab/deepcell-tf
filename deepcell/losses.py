@@ -45,7 +45,7 @@ def categorical_crossentropy(target, output, class_weights=None, axis=None, from
         axis = 1 if K.image_data_format() == 'channels_first' else len(output.get_shape()) - 1
     if not from_logits:
         # scale preds so that the class probas of each sample sum to 1
-        output /= tf.reduce_sum(output, axis=axis, keep_dims=True)
+        output = output / tf.reduce_sum(output, axis=axis, keep_dims=True)
         # manual computation of crossentropy
         _epsilon = _to_tensor(K.epsilon(), output.dtype.base_dtype)
         output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
@@ -76,7 +76,7 @@ def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, fr
         axis = 1 if K.image_data_format() == 'channels_first' else len(output.get_shape()) - 1
     reduce_axis = [x for x in list(range(len(output.get_shape()))) if x != axis]
     # scale preds so that the class probas of each sample sum to 1
-    output /= tf.reduce_sum(output, axis=axis, keepdims=True)
+    output = output / tf.reduce_sum(output, axis=axis, keepdims=True)
     # manual computation of crossentropy
     _epsilon = _to_tensor(K.epsilon(), output.dtype.base_dtype)
     output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
@@ -105,7 +105,7 @@ def sample_categorical_crossentropy(target, output, class_weights=None, axis=Non
         axis = 1 if K.image_data_format() == 'channels_first' else len(output.get_shape()) - 1
     if not from_logits:
         # scale preds so that the class probabilities of each sample sum to 1
-        output /= tf.reduce_sum(output, axis=axis, keep_dims=True)
+        output = output / tf.reduce_sum(output, axis=axis, keep_dims=True)
 
         # Multiply with mask so that only the sampled pixels are used
         output = tf.multiply(output, target)
