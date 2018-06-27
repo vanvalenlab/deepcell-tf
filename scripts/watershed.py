@@ -11,7 +11,7 @@ from deepcell import get_image_sizes
 from deepcell import make_training_data
 from deepcell import watershednetwork
 from deepcell import rate_scheduler
-from deepcell import train_model_disc, train_model_conv, train_model_sample
+from deepcell import train_model_watershed
 from deepcell import run_models_on_directory
 from deepcell import export_model
 
@@ -83,9 +83,6 @@ def train_model_on_training_data():
     lr_sched = rate_scheduler(lr=0.01, decay=0.99)
 
     model_args = {
-        'norm_method': 'median',
-        'reg': 1e-5,
-        'n_features': 3
     }
 
     data_format = K.image_data_format()
@@ -93,21 +90,14 @@ def train_model_on_training_data():
     col_axis = 3 if data_format == 'channels_first' else 2
     channel_axis = 1 if data_format == 'channels_first' else 3
 
-    if DATA_OUTPUT_MODE == 'sample':
-        train_model = train_model_sample
-        the_model = bn_feature_net_61x61
-        model_args['n_channels'] = 1
+    the_model = watershednetwork
+    train_model = train_model_watershed
 
-    elif DATA_OUTPUT_MODE == 'conv' or DATA_OUTPUT_MODE == 'disc':
-        train_model = train_model_conv
-        the_model = bn_dense_feature_net
-        model_args['location'] = False
-
-        size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[row_axis:col_axis + 1]
-        if data_format == 'channels_first':
-            model_args['input_shape'] = (X.shape[channel_axis], size[0], size[1])
-        else:
-            model_args['input_shape'] = (size[0], size[1], X.shape[channel_axis])
+    size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[row_axis:col_axis + 1]
+    if data_format == 'channels_first':
+        model_args['input_size'] = (X.shape[channel_axis], size[0], size[1])
+    else:
+        model_args['input_size'] = (size[0], size[1], X.shape[channel_axis])
 
     model = the_model(**model_args)
 
