@@ -1643,7 +1643,7 @@ def watershednetwork(pretrained_weights = None,input_size = (256,256,1)):
     return model
 
 
-def DirectionNetwork3(pretrained_weights = None,input_size = (256,256,2),loss="direction"):
+def direction_network_watershed(pretrained_weights = None,input_size = (256,256,2),loss="direction"):
     inputs  = Input(input_size)
     conv1_1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
     conv1_2 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1_1)
