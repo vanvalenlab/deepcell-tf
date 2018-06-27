@@ -17,7 +17,7 @@ from tensorflow.python.keras.models import Sequential, Model
 from tensorflow.python.keras.layers import Add, Permute, Input, Concatenate
 from tensorflow.python.keras.layers import Conv2D, Conv3D, MaxPool2D, AvgPool2D
 from tensorflow.python.keras.layers import Flatten, Dense, Dropout
-from tensorflow.python.keras.layers import UpSampling2D, merge, AveragePooling2D, Conv2DTranspose
+from tensorflow.python.keras.layers import UpSampling2D, AveragePooling2D, Conv2DTranspose, MaxPooling2D
 from tensorflow.python.keras.layers import Activation, Softmax
 from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.regularizers import l2
@@ -1618,28 +1618,28 @@ def watershednetwork(pretrained_weights = None,input_size = (256,256,1)):
     drop5 = Dropout(0.5)(conv5)
 
     up6 = Conv2D(512, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(drop5))
-    merge6 = merge([drop4,up6], mode = 'concat', concat_axis = 3)
+    merge6 = Concatenate(axis=3)([drop4,up6])
     conv6 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge6)
     conv6 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv6)
 
     up7 = Conv2D(256, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv6))
-    merge7 = merge([conv3,up7], mode = 'concat', concat_axis = 3)
+    merge7 = Concatenate(axis=3)([conv3,up7])
     conv7 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge7)
     conv7 = Conv2D(256, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv7)
 
     up8 = Conv2D(128, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv7))
-    merge8 = merge([conv2,up8], mode = 'concat', concat_axis = 3)
+    merge8 = Concatenate(axis=3)([conv2,up8])
     conv8 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge8)
     conv8 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv8)
 
     up9 = Conv2D(64, 2, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(UpSampling2D(size = (2,2))(conv8))
-    merge9 = merge([conv1,up9], mode = 'concat', concat_axis = 3)
+    merge9 = Concatenate(axis=3)([conv1,up9])
     conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(merge9)
     conv9 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
     conv9 = Conv2D(2, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv9)
     conv10 = Conv2D(1, 1, activation = 'sigmoid')(conv9)
 
-    model = Model(input = inputs, output = conv10)
+    model = Model(inputs = inputs, outputs = conv10)
     return model
 
 
@@ -1693,11 +1693,11 @@ def DirectionNetwork3(pretrained_weights = None,input_size = (256,256,2),loss="d
     upscr5_3= Conv2DTranspose(256,kernel_size=8,strides=4,padding = 'same')(fcn5_3)
     upscr4_3= Conv2DTranspose(256,kernel_size=4,strides=2,padding = 'same')(fcn4_3)
     
-    fuse3   = merge([fcn3_3,upscr5_3,upscr4_3], mode = 'concat', concat_axis = 3)
+    fuse3   = Concatenate(axis=3)([fcn3_3,upscr5_3,upscr4_3])
     fuse3_1 = Conv2D(512, 5, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(fuse3)
     fuse3_2 = Conv2D(512, 1, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(fuse3_1) 
     fuse3_3 = Conv2D(2,   1, activation = 'linear', padding = 'same', kernel_initializer = 'he_normal')(fuse3_2) # Output channels=2
     output  = Conv2DTranspose(2,kernel_size=8,strides=4,padding = 'same')(fcn5_3) #(Work for kernel_size=16 and stride=16)
-    model = Model(input = inputs, output = output)
+    model = Model(inputs = inputs, outputs = output)
 
     return model
