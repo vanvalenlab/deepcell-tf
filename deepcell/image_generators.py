@@ -217,8 +217,10 @@ class ImageFullyConvIterator(Iterator):
                 y = np.zeros(y_shape)
                 for label_val in range(np.amax(distance.flatten()) + 1):
                     y[label_val, :, :] = distance == label_val
-
-            batch_x[i] = x
+            if self.target_format == 'simple_watershed':
+                batch_x[i] = x/255.
+            else:
+                batch_x[i]=x
             batch_y[i] = y
 
         if self.save_to_dir:

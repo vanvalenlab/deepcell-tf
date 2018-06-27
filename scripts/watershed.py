@@ -44,7 +44,7 @@ def generate_training_data():
     training_direcs = ['set0']#, 'set1', 'set2', 'set3', 'set4', 'set5', 'set6']
     channel_names = ['channel']
     raw_image_direc = 'raw'
-    annotation_direc = 'annotated'
+    annotation_direc = 'annotated_uniquely'
 
     # Create the training data
     make_training_data(
@@ -79,7 +79,7 @@ def train_model_on_training_data():
 
     n_epoch = 100
     batch_size = 32 if DATA_OUTPUT_MODE == 'sample' else 1
-    optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    optimizer = Adam(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     lr_sched = rate_scheduler(lr=0.01, decay=0.99)
 
     model_args = {
