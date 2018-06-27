@@ -39,9 +39,9 @@ for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
 
 def generate_training_data():
     file_name_save = os.path.join(NPZ_DIR, PREFIX, DATA_FILE)
-    num_of_features = 2 # Specify the number of feature masks that are present
+    num_of_features = 1 # Specify the number of feature masks that are present
     window_size = (30, 30) # Size of window around pixel
-    training_direcs = ['set1', 'set2']
+    training_direcs = ['set0']#, 'set1', 'set2', 'set3', 'set4', 'set5', 'set6']
     channel_names = ['channel']
     raw_image_direc = 'raw'
     annotation_direc = 'annotated'
@@ -61,7 +61,7 @@ def generate_training_data():
         raw_image_direc=raw_image_direc,
         annotation_direc=annotation_direc,
         reshape_size=RESHAPE_SIZE if RESIZE else None,
-        edge_feature=[1, 0, 0], # Specify which feature is the edge feature,
+        edge_feature=[0], # Specify which feature is the edge feature,
         dilation_radius=1,
         output_mode=DATA_OUTPUT_MODE,
         display=False,
