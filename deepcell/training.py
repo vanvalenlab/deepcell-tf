@@ -235,10 +235,11 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
     print('Output Shape:', model.layers[-1].output_shape)
     print('Number of Classes:', n_classes)
 
+    '''
     def loss_function(y_true, y_pred):
         return direction_loss(y_true, y_pred)
-
-    model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
+    '''
+    model.compile(loss="binary_crossentropy", optimizer=optimizer, metrics=['accuracy'])
 
     print('Using real-time data augmentation.')
 
