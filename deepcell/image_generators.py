@@ -188,7 +188,7 @@ class ImageFullyConvIterator(Iterator):
                 gradient_y = sobel_v(distance)
                 direction_x = gradient_x / np.sqrt(gradient_x ** 2 + gradient_y ** 2 + epsilon)
                 direction_y = gradient_y / np.sqrt(gradient_x ** 2 + gradient_y ** 2 + epsilon)
-                direction = np.stack([direction_x, direction_y], axis=0)
+                direction = np.stack([direction_x, direction_y], axis=self.channel_axis)
                 y = direction
 
             if self.target_format == 'watershed':
