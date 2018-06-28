@@ -4,7 +4,7 @@ import errno
 import argparse
 
 import numpy as np
-from tensorflow.python.keras.optimizers import SGD
+from tensorflow.python.keras.optimizers import SGD,Adam
 from tensorflow.python.keras import backend as K
 
 from deepcell import get_image_sizes
@@ -120,11 +120,10 @@ def run_model_on_dir():
     raw_dir = 'raw'
     data_location = os.path.join(DATA_DIR, PREFIX, 'set1', raw_dir)
     output_location = os.path.join(RESULTS_DIR, PREFIX)
-    channel_names = ['Phase']
+    channel_names = ['channel']
     image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
 
-    model_name = '2018-06-13_ecoli_kc_polaris_{}_{}__0.h5'.format(
-        K.image_data_format(), DATA_OUTPUT_MODE)
+    model_name = '2018-06-28_watershed_channels_last_conv__0.h5'
 
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
@@ -132,9 +131,9 @@ def run_model_on_dir():
     window_size = (30, 30)
 
     if DATA_OUTPUT_MODE == 'sample':
-        model_fn = dilated_bn_feature_net_61x61
+        model_fn = watershednetwork
     elif DATA_OUTPUT_MODE == 'conv':
-        model_fn = bn_dense_feature_net
+        model_fn = watershednetwork
     else:
         raise ValueError('{} is not a valid training mode for 2D images (yet).'.format(
             DATA_OUTPUT_MODE))
@@ -169,14 +168,14 @@ def export():
     channel_axis = 1 if data_format == 'channels_first' else 3
 
     if DATA_OUTPUT_MODE == 'sample':
-        the_model = dilated_bn_feature_net_61x61
+        the_model = watershednetwork
         if K.image_data_format() == 'channels_first':
             model_args['input_shape'] = (1, 1080, 1280)
         else:
             model_args['input_shape'] = (1080, 1280, 1)
 
     elif DATA_OUTPUT_MODE == 'conv' or DATA_OUTPUT_MODE == 'disc':
-        the_model = bn_dense_feature_net
+        the_model = watershednetwork
         model_args['location'] = False
 
         size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[row_axis:col_axis + 1]
@@ -187,8 +186,7 @@ def export():
 
     model = the_model(**model_args)
 
-    model_name = '2018-06-13_ecoli_kc_polaris_{}_{}__0.h5'.format(
-        K.image_data_format(), DATA_OUTPUT_MODE)
+    model_name = '2018-06-28_watershed_channels_last_conv__0.h5'
 
     weights_path = os.path.join(MODEL_DIR, PREFIX, model_name)
     export_path = os.path.join(EXPORT_DIR, PREFIX)
