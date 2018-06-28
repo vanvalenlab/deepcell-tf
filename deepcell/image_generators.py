@@ -191,12 +191,6 @@ class ImageFullyConvIterator(Iterator):
                 direction = np.stack([direction_x, direction_y], axis=self.channel_axis)
                 y = direction
 
-            if self.target_format == 'simple_watershed':
-                if self.channel_axis == 1:
-                    interior = y[0, :, :]
-                else:
-                    interior = y[:, :, 0]
-
             if self.target_format == 'watershed':
                 if self.channel_axis == 1:
                     interior = y[1, :, :]
@@ -216,10 +210,8 @@ class ImageFullyConvIterator(Iterator):
                 y = np.zeros(y_shape)
                 for label_val in range(np.amax(distance.flatten()) + 1):
                     y[label_val, :, :] = distance == label_val
-            if self.target_format == 'simple_watershed':
-                batch_x[i] = x/255.
-            else:
-                batch_x[i]=x
+
+            batch_x[i] = x
             batch_y[i] = y
 
         if self.save_to_dir:
@@ -234,7 +226,7 @@ class ImageFullyConvIterator(Iterator):
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
-                if self.target_format == 'direction' or self.target_format == 'watershed' or  self.target_format == 'simple_watershed':
+                if self.target_format in {'direction', 'watershed', 'simple_watershed'}:
                     # TODO: handle channel_axis?
                     img_y = np.expand_dims(batch_y[i, :, :, 0], -1)
                     img = array_to_img(img_y, self.data_format, scale=True)
