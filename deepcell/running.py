@@ -89,7 +89,7 @@ def run_model_on_directory(data_location, channel_names, output_location, model,
     for i, image in enumerate(image_list):
         print('Processing image {} of {}'.format(i + 1, len(image_list)))
         if crop:
-            image = image[:, crop_size:crop_size*2, crop_size:crop_size*2, :]
+            image = image[:, 0:crop_size, 0:crop_size, :]
         model_output = run_model(image, model, win_x=win_x, win_y=win_y, split=split)
         model_outputs.append(model_output)
 
