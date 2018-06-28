@@ -123,7 +123,7 @@ def train_model_on_training_data():
 
 def run_model_on_dir():
     raw_dir = 'raw'
-    data_location = os.path.join(DATA_DIR, PREFIX, 'set1', raw_dir)
+    data_location = os.path.join(DATA_DIR, PREFIX, 'set0', raw_dir)
     output_location = os.path.join(RESULTS_DIR, PREFIX)
     channel_names = ['channel']
     image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
@@ -154,6 +154,8 @@ def run_model_on_dir():
         image_size_y=image_size_y,
         win_x=window_size[0],
         win_y=window_size[1],
+        crop=True,
+        crop_size=256,
         split=False)
 
 def export():
