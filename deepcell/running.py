@@ -78,21 +78,21 @@ def run_model(image, model, win_x=30, win_y=30, split=True):
     return model_output
 
 def run_model_on_directory(data_location, channel_names, output_location, model,
-                           win_x=30, win_y=30, split=True, save=True):
+                           win_x=30, win_y=30, split=True, save=True, crop=False, crop_size=256):
 
     channel_axis = 1 if CHANNELS_FIRST else -1
     n_features = model.layers[-1].output_shape[channel_axis]
-
     image_list = get_images_from_directory(data_location, channel_names)
-    image_list=np.array(image_list)
-    image_list = np.array([image_list.shape[0],image_list.shape[1],256,256,image_list.shape[4]])
-    image_list2=np.zeros(image_list.shape)
-    for k in range(len(image_list)):
-        for i in range(256):
-            for j in range(256):
-                image_list2[k,0,i,j,0]=image_list[k,0,i,j,0]
-    image_list=image_list2
-    image_list=list(image_list)
+    if crop_size:
+        image_list = np.array(image_list)
+        image_list = np.array([image_list.shape[0], image_list.shape[1], crop_size, crop_size, image_list.shape[4]])
+        image_list2 = np.zeros(image_list.shape)
+        for k in range(len(image_list)):
+            for i in range(crop_size):
+                for j in range(crop_size):
+                    image_list2[k, 0, i, j, 0] = image_list[k, 0, i, j, 0]
+        image_list = image_list2
+        image_list = list(image_list)
     model_outputs = []
 
     for i, image in enumerate(image_list):
