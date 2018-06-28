@@ -225,7 +225,7 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
 
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='movie')
 
-    if test_2d:
+    if test_2d and train_dict['X'].ndim == 5:
         X_shape = train_dict['X'].shape
         y_shape = train_dict['y'].shape
         flat_X_shape = (X_shape[0] * X_shape[1], X_shape[2], X_shape[3], X_shape[4])
