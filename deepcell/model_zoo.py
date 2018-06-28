@@ -1599,7 +1599,8 @@ This is the second part of the 2D deep watershed algorithm as per the paper:http
 """
 def watershednetwork(pretrained_weights = None,input_size = (256,256,1)):
     inputs = Input(input_size)
-    conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
+    img_norm = ImageNormalization2D(norm_method='max', filter_size=61, input_shape=input_size)(inputs)
+    conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(img_norm)
     conv1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1)
     pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
     conv2 = Conv2D(128, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool1)
@@ -1645,7 +1646,8 @@ def watershednetwork(pretrained_weights = None,input_size = (256,256,1)):
 
 def direction_network_watershed(pretrained_weights = None,input_size = (256,256,2),loss="direction"):
     inputs  = Input(input_size)
-    conv1_1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(inputs)
+    img_norm = ImageNormalization2D(norm_method='max', filter_size=61, input_shape=input_size)(inputs)
+    conv1_1 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(img_norm)
     conv1_2 = Conv2D(64, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv1_1)
     pool1   = pool1 = MaxPooling2D(pool_size=(2, 2))(conv1_2)
     
