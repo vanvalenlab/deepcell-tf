@@ -84,6 +84,7 @@ def run_model_on_directory(data_location, channel_names, output_location, model,
     n_features = model.layers[-1].output_shape[channel_axis]
 
     image_list = get_images_from_directory(data_location, channel_names)
+    image_list=np.array(image_list)
     image_list = np.array([image_list.shape[0],image_list.shape[1],256,256,image_list.shape[4]])
     image_list2=np.zeros(image_list.shape)
     for k in range(len(image_list)):
@@ -91,6 +92,7 @@ def run_model_on_directory(data_location, channel_names, output_location, model,
             for j in range(256):
                 image_list2[k,0,i,j,0]=image_list[k,0,i,j,0]
     image_list=image_list2
+    image_list=list(image_list)
     model_outputs = []
 
     for i, image in enumerate(image_list):
