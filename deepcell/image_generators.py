@@ -193,9 +193,9 @@ class ImageFullyConvIterator(Iterator):
 
             if self.target_format == 'simple_watershed':
                 if self.channel_axis == 1:
-                    interior = y[1, :, :]
+                    interior = y[0, :, :]
                 else:
-                    interior = y[:, :, 1]
+                    interior = y[:, :, 0]
 
             if self.target_format == 'watershed':
                 if self.channel_axis == 1:
