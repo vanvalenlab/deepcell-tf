@@ -20,6 +20,7 @@ DATA_OUTPUT_MODE = 'conv'
 BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
 RESIZE = True
 RESHAPE_SIZE = 256
+NUM_FRAMES = 45
 
 # filepath constants
 DATA_DIR = '/data/data'
@@ -41,15 +42,16 @@ def generate_training_data():
     file_name_save = os.path.join(NPZ_DIR, PREFIX, DATA_FILE)
     num_of_features = 1 # Specify the number of feature masks that are present
     window_size = (30, 30) # Size of window around pixel
-    training_direcs = ['set0']#, 'set1', 'set2', 'set3', 'set4', 'set5', 'set6']
+    training_direcs = ['set0', 'set1', 'set2', 'set3', 'set4', 'set5', 'set6']
     channel_names = ['channel']
     raw_image_direc = 'raw'
     annotation_direc = 'annotated_uniquely'
+    annotation_name = 'corrected'
 
     # Create the training data
     make_training_data(
         direc_name=os.path.join(DATA_DIR, PREFIX),
-        dimensionality=2,
+        dimensionality=3,
         max_training_examples=1e6, # Define maximum number of training examples
         window_size_x=window_size[0],
         window_size_y=window_size[1],
@@ -57,11 +59,13 @@ def generate_training_data():
         file_name_save=file_name_save,
         training_direcs=training_direcs,
         channel_names=channel_names,
+        num_frames=NUM_FRAMES,
         num_of_features=num_of_features,
         raw_image_direc=raw_image_direc,
         annotation_direc=annotation_direc,
+        annotation_name=annotation_name,
         reshape_size=RESHAPE_SIZE if RESIZE else None,
-        edge_feature=[0], # Specify which feature is the edge feature,
+        edge_feature=False, # Specify which feature is the edge feature,
         dilation_radius=1,
         output_mode=DATA_OUTPUT_MODE,
         display=False,
@@ -73,11 +77,12 @@ def train_model_on_training_data():
     direc_data = os.path.join(NPZ_DIR, PREFIX)
     training_data = np.load(os.path.join(direc_data, DATA_FILE + '.npz'))
 
-    class_weights = training_data['class_weights']
     X, y = training_data['X'], training_data['y']
+    X = np.reshape(X, (X.shape[0] * X.shape[1], X.shape[2], X.shape[3], X.shape[4]))
+    y = np.reshape(y, (y.shape[0] * y.shape[1], y.shape[2], y.shape[3], y.shape[4]))
     print('X.shape: {}\ny.shape: {}'.format(X.shape, y.shape))
 
-    n_epoch = 100
+    n_epoch = 8
     batch_size = 32 if DATA_OUTPUT_MODE == 'sample' else 1
     optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     lr_sched = rate_scheduler(lr=0.01, decay=0.99)
@@ -110,10 +115,10 @@ def train_model_on_training_data():
         direc_save=direc_save,
         direc_data=direc_data,
         lr_sched=lr_sched,
-        class_weight=class_weights,
+        class_weight=None,#class_weights,
         rotation_range=180,
         flip=True,
-        shear=True)
+        shear=False)
 
 
 def run_model_on_dir():
