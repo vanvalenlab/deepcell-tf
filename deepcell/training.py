@@ -212,7 +212,7 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
     return model
 
 def train_model_watershed(model=None, dataset=None, optimizer=None,
-                          expt='', it=0, batch_size=1, n_epoch=100,
+                          expt='', it=0, batch_size=1, n_epoch=100, test_2d=True,
                           direc_save='/data/models', direc_data='/data/npz_data',
                           lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                           rotation_range=0, flip=True, shear=0, class_weight=None):
@@ -223,7 +223,27 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
     file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
     file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
 
-    train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='conv')
+    train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='movie')
+
+    if test_2d:
+        X_shape = train_dict['X'].shape
+        y_shape = train_dict['y'].shape
+        flat_X_shape = (X_shape[0] * X_shape[1], X_shape[2], X_shape[3], X_shape[4])
+        flat_y_shape = (y_shape[0] * y_shape[1], y_shape[2], y_shape[3], y_shape[4])
+
+        X_shape = X_test.shape
+        y_shape = y_test.shape
+        flat_X_test_shape = (X_shape[0] * X_shape[1], X_shape[2], X_shape[3], X_shape[4])
+        flat_y_test_shape = (y_shape[0] * y_shape[1], y_shape[2], y_shape[3], y_shape[4])
+
+        train_dict['X'] = np.reshape(train_dict['X'], flat_X_shape)
+        train_dict['y'] = np.reshape(train_dict['y'], flat_y_shape)
+        X_test = np.reshape(X_test, flat_X_test_shape)
+        y_test = np.reshape(y_test, flat_y_test_shape)
+
+    # set all cell IDs to 1.  We care about is/is not a cell, not the ID
+    train_dict['y'][train_dict['y'] > 0] = 1
+    y_test[y_test > 0] = 1
 
     class_weights = train_dict['class_weights']
     n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
@@ -235,10 +255,10 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
     print('Output Shape:', model.layers[-1].output_shape)
     print('Number of Classes:', n_classes)
 
-    '''
     def loss_function(y_true, y_pred):
-        return direction_loss(y_true, y_pred)
-    '''
+        # TODO: implement direction loss
+        pass
+
     model.compile(loss="binary_crossentropy", optimizer=optimizer, metrics=['accuracy'])
 
     print('Using real-time data augmentation.')
