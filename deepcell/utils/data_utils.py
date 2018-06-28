@@ -321,6 +321,10 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     return feature_rows, feature_cols, feature_batch, feature_label
 
 def reshape_matrix(X, y, reshape_size=256):
+    if X.ndim != 4:
+        raise ValueError('reshape_matrix expects X dim to be 4, got {}'.format(X.ndim))
+    elif y.ndim != 4:
+        raise ValueError('reshape_matrix expects y dim to be 4, got {}'.format(y.ndim))
     image_size_x, image_size_y = X.shape[2:] if CHANNELS_FIRST else X.shape[1:3]
     rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
     new_batch_size = X.shape[0] * (rep_number) ** 2
@@ -373,6 +377,10 @@ def relabel_movie(y):
     return new_y
 
 def reshape_movie(X, y, reshape_size=256):
+    if X.ndim != 5:
+        raise ValueError('reshape_movie expects X dim to be 5, got {}'.format(X.ndim))
+    elif y.ndim != 5:
+        raise ValueError('reshape_movie expects y dim to be 5, got {}'.format(y.ndim))
     image_size_x, image_size_y = X.shape[3:] if CHANNELS_FIRST else X.shape[2:4]
     rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
     new_batch_size = X.shape[0] * (rep_number) ** 2
