@@ -84,6 +84,11 @@ def run_model_on_directory(data_location, channel_names, output_location, model,
     n_features = model.layers[-1].output_shape[channel_axis]
 
     image_list = get_images_from_directory(data_location, channel_names)
+    image_list2=[]
+    for img in image_list:
+        img2=img[0:256,0:256]
+        image_list2.append(img2)
+    image_list=image_list2
     model_outputs = []
 
     for i, image in enumerate(image_list):
@@ -114,7 +119,7 @@ def run_models_on_directory(data_location, channel_names, output_location, model
     else:
         batch_shape = (1, input_shape[0], input_shape[1], input_shape[2])
 
-    model = model_fn(input_size=input_shape)
+    model = model_fn()
 
     for layer in model.layers:
         print(layer.name)
