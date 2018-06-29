@@ -148,8 +148,6 @@ class ImageFullyConvIterator(Iterator):
         epsilon = K.epsilon() # epsilon = 1e-8
         if self.target_format == 'direction':
             y_channel_shape = 2
-        elif self.target_format == 'simple_watershed':
-            y_channel_shape = 1
         elif self.target_format == 'watershed':
             if self.channel_axis == 1:
                 interior = self.y[0, 1, :, :]
@@ -206,22 +204,12 @@ class ImageFullyConvIterator(Iterator):
                 distance = np.digitize(distance, bins)
 
                 # convert to one hot notation
-                if self.channel_axis == 1:
-                    y_shape = (np.amax(distance.flatten()) + 1, self.y.shape[2], self.y.shape[3])
-                else:
-                    y_shape = (self.y.shape[1], self.y.shape[2], np.amax(distance.flatten()) + 1)
-                y = np.zeros(y_shape)
+                y = np.zeros(batch_y.shape[1:])
                 for label_val in range(np.amax(distance.flatten()) + 1):
-                    y[label_val, :, :] = distance == label_val
-
-            if self.target_format == 'simple_watershed':
-                # not using distnace transform, but only care about interiors
-                if self.channel_axis == 1:
-                    y = y[1, :, :]
-                else:
-                    y = y[:, :, 1]
-                # expand dimensions to retain batch shape
-                y = np.expand_dims(y, axis=self.channel_axis)
+                    if self.channel_axis == 1:
+                        y[label_val, :, :] = distance == label_val
+                    else:
+                        y[:, :, label_val] = distance == label_val
 
             batch_x[i] = x
             batch_y[i] = y
