@@ -20,7 +20,6 @@ DATA_OUTPUT_MODE = 'conv'
 BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
 RESIZE = True
 RESHAPE_SIZE = 256
-NUM_FRAMES = 5
 
 # filepath constants
 DATA_DIR = '/data/data'
@@ -28,8 +27,8 @@ MODEL_DIR = '/data/models'
 NPZ_DIR = '/data/npz_data'
 RESULTS_DIR = '/data/results'
 EXPORT_DIR = '/data/exports'
-PREFIX = 'cells/RAW264.7/generic'
-DATA_FILE = 'watershed_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
+PREFIX = 'cells/ecoli/generic'
+DATA_FILE = 'ecoli_watershed_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
 
 for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
     try:
@@ -42,16 +41,16 @@ def generate_training_data():
     file_name_save = os.path.join(NPZ_DIR, PREFIX, DATA_FILE)
     num_of_features = 1 # Specify the number of feature masks that are present
     window_size = (30, 30) # Size of window around pixel
-    training_direcs = ['set0', 'set1', 'set2', 'set3', 'set4', 'set5', 'set6']
-    channel_names = ['channel']
+    training_direcs = ['set1', 'set2']#, 'set3', 'set4', 'set5', 'set6']
+    channel_names = ['phase']
     raw_image_direc = 'raw'
-    annotation_direc = 'annotated_uniquely'
+    annotation_direc = 'annotated'
     annotation_name = 'corrected'
 
     # Create the training data
     make_training_data(
         direc_name=os.path.join(DATA_DIR, PREFIX),
-        dimensionality=3,
+        dimensionality=2,
         max_training_examples=1e6, # Define maximum number of training examples
         window_size_x=window_size[0],
         window_size_y=window_size[1],
@@ -59,13 +58,11 @@ def generate_training_data():
         file_name_save=file_name_save,
         training_direcs=training_direcs,
         channel_names=channel_names,
-        num_frames=NUM_FRAMES,
         num_of_features=num_of_features,
         raw_image_direc=raw_image_direc,
         annotation_direc=annotation_direc,
-        annotation_name=annotation_name,
         reshape_size=RESHAPE_SIZE if RESIZE else None,
-        edge_feature=False, # Specify which feature is the edge feature,
+        edge_feature=[1, 0, 0], # Specify which feature is the edge feature,
         dilation_radius=1,
         output_mode=DATA_OUTPUT_MODE,
         display=False,
@@ -78,11 +75,9 @@ def train_model_on_training_data():
     training_data = np.load(os.path.join(direc_data, DATA_FILE + '.npz'))
 
     X, y = training_data['X'], training_data['y']
-    X = np.reshape(X, (X.shape[0] * X.shape[1], X.shape[2], X.shape[3], X.shape[4]))
-    y = np.reshape(y, (y.shape[0] * y.shape[1], y.shape[2], y.shape[3], y.shape[4]))
     print('X.shape: {}\ny.shape: {}'.format(X.shape, y.shape))
 
-    n_epoch = 8
+    n_epoch = 32
     batch_size = 32 if DATA_OUTPUT_MODE == 'sample' else 1
     optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     lr_sched = rate_scheduler(lr=0.01, decay=0.99)
@@ -115,7 +110,7 @@ def train_model_on_training_data():
         direc_save=direc_save,
         direc_data=direc_data,
         lr_sched=lr_sched,
-        class_weight=None,#class_weights,
+        class_weight=training_data['class_weights'],
         rotation_range=180,
         flip=True,
         shear=False)
@@ -123,25 +118,19 @@ def train_model_on_training_data():
 
 def run_model_on_dir():
     raw_dir = 'raw'
-    data_location = os.path.join(DATA_DIR, PREFIX, 'set0', raw_dir)
+    data_location = os.path.join(DATA_DIR, PREFIX, 'set1', raw_dir)
     output_location = os.path.join(RESULTS_DIR, PREFIX)
-    channel_names = ['channel']
+    channel_names = ['phase']
     image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
 
-    model_name = '2018-06-29_watershed_channels_last_conv__0.h5'
+    model_name = '2018-06-29_ecoli_watershed_channels_last_conv__0.h5'
 
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
     n_features = 3
     window_size = (30, 30)
 
-    if DATA_OUTPUT_MODE == 'sample':
-        model_fn = watershednetwork
-    elif DATA_OUTPUT_MODE == 'conv':
-        model_fn = watershednetwork
-    else:
-        raise ValueError('{} is not a valid training mode for 2D images (yet).'.format(
-            DATA_OUTPUT_MODE))
+    model_fn = watershednetwork
 
     predictions = run_models_on_directory(
         data_location=data_location,
@@ -193,7 +182,7 @@ def export():
 
     model = the_model(**model_args)
 
-    model_name = '2018-06-28_watershed_channels_last_conv__0.h5'
+    model_name = '2018-06-29_ecoli_watershed_channels_last_conv__0.h5'
 
     weights_path = os.path.join(MODEL_DIR, PREFIX, model_name)
     export_path = os.path.join(EXPORT_DIR, PREFIX)
