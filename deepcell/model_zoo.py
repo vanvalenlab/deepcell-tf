@@ -37,11 +37,13 @@ def bn_feature_net_21x21(n_features=3, n_channels=1, reg=1e-5, init='he_normal',
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
+        input_shape = (n_channels, 21, 21)
     else:
         channel_axis = -1
+        input_shape = (21, 21, n_channels)
 
     model = Sequential()
-    model.add(ImageNormalization2D(norm_method=norm_method, filter_size=21, input_shape=(n_channels, 21, 21)))
+    model.add(ImageNormalization2D(norm_method=norm_method, filter_size=21, input_shape=(input_shape)))
     model.add(Conv2D(32, (4, 4), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
@@ -74,7 +76,7 @@ def bn_feature_net_21x21(n_features=3, n_channels=1, reg=1e-5, init='he_normal',
 
     return model
 
-def dilated_bn_feature_net_21x21(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', weights_path=None, norm_method='std'):
+def dilated_bn_feature_net_21x21(input_shape=(2, 1080, 1280), batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, norm_method='std'):
     print('Using dilated feature net 21x21 with batch normalization')
 
     if K.image_data_format() == 'channels_first':
@@ -84,8 +86,9 @@ def dilated_bn_feature_net_21x21(input_shape=(2, 1080, 1280), n_features=3, reg=
 
     model = Sequential()
     d = 1
-    model.add(ImageNormalization2D(norm_method=norm_method, filter_size=21, input_shape=(n_channels, 21, 21)))
-    model.add(Conv2D(32, (4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(ImageNormalization2D(norm_method=norm_method, filter_size=21, input_shape=input_shape))
+
+    model.add(Conv2D(32, (4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', batch_size=batch_size, kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
 
@@ -96,6 +99,7 @@ def dilated_bn_feature_net_21x21(input_shape=(2, 1080, 1280), n_features=3, reg=
     d *= 2
 
     model.add(Conv2D(32, (3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
 
@@ -113,7 +117,6 @@ def dilated_bn_feature_net_21x21(input_shape=(2, 1080, 1280), n_features=3, reg=
 
     model.add(TensorProd2D(200, n_features, kernel_initializer=init, kernel_regularizer=l2(reg)))
 
-    model.add(Flatten())
     model.add(Softmax(axis=channel_axis))
 
     if weights_path is not None:
@@ -126,11 +129,13 @@ def bn_feature_net_31x31(n_features=3, n_channels=1, reg=1e-5, init='he_normal',
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
+        input_shape = (n_channels, 31, 31)
     else:
         channel_axis = -1
+        input_shape = (31, 31, n_channels)
 
     model = Sequential()
-    model.add(ImageNormalization2D(norm_method=norm_method, filter_size=31, input_shape=(n_channels, 31, 31)))
+    model.add(ImageNormalization2D(norm_method=norm_method, filter_size=31, input_shape=input_shape))
     model.add(Conv2D(32, (4, 4), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
@@ -164,7 +169,7 @@ def bn_feature_net_31x31(n_features=3, n_channels=1, reg=1e-5, init='he_normal',
 
     return model
 
-def dilated_bn_feature_net_31x31(n_features=3, n_channels=1, reg=1e-5, init='he_normal', weights_path=None, norm_method='std'):
+def dilated_bn_feature_net_31x31(input_shape=(2,1080,1280), n_features=3, n_channels=1, reg=1e-5, init='he_normal', weights_path=None, norm_method='std'):
     print('Using dilated feature net 31x31 with batch normalization')
 
     if K.image_data_format() == 'channels_first':
@@ -174,7 +179,7 @@ def dilated_bn_feature_net_31x31(n_features=3, n_channels=1, reg=1e-5, init='he_
 
     model = Sequential()
     d = 1
-    model.add(ImageNormalization2D(norm_method=norm_method, filter_size=31, input_shape=(n_channels, 31, 31)))
+    model.add(ImageNormalization2D(norm_method=norm_method, filter_size=31, input_shape=input_shape))
     model.add(Conv2D(32, (4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
