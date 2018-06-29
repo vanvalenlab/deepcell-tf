@@ -33,6 +33,7 @@ from .utils.transform_utils import transform_matrix_offset_center
 Custom image generators
 """
 
+
 class ImageSampleArrayIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
                  batch_size=32, shuffle=False, seed=None, data_format=None,
@@ -66,9 +67,9 @@ class ImageSampleArrayIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
-            batch_x = np.zeros((len(index_array), self.x.shape[self.channel_axis], 2*self.win_x + 1, 2*self.win_y + 1))
+            batch_x = np.zeros((len(index_array), self.x.shape[self.channel_axis], 2 * self.win_x + 1, 2 * self.win_y + 1))
         else:
-            batch_x = np.zeros((len(index_array), 2*self.win_x + 1, 2*self.win_y + 1, self.x.shape[self.channel_axis]))
+            batch_x = np.zeros((len(index_array), 2 * self.win_x + 1, 2 * self.win_y + 1, self.x.shape[self.channel_axis]))
 
         for i, j in enumerate(index_array):
             batch = self.b[j]
@@ -78,9 +79,9 @@ class ImageSampleArrayIterator(Iterator):
             win_y = self.win_y
 
             if self.channel_axis == 1:
-                x = self.x[batch, :, pixel_x-win_x:pixel_x+win_x+1, pixel_y-win_y:pixel_y+win_y+1]
+                x = self.x[batch, :, pixel_x - win_x:pixel_x + win_x + 1, pixel_y - win_y:pixel_y + win_y + 1]
             else:
-                x = self.x[batch, pixel_x-win_x:pixel_x+win_x+1, pixel_y-win_y:pixel_y+win_y+1, :]
+                x = self.x[batch, pixel_x - win_x:pixel_x + win_x + 1, pixel_y - win_y:pixel_y + win_y + 1, :]
 
             x = self.image_data_generator.random_transform(x.astype(K.floatx()))
             x = self.image_data_generator.standardize(x)
@@ -113,6 +114,7 @@ class ImageSampleArrayIterator(Iterator):
                 # so it can be done in parallel
             return self._get_batches_of_transformed_samples(index_array)
 
+
 class SampleDataGenerator(ImageDataGenerator):
     def sample_flow(self, train_dict, batch_size=32, shuffle=True, seed=None,
                     save_to_dir=None, save_prefix='', save_format='png'):
@@ -120,6 +122,7 @@ class SampleDataGenerator(ImageDataGenerator):
             train_dict, self,
             batch_size=batch_size, shuffle=shuffle, seed=seed, data_format=self.data_format,
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
+
 
 class ImageFullyConvIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
@@ -147,7 +150,7 @@ class ImageFullyConvIterator(Iterator):
         super(ImageFullyConvIterator, self).__init__(self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-        epsilon = K.epsilon() # epsilon = 1e-8
+        epsilon = K.epsilon()  # epsilon = 1e-8
         if self.target_format == 'direction':
             y_channel_shape = 2
         elif self.target_format == 'watershed':
@@ -253,6 +256,7 @@ class ImageFullyConvIterator(Iterator):
             # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
+
 class ImageFullyConvGatherIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
                  batch_size=1, training_examples=1e5, shuffle=False, seed=None,
@@ -286,11 +290,11 @@ class ImageFullyConvGatherIterator(Iterator):
             rows_to_sample[batch_id] = self.row_index[self.batch_index == batch_id]
             cols_to_sample[batch_id] = self.col_index[self.batch_index == batch_id]
 
-        #Subsample the pixel coordinates
+        # Subsample the pixel coordinates
         if self.channel_axis == 1:
-            expected_label_size = (self.x.shape[0], train_dict['y'].shape[1], self.x.shape[2]-2*self.win_x, self.x.shape[3] - 2*self.win_y)
+            expected_label_size = (self.x.shape[0], train_dict['y'].shape[1], self.x.shape[2] - 2 * self.win_x, self.x.shape[3] - 2 * self.win_y)
         else:
-            expected_label_size = (self.x.shape[0], self.x.shape[1]-2*self.win_x, self.x.shape[2] - 2*self.win_y, train_dict['y'].shape[-1])
+            expected_label_size = (self.x.shape[0], self.x.shape[1] - 2 * self.win_x, self.x.shape[2] - 2 * self.win_y, train_dict['y'].shape[-1])
         if train_dict['y'] is not None and train_dict['y'].shape != expected_label_size:
             raise Exception('The expected conv-net output and label image '
                             'should have the same size. Found: '
@@ -351,6 +355,7 @@ class ImageFullyConvGatherIterator(Iterator):
             # The transformation of images is not under thread lock
             # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
+
 
 class ImageFullyConvDataGenerator(object):
     """Generate minibatches of movie data with real-time data augmentation.
@@ -453,7 +458,7 @@ class ImageFullyConvDataGenerator(object):
                              'Received arg: {}'.format(zoom_range))
 
     def flow(self, train_dict, batch_size=1, shuffle=True, seed=None,
-            save_to_dir=None, save_prefix='', save_format='png', target_format=None):
+             save_to_dir=None, save_prefix='', save_format='png', target_format=None):
         return ImageFullyConvIterator(
             train_dict, self,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
@@ -575,7 +580,7 @@ class ImageFullyConvDataGenerator(object):
                 transform_matrix, zoom_matrix)
 
         if labels is not None:
-            y = labels #np.expand_dims(labels, axis = 0)
+            y = labels  # np.expand_dims(labels, axis=0)
 
             if transform_matrix is not None:
                 h, w = y.shape[img_row_axis], y.shape[img_col_axis]
@@ -654,9 +659,11 @@ class ImageFullyConvDataGenerator(object):
             self.std = np.reshape(self.std, broadcast_shape)
             x /= (self.std + K.epsilon())
 
+
 """
 Custom siamese generators
 """
+
 
 class SiameseDataGenerator(ImageDataGenerator):
     def siamese_flow(self, train_dict, crop_dim=14, min_track_length=5,
@@ -667,6 +674,7 @@ class SiameseDataGenerator(ImageDataGenerator):
                                shuffle=shuffle, seed=seed, data_format=data_format,
                                save_to_dir=save_to_dir, save_prefix=save_prefix,
                                save_format=save_format)
+
 
 class SiameseIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
@@ -718,7 +726,7 @@ class SiameseIterator(Iterator):
                 y_true = np.sum(y_batch == cell, axis=(self.row_axis - 1, self.col_axis - 1))
                 # get indices of frames where cell is present
                 y_index = np.where(y_true > 0)[0]
-                if y_index.size > 0: # if cell is present at all
+                if y_index.size > 0:  # if cell is present at all
                     start_frame = np.amin(y_index)
                     stop_frame = np.amax(y_index)
                     track_ids[track_counter] = {
@@ -746,7 +754,7 @@ class SiameseIterator(Iterator):
             batch = track_id['batch']
             label_1 = track_id['label']
             tracked_frames = track_id['frames']
-            frame_1 = np.random.choice(tracked_frames) # Select a frame from the track
+            frame_1 = np.random.choice(tracked_frames)  # Select a frame from the track
 
             X = self.X[batch]
             y = self.y[batch]
@@ -763,7 +771,7 @@ class SiameseIterator(Iterator):
             # Select another frame from a different track
             if not is_same_cell:
                 # all_labels = np.arange(1, np.amax(y) + 1)
-                all_labels = np.delete(np.unique(y), 0) # all labels in y but 0 (background)
+                all_labels = np.delete(np.unique(y), 0)  # all labels in y but 0 (background)
                 acceptable_labels = np.delete(all_labels, np.where(all_labels == label_1))
                 is_valid_label = False
                 while not is_valid_label:
@@ -774,14 +782,14 @@ class SiameseIterator(Iterator):
                     y_true = np.sum(y == label_2, axis=(
                         self.row_axis - 1, self.col_axis - 1, self.channel_axis - 1))
 
-                    y_index = np.where(y_true > 0)[0] # get frames where cell is present
-                    is_valid_label = y_index.any() # label_2 is in a frame
+                    y_index = np.where(y_true > 0)[0]  # get frames where cell is present
+                    is_valid_label = y_index.any()  # label_2 is in a frame
                     if not is_valid_label:
                         # remove invalid label from list of acceptable labels
                         acceptable_labels = np.delete(
                             acceptable_labels, np.where(acceptable_labels == label_2))
 
-                frame_2 = np.random.choice(y_index) # get random frame with label_2
+                frame_2 = np.random.choice(y_index)  # get random frame with label_2
 
             # Get appearances
             frames = [frame_1, frame_2]
@@ -850,9 +858,11 @@ class SiameseIterator(Iterator):
             # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
+
 """
 Custom movie generators
 """
+
 
 class MovieDataGenerator(object):
     """Generate minibatches of movie data with real-time data augmentation.
@@ -1285,9 +1295,11 @@ class MovieArrayIterator(Iterator):
             # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
+
 """
 Bounding box generators adapted from retina net library
 """
+
 
 class BoundingBoxIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
@@ -1319,7 +1331,7 @@ class BoundingBoxIterator(Iterator):
 
         bbox_list = []
         for b in range(self.x.shape[0]):
-            for l in range(1, self.num_features-1):
+            for l in range(1, self.num_features - 1):
                 if self.channel_axis == 3:
                     mask = self.y[b, :, :, l]
                 else:

@@ -33,9 +33,6 @@ from .utils.train_utils import rate_scheduler
 from .utils.transform_utils import to_categorical
 from .settings import CHANNELS_FIRST
 
-"""
-Training convnets
-"""
 
 def train_model_sample(model=None, dataset=None, optimizer=None,
                        expt='', it=0, batch_size=32, n_epoch=100,
@@ -70,7 +67,7 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
     # this will do preprocessing and realtime data augmentation
     datagen = SampleDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear, # randomly shear images in the range (radians , -shear_range to shear_range)
+        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
@@ -88,6 +85,7 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
         ])
 
     np.savez(file_name_save_loss, loss_history=loss_history.history)
+
 
 def train_model_conv(model=None, dataset=None, optimizer=None,
                      expt='', it=0, batch_size=1, n_epoch=100,
@@ -125,7 +123,7 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
     # this will do preprocessing and realtime data augmentation
     datagen = ImageFullyConvDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear, # randomly shear images in the range (radians , -shear_range to shear_range)
+        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
@@ -145,6 +143,7 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
     np.savez(file_name_save_loss, loss_history=loss_history.history)
 
     return model
+
 
 def train_model_siamese(model=None, dataset=None, optimizer=None,
                         expt='', it=0, batch_size=1, n_epoch=100,
@@ -182,13 +181,13 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
     # this will do preprocessing and realtime data augmentation
     datagen = SiameseDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear, # randomly shear images in the range (radians , -shear_range to shear_range)
+        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
     datagen_val = SiameseDataGenerator(
         rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=0, # randomly shear images in the range (radians , -shear_range to shear_range)
+        shear_range=0,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=0,  # randomly flip images
         vertical_flip=0)  # randomly flip images
 
@@ -210,6 +209,7 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
     np.savez(file_name_save_loss, loss_history=loss_history.history)
 
     return model
+
 
 def train_model_watershed(model=None, dataset=None, optimizer=None,
                           expt='', it=0, batch_size=1, n_epoch=100,
@@ -245,7 +245,7 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
     # this will do preprocessing and realtime data augmentation
     datagen = ImageFullyConvDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear, # randomly shear images in the range (radians , -shear_range to shear_range)
+        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
@@ -265,6 +265,7 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
     np.savez(file_name_save_loss, loss_history=loss_history.history)
 
     return model
+
 
 def train_model_disc(model=None, dataset=None, optimizer=None,
                      expt='', it=0, batch_size=1, n_epoch=100,
@@ -298,7 +299,7 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
     # this will do preprocessing and realtime data augmentation
     datagen = ImageFullyConvDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear, # randomly shear images in the range (radians , -shear_range to shear_range)
+        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
@@ -317,6 +318,7 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
     np.savez(file_name_save_loss, loss_history=loss_history.history)
 
     return model
+
 
 def train_model_conv_sample(model=None, dataset=None, optimizer=None,
                             expt='', it=0, batch_size=1, n_epoch=100,
@@ -343,6 +345,7 @@ def train_model_conv_sample(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     class_weights = np.array([1, 1, 1], dtype=K.floatx())
+
     def loss_function(y_true, y_pred):
         return sample_categorical_crossentropy(y_true, y_pred, axis=3,
                                                class_weights=class_weights, from_logits=False)
@@ -354,7 +357,7 @@ def train_model_conv_sample(model=None, dataset=None, optimizer=None,
     # this will do preprocessing and realtime data augmentation
     datagen = ImageFullyConvDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear, # randomly shear images in the range (radians , -shear_range to shear_range)
+        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
@@ -388,6 +391,7 @@ def train_model_conv_sample(model=None, dataset=None, optimizer=None,
         tiff.imsave(save_name, pred[0, :, :, j])
 
     return model
+
 
 def train_model_movie(model=None, dataset=None, optimizer=None,
                       expt='', it=0, batch_size=1, n_epoch=100,
@@ -428,7 +432,7 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
     # this will do preprocessing and realtime data augmentation
     datagen = MovieDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear, # randomly shear images in the range (radians , -shear_range to shear_range)
+        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 

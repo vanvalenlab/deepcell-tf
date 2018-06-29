@@ -11,22 +11,27 @@ from __future__ import division
 
 import numpy as np
 
+
 def rotate_array_0(arr):
     return arr
 
+
 def rotate_array_90(arr):
-    axes_order = list(range(arr.ndim - 2)) + [arr.ndim-1, arr.ndim-2]
-    slices = [slice(None) for _ in range(arr.ndim-2)] + [slice(None), slice(None, None, -1)]
+    axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
+    slices = [slice(None) for _ in range(arr.ndim - 2)] + [slice(None), slice(None, None, -1)]
     return arr[tuple(slices)].transpose(axes_order)
+
 
 def rotate_array_180(arr):
-    slices = [slice(None) for _ in range(arr.ndim-2)] + [slice(None, None, -1), slice(None, None, -1)]
+    slices = [slice(None) for _ in range(arr.ndim - 2)] + [slice(None, None, -1), slice(None, None, -1)]
     return arr[tuple(slices)]
 
+
 def rotate_array_270(arr):
-    axes_order = list(range(arr.ndim-2)) + [arr.ndim-1, arr.ndim-2]
-    slices = [slice(None) for _ in range(arr.ndim-2)] + [slice(None, None, -1), slice(None)]
+    axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
+    slices = [slice(None) for _ in range(arr.ndim - 2)] + [slice(None, None, -1), slice(None)]
     return arr[tuple(slices)].transpose(axes_order)
+
 
 def to_categorical(y, num_classes=None):
     """Converts a class vector (integers) to binary class matrix.
@@ -45,6 +50,7 @@ def to_categorical(y, num_classes=None):
     categorical = np.zeros((n, num_classes))
     categorical[np.arange(n), y] = 1
     return categorical
+
 
 def transform_matrix_offset_center(matrix, x, y):
     o_x = float(x) / 2 + 0.5
