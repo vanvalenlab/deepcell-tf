@@ -13,12 +13,24 @@ from tensorflow.python import keras
 from tensorflow.python.platform import test
 
 from deepcell.utils.train_utils import axis_softmax
+from deepcell.utils.train_utils import rate_scheduler
 
 TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RES_DIR = os.path.join(TEST_DIR, 'resources')
 TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
 
 class TrainUtilsTest(test.TestCase):
+    def test_rate_scheduler(self):
+        # if decay is small, learning rate should decrease as epochs increase
+        rs = rate_scheduler(lr=.001, decay=.95)
+        assert rs(1) > rs(2)
+        # if decay is large, learning rate should increase as epochs increase
+        rs = rate_scheduler(lr=.001, decay=1.05)
+        assert rs(1) < rs(2)
+        # if decay is 1, learning rate should not change
+        rs = rate_scheduler(lr=.001, decay=1)
+        assert rs(1) == rs(2)
+
     def test_axis_softmax(self):
         """
         Adapted from the Tensorflow test for the softmax layer.
