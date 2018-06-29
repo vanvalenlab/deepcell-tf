@@ -10,6 +10,7 @@ import shutil
 
 import numpy as np
 from skimage.io import imread
+from tensorflow.python.keras import backend as K
 from tensorflow.python.platform import test
 
 from deepcell.utils.io_utils import get_immediate_subdirs
@@ -42,7 +43,12 @@ class TestIOUtils(test.TestCase):
         assert get_immediate_subdirs(RES_DIR) == []
 
     def test_get_image(self):
+        # test tiff files
         test_img_path = os.path.join(RES_DIR, 'phase.tif')
+        test_img = get_image(test_img_path)
+        assert np.asarray(test_img).shape == (300, 300)
+        # test png files
+        test_img_path = os.path.join(RES_DIR, 'feature_0.png')
         test_img = get_image(test_img_path)
         assert np.asarray(test_img).shape == (300, 300)
 
@@ -63,9 +69,17 @@ class TestIOUtils(test.TestCase):
         assert sizes == (300, 300)
 
     def test_get_images_from_directory(self):
+        # test channels_last
+        K.set_image_data_format('channels_last')
         img = get_images_from_directory(RES_DIR, ['phase'])
         assert isinstance(img, list) and len(img) == 1
         assert img[0].shape == (1, 300, 300, 1)
+
+        # test channels_last
+        K.set_image_data_format('channels_first')
+        img = get_images_from_directory(RES_DIR, ['phase'])
+        assert isinstance(img, list) and len(img) == 1
+        assert img[0].shape == (1, 1, 300, 300)
 
 if __name__ == '__main__':
     test.main()
