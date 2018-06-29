@@ -20,7 +20,7 @@ DATA_OUTPUT_MODE = 'conv'
 BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
 RESIZE = True
 RESHAPE_SIZE = 256
-NUM_FRAMES = 45
+NUM_FRAMES = 5
 
 # filepath constants
 DATA_DIR = '/data/data'
@@ -128,7 +128,7 @@ def run_model_on_dir():
     channel_names = ['channel']
     image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
 
-    model_name = '2018-06-28_watershed_channels_last_conv__0.h5'
+    model_name = '2018-06-29_watershed_channels_last_conv__0.h5'
 
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
