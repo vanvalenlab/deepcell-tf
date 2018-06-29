@@ -15,9 +15,11 @@ from tensorflow.python.platform import test
 from deepcell.utils.train_utils import axis_softmax
 from deepcell.utils.train_utils import rate_scheduler
 
+
 TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RES_DIR = os.path.join(TEST_DIR, 'resources')
 TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
+
 
 class TrainUtilsTest(test.TestCase):
     def test_rate_scheduler(self):

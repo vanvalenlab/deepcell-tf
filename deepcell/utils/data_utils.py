@@ -27,7 +27,9 @@ from .misc_utils import sorted_nicely
 from .plot_utils import plot_training_data_2d
 from .plot_utils import plot_training_data_3d
 
+
 CHANNELS_FIRST = K.image_data_format() == 'channels_first'
+
 
 def data_generator(X, batch, feature_dict=None, mode='sample',
                    labels=None, pixel_x=None, pixel_y=None, win_x=30, win_y=30):
@@ -36,9 +38,9 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
         l_list = []
         for b, x, y, l in zip(batch, pixel_x, pixel_y, labels):
             if CHANNELS_FIRST:
-                img = X[b, :, x-win_x:x+win_x+1, y-win_y:y+win_y+1]
+                img = X[b, :, x - win_x:x + win_x + 1, y - win_y:y + win_y + 1]
             else:
-                img = X[b, x-win_x:x+win_x+1, y-win_y:y+win_y+1, :]
+                img = X[b, x - win_x:x + win_x + 1, y - win_y:y + win_y + 1, :]
             img_list.append(img)
             l_list.append(l)
         return np.stack(tuple(img_list), axis=0), np.array(l_list)
@@ -95,6 +97,7 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
     else:
         raise NotImplementedError('data_generator is not implemented for mode = {}'.format(mode))
 
+
 def get_data(file_name, mode='sample'):
     if mode == 'sample':
         training_data = np.load(file_name)
@@ -116,7 +119,7 @@ def get_data(file_name, mode='sample'):
         arr_shuff = np.random.permutation(arr)
 
         train_ind = arr_shuff[0:num_train]
-        test_ind = arr_shuff[num_train:num_train+num_test]
+        test_ind = arr_shuff[num_train:num_train + num_test]
 
         X_test, y_test = data_generator(X.astype(K.floatx()), batch[test_ind],
                                         pixel_x=pixels_x[test_ind], pixel_y=pixels_y[test_ind],
@@ -208,6 +211,7 @@ def get_data(file_name, mode='sample'):
 
         raise NotImplementedError('conv_gather is not finished yet')
 
+
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='valid',
                             window_size_x=30, window_size_y=30):
     """
@@ -251,6 +255,7 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='
 
     return list_of_max_sample_numbers
 
+
 def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
                         border_mode='valid', output_mode='sample'):
     """
@@ -293,9 +298,9 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
 
                     elif border_mode == 'valid':
                         condition = feature_rows_temp[i] - window_size_x > 0 and \
-                                    feature_rows_temp[i] + window_size_x < image_size_x and \
-                                    feature_cols_temp[i] - window_size_y > 0 and \
-                                    feature_cols_temp[i] + window_size_y < image_size_y
+                            feature_rows_temp[i] + window_size_x < image_size_x and \
+                            feature_cols_temp[i] - window_size_y > 0 and \
+                            feature_cols_temp[i] + window_size_y < image_size_y
 
                     if condition:
                         feature_rows.append(feature_rows_temp[i])
@@ -319,6 +324,7 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     feature_label = feature_label[rand_ind]
 
     return feature_rows, feature_cols, feature_batch, feature_label
+
 
 def reshape_matrix(X, y, reshape_size=256):
     """
@@ -371,16 +377,18 @@ def reshape_matrix(X, y, reshape_size=256):
     print('Reshaped training data from {} to {}'.format(X.shape, new_X.shape))
     return new_X, new_y
 
+
 def relabel_movie(y):
     """Relabels unique instance IDs to be from 1 to N"""
     new_y = np.zeros(y.shape)
-    unique_cells = np.unique(y) # get all unique values of y
-    unique_cells = np.delete(unique_cells, 0) # remove 0, as it is background
+    unique_cells = np.unique(y)  # get all unique values of y
+    unique_cells = np.delete(unique_cells, 0)  # remove 0, as it is background
     relabel_ids = np.arange(1, len(unique_cells) + 1)
     for cell_id, relabel_id in zip(unique_cells, relabel_ids):
         cell_loc = np.where(y == cell_id)
         new_y[cell_loc] = relabel_id
     return new_y
+
 
 def reshape_movie(X, y, reshape_size=256):
     """
@@ -434,6 +442,7 @@ def reshape_movie(X, y, reshape_size=256):
     print('Reshaped training data from {} to {}'.format(X.shape, new_X.shape))
     return new_X, new_y
 
+
 def load_training_images_2d(direc_name, training_direcs, channel_names, image_size,
                             window_size, raw_image_direc):
     """
@@ -472,6 +481,7 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
                     X[b, :, :, c] = image_data
 
     return X
+
 
 def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_feature,
                              dilation_radius, annotation_direc):
@@ -537,6 +547,7 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
             y[b, :, :, len(edge_feature) - 1] = 1 - np.sum(y[b], axis=2)
 
     return y
+
 
 def make_training_data_2d(direc_name, file_name_save, channel_names,
                           raw_image_direc='raw',
@@ -698,6 +709,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
             display_mask = y
         plot_training_data_2d(X, display_mask, max_plotted=max_plotted)
 
+
 def load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
                             image_size, window_size, num_frames, montage_mode=False):
     """
@@ -745,6 +757,7 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
 
     return X
 
+
 def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, annotation_name,
                              num_frames, image_size, montage_mode=False):
     """
@@ -788,6 +801,7 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
                     y[b, z, :, :, c] = annotation_img
 
     return y
+
 
 def make_training_data_3d(direc_name, file_name_save, channel_names,
                           training_direcs=None,
@@ -895,6 +909,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
 
     return None
 
+
 def make_training_data(direc_name, file_name_save, channel_names, dimensionality,
                        training_direcs=None,
                        window_size_x=30,
@@ -972,6 +987,5 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
     else:
         raise NotImplementedError('make_training_data is not implemented for '
                                   'dimensionality {}'.format(dimensionality))
-
 
     return None

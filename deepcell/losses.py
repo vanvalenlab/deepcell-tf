@@ -14,6 +14,7 @@ import tensorflow as tf
 
 from tensorflow.python.keras import backend as K
 
+
 def _to_tensor(x, dtype):
     """Convert the input `x` to a tensor of type `dtype`.
     # Arguments
@@ -26,6 +27,7 @@ def _to_tensor(x, dtype):
     if x.dtype != dtype:
         x = tf.cast(x, dtype)
     return x
+
 
 def categorical_crossentropy(target, output, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
@@ -53,6 +55,7 @@ def categorical_crossentropy(target, output, class_weights=None, axis=None, from
             return - tf.reduce_sum(target * tf.log(output), axis=axis)
         return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
     return tf.nn.softmax_cross_entropy_with_logits(labels=target, logits=output)
+
 
 def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
@@ -86,6 +89,7 @@ def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, fr
     class_weights = 1.0 / np.float(n_classes) * tf.divide(total_sum, class_sum + 1.)
     return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
 
+
 def sample_categorical_crossentropy(target, output, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor. Only the sampled
     pixels are used to compute the cross entropy
@@ -118,14 +122,17 @@ def sample_categorical_crossentropy(target, output, class_weights=None, axis=Non
         return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
     return tf.nn.softmax_cross_entropy_with_logits(labels=target, logits=output)
 
+
 def dice_coef(y_true, y_pred, smooth=1):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
     return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
 
+
 def dice_coef_loss(y_true, y_pred, smooth=1):
     return -dice_coef(y_true, y_pred, smooth)
+
 
 def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order=2, gamma=1e-3):
 
@@ -151,10 +158,9 @@ def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order
     mu_a = tf.expand_dims(mu, axis=0)
     mu_b = tf.expand_dims(mu, axis=1)
 
-
     diff_matrix = tf.subtract(mu_a, mu_b)
     L_dist_1 = temp_norm(diff_matrix, axis=-1)
-    L_dist_2 = tf.square(tf.nn.relu(tf.constant(2*delta_d, dtype=K.floatx()) - L_dist_1))
+    L_dist_2 = tf.square(tf.nn.relu(tf.constant(2 * delta_d, dtype=K.floatx()) - L_dist_1))
     diag = tf.constant(0, shape=[106], dtype=K.floatx())
     L_dist_3 = tf.matrix_set_diag(L_dist_2, diag)
     L_dist = tf.reduce_mean(L_dist_3)
@@ -165,6 +171,7 @@ def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order
     L = L_var + L_dist + L_reg
 
     return L
+
 
 def discriminative_instance_loss_3D(y_true, y_pred, delta_v=0.5, delta_d=1.5, order=2, gamma=1e-3):
 
@@ -192,7 +199,7 @@ def discriminative_instance_loss_3D(y_true, y_pred, delta_v=0.5, delta_d=1.5, or
 
     diff_matrix = tf.subtract(mu_a, mu_b)
     L_dist_1 = temp_norm(diff_matrix, axis=-1)
-    L_dist_2 = tf.square(tf.nn.relu(tf.constant(2*delta_d, dtype=K.floatx()) - L_dist_1))
+    L_dist_2 = tf.square(tf.nn.relu(tf.constant(2 * delta_d, dtype=K.floatx()) - L_dist_1))
     diag = tf.constant(0, dtype=K.floatx()) * tf.diag_part(L_dist_2)
     L_dist_3 = tf.matrix_set_diag(L_dist_2, diag)
     L_dist = tf.reduce_mean(L_dist_3)

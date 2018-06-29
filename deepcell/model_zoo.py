@@ -32,6 +32,7 @@ from .utils.train_utils import axis_softmax
 Batch normalized conv-nets
 """
 
+
 def bn_feature_net_21x21(n_features=3, n_channels=1, reg=1e-5, init='he_normal', norm_method='std'):
     print('Using feature net 21x21 with batch normalization')
 
@@ -73,6 +74,7 @@ def bn_feature_net_21x21(n_features=3, n_channels=1, reg=1e-5, init='he_normal',
     model.add(Softmax(axis=channel_axis))
 
     return model
+
 
 def dilated_bn_feature_net_21x21(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', weights_path=None, norm_method='std'):
     print('Using dilated feature net 21x21 with batch normalization')
@@ -121,6 +123,7 @@ def dilated_bn_feature_net_21x21(input_shape=(2, 1080, 1280), n_features=3, reg=
 
     return model
 
+
 def bn_feature_net_31x31(n_features=3, n_channels=1, reg=1e-5, init='he_normal', norm_method='std'):
     print('Using feature net 31x31 with batch normalization')
 
@@ -163,6 +166,7 @@ def bn_feature_net_31x31(n_features=3, n_channels=1, reg=1e-5, init='he_normal',
     model.add(Softmax(axis=channel_axis))
 
     return model
+
 
 def dilated_bn_feature_net_31x31(n_features=3, n_channels=1, reg=1e-5, init='he_normal', weights_path=None, norm_method='std'):
     print('Using dilated feature net 31x31 with batch normalization')
@@ -211,6 +215,7 @@ def dilated_bn_feature_net_31x31(n_features=3, n_channels=1, reg=1e-5, init='he_
         model.load_weights(weights_path, by_name=True)
 
     return model
+
 
 def bn_feature_net_61x61(n_features=3, n_channels=1, reg=1e-5, init='he_normal', norm_method='std'):
     print('Using feature net 61x61 with batch normalization')
@@ -264,6 +269,7 @@ def bn_feature_net_61x61(n_features=3, n_channels=1, reg=1e-5, init='he_normal',
     model.add(Activation('softmax'))
 
     return model
+
 
 def dilated_bn_feature_net_61x61(input_shape=(2, 1080, 1280), batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, permute=False, norm_method='std'):
     print('Using dilated feature net 61x61 with batch normalization')
@@ -326,6 +332,7 @@ def dilated_bn_feature_net_61x61(input_shape=(2, 1080, 1280), batch_size=None, n
 
     return model
 
+
 def bn_feature_net_81x81(n_features=3, n_channels=1, reg=1e-5, init='he_normal', norm_method='std'):
     print('Using feature net 81x81 with batch normalization')
 
@@ -385,6 +392,7 @@ def bn_feature_net_81x81(n_features=3, n_channels=1, reg=1e-5, init='he_normal',
     model.add(Softmax(axis=channel_axis))
 
     return model
+
 
 def dilated_bn_feature_net_81x81(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', weights_path=None, norm_method='std'):
     print('Using dilated feature net 81x81 with batch normalization')
@@ -452,9 +460,11 @@ def dilated_bn_feature_net_81x81(input_shape=(2, 1080, 1280), n_features=3, reg=
 
     return model
 
+
 """
 Multi-resolution batch normalized conv-nets
 """
+
 
 def bn_multires_feature_net_61x61(n_features=3, n_channels=1, reg=1e-5, init='he_normal', norm_method='std'):
     print('Using multi-resolution feature net 61x61 with batch normalization')
@@ -522,6 +532,7 @@ def bn_multires_feature_net_61x61(n_features=3, n_channels=1, reg=1e-5, init='he
     model = Model(inputs=inputs, outputs=act8)
 
     return model
+
 
 def dilated_bn_multires_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', softmax=False, location=True, permute=False, weights_path=None, from_logits=False, norm_method='std'):
     print('Using dilated multi-resolution feature net 61x61 with batch normalization')
@@ -595,16 +606,17 @@ def dilated_bn_multires_feature_net_61x61(input_shape=(2, 1080, 1280), n_feature
 
     if permute:
         if channel_axis == 1:
-            final_layer = Permute((2,3,1))(act8)
+            final_layer = Permute((2, 3, 1))(act8)
     else:
         final_layer = act8
 
-    model = Model(inputs = inputs, outputs = final_layer)
+    model = Model(inputs=inputs, outputs=final_layer)
 
     if weights_path is not None:
         model.load_weights(weights_path, by_name=True)
 
     return model
+
 
 def bn_multires_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', permute=False, softmax=True, location=False, norm_method='std', filter_size=61):
 
@@ -677,7 +689,7 @@ def bn_multires_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_fea
 
     merge1 = Concatenate(axis=channel_axis)([act1, act2, act3, act4, act5, act6, act7, act8, act9, act10, act11, act12])
 
-    tensor_prod1 = TensorProd2D(32*12, 128, kernel_initializer=init, kernel_regularizer=l2(reg))(merge1)
+    tensor_prod1 = TensorProd2D(32 * 12, 128, kernel_initializer=init, kernel_regularizer=l2(reg))(merge1)
     norm9 = BatchNormalization(axis=channel_axis)(tensor_prod1)
     act9 = Activation('relu')(norm9)
 
@@ -701,6 +713,7 @@ def bn_multires_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_fea
     model = Model(inputs=input1, outputs=final_layer)
 
     return model
+
 
 def bn_multires_pool_feature_net(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', permute=False, norm_method='std', filter_size=61):
 
@@ -729,7 +742,7 @@ def bn_multires_pool_feature_net(input_shape=(2, 1080, 1280), n_features=3, reg=
     norm4 = BatchNormalization(axis=channel_axis)(conv4)
     act4 = Activation('relu')(norm4)
 
-    pool2 = MaxPool2D(pool_size = (4, 4), strides=1, padding='same')(act4)
+    pool2 = MaxPool2D(pool_size=(4, 4), strides=1, padding='same')(act4)
 
     conv5 = Conv2D(32, (3, 3), dilation_rate=4, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(pool2)
     norm5 = BatchNormalization(axis=channel_axis)(conv5)
@@ -759,7 +772,7 @@ def bn_multires_pool_feature_net(input_shape=(2, 1080, 1280), n_features=3, reg=
     norm10 = BatchNormalization(axis=channel_axis)(conv10)
     act10 = Activation('relu')(norm10)
 
-    pool5 = MaxPool2D(pool_size = (32,32), strides=1, padding='same')(act10)
+    pool5 = MaxPool2D(pool_size=(32, 32), strides=1, padding='same')(act10)
 
     conv11 = Conv2D(32, (3, 3), dilation_rate=32, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(pool5)
     norm11 = BatchNormalization(axis=channel_axis)(conv11)
@@ -771,7 +784,7 @@ def bn_multires_pool_feature_net(input_shape=(2, 1080, 1280), n_features=3, reg=
 
     merge1 = Concatenate(axis=channel_axis)([act1, act2, act3, act4, act5, act6, act7, act8, act9, act10, act11, act12, pool1, pool2, pool3, pool4, pool5])
 
-    tensor_prod1 = TensorProd2D(32*12, 128, kernel_initializer=init, kernel_regularizer=l2(reg))(merge1)
+    tensor_prod1 = TensorProd2D(32 * 12, 128, kernel_initializer=init, kernel_regularizer=l2(reg))(merge1)
     norm9 = BatchNormalization(axis=channel_axis)(tensor_prod1)
     act9 = Activation('relu')(norm9)
 
@@ -791,6 +804,7 @@ def bn_multires_pool_feature_net(input_shape=(2, 1080, 1280), n_features=3, reg=
     model = Model(inputs=input1, outputs=final_layer)
 
     return model
+
 
 def bn_dense_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', permute=False, softmax=True, location=True, norm_method='std', filter_size=61):
 
@@ -843,7 +857,7 @@ def bn_dense_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_featur
     act6 = Activation('relu')(norm6)
     merge6 = Concatenate(axis=channel_axis)([merge5, act6])
 
-    tensor_prod1 = TensorProd2D(48*6 + input_shape[0], 256, kernel_initializer=init, kernel_regularizer=l2(reg))(merge6)
+    tensor_prod1 = TensorProd2D(48 * 6 + input_shape[0], 256, kernel_initializer=init, kernel_regularizer=l2(reg))(merge6)
     norm9 = BatchNormalization(axis=channel_axis)(tensor_prod1)
     act9 = Activation('relu')(norm9)
 
@@ -858,7 +872,7 @@ def bn_dense_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_featur
 
     if permute:
         if channel_axis == 1:
-            final_layer = Permute((2,3,1))(tensor_prod3)
+            final_layer = Permute((2, 3, 1))(tensor_prod3)
         else:
             final_layer = tensor_prod3
     else:
@@ -868,9 +882,11 @@ def bn_dense_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_featur
 
     return model
 
+
 """
 Residual layers for fine tuning
 """
+
 
 def identity_block(input_tensor, kernel_size, filters, stage, block):
     """The identity block is the block that has no conv layer at shortcut.
@@ -907,6 +923,7 @@ def identity_block(input_tensor, kernel_size, filters, stage, block):
     x = Activation('relu')(x)
 
     return x
+
 
 def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)):
     """A block that has a conv layer at shortcut.
@@ -951,6 +968,7 @@ def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2))
 
     return x
 
+
 def dilated_identity_block(input_tensor, kernel_size, filters, stage, block, dilation_rate=1):
     """The identity block is the block that has no conv layer at shortcut.
     # Arguments
@@ -987,6 +1005,7 @@ def dilated_identity_block(input_tensor, kernel_size, filters, stage, block, dil
     x = Activation('relu')(x)
 
     return x
+
 
 def ASPP_block(input_tensor, kernel_size, filters, stage, block):
     """The identity block is the block that has no conv layer at shortcut.
@@ -1041,14 +1060,14 @@ def ASPP_block(input_tensor, kernel_size, filters, stage, block):
 
     return x
 
-def resnet_custom(input_shape = (2,512,512), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', permute=False, upsample = True, softmax = False, norm_method='std', filter_size=61):
+
+def resnet_custom(input_shape=(2, 512, 512), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', permute=False, upsample=True, softmax=False, norm_method='std', filter_size=61):
     print("Using resnet_custom")
 
     if K.image_data_format() == 'channels_last':
         bn_axis = 3
     else:
         bn_axis = 1
-
 
     if batch_shape is None:
         inputs = Input(shape=input_shape)
@@ -1100,6 +1119,7 @@ def resnet_custom(input_shape = (2,512,512), batch_shape=None, n_features=3, reg
     model = Model(inputs=inputs, outputs=x)
 
     return model
+
 
 def dilated_bn_res_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', permute=False, weights_path=None, from_logits=False, norm_method='std'):
     print("Using dilated multi-resolution feature net 61x61 with batch normalization")
@@ -1179,8 +1199,9 @@ def dilated_bn_res_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, 
 Multiple input conv-nets for fully convolutional training
 """
 
+
 def dilated_bn_feature_net_gather_61x61(input_shape=(2, 1080, 1280), training_examples=1e5, batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, permute=False, norm_method='std'):
-    print("Using dilated feature net 61x61 with batch normalization")
+    print('Using dilated feature net 61x61 with batch normalization')
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -1237,7 +1258,6 @@ def dilated_bn_feature_net_gather_61x61(input_shape=(2, 1080, 1280), training_ex
     else:
         permute1 = act9
 
-
     batch_index_input = Input(batch_shape=(training_examples,), dtype='int32')
     row_index_input = Input(batch_shape=(training_examples,), dtype='int32')
     col_index_input = Input(batch_shape=(training_examples,), dtype='int32')
@@ -1254,9 +1274,11 @@ def dilated_bn_feature_net_gather_61x61(input_shape=(2, 1080, 1280), training_ex
     print(model.output_shape)
     return model
 
+
 """
 3D Conv-nets
 """
+
 
 def multires_block(input_tensor, num_filters=16, init='he_normal', reg=1e-5):
 
@@ -1297,6 +1319,7 @@ def multires_block(input_tensor, num_filters=16, init='he_normal', reg=1e-5):
 
     return merge6
 
+
 def bn_dense_multires_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_blocks=10, n_features=3, reg=1e-5, init='he_normal', permute=True, norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
@@ -1309,10 +1332,10 @@ def bn_dense_multires_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_blocks=
     list_of_blocks = []
     list_of_blocks.append(multires_block(img_norm, init=init, reg=reg))
 
-    for _ in range(n_blocks-1):
+    for _ in range(n_blocks - 1):
         list_of_blocks.append(multires_block(list_of_blocks[-1], init=init, reg=reg))
 
-    tensor_prod1 = TensorProd3D(n_blocks*6 + batch_shape[1], 64, kernel_initializer=init, kernel_regularizer=l2(reg))(list_of_blocks[-1])
+    tensor_prod1 = TensorProd3D(n_blocks * 6 + batch_shape[1], 64, kernel_initializer=init, kernel_regularizer=l2(reg))(list_of_blocks[-1])
     norm1 = BatchNormalization(axis=channel_axis)(tensor_prod1)
     act1 = Activation('relu')(norm1)
 
@@ -1380,7 +1403,7 @@ def bn_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_features=3, reg=1e-5, 
 
     merge1 = Concatenate(axis=channel_axis)([act1, act2, act3, act4, act5, act6])
 
-    tensor_prod1 = TensorProd3D(64*6, 256, kernel_initializer=init, kernel_regularizer=l2(reg))(merge1)
+    tensor_prod1 = TensorProd3D(64 * 6, 256, kernel_initializer=init, kernel_regularizer=l2(reg))(merge1)
     norm7 = BatchNormalization(axis=channel_axis)(tensor_prod1)
     act7 = Activation('relu')(norm7)
 
@@ -1451,7 +1474,7 @@ def bn_dense_feature_net_3D(batch_shape=(1, 1, 5, 256, 256), n_features=3, reg=1
     act6 = Activation('relu')(norm6)
     merge6 = Concatenate(axis=channel_axis)([merge5, act6])
 
-    tensor_prod1 = TensorProd3D(64*6 + input_shape[0], 256, kernel_initializer=init, kernel_regularizer=l2(reg))(merge6)
+    tensor_prod1 = TensorProd3D(64 * 6 + input_shape[0], 256, kernel_initializer=init, kernel_regularizer=l2(reg))(merge6)
     norm7 = BatchNormalization(axis=channel_axis)(tensor_prod1)
     act7 = Activation('relu')(norm7)
 
@@ -1472,6 +1495,7 @@ def bn_dense_feature_net_3D(batch_shape=(1, 1, 5, 256, 256), n_features=3, reg=1
     model = Model(inputs=input1, outputs=final_layer)
 
     return model
+
 
 def bn_dense_feature_net_lstm(input_shape=(1, 60, 256, 256), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', permute=False, softmax=True, norm_method='std', filter_size=61):
 
@@ -1518,37 +1542,38 @@ def bn_dense_feature_net_lstm(input_shape=(1, 60, 256, 256), batch_shape=None, n
     act6 = Activation('relu')(norm6)
     merge6 = Concatenate(axis=channel_axis)([merge5, act6])
 
-    tensorprod1 = TensorProd2D(64*6, 256, kernel_initializer=init, kernel_regularizer=l2(reg))(merge6)
+    tensorprod1 = TensorProd2D(64 * 6, 256, kernel_initializer=init, kernel_regularizer=l2(reg))(merge6)
 
     if channel_axis == 1:
         permute1 = Permute((2, 1, 3, 4))(tensorprod1)
 
-    lstm1 = ConvLSTM2D(64, (3, 3), dilation_rate=(1, 1), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences = True)(permute1)
-    lstm2 = ConvLSTM2D(64, (3, 3), dilation_rate=(1, 1), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences = True, go_backwards = True)(lstm1)
+    lstm1 = ConvLSTM2D(64, (3, 3), dilation_rate=(1, 1), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True)(permute1)
+    lstm2 = ConvLSTM2D(64, (3, 3), dilation_rate=(1, 1), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True, go_backwards=True)(lstm1)
 
-    lstm3 = ConvLSTM2D(64, (3, 3), dilation_rate=(2, 2), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences = True)(lstm2)
-    lstm4 = ConvLSTM2D(64, (3, 3), dilation_rate=(2, 2), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences = True, go_backwards = True)(lstm3)
+    lstm3 = ConvLSTM2D(64, (3, 3), dilation_rate=(2, 2), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True)(lstm2)
+    lstm4 = ConvLSTM2D(64, (3, 3), dilation_rate=(2, 2), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True, go_backwards=True)(lstm3)
 
-    lstm5 = ConvLSTM2D(64, (3, 3), dilation_rate=(4, 4), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences = True)(lstm4)
-    lstm6 = ConvLSTM2D(64, (3, 3), dilation_rate=(4, 4), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences = True, go_backwards = True)(lstm5)
+    lstm5 = ConvLSTM2D(64, (3, 3), dilation_rate=(4, 4), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True)(lstm4)
+    lstm6 = ConvLSTM2D(64, (3, 3), dilation_rate=(4, 4), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True, go_backwards=True)(lstm5)
 
-    lstm7 = ConvLSTM2D(64, (3, 3), dilation_rate=(8, 8), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences = True)(lstm6)
-    lstm8 = ConvLSTM2D(64, (3, 3), dilation_rate=(8, 8), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences = True, go_backwards = True)(lstm7)
+    lstm7 = ConvLSTM2D(64, (3, 3), dilation_rate=(8, 8), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True)(lstm6)
+    lstm8 = ConvLSTM2D(64, (3, 3), dilation_rate=(8, 8), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True, go_backwards=True)(lstm7)
 
-    lstm9 = ConvLSTM2D(64, (3, 3), dilation_rate=(16, 16), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences = True)(lstm8)
-    lstm10 = ConvLSTM2D(64, (3, 3), dilation_rate=(16, 16), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences = True, go_backwards = True)(lstm9)
+    lstm9 = ConvLSTM2D(64, (3, 3), dilation_rate=(16, 16), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True)(lstm8)
+    lstm10 = ConvLSTM2D(64, (3, 3), dilation_rate=(16, 16), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True, go_backwards=True)(lstm9)
 
-    lstm11 = ConvLSTM2D(64, (3, 3), dilation_rate=(32, 32), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences = True)(lstm10)
-    lstm12 = ConvLSTM2D(64, (3, 3), dilation_rate=(32, 32), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences = True, go_backwards = True)(lstm11)
+    lstm11 = ConvLSTM2D(64, (3, 3), dilation_rate=(32, 32), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True)(lstm10)
+    lstm12 = ConvLSTM2D(64, (3, 3), dilation_rate=(32, 32), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True, go_backwards=True)(lstm11)
 
     if channel_axis == 1:
         final_layer = Permute((2, 1, 3, 4))(lstm12)
     else:
         final_layer = lstm12
 
-    model = Model(inputs = input1, outputs = final_layer)
+    model = Model(inputs=input1, outputs=final_layer)
 
     return model
+
 
 def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal', permute=False, softmax=True, norm_method='std', filter_size=61):
 
@@ -1567,10 +1592,10 @@ def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal'
     feature_extractor.add(Activation('relu'))
     feature_extractor.add(MaxPool2D(pool_size=(2, 2)))
 
-    #feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
-    #feature_extractor.add(BatchNormalization(axis=channel_axis))
-    #feature_extractor.add(Activation('relu'))
-    #feature_extractor.add(MaxPool2D(pool_size = (2, 2)))
+    # feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
+    # feature_extractor.add(BatchNormalization(axis=channel_axis))
+    # feature_extractor.add(Activation('relu'))
+    # feature_extractor.add(MaxPool2D(pool_size = (2, 2)))
 
     # Create two instances of feature_extractor
     output_1 = feature_extractor(input_1)
@@ -1581,11 +1606,11 @@ def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal'
     flat1 = Flatten()(merged_outputs)
 
     # Implement dense net (or call preexisting one?) with the two outputs as inputs
-    dense1 = Dense( 32, activation='relu')(flat1)
+    dense1 = Dense(32, activation='relu')(flat1)
     dropout1 = Dropout(0.1)(dense1)
-    dense2 = Dense( 16, activation='relu')(dropout1)
+    dense2 = Dense(16, activation='relu')(dropout1)
     dropout2 = Dropout(0.1)(dense2)
-    dense3 = Dense( 2, activation='softmax')(dropout2)
+    dense3 = Dense(2, activation='softmax')(dropout2)
 
     # Instantiate model
     final_layer = dense3
