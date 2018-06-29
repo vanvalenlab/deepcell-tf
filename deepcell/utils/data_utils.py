@@ -321,6 +321,15 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     return feature_rows, feature_cols, feature_batch, feature_label
 
 def reshape_matrix(X, y, reshape_size=256):
+    """
+    Reshape matrix of dimension 4 to have x and y of size reshape_size.
+    Adds overlapping slices to batches.
+    E.g. reshape_size of 256 yields (1, 1024, 1024, 1) -> (16, 256, 256, 1)
+    """
+    if X.ndim != 4:
+        raise ValueError('reshape_matrix expects X dim to be 4, got {}'.format(X.ndim))
+    elif y.ndim != 4:
+        raise ValueError('reshape_matrix expects y dim to be 4, got {}'.format(y.ndim))
     image_size_x, image_size_y = X.shape[2:] if CHANNELS_FIRST else X.shape[1:3]
     rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
     new_batch_size = X.shape[0] * (rep_number) ** 2
@@ -363,6 +372,7 @@ def reshape_matrix(X, y, reshape_size=256):
     return new_X, new_y
 
 def relabel_movie(y):
+    """Relabels unique instance IDs to be from 1 to N"""
     new_y = np.zeros(y.shape)
     unique_cells = np.unique(y) # get all unique values of y
     unique_cells = np.delete(unique_cells, 0) # remove 0, as it is background
@@ -373,6 +383,15 @@ def relabel_movie(y):
     return new_y
 
 def reshape_movie(X, y, reshape_size=256):
+    """
+    Reshape tensor of dimension 5 to have x and y of size reshape_size.
+    Adds overlapping slices to batches.
+    E.g. reshape_size of 256 yields (1, 5, 1024, 1024, 1) -> (16, 5, 256, 256, 1)
+    """
+    if X.ndim != 5:
+        raise ValueError('reshape_movie expects X dim to be 5, got {}'.format(X.ndim))
+    elif y.ndim != 5:
+        raise ValueError('reshape_movie expects y dim to be 5, got {}'.format(y.ndim))
     image_size_x, image_size_y = X.shape[3:] if CHANNELS_FIRST else X.shape[2:4]
     rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
     new_batch_size = X.shape[0] * (rep_number) ** 2
