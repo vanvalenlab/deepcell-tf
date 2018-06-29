@@ -27,10 +27,6 @@ def run_model(image, model, win_x=30, win_y=30, split=True):
     x_axis = 2 if CHANNELS_FIRST else 1
     y_axis = 3 if CHANNELS_FIRST else 2
 
-    evaluate_model = K.function(
-        [model.layers[0].input, K.learning_phase()],
-        [model.layers[-1].output])
-
     n_features = model.layers[-1].output_shape[channel_axis]
 
     if split:
@@ -53,23 +49,23 @@ def run_model(image, model, win_x=30, win_y=30, split=True):
             img_2 = image[:, :, image_size_x - win_x:, 0:image_size_y + win_y]
             img_3 = image[:, :, image_size_x - win_x:, image_size_y - win_y:]
 
-            model_output[:, 0:image_size_x - win_x, 0:image_size_y - win_y] = evaluate_model([img_0, 0])[0]
-            model_output[:, 0:image_size_x - win_x, image_size_y - win_y:] = evaluate_model([img_1, 0])[0]
-            model_output[:, image_size_x - win_x:, 0:image_size_y - win_y] = evaluate_model([img_2, 0])[0]
-            model_output[:, image_size_x - win_x:, image_size_y - win_y:] = evaluate_model([img_3, 0])[0]
+            model_output[:, 0:image_size_x - win_x, 0:image_size_y - win_y] = model.predict(img_0)
+            model_output[:, 0:image_size_x - win_x, image_size_y - win_y:] = model.predict(img_1)
+            model_output[:, image_size_x - win_x:, 0:image_size_y - win_y] = model.predict(img_2)
+            model_output[:, image_size_x - win_x:, image_size_y - win_y:] = model.predict(img_3)
         else:
             img_0 = image[:, 0:image_size_x + win_x, 0:image_size_y + win_y, :]
             img_1 = image[:, 0:image_size_x + win_x, image_size_y - win_y:, :]
             img_2 = image[:, image_size_x - win_x:, 0:image_size_y + win_y, :]
             img_3 = image[:, image_size_x - win_x:, image_size_y - win_y:, :]
 
-            model_output[0:image_size_x - win_x, 0:image_size_y - win_y, :] = evaluate_model([img_0, 0])[0]
-            model_output[0:image_size_x - win_x, image_size_y - win_y:, :] = evaluate_model([img_1, 0])[0]
-            model_output[image_size_x - win_x:, 0:image_size_y - win_y, :] = evaluate_model([img_2, 0])[0]
-            model_output[image_size_x - win_x:, image_size_y - win_y:, :] = evaluate_model([img_3, 0])[0]
+            model_output[0:image_size_x - win_x, 0:image_size_y - win_y, :] = model.predict(img_0)
+            model_output[0:image_size_x - win_x, image_size_y - win_y:, :] = model.predict(img_1)
+            model_output[image_size_x - win_x:, 0:image_size_y - win_y, :] = model.predict(img_2)
+            model_output[image_size_x - win_x:, image_size_y - win_y:, :] = model.predict(img_3)
 
     else:
-        model_output = evaluate_model([image, 0])[0]
+        model_output = model.predict(image)
         model_output = model_output[0, :, :, :]
 
     return model_output
