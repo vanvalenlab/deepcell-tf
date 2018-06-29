@@ -43,7 +43,7 @@ def bn_feature_net_21x21(n_features=3, n_channels=1, reg=1e-5, init='he_normal',
         input_shape = (21, 21, n_channels)
 
     model = Sequential()
-    model.add(ImageNormalization2D(norm_method=norm_method, filter_size=21, input_shape=(input_shape)))
+    model.add(ImageNormalization2D(norm_method=norm_method, filter_size=21, input_shape=input_shape))
     model.add(Conv2D(32, (4, 4), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
@@ -87,7 +87,6 @@ def dilated_bn_feature_net_21x21(input_shape=(2, 1080, 1280), batch_size=None, n
     model = Sequential()
     d = 1
     model.add(ImageNormalization2D(norm_method=norm_method, filter_size=21, input_shape=input_shape))
-
     model.add(Conv2D(32, (4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', batch_size=batch_size, kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
