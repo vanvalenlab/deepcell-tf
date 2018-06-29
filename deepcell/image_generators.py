@@ -129,8 +129,6 @@ class ImageFullyConvIterator(Iterator):
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.win_x = train_dict['win_x']
-        self.win_y = train_dict['win_y']
 
         if self.x.ndim != 4:
             raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
@@ -150,6 +148,8 @@ class ImageFullyConvIterator(Iterator):
         epsilon = K.epsilon() # epsilon = 1e-8
         if self.target_format == 'direction':
             y_channel_shape = 2
+        elif self.target_format == 'simple_watershed':
+            y_channel_shape = 1
         elif self.target_format == 'watershed':
             if self.channel_axis == 1:
                 interior = self.y[0, 1, :, :]
@@ -165,7 +165,10 @@ class ImageFullyConvIterator(Iterator):
             y_channel_shape = self.y.shape[self.channel_axis]
 
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
-        batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:]))
+        if self.channel_axis == 1:
+            batch_y = np.zeros(tuple([len(index_array), y_channel_shape] + list(self.y.shape)[2:]))
+        else:
+            batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:3] + [y_channel_shape]))
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -210,6 +213,15 @@ class ImageFullyConvIterator(Iterator):
                 y = np.zeros(y_shape)
                 for label_val in range(np.amax(distance.flatten()) + 1):
                     y[label_val, :, :] = distance == label_val
+
+            if self.target_format == 'simple_watershed':
+                # not using distnace transform, but only care about interiors
+                if self.channel_axis == 1:
+                    y = y[1, :, :]
+                else:
+                    y = y[:, :, 1]
+                # expand dimensions to retain batch shape
+                y = np.expand_dims(y, axis=self.channel_axis)
 
             batch_x[i] = x
             batch_y[i] = y
