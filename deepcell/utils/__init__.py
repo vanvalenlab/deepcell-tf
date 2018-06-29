@@ -22,6 +22,5 @@ from .plot_utils import plot_training_data_2d
 from .plot_utils import plot_training_data_3d
 from .train_utils import axis_softmax
 from .train_utils import rate_scheduler
-from .transform_utils import flip_axis
 from .transform_utils import to_categorical
 from .transform_utils import transform_matrix_offset_center
