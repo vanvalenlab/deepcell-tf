@@ -21,7 +21,7 @@ from tensorflow.python.platform import test
 from deepcell import losses
 
 try:
-    import h5py # pylint:disable=wrong-import-position
+    import h5py  # pylint:disable=wrong-import-position
 except ImportError:
     h5py = None
 
@@ -68,7 +68,7 @@ class KerasLossesTest(test.TestCase):
             for obj in ALL_LOSSES:
                 objective_output = obj(y_a, y_b)
                 print(obj)
-                self.assertListEqual(objective_output.get_shape().as_list(), [6,])
+                self.assertListEqual(objective_output.get_shape().as_list(), [6])
 
     def test_cce_one_hot(self):
         with self.test_session():

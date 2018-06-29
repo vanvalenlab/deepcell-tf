@@ -27,6 +27,7 @@ TEST_IMG_90 = imread(os.path.join(RES_DIR, 'rotated_90.tif'))
 TEST_IMG_180 = imread(os.path.join(RES_DIR, 'rotated_180.tif'))
 TEST_IMG_270 = imread(os.path.join(RES_DIR, 'rotated_270.tif'))
 
+
 class TransformUtilsTest(test.TestCase):
     def test_to_categorical(self):
         num_classes = 5

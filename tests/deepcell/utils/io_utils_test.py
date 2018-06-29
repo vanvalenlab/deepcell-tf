@@ -19,16 +19,18 @@ from deepcell.utils.io_utils import nikon_getfiles
 from deepcell.utils.io_utils import get_image_sizes
 from deepcell.utils.io_utils import get_images_from_directory
 
+
 TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RES_DIR = os.path.join(TEST_DIR, 'resources')
 TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
+
 
 class TestIOUtils(test.TestCase):
 
     def test_get_immediate_subdirs(self):
         dirs = []
         tmp_dir = os.path.join(RES_DIR, 'tmp')
-        for x in range(2, -1, -1): # iterate backwards to test sorting
+        for x in range(2, -1, -1):  # iterate backwards to test sorting
             sub_dir = os.path.join(tmp_dir, str(x))
             try:
                 os.makedirs(sub_dir)

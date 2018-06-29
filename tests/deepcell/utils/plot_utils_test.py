@@ -16,6 +16,7 @@ TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 RES_DIR = os.path.join(TEST_DIR, 'resources')
 TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
 
+
 class PlotUtilsTest(test.TestCase):
     def test_cf(self):
         # values are hard-coded for test image
