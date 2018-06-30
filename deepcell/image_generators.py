@@ -1174,26 +1174,29 @@ class WatershedIterator(Iterator):
                 interior = y[1, :, :]
             else:
                 interior = y[:, :, 1]
+
             distance = ndi.distance_transform_edt(interior)
-            min_dist = np.amin(distance.flatten())
-            max_dist = np.amax(distance.flatten())
-            bins = np.linspace(min_dist - epsilon, max_dist + epsilon, num=16)
-            distance = np.digitize(distance, bins)
+            distance = distance.astype(K.floatx())  # normalized distances are floats
 
             label_matrix = label(interior)
-            props = regionprops(label_matrix)
-            for prop in props:
-                max_distance = np.amax(distance[label_matrix == prop.label])
-                distance[label_matrix == prop.label] /= max_distance
+            for prop in regionprops(label_matrix):
+                labeled_distance = distance[label_matrix == prop.label]
+                normalized_distance = labeled_distance / np.amax(labeled_distance)
+                distance[label_matrix == prop.label] = normalized_distance
+
+            min_dist = np.amin(distance)
+            max_dist = np.amax(distance)
+            bins = np.linspace(min_dist - epsilon, max_dist + epsilon, num=self.distance_bins)
+            distance = np.digitize(distance, bins)
 
             # convert to one hot notation
             if self.channel_axis == 1:
-                y_shape = (np.amax(distance.flatten()) + 1, self.y.shape[2], self.y.shape[3])
+                y_shape = (self.distance_bins, self.y.shape[2], self.y.shape[3])
             else:
-                y_shape = (self.y.shape[1], self.y.shape[2], np.amax(distance.flatten()) + 1)
+                y_shape = (self.y.shape[1], self.y.shape[2], self.distance_bins)
 
             y = np.zeros(y_shape)
-            for label_val in range(np.amax(distance.flatten()) + 1):
+            for label_val in range(np.amax(distance) + 1):
                 if self.channel_axis == 1:
                     y[label_val, :, :] = distance == label_val
                 else:
