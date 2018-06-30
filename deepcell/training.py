@@ -267,7 +267,7 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
         steps_per_epoch=train_dict['y'].shape[0] // batch_size,
         epochs=n_epoch,
         class_weight=class_weight,
-        validation_data=datagen.flow(validation_dict, batch_size=batch_size, distance_bins=distance_bins),
+        validation_data=datagen_val.flow(validation_dict, batch_size=batch_size, distance_bins=distance_bins),
         validation_steps=X_test.shape[0] // batch_size,
         callbacks=[
             ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
