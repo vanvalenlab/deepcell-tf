@@ -129,8 +129,6 @@ class ImageFullyConvIterator(Iterator):
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.win_x = train_dict['win_x']
-        self.win_y = train_dict['win_y']
 
         if self.x.ndim != 4:
             raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
@@ -165,7 +163,10 @@ class ImageFullyConvIterator(Iterator):
             y_channel_shape = self.y.shape[self.channel_axis]
 
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
-        batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:]))
+        if self.channel_axis == 1:
+            batch_y = np.zeros(tuple([len(index_array), y_channel_shape] + list(self.y.shape)[2:]))
+        else:
+            batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:3] + [y_channel_shape]))
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -188,7 +189,7 @@ class ImageFullyConvIterator(Iterator):
                 gradient_y = sobel_v(distance)
                 direction_x = gradient_x / np.sqrt(gradient_x ** 2 + gradient_y ** 2 + epsilon)
                 direction_y = gradient_y / np.sqrt(gradient_x ** 2 + gradient_y ** 2 + epsilon)
-                direction = np.stack([direction_x, direction_y], axis=0)
+                direction = np.stack([direction_x, direction_y], axis=self.channel_axis)
                 y = direction
 
             if self.target_format == 'watershed':
@@ -203,13 +204,12 @@ class ImageFullyConvIterator(Iterator):
                 distance = np.digitize(distance, bins)
 
                 # convert to one hot notation
-                if self.channel_axis == 1:
-                    y_shape = (np.amax(distance.flatten()) + 1, self.y.shape[2], self.y.shape[3])
-                else:
-                    y_shape = (self.y.shape[1], self.y.shape[2], np.amax(distance.flatten()) + 1)
-                y = np.zeros(y_shape)
+                y = np.zeros(batch_y.shape[1:])
                 for label_val in range(np.amax(distance.flatten()) + 1):
-                    y[label_val, :, :] = distance == label_val
+                    if self.channel_axis == 1:
+                        y[label_val, :, :] = distance == label_val
+                    else:
+                        y[:, :, label_val] = distance == label_val
 
             batch_x[i] = x
             batch_y[i] = y
@@ -226,7 +226,7 @@ class ImageFullyConvIterator(Iterator):
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
-                if self.target_format == 'direction' or self.target_format == 'watershed':
+                if self.target_format in {'direction', 'watershed', 'simple_watershed'}:
                     # TODO: handle channel_axis?
                     img_y = np.expand_dims(batch_y[i, :, :, 0], -1)
                     img = array_to_img(img_y, self.data_format, scale=True)

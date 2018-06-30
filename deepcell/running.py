@@ -74,16 +74,18 @@ def run_model(image, model, win_x=30, win_y=30, split=True):
     return model_output
 
 def run_model_on_directory(data_location, channel_names, output_location, model,
-                           win_x=30, win_y=30, split=True, save=True):
+                           win_x=30, win_y=30, split=True, save=True, crop=False, crop_size=256):
 
     channel_axis = 1 if CHANNELS_FIRST else -1
     n_features = model.layers[-1].output_shape[channel_axis]
-
     image_list = get_images_from_directory(data_location, channel_names)
+
     model_outputs = []
 
     for i, image in enumerate(image_list):
         print('Processing image {} of {}'.format(i + 1, len(image_list)))
+        if crop:
+            image = image[:, 0:crop_size, 0:crop_size, :]
         model_output = run_model(image, model, win_x=win_x, win_y=win_y, split=split)
         model_outputs.append(model_output)
 
@@ -98,7 +100,8 @@ def run_model_on_directory(data_location, channel_names, output_location, model,
 
 def run_models_on_directory(data_location, channel_names, output_location, model_fn,
                             list_of_weights, n_features=3, win_x=30, win_y=30,
-                            image_size_x=1080, image_size_y=1280, save=True, split=True):
+                            image_size_x=1080, image_size_y=1280, save=True, split=True,
+                            crop=False, crop_size=256):
     if split:
         input_shape = (len(channel_names), image_size_x // 2 + win_x, image_size_y // 2 + win_y)
     else:
@@ -110,7 +113,7 @@ def run_models_on_directory(data_location, channel_names, output_location, model
     else:
         batch_shape = (1, input_shape[0], input_shape[1], input_shape[2])
 
-    model = model_fn(input_shape=input_shape, n_features=n_features)
+    model = model_fn()
 
     for layer in model.layers:
         print(layer.name)
@@ -123,7 +126,8 @@ def run_models_on_directory(data_location, channel_names, output_location, model
         model.load_weights(weights_path)
         processed_image_list = run_model_on_directory(
             data_location, channel_names, output_location, model,
-            win_x=win_x, win_y=win_y, save=False, split=split)
+            win_x=win_x, win_y=win_y, save=False, split=split,
+            crop=crop, crop_size=crop_size)
 
         model_outputs.append(np.stack(processed_image_list, axis=0))
 

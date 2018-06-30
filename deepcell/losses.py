@@ -203,3 +203,33 @@ def discriminative_instance_loss_3D(y_true, y_pred, delta_v=0.5, delta_d=1.5, or
     L = L_var + L_dist + L_reg
 
     return L
+
+def absloss(y_true, y_pred):
+    diff=K.abs(y_true-y_pred)
+    return K.mean(diff)
+
+def mirror_loss(y_true,y_pred):
+    diff = tf.square(tf.norm(tf.subtract(y_true, y_pred), axis = 1))
+    return K.sum(diff, axis = -1)
+
+def jaccard_distance(y_true, y_pred, smooth=100):
+    intersection = K.sum(K.abs(y_true * y_pred), axis=-1)
+    sum_ = K.sum(K.abs(y_true) + K.abs(y_pred), axis=-1)
+    jac = (intersection + smooth) / (sum_ - intersection + smooth)
+    return (1 - jac) * smooth
+
+def inversecosdistance(y_true,y_pred):
+    weight = tf.expand_dims(y_true[:,:,:,2],axis=-1)
+    ss=tf.expand_dims(y_true[:,:,:,3],axis=-1)
+    ss=tf.to_float(tf.reshape(ss, (-1, 1)))
+    y_true=tf.stack([y_true[:,:,:,0],y_true[:,:,:,1]],axis=-1)
+    #y_pred = tf.reshape(y_pred, (-1,2))
+    #y_true = tf.to_float(tf.reshape(y_true, (-1,2)))
+    weight = tf.to_float(tf.reshape(weight, (-1, 1)))
+    pred = tf.nn.l2_normalize(y_pred, 1) * 0.999999
+    gt = tf.nn.l2_normalize(y_true, 1) * 0.999999
+
+    errorAngles = tf.acos(tf.reduce_sum(pred * gt, reduction_indices=[1], keep_dims=True))
+    lossAngleTotal = tf.reduce_sum((tf.abs(errorAngles*errorAngles)))
+
+    return lossAngleTotal
