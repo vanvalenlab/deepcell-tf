@@ -13,7 +13,7 @@ from deepcell import bn_feature_net_61x61
 from deepcell import dilated_bn_feature_net_61x61
 from deepcell import bn_dense_feature_net
 from deepcell import rate_scheduler
-from deepcell import train_model_watershed
+from deepcell import train_model_watershed, train_model_watershed_sample
 from deepcell import run_models_on_directory
 from deepcell import export_model
 
@@ -97,22 +97,22 @@ def train_model_on_training_data():
     col_axis = 3 if data_format == 'channels_first' else 2
     channel_axis = 1 if data_format == 'channels_first' else 3
 
+    size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[row_axis:col_axis + 1]
+
     if DATA_OUTPUT_MODE == 'sample':
         the_model = bn_feature_net_61x61
+        train_model = train_model_watershed_sample
     elif DATA_OUTPUT_MODE == 'conv':
         the_model = bn_dense_feature_net
+        train_model = train_model_watershed
         model_args['permute'] = False
         model_args['location'] = False
+        if data_format == 'channels_first':
+            model_args['input_shape'] = (X.shape[channel_axis], size[0], size[1])
+        else:
+            model_args['input_shape'] = (size[0], size[1], X.shape[channel_axis])
     else:
         raise ValueError('Unknown DATA_OUTPUT_MODE "{}"'.format(DATA_OUTPUT_MODE))
-
-    train_model = train_model_watershed
-
-    size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[row_axis:col_axis + 1]
-    if data_format == 'channels_first':
-        model_args['input_shape'] = (X.shape[channel_axis], size[0], size[1])
-    else:
-        model_args['input_shape'] = (size[0], size[1], X.shape[channel_axis])
 
     model = the_model(**model_args)
 
