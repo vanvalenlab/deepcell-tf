@@ -291,7 +291,7 @@ def train_model_watershed_sample(model=None, dataset=None, optimizer=None,
     file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
     file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
 
-    train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='conv')
+    train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='sample')
 
     if class_weight is None:
         class_weight = train_dict['class_weights']
