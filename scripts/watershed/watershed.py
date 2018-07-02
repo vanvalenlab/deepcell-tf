@@ -19,7 +19,7 @@ from deepcell import export_model
 
 # data options
 DATA_OUTPUT_MODE = 'conv'
-DATA_OUTPUT_MODE = 'sample'
+# DATA_OUTPUT_MODE = 'sample'
 BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
 RESIZE = False
 RESHAPE_SIZE = 512
