@@ -88,8 +88,6 @@ def train_model_on_training_data():
 
     model_args = {
         'n_features': 2, # np.unique(y).size
-        'permute': False,
-        'location': False,
         'norm_method': 'whole_image'
     }
 
@@ -151,8 +149,7 @@ def run_model_on_dir():
         row_size, col_size = images.shape[2:4]
         batch_shape = (batch_size, number_of_frames, row_size, col_size, images.shape[4])
 
-    model = the_model(batch_shape=batch_shape, n_features=n_features,
-                      permute=False, location=False, norm_method='whole_image')
+    model = the_model(batch_shape=batch_shape, n_features=n_features, norm_method='whole_image')
 
     model.load_weights(weights)
     model_output = run_model(images, model, win_x=30, win_y=30, split=False)
@@ -174,8 +171,6 @@ def run_model_on_dir():
 def export():
     model_args = {
         'n_features': 2, # np.unique(y).size
-        'permute': False,
-        'location': False
     }
 
     data_format = K.image_data_format()

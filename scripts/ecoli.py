@@ -104,7 +104,6 @@ def train_model_on_training_data():
     elif DATA_OUTPUT_MODE == 'conv' or DATA_OUTPUT_MODE == 'disc':
         train_model = train_model_conv
         the_model = bn_dense_feature_net
-        model_args['location'] = False
 
         size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[row_axis:col_axis + 1]
         if data_format == 'channels_first':
@@ -190,7 +189,6 @@ def export():
 
     elif DATA_OUTPUT_MODE == 'conv' or DATA_OUTPUT_MODE == 'disc':
         the_model = bn_dense_feature_net
-        model_args['location'] = False
 
         size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[row_axis:col_axis + 1]
         if data_format == 'channels_first':
