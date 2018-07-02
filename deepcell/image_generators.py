@@ -833,6 +833,7 @@ class SiameseIterator(Iterator):
 Watershed generator
 """
 
+
 class WatershedDataGenerator(ImageFullyConvDataGenerator):
     """Generate minibatches of movie data with real-time data augmentation.
     # Arguments
@@ -940,6 +941,7 @@ class WatershedDataGenerator(ImageFullyConvDataGenerator):
             batch_size=batch_size, shuffle=shuffle, seed=seed,
             data_format=self.data_format, distance_bins=distance_bins,
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
+
 
 class WatershedIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,

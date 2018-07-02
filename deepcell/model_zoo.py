@@ -77,6 +77,7 @@ def bn_feature_net_21x21(n_features=3, n_channels=1, reg=1e-5, init='he_normal',
 
     return model
 
+
 def dilated_bn_feature_net_21x21(input_shape=(2, 1080, 1280), batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, norm_method='std'):
     print('Using dilated feature net 21x21 with batch normalization')
 
@@ -169,6 +170,7 @@ def bn_feature_net_31x31(n_features=3, n_channels=1, reg=1e-5, init='he_normal',
     model.add(Softmax(axis=channel_axis))
 
     return model
+
 
 def dilated_bn_feature_net_31x31(input_shape=(2, 1080, 1280), n_features=3, n_channels=1, reg=1e-5, init='he_normal', weights_path=None, norm_method='std'):
     print('Using dilated feature net 31x31 with batch normalization')
