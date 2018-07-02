@@ -629,9 +629,9 @@ Custom siamese generators
 """
 
 class SiameseDataGenerator(ImageDataGenerator):
-    def siamese_flow(self, train_dict, crop_dim=14, min_track_length=5,
-                     batch_size=32, shuffle=True, seed=None, data_format=None,
-                     save_to_dir=None, save_prefix='', save_format='png'):
+    def flow(self, train_dict, crop_dim=14, min_track_length=5,
+             batch_size=32, shuffle=True, seed=None, data_format=None,
+             save_to_dir=None, save_prefix='', save_format='png'):
         return SiameseIterator(train_dict, self, crop_dim=crop_dim,
                                min_track_length=min_track_length, batch_size=batch_size,
                                shuffle=shuffle, seed=seed, data_format=data_format,
