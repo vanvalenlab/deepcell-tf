@@ -133,7 +133,7 @@ class ImageFullyConvIterator(Iterator):
                              'You passed an array with shape {}'.format(self.x.shape))
 
         self.channel_axis = -1 if data_format == 'channels_last' else 1
-        self.y = train_dict['y']
+        self.y = np.int32(train_dict['y'])
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -302,8 +302,6 @@ class ImageFullyConvGatherIterator(Iterator):
 
         if self.y is None:
             return batch_x
-        # if self.channel_axis == 1:
-        #     batch_y = np.moveaxis(batch_y, 1, 3)
         return [batch_x, j, self.pixels_x, self.pixels_y], [batch_y]
 
     def next(self):
