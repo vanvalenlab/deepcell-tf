@@ -403,7 +403,7 @@ class ImageFullyConvDataGenerator(object):
             self.channel_axis = 1
             self.row_axis = 2
             self.col_axis = 3
-        if data_format == 'channels_last':
+        elif data_format == 'channels_last':
             self.channel_axis = 3
             self.row_axis = 1
             self.col_axis = 2
@@ -421,7 +421,7 @@ class ImageFullyConvDataGenerator(object):
                              'Received arg: {}'.format(zoom_range))
 
     def flow(self, train_dict, batch_size=1, shuffle=True, seed=None,
-            save_to_dir=None, save_prefix='', save_format='png', target_format=None):
+             save_to_dir=None, save_prefix='', save_format='png', target_format=None):
         return ImageFullyConvIterator(
             train_dict, self,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
@@ -656,7 +656,7 @@ class SiameseIterator(Iterator):
             self.row_axis = 2
             self.col_axis = 3
             self.time_axis = 1
-        self.X = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
         self.y = np.int32(train_dict['y'])
         self.crop_dim = crop_dim
         self.min_track_length = min_track_length
@@ -668,7 +668,7 @@ class SiameseIterator(Iterator):
 
         self.track_ids = self._get_track_ids()
 
-        super(SiameseIterator, self).__init__(self.X.shape[0], batch_size, shuffle, seed)
+        super(SiameseIterator, self).__init__(self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_track_ids(self):
         """
@@ -716,7 +716,7 @@ class SiameseIterator(Iterator):
             tracked_frames = track_id['frames']
             frame_1 = np.random.choice(tracked_frames) # Select a frame from the track
 
-            X = self.X[batch]
+            X = self.x[batch]
             y = self.y[batch]
 
             # Choose comparison cell
@@ -906,7 +906,7 @@ class WatershedDataGenerator(ImageFullyConvDataGenerator):
             self.channel_axis = 1
             self.row_axis = 2
             self.col_axis = 3
-        if data_format == 'channels_last':
+        elif data_format == 'channels_last':
             self.channel_axis = 3
             self.row_axis = 1
             self.col_axis = 2
@@ -1119,7 +1119,7 @@ class MovieDataGenerator(object):
             self.row_axis = 3
             self.col_axis = 4
             self.time_axis = 2
-        if data_format == 'channels_last':
+        elif data_format == 'channels_last':
             self.channel_axis = 4
             self.row_axis = 2
             self.col_axis = 3
