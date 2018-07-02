@@ -66,21 +66,19 @@ class ImageSampleArrayIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
-            batch_x = np.zeros((len(index_array), self.x.shape[self.channel_axis], 2*self.win_x + 1, 2*self.win_y + 1))
+            batch_x = np.zeros((len(index_array), self.x.shape[self.channel_axis], 2 * self.win_x + 1, 2 * self.win_y + 1))
         else:
-            batch_x = np.zeros((len(index_array), 2*self.win_x + 1, 2*self.win_y + 1, self.x.shape[self.channel_axis]))
+            batch_x = np.zeros((len(index_array), 2 * self.win_x + 1, 2 * self.win_y + 1, self.x.shape[self.channel_axis]))
 
         for i, j in enumerate(index_array):
             batch = self.b[j]
             pixel_x = self.pixels_x[j]
             pixel_y = self.pixels_y[j]
-            win_x = self.win_x
-            win_y = self.win_y
 
             if self.channel_axis == 1:
-                x = self.x[batch, :, pixel_x-win_x:pixel_x+win_x+1, pixel_y-win_y:pixel_y+win_y+1]
+                x = self.x[batch, :, pixel_x - self.win_x:pixel_x + self.win_x + 1, pixel_y - self.win_y:pixel_y + self.win_y + 1]
             else:
-                x = self.x[batch, pixel_x-win_x:pixel_x+win_x+1, pixel_y-win_y:pixel_y+win_y+1, :]
+                x = self.x[batch, pixel_x - self.win_x:pixel_x + self.win_x + 1, pixel_y - self.win_y:pixel_y + self.win_y + 1, :]
 
             x = self.image_data_generator.random_transform(x.astype(K.floatx()))
             x = self.image_data_generator.standardize(x)
