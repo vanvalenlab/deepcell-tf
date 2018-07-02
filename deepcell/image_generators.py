@@ -129,8 +129,6 @@ class ImageFullyConvIterator(Iterator):
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.win_x = train_dict['win_x']
-        self.win_y = train_dict['win_y']
 
         if self.x.ndim != 4:
             raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
@@ -1495,8 +1493,6 @@ class BoundingBoxIterator(Iterator):
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.win_x = train_dict['win_x']
-        self.win_y = train_dict['win_y']
 
         if self.x.ndim != 4:
             raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
