@@ -24,7 +24,6 @@ from .image_generators import ImageFullyConvDataGenerator
 from .image_generators import MovieDataGenerator
 from .image_generators import SiameseDataGenerator
 from .image_generators import WatershedDataGenerator
-from .image_generators import WatershedSampleDataGenerator
 from .losses import sample_categorical_crossentropy
 from .losses import weighted_categorical_crossentropy
 from .losses import discriminative_instance_loss
