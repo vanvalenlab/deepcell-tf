@@ -426,13 +426,12 @@ def reshape_movie(X, y, reshape_size=256):
     return new_X, new_y
 
 def load_training_images_2d(direc_name, training_direcs, channel_names, image_size,
-                            window_size, raw_image_direc):
+                            raw_image_direc):
     """
     Iterate over every image in the training directories and load
     each into a numpy array.
     """
     # Unpack size tuples
-    window_size_x, window_size_y = window_size
     image_size_x, image_size_y = image_size
 
     # Initialize training data array
@@ -576,8 +575,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
     image_size = get_image_sizes(image_path, channel_names)
 
     X = load_training_images_2d(direc_name, training_direcs, channel_names,
-                                raw_image_direc=raw_image_direc,
-                                image_size=image_size, window_size=window_size)
+                                raw_image_direc=raw_image_direc, image_size=image_size)
 
     y = load_annotated_images_2d(direc_name, training_direcs,
                                  image_size=image_size,
