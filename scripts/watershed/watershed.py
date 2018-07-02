@@ -13,7 +13,7 @@ from deepcell import bn_feature_net_61x61
 from deepcell import dilated_bn_feature_net_61x61
 from deepcell import bn_dense_feature_net
 from deepcell import rate_scheduler
-from deepcell import train_model_watershed, train_model_watershed_sample
+from deepcell import train_model_watershed
 from deepcell import run_models_on_directory
 from deepcell import export_model
 
@@ -101,7 +101,7 @@ def train_model_on_training_data():
 
     if DATA_OUTPUT_MODE == 'sample':
         the_model = bn_feature_net_61x61
-        train_model = train_model_watershed_sample
+        train_model = train_model_watershed
     elif DATA_OUTPUT_MODE == 'conv':
         the_model = bn_dense_feature_net
         train_model = train_model_watershed
