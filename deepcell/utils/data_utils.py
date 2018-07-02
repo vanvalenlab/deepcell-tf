@@ -635,21 +635,29 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
         for b in range(y.shape[0]):
             interior_mask = y[b, 1, :, :] if CHANNELS_FIRST else y[b, :, :, 1]
-            y_label[b] = label(interior_mask)
+            y_label[b, :, :, 0] = label(interior_mask)
+        
+         
+        print('interior_mask.shape: {}\ny_label.shape: {}'.format(interior_mask.shape, y_label.shape))
 
         max_cells = np.amax(y_label)
         if CHANNELS_FIRST:
             y_binary = np.zeros((y.shape[0], max_cells + 1, y.shape[2], y.shape[3]), dtype='int32')
         else:
-            y_binary = np.zeros((y.shape[0], y.shape[2], y.shape[3], max_cells + 1), dtype='int32')
+            y_binary = np.zeros((y.shape[0], y.shape[1], y.shape[2], max_cells + 1), dtype='int32')
+
+        print('y_binary.shape: {}\ny.shape: {}'.format(y_binary.shape, y.shape))
 
         for b in range(y.shape[0]):
-            label_mask = y_label[b]
+            label_mask = y_label[b,:,:,0]
             for l in range(max_cells + 1):
                 if CHANNELS_FIRST:
-                    y_binary[b, l, :, :] = label_mask == l
+                    y_binary[b, l, :, :] = (label_mask == l)
                 else:
-                    y_binary[b, :, :, l] = label_mask == l
+                    y_binary[b, :, :, l] = (label_mask == l)
+        
+        import pdb
+        pdb.set_trace()
 
         # Trim the sides of the mask to ensure a sliding window does not slide
         # past before or after the boundary of y_label or y_binary

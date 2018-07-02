@@ -282,7 +282,7 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
     n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
-    print('y_train shape:', train_dict['y'].shape)
+    print('y_train shape::::', train_dict['y'].shape)
     print('X_test shape:', X_test.shape)
     print('y_test shape:', y_test.shape)
     print('Output Shape:', model.layers[-1].output_shape)
@@ -291,8 +291,8 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
     def loss_function(y_true, y_pred):
         return discriminative_instance_loss(y_true, y_pred)
 
-    model.compile(loss=loss_function, optimizer=optimizer)
-
+    #model.compile(loss='mean_squared_error', optimizer=optimizer)
+    model.compile(loss=loss_function, optimizer = optimizer, metrics = ['accuracy'])
     print('Using real-time data augmentation.')
 
     # this will do preprocessing and realtime data augmentation

@@ -4,9 +4,11 @@ import errno
 import argparse
 
 import numpy as np
+import tensorflow as tf
 from tensorflow.python.keras.optimizers import SGD
 from tensorflow.python.keras import backend as K
-
+from tensorflow.python import debug as tf_debug
+from tensorflow.contrib.eager.python import tfe
 from deepcell import get_image_sizes
 from deepcell import make_training_data
 from deepcell import bn_feature_net_61x61
@@ -17,11 +19,14 @@ from deepcell import train_model_disc, train_model_conv, train_model_sample
 from deepcell import run_models_on_directory
 from deepcell import export_model
 
+sess = K.get_session()
+K.set_session(sess)
+
 # data options
-DATA_OUTPUT_MODE = 'conv'
-DATA_OUTPUT_MODE = 'sample'
+DATA_OUTPUT_MODE = 'disc'
+# DATA_OUTPUT_MODE = 'sample'
 BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
-RESIZE = True
+RESIZE = False
 RESHAPE_SIZE = 512
 
 # filepath constants
@@ -30,8 +35,8 @@ MODEL_DIR = '/data/models'
 NPZ_DIR = '/data/npz_data'
 RESULTS_DIR = '/data/results'
 EXPORT_DIR = '/data/exports'
-PREFIX = 'cells/ecoli/kc_polaris'
-DATA_FILE = 'ecoli_kc_polaris_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
+PREFIX = 'cells/ecoli/generic'
+DATA_FILE = 'ecoli_generic_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
 
 for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
     try:
@@ -45,7 +50,7 @@ def generate_training_data():
     num_of_features = 2 # Specify the number of feature masks that are present
     window_size = (30, 30) # Size of window around pixel
     training_direcs = ['set1', 'set2']
-    channel_names = ['Phase']
+    channel_names = ['phase']
     raw_image_direc = 'raw'
     annotation_direc = 'annotated'
 
@@ -80,7 +85,7 @@ def train_model_on_training_data():
     X, y = training_data['X'], training_data['y']
     print('X.shape: {}\ny.shape: {}'.format(X.shape, y.shape))
 
-    n_epoch = 100
+    n_epoch = 1000
     batch_size = 32 if DATA_OUTPUT_MODE == 'sample' else 1
     optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     lr_sched = rate_scheduler(lr=0.01, decay=0.99)
@@ -88,7 +93,7 @@ def train_model_on_training_data():
     model_args = {
         'norm_method': 'median',
         'reg': 1e-5,
-        'n_features': 3
+        'n_features': y.shape[1 if K.image_data_format() == 'channels_first' else -1]
     }
 
     data_format = K.image_data_format()
@@ -102,7 +107,10 @@ def train_model_on_training_data():
         model_args['n_channels'] = 1
 
     elif DATA_OUTPUT_MODE == 'conv' or DATA_OUTPUT_MODE == 'disc':
-        train_model = train_model_conv
+        if DATA_OUTPUT_MODE == 'conv':
+            train_model = train_model_conv
+        else:
+            train_model = train_model_disc
         the_model = bn_dense_feature_net
         model_args['location'] = False
 
@@ -133,20 +141,20 @@ def run_model_on_dir():
     raw_dir = 'raw'
     data_location = os.path.join(DATA_DIR, PREFIX, 'set1', raw_dir)
     output_location = os.path.join(RESULTS_DIR, PREFIX)
-    channel_names = ['Phase']
+    channel_names = ['phase']
     image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
 
-    model_name = '2018-06-13_ecoli_kc_polaris_{}_{}__0.h5'.format(
+    model_name = '2018-07-02_ecoli_generic_{}_{}__0.h5'.format(
         K.image_data_format(), DATA_OUTPUT_MODE)
 
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
-    n_features = 3
+    n_features = 259
     window_size = (30, 30)
 
     if DATA_OUTPUT_MODE == 'sample':
         model_fn = dilated_bn_feature_net_61x61
-    elif DATA_OUTPUT_MODE == 'conv':
+    elif DATA_OUTPUT_MODE == 'conv' or DATA_OUTPUT_MODE == 'disc':
         model_fn = bn_dense_feature_net
     else:
         raise ValueError('{} is not a valid training mode for 2D images (yet).'.format(
