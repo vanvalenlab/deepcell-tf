@@ -637,18 +637,22 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
             y_label = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1), dtype='int32')
 
         for b in range(y.shape[0]):
-            interior_mask = y[b, 1, :, :] if CHANNELS_FIRST else y[b, :, :, 1]
-            y_label[b] = label(interior_mask)
+            if CHANNELS_FIRST:
+                interior_mask = y[b, 1, :, :]
+                y_label[b, 0, :, :] = label(interior_mask)
+            else:
+                interior_mask = y[b, :, :, 1]
+                y_label[b, :, :, 0] = label(interior_mask)
 
-        max_cells = np.amax(y_label)
+        max_cells = np.amax(y_label) + 1
         if CHANNELS_FIRST:
-            y_binary = np.zeros((y.shape[0], max_cells + 1, y.shape[2], y.shape[3]), dtype='int32')
+            y_binary = np.zeros((y.shape[0], max_cells, y.shape[2], y.shape[3]), dtype='int32')
         else:
-            y_binary = np.zeros((y.shape[0], y.shape[2], y.shape[3], max_cells + 1), dtype='int32')
+            y_binary = np.zeros((y.shape[0], y.shape[1], y.shape[2], max_cells), dtype='int32')
 
         for b in range(y.shape[0]):
             label_mask = y_label[b]
-            for l in range(max_cells + 1):
+            for l in range(max_cells):
                 if CHANNELS_FIRST:
                     y_binary[b, l, :, :] = label_mask == l
                 else:
