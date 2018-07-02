@@ -114,8 +114,8 @@ class ImageSampleArrayIterator(Iterator):
             return self._get_batches_of_transformed_samples(index_array)
 
 class SampleDataGenerator(ImageDataGenerator):
-    def sample_flow(self, train_dict, batch_size=32, shuffle=True, seed=None,
-                    save_to_dir=None, save_prefix='', save_format='png'):
+    def flow(self, train_dict, batch_size=32, shuffle=True, seed=None,
+             save_to_dir=None, save_prefix='', save_format='png'):
         return ImageSampleArrayIterator(
             train_dict, self,
             batch_size=batch_size, shuffle=shuffle, seed=seed, data_format=self.data_format,
