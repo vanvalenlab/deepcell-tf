@@ -223,30 +223,21 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='
     """
     list_of_max_sample_numbers = []
 
-    if CHANNELS_FIRST:
-        y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
-    else:
-        y_trimmed = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
+    if border_mode.lower() == 'valid':
+        y = trim_padding(y, window_size_x, window_size_y)
+
     # for each set of images
     for j in range(y.shape[0]):
         if output_mode.lower() == 'sample':
             for k, edge_feat in enumerate(edge_feature):
                 if edge_feat == 1:
-                    if border_mode == 'same':
-                        if CHANNELS_FIRST:
-                            y_sum = np.sum(y[j, k, :, :])
-                        else:
-                            y_sum = np.sum(y[j, :, :, k])
-                        list_of_max_sample_numbers.append(y_sum)
+                    if CHANNELS_FIRST:
+                        y_sum = np.sum(y[j, k, :, :])
+                    else:
+                        y_sum = np.sum(y[j, :, :, k])
+                    list_of_max_sample_numbers.append(y_sum)
 
-                    elif border_mode == 'valid':
-                        if CHANNELS_FIRST:
-                            y_sum = np.sum(y_trimmed[j, k, :, :])
-                        else:
-                            y_sum = np.sum(y_trimmed[j, :, :, k])
-                        list_of_max_sample_numbers.append(y_sum)
-
-        elif output_mode.lower() in {'conv', 'disc'}:
+        else:
             list_of_max_sample_numbers.append(np.Inf)
 
     return list_of_max_sample_numbers
@@ -260,10 +251,8 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     """
     if CHANNELS_FIRST:
         num_dirs, num_features, image_size_x, image_size_y = y.shape
-        # y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
     else:
         num_dirs, image_size_x, image_size_y, num_features = y.shape
-        # y_trimmed = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
 
     list_of_max_sample_numbers = get_max_sample_num_list(
         y=y, edge_feature=edge_feature, output_mode=output_mode, border_mode=border_mode,
@@ -319,6 +308,27 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     feature_label = feature_label[rand_ind]
 
     return feature_rows, feature_cols, feature_batch, feature_label
+
+def trim_padding(nparr, win_x, win_y):
+    """
+    Trim the boundaries of the numpy array to allow for a sliding
+    window of size (win_x, win_y) to not slide over regions without pixel data
+    """
+    is_channels_first = K.image_data_format() == 'channels_first'
+    if nparr.ndim == 4:
+        if is_channels_first:
+            trimmed = nparr[:, :, win_x:-win_x, win_y:-win_y]
+        else:
+            trimmed = nparr[:, win_x:-win_x, win_y:-win_y, :]
+    elif nparr.ndim == 5:
+        if is_channels_first:
+            trimmed = nparr[:, :, :, win_x:-win_x, win_y:-win_y]
+        else:
+            trimmed = nparr[:, :, win_x:-win_x, win_y:-win_y, :]
+    else:
+        raise ValueError('Expected to trim numpy array of ndim 4 or 5, got "{}"'.format(
+            nparr.ndim))
+    return trimmed
 
 def reshape_matrix(X, y, reshape_size=256):
     image_size_x, image_size_y = X.shape[2:] if CHANNELS_FIRST else X.shape[1:3]
@@ -578,12 +588,6 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
     if reshape_size is not None:
         X, y = reshape_matrix(X, y, reshape_size=reshape_size)
 
-    # Trim the feature mask so that each window does not overlap with the border of the image
-    if CHANNELS_FIRST:
-        y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
-    else:
-        y_trimmed = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
-
     # Create mask of sampled pixels
     feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
         y, edge_feature, output_mode=output_mode, border_mode=border_mode,
@@ -616,8 +620,9 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
             else:
                 y_sample[b, r, c, l] = 1
 
+        # Trim the feature mask so that each window does not overlap with the border of the image
         if border_mode == 'valid':
-            y = y_trimmed
+            y = trim_padding(y, window_size_x, window_size_y)
 
         # Save training data in npz format
         np.savez(file_name_save, class_weights=weights, X=X, y=y,
@@ -654,12 +659,8 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         # Trim the sides of the mask to ensure a sliding window does not slide
         # past before or after the boundary of y_label or y_binary
         if border_mode == 'valid':
-            if CHANNELS_FIRST:
-                y_label = y_label[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
-                y_binary = y_binary[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
-            else:
-                y_label = y_label[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
-                y_binary = y_binary[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
+            y_label = trim_padding(y_label, window_size_x, window_size_y)
+            y_binary = trim_padding(y_binary, window_size_x, window_size_y)
 
         # Save training data in npz format
         np.savez(file_name_save, class_weights=weights, X=X, y=y_binary,
