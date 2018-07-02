@@ -527,7 +527,7 @@ def bn_multires_feature_net_61x61(n_features=3, n_channels=1, reg=1e-5, init='he
 
     return model
 
-def dilated_bn_multires_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', softmax=False, location=True, permute=False, weights_path=None, from_logits=False, norm_method='std'):
+def dilated_bn_multires_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', softmax=False, location=False, permute=False, weights_path=None, from_logits=False, norm_method='std'):
     print('Using dilated multi-resolution feature net 61x61 with batch normalization')
 
     if K.image_data_format() == 'channels_first':
@@ -796,7 +796,7 @@ def bn_multires_pool_feature_net(input_shape=(2, 1080, 1280), n_features=3, reg=
 
     return model
 
-def bn_dense_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', permute=False, softmax=True, location=True, norm_method='std', filter_size=61):
+def bn_dense_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', permute=False, softmax=True, location=False, norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -1301,7 +1301,7 @@ def multires_block(input_tensor, num_filters=16, init='he_normal', reg=1e-5):
 
     return merge6
 
-def bn_dense_multires_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_blocks=10, n_features=3, reg=1e-5, init='he_normal', permute=True, norm_method='std', filter_size=61):
+def bn_dense_multires_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_blocks=10, n_features=3, reg=1e-5, init='he_normal', permute=False, norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -1340,7 +1340,7 @@ def bn_dense_multires_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_blocks=
     return model
 
 
-def bn_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_features=3, reg=1e-5, init='he_normal', location=True, permute=True, softmax=True, norm_method='std', filter_size=61):
+def bn_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_features=3, reg=1e-5, init='he_normal', location=False, permute=False, softmax=True, norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -1407,7 +1407,7 @@ def bn_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_features=3, reg=1e-5, 
     return model
 
 
-def bn_dense_feature_net_3D(batch_shape=(1, 1, 5, 256, 256), n_features=3, reg=1e-5, init='he_normal', location=True, permute=True, softmax=True, norm_method='std', filter_size=61):
+def bn_dense_feature_net_3D(batch_shape=(1, 1, 5, 256, 256), n_features=3, reg=1e-5, init='he_normal', location=False, permute=False, softmax=True, norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
