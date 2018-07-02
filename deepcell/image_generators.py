@@ -101,7 +101,7 @@ class ImageSampleArrayIterator(Iterator):
         batch_y = self.y[index_array]
         return batch_x, batch_y
 
-        def __next__(self):
+        def next(self):
             """For python 2.x.
             # Returns the next batch.
             """
@@ -109,8 +109,8 @@ class ImageSampleArrayIterator(Iterator):
             # the indexing of each batch.
             with self.lock:
                 index_array = next(self.index_generator)
-                # The transformation of images is not under thread lock
-                # so it can be done in parallel
+            # The transformation of images is not under thread lock
+            # so it can be done in parallel
             return self._get_batches_of_transformed_samples(index_array)
 
 class SampleDataGenerator(ImageDataGenerator):
@@ -209,7 +209,7 @@ class ImageFullyConvIterator(Iterator):
             return batch_x
         return batch_x, batch_y
 
-    def __next__(self):
+    def next(self):
         """For python 2.x.
         # Returns the next batch.
         """
@@ -217,8 +217,8 @@ class ImageFullyConvIterator(Iterator):
         # the indexing of each batch.
         with self.lock:
             index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
 class ImageFullyConvGatherIterator(Iterator):
@@ -308,7 +308,7 @@ class ImageFullyConvGatherIterator(Iterator):
         #     batch_y = np.moveaxis(batch_y, 1, 3)
         return [batch_x, j, self.pixels_x, self.pixels_y], [batch_y]
 
-    def __next__(self):
+    def next(self):
         """For python 2.x.
         # Returns the next batch.
         """
@@ -316,8 +316,8 @@ class ImageFullyConvGatherIterator(Iterator):
         # the indexing of each batch.
         with self.lock:
             index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
 class ImageFullyConvDataGenerator(object):
@@ -814,8 +814,8 @@ class SiameseIterator(Iterator):
         # the indexing of each batch.
         with self.lock:
             index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
 
@@ -1034,7 +1034,7 @@ class WatershedIterator(Iterator):
             return batch_x
         return batch_x, batch_y
 
-    def __next__(self):
+    def next(self):
         """For python 2.x.
         # Returns the next batch.
         """
@@ -1042,8 +1042,8 @@ class WatershedIterator(Iterator):
         # the indexing of each batch.
         with self.lock:
             index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
 """
@@ -1469,7 +1469,7 @@ class MovieArrayIterator(Iterator):
         # batch_y = np.rollaxis(batch_y, 1, 5)
         return batch_x, batch_y
 
-    def __next__(self):
+    def next(self):
         """For python 2.x.
         # Returns the next batch.
         """
@@ -1477,8 +1477,8 @@ class MovieArrayIterator(Iterator):
         # the indexing of each batch.
         with self.lock:
             index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
 """
@@ -1619,7 +1619,7 @@ class BoundingBoxIterator(Iterator):
         # batch_y = np.rollaxis(batch_y, 1, 4)
         return batch_x, [regressions_list, labels_list]
 
-    def __next__(self):
+    def next(self):
         """For python 2.x.
         # Returns the next batch.
         """
@@ -1627,6 +1627,6 @@ class BoundingBoxIterator(Iterator):
         # the indexing of each batch.
         with self.lock:
             index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
