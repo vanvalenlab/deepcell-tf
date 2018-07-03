@@ -51,9 +51,9 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 
         for b, px, py in zip(batch, pixels_x, pixels_y):
             if CHANNELS_FIRST:
-                X_sample[b] = X[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
+                X_sample[b, :, :, :] = X[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
             else:
-                X_sample[b] = X[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
+                X_sample[b, :, :, :] = X[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
 
         X = X_sample
 
