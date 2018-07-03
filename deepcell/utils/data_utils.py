@@ -14,8 +14,8 @@ import os
 import random
 
 import numpy as np
-from skimage.morphology import disk, binary_dilation
 from skimage.measure import label
+from skimage.morphology import disk, binary_dilation
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import backend as K
@@ -31,6 +31,17 @@ from .plot_utils import plot_training_data_3d
 CHANNELS_FIRST = K.image_data_format() == 'channels_first'
 
 def get_data(file_name, mode='sample', test_size=.1, seed=None):
+    """Load data from NPZ file and split into train and test sets
+    # Arguments
+        file_name: path to NPZ file to load
+        mode: if 'sample', will return datapoints for each pixel,
+              otherwise, returns the same data that was loaded
+        test_size: percent of data to leave as testing holdout
+        seed: seed number for random train/test split repeatability
+    # Returns
+        dict of training data, and a tuple of testing data:
+        train_dict, (X_test, y_test)
+    """
     training_data = np.load(file_name)
     X = training_data['X']
     y = training_data['y']
