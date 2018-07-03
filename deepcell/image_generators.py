@@ -28,6 +28,7 @@ from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
 from .utils.transform_utils import transform_matrix_offset_center
+from .utils.transform_utils import distance_transform_2d
 
 """
 Custom image generators
@@ -939,7 +940,6 @@ class WatershedIterator(Iterator):
         super(WatershedIterator, self).__init__(self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-        epsilon = K.epsilon()
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
         if self.channel_axis == 1:
             batch_y = np.zeros(tuple([len(index_array), self.distance_bins] + list(self.y.shape)[2:]))
@@ -962,19 +962,7 @@ class WatershedIterator(Iterator):
             else:
                 interior = y[:, :, 1]
 
-            distance = ndi.distance_transform_edt(interior)
-            distance = distance.astype(K.floatx())  # normalized distances are floats
-
-            label_matrix = label(interior)
-            for prop in regionprops(label_matrix):
-                labeled_distance = distance[label_matrix == prop.label]
-                normalized_distance = labeled_distance / np.amax(labeled_distance)
-                distance[label_matrix == prop.label] = normalized_distance
-
-            min_dist = np.amin(distance)
-            max_dist = np.amax(distance)
-            bins = np.linspace(min_dist - epsilon, max_dist + epsilon, num=self.distance_bins)
-            distance = np.digitize(distance, bins)
+            distance = distance_transform_2d(interior, self.distance_bins)
 
             # convert to one hot notation
             if self.channel_axis == 1:
