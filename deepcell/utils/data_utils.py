@@ -183,21 +183,21 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
             non_rand_ind = np.arange(len(feature_rows_temp))
             rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows_temp), replace=False)
 
+            pixel_counter = 0
             for i in rand_ind:
-                if len(feature_label) >= list_of_max_sample_numbers[direc]:
-                    continue
+                if pixel_counter < list_of_max_sample_numbers[direc]:
+                    condition = border_mode == 'valid' and \
+                                feature_rows_temp[i] - window_size_x > 0 and \
+                                feature_rows_temp[i] + window_size_x < image_size_x and \
+                                feature_cols_temp[i] - window_size_y > 0 and \
+                                feature_cols_temp[i] + window_size_y < image_size_y
 
-                condition = border_mode == 'valid' and \
-                            feature_rows_temp[i] - window_size_x > 0 and \
-                            feature_rows_temp[i] + window_size_x < image_size_x and \
-                            feature_cols_temp[i] - window_size_y > 0 and \
-                            feature_cols_temp[i] + window_size_y < image_size_y
-
-                if border_mode == 'same' or condition:
-                    feature_rows.append(feature_rows_temp[i])
-                    feature_cols.append(feature_cols_temp[i])
-                    feature_batch.append(direc)
-                    feature_label.append(k)
+                    if border_mode == 'same' or condition:
+                        feature_rows.append(feature_rows_temp[i])
+                        feature_cols.append(feature_cols_temp[i])
+                        feature_batch.append(direc)
+                        feature_label.append(k)
+                        pixel_counter += 1
 
     # Randomize
     non_rand_ind = np.arange(len(feature_rows), dtype='int32')
