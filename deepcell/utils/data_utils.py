@@ -30,28 +30,6 @@ from .plot_utils import plot_training_data_3d
 
 CHANNELS_FIRST = K.image_data_format() == 'channels_first'
 
-def data_generator(X, batch, feature_dict=None, mode='conv_gather', labels=None):
-    if mode == 'conv_gather':
-        img_list = []
-        l_list = []
-        batch_list = []
-        row_list = []
-        col_list = []
-        feature_dict_new = {}
-        for b_new, b in enumerate(batch):
-            img_list.append(X[b])
-            l_list.append(labels[b])
-            batch_list = feature_dict[b][0] - np.amin(feature_dict[b][0])
-            row_list = feature_dict[b][1]
-            col_list = feature_dict[b][2]
-            l_list = feature_dict[b][3]
-            feature_dict_new[b_new] = (batch_list, row_list, col_list, l_list)
-        img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
-        return img_list, feature_dict_new
-
-    else:
-        raise NotImplementedError('data_generator is not implemented for mode = {}'.format(mode))
-
 def get_data(file_name, mode='sample', test_size=.1, seed=None):
     training_data = np.load(file_name)
     X = training_data['X']
@@ -78,29 +56,6 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
                 X_sample[b] = X[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
 
         X = X_sample
-
-    elif mode == 'conv_gather':
-        feature_dict = training_data['feature_dict']
-
-        total_batch_size = X.shape[0]
-        num_test = np.int32(np.ceil(np.float(total_batch_size) * test_size))
-        num_train = np.int32(total_batch_size - num_test)
-
-        # Split data set into training data and validation data
-        arr = np.arange(total_batch_size)
-        arr_shuff = np.random.permutation(arr)
-
-        train_ind = arr_shuff[0:num_train]
-        test_ind = arr_shuff[num_train:]
-
-        # TODO: conv_gather is not yet finished
-        X_train, train_gather_dict = data_generator(
-            X, train_ind, feature_dict=feature_dict, labels=y, mode=mode)
-
-        X_test, test_gather_dict = data_generator(
-            X, test_ind, feature_dict=feature_dict, labels=y, mode=mode)
-
-        raise NotImplementedError('conv_gather is not finished yet')
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=seed)
