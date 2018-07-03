@@ -99,17 +99,17 @@ class ImageSampleArrayIterator(Iterator):
         batch_y = self.y[index_array]
         return batch_x, batch_y
 
-        def next(self):
-            """For python 2.x.
-            # Returns the next batch.
-            """
-            # Keeps under lock only the mechanism which advances
-            # the indexing of each batch.
-            with self.lock:
-                index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
-            return self._get_batches_of_transformed_samples(index_array)
+    def next(self):
+        """For python 2.x.
+        # Returns the next batch.
+        """
+        # Keeps under lock only the mechanism which advances
+        # the indexing of each batch.
+        with self.lock:
+            index_array = next(self.index_generator)
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
+        return self._get_batches_of_transformed_samples(index_array)
 
 class SampleDataGenerator(ImageDataGenerator):
     def flow(self, train_dict, batch_size=32, shuffle=True, seed=None,
