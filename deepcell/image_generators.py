@@ -45,15 +45,11 @@ class ImageSampleArrayIterator(Iterator):
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-
         if self.x.ndim != 4:
             raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
                              'You passed an array with shape', self.x.shape)
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.y = train_dict['y']
-        self.b = train_dict['batch']
-        self.pixels_x = train_dict['pixels_x']
-        self.pixels_y = train_dict['pixels_y']
         self.win_x = train_dict['win_x']
         self.win_y = train_dict['win_y']
         self.image_data_generator = image_data_generator
@@ -71,15 +67,7 @@ class ImageSampleArrayIterator(Iterator):
             batch_x = np.zeros((len(index_array), 2 * self.win_x + 1, 2 * self.win_y + 1, self.x.shape[self.channel_axis]))
 
         for i, j in enumerate(index_array):
-            batch = self.b[j]
-            pixel_x = self.pixels_x[j]
-            pixel_y = self.pixels_y[j]
-
-            if self.channel_axis == 1:
-                x = self.x[batch, :, pixel_x - self.win_x:pixel_x + self.win_x + 1, pixel_y - self.win_y:pixel_y + self.win_y + 1]
-            else:
-                x = self.x[batch, pixel_x - self.win_x:pixel_x + self.win_x + 1, pixel_y - self.win_y:pixel_y + self.win_y + 1, :]
-
+            x = self.x[j]
             x = self.image_data_generator.random_transform(x.astype(K.floatx()))
             x = self.image_data_generator.standardize(x)
 
@@ -94,6 +82,7 @@ class ImageSampleArrayIterator(Iterator):
                     hash=np.random.randint(1e4),
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
+
         if self.y is None:
             return batch_x
         batch_y = self.y[index_array]
