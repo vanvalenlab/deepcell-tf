@@ -30,21 +30,8 @@ from .plot_utils import plot_training_data_3d
 
 CHANNELS_FIRST = K.image_data_format() == 'channels_first'
 
-def data_generator(X, batch, feature_dict=None, mode='sample',
-                   labels=None, pixel_x=None, pixel_y=None, win_x=30, win_y=30):
-    if mode == 'sample':
-        img_list = []
-        l_list = []
-        for b, x, y, l in zip(batch, pixel_x, pixel_y, labels):
-            if CHANNELS_FIRST:
-                img = X[b, :, x - win_x:x + win_x + 1, y - win_y:y + win_y + 1]
-            else:
-                img = X[b, x - win_x:x + win_x + 1, y - win_y:y + win_y + 1, :]
-            img_list.append(img)
-            l_list.append(l)
-        return np.stack(tuple(img_list), axis=0), np.array(l_list)
-
-    elif mode == 'conv_gather':
+def data_generator(X, batch, feature_dict=None, mode='conv_gather', labels=None):
+    if mode == 'conv_gather':
         img_list = []
         l_list = []
         batch_list = []
@@ -60,7 +47,6 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
             l_list = feature_dict[b][3]
             feature_dict_new[b_new] = (batch_list, row_list, col_list, l_list)
         img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
-
         return img_list, feature_dict_new
 
     else:
@@ -70,59 +56,28 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     training_data = np.load(file_name)
     X = training_data['X']
     y = training_data['y']
-
-    if 'class_weights' in training_data:
-        class_weights = training_data['class_weights']
-    else:
-        class_weights = None
+    class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
 
     if mode == 'conv_sample':
         y = training_data['y_sample']
 
-    if mode == 'sample':
+    elif mode == 'sample':
         batch = training_data['batch']
         pixels_x = training_data['pixels_x']
         pixels_y = training_data['pixels_y']
         win_x = training_data['win_x']
         win_y = training_data['win_y']
 
-        total_batch_size = len(y)
-        num_test = np.int32(np.floor(np.float(total_batch_size) * test_size))
-        num_train = np.int32(total_batch_size - num_test)
+        img_list = []
+        for b, x, y in zip(batch, pixels_x, pixels_y):
+            if CHANNELS_FIRST:
+                img = X[b, :, x - win_x:x + win_x + 1, y - win_y:y + win_y + 1]
+            else:
+                img = X[b, x - win_x:x + win_x + 1, y - win_y:y + win_y + 1, :]
+            img_list.append(img)
 
-        # Split data set into training data and validation data
-        arr = np.arange(len(y))
-        arr_shuff = np.random.permutation(arr)
-
-        train_ind = arr_shuff[0:num_train]
-        test_ind = arr_shuff[num_train:num_train+num_test]
-
-        X_test, y_test = data_generator(X.astype(K.floatx()), batch[test_ind],
-                                        pixel_x=pixels_x[test_ind], pixel_y=pixels_y[test_ind],
-                                        labels=y[test_ind], win_x=win_x, win_y=win_y)
-
-        train_dict = {
-            'X': X.astype(K.floatx()),
-            'y': y[train_ind],
-            'batch': batch[train_ind],
-            'pixels_x': pixels_x[train_ind],
-            'pixels_y': pixels_y[train_ind],
-            'win_x': win_x,
-            'win_y': win_y
-        }
-
-    elif mode in {'conv', 'conv_sample', 'movie', 'siamese'}:
-
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=seed)
-
-        train_dict = {
-            'X': X_train,
-            'y': y_train,
-            'class_weights': class_weights,
-            'win_x': win_x,
-            'win_y': win_y
-        }
+        X = np.stack(tuple(img_list), axis=0)
+        y = np.array(y)
 
     elif mode == 'conv_gather':
         feature_dict = training_data['feature_dict']
@@ -130,7 +85,6 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         total_batch_size = X.shape[0]
         num_test = np.int32(np.ceil(np.float(total_batch_size) * test_size))
         num_train = np.int32(total_batch_size - num_test)
-        full_batch_size = np.int32(num_test + num_train)
 
         # Split data set into training data and validation data
         arr = np.arange(total_batch_size)
@@ -147,8 +101,17 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
             X, test_ind, feature_dict=feature_dict, labels=y, mode=mode)
 
         raise NotImplementedError('conv_gather is not finished yet')
-    else:
-        raise ValueError('"{}" is not a valid mode for get_data')
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=seed)
+
+    train_dict = {
+        'X': X_train,
+        'y': y_train,
+        'class_weights': class_weights,
+        'win_x': win_x,
+        'win_y': win_y
+    }
 
     return train_dict, (X_test, y_test)
 
