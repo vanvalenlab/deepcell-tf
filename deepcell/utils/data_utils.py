@@ -64,22 +64,6 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     if mode == 'conv_sample':
         y = training_data['y_sample']
 
-    elif mode == 'sample':
-        batch = training_data['batch']
-        pixels_x = training_data['pixels_x']
-        pixels_y = training_data['pixels_y']
-
-        img_list = []
-        for b, px, py in zip(batch, pixels_x, pixels_y):
-            if CHANNELS_FIRST:
-                img = X[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
-            else:
-                img = X[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
-            img_list.append(img)
-
-        X = np.stack(tuple(img_list), axis=0)
-        y = np.array(y)
-
     elif mode == 'conv_gather':
         feature_dict = training_data['feature_dict']
 
@@ -500,8 +484,21 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
     # Sample pixels from the label matrix
     if output_mode == 'sample':
+        if CHANNELS_FIRST:
+            shape = (len(feature_batch), X.shape[1], 2 * window_size_x + 1, 2 * window_size_y + 1)
+        else:
+            shape = (len(feature_batch), 2 * window_size_x + 1, 2 * window_size_y + 1, X.shape[3])
+
+        X_sample = np.zeros(shape)
+        for b, px, py in zip(feature_batch, feature_rows, feature_cols):
+            if CHANNELS_FIRST:
+                img = X[b, :, px - window_size_x:px + window_size_x + 1, py - window_size_y:py + window_size_y + 1]
+            else:
+                img = X[b, px - window_size_x:px + window_size_x + 1, py - window_size_y:py + window_size_y + 1, :]
+            X_sample[b] = img
+
         # Save training data in npz format
-        np.savez(file_name_save, class_weights=weights, X=X, y=feature_label,
+        np.savez(file_name_save, class_weights=weights, X=X_sample, y=feature_label,
                  batch=feature_batch, pixels_x=feature_rows, pixels_y=feature_cols,
                  win_x=window_size_x, win_y=window_size_y)
 
