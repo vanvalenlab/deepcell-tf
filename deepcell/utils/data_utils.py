@@ -69,11 +69,11 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         win_y = training_data['win_y']
 
         img_list = []
-        for b, x, y in zip(batch, pixels_x, pixels_y):
+        for b, px, py in zip(batch, pixels_x, pixels_y):
             if CHANNELS_FIRST:
-                img = X[b, :, x - win_x:x + win_x + 1, y - win_y:y + win_y + 1]
+                img = X[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
             else:
-                img = X[b, x - win_x:x + win_x + 1, y - win_y:y + win_y + 1, :]
+                img = X[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
             img_list.append(img)
 
         X = np.stack(tuple(img_list), axis=0)
