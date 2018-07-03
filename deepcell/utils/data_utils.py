@@ -187,7 +187,8 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='
     return list_of_max_sample_numbers
 
 def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
-                        border_mode='valid', output_mode='sample'):
+                        border_mode='valid', output_mode='sample',
+                        max_training_examples=1e7):
     """
     Create a list of the maximum pixels to sample from each feature in each data set.
     If output_mode is 'sample', then this will be set to the number of edge pixels.
@@ -218,38 +219,35 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
             # Randomly permute index vector
             non_rand_ind = np.arange(len(feature_rows_temp))
             rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows_temp), replace=False)
-            pixel_counter = 0
+
             for i in rand_ind:
-                if pixel_counter < list_of_max_sample_numbers[direc]:
-                    if border_mode == 'same':
-                        condition = True
+                if len(feature_label) >= list_of_max_sample_numbers[direc]:
+                    continue
 
-                    elif border_mode == 'valid':
-                        condition = feature_rows_temp[i] - window_size_x > 0 and \
-                                    feature_rows_temp[i] + window_size_x < image_size_x and \
-                                    feature_cols_temp[i] - window_size_y > 0 and \
-                                    feature_cols_temp[i] + window_size_y < image_size_y
+                condition = border_mode == 'valid' and \
+                            feature_rows_temp[i] - window_size_x > 0 and \
+                            feature_rows_temp[i] + window_size_x < image_size_x and \
+                            feature_cols_temp[i] - window_size_y > 0 and \
+                            feature_cols_temp[i] + window_size_y < image_size_y
 
-                    if condition:
-                        feature_rows.append(feature_rows_temp[i])
-                        feature_cols.append(feature_cols_temp[i])
-                        feature_batch.append(direc)
-                        feature_label.append(k)
-                        pixel_counter += 1
+                if border_mode == 'same' or condition:
+                    feature_rows.append(feature_rows_temp[i])
+                    feature_cols.append(feature_cols_temp[i])
+                    feature_batch.append(direc)
+                    feature_label.append(k)
 
     # Randomize
-    feature_rows = np.array(feature_rows, dtype='int32')
-    feature_cols = np.array(feature_cols, dtype='int32')
-    feature_batch = np.array(feature_batch, dtype='int32')
-    feature_label = np.array(feature_label, dtype='int32')
+    non_rand_ind = np.arange(len(feature_rows), dtype='int32')
+    if max_training_examples:
+        max_training_examples = non_rand_ind.size
 
-    non_rand_ind = np.arange(len(feature_rows), dtype='int')
-    rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows), replace=False)
+    limit = min(non_rand_ind.size, max_training_examples)
+    rand_ind = np.random.choice(non_rand_ind, size=limit, replace=False)
 
-    feature_rows = feature_rows[rand_ind]
-    feature_cols = feature_cols[rand_ind]
-    feature_batch = feature_batch[rand_ind]
-    feature_label = feature_label[rand_ind]
+    feature_rows = np.array(feature_rows, dtype='int32')[rand_ind]
+    feature_cols = np.array(feature_cols, dtype='int32')[rand_ind]
+    feature_batch = np.array(feature_batch, dtype='int32')[rand_ind]
+    feature_label = np.array(feature_label, dtype='int32')[rand_ind]
 
     return feature_rows, feature_cols, feature_batch, feature_label
 
@@ -531,22 +529,13 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
     # Create mask of sampled pixels
     feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
         y, edge_feature, output_mode=output_mode, border_mode=border_mode,
-        window_size_x=window_size_x, window_size_y=window_size_y)
+        window_size_x=window_size_x, window_size_y=window_size_y,
+        max_training_examples=max_training_examples)
 
     weights = compute_class_weight('balanced', y=feature_label, classes=np.unique(feature_label))
 
     # Sample pixels from the label matrix
     if output_mode == 'sample':
-        # Randomly select training points if there are too many
-        if len(feature_rows) > max_training_examples:
-            non_rand_ind = np.arange(len(feature_rows), dtype='int')
-            rand_ind = np.random.choice(non_rand_ind, size=max_training_examples, replace=False)
-
-            feature_rows = feature_rows[rand_ind]
-            feature_cols = feature_cols[rand_ind]
-            feature_batch = feature_batch[rand_ind]
-            feature_label = feature_label[rand_ind]
-
         # Save training data in npz format
         np.savez(file_name_save, class_weights=weights, X=X, y=feature_label,
                  batch=feature_batch, pixels_x=feature_rows, pixels_y=feature_cols,
