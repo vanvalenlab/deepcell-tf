@@ -511,15 +511,13 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         border_mode:  'valid' or 'same'
         output_mode:  'sample', 'conv', or 'disc'
     """
-    max_training_examples = int(max_training_examples)
-    window_size = (window_size_x, window_size_y)
-
     # Load one file to get image sizes (all images same size as they are from same microscope)
     image_path = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
     image_size = get_image_sizes(image_path, channel_names)
 
     X = load_training_images_2d(direc_name, training_direcs, channel_names,
-                                raw_image_direc=raw_image_direc, image_size=image_size)
+                                image_size=image_size,
+                                raw_image_direc=raw_image_direc)
 
     y = load_annotated_images_2d(direc_name, training_direcs,
                                  image_size=image_size,
@@ -627,12 +625,11 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         plot_training_data_2d(X, display_mask, max_plotted=max_plotted)
 
 def load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
-                            image_size, window_size, num_frames, montage_mode=False):
+                            image_size, num_frames, montage_mode=False):
     """
     Iterate over every image in the training directories and load
     each into a numpy array.
     """
-    window_size_x, window_size_y = window_size
     image_size_x, image_size_y = image_size
 
     # flatten list of lists
@@ -776,8 +773,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
     image_size = get_image_sizes(rand_train_dir, channel_names)
 
     X = load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
-                                image_size, window_size=(window_size_x, window_size_y),
-                                num_frames=num_frames, montage_mode=montage_mode)
+                                image_size, num_frames=num_frames, montage_mode=montage_mode)
 
     y = load_annotated_images_3d(direc_name, training_direcs, annotation_direc,
                                  annotation_name, num_frames, image_size,
