@@ -70,11 +70,10 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         pixels_y = training_data['pixels_y']
 
         if CHANNELS_FIRST:
-            shape = (len(batch), X.shape[1], 2 * win_x + 1, 2 * win_y + 1)
+            X_sample = np.zeros((len(batch), X.shape[1], 2 * win_x + 1, 2 * win_y + 1))
         else:
-            shape = (len(batch), 2 * win_x + 1, 2 * win_y + 1, X.shape[3])
+            X_sample = np.zeros((len(batch), 2 * win_x + 1, 2 * win_y + 1, X.shape[3]))
 
-        X_sample = np.zeros(shape)
         for b, px, py in zip(batch, pixels_x, pixels_y):
             if CHANNELS_FIRST:
                 X_sample[b] = X[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
