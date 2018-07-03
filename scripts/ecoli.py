@@ -5,7 +5,7 @@ import argparse
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras.optimizers import SGD
+from tensorflow.python.keras.optimizers import SGD, Adam
 from tensorflow.python.keras import backend as K
 from tensorflow.python import debug as tf_debug
 from tensorflow.contrib.eager.python import tfe
@@ -85,7 +85,7 @@ def train_model_on_training_data():
     X, y = training_data['X'], training_data['y']
     print('X.shape: {}\ny.shape: {}'.format(X.shape, y.shape))
 
-    n_epoch = 1000
+    n_epoch = 300
     batch_size = 32 if DATA_OUTPUT_MODE == 'sample' else 1
     optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     lr_sched = rate_scheduler(lr=0.01, decay=0.99)
@@ -112,7 +112,7 @@ def train_model_on_training_data():
         else:
             train_model = train_model_disc
         the_model = bn_dense_feature_net
-        model_args['location'] = False
+        model_args['location'] = True
 
         size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[row_axis:col_axis + 1]
         if data_format == 'channels_first':
@@ -144,7 +144,7 @@ def run_model_on_dir():
     channel_names = ['phase']
     image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
 
-    model_name = '2018-07-02_ecoli_generic_{}_{}__0.h5'.format(
+    model_name = '2018-07-03_ecoli_generic_{}_{}__0.h5'.format(
         K.image_data_format(), DATA_OUTPUT_MODE)
 
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
