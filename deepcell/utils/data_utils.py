@@ -61,10 +61,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 
     class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
 
-    if mode == 'conv_sample':
-        y = training_data['y_sample']
-
-    elif mode == 'sample':
+    if mode == 'sample':
         batch = training_data['batch']
         pixels_x = training_data['pixels_x']
         pixels_y = training_data['pixels_y']
