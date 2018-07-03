@@ -83,9 +83,8 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='valid',
                             window_size_x=30, window_size_y=30):
-    """
-    For each set of images and each feature, find the maximum number of samples
-    for to be used.  This will be used to balance class sampling.
+    """For each set of images and each feature, find the maximum number
+    of samples for to be used. This will be used to balance class sampling.
     # Arguments
         y: mask to indicate which pixels belong to which class
         edge_feature: [1, 0, 0], the 1 indicates the feature is the cell edge
@@ -118,10 +117,9 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='
 def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
                         border_mode='valid', output_mode='sample',
                         max_training_examples=1e7):
-    """
-    Create a list of the maximum pixels to sample from each feature in each data set.
-    If output_mode is 'sample', then this will be set to the number of edge pixels.
-    If not, then it will be set to np.Inf, i.e. sampling everything.
+    """Create a list of the maximum pixels to sample from each feature in each
+    data set. If output_mode is 'sample', then this will be set to the number
+    of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
     """
     if CHANNELS_FIRST:
         num_dirs, num_features, image_size_x, image_size_y = y.shape
@@ -181,9 +179,14 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     return feature_rows, feature_cols, feature_batch, feature_label
 
 def trim_padding(nparr, win_x, win_y):
-    """
-    Trim the boundaries of the numpy array to allow for a sliding
+    """Trim the boundaries of the numpy array to allow for a sliding
     window of size (win_x, win_y) to not slide over regions without pixel data
+    Aguments:
+        nparr: numpy array to trim
+        win_x: number of row pixels to ignore on either side
+        win_y: number of column pixels to ignore on either side
+    Returns:
+        trimmed numpy array of size x - 2 * win_x - 1, y - 2 * win_y - 1
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     if nparr.ndim == 4:
