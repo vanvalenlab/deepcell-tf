@@ -613,6 +613,7 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
                           'there are {} total frames'.format(
                               len(imglist) - num_frames, num_frames, len(imglist)))
                     break
+
                 image_data = np.asarray(get_image(os.path.join(direc, img)))
 
                 if CHANNELS_FIRST:
@@ -639,7 +640,6 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
         y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
         y_dirs = sorted_nicely(y_dirs)
 
-    # TODO: movie training data with channels?
     if CHANNELS_FIRST:
         y_shape = (len(y_dirs), len(annotation_name), num_frames, image_size_x, image_size_y)
     else:
@@ -657,8 +657,8 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
                           'there are {} total frames'.format(
                               len(imglist) - num_frames, num_frames, len(imglist)))
                     break
+
                 annotation_img = get_image(os.path.join(direc, img_file))
-                # TODO: movie training data with channels?
                 if CHANNELS_FIRST:
                     y[b, c, z, :, :] = annotation_img
                 else:
