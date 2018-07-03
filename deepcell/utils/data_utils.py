@@ -68,10 +68,18 @@ def data_generator(X, batch, feature_dict=None, mode='sample',
 
 def get_data(file_name, mode='sample', test_size=.1, seed=None):
     training_data = np.load(file_name)
+    X = training_data['X']
+    y = training_data['y']
+
+    if 'class_weights' in training_data:
+        class_weights = training_data['class_weights']
+    else:
+        class_weights = None
+
+    if mode == 'conv_sample':
+        y = training_data['y_sample']
 
     if mode == 'sample':
-        X = training_data['X']
-        y = training_data['y']
         batch = training_data['batch']
         pixels_x = training_data['pixels_x']
         pixels_y = training_data['pixels_y']
@@ -103,17 +111,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
             'win_y': win_y
         }
 
-        return train_dict, (X_test, y_test)
-
     elif mode in {'conv', 'conv_sample', 'movie', 'siamese'}:
-        X = training_data['X']
-        y = training_data['y']
-        if mode == 'conv_sample':
-            y = training_data['y_sample']
-        if mode == 'conv' or mode == 'conv_sample':
-            class_weights = training_data['class_weights']
-        elif mode == 'movie' or mode == 'siamese':
-            class_weights = None
 
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=test_size, random_state=seed)
@@ -126,22 +124,13 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
             'win_y': win_y
         }
 
-        return train_dict, (X_test, y_test)
-
     elif mode == 'conv_gather':
-        X = training_data['X']
-        y = training_data['y']
-        win_x = training_data['win_x']
-        win_y = training_data['win_y']
         feature_dict = training_data['feature_dict']
-        class_weights = training_data['class_weights']
 
         total_batch_size = X.shape[0]
         num_test = np.int32(np.ceil(np.float(total_batch_size) * test_size))
         num_train = np.int32(total_batch_size - num_test)
         full_batch_size = np.int32(num_test + num_train)
-
-        print(total_batch_size, num_test, num_train)
 
         # Split data set into training data and validation data
         arr = np.arange(total_batch_size)
@@ -160,6 +149,8 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         raise NotImplementedError('conv_gather is not finished yet')
     else:
         raise ValueError('"{}" is not a valid mode for get_data')
+
+    return train_dict, (X_test, y_test)
 
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='valid',
                             window_size_x=30, window_size_y=30):
