@@ -14,9 +14,10 @@ import os
 import random
 
 import numpy as np
-from skimage.morphology import disk, binary_dilation
 from skimage.measure import label
+from skimage.morphology import disk, binary_dilation
 from sklearn.utils.class_weight import compute_class_weight
+from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import backend as K
 
 from .io_utils import get_image
@@ -29,190 +30,61 @@ from .plot_utils import plot_training_data_3d
 
 CHANNELS_FIRST = K.image_data_format() == 'channels_first'
 
-def data_generator(X, batch, feature_dict=None, mode='sample',
-                   labels=None, pixel_x=None, pixel_y=None, win_x=30, win_y=30):
+def get_data(file_name, mode='sample', test_size=.1, seed=None):
+    """Load data from NPZ file and split into train and test sets
+    # Arguments
+        file_name: path to NPZ file to load
+        mode: if 'sample', will return datapoints for each pixel,
+              otherwise, returns the same data that was loaded
+        test_size: percent of data to leave as testing holdout
+        seed: seed number for random train/test split repeatability
+    # Returns
+        dict of training data, and a tuple of testing data:
+        train_dict, (X_test, y_test)
+    """
+    training_data = np.load(file_name)
+    X = training_data['X']
+    y = training_data['y']
+    win_x = training_data['win_x']
+    win_y = training_data['win_y']
+
+    class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
+
     if mode == 'sample':
-        img_list = []
-        l_list = []
-        for b, x, y, l in zip(batch, pixel_x, pixel_y, labels):
-            if CHANNELS_FIRST:
-                img = X[b, :, x-win_x:x+win_x+1, y-win_y:y+win_y+1]
-            else:
-                img = X[b, x-win_x:x+win_x+1, y-win_y:y+win_y+1, :]
-            img_list.append(img)
-            l_list.append(l)
-        return np.stack(tuple(img_list), axis=0), np.array(l_list)
-
-    elif mode == 'conv' or mode == 'conv_sample':
-        img_list = []
-        l_list = []
-        for b in batch:
-            img_list.append(X[b])
-            l_list.append(labels[b])
-        img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
-        l_list = np.stack(tuple(l_list), axis=0)
-        return img_list, l_list
-
-    elif mode == 'siamese':
-        img_list = []
-        l_list = []
-        for b in batch:
-            img_list.append(X[b])
-            l_list.append(labels[b])
-        img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
-        l_list = np.stack(tuple(l_list), axis=0)
-        return img_list, l_list
-
-    elif mode == 'conv_gather':
-        img_list = []
-        l_list = []
-        batch_list = []
-        row_list = []
-        col_list = []
-        feature_dict_new = {}
-        for b_new, b in enumerate(batch):
-            img_list.append(X[b])
-            l_list.append(labels[b])
-            batch_list = feature_dict[b][0] - np.amin(feature_dict[b][0])
-            row_list = feature_dict[b][1]
-            col_list = feature_dict[b][2]
-            l_list = feature_dict[b][3]
-            feature_dict_new[b_new] = (batch_list, row_list, col_list, l_list)
-        img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
-
-        return img_list, feature_dict_new
-
-    elif mode == 'movie':
-        img_list = []
-        l_list = []
-        for b in batch:
-            img_list.append(X[b])
-            l_list.append(labels[b])
-        img_list = np.stack(tuple(img_list), axis=0).astype(K.floatx())
-        l_list = np.stack(tuple(l_list), axis=0)
-        return img_list, l_list
-
-    else:
-        raise NotImplementedError('data_generator is not implemented for mode = {}'.format(mode))
-
-def get_data(file_name, mode='sample'):
-    if mode == 'sample':
-        training_data = np.load(file_name)
-        X = training_data['X']
-        y = training_data['y']
         batch = training_data['batch']
         pixels_x = training_data['pixels_x']
         pixels_y = training_data['pixels_y']
-        win_x = training_data['win_x']
-        win_y = training_data['win_y']
 
-        total_batch_size = len(y)
-        num_test = np.int32(np.floor(np.float(total_batch_size) / 10))
-        num_train = np.int32(total_batch_size - num_test)
-        full_batch_size = np.int32(num_test + num_train)
+        if CHANNELS_FIRST:
+            X_sample = np.zeros((len(batch), X.shape[1], 2 * win_x + 1, 2 * win_y + 1))
+        else:
+            X_sample = np.zeros((len(batch), 2 * win_x + 1, 2 * win_y + 1, X.shape[3]))
 
-        # Split data set into training data and validation data
-        arr = np.arange(len(y))
-        arr_shuff = np.random.permutation(arr)
+        for i, (b, px, py) in enumerate(zip(batch, pixels_x, pixels_y)):
+            if CHANNELS_FIRST:
+                X_sample[i] = X[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
+            else:
+                X_sample[i] = X[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
 
-        train_ind = arr_shuff[0:num_train]
-        test_ind = arr_shuff[num_train:num_train+num_test]
+        X = X_sample
 
-        X_test, y_test = data_generator(X.astype(K.floatx()), batch[test_ind],
-                                        pixel_x=pixels_x[test_ind], pixel_y=pixels_y[test_ind],
-                                        labels=y[test_ind], win_x=win_x, win_y=win_y)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=seed)
 
-        train_dict = {
-            'X': X.astype(K.floatx()),
-            'y': y[train_ind],
-            'batch': batch[train_ind],
-            'pixels_x': pixels_x[train_ind],
-            'pixels_y': pixels_y[train_ind],
-            'win_x': win_x,
-            'win_y': win_y
-        }
+    train_dict = {
+        'X': X_train,
+        'y': y_train,
+        'class_weights': class_weights,
+        'win_x': win_x,
+        'win_y': win_y
+    }
 
-        return train_dict, (X_test, y_test)
-
-    elif mode == 'conv' or mode == 'conv_sample' or mode == 'movie' or mode == 'siamese':
-        training_data = np.load(file_name)
-        X = training_data['X']
-        y = training_data['y']
-        if mode == 'conv_sample':
-            y = training_data['y_sample']
-        if mode == 'conv' or mode == 'conv_sample':
-            class_weights = training_data['class_weights']
-        elif mode == 'movie' or mode == 'siamese':
-            class_weights = None
-        win_x = training_data['win_x']
-        win_y = training_data['win_y']
-
-        total_batch_size = X.shape[0]
-        num_test = np.int32(np.ceil(np.float(total_batch_size) / 10))
-        num_train = np.int32(total_batch_size - num_test)
-        full_batch_size = np.int32(num_test + num_train)
-
-        print('Batch Size: {}\nNum Test: {}\nNum Train: {}'.format(
-            total_batch_size, num_test, num_train))
-
-        # Split data set into training data and validation data
-        arr = np.arange(total_batch_size)
-        arr_shuff = np.random.permutation(arr)
-
-        train_ind = arr_shuff[0:num_train]
-        test_ind = arr_shuff[num_train:]
-
-        X_train, y_train = data_generator(X, train_ind, labels=y, mode=mode)
-        X_test, y_test = data_generator(X, test_ind, labels=y, mode=mode)
-
-        # y_test = np.moveaxis(y_test, 1, 3)
-        train_dict = {
-            'X': X_train,
-            'y': y_train,
-            'class_weights': class_weights,
-            'win_x': win_x,
-            'win_y': win_y
-        }
-
-        return train_dict, (X_test, y_test)
-
-    elif mode == 'conv_gather':
-        training_data = np.load(file_name)
-        X = training_data['X']
-        y = training_data['y']
-        win_x = training_data['win_x']
-        win_y = training_data['win_y']
-        feature_dict = training_data['feature_dict']
-        class_weights = training_data['class_weights']
-
-        total_batch_size = X.shape[0]
-        num_test = np.int32(np.ceil(np.float(total_batch_size) / 10))
-        num_train = np.int32(total_batch_size - num_test)
-        full_batch_size = np.int32(num_test + num_train)
-
-        print(total_batch_size, num_test, num_train)
-
-        # Split data set into training data and validation data
-        arr = np.arange(total_batch_size)
-        arr_shuff = np.random.permutation(arr)
-
-        train_ind = arr_shuff[0:num_train]
-        test_ind = arr_shuff[num_train:]
-
-        # TODO: conv_gather is not yet finished
-        X_train, train_gather_dict = data_generator(
-            X, train_ind, feature_dict=feature_dict, labels=y, mode=mode)
-
-        X_test, test_gather_dict = data_generator(
-            X, test_ind, feature_dict=feature_dict, labels=y, mode=mode)
-
-        raise NotImplementedError('conv_gather is not finished yet')
+    return train_dict, (X_test, y_test)
 
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='valid',
                             window_size_x=30, window_size_y=30):
-    """
-    For each set of images and each feature, find the maximum number of samples
-    for to be used.  This will be used to balance class sampling.
+    """For each set of images and each feature, find the maximum number
+    of samples for to be used. This will be used to balance class sampling.
     # Arguments
         y: mask to indicate which pixels belong to which class
         edge_feature: [1, 0, 0], the 1 indicates the feature is the cell edge
@@ -223,47 +95,36 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='
     """
     list_of_max_sample_numbers = []
 
-    if CHANNELS_FIRST:
-        y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
-    else:
-        y_trimmed = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
+    if border_mode.lower() == 'valid':
+        y = trim_padding(y, window_size_x, window_size_y)
+
     # for each set of images
     for j in range(y.shape[0]):
         if output_mode.lower() == 'sample':
             for k, edge_feat in enumerate(edge_feature):
                 if edge_feat == 1:
-                    if border_mode == 'same':
-                        if CHANNELS_FIRST:
-                            y_sum = np.sum(y[j, k, :, :])
-                        else:
-                            y_sum = np.sum(y[j, :, :, k])
-                        list_of_max_sample_numbers.append(y_sum)
+                    if CHANNELS_FIRST:
+                        y_sum = np.sum(y[j, k, :, :])
+                    else:
+                        y_sum = np.sum(y[j, :, :, k])
+                    list_of_max_sample_numbers.append(y_sum)
 
-                    elif border_mode == 'valid':
-                        if CHANNELS_FIRST:
-                            y_sum = np.sum(y_trimmed[j, k, :, :])
-                        else:
-                            y_sum = np.sum(y_trimmed[j, :, :, k])
-                        list_of_max_sample_numbers.append(y_sum)
-
-        elif output_mode.lower() in {'conv', 'disc'}:
+        else:
             list_of_max_sample_numbers.append(np.Inf)
 
     return list_of_max_sample_numbers
 
 def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
-                        border_mode='valid', output_mode='sample'):
-    """
-    Create a list of the maximum pixels to sample from each feature in each data set.
-    If output_mode is 'sample', then this will be set to the number of edge pixels.
-    If not, then it will be set to np.Inf, i.e. sampling everything.
+                        border_mode='valid', output_mode='sample',
+                        max_training_examples=1e7):
+    """Create a list of the maximum pixels to sample from each feature in each
+    data set. If output_mode is 'sample', then this will be set to the number
+    of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
     """
     if CHANNELS_FIRST:
         num_dirs, num_features, image_size_x, image_size_y = y.shape
-        # y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
     else:
         num_dirs, image_size_x, image_size_y, num_features = y.shape
-        # y_trimmed = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
 
     list_of_max_sample_numbers = get_max_sample_num_list(
         y=y, edge_feature=edge_feature, output_mode=output_mode, border_mode=border_mode,
@@ -285,19 +146,17 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
             # Randomly permute index vector
             non_rand_ind = np.arange(len(feature_rows_temp))
             rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows_temp), replace=False)
+
             pixel_counter = 0
             for i in rand_ind:
                 if pixel_counter < list_of_max_sample_numbers[direc]:
-                    if border_mode == 'same':
-                        condition = True
+                    condition = border_mode == 'valid' and \
+                                feature_rows_temp[i] - window_size_x > 0 and \
+                                feature_rows_temp[i] + window_size_x < image_size_x and \
+                                feature_cols_temp[i] - window_size_y > 0 and \
+                                feature_cols_temp[i] + window_size_y < image_size_y
 
-                    elif border_mode == 'valid':
-                        condition = feature_rows_temp[i] - window_size_x > 0 and \
-                                    feature_rows_temp[i] + window_size_x < image_size_x and \
-                                    feature_cols_temp[i] - window_size_y > 0 and \
-                                    feature_cols_temp[i] + window_size_y < image_size_y
-
-                    if condition:
+                    if border_mode == 'same' or condition:
                         feature_rows.append(feature_rows_temp[i])
                         feature_cols.append(feature_cols_temp[i])
                         feature_batch.append(direc)
@@ -305,20 +164,45 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
                         pixel_counter += 1
 
     # Randomize
-    feature_rows = np.array(feature_rows, dtype='int32')
-    feature_cols = np.array(feature_cols, dtype='int32')
-    feature_batch = np.array(feature_batch, dtype='int32')
-    feature_label = np.array(feature_label, dtype='int32')
+    non_rand_ind = np.arange(len(feature_rows), dtype='int32')
+    if max_training_examples:
+        max_training_examples = non_rand_ind.size
 
-    non_rand_ind = np.arange(len(feature_rows), dtype='int')
-    rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows), replace=False)
+    limit = min(non_rand_ind.size, max_training_examples)
+    rand_ind = np.random.choice(non_rand_ind, size=limit, replace=False)
 
-    feature_rows = feature_rows[rand_ind]
-    feature_cols = feature_cols[rand_ind]
-    feature_batch = feature_batch[rand_ind]
-    feature_label = feature_label[rand_ind]
+    feature_rows = np.array(feature_rows, dtype='int32')[rand_ind]
+    feature_cols = np.array(feature_cols, dtype='int32')[rand_ind]
+    feature_batch = np.array(feature_batch, dtype='int32')[rand_ind]
+    feature_label = np.array(feature_label, dtype='int32')[rand_ind]
 
     return feature_rows, feature_cols, feature_batch, feature_label
+
+def trim_padding(nparr, win_x, win_y):
+    """Trim the boundaries of the numpy array to allow for a sliding
+    window of size (win_x, win_y) to not slide over regions without pixel data
+    Aguments:
+        nparr: numpy array to trim
+        win_x: number of row pixels to ignore on either side
+        win_y: number of column pixels to ignore on either side
+    Returns:
+        trimmed numpy array of size x - 2 * win_x - 1, y - 2 * win_y - 1
+    """
+    is_channels_first = K.image_data_format() == 'channels_first'
+    if nparr.ndim == 4:
+        if is_channels_first:
+            trimmed = nparr[:, :, win_x:-win_x, win_y:-win_y]
+        else:
+            trimmed = nparr[:, win_x:-win_x, win_y:-win_y, :]
+    elif nparr.ndim == 5:
+        if is_channels_first:
+            trimmed = nparr[:, :, :, win_x:-win_x, win_y:-win_y]
+        else:
+            trimmed = nparr[:, :, win_x:-win_x, win_y:-win_y, :]
+    else:
+        raise ValueError('Expected to trim numpy array of ndim 4 or 5, got "{}"'.format(
+            nparr.ndim))
+    return trimmed
 
 def reshape_matrix(X, y, reshape_size=256):
     image_size_x, image_size_y = X.shape[2:] if CHANNELS_FIRST else X.shape[1:3]
@@ -416,13 +300,12 @@ def reshape_movie(X, y, reshape_size=256):
     return new_X, new_y
 
 def load_training_images_2d(direc_name, training_direcs, channel_names, image_size,
-                            window_size, raw_image_direc):
+                            raw_image_direc):
     """
     Iterate over every image in the training directories and load
     each into a numpy array.
     """
     # Unpack size tuples
-    window_size_x, window_size_y = window_size
     image_size_x, image_size_y = image_size
 
     # Initialize training data array
@@ -558,16 +441,13 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         border_mode:  'valid' or 'same'
         output_mode:  'sample', 'conv', or 'disc'
     """
-    max_training_examples = int(max_training_examples)
-    window_size = (window_size_x, window_size_y)
-
     # Load one file to get image sizes (all images same size as they are from same microscope)
     image_path = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
     image_size = get_image_sizes(image_path, channel_names)
 
     X = load_training_images_2d(direc_name, training_direcs, channel_names,
-                                raw_image_direc=raw_image_direc,
-                                image_size=image_size, window_size=window_size)
+                                image_size=image_size,
+                                raw_image_direc=raw_image_direc)
 
     y = load_annotated_images_2d(direc_name, training_direcs,
                                  image_size=image_size,
@@ -578,30 +458,16 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
     if reshape_size is not None:
         X, y = reshape_matrix(X, y, reshape_size=reshape_size)
 
-    # Trim the feature mask so that each window does not overlap with the border of the image
-    if CHANNELS_FIRST:
-        y_trimmed = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
-    else:
-        y_trimmed = y[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
-
     # Create mask of sampled pixels
     feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
         y, edge_feature, output_mode=output_mode, border_mode=border_mode,
-        window_size_x=window_size_x, window_size_y=window_size_y)
+        window_size_x=window_size_x, window_size_y=window_size_y,
+        max_training_examples=max_training_examples)
 
     weights = compute_class_weight('balanced', y=feature_label, classes=np.unique(feature_label))
 
     # Sample pixels from the label matrix
     if output_mode == 'sample':
-        # Randomly select training points if there are too many
-        if len(feature_rows) > max_training_examples:
-            non_rand_ind = np.arange(len(feature_rows), dtype='int')
-            rand_ind = np.random.choice(non_rand_ind, size=max_training_examples, replace=False)
-
-            feature_rows = feature_rows[rand_ind]
-            feature_cols = feature_cols[rand_ind]
-            feature_batch = feature_batch[rand_ind]
-            feature_label = feature_label[rand_ind]
 
         # Save training data in npz format
         np.savez(file_name_save, class_weights=weights, X=X, y=feature_label,
@@ -616,8 +482,9 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
             else:
                 y_sample[b, r, c, l] = 1
 
+        # Trim the feature mask so that each window does not overlap with the border of the image
         if border_mode == 'valid':
-            y = y_trimmed
+            y = trim_padding(y, window_size_x, window_size_y)
 
         # Save training data in npz format
         np.savez(file_name_save, class_weights=weights, X=X, y=y,
@@ -634,18 +501,22 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
             y_label = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1), dtype='int32')
 
         for b in range(y.shape[0]):
-            interior_mask = y[b, 1, :, :] if CHANNELS_FIRST else y[b, :, :, 1]
-            y_label[b] = label(interior_mask)
+            if CHANNELS_FIRST:
+                interior_mask = y[b, 1, :, :]
+                y_label[b, 0, :, :] = label(interior_mask)
+            else:
+                interior_mask = y[b, :, :, 1]
+                y_label[b, :, :, 0] = label(interior_mask)
 
-        max_cells = np.amax(y_label)
+        max_cells = np.amax(y_label) + 1
         if CHANNELS_FIRST:
-            y_binary = np.zeros((y.shape[0], max_cells + 1, y.shape[2], y.shape[3]), dtype='int32')
+            y_binary = np.zeros((y.shape[0], max_cells, y.shape[2], y.shape[3]), dtype='int32')
         else:
-            y_binary = np.zeros((y.shape[0], y.shape[2], y.shape[3], max_cells + 1), dtype='int32')
+            y_binary = np.zeros((y.shape[0], y.shape[1], y.shape[2], max_cells), dtype='int32')
 
         for b in range(y.shape[0]):
             label_mask = y_label[b]
-            for l in range(max_cells + 1):
+            for l in range(max_cells):
                 if CHANNELS_FIRST:
                     y_binary[b, l, :, :] = label_mask == l
                 else:
@@ -654,12 +525,8 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         # Trim the sides of the mask to ensure a sliding window does not slide
         # past before or after the boundary of y_label or y_binary
         if border_mode == 'valid':
-            if CHANNELS_FIRST:
-                y_label = y_label[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
-                y_binary = y_binary[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y]
-            else:
-                y_label = y_label[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
-                y_binary = y_binary[:, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
+            y_label = trim_padding(y_label, window_size_x, window_size_y)
+            y_binary = trim_padding(y_binary, window_size_x, window_size_y)
 
         # Save training data in npz format
         np.savez(file_name_save, class_weights=weights, X=X, y=y_binary,
@@ -680,12 +547,11 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         plot_training_data_2d(X, display_mask, max_plotted=max_plotted)
 
 def load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
-                            image_size, window_size, num_frames, montage_mode=False):
+                            image_size, num_frames, montage_mode=False):
     """
     Iterate over every image in the training directories and load
     each into a numpy array.
     """
-    window_size_x, window_size_y = window_size
     image_size_x, image_size_y = image_size
 
     # flatten list of lists
@@ -717,6 +583,7 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
                           'there are {} total frames'.format(
                               len(imglist) - num_frames, num_frames, len(imglist)))
                     break
+
                 image_data = np.asarray(get_image(os.path.join(direc, img)))
 
                 if CHANNELS_FIRST:
@@ -743,7 +610,6 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
         y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
         y_dirs = sorted_nicely(y_dirs)
 
-    # TODO: movie training data with channels?
     if CHANNELS_FIRST:
         y_shape = (len(y_dirs), len(annotation_name), num_frames, image_size_x, image_size_y)
     else:
@@ -761,8 +627,8 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
                           'there are {} total frames'.format(
                               len(imglist) - num_frames, num_frames, len(imglist)))
                     break
+
                 annotation_img = get_image(os.path.join(direc, img_file))
-                # TODO: movie training data with channels?
                 if CHANNELS_FIRST:
                     y[b, c, z, :, :] = annotation_img
                 else:
@@ -829,8 +695,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
     image_size = get_image_sizes(rand_train_dir, channel_names)
 
     X = load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
-                                image_size, window_size=(window_size_x, window_size_y),
-                                num_frames=num_frames, montage_mode=montage_mode)
+                                image_size, num_frames=num_frames, montage_mode=montage_mode)
 
     y = load_annotated_images_3d(direc_name, training_direcs, annotation_direc,
                                  annotation_name, num_frames, image_size,

@@ -10,8 +10,38 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
-from scipy import ndimage as ndi
 import ndi.measurements
+from scipy import ndimage
+from skimage.measure import label
+from skimage.measure import regionprops
+from tensorflow.python.keras import backend as K
+
+def distance_transform_2d(mask, bins=16):
+    """Transform a label mask into distance classes.
+    # Arguments
+        mask: a label mask (y data)
+        bins: the number of transformed distance classes
+    # Returns
+        distance: a mask of same shape as input mask,
+                  with each label being a distance class from 1 to bins
+    """
+    distance = ndimage.distance_transform_edt(mask)
+    distance = distance.astype(K.floatx())  # normalized distances are floats
+
+    # uniquely label each cell and normalize the distance values
+    # by that cells maximum distance value
+    label_matrix = label(mask)
+    for prop in regionprops(label_matrix):
+        labeled_distance = distance[label_matrix == prop.label]
+        normalized_distance = labeled_distance / np.amax(labeled_distance)
+        distance[label_matrix == prop.label] = normalized_distance
+
+    # bin each distance value into a class from 1 to bins
+    min_dist = np.amin(distance)
+    max_dist = np.amax(distance)
+    bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins)
+    distance = np.digitize(distance, bins)
+    return distance
 
 def rotate_array_0(arr):
     return arr
@@ -88,7 +118,7 @@ def distance_transform_3d(maskstack,bins=16):
     epsilon=1e-25
     dt_2dslice=[]
     for mask in ms:
-        dt_2dslice.append(ndi.distance_transform_edt(mask))
+        dt_2dslice.append(ndimage.distance_transform_edt(mask))
     dt_2dslice=np.array(dt_2dslice)
     print(dt_2dslice.shape)
     distance=np.zeros(list(ms.shape))
