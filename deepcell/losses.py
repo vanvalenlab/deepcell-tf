@@ -128,9 +128,9 @@ def dice_coef(y_true, y_pred, smooth=1):
 def dice_coef_loss(y_true, y_pred, smooth=1):
     return -dice_coef(y_true, y_pred, smooth)
 
-def discriminative_instance_loss(y_true, y_pred, delta_v=0.3, delta_d=0.9, order=2, gamma=1e-4):
+def discriminative_instance_loss(y_true, y_pred, delta_v=0.2, delta_d=0.6, order=2, gamma=1e-3):
     def temp_norm(ten, axis=-1):
-        return tf.sqrt(tf.constant(1e-4, dtype=K.floatx()) + tf.reduce_sum(tf.square(ten), axis=axis))
+        return tf.sqrt(K.epsilon() + tf.reduce_sum(tf.square(ten), axis=axis))
 
     # Compute variance loss
     cells_summed = tf.tensordot(y_true, y_pred, axes=[[0, 1, 2], [0, 1, 2]])
