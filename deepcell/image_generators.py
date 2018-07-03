@@ -39,15 +39,18 @@ class ImageSampleArrayIterator(Iterator):
                  batch_size=32, shuffle=False, seed=None, data_format=None,
                  save_to_dir=None, save_prefix='', save_format='png'):
         if train_dict['X'].shape[0] != train_dict['y'].shape[0]:
-            raise ValueError('Number of training data batches and labels should '
-                             'have the same length. X.shape = {} y.shape = {}'.format(
-                                train_dict['X'].shape, train_dict['y'].shape))
+            raise ValueError('Training batches and labels should have the same'
+                             'length. Found X.shape: {} y.shape: {}'.format(
+                                 train_dict['X'].shape, train_dict['y'].shape))
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+
         if self.x.ndim != 4:
-            raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
-                             'You passed an array with shape', self.x.shape)
+            raise ValueError('Input data in `ImageSampleArrayIterator` should'
+                             'have rank 4. Got array with shape {}'.format(
+                                 self.x.shape))
+
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.y = train_dict['y']
         self.win_x = train_dict['win_x']
@@ -105,8 +108,9 @@ class SampleDataGenerator(ImageDataGenerator):
              save_to_dir=None, save_prefix='', save_format='png'):
         return ImageSampleArrayIterator(
             train_dict, self,
-            batch_size=batch_size, shuffle=shuffle, seed=seed, data_format=self.data_format,
-            save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
+            batch_size=batch_size, shuffle=shuffle, seed=seed,
+            data_format=self.data_format, save_to_dir=save_to_dir,
+            save_prefix=save_prefix, save_format=save_format)
 
 class ImageFullyConvIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
@@ -118,8 +122,9 @@ class ImageFullyConvIterator(Iterator):
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
 
         if self.x.ndim != 4:
-            raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
-                             'You passed an array with shape {}'.format(self.x.shape))
+            raise ValueError('Input data in `ImageFullyConvIterator` should'
+                             'have rank 4. Got array with shape {}'.format(
+                                 self.x.shape))
 
         self.channel_axis = -1 if data_format == 'channels_last' else 1
         self.y = np.int32(train_dict['y'])
@@ -129,7 +134,8 @@ class ImageFullyConvIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
         self.target_format = target_format
-        super(ImageFullyConvIterator, self).__init__(self.x.shape[0], batch_size, shuffle, seed)
+        super(ImageFullyConvIterator, self).__init__(
+            self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         epsilon = K.epsilon()
@@ -242,7 +248,7 @@ class ImageFullyConvDataGenerator(object):
         data_format: 'channels_first' or 'channels_last'.
             In 'channels_first' mode, the channels dimension
             (the depth) is at index 1, in 'channels_last' mode it is at index 4.
-            It     aults to the `image_data_format` value found in your
+            It defaults to the `image_data_format` value found in your
             Keras config file at `~/.keras/keras.json`.
             If you never set it, then it will be "channels_last".
             """
