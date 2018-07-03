@@ -158,6 +158,8 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
             X, test_ind, feature_dict=feature_dict, labels=y, mode=mode)
 
         raise NotImplementedError('conv_gather is not finished yet')
+    else:
+        raise ValueError('"{}" is not a valid mode for get_data')
 
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='valid',
                             window_size_x=30, window_size_y=30):
