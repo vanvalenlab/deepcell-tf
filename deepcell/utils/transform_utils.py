@@ -10,6 +10,8 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
+from scipy import ndimage as ndi
+import ndi.measurements
 
 def rotate_array_0(arr):
     return arr
@@ -67,3 +69,41 @@ def flip_axis(x, axis):
     x = x[::-1, ...]
     x = x.swapaxes(0, axis)
     return x
+
+def distance_transform_3d(maskstack,bins=16):
+    #Input: (no of frames,x,y) : The stack of masks
+    #Output:(no of frames,x,y) : 3D Euclidiean Distance Transform
+    def weightmask(maskimg):
+        img=label(maskimg)
+        img=img.flatten()
+        unique, counts = np.unique(img, return_counts=True)
+        counts=1/np.sqrt(counts)
+        dic=dict(zip(unique, counts))
+        dic[0]=0
+        img_out=map(dic.get, img)
+        img_out=list(img_out)
+        return np.reshape(img_out,(maskimg.shape[0],maskimg.shape[1],maskimg.shape[2]))
+
+    ms=weightmask(maskstack)
+    epsilon=1e-25
+    dt_2dslice=[]
+    for mask in ms:
+        dt_2dslice.append(ndi.distance_transform_edt(mask))
+    dt_2dslice=np.array(dt_2dslice)
+    print(dt_2dslice.shape)
+    distance=np.zeros(list(ms.shape))
+    for k in range(ms.shape[0]):
+        adder=[np.square(x-k) for x in range(len(dt_2dslice))]
+        for i in range(ms.shape[1]):
+            for j in range(ms.shape[2]):
+                slicearr=np.square(dt_2dslice[:,i,j])
+                temparr=slicearr+adder
+                zans=np.argmin(temparr)
+                distance[k][i][j]=np.sqrt(np.square(dt_2dslice[zans,i,j])+np.square(zans-k))
+
+    min_dist = np.amin(distance.flatten())
+    max_dist = np.amax(distance.flatten())
+    bins     = np.linspace(min_dist - epsilon, max_dist + epsilon, num=16)
+    distance = np.digitize(distance, bins)
+
+    return distance
