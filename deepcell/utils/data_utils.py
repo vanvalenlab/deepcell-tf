@@ -49,11 +49,11 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         else:
             X_sample = np.zeros((len(batch), 2 * win_x + 1, 2 * win_y + 1, X.shape[3]))
 
-        for b, px, py in zip(batch, pixels_x, pixels_y):
+        for i, (b, px, py) in enumerate(zip(batch, pixels_x, pixels_y)):
             if CHANNELS_FIRST:
-                X_sample[b, :, :, :] = X[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
+                X_sample[i] = X[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
             else:
-                X_sample[b, :, :, :] = X[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
+                X_sample[i] = X[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
 
         X = X_sample
 
