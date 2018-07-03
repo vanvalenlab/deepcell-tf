@@ -29,8 +29,8 @@ MODEL_DIR = '/data/models'
 NPZ_DIR = '/data/npz_data'
 RESULTS_DIR = '/data/results'
 EXPORT_DIR = '/data/exports'
-PREFIX = 'cells/unspecified_nuclear_data/nuclei_broad'
-DATA_FILE = 'nuclei_broad_watershed_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
+PREFIX = 'cells/RAW264.7/generic'
+DATA_FILE = 'RAWMovie_watershed3d{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
 
 for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
     try:
@@ -42,8 +42,8 @@ for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
 def generate_training_data():
     direc_name = os.path.join(DATA_DIR, PREFIX)
     training_direcs = ['set6'] # only set6 from MouseBrain has been annotated
-    raw_image_direc = 'stacked_raw'
-    annotation_direc = 'annotated/all_montages'
+    raw_image_direc = 'raw'
+    annotation_direc = 'annotated'
     file_name_save = os.path.join(NPZ_DIR, PREFIX, DATA_FILE)
 
     # Create the training data
@@ -51,7 +51,7 @@ def generate_training_data():
         dimensionality=3,
         direc_name=direc_name,
         file_name_save=file_name_save,
-        channel_names=['slice'], # for iterating over stacks of images from a montage
+        channel_names=['channel'], # for iterating over stacks of images from a montage
         training_direcs=training_direcs,
         output_mode=DATA_OUTPUT_MODE,
         window_size_x=30,
@@ -64,8 +64,8 @@ def generate_training_data():
         num_frames=NUM_FRAMES,
         num_of_frames_to_display=5,
         verbose=True,
-        montage_mode=True,
-        annotation_name='', # basically channel name but for annotated images
+        montage_mode=False,
+        annotation_name='corrected', # basically channel name but for annotated images
         raw_image_direc=raw_image_direc,
         annotation_direc=annotation_direc)
 
