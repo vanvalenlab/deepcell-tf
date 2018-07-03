@@ -55,8 +55,9 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
 
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
-    print('pixels_x shape:', train_dict['pixels_x'].shape[0])
-    print('X_test shape:', X_test.shape[0])
+    print('y_train shape:', train_dict['y'].shape)
+    print('X_test shape:', X_test.shape)
+    print('y_test shape:', y_test.shape)
     print('Output Shape:', model.layers[-1].output_shape)
     print('Number of Classes:', n_classes)
 
