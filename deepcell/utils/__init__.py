@@ -8,7 +8,6 @@ from . import train_utils
 from . import transform_utils
 
 # Globally-importable utils.
-from .data_utils import data_generator
 from .data_utils import get_data
 from .data_utils import make_training_data
 from .io_utils import get_immediate_subdirs
