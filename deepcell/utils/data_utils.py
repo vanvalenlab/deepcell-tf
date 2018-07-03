@@ -56,6 +56,9 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     training_data = np.load(file_name)
     X = training_data['X']
     y = training_data['y']
+    win_x = training_data['win_x']
+    win_y = training_data['win_y']
+
     class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
 
     if mode == 'conv_sample':
@@ -65,8 +68,6 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         batch = training_data['batch']
         pixels_x = training_data['pixels_x']
         pixels_y = training_data['pixels_y']
-        win_x = training_data['win_x']
-        win_y = training_data['win_y']
 
         img_list = []
         for b, px, py in zip(batch, pixels_x, pixels_y):
