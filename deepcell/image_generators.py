@@ -37,11 +37,10 @@ class ImageSampleArrayIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
                  batch_size=32, shuffle=False, seed=None, data_format=None,
                  save_to_dir=None, save_prefix='', save_format='png'):
-
-        if train_dict['y'].size > 0 and len(train_dict['pixels_x']) != len(train_dict['y']):
-            raise Exception('Number of sampled pixels and y (labels) should have the same length. '
-                            'Found: Number of sampled pixels = {}, y.shape = {}'.format(
-                                len(train_dict['pixels_x']), np.asarray(train_dict['y']).shape))
+        if train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+            raise ValueError('Number of training data batches and labels should '
+                             'have the same length. X.shape = {} y.shape = {}'.format(
+                                train_dict['X'].shape, train_dict['y'].shape))
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
