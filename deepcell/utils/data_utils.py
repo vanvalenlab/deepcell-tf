@@ -31,6 +31,7 @@ from .plot_utils import plot_training_data_3d
 
 CHANNELS_FIRST = K.image_data_format() == 'channels_first'
 
+
 def get_data(file_name, mode='sample', test_size=.1, seed=None):
     """Load data from NPZ file and split into train and test sets
     # Arguments
@@ -154,10 +155,10 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
             for i in rand_ind:
                 if pixel_counter < list_of_max_sample_numbers[direc]:
                     condition = border_mode == 'valid' and \
-                                feature_rows_temp[i] - window_size_x > 0 and \
-                                feature_rows_temp[i] + window_size_x < image_size_x and \
-                                feature_cols_temp[i] - window_size_y > 0 and \
-                                feature_cols_temp[i] + window_size_y < image_size_y
+                        feature_rows_temp[i] - window_size_x > 0 and \
+                        feature_rows_temp[i] + window_size_x < image_size_x and \
+                        feature_cols_temp[i] - window_size_y > 0 and \
+                        feature_cols_temp[i] + window_size_y < image_size_y
 
                     if border_mode == 'same' or condition:
                         feature_rows.append(feature_rows_temp[i])
@@ -180,6 +181,7 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     feature_label = np.array(feature_label, dtype='int32')[rand_ind]
 
     return feature_rows, feature_cols, feature_batch, feature_label
+
 
 def trim_padding(nparr, win_x, win_y):
     """Trim the boundaries of the numpy array to allow for a sliding
@@ -206,6 +208,7 @@ def trim_padding(nparr, win_x, win_y):
         raise ValueError('Expected to trim numpy array of ndim 4 or 5, got "{}"'.format(
             nparr.ndim))
     return trimmed
+
 
 def reshape_matrix(X, y, reshape_size=256):
     """

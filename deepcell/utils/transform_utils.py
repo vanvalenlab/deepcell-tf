@@ -15,6 +15,7 @@ from skimage.measure import label
 from skimage.measure import regionprops
 from tensorflow.python.keras import backend as K
 
+
 def distance_transform_2d(mask, bins=16):
     """Transform a label mask into distance classes.
     # Arguments
