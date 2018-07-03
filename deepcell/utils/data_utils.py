@@ -484,14 +484,17 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
     # Sample pixels from the label matrix
     if output_mode == 'sample':
-        X_sample = []
+        if CHANNELS_FIRST:
+            shape = (len(feature_batch), X.shape[1], 2 * window_size_x + 1, 2 * window_size_y + 1)
+        else:
+            shape = (len(feature_batch), 2 * window_size_x + 1, 2 * window_size_y + 1, X.shape[3])
+
+        X_sample = np.zeros(shape)
         for b, px, py in zip(feature_batch, feature_rows, feature_cols):
             if CHANNELS_FIRST:
-                img = X[b, :, px - window_size_x:px + window_size_x + 1, py - window_size_y:py + window_size_y + 1]
+                X_sample[b] = X[b, :, px - window_size_x:px + window_size_x + 1, py - window_size_y:py + window_size_y + 1]
             else:
-                img = X[b, px - window_size_x:px + window_size_x + 1, py - window_size_y:py + window_size_y + 1, :]
-            X_sample.append(img)
-        X_sample = np.stack(X_sample, axis=0)
+                X_sample[b] = X[b, px - window_size_x:px + window_size_x + 1, py - window_size_y:py + window_size_y + 1, :]
 
         # Save training data in npz format
         np.savez(file_name_save, class_weights=weights, X=X_sample, y=feature_label,
