@@ -28,7 +28,6 @@ from scipy import ndimage
 from skimage import feature
 from sklearn.utils import class_weight
 from deepcell import get_image
-from deepcell import format_coord as cf
 from skimage import morphology as morph
 import matplotlib.pyplot as plt
 from skimage.transform import resize
