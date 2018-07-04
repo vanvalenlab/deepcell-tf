@@ -8,12 +8,40 @@ from __future__ import print_function
 import numpy as np
 from tensorflow.python.platform import test
 
+from deepcell.utils.data_utils import trim_padding
 from deepcell.utils.data_utils import relabel_movie
 from deepcell.utils.data_utils import reshape_movie
 from deepcell.utils.data_utils import reshape_matrix
 
 
 class TestDataUtils(test.TestCase):
+
+    def test_trim_padding(self):
+        # test 2d image
+        img_size = 512
+        arr = np.zeros((1, img_size, img_size, 1))
+        win_x, win_y = 30, 30
+        trimmed_x = img_size - 2 * win_x
+        trimmed_y = img_size - 2 * win_y
+        trimmed_arr = trim_padding(arr, win_x, win_y)
+        assert trimmed_arr.shape == (1, trimmed_x, trimmed_y, 1)
+
+        # test 3d image stack
+        img_size = 256
+        arr = np.zeros((1, 30, img_size, img_size, 1))
+        win_x, win_y = 20, 30
+        trimmed_x = img_size - 2 * win_x
+        trimmed_y = img_size - 2 * win_y
+        trimmed_arr = trim_padding(arr, win_x, win_y)
+        assert trimmed_arr.shape == (1, 30, trimmed_x, trimmed_y, 1)
+
+        # test bad input
+        with self.assertRaises(ValueError):
+            small_arr = np.zeros((img_size, img_size, 1))
+            trim_padding(small_arr, 10, 10)
+        with self.assertRaises(ValueError):
+            big_arr = np.zeros((1, 1, 30, img_size, img_size, 1))
+            trim_padding(big_arr, 10, 10)
 
     def test_relabel_movie(self):
         y = np.array([[0, 3, 5], [4, 99, 123]])
