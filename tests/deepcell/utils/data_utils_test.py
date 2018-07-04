@@ -62,6 +62,7 @@ class TestDataUtils(test.TestCase):
         assert np.array_equal(relabel_movie(y), np.array([[0, 1, 3], [2, 4, 5]]))
 
     def test_reshape_movie(self):
+        K.set_image_data_format('channels_last')
         X = np.zeros((1, 30, 1024, 1024, 3))
         y = np.zeros((1, 30, 1024, 1024, 1))
         new_size = 256
@@ -95,7 +96,27 @@ class TestDataUtils(test.TestCase):
         with self.assertRaises(ValueError):
             new_X, new_y = reshape_movie(X, bigger, new_size)
 
+    def test_reshape_movie_channels_first(self):
+        K.set_image_data_format('channels_first')
+        X = np.zeros((1, 3, 30, 1024, 1024))
+        y = np.zeros((1, 1, 30, 1024, 1024))
+        new_size = 256
+
+        # test resize to smaller image, divisible
+        new_X, new_y = reshape_movie(X, y, new_size)
+        new_batch = np.ceil(1024 / new_size) ** 2
+        assert new_X.shape == (new_batch, 3, 30, new_size, new_size)
+        assert new_y.shape == (new_batch, 1, 30, new_size, new_size)
+
+        # test reshape with non-divisible values.
+        new_size = 200
+        new_batch = np.ceil(1024 / new_size) ** 2
+        new_X, new_y = reshape_movie(X, y, new_size)
+        assert new_X.shape == (new_batch, 3, 30, new_size, new_size)
+        assert new_y.shape == (new_batch, 1, 30, new_size, new_size)
+
     def test_reshape_matrix(self):
+        K.set_image_data_format('channels_last')
         X = np.zeros((1, 1024, 1024, 3))
         y = np.zeros((1, 1024, 1024, 1))
         new_size = 256
@@ -121,13 +142,32 @@ class TestDataUtils(test.TestCase):
         bigger = np.zeros((1, 1024, 1024, 3, 1))
         smaller = np.zeros((1, 1024, 1024))
         with self.assertRaises(ValueError):
-            new_X, new_y = reshape_movie(smaller, y, new_size)
+            new_X, new_y = reshape_matrix(smaller, y, new_size)
         with self.assertRaises(ValueError):
-            new_X, new_y = reshape_movie(bigger, y, new_size)
+            new_X, new_y = reshape_matrix(bigger, y, new_size)
         with self.assertRaises(ValueError):
-            new_X, new_y = reshape_movie(X, smaller, new_size)
+            new_X, new_y = reshape_matrix(X, smaller, new_size)
         with self.assertRaises(ValueError):
-            new_X, new_y = reshape_movie(X, bigger, new_size)
+            new_X, new_y = reshape_matrix(X, bigger, new_size)
+
+    def test_reshape_matrix_channels_first(self):
+        K.set_image_data_format('channels_first')
+        X = np.zeros((1, 3, 1024, 1024))
+        y = np.zeros((1, 1, 1024, 1024))
+        new_size = 256
+
+        # test resize to smaller image, divisible
+        new_X, new_y = reshape_matrix(X, y, new_size)
+        new_batch = np.ceil(1024 / new_size) ** 2
+        assert new_X.shape == (new_batch, 3, new_size, new_size)
+        assert new_y.shape == (new_batch, 1, new_size, new_size)
+
+        # test reshape with non-divisible values.
+        new_size = 200
+        new_batch = np.ceil(1024 / new_size) ** 2
+        new_X, new_y = reshape_matrix(X, y, new_size)
+        assert new_X.shape == (new_batch, 3, new_size, new_size)
+        assert new_y.shape == (new_batch, 1, new_size, new_size)
 
 
 if __name__ == '__main__':
