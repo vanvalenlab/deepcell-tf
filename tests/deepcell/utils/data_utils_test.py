@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+from tensorflow.python.keras import backend as K
 from tensorflow.python.platform import test
 
 from deepcell.utils.data_utils import trim_padding
@@ -18,22 +19,35 @@ class TestDataUtils(test.TestCase):
 
     def test_trim_padding(self):
         # test 2d image
+        K.set_image_data_format('channels_last')
         img_size = 512
-        arr = np.zeros((1, img_size, img_size, 1))
         win_x, win_y = 30, 30
         trimmed_x = img_size - 2 * win_x
         trimmed_y = img_size - 2 * win_y
+        K.set_image_data_format('channels_last')
+        arr = np.zeros((1, img_size, img_size, 1))
         trimmed_arr = trim_padding(arr, win_x, win_y)
         assert trimmed_arr.shape == (1, trimmed_x, trimmed_y, 1)
+        # test channels_first
+        K.set_image_data_format('channels_first')
+        arr = np.zeros((1, 1, img_size, img_size))
+        trimmed_arr = trim_padding(arr, win_x, win_y)
+        assert trimmed_arr.shape == (1, 1, trimmed_x, trimmed_y)
 
         # test 3d image stack
         img_size = 256
-        arr = np.zeros((1, 30, img_size, img_size, 1))
         win_x, win_y = 20, 30
         trimmed_x = img_size - 2 * win_x
         trimmed_y = img_size - 2 * win_y
+        K.set_image_data_format('channels_last')
+        arr = np.zeros((1, 30, img_size, img_size, 1))
         trimmed_arr = trim_padding(arr, win_x, win_y)
         assert trimmed_arr.shape == (1, 30, trimmed_x, trimmed_y, 1)
+        # test channels_first
+        K.set_image_data_format('channels_first')
+        arr = np.zeros((1, 1, 30, img_size, img_size))
+        trimmed_arr = trim_padding(arr, win_x, win_y)
+        assert trimmed_arr.shape == (1, 1, 30, trimmed_x, trimmed_y)
 
         # test bad input
         with self.assertRaises(ValueError):
