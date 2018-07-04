@@ -13,6 +13,7 @@ from skimage.io import imread
 from tensorflow.python.platform import test
 
 from deepcell.utils.transform_utils import to_categorical
+from deepcell.utils.transform_utils import distance_transform_2d
 from deepcell.utils.transform_utils import rotate_array_0
 from deepcell.utils.transform_utils import rotate_array_90
 from deepcell.utils.transform_utils import rotate_array_180
@@ -23,12 +24,23 @@ RES_DIR = os.path.join(TEST_DIR, 'resources')
 
 # Load images
 TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
+TEST_MASK = imread(os.path.join(RES_DIR, 'feature_1.tif'))
 TEST_IMG_90 = imread(os.path.join(RES_DIR, 'rotated_90.tif'))
 TEST_IMG_180 = imread(os.path.join(RES_DIR, 'rotated_180.tif'))
 TEST_IMG_270 = imread(os.path.join(RES_DIR, 'rotated_270.tif'))
 
 
 class TransformUtilsTest(test.TestCase):
+    def test_distance_transform_2d(self):
+        # TODO: questionable test results.  Should it be bin_size - 1?
+        bin_size = 3
+        distance = distance_transform_2d(TEST_MASK, bins=bin_size)
+        assert np.unique(distance).size == bin_size - 1
+
+        bin_size = 4
+        distance = distance_transform_2d(TEST_MASK, bins=bin_size)
+        assert np.unique(distance).size == bin_size - 1
+
     def test_to_categorical(self):
         num_classes = 5
         shapes = [(1,), (3,), (4, 3), (5, 4, 3), (3, 1), (3, 2, 1)]
