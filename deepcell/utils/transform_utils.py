@@ -10,7 +10,6 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
-import scipy.label.measurements
 from scipy import ndimage
 from skimage.measure import label
 from skimage.measure import regionprops
@@ -100,40 +99,47 @@ def flip_axis(x, axis):
     x = x.swapaxes(0, axis)
     return x
 
-def distance_transform_3d(maskstack,bins=16):
-    #Input: (no of frames,x,y) : The stack of masks
-    #Output:(no of frames,x,y) : 3D Euclidiean Distance Transform
-    def weightmask(maskimg):
-        img=label(maskimg)
-        img=img.flatten()
+def distance_transform_3d(maskstack, bins=16):
+    """Transform a label mask into distance classes for a z-stack of images
+    # Arguments
+        mask: a z-stack of label masks (y data)
+        bins: the number of transformed distance classes
+    # Returns
+        distance: 3D Euclidiean Distance Transform
+    """
+    def weightmask(mask):
+        img = label(mask)
+        img = img.flatten()
         unique, counts = np.unique(img, return_counts=True)
-        counts=1/np.sqrt(counts)
-        dic=dict(zip(unique, counts))
-        dic[0]=0
-        img_out=map(dic.get, img)
-        img_out=list(img_out)
-        return np.reshape(img_out,(maskimg.shape[0],maskimg.shape[1],maskimg.shape[2]))
+        counts = 1 / np.sqrt(counts)
+        dic = dict(zip(unique, counts))
+        dic[0] = 0
+        img_out = map(dic.get, img)
+        img_out = list(img_out)
+        new_shape = (mask.shape[0], mask.shape[1], mask.shape[2])
+        return np.reshape(img_out, new_shape)
 
-    ms=weightmask(maskstack)
-    epsilon=1e-25
-    dt_2dslice=[]
-    for mask in ms:
-        dt_2dslice.append(ndimage.distance_transform_edt(mask))
-    dt_2dslice=np.array(dt_2dslice)
-    print(dt_2dslice.shape)
-    distance=np.zeros(list(ms.shape))
-    for k in range(ms.shape[0]):
-        adder=[np.square(x-k) for x in range(len(dt_2dslice))]
-        for i in range(ms.shape[1]):
-            for j in range(ms.shape[2]):
-                slicearr=np.square(dt_2dslice[:,i,j])
-                temparr=slicearr+adder
-                zans=np.argmin(temparr)
-                distance[k][i][j]=np.sqrt(np.square(dt_2dslice[zans,i,j])+np.square(zans-k))
+    epsilon = 1e-25
+
+    weighted_mask = weightmask(maskstack)
+    distance_slices = [ndimage.distance_transform_edt(m) for m in weighted_mask]
+    distance_slices = np.array(distance_slices)
+
+    distance = np.zeros(weighted_mask.shape)
+    for k in range(weighted_mask.shape[0]):
+        adder = [np.square(x - k) for x in range(len(distance_slices))]
+        for i in range(weighted_mask.shape[1]):
+            for j in range(weighted_mask.shape[2]):
+                slicearr = np.square(distance_slices[:, i, j])
+
+                zans = np.argmin(slicearr + adder)
+                zij = np.square(distance_slices[zans, i, j])
+                zk = np.square(zans - k)
+                distance[k][i][j] = np.sqrt(zij + zk)
 
     min_dist = np.amin(distance.flatten())
     max_dist = np.amax(distance.flatten())
-    bins     = np.linspace(min_dist - epsilon, max_dist + epsilon, num=16)
+    bins = np.linspace(min_dist - epsilon, max_dist + epsilon, num=16)
     distance = np.digitize(distance, bins)
 
     return distance
