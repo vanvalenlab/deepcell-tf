@@ -51,8 +51,14 @@ def distance_transform_3d(maskstack, bins=16):
         distance: 3D Euclidiean Distance Transform
     """
     def weightmask(mask):
-        img = label(mask)
-        img = img.flatten()
+        # if mask is binary create unique labels
+        if np.unique(mask).size <= 2:
+            raise NotImplementedError('3D distance transform assumes data to be'
+                                      'uniquely labeled. Currently, no function'
+                                      'to transform semantic masks to unique'
+                                      'labels in 3D.')
+        # img = label(mask) if np.unique(mask).size <= 2 else mask
+        img = mask.flatten()
         unique, counts = np.unique(img, return_counts=True)
         counts = 1 / np.sqrt(counts)
         dic = dict(zip(unique, counts))
@@ -61,13 +67,6 @@ def distance_transform_3d(maskstack, bins=16):
         img_out = list(img_out)
         new_shape = (mask.shape[0], mask.shape[1], mask.shape[2])
         return np.reshape(img_out, new_shape)
-
-    if maskstack.ndim == 4:  # expects z-stack to not have channel dimension?
-        if K.image_data_format() == 'channels_first':
-            no_channel_shape = maskstack.shape[1:]
-        else:
-            no_channel_shape = maskstack.shape[:-1]
-        maskstack = np.reshape(maskstack, no_channel_shape)
 
     weighted_mask = weightmask(maskstack)
     distance_slices = [ndimage.distance_transform_edt(m) for m in weighted_mask]
@@ -79,7 +78,6 @@ def distance_transform_3d(maskstack, bins=16):
         for i in range(weighted_mask.shape[1]):
             for j in range(weighted_mask.shape[2]):
                 slicearr = np.square(distance_slices[:, i, j])
-
                 zans = np.argmin(slicearr + adder)
                 zij = np.square(distance_slices[zans, i, j])
                 zk = np.square(zans - k)
@@ -89,10 +87,6 @@ def distance_transform_3d(maskstack, bins=16):
     max_dist = np.amax(distance.flatten())
     bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins)
     distance = np.digitize(distance, bins)
-
-    # add channel axis again
-    channel_axis = 0 if K.image_data_format == 'channels_first' else -1
-    distance = np.expand_dims(distance, axis=channel_axis)
     return distance
 
 def rotate_array_0(arr):
