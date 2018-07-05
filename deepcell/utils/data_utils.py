@@ -515,7 +515,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
             y_binary = np.zeros((y.shape[0], y.shape[1], y.shape[2], max_cells), dtype='int32')
 
         for b in range(y.shape[0]):
-            label_mask = y_label[b]
+            label_mask = y_label[b, :, :, 0]
             for l in range(max_cells):
                 if CHANNELS_FIRST:
                     y_binary[b, l, :, :] = (label_mask == l)
