@@ -95,7 +95,6 @@ def train_model_on_training_data():
         'reg': 1e-5,
         'n_features': y.shape[1 if K.image_data_format() == 'channels_first' else -1]
     }
-
     data_format = K.image_data_format()
     row_axis = 2 if data_format == 'channels_first' else 1
     col_axis = 3 if data_format == 'channels_first' else 2
@@ -113,12 +112,13 @@ def train_model_on_training_data():
             train_model = train_model_disc
         the_model = bn_dense_feature_net
         model_args['location'] = True
-
+        
+        
         size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[row_axis:col_axis + 1]
         if data_format == 'channels_first':
-            model_args['input_shape'] = (X.shape[channel_axis], size[0], size[1])
+            model_args['batch_shape'] = (batch_size, X.shape[channel_axis], size[0], size[1])
         else:
-            model_args['input_shape'] = (size[0], size[1], X.shape[channel_axis])
+            model_args['batch_shape'] = (batch_size, size[0], size[1], X.shape[channel_axis])
 
     model = the_model(**model_args)
 
@@ -144,7 +144,7 @@ def run_model_on_dir():
     channel_names = ['phase']
     image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
 
-    model_name = '2018-07-03_ecoli_generic_{}_{}__0.h5'.format(
+    model_name = '2018-07-05_ecoli_generic_{}_{}__0.h5'.format(
         K.image_data_format(), DATA_OUTPUT_MODE)
 
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
