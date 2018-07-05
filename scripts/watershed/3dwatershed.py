@@ -11,7 +11,7 @@ from deepcell import get_image_sizes
 from deepcell import make_training_data
 from deepcell import bn_feature_net_3D as the_model
 from deepcell import rate_scheduler
-from deepcell import train_model_3dwatershed as train_model
+from deepcell import train_model_watershed_3D as train_model
 from deepcell import run_models_on_directory
 from deepcell import export_model
 

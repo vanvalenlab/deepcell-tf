@@ -443,12 +443,12 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
     return model
 
 
-def train_model_3dwatershed(model=None, dataset=None, optimizer=None,
-                          expt='', it=0, batch_size=1, n_epoch=100,
-                          direc_save='/data/models', direc_data='/data/npz_data',
-                          lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-                          number_of_frames=10, rotation_range=0, flip=True,
-                          shear=0, class_weight=None, distance_bins=16):
+def train_model_watershed_3D(model=None, dataset=None, optimizer=None,
+                             expt='', it=0, batch_size=1, n_epoch=100,
+                             direc_save='/data/models', direc_data='/data/npz_data',
+                             lr_sched=rate_scheduler(lr=0.01, decay=0.95),
+                             number_of_frames=10, rotation_range=0, flip=True,
+                             shear=0, class_weight=None, distance_bins=16):
 
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
