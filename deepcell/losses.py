@@ -128,7 +128,7 @@ def dice_coef(y_true, y_pred, smooth=1):
 def dice_coef_loss(y_true, y_pred, smooth=1):
     return -dice_coef(y_true, y_pred, smooth)
 
-def discriminative_instance_loss(y_true, y_pred, delta_v=0.2, delta_d=0.6, order=2, gamma=1e-3):
+def discriminative_instance_loss(y_true, y_pred, delta_v=0.1, delta_d=0.3, order=2, gamma=1e-3):
     def temp_norm(ten, axis=-1):
         return tf.sqrt(K.epsilon() + tf.reduce_sum(tf.square(ten), axis=axis))
 
@@ -158,7 +158,7 @@ def discriminative_instance_loss(y_true, y_pred, delta_v=0.2, delta_d=0.6, order
 
     # Compute regularization loss
     L_reg = gamma * temp_norm(mu, axis=-1)
-    L = L_var + L_dist + tf.reduce_mean(L_reg)
+    L = 2000 * L_var + 100*L_dist + 2000 * tf.reduce_mean(L_reg)
     
     return L
 
