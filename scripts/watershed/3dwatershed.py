@@ -4,6 +4,7 @@ import errno
 import argparse
 
 import numpy as np
+from skimage.external import tifffile as tiff
 from tensorflow.python.keras.optimizers import SGD,Adam
 from tensorflow.python.keras import backend as K
 
@@ -12,16 +13,17 @@ from deepcell import make_training_data
 from deepcell import bn_feature_net_3D as the_model
 from deepcell import rate_scheduler
 from deepcell import train_model_watershed_3D as train_model
+from deepcell.utils.data_utils import load_training_images_3d
 from deepcell import run_models_on_directory
+from deepcell import run_model
 from deepcell import export_model
 
 # data options
 DATA_OUTPUT_MODE = 'conv'
-# DATA_OUTPUT_MODE = 'sample'
 BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
 RESIZE = False
 RESHAPE_SIZE = 512
-NUM_FRAMES = 10
+NUM_FRAMES = 10  # get first N frames from each training folder
 
 # filepath constants
 DATA_DIR = '/data/data'
@@ -30,7 +32,7 @@ NPZ_DIR = '/data/npz_data'
 RESULTS_DIR = '/data/results'
 EXPORT_DIR = '/data/exports'
 PREFIX = 'cells/RAW264.7/generic'
-DATA_FILE = 'RAWMovie_watershed3d{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
+DATA_FILE = 'RAW_3d_watershed_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
 
 for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
     try:
@@ -41,7 +43,7 @@ for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
 
 def generate_training_data():
     direc_name = os.path.join(DATA_DIR, PREFIX)
-    training_direcs = ['set6'] # only set6 from MouseBrain has been annotated
+    training_direcs = ['set1', 'set2', 'set3', 'set4']
     raw_image_direc = 'raw'
     annotation_direc = 'annotated'
     file_name_save = os.path.join(NPZ_DIR, PREFIX, DATA_FILE)
@@ -120,77 +122,85 @@ def train_model_on_training_data():
 
 
 def run_model_on_dir():
-    raw_dir = 'raw'
-    data_location = os.path.join(DATA_DIR, PREFIX, 'set1', raw_dir)
-    output_location = os.path.join(RESULTS_DIR, PREFIX)
+    save_output_images = True
     channel_names = ['nuclear']
-    image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
 
-    model_name = '2018-07-01_nuclei_broad_watershed_channels_last_conv__0.h5'
-
+    # Define the model
+    model_name = '2018-07-05_RAW_3d_watershed_channels_last_conv__0.h5'
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
-    n_features = 4
-    window_size = (30, 30)
+    number_of_frames = 30
+    batch_size = 1
+    win_x, win_y = 30, 30
+    n_features = 16
 
-    if DATA_OUTPUT_MODE == 'sample':
-        model_fn = dilated_bn_feature_net_61x61
-    elif DATA_OUTPUT_MODE == 'conv':
-        model_fn = bn_dense_feature_net
-
-    predictions = run_models_on_directory(
-        data_location=data_location,
+    images = load_training_images_3d(
+        direc_name=os.path.join(DATA_DIR, PREFIX),
+        training_direcs=['set1'],
         channel_names=channel_names,
-        output_location=output_location,
-        n_features=n_features,
-        model_fn=model_fn,
-        list_of_weights=[weights],
-        image_size_x=image_size_x,
-        image_size_y=image_size_y,
-        win_x=window_size[0],
-        win_y=window_size[1],
-        split=False)
+        raw_image_direc='raw',
+        image_size=(256, 256),
+        num_frames=number_of_frames)
+
+    if K.image_data_format() == 'channels_first':
+        row_size, col_size = images.shape[3:]
+        batch_shape = (batch_size, images.shape[1], number_of_frames, row_size, col_size)
+    else:
+        row_size, col_size = images.shape[2:4]
+        batch_shape = (batch_size, number_of_frames, row_size, col_size, images.shape[4])
+
+    model = the_model(batch_shape=batch_shape, n_features=n_features, norm_method='whole_image')
+
+    model.load_weights(weights)
+    model_output = run_model(images, model, win_x=30, win_y=30, split=False)
+
+    # Save images
+    if save_output_images:
+        for i in range(model_output.shape[0]):
+            for f in range(n_features):
+                if K.image_data_format() == 'channels_first':
+                    feature = model_output[i, f, :, :]
+                else:
+                    feature = model_output[i, :, :, f]
+                cnnout_name = 'feature_{}_frame_{}.tif'.format(f, str(i).zfill(3))
+                out_file_path = os.path.join(RESULTS_DIR, PREFIX, 'set_0_x_3_y_2', cnnout_name)
+                tiff.imsave(out_file_path, feature)
+    print('Done!')
+
 
 def export():
     model_args = {
-        'norm_method': 'median',
-        'reg': 1e-5,
-        'n_features': 3
+        'n_features': 16, # np.unique(y).size
     }
+
+    data_format = K.image_data_format()
+    row_axis = 3 if data_format == 'channels_first' else 2
+    col_axis = 4 if data_format == 'channels_first' else 3
+    channel_axis = 1 if data_format == 'channels_first' else 4
 
     direc_data = os.path.join(NPZ_DIR, PREFIX)
     training_data = np.load(os.path.join(direc_data, DATA_FILE + '.npz'))
+
     X, y = training_data['X'], training_data['y']
+    print('X.shape: {}\ny.shape: {}'.format(X.shape, y.shape))
 
-    data_format = K.image_data_format()
-    row_axis = 2 if data_format == 'channels_first' else 1
-    col_axis = 3 if data_format == 'channels_first' else 2
-    channel_axis = 1 if data_format == 'channels_first' else 3
+    frames_per_batch = 10
+    batch_size = 1
 
-    if DATA_OUTPUT_MODE == 'sample':
-        the_model = watershednetwork
-        if K.image_data_format() == 'channels_first':
-            model_args['input_shape'] = (1, 1080, 1280)
-        else:
-            model_args['input_shape'] = (1080, 1280, 1)
-
-    elif DATA_OUTPUT_MODE == 'conv' or DATA_OUTPUT_MODE == 'disc':
-        the_model = watershednetwork
-        model_args['location'] = False
-
-        size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[row_axis:col_axis + 1]
-        if data_format == 'channels_first':
-            model_args['input_shape'] = (X.shape[channel_axis], size[0], size[1])
-        else:
-            model_args['input_shape'] = (size[0], size[1], X.shape[channel_axis])
+    nrow, ncol = X.shape[row_axis:col_axis + 1] if not RESIZE else (RESHAPE_SIZE, RESHAPE_SIZE)
+    if data_format == 'channels_first':
+        batch_shape = (batch_size, X.shape[channel_axis], frames_per_batch, nrow, ncol)
+    else:
+        batch_shape = (batch_size, frames_per_batch, nrow, ncol, X.shape[channel_axis])
+    model_args['batch_shape'] = batch_shape
 
     model = the_model(**model_args)
 
-    model_name = '2018-06-29_ecoli_watershed_channels_last_conv__0.h5'
-
+    model_name = '2018-07-05_RAW_watershed_3d_channels_last_conv__0.h5'
     weights_path = os.path.join(MODEL_DIR, PREFIX, model_name)
     export_path = os.path.join(EXPORT_DIR, PREFIX)
     export_model(model, export_path, model_version=0, weights_path=weights_path)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
