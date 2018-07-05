@@ -105,12 +105,12 @@ def run_models_on_directory(data_location, channel_names, output_location, model
         input_shape = (len(channel_names), image_size_x, image_size_y)
 
     if CHANNELS_LAST:
-        input_shape = (input_shape[1], input_shape[2], input_shape[0])
         batch_shape = (1, input_shape[1], input_shape[2], input_shape[0])
+        input_shape = (input_shape[1], input_shape[2], input_shape[0])
     else:
         batch_shape = (1, input_shape[0], input_shape[1], input_shape[2])
 
-    model = model_fn(input_shape=input_shape, n_features=n_features, location=False, permute=False)
+    model = model_fn(input_shape=input_shape, batch_shape=batch_shape, n_features=n_features, location=True, permute=False)
 
     for layer in model.layers:
         print(layer.name)
