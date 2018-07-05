@@ -4,7 +4,7 @@ import errno
 import argparse
 
 import numpy as np
-import tifffile as tiff
+from skimage.external import tifffile as tiff
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.optimizers import SGD, Adam
 
@@ -24,7 +24,7 @@ DATA_OUTPUT_MODE = 'conv'
 BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
 RESIZE = False
 RESHAPE_SIZE = 128
-NUM_FRAMES = 30 # get first N frames from each training folder
+NUM_FRAMES = 30  # get first N frames from each training folder
 
 # filepath constants
 DATA_DIR = '/data/data'
@@ -139,7 +139,6 @@ def run_model_on_dir():
         channel_names=channel_names,
         raw_image_direc=os.path.join('stacked_raw', 'set_0_x_3_y_2'),
         image_size=(256, 256),
-        window_size=(win_x, win_y),
         num_frames=number_of_frames)
 
     if K.image_data_format() == 'channels_first':
