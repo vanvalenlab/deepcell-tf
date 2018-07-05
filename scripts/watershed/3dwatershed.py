@@ -24,6 +24,7 @@ BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
 RESIZE = False
 RESHAPE_SIZE = 512
 NUM_FRAMES = 10  # get first N frames from each training folder
+BINS = 16  # number of distance bins to classify
 
 # filepath constants
 DATA_DIR = '/data/data'
@@ -31,8 +32,8 @@ MODEL_DIR = '/data/models'
 NPZ_DIR = '/data/npz_data'
 RESULTS_DIR = '/data/results'
 EXPORT_DIR = '/data/exports'
-PREFIX = 'cells/RAW264.7/generic'
-DATA_FILE = 'RAW_3d_watershed_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
+PREFIX = 'cells/MouseBrain/generic'
+DATA_FILE = 'MouseBrain_3d_watershed_{}_{}'.format(K.image_data_format(), DATA_OUTPUT_MODE)
 
 for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
     try:
@@ -43,9 +44,9 @@ for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
 
 def generate_training_data():
     direc_name = os.path.join(DATA_DIR, PREFIX)
-    training_direcs = ['set1', 'set2', 'set3', 'set4']
-    raw_image_direc = 'raw'
-    annotation_direc = 'annotated'
+    training_direcs = ['set6']
+    raw_image_direc = 'stacked_raw'
+    annotation_direc = 'annotated/all_montages'
     file_name_save = os.path.join(NPZ_DIR, PREFIX, DATA_FILE)
 
     # Create the training data
@@ -53,7 +54,7 @@ def generate_training_data():
         dimensionality=3,
         direc_name=direc_name,
         file_name_save=file_name_save,
-        channel_names=['channel'], # for iterating over stacks of images from a montage
+        channel_names=['slice'], # for iterating over stacks of images from a montage
         training_direcs=training_direcs,
         output_mode=DATA_OUTPUT_MODE,
         window_size_x=30,
@@ -66,8 +67,8 @@ def generate_training_data():
         num_frames=NUM_FRAMES,
         num_of_frames_to_display=5,
         verbose=True,
-        montage_mode=False,
-        annotation_name='corrected', # basically channel name but for annotated images
+        montage_mode=True,
+        annotation_name='', # basically channel name but for annotated images
         raw_image_direc=raw_image_direc,
         annotation_direc=annotation_direc)
 
@@ -85,11 +86,9 @@ def train_model_on_training_data():
     sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     frames_per_batch = 10
 
-    distance_bins = 16
-
     model_args = {
         'norm_method': 'whole_image',
-        'n_features': distance_bins
+        'n_features': BINS
     }
 
     data_format = K.image_data_format()
@@ -117,28 +116,29 @@ def train_model_on_training_data():
         direc_data=direc_data,
         lr_sched=rate_scheduler(lr=0.01, decay=0.95),
         rotation_range=180,
+        distance_bins=BINS,
         flip=True,
         shear=0)
 
 
 def run_model_on_dir():
     save_output_images = True
-    channel_names = ['nuclear']
+    channel_names = ['slice']
 
     # Define the model
-    model_name = '2018-07-05_RAW_3d_watershed_channels_last_conv__0.h5'
+    model_name = '2018-07-05_MouseBrain_3d_watershed_channels_last_conv__0.h5'
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
     number_of_frames = 30
     batch_size = 1
     win_x, win_y = 30, 30
-    n_features = 16
+    n_features = BINS
 
     images = load_training_images_3d(
         direc_name=os.path.join(DATA_DIR, PREFIX),
         training_direcs=['set1'],
         channel_names=channel_names,
-        raw_image_direc='raw',
+        raw_image_direc=os.path.join('stacked_raw', 'set_0_x_3_y_2'),
         image_size=(256, 256),
         num_frames=number_of_frames)
 
@@ -196,7 +196,7 @@ def export():
 
     model = the_model(**model_args)
 
-    model_name = '2018-07-05_RAW_watershed_3d_channels_last_conv__0.h5'
+    model_name = '2018-07-05_MouseBrain_watershed_3d_channels_last_conv__0.h5'
     weights_path = os.path.join(MODEL_DIR, PREFIX, model_name)
     export_path = os.path.join(EXPORT_DIR, PREFIX)
     export_model(model, export_path, model_version=0, weights_path=weights_path)
