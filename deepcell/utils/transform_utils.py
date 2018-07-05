@@ -62,13 +62,18 @@ def distance_transform_3d(maskstack, bins=16):
         new_shape = (mask.shape[0], mask.shape[1], mask.shape[2])
         return np.reshape(img_out, new_shape)
 
-    epsilon = 1e-25
+    if maskstack.ndim == 4:  # expects z-stack to not have channel dimension?
+        if K.image_data_format() == 'channels_first':
+            no_channel_shape = maskstack.shape[1:]
+        else:
+            no_channel_shape = maskstack.shape[:-1]
+        maskstack = np.reshape(maskstack, no_channel_shape)
 
     weighted_mask = weightmask(maskstack)
     distance_slices = [ndimage.distance_transform_edt(m) for m in weighted_mask]
     distance_slices = np.array(distance_slices)
 
-    distance = np.zeros(weighted_mask.shape)
+    distance = np.zeros(list(weighted_mask.shape))
     for k in range(weighted_mask.shape[0]):
         adder = [np.square(x - k) for x in range(len(distance_slices))]
         for i in range(weighted_mask.shape[1]):
@@ -82,9 +87,12 @@ def distance_transform_3d(maskstack, bins=16):
 
     min_dist = np.amin(distance.flatten())
     max_dist = np.amax(distance.flatten())
-    bins = np.linspace(min_dist - epsilon, max_dist + epsilon, num=16)
+    bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins)
     distance = np.digitize(distance, bins)
 
+    # add channel axis again
+    channel_axis = 0 if K.image_data_format == 'channels_first' else -1
+    distance = np.expand_dims(distance, axis=channel_axis)
     return distance
 
 def rotate_array_0(arr):
