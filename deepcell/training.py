@@ -24,7 +24,7 @@ from .image_generators import ImageFullyConvDataGenerator
 from .image_generators import MovieDataGenerator
 from .image_generators import SiameseDataGenerator
 from .image_generators import WatershedDataGenerator
-from .image_generators import Watershed3dMovieGenerator
+from .image_generators import WatershedMovieDataGenerator
 from .losses import sample_categorical_crossentropy
 from .losses import weighted_categorical_crossentropy
 from .losses import discriminative_instance_loss
@@ -478,14 +478,14 @@ def train_model_watershed_3D(model=None, dataset=None, optimizer=None,
     print('Using real-time data augmentation.')
 
     # this will do preprocessing and realtime data augmentation
-    datagen = Watershed3dMovieGenerator(
+    datagen = WatershedMovieDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
     # no augmentation for validation data
-    datagen_val = Watershed3dMovieGenerator(
+    datagen_val = WatershedMovieDataGenerator(
         rotation_range=0,
         shear_range=0,
         horizontal_flip=0,

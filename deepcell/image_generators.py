@@ -28,7 +28,7 @@ from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
 from .utils.transform_utils import transform_matrix_offset_center
-from .utils.transform_utils import distance_transform_2d
+from .utils.transform_utils import distance_transform_2d, distance_transform_3d
 
 """
 Custom image generators
@@ -1363,7 +1363,7 @@ class MovieArrayIterator(Iterator):
         return self._get_batches_of_transformed_samples(index_array)
 
 
-class Watershed3dMovieGenerator(MovieDataGenerator):
+class WatershedMovieDataGenerator(MovieDataGenerator):
     """Generate minibatches of movie data with real-time data augmentation.
     # Arguments
         featurewise_center: set input mean to 0 over the dataset.
@@ -1464,55 +1464,66 @@ class Watershed3dMovieGenerator(MovieDataGenerator):
             raise ValueError('`zoom_range` should be a float or a tuple or list of two floats. '
                              'Received arg: {}'.format(zoom_range))
 
-    def flow(self, train_dict, batch_size=1, shuffle=True, seed=None,
+    def flow(self, train_dict, batch_size=1, shuffle=True, seed=None, number_of_frames=10,
              save_to_dir=None, save_prefix='', distance_bins=16, save_format='png'):
-        return Watershed3dIterator(
+        return WatershedMovieIterator(
             train_dict, self,
-            batch_size=batch_size, shuffle=shuffle, seed=seed,
+            batch_size=batch_size, shuffle=shuffle, seed=seed, number_of_frames=number_of_frames,
             data_format=self.data_format, distance_bins=distance_bins,
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
 
-class Watershed3dIterator(Iterator):
-    def __init__(self, train_dict, image_data_generator,
-                 batch_size=1, shuffle=False, seed=None,
+class WatershedMovieIterator(Iterator):
+    def __init__(self, train_dict, movie_data_generator,
+                 batch_size=1, shuffle=False, seed=None, number_of_frames=10,
                  data_format=None, distance_bins=16,
                  save_to_dir=None, save_prefix='', save_format='png'):
         if data_format is None:
             data_format = K.image_data_format()
+
+        self.channel_axis = 4 if data_format == 'channels_last' else 1
+        self.time_axis = 1 if data_format == 'channels_last' else 2
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.y = np.asarray(train_dict['y'], dtype=K.floatx())
 
         if self.x.ndim != 5:
-            raise ValueError('Input data in `Watershed3dIterator` should have rank 5. '
+            raise ValueError('Input data in `WatershedMovieIterator` should have rank 5. '
                              'You passed an array with shape {}'.format(self.x.shape))
 
-        self.channel_axis = -1 if data_format == 'channels_last' else 1
+        if self.x.shape[self.time_axis] - number_of_frames < 0:
+            raise Exception('The number of frames used in each training batch should '
+                            'be less than the number of frames in the training data!')
+
+        self.number_of_frames = number_of_frames
         self.distance_bins = distance_bins
-        self.y = train_dict['y']
-        self.image_data_generator = image_data_generator
+        self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        super(Watershed3dIterator, self).__init__(self.x.shape[0], batch_size, shuffle, seed)
+        super(WatershedMovieIterator, self).__init__(self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
-        if self.channel_axis == 1:
-            batch_y = np.zeros(tuple([len(index_array), self.distance_bins] + list(self.y.shape)[2:]))
+        if self.data_format == 'channels_first':
+            batch_x = np.zeros(tuple([len(index_array), self.x.shape[1], self.number_of_frames] + list(self.x.shape)[3:]))
+            if self.y is not None:
+                batch_y = np.zeros(tuple([len(index_array), self.distance_bins, self.number_of_frames] + list(self.y.shape)[3:]))
+
         else:
-            batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:4] + [self.distance_bins]))
+            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.x.shape)[2:]))
+            if self.y is not None:
+                batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.y.shape)[2:4] + [self.distance_bins]))
 
         for i, j in enumerate(index_array):
             x = self.x[j]
 
             if self.y is not None:
                 y = self.y[j]
-                x, y = self.image_data_generator.random_transform(x.astype(K.floatx()), y)
+                x, y = self.movie_data_generator.random_transform(x.astype(K.floatx()), y)
             else:
-                x = self.image_data_generator.random_transform(x.astype(K.floatx()))
+                x = self.movie_data_generator.random_transform(x.astype(K.floatx()))
 
-            x = self.image_data_generator.standardize(x)
+            x = self.movie_data_generator.standardize(x)
             distance = distance_transform_3d(y, self.distance_bins)
 
             # convert to one hot notation
@@ -1568,24 +1579,6 @@ class Watershed3dIterator(Iterator):
         # The transformation of images is not under thread lock
         # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 """
