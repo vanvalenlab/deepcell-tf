@@ -65,9 +65,9 @@ class ImageSampleArrayIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
-            batch_x = np.zeros((len(index_array), self.x.shape[self.channel_axis], 2 * self.win_x + 1, 2 * self.win_y + 1))
+            batch_x = np.zeros((len(index_array), self.x.shape[self.channel_axis], 2*self.win_x + 1, 2*self.win_y + 1))
         else:
-            batch_x = np.zeros((len(index_array), 2 * self.win_x + 1, 2 * self.win_y + 1, self.x.shape[self.channel_axis]))
+            batch_x = np.zeros((len(index_array), 2*self.win_x + 1, 2*self.win_y + 1, self.x.shape[self.channel_axis]))
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -594,9 +594,9 @@ class SiameseIterator(Iterator):
     def _get_batches_of_transformed_samples(self, index_array):
         # initialize batch_x_1, batch_x_2, and batch_y
         if self.data_format == 'channels_first':
-            batch_shape = (len(index_array), self.X.shape[self.channel_axis], self.crop_dim, self.crop_dim)
+            batch_shape = (len(index_array), self.x.shape[self.channel_axis], self.crop_dim, self.crop_dim)
         else:
-            batch_shape = (len(index_array), self.crop_dim, self.crop_dim, self.X.shape[self.channel_axis])
+            batch_shape = (len(index_array), self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis])
 
         batch_x_1 = np.zeros(batch_shape, dtype=K.floatx())
         batch_x_2 = np.zeros(batch_shape, dtype=K.floatx())
