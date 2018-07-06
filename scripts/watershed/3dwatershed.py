@@ -23,8 +23,8 @@ DATA_OUTPUT_MODE = 'conv'
 BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
 RESIZE = False
 RESHAPE_SIZE = 512
-NUM_FRAMES = 10  # get first N frames from each training folder
-BINS = 16  # number of distance bins to classify
+NUM_FRAMES = 30  # get first N frames from each training folder
+BINS = 4  # number of distance bins to classify
 
 # filepath constants
 DATA_DIR = '/data/data'
@@ -126,7 +126,7 @@ def run_model_on_dir():
     channel_names = ['slice']
 
     # Define the model
-    model_name = '2018-07-05_MouseBrain_3d_watershed_channels_last_conv__0.h5'
+    model_name = '2018-07-06_MouseBrain_3d_watershed_channels_last_conv__0.h5'
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
     number_of_frames = 30
@@ -170,7 +170,7 @@ def run_model_on_dir():
 
 def export():
     model_args = {
-        'n_features': 16, # np.unique(y).size
+        'n_features': BINS, # np.unique(y).size
     }
 
     data_format = K.image_data_format()
