@@ -211,13 +211,6 @@ def export():
     export_model(model, export_path, model_version=0, weights_path=weights_path)
 
 
-def find_centers(result_directory):
-    if not os.path.isdir(result_directory):
-        raise ValueError('must pass a valid directory with watershed results')
-    feature_dirs = [d for d in os.listdir(result_directory) if os.path.isdir(d)]
-
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('command', type=str, choices=['train', 'run', 'export', 'center'],
