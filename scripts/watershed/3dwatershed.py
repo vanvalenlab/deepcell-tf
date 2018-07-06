@@ -241,5 +241,3 @@ if __name__ == '__main__':
 
     elif args.command == 'export':
         export()
-
-    elif args.command == 'center'
