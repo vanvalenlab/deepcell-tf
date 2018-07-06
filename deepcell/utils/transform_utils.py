@@ -72,15 +72,15 @@ def distance_transform_3d(maskstack, bins=16):
     if K.image_data_format() == 'channels_first':
         maskstack = np.rollaxis(maskstack, 0, 4)
 
-    # weighted_mask = weightmask(maskstack)
-    distance_slices = [ndimage.distance_transform_edt(m) for m in maskstack]
+    weighted_mask = weightmask(maskstack)
+    distance_slices = [ndimage.distance_transform_edt(m) for m in weighted_mask]
     distance_slices = np.array(distance_slices)
 
-    distance = np.zeros(list(maskstack.shape))
-    for k in range(maskstack.shape[0]):
+    distance = np.zeros(list(weighted_mask.shape))
+    for k in range(weighted_mask.shape[0]):
         adder = [np.square(x - k) for x in range(len(distance_slices))]
-        for i in range(maskstack.shape[1]):
-            for j in range(maskstack.shape[2]):
+        for i in range(weighted_mask.shape[1]):
+            for j in range(weighted_mask.shape[2]):
                 slicearr = np.square(distance_slices[:, i, j])
                 zans = np.argmin(slicearr + adder)
                 zij = np.square(distance_slices[zans, i, j])
