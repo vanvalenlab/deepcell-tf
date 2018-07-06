@@ -20,7 +20,7 @@ from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.transform import resize
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.utils import to_categorical
+from tensorflow.python.keras.utils import to_categorical as keras_to_categorical
 from tensorflow.python.keras.preprocessing.image import random_channel_shift
 from tensorflow.python.keras.preprocessing.image import apply_transform
 from tensorflow.python.keras.preprocessing.image import flip_axis
@@ -1539,18 +1539,7 @@ class WatershedMovieIterator(Iterator):
 
             # convert to one hot notation
             if self.y is not None:
-                y = to_categorical(distance)
-            # if self.channel_axis == 1:
-            #     y_shape = (self.distance_bins, y.shape[2], self.y.shape[3], self.y.shape[4])
-            # else:
-            #     y_shape = (y.shape[1], y.shape[2], y.shape[3], self.distance_bins)
-            #
-            # y = np.zeros(y_shape)
-            # for label_val in range(np.amax(distance) + 1):
-            #     if self.channel_axis == 1:
-            #         y[label_val, :, :, :] = distance == label_val
-            #     else:
-            #         y[:, :, :, label_val] = distance == label_val
+                y = keras_to_categorical(distance)
 
             batch_x[i] = x
             if self.y is not None:
