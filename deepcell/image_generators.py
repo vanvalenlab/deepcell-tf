@@ -670,7 +670,7 @@ class SiameseIterator(Iterator):
 
         self.track_ids = self._get_track_ids()
 
-        super(SiameseIterator, self).__init__(self.X.shape[0], batch_size, shuffle, seed)
+        super(SiameseIterator, self).__init__(len(self.track_ids), batch_size, shuffle, seed)
 
     def _get_track_ids(self):
         """
