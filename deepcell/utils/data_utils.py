@@ -106,7 +106,7 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='
         if output_mode.lower() == 'sample':
             for k, edge_feat in enumerate(edge_feature):
                 if edge_feat == 1:
-                    if CHANNELS_FIRST:
+                    if K.image_data_format() == 'channels_first':
                         y_sum = np.sum(y[j, k, :, :])
                     else:
                         y_sum = np.sum(y[j, :, :, k])

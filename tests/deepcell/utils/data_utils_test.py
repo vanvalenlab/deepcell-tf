@@ -9,6 +9,7 @@ import numpy as np
 from tensorflow.python.keras import backend as K
 from tensorflow.python.platform import test
 
+from deepcell.utils.data_utils import get_max_sample_num_list
 from deepcell.utils.data_utils import trim_padding
 from deepcell.utils.data_utils import relabel_movie
 from deepcell.utils.data_utils import reshape_movie
@@ -16,6 +17,61 @@ from deepcell.utils.data_utils import reshape_matrix
 
 
 class TestDataUtils(test.TestCase):
+
+    def test_get_max_sample_num_list(self):
+        K.set_image_data_format('channels_last')
+        edge_feature = [1, 0, 0]  # first channel index is cell edge
+        win_x, win_y = 10, 10
+        y = np.zeros((2, 30, 30, 3))
+        y[:, 0, 0, 0] = 1  # set value outside valid window range
+        y[:, win_x + 1, win_y + 1, 0] = 1  # set value inside valid window range
+        # test non-sample mode
+        max_nums = get_max_sample_num_list(y, edge_feature,
+                                           output_mode='conv',
+                                           border_mode='same',
+                                           window_size_x=win_x,
+                                           window_size_y=win_y)
+        assert max_nums == [np.Inf, np.Inf]
+
+        # test sample mode, no padding
+        max_nums = get_max_sample_num_list(y, edge_feature,
+                                           output_mode='sample',
+                                           border_mode='same',
+                                           window_size_x=win_x,
+                                           window_size_y=win_y)
+        assert max_nums == [2, 2]
+
+        # test sample mode, valid padding
+        max_nums = get_max_sample_num_list(y, edge_feature,
+                                           output_mode='sample',
+                                           border_mode='valid',
+                                           window_size_x=win_x,
+                                           window_size_y=win_y)
+        assert max_nums == [1, 1]
+
+    def test_get_max_sample_num_list_channels_first(self):
+        K.set_image_data_format('channels_first')
+        edge_feature = [1, 0, 0]  # first channel index is cell edge
+        win_x, win_y = 10, 10
+        y = np.zeros((2, 3, 30, 30))
+        y[:, 0, 0, 0] = 1  # set value outside valid window range
+        y[:, 0, win_x + 1, win_y + 1] = 1  # set value inside valid window range
+
+        # test sample mode, no padding
+        max_nums = get_max_sample_num_list(y, edge_feature,
+                                           output_mode='sample',
+                                           border_mode='same',
+                                           window_size_x=win_x,
+                                           window_size_y=win_y)
+        assert max_nums == [2, 2]
+
+        # test sample mode, valid padding
+        max_nums = get_max_sample_num_list(y, edge_feature,
+                                           output_mode='sample',
+                                           border_mode='valid',
+                                           window_size_x=win_x,
+                                           window_size_y=win_y)
+        assert max_nums == [1, 1]
 
     def test_trim_padding(self):
         # test 2d image
