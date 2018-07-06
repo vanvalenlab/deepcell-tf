@@ -157,14 +157,23 @@ def run_model_on_dir():
     # Save images
     if save_output_images:
         for i in range(model_output.shape[0]):
-            for f in range(n_features):
-                if K.image_data_format() == 'channels_first':
-                    feature = model_output[i, f, :, :]
-                else:
-                    feature = model_output[i, :, :, f]
-                cnnout_name = 'feature_{}_frame_{}.tif'.format(f, str(i).zfill(3))
-                out_file_path = os.path.join(RESULTS_DIR, PREFIX, 'set_0_x_3_y_2', cnnout_name)
-                tiff.imsave(out_file_path, feature)
+            # for f in range(n_features):
+            #     if K.image_data_format() == 'channels_first':
+            #         feature = model_output[i, f, :, :]
+            #     else:
+            #         feature = model_output[i, :, :, f]
+            #     cnnout_name = 'feature_{}_frame_{}.tif'.format(f, str(i).zfill(3))
+            #     out_file_path = os.path.join(RESULTS_DIR, PREFIX, 'set_0_x_3_y_2', cnnout_name)
+            #     tiff.imsave(out_file_path, feature)
+
+            # save the argmax of each frame
+            # (not all cell centers will have the same value)
+            max_img = np.argmax(model_output[i], axis=-1)
+            max_img = max_img.astype(np.int16)
+            cnnout_name = 'argmax_frame_{}.tif'.format(str(i).zfill(3))
+            out_file_path = os.path.join(RESULTS_DIR, PREFIX, 'set_0_x_3_y_2', cnnout_name)
+            tiff.imsave(out_file_path, max_img)
+
     print('Done!')
 
 
@@ -202,10 +211,19 @@ def export():
     export_model(model, export_path, model_version=0, weights_path=weights_path)
 
 
+def find_centers(result_directory):
+    if not os.path.isdir(result_directory):
+        raise ValueError('must pass a valid directory with watershed results')
+    feature_dirs = [d for d in os.listdir(result_directory) if os.path.isdir(d)]
+
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', type=str, choices=['train', 'run', 'export'],
+    parser.add_argument('command', type=str, choices=['train', 'run', 'export', 'center'],
                         help='train or run models')
+    parser.add_argument('--results', type=str,
+                        help='result dir to find centers')
     parser.add_argument('-o', '--overwrite', action='store_true', dest='overwrite',
                         help='force re-write of training data npz files')
 
@@ -223,3 +241,5 @@ if __name__ == '__main__':
 
     elif args.command == 'export':
         export()
+
+    elif args.command == 'center'
