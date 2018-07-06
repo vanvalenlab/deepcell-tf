@@ -1590,7 +1590,7 @@ def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal'
     input_2 = Input(shape=input_shape)
     # Sequential interface for siamese portion of model
     feature_extractor = Sequential()
-    feature_extractor.add(ImageNormalization3D(norm_method=norm_method, filter_size=filter_size, input_shape=input_shape))
+    feature_extractor.add(ImageNormalization2D(norm_method=norm_method, filter_size=filter_size, input_shape=input_shape))
     feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
     feature_extractor.add(BatchNormalization(axis=channel_axis))
     feature_extractor.add(Activation('relu'))
