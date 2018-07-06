@@ -195,52 +195,47 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
 
     validation_dict = {'X': X_test, 'y': y_test}
 
-    # Compute number of training samples needed to (stastically speaking) observe all cell pairs.
-    # Assume that the number of images is encoded in the second dimension.
-    # Assume that y values are a cell-uniquely-labeled mask.
-    # Assume that a cell is paired with one of its other frames 50% of the time
-    # and a frame from another cell 50% of the time.
-    total_train_pairs = 0
-    for image_set in range(train_dict['y'].shape[0]):
-        set_cells = 0
-        cells_per_image = []
-        for image in range(train_dict['y'].shape[1]):
-            image_cells = int(train_dict['y'][image_set,image,:,:,:].max())
-            set_cells = set_cells + image_cells
-            cells_per_image.append(image_cells)
-        # Since there are many more possible non-self pairings than there are self pairings,
-        # we want to estimate the number of possible non-self pairings and then multiply
-        # that number by two, since the odds of getting a non-self pairing are 50%, to
-        # find out how many pairs we would need to sample to (statistically speaking)
-        # observe all possible cell-frame pairs.
-        # We're going to assume that the average cell is present in every frame. This will
-        # lead to an underestimate of the number of possible non-self pairings, but it's 
-        # unclear how significant the underestimate is.
-        average_cells_per_frame = int( sum(cells_per_image) / len(cells_per_image) )
-        non_self_cellframes = (average_cells_per_frame-1)*len(cells_per_image)
-        non_self_pairings = non_self_cellframes*max(cells_per_image)
-        cell_pairings = non_self_pairings*2
-        total_train_pairs = total_train_pairs + cell_pairings
-    # The magic number on this line is a power of 2 chosen just to reduce training time.
-    # This shouldn't remain long term.
-    total_train_pairs = int(total_train_pairs // 2048)
-    
+    def cell_pairing_computation( train_or_test, cell_pair_reduction_factor=1 ):
+        '''
+        train_or_test: 'train' or 'test', indicates which dataset to use
+        cell_pair_reduction_factor: a power of 2 chosen to reduce training time
+        '''
+        # Compute number of samples needed to (stastically speaking) observe all cell pairs.
+        # Assume that the number of images is encoded in the second dimension.
+        # Assume that y values are a cell-uniquely-labeled mask.
+        # Assume that a cell is paired with one of its other frames 50% of the time
+        # and a frame from another cell 50% of the time.
+        if train_or_test=='train':
+            cell_dataset = train_dict['y']
+        elif train_or_test=='test':
+            cell_dataset = y_test
+        total_cell_pairs = 0
+        for image_set in range(cell_dataset.shape[0]):
+            set_cells = 0
+            cells_per_image = []
+            for image in range(cell_dataset.shape[1]):
+                image_cells = int(cell_dataset[image_set,image,:,:,:].max())
+                set_cells = set_cells + image_cells
+                cells_per_image.append(image_cells)
+            # Since there are many more possible non-self pairings than there are self pairings,
+            # we want to estimate the number of possible non-self pairings and then multiply
+            # that number by two, since the odds of getting a non-self pairing are 50%, to
+            # find out how many pairs we would need to sample to (statistically speaking)
+            # observe all possible cell-frame pairs.
+            # We're going to assume that the average cell is present in every frame. This will
+            # lead to an underestimate of the number of possible non-self pairings, but it's 
+            # unclear how significant the underestimate is.
+            average_cells_per_frame = int( sum(cells_per_image) / len(cells_per_image) )
+            non_self_cellframes = (average_cells_per_frame-1)*len(cells_per_image)
+            non_self_pairings = non_self_cellframes*max(cells_per_image)
+            cell_pairings = non_self_pairings*2
+            total_cell_pairs = total_cell_pairs + cell_pairings
+        total_cell_pairs = int(total_cell_pairs // cell_pair_reduction_factor)
+        return total_cell_pairs
+  
     # Compute number of validation samples needed to (stastically speaking) observe all cell pairs.
-    # (See above comments for more explanation.)
-    total_test_pairs = 0
-    for image_set in range(y_test.shape[0]):
-        set_cells = 0
-        cells_per_image = []
-        for image in range(y_test.shape[1]):
-            image_cells = int(y_test[image_set,image,:,:,:].max())
-            set_cells = set_cells + image_cells
-            cells_per_image.append(image_cells)
-        average_cells_per_frame = int( sum(cells_per_image) / len(cells_per_image) )
-        non_self_cellframes = (average_cells_per_frame-1)*len(cells_per_image)
-        non_self_pairings = non_self_cellframes*max(cells_per_image)
-        cell_pairings = non_self_pairings*2
-        total_test_pairs = total_test_pairs + cell_pairings
-    total_test_pairs = int(total_test_pairs // 2048)
+    total_train_pairs = cell_pairing_computation(train_or_test='train')
+    total_test_pairs = cell_pairing_computation(train_or_test='test')
 
     # fit the model on the batches generated by datagen.flow()
     loss_history = model.fit_generator(
