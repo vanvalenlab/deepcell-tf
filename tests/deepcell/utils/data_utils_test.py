@@ -9,6 +9,7 @@ import numpy as np
 from tensorflow.python.keras import backend as K
 from tensorflow.python.platform import test
 
+from deepcell.utils.data_utils import sample_label_matrix
 from deepcell.utils.data_utils import get_max_sample_num_list
 from deepcell.utils.data_utils import trim_padding
 from deepcell.utils.data_utils import relabel_movie
@@ -48,6 +49,57 @@ class TestDataUtils(test.TestCase):
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [1, 1]
+
+    def test_sample_label_matrix(self):
+        K.set_image_data_format('channels_last')
+        win_x, win_y = 10, 10
+        y = np.zeros((2, 30, 30, 3))
+        y[:, 0, 0, 0] = 1  # set value outside valid window range
+        y[:, win_x + 1, win_y + 1, 0] = 1  # set value inside valid window range
+        r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
+                                         window_size_x=win_x,
+                                         window_size_y=win_y,
+                                         border_mode='valid',
+                                         output_mode='sample')
+        assert len(r) == len(c) == len(b) == len(l)
+        assert np.unique(b).size == 2
+        assert np.unique(r).size == np.unique(c).size == 1
+        assert np.unique(l).size == 1
+
+        r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
+                                         window_size_x=win_x,
+                                         window_size_y=win_y,
+                                         border_mode='same',
+                                         output_mode='conv')
+        assert len(r) == len(c) == len(b) == len(l)
+        assert np.unique(r).size == np.unique(c).size == 2
+        assert np.unique(l).size == 1
+
+    def test_sample_label_matrix_channels_first(self):
+        K.set_image_data_format('channels_first')
+        win_x, win_y = 10, 10
+        y = np.zeros((2, 3, 30, 30))
+        y[:, 0, 0, 0] = 1  # set value outside valid window range
+        y[:, 0, win_x + 1, win_y + 1] = 1  # set value inside valid window range
+        r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
+                                         window_size_x=win_x,
+                                         window_size_y=win_y,
+                                         border_mode='valid',
+                                         output_mode='sample')
+        assert len(r) == len(c) == len(b) == len(l)
+        assert np.unique(b).size == 2
+        assert np.unique(r).size == np.unique(c).size == 1
+        assert np.unique(l).size == 1
+
+        r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
+                                         window_size_x=win_x,
+                                         window_size_y=win_y,
+                                         border_mode='same',
+                                         output_mode='conv')
+        assert len(r) == len(c) == len(b) == len(l)
+        assert np.unique(b).size == 2
+        assert np.unique(r).size == np.unique(c).size == 2
+        assert np.unique(l).size == 1
 
     def test_get_max_sample_num_list_channels_first(self):
         K.set_image_data_format('channels_first')

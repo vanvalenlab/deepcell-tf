@@ -125,7 +125,8 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     data set. If output_mode is 'sample', then this will be set to the number
     of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
     """
-    if CHANNELS_FIRST:
+    is_channel_first = K.image_data_format() == 'channels_first'
+    if is_channel_first:
         num_dirs, num_features, image_size_x, image_size_y = y.shape
     else:
         num_dirs, image_size_x, image_size_y, num_features = y.shape
@@ -138,7 +139,7 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
 
     for direc in range(num_dirs):
         for k in range(num_features):
-            if CHANNELS_FIRST:
+            if is_channel_first:
                 feature_rows_temp, feature_cols_temp = np.where(y[direc, k, :, :] == 1)
             else:
                 feature_rows_temp, feature_cols_temp = np.where(y[direc, :, :, k] == 1)
