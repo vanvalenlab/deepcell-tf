@@ -1515,10 +1515,20 @@ class WatershedMovieIterator(Iterator):
                 batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.y.shape)[2:4] + [self.distance_bins]))
 
         for i, j in enumerate(index_array):
-            x = self.x[j]
+            # Sample along the time axis
+            time_start = np.random.randint(0, high=self.x.shape[self.time_axis] - self.number_of_frames)
+            time_end = time_start + self.number_of_frames
+            if self.time_axis == 1:
+                x = self.x[j, time_start:time_end, :, :, :]
+                if self.y is not None:
+                    y = self.y[j, time_start:time_end, :, :, :]
+
+            elif self.time_axis == 2:
+                x = self.x[j, :, time_start:time_end, :, :]
+                if self.y is not None:
+                    y = self.y[j, :, time_start:time_end, :, :]
 
             if self.y is not None:
-                y = self.y[j]
                 x, y = self.movie_data_generator.random_transform(x.astype(K.floatx()), y)
             else:
                 x = self.movie_data_generator.random_transform(x.astype(K.floatx()))
