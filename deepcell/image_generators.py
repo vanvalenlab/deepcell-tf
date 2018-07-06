@@ -28,6 +28,7 @@ from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
 from .utils.transform_utils import transform_matrix_offset_center
+from .utils.transform_utils import distance_transform_2d
 
 """
 Custom image generators
@@ -37,23 +38,21 @@ class ImageSampleArrayIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
                  batch_size=32, shuffle=False, seed=None, data_format=None,
                  save_to_dir=None, save_prefix='', save_format='png'):
-
-        if train_dict['y'].size > 0 and len(train_dict['pixels_x']) != len(train_dict['y']):
-            raise Exception('Number of sampled pixels and y (labels) should have the same length. '
-                            'Found: Number of sampled pixels = {}, y.shape = {}'.format(
-                                len(train_dict['pixels_x']), np.asarray(train_dict['y']).shape))
+        if train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+            raise ValueError('Training batches and labels should have the same'
+                             'length. Found X.shape: {} y.shape: {}'.format(
+                                 train_dict['X'].shape, train_dict['y'].shape))
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
 
         if self.x.ndim != 4:
-            raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
-                             'You passed an array with shape', self.x.shape)
+            raise ValueError('Input data in `ImageSampleArrayIterator` should'
+                             'have rank 4. Got array with shape {}'.format(
+                                 self.x.shape))
+
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.y = train_dict['y']
-        self.b = train_dict['batch']
-        self.pixels_x = train_dict['pixels_x']
-        self.pixels_y = train_dict['pixels_y']
         self.win_x = train_dict['win_x']
         self.win_y = train_dict['win_y']
         self.image_data_generator = image_data_generator
@@ -66,22 +65,12 @@ class ImageSampleArrayIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
-            batch_x = np.zeros((len(index_array), self.x.shape[self.channel_axis], 2*self.win_x + 1, 2*self.win_y + 1))
+            batch_x = np.zeros((len(index_array), self.x.shape[self.channel_axis], 2 * self.win_x + 1, 2 * self.win_y + 1))
         else:
-            batch_x = np.zeros((len(index_array), 2*self.win_x + 1, 2*self.win_y + 1, self.x.shape[self.channel_axis]))
+            batch_x = np.zeros((len(index_array), 2 * self.win_x + 1, 2 * self.win_y + 1, self.x.shape[self.channel_axis]))
 
         for i, j in enumerate(index_array):
-            batch = self.b[j]
-            pixel_x = self.pixels_x[j]
-            pixel_y = self.pixels_y[j]
-            win_x = self.win_x
-            win_y = self.win_y
-
-            if self.channel_axis == 1:
-                x = self.x[batch, :, pixel_x-win_x:pixel_x+win_x+1, pixel_y-win_y:pixel_y+win_y+1]
-            else:
-                x = self.x[batch, pixel_x-win_x:pixel_x+win_x+1, pixel_y-win_y:pixel_y+win_y+1, :]
-
+            x = self.x[j]
             x = self.image_data_generator.random_transform(x.astype(K.floatx()))
             x = self.image_data_generator.standardize(x)
 
@@ -96,30 +85,32 @@ class ImageSampleArrayIterator(Iterator):
                     hash=np.random.randint(1e4),
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
+
         if self.y is None:
             return batch_x
         batch_y = self.y[index_array]
         return batch_x, batch_y
 
-        def __next__(self):
-            """For python 2.x.
-            # Returns the next batch.
-            """
-            # Keeps under lock only the mechanism which advances
-            # the indexing of each batch.
-            with self.lock:
-                index_array = next(self.index_generator)
-                # The transformation of images is not under thread lock
-                # so it can be done in parallel
-            return self._get_batches_of_transformed_samples(index_array)
+    def next(self):
+        """For python 2.x.
+        # Returns the next batch.
+        """
+        # Keeps under lock only the mechanism which advances
+        # the indexing of each batch.
+        with self.lock:
+            index_array = next(self.index_generator)
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
+        return self._get_batches_of_transformed_samples(index_array)
 
 class SampleDataGenerator(ImageDataGenerator):
-    def sample_flow(self, train_dict, batch_size=32, shuffle=True, seed=None,
-                    save_to_dir=None, save_prefix='', save_format='png'):
+    def flow(self, train_dict, batch_size=32, shuffle=True, seed=None,
+             save_to_dir=None, save_prefix='', save_format='png'):
         return ImageSampleArrayIterator(
             train_dict, self,
-            batch_size=batch_size, shuffle=shuffle, seed=seed, data_format=self.data_format,
-            save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
+            batch_size=batch_size, shuffle=shuffle, seed=seed,
+            data_format=self.data_format, save_to_dir=save_to_dir,
+            save_prefix=save_prefix, save_format=save_format)
 
 class ImageFullyConvIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
@@ -129,22 +120,22 @@ class ImageFullyConvIterator(Iterator):
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.win_x = train_dict['win_x']
-        self.win_y = train_dict['win_y']
 
         if self.x.ndim != 4:
-            raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
-                             'You passed an array with shape {}'.format(self.x.shape))
+            raise ValueError('Input data in `ImageFullyConvIterator` should'
+                             'have rank 4. Got array with shape {}'.format(
+                                 self.x.shape))
 
         self.channel_axis = -1 if data_format == 'channels_last' else 1
-        self.y = train_dict['y']
+        self.y = np.int32(train_dict['y'])
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
         self.target_format = target_format
-        super(ImageFullyConvIterator, self).__init__(self.x.shape[0], batch_size, shuffle, seed)
+        super(ImageFullyConvIterator, self).__init__(
+            self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         epsilon = K.epsilon()
@@ -211,7 +202,7 @@ class ImageFullyConvIterator(Iterator):
             return batch_x
         return batch_x, batch_y
 
-    def __next__(self):
+    def next(self):
         """For python 2.x.
         # Returns the next batch.
         """
@@ -219,107 +210,8 @@ class ImageFullyConvIterator(Iterator):
         # the indexing of each batch.
         with self.lock:
             index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
-        return self._get_batches_of_transformed_samples(index_array)
-
-class ImageFullyConvGatherIterator(Iterator):
-    def __init__(self, train_dict, image_data_generator,
-                 batch_size=1, training_examples=1e5, shuffle=False, seed=None,
-                 data_format=None, save_to_dir=None, save_prefix='', save_format='png'):
-        if data_format is None:
-            data_format = K.image_data_format()
-        self.channel_axis = -1 if data_format == 'channels_last' else 1
-        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.y = train_dict['y']
-        self.win_x = train_dict['win_x']
-        self.win_y = train_dict['win_y']
-        self.image_data_generator = image_data_generator
-        self.data_format = data_format
-        self.save_to_dir = save_to_dir
-        self.save_prefix = save_prefix
-        self.save_format = save_format
-
-        if self.x.ndim != 4:
-            raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
-                             'You passed an array with shape {}'.format(self.x.shape))
-
-        if training_examples != len(self.row_index):
-            raise Exception('The number of training examples should match '
-                            'the size of the training data')
-
-        # Reorganize the batch, row, and col indices
-        different_batches = list(np.arange(train_dict['X'].shape[0]))
-        rows_to_sample = {}
-        cols_to_sample = {}
-        for batch_id in different_batches:
-            rows_to_sample[batch_id] = self.row_index[self.batch_index == batch_id]
-            cols_to_sample[batch_id] = self.col_index[self.batch_index == batch_id]
-
-        #Subsample the pixel coordinates
-        if self.channel_axis == 1:
-            expected_label_size = (self.x.shape[0], train_dict['y'].shape[1], self.x.shape[2]-2*self.win_x, self.x.shape[3] - 2*self.win_y)
-        else:
-            expected_label_size = (self.x.shape[0], self.x.shape[1]-2*self.win_x, self.x.shape[2] - 2*self.win_y, train_dict['y'].shape[-1])
-        if train_dict['y'] is not None and train_dict['y'].shape != expected_label_size:
-            raise Exception('The expected conv-net output and label image '
-                            'should have the same size. Found: '
-                            'expected conv-net output shape = {}, label image shape = {}'.format(
-                                expected_label_size, train_dict['y'].shape))
-
-        super(ImageFullyConvGatherIterator, self).__init__(
-            self.x.shape[0], batch_size, shuffle, seed)
-
-    def _get_batches_of_transformed_samples(self, index_array):
-        if self.channel_axis == 1:
-            batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:4]))
-            if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:4]))
-        else:
-            batch_x = np.zeros(tuple([len(index_array)] + [self.x.shape[2], self.x.shape[3], self.x.shape[1]]))
-            if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array)] + [self.y.shape[2], self.y.shape[3], self.y.shape[1]]))
-
-        for i, j in enumerate(index_array):
-            x = self.x[j]
-
-            if self.y is not None:
-                y = self.y[j]
-                x, y = self.image_data_generator.random_transform(x.astype(K.floatx()), y)
-            else:
-                x = self.image_data_generator.random_transform(x.astype(K.floatx()))
-
-            x = self.image_data_generator.standardize(x)
-
-            batch_x[i] = x
-            batch_y[i] = y
-
-        if self.save_to_dir:
-            for i, j in enumerate(index_array):
-                img = array_to_img(batch_x[i], self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(
-                    prefix=self.save_prefix,
-                    index=j,
-                    hash=np.random.randint(1e4),
-                    format=self.save_format)
-                img.save(os.path.join(self.save_to_dir, fname))
-
-        if self.y is None:
-            return batch_x
-        # if self.channel_axis == 1:
-        #     batch_y = np.moveaxis(batch_y, 1, 3)
-        return [batch_x, j, self.pixels_x, self.pixels_y], [batch_y]
-
-    def __next__(self):
-        """For python 2.x.
-        # Returns the next batch.
-        """
-        # Keeps under lock only the mechanism which advances
-        # the indexing of each batch.
-        with self.lock:
-            index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
 class ImageFullyConvDataGenerator(object):
@@ -356,7 +248,7 @@ class ImageFullyConvDataGenerator(object):
         data_format: 'channels_first' or 'channels_last'.
             In 'channels_first' mode, the channels dimension
             (the depth) is at index 1, in 'channels_last' mode it is at index 4.
-            It     aults to the `image_data_format` value found in your
+            It defaults to the `image_data_format` value found in your
             Keras config file at `~/.keras/keras.json`.
             If you never set it, then it will be "channels_last".
             """
@@ -405,7 +297,7 @@ class ImageFullyConvDataGenerator(object):
             self.channel_axis = 1
             self.row_axis = 2
             self.col_axis = 3
-        if data_format == 'channels_last':
+        elif data_format == 'channels_last':
             self.channel_axis = 3
             self.row_axis = 1
             self.col_axis = 2
@@ -423,7 +315,7 @@ class ImageFullyConvDataGenerator(object):
                              'Received arg: {}'.format(zoom_range))
 
     def flow(self, train_dict, batch_size=1, shuffle=True, seed=None,
-            save_to_dir=None, save_prefix='', save_format='png', target_format=None):
+             save_to_dir=None, save_prefix='', save_format='png', target_format=None):
         return ImageFullyConvIterator(
             train_dict, self,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
@@ -629,9 +521,9 @@ Custom siamese generators
 """
 
 class SiameseDataGenerator(ImageDataGenerator):
-    def siamese_flow(self, train_dict, crop_dim=14, min_track_length=5,
-                     batch_size=32, shuffle=True, seed=None, data_format=None,
-                     save_to_dir=None, save_prefix='', save_format='png'):
+    def flow(self, train_dict, crop_dim=14, min_track_length=5,
+             batch_size=32, shuffle=True, seed=None, data_format=None,
+             save_to_dir=None, save_prefix='', save_format='png'):
         return SiameseIterator(train_dict, self, crop_dim=crop_dim,
                                min_track_length=min_track_length, batch_size=batch_size,
                                shuffle=shuffle, seed=seed, data_format=data_format,
@@ -658,7 +550,7 @@ class SiameseIterator(Iterator):
             self.row_axis = 2
             self.col_axis = 3
             self.time_axis = 1
-        self.X = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
         self.y = np.int32(train_dict['y'])
         self.crop_dim = crop_dim
         self.min_track_length = min_track_length
@@ -718,7 +610,7 @@ class SiameseIterator(Iterator):
             tracked_frames = track_id['frames']
             frame_1 = np.random.choice(tracked_frames) # Select a frame from the track
 
-            X = self.X[batch]
+            X = self.x[batch]
             y = self.y[batch]
 
             # Choose comparison cell
@@ -816,8 +708,8 @@ class SiameseIterator(Iterator):
         # the indexing of each batch.
         with self.lock:
             index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
 
@@ -908,7 +800,7 @@ class WatershedDataGenerator(ImageFullyConvDataGenerator):
             self.channel_axis = 1
             self.row_axis = 2
             self.col_axis = 3
-        if data_format == 'channels_last':
+        elif data_format == 'channels_last':
             self.channel_axis = 3
             self.row_axis = 1
             self.col_axis = 2
@@ -957,7 +849,6 @@ class WatershedIterator(Iterator):
         super(WatershedIterator, self).__init__(self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-        epsilon = K.epsilon()
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
         if self.channel_axis == 1:
             batch_y = np.zeros(tuple([len(index_array), self.distance_bins] + list(self.y.shape)[2:]))
@@ -980,19 +871,7 @@ class WatershedIterator(Iterator):
             else:
                 interior = y[:, :, 1]
 
-            distance = ndi.distance_transform_edt(interior)
-            distance = distance.astype(K.floatx())  # normalized distances are floats
-
-            label_matrix = label(interior)
-            for prop in regionprops(label_matrix):
-                labeled_distance = distance[label_matrix == prop.label]
-                normalized_distance = labeled_distance / np.amax(labeled_distance)
-                distance[label_matrix == prop.label] = normalized_distance
-
-            min_dist = np.amin(distance)
-            max_dist = np.amax(distance)
-            bins = np.linspace(min_dist - epsilon, max_dist + epsilon, num=self.distance_bins)
-            distance = np.digitize(distance, bins)
+            distance = distance_transform_2d(interior, self.distance_bins)
 
             # convert to one hot notation
             if self.channel_axis == 1:
@@ -1036,7 +915,7 @@ class WatershedIterator(Iterator):
             return batch_x
         return batch_x, batch_y
 
-    def __next__(self):
+    def next(self):
         """For python 2.x.
         # Returns the next batch.
         """
@@ -1044,8 +923,8 @@ class WatershedIterator(Iterator):
         # the indexing of each batch.
         with self.lock:
             index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
 """
@@ -1121,7 +1000,7 @@ class MovieDataGenerator(object):
             self.row_axis = 3
             self.col_axis = 4
             self.time_axis = 2
-        if data_format == 'channels_last':
+        elif data_format == 'channels_last':
             self.channel_axis = 4
             self.row_axis = 2
             self.col_axis = 3
@@ -1471,7 +1350,7 @@ class MovieArrayIterator(Iterator):
         # batch_y = np.rollaxis(batch_y, 1, 5)
         return batch_x, batch_y
 
-    def __next__(self):
+    def next(self):
         """For python 2.x.
         # Returns the next batch.
         """
@@ -1479,8 +1358,8 @@ class MovieArrayIterator(Iterator):
         # the indexing of each batch.
         with self.lock:
             index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
 """
@@ -1495,8 +1374,6 @@ class BoundingBoxIterator(Iterator):
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.win_x = train_dict['win_x']
-        self.win_y = train_dict['win_y']
 
         if self.x.ndim != 4:
             raise ValueError('Input data in `NumpyArrayIterator` should have rank 4. '
@@ -1623,7 +1500,7 @@ class BoundingBoxIterator(Iterator):
         # batch_y = np.rollaxis(batch_y, 1, 4)
         return batch_x, [regressions_list, labels_list]
 
-    def __next__(self):
+    def next(self):
         """For python 2.x.
         # Returns the next batch.
         """
@@ -1631,6 +1508,6 @@ class BoundingBoxIterator(Iterator):
         # the indexing of each batch.
         with self.lock:
             index_array = next(self.index_generator)
-            # The transformation of images is not under thread lock
-            # so it can be done in parallel
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)

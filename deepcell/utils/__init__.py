@@ -8,7 +8,6 @@ from . import train_utils
 from . import transform_utils
 
 # Globally-importable utils.
-from .data_utils import data_generator
 from .data_utils import get_data
 from .data_utils import make_training_data
 from .io_utils import get_immediate_subdirs
@@ -22,6 +21,7 @@ from .plot_utils import plot_training_data_2d
 from .plot_utils import plot_training_data_3d
 from .train_utils import axis_softmax
 from .train_utils import rate_scheduler
+from .transform_utils import distance_transform_2d
 from .transform_utils import flip_axis
 from .transform_utils import to_categorical
 from .transform_utils import transform_matrix_offset_center
