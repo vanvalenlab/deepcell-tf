@@ -29,9 +29,6 @@ from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
 from .utils.transform_utils import transform_matrix_offset_center
 
-"""
-Custom image generators
-"""
 
 class ImageSampleArrayIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
@@ -66,9 +63,23 @@ class ImageSampleArrayIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
-            batch_x = np.zeros((len(index_array), self.x.shape[self.channel_axis], 2*self.win_x + 1, 2*self.win_y + 1))
+            batch_x = np.zeros(
+                (
+                    len(index_array),
+                    self.x.shape[self.channel_axis],
+                    2*self.win_x + 1,
+                    2*self.win_y + 1
+                )
+            )
         else:
-            batch_x = np.zeros((len(index_array), 2*self.win_x + 1, 2*self.win_y + 1, self.x.shape[self.channel_axis]))
+            batch_x = np.zeros(
+                (
+                    len(index_array),
+                    2*self.win_x + 1,
+                    2*self.win_y + 1,
+                    self.x.shape[self.channel_axis]
+                )
+            )
 
         for i, j in enumerate(index_array):
             batch = self.b[j]
@@ -101,17 +112,17 @@ class ImageSampleArrayIterator(Iterator):
         batch_y = self.y[index_array]
         return batch_x, batch_y
 
-        def __next__(self):
-            """For python 2.x.
-            # Returns the next batch.
-            """
-            # Keeps under lock only the mechanism which advances
-            # the indexing of each batch.
-            with self.lock:
-                index_array = next(self.index_generator)
-                # The transformation of images is not under thread lock
-                # so it can be done in parallel
-            return self._get_batches_of_transformed_samples(index_array)
+    def __next__(self):
+        """For python 2.x.
+        # Returns the next batch.
+        """
+        # Keeps under lock only the mechanism which advances
+        # the indexing of each batch.
+        with self.lock:
+            index_array = next(self.index_generator)
+            # The transformation of images is not under thread lock
+            # so it can be done in parallel
+        return self._get_batches_of_transformed_samples(index_array)
 
 class SampleDataGenerator(ImageDataGenerator):
     def sample_flow(self, train_dict, batch_size=32, shuffle=True, seed=None,
@@ -157,7 +168,9 @@ class ImageFullyConvIterator(Iterator):
         if self.channel_axis == 1:
             batch_y = np.zeros(tuple([len(index_array), y_channel_shape] + list(self.y.shape)[2:]))
         else:
-            batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:3] + [y_channel_shape]))
+            batch_y = np.zeros(
+                tuple([len(index_array)] + list(self.y.shape)[1:3] + [y_channel_shape])
+            )
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -258,9 +271,19 @@ class ImageFullyConvGatherIterator(Iterator):
 
         #Subsample the pixel coordinates
         if self.channel_axis == 1:
-            expected_label_size = (self.x.shape[0], train_dict['y'].shape[1], self.x.shape[2]-2*self.win_x, self.x.shape[3] - 2*self.win_y)
+            expected_label_size = (
+                self.x.shape[0],
+                train_dict['y'].shape[1],
+                self.x.shape[2]-2*self.win_x,
+                self.x.shape[3] - 2*self.win_y
+            )
         else:
-            expected_label_size = (self.x.shape[0], self.x.shape[1]-2*self.win_x, self.x.shape[2] - 2*self.win_y, train_dict['y'].shape[-1])
+            expected_label_size = (
+                self.x.shape[0],
+                self.x.shape[1]-2*self.win_x,
+                self.x.shape[2] - 2*self.win_y,
+                train_dict['y'].shape[-1]
+            )
         if train_dict['y'] is not None and train_dict['y'].shape != expected_label_size:
             raise Exception('The expected conv-net output and label image '
                             'should have the same size. Found: '
@@ -276,9 +299,13 @@ class ImageFullyConvGatherIterator(Iterator):
             if self.y is not None:
                 batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:4]))
         else:
-            batch_x = np.zeros(tuple([len(index_array)] + [self.x.shape[2], self.x.shape[3], self.x.shape[1]]))
+            batch_x = np.zeros(
+                tuple([len(index_array)] + [self.x.shape[2], self.x.shape[3], self.x.shape[1]])
+            )
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array)] + [self.y.shape[2], self.y.shape[3], self.y.shape[1]]))
+                batch_y = np.zeros(
+                    tuple([len(index_array)] + [self.y.shape[2], self.y.shape[3], self.y.shape[1]])
+                )
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -423,7 +450,7 @@ class ImageFullyConvDataGenerator(object):
                              'Received arg: {}'.format(zoom_range))
 
     def flow(self, train_dict, batch_size=1, shuffle=True, seed=None,
-            save_to_dir=None, save_prefix='', save_format='png', target_format=None):
+             save_to_dir=None, save_prefix='', save_format='png', target_format=None):
         return ImageFullyConvIterator(
             train_dict, self,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
@@ -489,12 +516,14 @@ class ImageFullyConvDataGenerator(object):
             theta = 0
 
         if self.height_shift_range:
-            tx = np.random.uniform(-self.height_shift_range, self.height_shift_range) * x.shape[img_row_axis]
+            tx = np.random.uniform(-self.height_shift_range, self.height_shift_range) * \
+                x.shape[img_row_axis]
         else:
             tx = 0
 
         if self.width_shift_range:
-            ty = np.random.uniform(-self.width_shift_range, self.width_shift_range) * x.shape[img_col_axis]
+            ty = np.random.uniform(-self.width_shift_range, self.width_shift_range) * \
+                x.shape[img_col_axis]
         else:
             ty = 0
 
@@ -624,10 +653,6 @@ class ImageFullyConvDataGenerator(object):
             self.std = np.reshape(self.std, broadcast_shape)
             x /= (self.std + K.epsilon())
 
-"""
-Custom siamese generators
-"""
-
 class SiameseDataGenerator(ImageDataGenerator):
     def siamese_flow(self, train_dict, crop_dim=14, min_track_length=5,
                      batch_size=32, shuffle=True, seed=None, data_format=None,
@@ -689,8 +714,8 @@ class SiameseIterator(Iterator):
                 # get indices of frames where cell is present
                 y_index = np.where(y_true > 0)[0]
                 if y_index.size > 0: # if cell is present at all
-                    start_frame = np.amin(y_index)
-                    stop_frame = np.amax(y_index)
+                    #start_frame = np.amin(y_index)
+                    #stop_frame = np.amax(y_index)
                     track_ids[track_counter] = {
                         'batch': batch,
                         'label': cell,
@@ -702,9 +727,19 @@ class SiameseIterator(Iterator):
     def _get_batches_of_transformed_samples(self, index_array):
         # initialize batch_x_1, batch_x_2, and batch_y
         if self.data_format == 'channels_first':
-            batch_shape = (len(index_array), self.X.shape[self.channel_axis], self.crop_dim, self.crop_dim)
+            batch_shape = (
+                len(index_array),
+                self.X.shape[self.channel_axis],
+                self.crop_dim,
+                self.crop_dim
+            )
         else:
-            batch_shape = (len(index_array), self.crop_dim, self.crop_dim, self.X.shape[self.channel_axis])
+            batch_shape = (
+                len(index_array),
+                self.crop_dim,
+                self.crop_dim,
+                self.X.shape[self.channel_axis]
+            )
 
         batch_x_1 = np.zeros(batch_shape, dtype=K.floatx())
         batch_x_2 = np.zeros(batch_shape, dtype=K.floatx())
@@ -819,11 +854,6 @@ class SiameseIterator(Iterator):
             # The transformation of images is not under thread lock
             # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
-
-
-"""
-Watershed generator
-"""
 
 class WatershedDataGenerator(ImageFullyConvDataGenerator):
     """Generate minibatches of movie data with real-time data augmentation.
@@ -960,9 +990,13 @@ class WatershedIterator(Iterator):
         epsilon = K.epsilon()
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
         if self.channel_axis == 1:
-            batch_y = np.zeros(tuple([len(index_array), self.distance_bins] + list(self.y.shape)[2:]))
+            batch_y = np.zeros(
+                tuple([len(index_array), self.distance_bins] + list(self.y.shape)[2:])
+            )
         else:
-            batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:3] + [self.distance_bins]))
+            batch_y = np.zeros(
+                tuple([len(index_array)] + list(self.y.shape)[1:3] + [self.distance_bins])
+            )
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -1047,10 +1081,6 @@ class WatershedIterator(Iterator):
             # The transformation of images is not under thread lock
             # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
-
-"""
-Custom movie generators
-"""
 
 class MovieDataGenerator(object):
     """Generate minibatches of movie data with real-time data augmentation.
@@ -1223,12 +1253,14 @@ class MovieDataGenerator(object):
             theta = 0
 
         if self.height_shift_range:
-            tx = np.random.uniform(-self.height_shift_range, self.height_shift_range) * x.shape[img_row_axis]
+            tx = np.random.uniform(-self.height_shift_range, self.height_shift_range) * \
+                x.shape[img_row_axis]
         else:
             tx = 0
 
         if self.width_shift_range:
-            ty = np.random.uniform(-self.width_shift_range, self.width_shift_range) * x.shape[img_col_axis]
+            ty = np.random.uniform(-self.width_shift_range, self.width_shift_range) * \
+                x.shape[img_col_axis]
         else:
             ty = 0
 
@@ -1409,27 +1441,45 @@ class MovieArrayIterator(Iterator):
         super(MovieArrayIterator, self).__init__(len(train_dict['y']), batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-        # Note to self - Make sure the exact same transformation is applied to every frame in each movie
-        # Note to self - Also make sure that the exact same transformation is applied to the data movie
+        # TODO:
+        # Note to self -
+        # Make sure the exact same transformation is applied to every frame in each movie
+        # Note to self -
+        # Also make sure that the exact same transformation is applied to the data movie
         # and the label movie
 
         # index_array = index_array[0] # index_array[0] is an integer
         if self.data_format == 'channels_first':
-            batch_x = np.zeros(tuple([len(index_array), self.x.shape[1], self.number_of_frames] + list(self.x.shape)[3:]))
+            batch_x = np.zeros(
+                tuple(
+                    [len(index_array), self.x.shape[1], self.number_of_frames] + \
+                        list(self.x.shape)[3:]
+                )
+            )
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.y.shape[1], self.number_of_frames] + list(self.y.shape)[3:]))
+                batch_y = np.zeros(
+                    tuple(
+                        [len(index_array), self.y.shape[1], self.number_of_frames] + \
+                            list(self.y.shape)[3:]
+                    )
+                )
 
         else:
-            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.x.shape)[2:]))
+            batch_x = np.zeros(
+                tuple([len(index_array), self.number_of_frames] + list(self.x.shape)[2:])
+            )
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.y.shape)[2:]))
+                batch_y = np.zeros(
+                    tuple([len(index_array), self.number_of_frames] + list(self.y.shape)[2:])
+                )
 
         for i, j in enumerate(index_array):
             if self.y is not None:
                 y = self.y[j]
 
             # Sample along the time axis
-            time_start = np.random.randint(0, high=self.x.shape[self.time_axis] - self.number_of_frames)
+            time_start = \
+                np.random.randint(0, high=self.x.shape[self.time_axis] - self.number_of_frames)
             time_end = time_start + self.number_of_frames
             if self.time_axis == 1:
                 x = self.x[j, time_start:time_end, :, :, :]
@@ -1482,10 +1532,6 @@ class MovieArrayIterator(Iterator):
             # The transformation of images is not under thread lock
             # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
-
-"""
-Bounding box generators adapted from retina net library
-"""
 
 class BoundingBoxIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
@@ -1546,7 +1592,8 @@ class BoundingBoxIterator(Iterator):
             bboxes = np.concatenate(bboxes, axis=0)
         return bboxes
 
-    def anchor_targets(image_shape,
+    def anchor_targets(self,
+                       image_shape,
                        annotations,
                        num_classes,
                        mask_shape=None,
@@ -1573,9 +1620,13 @@ class BoundingBoxIterator(Iterator):
             if self.y is not None:
                 batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:4]))
         else:
-            batch_x = np.zeros(tuple([len(index_array), self.x.shape[2], self.x.shape[3], self.x.shape[1]]))
+            batch_x = np.zeros(
+                tuple([len(index_array), self.x.shape[2], self.x.shape[3], self.x.shape[1]])
+            )
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.y.shape[2], self.y.shape[3], self.y.shape[1]]))
+                batch_y = np.zeros(
+                    tuple([len(index_array), self.y.shape[2], self.y.shape[3], self.y.shape[1]])
+                )
 
         regressions_list = []
         labels_list = []

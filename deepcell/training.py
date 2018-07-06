@@ -27,16 +27,12 @@ from .image_generators import WatershedDataGenerator
 from .losses import sample_categorical_crossentropy
 from .losses import weighted_categorical_crossentropy
 from .losses import discriminative_instance_loss
-from .losses import discriminative_instance_loss_3D
 from .utils.io_utils import get_images_from_directory
 from .utils.data_utils import get_data
 from .utils.train_utils import rate_scheduler
 from .utils.transform_utils import to_categorical
 from .settings import CHANNELS_FIRST
 
-"""
-Training convnets
-"""
 
 def train_model_sample(model=None, dataset=None, optimizer=None,
                        expt='', it=0, batch_size=32, n_epoch=100,
@@ -47,8 +43,10 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
+    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(
+        todays_date, dataset, expt, it))
+    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(
+        todays_date, dataset, expt, it))
 
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='sample')
     n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
@@ -84,7 +82,13 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
         validation_steps=X_test.shape[0] // batch_size,
         class_weight=class_weight,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=0, save_best_only=True, mode='auto'),
+            ModelCheckpoint(
+                file_name_save,
+                monitor='val_loss',
+                verbose=0,
+                save_best_only=True,
+                mode='auto'
+            ),
             LearningRateScheduler(lr_sched)
         ])
 
@@ -99,8 +103,10 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
+    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(
+        todays_date, dataset, expt, it))
+    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(
+        todays_date, dataset, expt, it))
 
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='conv')
 
@@ -138,7 +144,13 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
         validation_data=(X_test, y_test),
         validation_steps=X_test.shape[0] // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
+            ModelCheckpoint(
+                file_name_save,
+                monitor='val_loss',
+                verbose=1,
+                save_best_only=True,
+                mode='auto'
+            ),
             LearningRateScheduler(lr_sched)
         ])
 
@@ -156,8 +168,10 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
+    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(
+        todays_date, dataset, expt, it))
+    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(
+        todays_date, dataset, expt, it))
 
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='siamese')
 
@@ -195,7 +209,7 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
 
     validation_dict = {'X': X_test, 'y': y_test}
 
-    def cell_pairing_computation( train_or_test, cell_pair_reduction_factor=1 ):
+    def cell_pairing_computation(train_or_test, cell_pair_reduction_factor=1):
         '''
         train_or_test: 'train' or 'test', indicates which dataset to use
         cell_pair_reduction_factor: a power of 2 chosen to reduce training time
@@ -205,16 +219,16 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
         # Assume that y values are a cell-uniquely-labeled mask.
         # Assume that a cell is paired with one of its other frames 50% of the time
         # and a frame from another cell 50% of the time.
-        if train_or_test=='train':
+        if train_or_test == 'train':
             cell_dataset = train_dict['y']
-        elif train_or_test=='test':
+        elif train_or_test == 'test':
             cell_dataset = y_test
         total_cell_pairs = 0
         for image_set in range(cell_dataset.shape[0]):
             set_cells = 0
             cells_per_image = []
             for image in range(cell_dataset.shape[1]):
-                image_cells = int(cell_dataset[image_set,image,:,:,:].max())
+                image_cells = int(cell_dataset[image_set, image, :, :, :].max())
                 set_cells = set_cells + image_cells
                 cells_per_image.append(image_cells)
             # Since there are many more possible non-self pairings than there are self pairings,
@@ -223,16 +237,16 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
             # find out how many pairs we would need to sample to (statistically speaking)
             # observe all possible cell-frame pairs.
             # We're going to assume that the average cell is present in every frame. This will
-            # lead to an underestimate of the number of possible non-self pairings, but it's 
+            # lead to an underestimate of the number of possible non-self pairings, but it's
             # unclear how significant the underestimate is.
-            average_cells_per_frame = int( sum(cells_per_image) / len(cells_per_image) )
+            average_cells_per_frame = int(sum(cells_per_image) / len(cells_per_image))
             non_self_cellframes = (average_cells_per_frame-1)*len(cells_per_image)
             non_self_pairings = non_self_cellframes*max(cells_per_image)
             cell_pairings = non_self_pairings*2
             total_cell_pairs = total_cell_pairs + cell_pairings
         total_cell_pairs = int(total_cell_pairs // cell_pair_reduction_factor)
         return total_cell_pairs
-  
+
     # Compute number of validation samples needed to (stastically speaking) observe all cell pairs.
     total_train_pairs = cell_pairing_computation(train_or_test='train')
     total_test_pairs = cell_pairing_computation(train_or_test='test')
@@ -240,12 +254,18 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
     # fit the model on the batches generated by datagen.flow()
     loss_history = model.fit_generator(
         datagen.siamese_flow(train_dict, batch_size=batch_size),
-        steps_per_epoch= total_train_pairs // batch_size,
+        steps_per_epoch=(total_train_pairs // batch_size),
         epochs=n_epoch,
         validation_data=datagen_val.siamese_flow(validation_dict, batch_size=batch_size),
-        validation_steps= total_test_pairs // batch_size,
+        validation_steps=(total_test_pairs // batch_size),
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
+            ModelCheckpoint(
+                file_name_save,
+                monitor='val_loss',
+                verbose=1,
+                save_best_only=True,
+                mode='auto'
+            ),
             LearningRateScheduler(lr_sched)
         ])
 
@@ -264,8 +284,10 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
+    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(
+        todays_date, dataset, expt, it))
+    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(
+        todays_date, dataset, expt, it))
 
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='conv')
 
@@ -291,7 +313,7 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
     # this will do preprocessing and realtime data augmentation
     datagen = WatershedDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
+        shear_range=shear, # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
@@ -310,10 +332,20 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
         steps_per_epoch=train_dict['y'].shape[0] // batch_size,
         epochs=n_epoch,
         class_weight=class_weight,
-        validation_data=datagen_val.flow(validation_dict, batch_size=batch_size, distance_bins=distance_bins),
+        validation_data=datagen_val.flow(
+            validation_dict,
+            batch_size=batch_size,
+            distance_bins=distance_bins
+        ),
         validation_steps=X_test.shape[0] // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
+            ModelCheckpoint(
+                file_name_save,
+                monitor='val_loss',
+                verbose=1,
+                save_best_only=True,
+                mode='auto'
+            ),
             LearningRateScheduler(lr_sched)
         ])
 
@@ -331,8 +363,10 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
+    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(
+        todays_date, dataset, expt, it))
+    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(
+        todays_date, dataset, expt, it))
 
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='conv')
     n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
@@ -365,7 +399,13 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
         validation_data=(X_test, y_test),
         validation_steps=X_test.shape[0] // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
+            ModelCheckpoint(
+                file_name_save,
+                monitor='val_loss',
+                verbose=1,
+                save_best_only=True,
+                mode='auto'
+            ),
             LearningRateScheduler(lr_sched)
         ])
 
@@ -383,8 +423,10 @@ def train_model_conv_sample(model=None, dataset=None, optimizer=None,
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
+    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(
+        todays_date, dataset, expt, it))
+    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(
+        todays_date, dataset, expt, it))
 
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='conv_sample')
 
@@ -414,7 +456,7 @@ def train_model_conv_sample(model=None, dataset=None, optimizer=None,
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
-    x, y = next(datagen.flow(train_dict, batch_size=1))
+    #x, y = next(datagen.flow(train_dict, batch_size=1))
 
     # fit the model on the batches generated by datagen.flow()
     loss_history = model.fit_generator(
@@ -424,7 +466,13 @@ def train_model_conv_sample(model=None, dataset=None, optimizer=None,
         validation_data=(X_test, y_test),
         validation_steps=X_test.shape[0] // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
+            ModelCheckpoint(
+                file_name_save,
+                monitor='val_loss',
+                verbose=1,
+                save_best_only=True,
+                mode='auto'
+            ),
             LearningRateScheduler(lr_sched)
         ])
 
@@ -455,8 +503,10 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
     training_data_file_name = os.path.join(direc_data, '{}.npz'.format(dataset))
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
+    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(
+        todays_date, dataset, expt, it))
+    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(
+        todays_date, dataset, expt, it))
 
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='movie')
     X_train, y_train = train_dict['X'], train_dict['y']
@@ -526,13 +576,27 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
     # fit the model on the batches generated by datagen.flow()
     loss_history = model.fit_generator(
         datagen.flow(train_dict, batch_size=batch_size, number_of_frames=number_of_frames),
-        steps_per_epoch=(train_dict['y'].shape[0] * train_dict['y'].shape[time_axis] // number_of_frames) // batch_size,
+        steps_per_epoch=(
+            train_dict['y'].shape[0] * train_dict['y'].shape[time_axis] // number_of_frames
+            ) // batch_size,
         epochs=n_epoch,
         # class_weight=class_weights,
-        validation_data=datagen_val.flow(validation_dict, batch_size=batch_size, number_of_frames=number_of_frames),
-        validation_steps=(X_test.shape[0] * X_test.shape[time_axis] // number_of_frames) // batch_size,
+        validation_data=datagen_val.flow(
+            validation_dict,
+            batch_size=batch_size,
+            number_of_frames=number_of_frames
+        ),
+        validation_steps=(
+            X_test.shape[0] * X_test.shape[time_axis] // number_of_frames
+            ) // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
+            ModelCheckpoint(
+                file_name_save,
+                monitor='val_loss',
+                verbose=1,
+                save_best_only=True,
+                mode='auto'
+            ),
             LearningRateScheduler(lr_sched)
         ])
 
