@@ -562,7 +562,7 @@ class SiameseIterator(Iterator):
 
         self.track_ids = self._get_track_ids()
 
-        super(SiameseIterator, self).__init__(self.x.shape[0], batch_size, shuffle, seed)
+        super(SiameseIterator, self).__init__(len(self.track_ids), batch_size, shuffle, seed)
 
     def _get_track_ids(self):
         """
@@ -594,9 +594,9 @@ class SiameseIterator(Iterator):
     def _get_batches_of_transformed_samples(self, index_array):
         # initialize batch_x_1, batch_x_2, and batch_y
         if self.data_format == 'channels_first':
-            batch_shape = (len(index_array), self.X.shape[self.channel_axis], self.crop_dim, self.crop_dim)
+            batch_shape = (len(index_array), self.x.shape[self.channel_axis], self.crop_dim, self.crop_dim)
         else:
-            batch_shape = (len(index_array), self.crop_dim, self.crop_dim, self.X.shape[self.channel_axis])
+            batch_shape = (len(index_array), self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis])
 
         batch_x_1 = np.zeros(batch_shape, dtype=K.floatx())
         batch_x_2 = np.zeros(batch_shape, dtype=K.floatx())
