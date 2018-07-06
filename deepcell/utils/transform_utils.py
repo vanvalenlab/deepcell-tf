@@ -72,15 +72,15 @@ def distance_transform_3d(maskstack, bins=16):
     if K.image_data_format() == 'channels_first':
         maskstack = np.rollaxis(maskstack, 0, 4)
 
-    weighted_mask = weightmask(maskstack)
-    distance_slices = [ndimage.distance_transform_edt(m) for m in weighted_mask]
+    # weighted_mask = weightmask(maskstack)
+    distance_slices = [ndimage.distance_transform_edt(m) for m in maskstack]
     distance_slices = np.array(distance_slices)
 
-    distance = np.zeros(list(weighted_mask.shape))
-    for k in range(weighted_mask.shape[0]):
+    distance = np.zeros(list(maskstack.shape))
+    for k in range(maskstack.shape[0]):
         adder = [np.square(x - k) for x in range(len(distance_slices))]
-        for i in range(weighted_mask.shape[1]):
-            for j in range(weighted_mask.shape[2]):
+        for i in range(maskstack.shape[1]):
+            for j in range(maskstack.shape[2]):
                 slicearr = np.square(distance_slices[:, i, j])
                 zans = np.argmin(slicearr + adder)
                 zij = np.square(distance_slices[zans, i, j])
@@ -91,6 +91,12 @@ def distance_transform_3d(maskstack, bins=16):
     max_dist = np.amax(distance.flatten())
     bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins)
     distance = np.digitize(distance, bins)
+
+    # normalize by maximum distance
+    for cell_label in np.unique(maskstack):
+        labeled_distance = distance[maskstack == cell_label]
+        normalized_distance = labeled_distance / np.amax(labeled_distance)
+        distance[maskstack == cell_label] = normalized_distance
 
     # change back to channels_first, if necessary
     if K.image_data_format() == 'channels_first':
