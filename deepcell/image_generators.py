@@ -20,6 +20,7 @@ from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.transform import resize
 from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.utils import to_categorical
 from tensorflow.python.keras.preprocessing.image import random_channel_shift
 from tensorflow.python.keras.preprocessing.image import apply_transform
 from tensorflow.python.keras.preprocessing.image import flip_axis
@@ -1537,20 +1538,23 @@ class WatershedMovieIterator(Iterator):
             distance = distance_transform_3d(y, self.distance_bins)
 
             # convert to one hot notation
-            if self.channel_axis == 1:
-                y_shape = (self.distance_bins, self.y.shape[2], self.y.shape[3], self.y.shape[4])
-            else:
-                y_shape = (self.y.shape[1], self.y.shape[2], self.y.shape[3], self.distance_bins)
-
-            y = np.zeros(y_shape)
-            for label_val in range(np.amax(distance) + 1):
-                if self.channel_axis == 1:
-                    y[label_val, :, :, :] = distance == label_val
-                else:
-                    y[:, :, :, label_val] = distance == label_val
+            if self.y is not None:
+                y = to_categorical(distance)
+            # if self.channel_axis == 1:
+            #     y_shape = (self.distance_bins, y.shape[2], self.y.shape[3], self.y.shape[4])
+            # else:
+            #     y_shape = (y.shape[1], y.shape[2], y.shape[3], self.distance_bins)
+            #
+            # y = np.zeros(y_shape)
+            # for label_val in range(np.amax(distance) + 1):
+            #     if self.channel_axis == 1:
+            #         y[label_val, :, :, :] = distance == label_val
+            #     else:
+            #         y[:, :, :, label_val] = distance == label_val
 
             batch_x[i] = x
-            batch_y[i] = y
+            if self.y is not None:
+                batch_y[i] = y
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
