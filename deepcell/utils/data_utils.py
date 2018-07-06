@@ -106,7 +106,7 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='
         if output_mode.lower() == 'sample':
             for k, edge_feat in enumerate(edge_feature):
                 if edge_feat == 1:
-                    if CHANNELS_FIRST:
+                    if K.image_data_format() == 'channels_first':
                         y_sum = np.sum(y[j, k, :, :])
                     else:
                         y_sum = np.sum(y[j, :, :, k])
@@ -125,7 +125,8 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     data set. If output_mode is 'sample', then this will be set to the number
     of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
     """
-    if CHANNELS_FIRST:
+    is_channel_first = K.image_data_format() == 'channels_first'
+    if is_channel_first:
         num_dirs, num_features, image_size_x, image_size_y = y.shape
     else:
         num_dirs, image_size_x, image_size_y, num_features = y.shape
@@ -138,7 +139,7 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
 
     for direc in range(num_dirs):
         for k in range(num_features):
-            if CHANNELS_FIRST:
+            if is_channel_first:
                 feature_rows_temp, feature_cols_temp = np.where(y[direc, k, :, :] == 1)
             else:
                 feature_rows_temp, feature_cols_temp = np.where(y[direc, :, :, k] == 1)
@@ -216,15 +217,16 @@ def reshape_matrix(X, y, reshape_size=256):
     Adds overlapping slices to batches.
     E.g. reshape_size of 256 yields (1, 1024, 1024, 1) -> (16, 256, 256, 1)
     """
+    is_channels_first = K.image_data_format() == 'channels_first'
     if X.ndim != 4:
         raise ValueError('reshape_matrix expects X dim to be 4, got {}'.format(X.ndim))
     elif y.ndim != 4:
         raise ValueError('reshape_matrix expects y dim to be 4, got {}'.format(y.ndim))
-    image_size_x, image_size_y = X.shape[2:] if CHANNELS_FIRST else X.shape[1:3]
+    image_size_x, image_size_y = X.shape[2:] if is_channels_first else X.shape[1:3]
     rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
     new_batch_size = X.shape[0] * (rep_number) ** 2
 
-    if CHANNELS_FIRST:
+    if is_channels_first:
         new_X_shape = (new_batch_size, X.shape[1], reshape_size, reshape_size)
         new_y_shape = (new_batch_size, y.shape[1], reshape_size, reshape_size)
     else:
@@ -241,14 +243,14 @@ def reshape_matrix(X, y, reshape_size=256):
                 if i != rep_number - 1:
                     x_start, x_end = i * reshape_size, (i + 1) * reshape_size
                 else:
-                    x_start, x_end = -reshape_size, X.shape[2 if CHANNELS_FIRST else 1]
+                    x_start, x_end = -reshape_size, X.shape[2 if is_channels_first else 1]
 
                 if j != rep_number - 1:
                     y_start, y_end = j * reshape_size, (j + 1) * reshape_size
                 else:
-                    y_start, y_end = -reshape_size, y.shape[3 if CHANNELS_FIRST else 2]
+                    y_start, y_end = -reshape_size, y.shape[3 if is_channels_first else 2]
 
-                if CHANNELS_FIRST:
+                if is_channels_first:
                     new_X[counter] = X[b, :, x_start:x_end, y_start:y_end]
                     new_y[counter] = y[b, :, x_start:x_end, y_start:y_end]
                 else:
@@ -280,15 +282,16 @@ def reshape_movie(X, y, reshape_size=256):
     Adds overlapping slices to batches.
     E.g. reshape_size of 256 yields (1, 5, 1024, 1024, 1) -> (16, 5, 256, 256, 1)
     """
+    is_channels_first = K.image_data_format() == 'channels_first'
     if X.ndim != 5:
         raise ValueError('reshape_movie expects X dim to be 5, got {}'.format(X.ndim))
     elif y.ndim != 5:
         raise ValueError('reshape_movie expects y dim to be 5, got {}'.format(y.ndim))
-    image_size_x, image_size_y = X.shape[3:] if CHANNELS_FIRST else X.shape[2:4]
+    image_size_x, image_size_y = X.shape[3:] if is_channels_first else X.shape[2:4]
     rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
     new_batch_size = X.shape[0] * (rep_number) ** 2
 
-    if CHANNELS_FIRST:
+    if is_channels_first:
         new_X_shape = (new_batch_size, X.shape[1], X.shape[2], reshape_size, reshape_size)
         new_y_shape = (new_batch_size, y.shape[1], y.shape[2], reshape_size, reshape_size)
     else:
@@ -299,8 +302,8 @@ def reshape_movie(X, y, reshape_size=256):
     new_y = np.zeros(new_y_shape, dtype='int32')
 
     counter = 0
-    row_axis = 3 if CHANNELS_FIRST else 2
-    col_axis = 4 if CHANNELS_FIRST else 3
+    row_axis = 3 if is_channels_first else 2
+    col_axis = 4 if is_channels_first else 3
     for b in range(X.shape[0]):
         for i in range(rep_number):
             for j in range(rep_number):
@@ -313,7 +316,7 @@ def reshape_movie(X, y, reshape_size=256):
                 else:
                     y_start, y_end = -reshape_size, y.shape[col_axis]
 
-                if CHANNELS_FIRST:
+                if is_channels_first:
                     new_X[counter] = X[b, :, :, x_start:x_end, y_start:y_end]
                     new_y[counter] = relabel_movie(y[b, :, :, x_start:x_end, y_start:y_end])
                 else:
