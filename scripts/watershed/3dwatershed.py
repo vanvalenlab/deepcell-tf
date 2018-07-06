@@ -136,7 +136,7 @@ def run_model_on_dir():
 
     images = load_training_images_3d(
         direc_name=os.path.join(DATA_DIR, PREFIX),
-        training_direcs=['set1'],
+        training_direcs=['set0'],
         channel_names=channel_names,
         raw_image_direc=os.path.join('stacked_raw', 'set_0_x_3_y_2'),
         image_size=(256, 256),
