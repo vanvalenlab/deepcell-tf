@@ -87,17 +87,21 @@ def distance_transform_3d(maskstack, bins=16):
                 zk = np.square(zans - k)
                 distance[k][i][j] = np.sqrt(zij + zk)
 
+    # normalize by maximum distance
+    distance = np.expand_dims(distance, axis=-1)  # add channels for comparison
+    for cell_label in np.unique(maskstack):
+        if cell_label == 0:  # distance is only found for non-zero regions
+            continue
+        labeled_distance = distance[maskstack == cell_label]
+        normalized_distance = labeled_distance / np.amax(labeled_distance)
+        distance[maskstack == cell_label] = normalized_distance
+    distance = np.reshape(distance, distance.shape[:-1])  # remove channels again
+    
     min_dist = np.amin(distance.flatten())
     max_dist = np.amax(distance.flatten())
     bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins)
     distance = np.digitize(distance, bins)
-
-    # normalize by maximum distance
-    for cell_label in np.unique(maskstack):
-        labeled_distance = distance[maskstack == cell_label]
-        normalized_distance = labeled_distance / np.amax(labeled_distance)
-        distance[maskstack == cell_label] = normalized_distance
-
+    
     # change back to channels_first, if necessary
     if K.image_data_format() == 'channels_first':
         distance = np.rollaxis(distance, 3, 0)
