@@ -190,7 +190,7 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
                                                  n_classes=n_classes,
                                                  from_logits=False)
 
-    model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
+    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
 
     print('Using real-time data augmentation.')
 

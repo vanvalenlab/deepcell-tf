@@ -1563,18 +1563,23 @@ def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal'
 
     input_1 = Input(shape=input_shape)
     input_2 = Input(shape=input_shape)
+    
     # Sequential interface for siamese portion of model
     feature_extractor = Sequential()
-    feature_extractor.add(ImageNormalization2D(norm_method=norm_method, filter_size=filter_size, input_shape=input_shape))
+    feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), input_shape=input_shape))
+    feature_extractor.add(BatchNormalization(axis=channel_axis))
+    feature_extractor.add(Activation('relu'))
     feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
     feature_extractor.add(BatchNormalization(axis=channel_axis))
     feature_extractor.add(Activation('relu'))
     feature_extractor.add(MaxPool2D(pool_size=(2, 2)))
-
-    #feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
-    #feature_extractor.add(BatchNormalization(axis=channel_axis))
-    #feature_extractor.add(Activation('relu'))
-    #feature_extractor.add(MaxPool2D(pool_size = (2, 2)))
+    feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
+    feature_extractor.add(BatchNormalization(axis=channel_axis))
+    feature_extractor.add(Activation('relu'))
+    feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
+    feature_extractor.add(BatchNormalization(axis=channel_axis))
+    feature_extractor.add(Activation('relu'))
+    feature_extractor.add(MaxPool2D(pool_size=(2, 2)))
 
     # Create two instances of feature_extractor
     output_1 = feature_extractor(input_1)
@@ -1585,11 +1590,13 @@ def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal'
     flat1 = Flatten()(merged_outputs)
 
     # Implement dense net (or call preexisting one?) with the two outputs as inputs
-    dense1 = Dense( 32, activation='relu')(flat1)
-    dropout1 = Dropout(0.1)(dense1)
-    dense2 = Dense( 16, activation='relu')(dropout1)
-    dropout2 = Dropout(0.1)(dense2)
-    dense3 = Dense( 2, activation='softmax')(dropout2)
+    dense1 = Dense(128)(flat1)
+    bn1 = BatchNormalization(axis=channel_axis)(dense1)
+    relu1 = Activation('relu')(bn1)
+    dense2 = Dense(128)(relu1)
+    bn2 = BatchNormalization(axis=channel_axis)(dense2)
+    relu2 = Activation('relu')(bn2)
+    dense3 = Dense( 2, activation='softmax')(relu2)
 
     # Instantiate model
     final_layer = dense3

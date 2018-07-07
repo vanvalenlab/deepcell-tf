@@ -521,7 +521,7 @@ Custom siamese generators
 """
 
 class SiameseDataGenerator(ImageDataGenerator):
-    def flow(self, train_dict, crop_dim=14, min_track_length=5,
+    def flow(self, train_dict, crop_dim=32, min_track_length=5,
              batch_size=32, shuffle=True, seed=None, data_format=None,
              save_to_dir=None, save_prefix='', save_format='png'):
         return SiameseIterator(train_dict, self, crop_dim=crop_dim,
@@ -532,7 +532,7 @@ class SiameseDataGenerator(ImageDataGenerator):
 
 class SiameseIterator(Iterator):
     def __init__(self, train_dict, image_data_generator,
-                 crop_dim=14, min_track_length=5, batch_size=32, shuffle=False,
+                 crop_dim=32, min_track_length=5, batch_size=32, shuffle=False,
                  seed=None, data_format=None, save_to_dir=None, save_prefix='',
                  save_format='png'):
         # Identify the channel axis so the code works regardless of what dimension
