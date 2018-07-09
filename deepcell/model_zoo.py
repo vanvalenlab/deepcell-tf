@@ -1596,10 +1596,11 @@ def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal'
     dense2 = Dense(128)(relu1)
     bn2 = BatchNormalization(axis=channel_axis)(dense2)
     relu2 = Activation('relu')(bn2)
-    dense3 = Dense( 2, activation='softmax')(relu2)
+    dense3 = Dense(2, activation='softmax')(relu2)
 
     # Instantiate model
     final_layer = dense3
     model = Model(inputs=[input_1, input_2], outputs=final_layer)
 
     return model
+    
