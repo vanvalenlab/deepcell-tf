@@ -19,6 +19,7 @@ from skimage.morphology import disk, binary_dilation
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.utils import to_categorical
 
 from .io_utils import get_image
 from .io_utils import get_image_sizes
@@ -463,16 +464,22 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
     if distance_transform:
         if K.image_data_format() == 'channels_first':
+            channel_axis = 1
             new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3]))
         else:
             new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1))
+            channel_axis = -1
         for b in range(y.shape[0]):
             if K.image_data_format() == 'channels_first':
-                d = np.expand_dims(y[b, 1, :, :], axis=1)
+                d = np.expand_dims(y[b, 1, :, :], axis=channel_axis)
             else:
-                d = np.expand_dims(y[b, :, :, 1], axis=-1)
+                d = np.expand_dims(y[b, :, :, 1], axis=channel_axis)
             new_y[b] = distance_transform_2d(d, bins=distance_bins)
-        y = new_y
+        y = to_categorical(new_y)
+        # not really edge_feature anymore, but there will be the fewest
+        # "center" pixels, so lets call that the edge_feature for now
+        edge_feature = [0] * y.shape[channel_axis]
+        edge_feature[-1] = 1
 
     # Create mask of sampled pixels
     feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
