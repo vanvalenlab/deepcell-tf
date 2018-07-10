@@ -156,19 +156,11 @@ def run_model_on_dir():
 
     # Save images
     if save_output_images:
+        channel_axis = 0 if K.image_data_format() == 'channels_first' else -1
         for i in range(model_output.shape[0]):
-            # for f in range(n_features):
-            #     if K.image_data_format() == 'channels_first':
-            #         feature = model_output[i, f, :, :]
-            #     else:
-            #         feature = model_output[i, :, :, f]
-            #     cnnout_name = 'feature_{}_frame_{}.tif'.format(f, str(i).zfill(3))
-            #     out_file_path = os.path.join(RESULTS_DIR, PREFIX, 'set_0_x_3_y_2', cnnout_name)
-            #     tiff.imsave(out_file_path, feature)
-
             # save the argmax of each frame
             # (not all cell centers will have the same value)
-            max_img = np.argmax(model_output[i], axis=-1)
+            max_img = np.argmax(model_output[i], axis=channel_axis)
             max_img = max_img.astype(np.int16)
             cnnout_name = 'argmax_frame_{}.tif'.format(str(i).zfill(3))
             out_file_path = os.path.join(RESULTS_DIR, PREFIX, 'set_0_x_3_y_2', cnnout_name)
