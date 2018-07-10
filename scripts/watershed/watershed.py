@@ -4,6 +4,7 @@ import errno
 import argparse
 
 import numpy as np
+from skimage.external import tifffile as tiff
 from tensorflow.python.keras.optimizers import SGD,Adam
 from tensorflow.python.keras import backend as K
 
@@ -83,7 +84,7 @@ def train_model_on_training_data():
     X, y = training_data['X'], training_data['y']
     print('X.shape: {}\ny.shape: {}'.format(X.shape, y.shape))
 
-    n_epoch = 8
+    n_epoch = 4 if DATA_OUTPUT_MODE == 'sample' else 16
     batch_size = 32 if DATA_OUTPUT_MODE == 'sample' else 1
     optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     lr_sched = rate_scheduler(lr=0.01, decay=0.99)
@@ -139,7 +140,9 @@ def run_model_on_dir():
     channel_names = ['nuclear']
     image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
 
-    model_name = '2018-07-01_nuclei_broad_watershed_channels_last_conv__0.h5'
+    model_name = '2018-07-10_nuclei_broad_watershed_{}_{}__0.h5'.format(
+        K.image_data_format(), DATA_OUTPUT_MODE
+    )
 
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
@@ -163,6 +166,15 @@ def run_model_on_dir():
         win_x=window_size[0],
         win_y=window_size[1],
         split=False)
+
+    channel_axis = 0 if K.image_data_format() == 'channels_first' else -1
+    for i in predictions.shape[0]:
+        max_img = np.argmax(predictions[i], axis=channel_axis)
+        max_img = max_img.astype(np.int16)
+        cnnout_name = 'argmax_frame_{}.tif'.format(str(i).zfill(3))
+        out_file_path = os.path.join(RESULTS_DIR, PREFIX, cnnout_name)
+        tiff.imsave(out_file_path, max_img)
+
 
 def export():
     model_args = {
