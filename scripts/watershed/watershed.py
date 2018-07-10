@@ -83,17 +83,15 @@ def train_model_on_training_data():
     X, y = training_data['X'], training_data['y']
     print('X.shape: {}\ny.shape: {}'.format(X.shape, y.shape))
 
-    n_epoch = 100
+    n_epoch = 8
     batch_size = 32 if DATA_OUTPUT_MODE == 'sample' else 1
     optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     lr_sched = rate_scheduler(lr=0.01, decay=0.99)
 
-    distance_bins = BINS
-
     model_args = {
         'norm_method': 'max',
         'reg': 1e-5,
-        'n_features': distance_bins
+        'n_features': BINS
     }
 
     data_format = K.image_data_format()
@@ -127,7 +125,7 @@ def train_model_on_training_data():
         direc_save=direc_save,
         direc_data=direc_data,
         lr_sched=lr_sched,
-        distance_bins=distance_bins,
+        distance_bins=BINS,
         class_weight=training_data['class_weights'],
         rotation_range=180,
         flip=True,
@@ -145,7 +143,7 @@ def run_model_on_dir():
 
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
-    n_features = 4
+    n_features = BINS
     window_size = (30, 30)
 
     if DATA_OUTPUT_MODE == 'sample':
@@ -170,7 +168,7 @@ def export():
     model_args = {
         'norm_method': 'median',
         'reg': 1e-5,
-        'n_features': 3
+        'n_features': BINS
     }
 
     direc_data = os.path.join(NPZ_DIR, PREFIX)
@@ -183,14 +181,14 @@ def export():
     channel_axis = 1 if data_format == 'channels_first' else 3
 
     if DATA_OUTPUT_MODE == 'sample':
-        the_model = watershednetwork
+        the_model = dilated_bn_feature_net_61x61
         if K.image_data_format() == 'channels_first':
             model_args['input_shape'] = (1, 1080, 1280)
         else:
             model_args['input_shape'] = (1080, 1280, 1)
 
     elif DATA_OUTPUT_MODE == 'conv' or DATA_OUTPUT_MODE == 'disc':
-        the_model = watershednetwork
+        the_model = bn_dense_feature_net
         model_args['location'] = False
 
         size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[row_axis:col_axis + 1]
