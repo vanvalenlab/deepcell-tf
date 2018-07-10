@@ -491,8 +491,8 @@ class ImageFullyConvDataGenerator(object):
             ValueError: in case of invalid input `x`.
         """
         x = np.asarray(x, dtype=K.floatx())
-        if x.ndim != 5:
-            raise ValueError('Input to `.fit()` should have rank 5. '
+        if x.ndim != 4:
+            raise ValueError('Input to `.fit()` should have rank 4. '
                              'Got array with shape: ' + str(x.shape))
 
         if seed is not None:
