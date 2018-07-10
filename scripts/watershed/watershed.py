@@ -13,16 +13,17 @@ from deepcell import bn_feature_net_61x61
 from deepcell import dilated_bn_feature_net_61x61
 from deepcell import bn_dense_feature_net
 from deepcell import rate_scheduler
-from deepcell import train_model_watershed
+from deepcell import train_model_watershed, train_model_watershed_sample
 from deepcell import run_models_on_directory
 from deepcell import export_model
 
 # data options
 DATA_OUTPUT_MODE = 'conv'
-# DATA_OUTPUT_MODE = 'sample'
+DATA_OUTPUT_MODE = 'sample'
 BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
 RESIZE = False
 RESHAPE_SIZE = 512
+BINS = 4
 
 # filepath constants
 DATA_DIR = '/data/data'
@@ -39,6 +40,7 @@ for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
     except OSError as exc: # Guard against race condition
         if exc.errno != errno.EEXIST:
             raise
+
 
 def generate_training_data():
     file_name_save = os.path.join(NPZ_DIR, PREFIX, DATA_FILE)
@@ -59,6 +61,8 @@ def generate_training_data():
         border_mode=BORDER_MODE,
         file_name_save=file_name_save,
         training_direcs=training_direcs,
+        distance_transform=DATA_OUTPUT_MODE == 'sample',
+        distance_bins=BINS,
         channel_names=channel_names,
         num_of_features=num_of_features,
         raw_image_direc=raw_image_direc,
@@ -84,7 +88,7 @@ def train_model_on_training_data():
     optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     lr_sched = rate_scheduler(lr=0.01, decay=0.99)
 
-    distance_bins = 4
+    distance_bins = BINS
 
     model_args = {
         'norm_method': 'max',
@@ -101,12 +105,10 @@ def train_model_on_training_data():
 
     if DATA_OUTPUT_MODE == 'sample':
         the_model = bn_feature_net_61x61
-        train_model = train_model_watershed
+        train_model = train_model_watershed_sample
     elif DATA_OUTPUT_MODE == 'conv':
         the_model = bn_dense_feature_net
         train_model = train_model_watershed
-        model_args['permute'] = False
-        model_args['location'] = False
         if data_format == 'channels_first':
             model_args['input_shape'] = (X.shape[channel_axis], size[0], size[1])
         else:
