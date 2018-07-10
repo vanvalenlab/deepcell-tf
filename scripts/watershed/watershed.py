@@ -44,8 +44,8 @@ for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):
 
 def generate_training_data():
     file_name_save = os.path.join(NPZ_DIR, PREFIX, DATA_FILE)
-    num_of_features = 1 # Specify the number of feature masks that are present
-    window_size = (30, 30) # Size of window around pixel
+    num_of_features = BINS  # Specify the number of feature masks that are present
+    window_size = (30, 30)  # Size of window around pixel
     training_direcs = ['set1', 'set2', 'set3', 'set4', 'set5']
     channel_names = ['nuclear']
     raw_image_direc = 'raw'
