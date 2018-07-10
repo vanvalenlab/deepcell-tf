@@ -462,9 +462,16 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         X, y = reshape_matrix(X, y, reshape_size=reshape_size)
 
     if distance_transform:
-        new_y = np.zeros(y.shape)
+        if K.image_data_format() == 'channels_first':
+            new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3]))
+        else:
+            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1))
         for b in range(y.shape[0]):
-            new_y[b] = distance_transform_2d(y[b], bins=distance_bins)
+            if K.image_data_format() == 'channels_first':
+                d = np.expand_dims(y[b, 1, :, :], axis=1)
+            else:
+                d = np.expand_dims(y[b, :, :, 1], axis=-1)
+            new_y[b] = distance_transform_2d(d, bins=distance_bins)
         y = new_y
 
     # Create mask of sampled pixels
