@@ -382,6 +382,10 @@ def train_model_watershed_sample(model=None, dataset=None, optimizer=None,
         horizontal_flip=0,
         vertical_flip=0)
 
+    # convert class vectors to binary class matrices
+    train_dict['y'] = to_categorical(train_dict['y'], n_classes)
+    y_test = to_categorical(y_test, n_classes)
+
     validation_dict = {
         'X': X_test,
         'y': y_test,
