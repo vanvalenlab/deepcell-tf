@@ -39,7 +39,7 @@ def distance_transform_2d(mask, bins=16):
     min_dist = np.amin(distance)
     max_dist = np.amax(distance)
     bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins)
-    distance = np.digitize(distance, bins)
+    distance = np.digitize(distance, bins, right=True)
     return distance
 
 def rotate_array_0(arr):
