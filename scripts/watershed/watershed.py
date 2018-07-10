@@ -168,7 +168,7 @@ def run_model_on_dir():
         split=False)
 
     channel_axis = 0 if K.image_data_format() == 'channels_first' else -1
-    for i in predictions.shape[0]:
+    for i in range(predictions.shape[0]):
         max_img = np.argmax(predictions[i], axis=channel_axis)
         max_img = max_img.astype(np.int16)
         cnnout_name = 'argmax_frame_{}.tif'.format(str(i).zfill(3))
