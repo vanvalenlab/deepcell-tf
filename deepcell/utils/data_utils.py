@@ -27,6 +27,7 @@ from .io_utils import get_immediate_subdirs
 from .misc_utils import sorted_nicely
 from .plot_utils import plot_training_data_2d
 from .plot_utils import plot_training_data_3d
+from .transform_utils import distance_transform_2d
 
 CHANNELS_FIRST = K.image_data_format() == 'channels_first'
 
@@ -407,6 +408,8 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
                           annotation_direc='annotated',
                           training_direcs=None,
                           max_training_examples=1e7,
+                          distance_transform=False,
+                          distance_bins=4,
                           window_size_x=30,
                           window_size_y=30,
                           edge_feature=[1, 0, 0],
@@ -457,6 +460,9 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
     if reshape_size is not None:
         X, y = reshape_matrix(X, y, reshape_size=reshape_size)
+
+    if distance_transform:
+        y = distance_transform_2d(y, bins=distance_bins)
 
     # Create mask of sampled pixels
     feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
@@ -787,6 +793,8 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               window_size_x=window_size_x,
                               window_size_y=window_size_y,
                               edge_feature=edge_feature,
+                              distance_transform=kwargs.get('distance_transform', False),
+                              distance_bins=kwargs.get('distance_bins', 4),
                               display=display,
                               verbose=verbose,
                               reshape_size=reshape_size,
