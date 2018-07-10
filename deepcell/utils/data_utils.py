@@ -463,7 +463,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
     if distance_transform:
         new_y = np.zeros(y.shape)
-        for b in y.shape[0]:
+        for b in range(y.shape[0]):
             new_y[b] = distance_transform_2d(y[b], bins=distance_bins)
         y = new_y
 
