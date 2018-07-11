@@ -874,25 +874,25 @@ def bn_dense_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_featur
 
     return model
 
-def disc_net(input_shape = (256,256,1), seg_model=None, n_features=16, reg=1e-5, init='he_normal', softmax=True, location=True, norm_method='std', filter_size=61):
+def disc_net(input_shape=(256, 256, 1), seg_model=None, n_features=16, reg=1e-5, init='he_normal', softmax=True, location=True, norm_method='std', filter_size=61):
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
     else:
         channel_axis = -1
 
     for layer in seg_model.layers:
-        layer.trainable=False
-        
+        layer.trainable = False
+
     input1 = Input(shape=input_shape)
     seg_output = seg_model(input1)
-    img_norm = ImageNormalization2D(norm_method='std', filter_size=61)(input1)
-    
+    img_norm = ImageNormalization2D(norm_method=norm_method, filter_size=filter_size)(input1)
+
     if location:
         loc0 = Location(in_shape=input_shape)(img_norm)
         input2 = Concatenate(axis=channel_axis)([img_norm, loc0])
     else:
         input2 = img_norm
-        
+
     input3 = Concatenate(axis=-1)([input2, seg_output])
 
     conv1 = Conv2D(32, (3, 3), dilation_rate=1, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(input3)
@@ -942,7 +942,7 @@ def disc_net(input_shape = (256,256,1), seg_model=None, n_features=16, reg=1e-5,
     conv12 = Conv2D(32, (3, 3), dilation_rate=32, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act11)
     norm12 = BatchNormalization(axis=channel_axis)(conv12)
     act12 = Activation('relu')(norm12)
-    
+
     conv13 = Conv2D(32, (3, 3), dilation_rate=64, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act12)
     norm13 = BatchNormalization(axis=channel_axis)(conv13)
     act13 = Activation('relu')(norm13)
@@ -967,9 +967,9 @@ def disc_net(input_shape = (256,256,1), seg_model=None, n_features=16, reg=1e-5,
         act15 = Softmax(axis=channel_axis)(tensor_prod3)
     else:
         act15 = tensor_prod3
-        
+
     final_layer = act15
-    
+
     model = Model(inputs=input1, outputs=final_layer)
 
     return model

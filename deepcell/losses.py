@@ -11,9 +11,8 @@ from __future__ import division
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.python import debug as tf_debug
 from tensorflow.python.keras import backend as K
-from tensorflow.python.ops import io_ops
+
 
 def _to_tensor(x, dtype):
     """Convert the input `x` to a tensor of type `dtype`.
@@ -137,14 +136,14 @@ def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order
     n_pixels = tf.cast(tf.count_nonzero(y_true, axis=[0, 1, 2]), dtype=K.floatx()) + K.epsilon()
     n_pixels_expand = tf.expand_dims(n_pixels, axis=1) + K.epsilon()
     mu = tf.divide(cells_summed, n_pixels_expand)
-    
+
     mu_tensor = tf.tensordot(y_true, mu, axes=[[-1], [0]])
     L_var_1 = y_pred - mu_tensor
     L_var_2 = tf.square(tf.nn.relu(temp_norm(L_var_1, axis=-1) - tf.constant(delta_v, dtype=K.floatx())))
     L_var_3 = tf.tensordot(L_var_2, y_true, axes=[[0, 1, 2], [0, 1, 2]])
     L_var_4 = tf.divide(L_var_3, n_pixels)
     L_var = tf.reduce_mean(L_var_4)
-    
+
     # Compute distance loss
     mu_a = tf.expand_dims(mu, axis=0)
     mu_b = tf.expand_dims(mu, axis=1)
@@ -159,15 +158,13 @@ def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order
     # Compute regularization loss
     L_reg = gamma * temp_norm(mu, axis=-1)
     L =  L_var + L_dist + tf.reduce_mean(L_reg)
-    
+
     return L
 
 def discriminative_instance_loss_3D(y_true, y_pred, delta_v=0.5, delta_d=1.5, order=2, gamma=1e-3):
 
     def temp_norm(ten, axis=-1):
         return tf.sqrt(tf.constant(1e-4, dtype=K.floatx()) + tf.reduce_sum(tf.square(ten), axis=axis))
-
-    # y_pred = tf.divide(y_pred, tf.expand_dims(tf.norm(y_pred, ord = 2, axis = -1), axis = -1))
 
     # Compute variance loss
     cells_summed = tf.tensordot(y_true, y_pred, axes=[[0, 1, 2, 3], [0, 1, 2, 3]])
@@ -188,7 +185,7 @@ def discriminative_instance_loss_3D(y_true, y_pred, delta_v=0.5, delta_d=1.5, or
 
     diff_matrix = tf.subtract(mu_a, mu_b)
     L_dist_1 = temp_norm(diff_matrix, axis=-1)
-    L_dist_2 = tf.square(tf.nn.relu(tf.constant(2*delta_d, dtype=K.floatx()) - L_dist_1))
+    L_dist_2 = tf.square(tf.nn.relu(tf.constant(2 * delta_d, dtype=K.floatx()) - L_dist_1))
     diag = tf.constant(0, dtype=K.floatx()) * tf.diag_part(L_dist_2)
     L_dist_3 = tf.matrix_set_diag(L_dist_2, diag)
     L_dist = tf.reduce_mean(L_dist_3)

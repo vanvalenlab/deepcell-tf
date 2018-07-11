@@ -1518,67 +1518,6 @@ Discriminative generator
 """
 
 class DiscDataGenerator(ImageFullyConvDataGenerator):
-    def __init__(self,
-             featurewise_center=False,
-             samplewise_center=False,
-             featurewise_std_normalization=False,
-             samplewise_std_normalization=False,
-             rotation_range=0.,
-             width_shift_range=0.,
-             height_shift_range=0.,
-             shear_range=0.,
-             zoom_range=0.,
-             channel_shift_range=0.,
-             fill_mode='nearest',
-             cval=0.,
-             horizontal_flip=False,
-             vertical_flip=False,
-             rescale=None,
-             preprocessing_function=None,
-             data_format=None):
-        if data_format is None:
-            data_format = K.image_data_format()
-        if data_format not in {'channels_last', 'channels_first'}:
-            raise ValueError('`data_format` should be `"channels_last"` (channel after row and '
-                             'column) or `"channels_first"` (channel before row and column). '
-                             'Received arg: {}'.format(data_format))
-        self.featurewise_center = featurewise_center
-        self.samplewise_center = samplewise_center
-        self.featurewise_std_normalization = featurewise_std_normalization
-        self.samplewise_std_normalization = samplewise_std_normalization
-        self.rotation_range = rotation_range
-        self.width_shift_range = width_shift_range
-        self.height_shift_range = height_shift_range
-        self.shear_range = shear_range
-        self.zoom_range = zoom_range
-        self.channel_shift_range = channel_shift_range
-        self.fill_mode = fill_mode
-        self.cval = cval
-        self.horizontal_flip = horizontal_flip
-        self.vertical_flip = vertical_flip
-        self.rescale = rescale
-        self.preprocessing_function = preprocessing_function
-        self.data_format = data_format
-        if data_format == 'channels_first':
-            self.channel_axis = 1
-            self.row_axis = 2
-            self.col_axis = 3
-        elif data_format == 'channels_last':
-            self.channel_axis = 3
-            self.row_axis = 1
-            self.col_axis = 2
-
-        self.mean = None
-        self.std = None
-        self.principal_components = None
-
-        if np.isscalar(zoom_range):
-            self.zoom_range = [1 - zoom_range, 1 + zoom_range]
-        elif len(zoom_range) == 2:
-            self.zoom_range = [zoom_range[0], zoom_range[1]]
-        else:
-            raise ValueError('`zoom_range` should be a float or a tuple or list of two floats. '
-                             'Received arg: {}'.format(zoom_range))
 
     def flow(self, train_dict, batch_size=1, shuffle=True, seed=None,
              save_to_dir=None, save_prefix='', save_format='png'):
@@ -1605,11 +1544,14 @@ class DiscIterator(Iterator):
         self.y = train_dict['y']
         self.max_label = 0
         for batch in range(self.y.shape[0]):
-            label_matrix = label(self.y[batch,:,:,1])
-            max_label= np.amax(label_matrix)
+            if self.channel_axis == 1:
+                label_matrix = label(self.y[batch, 1, :, :])
+            else:
+                label_matrix = label(self.y[batch, :, :, 1])
+            max_label = np.amax(label_matrix)
             if max_label > self.max_label:
                 self.max_label = max_label
-            
+
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -1639,7 +1581,7 @@ class DiscIterator(Iterator):
                 interior = y[1, :, :]
             else:
                 interior = y[:, :, 1]
-                
+
             label_matrix = label(interior)
 
             # convert to one hot notation
@@ -1649,12 +1591,12 @@ class DiscIterator(Iterator):
                 y_shape = (self.y.shape[1], self.y.shape[2], self.max_label + 1)
 
             y = np.zeros(y_shape)
-            
-            for label_val in range(0,self.max_label+1):
+
+            for label_val in range(self.max_label + 1):
                 if self.channel_axis == 1:
-                    y[label_val,:,:] = label_matrix == label_val
+                    y[label_val, :, :] = label_matrix == label_val
                 else:
-                    y[:,:,label_val] = label_matrix == label_val    
+                    y[:, :, label_val] = label_matrix == label_val
 
             batch_x[i] = x
             batch_y[i] = y
