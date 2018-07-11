@@ -14,7 +14,7 @@ from deepcell import bn_dense_multires_feature_net_3D
 from deepcell import bn_dense_feature_net_lstm
 from deepcell import siamese_model
 from deepcell import rate_scheduler
-from deepcell import train_model_disc as train_model
+from deepcell import train_model_movie as train_model
 from deepcell.utils.data_utils import load_training_images_3d
 from deepcell import run_model
 from deepcell import export_model
@@ -110,8 +110,8 @@ def train_model_on_training_data():
         dataset=DATA_FILE,
         optimizer=sgd,
         batch_size=batch_size,
-#        number_of_frames=frames_per_batch,
-	n_epoch=n_epoch,
+        number_of_frames=frames_per_batch,
+        n_epoch=n_epoch,
         direc_save=direc_save,
         direc_data=direc_data,
         lr_sched=rate_scheduler(lr=0.01, decay=0.95),
@@ -125,7 +125,7 @@ def run_model_on_dir():
     channel_names = ['slice']
 
     # Define the model
-    model_name = '2018-06-25_MouseBrain_channels_last_conv__0.h5'
+    model_name = '2018-06-17_MouseBrain_channels_last_conv__0.h5'
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
     number_of_frames = 30
@@ -196,7 +196,7 @@ def export():
 
     model = the_model(**model_args)
 
-    model_name = '2018-06-25_MouseBrain_channels_last_conv__0.h5'
+    model_name = '2018-06-13_MouseBrain_channels_last_conv__0.h5'
     weights_path = os.path.join(MODEL_DIR, PREFIX, model_name)
     export_path = os.path.join(EXPORT_DIR, PREFIX)
     export_model(model, export_path, model_version=0, weights_path=weights_path)
