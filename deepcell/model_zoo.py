@@ -16,7 +16,8 @@ from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.python.keras.models import Sequential, Model
 from tensorflow.python.keras.layers import Add, Permute, Input, Concatenate
 from tensorflow.python.keras.layers import Conv2D, Conv3D, MaxPool2D, AvgPool2D
-from tensorflow.python.keras.layers import Flatten, Dense, Dropout
+from tensorflow.python.keras.layers import Flatten, Dense, Dropout, MaxPooling2D
+from tensorflow.python.keras.layers import MaxPooling2D, UpSampling2D
 from tensorflow.python.keras.layers import Activation, Softmax
 from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.regularizers import l2
@@ -1595,4 +1596,69 @@ def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal'
     final_layer = dense3
     model = Model(inputs=[input_1, input_2], outputs=final_layer)
 
+    return model
+
+def watershed_net(input_shape=(256, 256, 1), segmentation_model=None, n_features=16, reg=1e-5, init='he_normal', softmax=True, norm_method='std', filter_size=61):
+    if K.image_data_format() == 'channels_first':
+        channel_axis = 1
+    else:
+        channel_axis = -1
+
+    if segmentation_model:
+        for layer in segmentation_model.layers:
+            layer.trainable = False
+
+    inputs1 = Input(input_shape)
+    img_norm = ImageNormalization2D(norm_method='max', filter_size=61, input_shape=input_shape)(inputs1)
+
+    if segmentation_model:
+        segmentation_output = segmentation_model(inputs1)
+        inputs2 = Concatenate(axis=-1)([img_norm, segmentation_output])
+    else:
+        inputs2 = img_norm
+
+    conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(inputs2)
+    conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv1)
+    pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
+
+    conv2 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool1)
+    conv2 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv2)
+    pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
+
+    conv3 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool2)
+    conv3 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv3)
+    pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
+
+    conv4 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool3)
+    conv4 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv4)
+    drop4 = Dropout(0.5)(conv4)
+    pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
+
+    conv5 = Conv2D(1024, 3, activation='relu', padding='same', kernel_initializer='he_normal')(pool4)
+    conv5 = Conv2D(1024, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv5)
+    drop5 = Dropout(0.5)(conv5)
+
+    up6 = Conv2D(512, 2, activation='relu', padding='same', kernel_initializer='he_normal')(UpSampling2D(size=(2, 2))(drop5))
+    merge6 = Concatenate(axis=3)([drop4, up6])
+    conv6 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge6)
+    conv6 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv6)
+
+    up7 = Conv2D(256, 2, activation='relu', padding='same', kernel_initializer='he_normal')(UpSampling2D(size=(2, 2))(conv6))
+    merge7 = Concatenate(axis=3)([conv3, up7])
+    conv7 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge7)
+    conv7 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv7)
+
+    up8 = Conv2D(128, 2, activation='relu', padding='same', kernel_initializer='he_normal')(UpSampling2D(size=(2, 2))(conv7))
+    merge8 = Concatenate(axis=3)([conv2, up8])
+    conv8 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge8)
+    conv8 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv8)
+
+    up9 = Conv2D(64, 2, activation='relu', padding='same', kernel_initializer='he_normal')(UpSampling2D(size=(2, 2))(conv8))
+    merge9 = Concatenate(axis=3)([conv1, up9])
+    conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(merge9)
+    conv9 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
+    conv9 = Conv2D(2, 3, activation='relu', padding='same', kernel_initializer='he_normal')(conv9)
+    conv10 = Conv2D(1, 1, activation='sigmoid')(conv9)
+
+    model = Model(inputs=inputs, outputs=conv10)
     return model
