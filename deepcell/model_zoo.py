@@ -20,6 +20,7 @@ from tensorflow.python.keras.layers import Flatten, Dense, Dropout, MaxPooling2D
 from tensorflow.python.keras.layers import MaxPooling2D, UpSampling2D
 from tensorflow.python.keras.layers import Activation, Softmax
 from tensorflow.python.keras.layers import BatchNormalization
+from tensorflow.python.keras.layers import UpSampling2D, AveragePooling2D, Conv2DTranspose, MaxPooling2D
 from tensorflow.python.keras.regularizers import l2
 
 from .layers import Resize
@@ -28,6 +29,7 @@ from .layers import TensorProd2D, TensorProd3D
 from .layers import Location, Location3D
 from .layers import ImageNormalization2D, ImageNormalization3D
 from .utils.train_utils import axis_softmax
+
 
 """
 Batch normalized conv-nets
@@ -628,7 +630,7 @@ def bn_multires_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_fea
 
     if location:
         loc0 = Location(in_shape=input_shape)(img_norm)
-        input2 = Concatenate(axis=1)([img_norm, loc0])
+        input2 = Concatenate(axis=channel_axis)([img_norm, loc0])
     else:
         input2 = img_norm
 
@@ -872,6 +874,107 @@ def bn_dense_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_featur
     model = Model(inputs=input1, outputs=final_layer)
 
     return model
+
+def disc_net(input_shape=(256, 256, 1), seg_model=None, n_features=16, reg=1e-5, init='he_normal', softmax=True, location=True, norm_method='std', filter_size=61):
+    if K.image_data_format() == 'channels_first':
+        channel_axis = 1
+    else:
+        channel_axis = -1
+
+    for layer in seg_model.layers:
+        layer.trainable = False
+
+    input1 = Input(shape=input_shape)
+    seg_output = seg_model(input1)
+    img_norm = ImageNormalization2D(norm_method=norm_method, filter_size=filter_size)(input1)
+
+    if location:
+        loc0 = Location(in_shape=input_shape)(img_norm)
+        input2 = Concatenate(axis=channel_axis)([img_norm, loc0])
+    else:
+        input2 = img_norm
+
+    input3 = Concatenate(axis=-1)([input2, seg_output])
+
+    conv1 = Conv2D(32, (3, 3), dilation_rate=1, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(input3)
+    norm1 = BatchNormalization(axis=channel_axis)(conv1)
+    act1 = Activation('relu')(norm1)
+
+    conv2 = Conv2D(32, (3, 3), dilation_rate=1, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act1)
+    norm2 = BatchNormalization(axis=channel_axis)(conv2)
+    act2 = Activation('relu')(norm2)
+
+    conv3 = Conv2D(32, (3, 3), dilation_rate=2, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act2)
+    norm3 = BatchNormalization(axis=channel_axis)(conv3)
+    act3 = Activation('relu')(norm3)
+
+    conv4 = Conv2D(32, (3, 3), dilation_rate=2, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act3)
+    norm4 = BatchNormalization(axis=channel_axis)(conv4)
+    act4 = Activation('relu')(norm4)
+
+    conv5 = Conv2D(32, (3, 3), dilation_rate=4, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act4)
+    norm5 = BatchNormalization(axis=channel_axis)(conv5)
+    act5 = Activation('relu')(norm5)
+
+    conv6 = Conv2D(32, (3, 3), dilation_rate=4, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act5)
+    norm6 = BatchNormalization(axis=channel_axis)(conv6)
+    act6 = Activation('relu')(norm6)
+
+    conv7 = Conv2D(32, (3, 3), dilation_rate=8, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act6)
+    norm7 = BatchNormalization(axis=channel_axis)(conv7)
+    act7 = Activation('relu')(norm7)
+
+    conv8 = Conv2D(32, (3, 3), dilation_rate=8, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act7)
+    norm8 = BatchNormalization(axis=channel_axis)(conv8)
+    act8 = Activation('relu')(norm8)
+
+    conv9 = Conv2D(32, (3, 3), dilation_rate=16, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act8)
+    norm9 = BatchNormalization(axis=channel_axis)(conv9)
+    act9 = Activation('relu')(norm9)
+
+    conv10 = Conv2D(32, (3, 3), dilation_rate=16, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act9)
+    norm10 = BatchNormalization(axis=channel_axis)(conv10)
+    act10 = Activation('relu')(norm10)
+
+    conv11 = Conv2D(32, (3, 3), dilation_rate=32, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act10)
+    norm11 = BatchNormalization(axis=channel_axis)(conv11)
+    act11 = Activation('relu')(norm11)
+
+    conv12 = Conv2D(32, (3, 3), dilation_rate=32, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act11)
+    norm12 = BatchNormalization(axis=channel_axis)(conv12)
+    act12 = Activation('relu')(norm12)
+
+    conv13 = Conv2D(32, (3, 3), dilation_rate=64, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act12)
+    norm13 = BatchNormalization(axis=channel_axis)(conv13)
+    act13 = Activation('relu')(norm13)
+
+    conv14 = Conv2D(32, (3, 3), dilation_rate=64, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(act13)
+    norm14 = BatchNormalization(axis=channel_axis)(conv14)
+    act14 = Activation('relu')(norm14)
+
+    merge1 = Concatenate(axis=channel_axis)([act1, act2, act3, act4, act5, act6, act7, act8, act9, act10, act11, act12, act13, act14])
+
+    tensor_prod1 = TensorProd2D(32*12, 128, kernel_initializer=init, kernel_regularizer=l2(reg))(merge1)
+    norm9 = BatchNormalization(axis=channel_axis)(tensor_prod1)
+    act9 = Activation('relu')(norm9)
+
+    tensor_prod2 = TensorProd2D(128, 128, kernel_initializer=init, kernel_regularizer=l2(reg))(act9)
+    norm10 = BatchNormalization(axis=channel_axis)(tensor_prod2)
+    act10 = Activation('relu')(norm10)
+
+    tensor_prod3 = TensorProd2D(128, n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(act10)
+
+    if softmax:
+        act15 = Softmax(axis=channel_axis)(tensor_prod3)
+    else:
+        act15 = tensor_prod3
+
+    final_layer = act15
+
+    model = Model(inputs=input1, outputs=final_layer)
+
+    return model
+
 
 """
 Residual layers for fine tuning
