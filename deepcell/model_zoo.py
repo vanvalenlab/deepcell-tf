@@ -1598,26 +1598,11 @@ def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal'
 
     return model
 
-def watershed_net(input_shape=(256, 256, 1), segmentation_model=None, n_features=16, reg=1e-5, init='he_normal', norm_method='std', filter_size=61):
-    if K.image_data_format() == 'channels_first':
-        channel_axis = 1
-    else:
-        channel_axis = -1
-
-    if segmentation_model:
-        for layer in segmentation_model.layers:
-            layer.trainable = False
-
+def watershed_net(input_shape=(256, 256, 1), n_features=16, reg=1e-5, init='he_normal', norm_method='std', filter_size=61):
     inputs1 = Input(input_shape)
     img_norm = ImageNormalization2D(norm_method=norm_method, filter_size=filter_size, input_shape=input_shape)(inputs1)
 
-    if segmentation_model:
-        segmentation_output = segmentation_model(inputs1)
-        inputs2 = Concatenate(axis=-1)([img_norm, segmentation_output])
-    else:
-        inputs2 = img_norm
-
-    conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer=init)(inputs2)
+    conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer=init)(img_norm)
     conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer=init)(conv1)
     pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
 
