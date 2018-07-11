@@ -88,7 +88,7 @@ def train_model_on_training_data():
     n_epoch = 300
     batch_size = 32 if DATA_OUTPUT_MODE == 'sample' else 1
     optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-    lr_sched = rate_scheduler(lr=0.01, decay=0.99)
+    lr_sched = rate_scheduler(lr=0.05, decay=0.99)
 
     model_args = {
         'norm_method': 'median',
@@ -144,7 +144,7 @@ def run_model_on_dir():
     channel_names = ['phase']
     image_size_x, image_size_y = get_image_sizes(data_location, channel_names)
 
-    model_name = '2018-07-05_ecoli_generic_{}_{}__0.h5'.format(
+    model_name = '2018-07-09_ecoli_generic_{}_{}__0.h5'.format(
         K.image_data_format(), DATA_OUTPUT_MODE)
 
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
