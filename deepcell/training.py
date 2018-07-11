@@ -98,7 +98,7 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
         validation_steps=y_test.shape[0] // batch_size,
         class_weight=class_weight,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=0, save_best_only=True, mode='auto'),
+            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
             LearningRateScheduler(lr_sched)
         ])
 
