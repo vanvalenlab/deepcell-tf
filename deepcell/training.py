@@ -19,7 +19,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.utils import to_categorical as keras_to_categorical
 from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 
-from deepcell import DiscDataGenerator
+from .image_generators import DiscDataGenerator
 from .image_generators import SampleDataGenerator
 from .image_generators import ImageFullyConvDataGenerator
 from .image_generators import MovieDataGenerator
@@ -299,7 +299,7 @@ def train_model_fgbg(model=None, dataset=None, optimizer=None,
                      direc_save='/data/models', direc_data='/data/npz_data',
                      lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                      rotation_range=0, flip=True, shear=0, class_weight=None):
-    
+
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
 
@@ -329,32 +329,34 @@ def train_model_fgbg(model=None, dataset=None, optimizer=None,
     def loss_function_fgbg(y_true, y_pred):
         return weighted_categorical_crossentropy(y_true, y_pred,
                                                  n_classes=n_classes,
-                                                 from_logits=False) 
+                                                 from_logits=False)
 
     model.compile(loss=loss_function_fgbg, optimizer=optimizer, metrics=['accuracy'])
 
     datagen_fgbg = ImageFullyConvDataGenerator(
         rotation_range=180,  # randomly rotate images by 0 to rotation_range degrees
-    	shear_range=0, # randomly shear images in the range (radians , -shear_range to shear_range)
-    	horizontal_flip=True,  # randomly flip images
-    	vertical_flip=True)  # randomly flip images
+        shear_range=0, # randomly shear images in the range (radians , -shear_range to shear_range)
+        horizontal_flip=True,  # randomly flip images
+        vertical_flip=True)  # randomly flip images
 
     datagen_fgbg_test = ImageFullyConvDataGenerator(
-    	rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
-    	shear_range=0, # randomly shear images in the range (radians , -shear_range to shear_range)
-    	horizontal_flip=False,  # randomly flip images
-    	vertical_flip=False)  # randomly flip images
+        rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
+        shear_range=0, # randomly shear images in the range (radians , -shear_range to shear_range)
+        horizontal_flip=False,  # randomly flip images
+        vertical_flip=False)  # randomly flip images
 
     loss_history = model.fit_generator(
-    	datagen_fgbg.flow(train_dict, batch_size=batch_size),
-    	steps_per_epoch=train_dict['y'].shape[0] // batch_size,
-    	epochs=n_epoch,
-    	validation_data=datagen_fgbg_test.flow(test_dict, batch_size=batch_size),
-    	validation_steps=X_test.shape[0] // batch_size,
-    	callbacks=[
+        datagen_fgbg.flow(train_dict, batch_size=batch_size),
+        steps_per_epoch=train_dict['y'].shape[0] // batch_size,
+        epochs=n_epoch,
+        validation_data=datagen_fgbg_test.flow(test_dict, batch_size=batch_size),
+        validation_steps=X_test.shape[0] // batch_size,
+        callbacks=[
             ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
             LearningRateScheduler(lr_sched)
-    	])
+        ])
+
+    np.savez(file_name_save_loss, loss_history=loss_history.history)
 
     return model
 
@@ -365,18 +367,18 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
                      rotation_range=0, flip=True, shear=0, class_weight=None):
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    
+
     file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
     file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
 
     train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='conv')
 
     test_dict = {
-    	'X':X_test,
-    	'y':y_test,
-    	'class_weights':train_dict['class_weights'],
-    	'win_x':train_dict['win_x'],
-    	'win_y':train_dict['win_y']
+        'X':X_test,
+        'y':y_test,
+        'class_weights':train_dict['class_weights'],
+        'win_x':train_dict['win_x'],
+        'win_y':train_dict['win_y']
     }
 
     class_weights = train_dict['class_weights']
@@ -390,34 +392,33 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-    	return discriminative_instance_loss(y_true, y_pred)
+        return discriminative_instance_loss(y_true, y_pred)
 
     model.compile(loss=loss_function, optimizer=optimizer)
 
     datagen = DiscDataGenerator(
         rotation_range=180,  # randomly rotate images by 0 to rotation_range degrees
-    	shear_range=0, # randomly shear images in the range (radians , -shear_range to shear_range)
-    	horizontal_flip=True,  # randomly flip images
-    	vertical_flip=True)  # randomly flip images
+        shear_range=0, # randomly shear images in the range (radians , -shear_range to shear_range)
+        horizontal_flip=True,  # randomly flip images
+        vertical_flip=True)  # randomly flip images
 
     datagen_test = DiscDataGenerator(
-    	rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
-    	shear_range=0, # randomly shear images in the range (radians , -shear_range to shear_range)
-    	horizontal_flip=False,  # randomly flip images
-    	vertical_flip=False)  # randomly flip images
+        rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
+        shear_range=0, # randomly shear images in the range (radians , -shear_range to shear_range)
+        horizontal_flip=False,  # randomly flip images
+        vertical_flip=False)  # randomly flip images
 
     loss_history = model.fit_generator(
-    	datagen.flow(train_dict, batch_size=batch_size),
-    	steps_per_epoch=train_dict['y'].shape[0] // batch_size,
-    	epochs=n_epoch,
-    	validation_data=datagen_test.flow(test_dict, batch_size=batch_size),
-    	validation_steps=X_test.shape[0] // batch_size,
-    	callbacks=[
+        datagen.flow(train_dict, batch_size=batch_size),
+        steps_per_epoch=train_dict['y'].shape[0] // batch_size,
+        epochs=n_epoch,
+        validation_data=datagen_test.flow(test_dict, batch_size=batch_size),
+        validation_steps=X_test.shape[0] // batch_size,
+        callbacks=[
             ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
             LearningRateScheduler(lr_sched)
-    	]) 
+        ])
 
-    model.save_weights(file_name_save)
     np.savez(file_name_save_loss, loss_history=loss_history.history)
 
     return model
