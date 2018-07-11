@@ -1544,8 +1544,11 @@ class DiscIterator(Iterator):
         self.y = train_dict['y']
         self.max_label = 0
         for batch in range(self.y.shape[0]):
-            label_matrix = label(self.y[batch,:,:,1])
-            max_label= np.amax(label_matrix)
+            if self.channel_axis == 1:
+                label_matrix = label(self.y[batch, 1, :, :])
+            else:
+                label_matrix = label(self.y[batch, :, :, 1])
+            max_label = np.amax(label_matrix)
             if max_label > self.max_label:
                 self.max_label = max_label
 
@@ -1589,11 +1592,11 @@ class DiscIterator(Iterator):
 
             y = np.zeros(y_shape)
 
-            for label_val in range(0,self.max_label+1):
+            for label_val in range(self.max_label + 1):
                 if self.channel_axis == 1:
-                    y[label_val,:,:] = label_matrix == label_val
+                    y[label_val, :, :] = label_matrix == label_val
                 else:
-                    y[:,:,label_val] = label_matrix == label_val
+                    y[:, :, label_val] = label_matrix == label_val
 
             batch_x[i] = x
             batch_y[i] = y
