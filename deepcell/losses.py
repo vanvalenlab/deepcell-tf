@@ -130,17 +130,20 @@ def dice_coef_loss(y_true, y_pred, smooth=1):
 def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order=2, gamma=1e-3):
     def temp_norm(ten, axis=-1):
         return tf.sqrt(K.epsilon() + tf.reduce_sum(tf.square(ten), axis=axis))
+    
+    channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+    other_axes = [0, 1, 2] if channel_axis == -1 else [0, 2, 3]
 
     # Compute variance loss
-    cells_summed = tf.tensordot(y_true, y_pred, axes=[[0, 1, 2], [0, 1, 2]])
-    n_pixels = tf.cast(tf.count_nonzero(y_true, axis=[0, 1, 2]), dtype=K.floatx()) + K.epsilon()
+    cells_summed = tf.tensordot(y_true, y_pred, axes=[other_axes, other_axes])
+    n_pixels = tf.cast(tf.count_nonzero(y_true, axis=other_axes), dtype=K.floatx()) + K.epsilon()
     n_pixels_expand = tf.expand_dims(n_pixels, axis=1) + K.epsilon()
     mu = tf.divide(cells_summed, n_pixels_expand)
 
-    mu_tensor = tf.tensordot(y_true, mu, axes=[[-1], [0]])
+    mu_tensor = tf.tensordot(y_true, mu, axes=[[channel_axis], [0]])
     L_var_1 = y_pred - mu_tensor
-    L_var_2 = tf.square(tf.nn.relu(temp_norm(L_var_1, axis=-1) - tf.constant(delta_v, dtype=K.floatx())))
-    L_var_3 = tf.tensordot(L_var_2, y_true, axes=[[0, 1, 2], [0, 1, 2]])
+    L_var_2 = tf.square(tf.nn.relu(temp_norm(L_var_1, axis=channel_axis) - tf.constant(delta_v, dtype=K.floatx())))
+    L_var_3 = tf.tensordot(L_var_2, y_true, axes=[other_axes, other_axes])
     L_var_4 = tf.divide(L_var_3, n_pixels)
     L_var = tf.reduce_mean(L_var_4)
 
@@ -149,7 +152,7 @@ def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order
     mu_b = tf.expand_dims(mu, axis=1)
 
     diff_matrix = tf.subtract(mu_b, mu_a)
-    L_dist_1 = temp_norm(diff_matrix, axis=-1)
+    L_dist_1 = temp_norm(diff_matrix, axis=channel_axis)
     L_dist_2 = tf.square(tf.nn.relu(tf.constant(2*delta_d, dtype=K.floatx()) - L_dist_1))
     diag = tf.constant(0, dtype=K.floatx()) * tf.diag_part(L_dist_2)
     L_dist_3 = tf.matrix_set_diag(L_dist_2, diag)
