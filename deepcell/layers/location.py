@@ -13,6 +13,7 @@ import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
 
+
 class Location(Layer):
     def __init__(self, in_shape, data_format=None, **kwargs):
         super(Location, self).__init__(**kwargs)
@@ -51,7 +52,7 @@ class Location(Layer):
             loc = tf.stack([loc_x, loc_y], axis=0)
 
         location = tf.expand_dims(loc, 0)
-        location = tf.tile(location, [tf.shape(inputs)[0],1,1,1])
+        location = tf.tile(location, [tf.shape(inputs)[0], 1, 1, 1])
 
         return location
 
@@ -62,6 +63,7 @@ class Location(Layer):
         }
         base_config = super(Location, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
+
 
 class Location3D(Layer):
     def __init__(self, in_shape, data_format=None, **kwargs):
