@@ -715,7 +715,7 @@ class WatershedIterator(Iterator):
                 'Input data in `WatershedIterator` should have rank 4. '
                 'You passed an array with shape', self.x.shape)
 
-        self.channel_axis = -1 if data_format == 'channels_last' else 1
+        self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.distance_bins = distance_bins
         self.y = train_dict['y']
         self.image_data_generator = image_data_generator
@@ -773,8 +773,7 @@ class WatershedIterator(Iterator):
         if self.save_to_dir:
             for i, j in enumerate(index_array):
                 # Save X batch
-                img_x = np.expand_dims(batch_x[i, :, :, 0], -1)
-                img = array_to_img(img_x, self.data_format, scale=True)
+                img = array_to_img(batch_x[i], self.data_format, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(
                     prefix=self.save_prefix,
                     index=j,
@@ -783,7 +782,9 @@ class WatershedIterator(Iterator):
                 img.save(os.path.join(self.save_to_dir, fname))
 
                 if self.y is not None:
-                    img_y = np.expand_dims(batch_y[i, :, :, 0], -1)
+                    # Save y batch, but just the MAX distance for each pixel
+                    img_y = np.argmax(batch_y[i], axis=self.channel_axis - 1)
+                    img_y = np.expand_dims(img_y, axis=self.channel_axis - 1)
                     img = array_to_img(img_y, self.data_format, scale=True)
                     fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
                         prefix=self.save_prefix,
