@@ -20,6 +20,7 @@ import argparse
 import os
 import sys
 import warnings
+from fnmatch import fnmatch
 import pandas as pd
 import keras
 import keras.preprocessing.image
@@ -31,19 +32,18 @@ import keras_retinanet.models as models
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.callbacks.eval import Evaluate
 from keras_retinanet.models.retinanet import retinanet_bbox
-from keras_retinanet.preprocessing.kitti import KittiGenerator
-from keras_retinanet.preprocessing.open_images import OpenImagesGenerator
-from keras_retinanet.preprocessing.pascal_voc import PascalVocGenerator
 from keras_retinanet.utils.anchors import make_shapes_callback
 from keras_retinanet.utils.keras_version import check_keras_version
 from keras_retinanet.utils.model import freeze as freeze_model
 from keras_retinanet.utils.transform import random_transform_generator
-from deepcell.utils.image_generators import Retinanet_Generator
+from deepcell import Retinanet_Generator
 
 import numpy as np
 from PIL import Image
 from six import raise_from
 from skimage.io import imread
+from skimage.external.tifffile import TiffFile
+from skimage.measure import label, regionprops
 import csv
 import sys
 import os.path
@@ -491,7 +491,7 @@ def create_generators(args, preprocess_image):
     else:
         transform_generator = random_transform_generator(flip_x_chance=0.5)
 
-    args.dataset_type == 'csv':
+    if args.dataset_type == 'csv':
         train_generator = CSVGenerator(
             args.annotations,
             args.classes,
