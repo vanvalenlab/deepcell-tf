@@ -15,6 +15,7 @@ from skimage.measure import label
 from skimage.measure import regionprops
 from tensorflow.python.keras import backend as K
 
+
 def distance_transform_2d(mask, bins=16):
     """Transform a label mask into distance classes.
     # Arguments
@@ -41,6 +42,7 @@ def distance_transform_2d(mask, bins=16):
     bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins)
     distance = np.digitize(distance, bins)
     return distance
+
 
 def distance_transform_3d(maskstack, bins=16):
     """Transform a label mask into distance classes for a z-stack of images
@@ -108,22 +110,27 @@ def distance_transform_3d(maskstack, bins=16):
 
     return distance
 
+
 def rotate_array_0(arr):
     return arr
 
+
 def rotate_array_90(arr):
-    axes_order = list(range(arr.ndim - 2)) + [arr.ndim-1, arr.ndim-2]
-    slices = [slice(None) for _ in range(arr.ndim-2)] + [slice(None), slice(None, None, -1)]
+    axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
+    slices = [slice(None) for _ in range(arr.ndim - 2)] + [slice(None), slice(None, None, -1)]
     return arr[tuple(slices)].transpose(axes_order)
+
 
 def rotate_array_180(arr):
-    slices = [slice(None) for _ in range(arr.ndim-2)] + [slice(None, None, -1), slice(None, None, -1)]
+    slices = [slice(None) for _ in range(arr.ndim - 2)] + [slice(None, None, -1), slice(None, None, -1)]
     return arr[tuple(slices)]
 
+
 def rotate_array_270(arr):
-    axes_order = list(range(arr.ndim-2)) + [arr.ndim-1, arr.ndim-2]
-    slices = [slice(None) for _ in range(arr.ndim-2)] + [slice(None, None, -1), slice(None)]
+    axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
+    slices = [slice(None) for _ in range(arr.ndim - 2)] + [slice(None, None, -1), slice(None)]
     return arr[tuple(slices)].transpose(axes_order)
+
 
 def to_categorical(y, num_classes=None):
     """Converts a class vector (integers) to binary class matrix.
@@ -143,6 +150,7 @@ def to_categorical(y, num_classes=None):
     categorical[np.arange(n), y] = 1
     return categorical
 
+
 def transform_matrix_offset_center(matrix, x, y):
     o_x = float(x) / 2 + 0.5
     o_y = float(y) / 2 + 0.5
@@ -158,9 +166,3 @@ def transform_matrix_offset_center(matrix, x, y):
     ])
     transform_matrix = np.dot(np.dot(offset_matrix, matrix), reset_matrix)
     return transform_matrix
-
-def flip_axis(x, axis):
-    x = np.asarray(x).swapaxes(axis, 0)
-    x = x[::-1, ...]
-    x = x.swapaxes(0, axis)
-    return x

@@ -18,6 +18,7 @@ from tensorflow.python.keras import backend as K
 
 from .misc_utils import sorted_nicely
 
+
 def get_immediate_subdirs(directory):
     """
     Get all DIRECTORIES that are immediate children of a given directory
@@ -28,6 +29,7 @@ def get_immediate_subdirs(directory):
     """
     return sorted([d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))])
 
+
 def get_image(file_name):
     """
     Read image from file and load into numpy array
@@ -36,6 +38,7 @@ def get_image(file_name):
     if ext == '.tif' or ext == '.tiff':
         return np.float32(TiffFile(file_name).asarray())
     return np.float32(imread(file_name))
+
 
 def nikon_getfiles(direc_name, channel_name):
     """
@@ -47,6 +50,7 @@ def nikon_getfiles(direc_name, channel_name):
     imgfiles = sorted_nicely(imgfiles)
     return imgfiles
 
+
 def get_image_sizes(data_location, channel_names):
     """Get the first image inside the data_location and return its shape"""
     img_list_channels = []
@@ -54,6 +58,7 @@ def get_image_sizes(data_location, channel_names):
         img_list_channels.append(nikon_getfiles(data_location, channel))
     img_temp = np.asarray(get_image(os.path.join(data_location, img_list_channels[0][0])))
     return img_temp.shape
+
 
 def get_images_from_directory(data_location, channel_names):
     """

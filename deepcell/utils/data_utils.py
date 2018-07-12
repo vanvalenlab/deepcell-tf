@@ -30,7 +30,9 @@ from .plot_utils import plot_training_data_2d
 from .plot_utils import plot_training_data_3d
 from .transform_utils import distance_transform_2d
 
+
 CHANNELS_FIRST = K.image_data_format() == 'channels_first'
+
 
 def get_data(file_name, mode='sample', test_size=.1, seed=None):
     """Load data from NPZ file and split into train and test sets
@@ -83,6 +85,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 
     return train_dict, (X_test, y_test)
 
+
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='valid',
                             window_size_x=30, window_size_y=30):
     """For each set of images and each feature, find the maximum number
@@ -105,7 +108,7 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='
         if output_mode.lower() == 'sample':
             for k, edge_feat in enumerate(edge_feature):
                 if edge_feat == 1:
-                    if CHANNELS_FIRST:
+                    if K.image_data_format() == 'channels_first':
                         y_sum = np.sum(y[j, k, :, :])
                     else:
                         y_sum = np.sum(y[j, :, :, k])
@@ -116,6 +119,7 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='
 
     return list_of_max_sample_numbers
 
+
 def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
                         border_mode='valid', output_mode='sample',
                         max_training_examples=1e7):
@@ -123,7 +127,8 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     data set. If output_mode is 'sample', then this will be set to the number
     of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
     """
-    if CHANNELS_FIRST:
+    is_channel_first = K.image_data_format() == 'channels_first'
+    if is_channel_first:
         num_dirs, num_features, image_size_x, image_size_y = y.shape
     else:
         num_dirs, image_size_x, image_size_y, num_features = y.shape
@@ -136,7 +141,7 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
 
     for direc in range(num_dirs):
         for k in range(num_features):
-            if CHANNELS_FIRST:
+            if is_channel_first:
                 feature_rows_temp, feature_cols_temp = np.where(y[direc, k, :, :] == 1)
             else:
                 feature_rows_temp, feature_cols_temp = np.where(y[direc, :, :, k] == 1)
@@ -153,10 +158,10 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
             for i in rand_ind:
                 if pixel_counter < list_of_max_sample_numbers[direc]:
                     condition = border_mode == 'valid' and \
-                                feature_rows_temp[i] - window_size_x > 0 and \
-                                feature_rows_temp[i] + window_size_x < image_size_x and \
-                                feature_cols_temp[i] - window_size_y > 0 and \
-                                feature_cols_temp[i] + window_size_y < image_size_y
+                        feature_rows_temp[i] - window_size_x > 0 and \
+                        feature_rows_temp[i] + window_size_x < image_size_x and \
+                        feature_cols_temp[i] - window_size_y > 0 and \
+                        feature_cols_temp[i] + window_size_y < image_size_y
 
                     if border_mode == 'same' or condition:
                         feature_rows.append(feature_rows_temp[i])
@@ -179,6 +184,7 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     feature_label = np.array(feature_label, dtype='int32')[rand_ind]
 
     return feature_rows, feature_cols, feature_batch, feature_label
+
 
 def trim_padding(nparr, win_x, win_y):
     """Trim the boundaries of the numpy array to allow for a sliding
@@ -206,12 +212,23 @@ def trim_padding(nparr, win_x, win_y):
             nparr.ndim))
     return trimmed
 
+
 def reshape_matrix(X, y, reshape_size=256):
-    image_size_x, image_size_y = X.shape[2:] if CHANNELS_FIRST else X.shape[1:3]
+    """
+    Reshape matrix of dimension 4 to have x and y of size reshape_size.
+    Adds overlapping slices to batches.
+    E.g. reshape_size of 256 yields (1, 1024, 1024, 1) -> (16, 256, 256, 1)
+    """
+    is_channels_first = K.image_data_format() == 'channels_first'
+    if X.ndim != 4:
+        raise ValueError('reshape_matrix expects X dim to be 4, got {}'.format(X.ndim))
+    elif y.ndim != 4:
+        raise ValueError('reshape_matrix expects y dim to be 4, got {}'.format(y.ndim))
+    image_size_x, image_size_y = X.shape[2:] if is_channels_first else X.shape[1:3]
     rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
     new_batch_size = X.shape[0] * (rep_number) ** 2
 
-    if CHANNELS_FIRST:
+    if is_channels_first:
         new_X_shape = (new_batch_size, X.shape[1], reshape_size, reshape_size)
         new_y_shape = (new_batch_size, y.shape[1], reshape_size, reshape_size)
     else:
@@ -228,14 +245,14 @@ def reshape_matrix(X, y, reshape_size=256):
                 if i != rep_number - 1:
                     x_start, x_end = i * reshape_size, (i + 1) * reshape_size
                 else:
-                    x_start, x_end = -reshape_size, X.shape[2 if CHANNELS_FIRST else 1]
+                    x_start, x_end = -reshape_size, X.shape[2 if is_channels_first else 1]
 
                 if j != rep_number - 1:
                     y_start, y_end = j * reshape_size, (j + 1) * reshape_size
                 else:
-                    y_start, y_end = -reshape_size, y.shape[3 if CHANNELS_FIRST else 2]
+                    y_start, y_end = -reshape_size, y.shape[3 if is_channels_first else 2]
 
-                if CHANNELS_FIRST:
+                if is_channels_first:
                     new_X[counter] = X[b, :, x_start:x_end, y_start:y_end]
                     new_y[counter] = y[b, :, x_start:x_end, y_start:y_end]
                 else:
@@ -248,22 +265,35 @@ def reshape_matrix(X, y, reshape_size=256):
     print('Reshaped training data from {} to {}'.format(X.shape, new_X.shape))
     return new_X, new_y
 
+
 def relabel_movie(y):
+    """Relabels unique instance IDs to be from 1 to N"""
     new_y = np.zeros(y.shape)
-    unique_cells = np.unique(y) # get all unique values of y
-    unique_cells = np.delete(unique_cells, 0) # remove 0, as it is background
+    unique_cells = np.unique(y)  # get all unique values of y
+    unique_cells = np.delete(unique_cells, 0)  # remove 0, as it is background
     relabel_ids = np.arange(1, len(unique_cells) + 1)
     for cell_id, relabel_id in zip(unique_cells, relabel_ids):
         cell_loc = np.where(y == cell_id)
         new_y[cell_loc] = relabel_id
     return new_y
 
+
 def reshape_movie(X, y, reshape_size=256):
-    image_size_x, image_size_y = X.shape[3:] if CHANNELS_FIRST else X.shape[2:4]
+    """
+    Reshape tensor of dimension 5 to have x and y of size reshape_size.
+    Adds overlapping slices to batches.
+    E.g. reshape_size of 256 yields (1, 5, 1024, 1024, 1) -> (16, 5, 256, 256, 1)
+    """
+    is_channels_first = K.image_data_format() == 'channels_first'
+    if X.ndim != 5:
+        raise ValueError('reshape_movie expects X dim to be 5, got {}'.format(X.ndim))
+    elif y.ndim != 5:
+        raise ValueError('reshape_movie expects y dim to be 5, got {}'.format(y.ndim))
+    image_size_x, image_size_y = X.shape[3:] if is_channels_first else X.shape[2:4]
     rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
     new_batch_size = X.shape[0] * (rep_number) ** 2
 
-    if CHANNELS_FIRST:
+    if is_channels_first:
         new_X_shape = (new_batch_size, X.shape[1], X.shape[2], reshape_size, reshape_size)
         new_y_shape = (new_batch_size, y.shape[1], y.shape[2], reshape_size, reshape_size)
     else:
@@ -274,8 +304,8 @@ def reshape_movie(X, y, reshape_size=256):
     new_y = np.zeros(new_y_shape, dtype='int32')
 
     counter = 0
-    row_axis = 3 if CHANNELS_FIRST else 2
-    col_axis = 4 if CHANNELS_FIRST else 3
+    row_axis = 3 if is_channels_first else 2
+    col_axis = 4 if is_channels_first else 3
     for b in range(X.shape[0]):
         for i in range(rep_number):
             for j in range(rep_number):
@@ -288,7 +318,7 @@ def reshape_movie(X, y, reshape_size=256):
                 else:
                     y_start, y_end = -reshape_size, y.shape[col_axis]
 
-                if CHANNELS_FIRST:
+                if is_channels_first:
                     new_X[counter] = X[b, :, :, x_start:x_end, y_start:y_end]
                     new_y[counter] = relabel_movie(y[b, :, :, x_start:x_end, y_start:y_end])
                 else:
@@ -300,6 +330,7 @@ def reshape_movie(X, y, reshape_size=256):
     print('Reshaped feature data from {} to {}'.format(y.shape, new_y.shape))
     print('Reshaped training data from {} to {}'.format(X.shape, new_X.shape))
     return new_X, new_y
+
 
 def load_training_images_2d(direc_name, training_direcs, channel_names, image_size,
                             raw_image_direc):
@@ -338,6 +369,7 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
                     X[b, :, :, c] = image_data
 
     return X
+
 
 def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_feature,
                              dilation_radius, annotation_direc):
@@ -403,6 +435,7 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
             y[b, :, :, len(edge_feature) - 1] = 1 - np.sum(y[b], axis=2)
 
     return y
+
 
 def make_training_data_2d(direc_name, file_name_save, channel_names,
                           raw_image_direc='raw',
@@ -569,6 +602,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
             display_mask = y
         plot_training_data_2d(X, display_mask, max_plotted=max_plotted)
 
+
 def load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
                             image_size, num_frames, montage_mode=False):
     """
@@ -616,6 +650,7 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
 
     return X
 
+
 def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, annotation_name,
                              num_frames, image_size, montage_mode=False):
     """
@@ -658,6 +693,7 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
                     y[b, z, :, :, c] = annotation_img
 
     return y
+
 
 def make_training_data_3d(direc_name, file_name_save, channel_names,
                           training_direcs=None,
@@ -764,6 +800,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
 
     return None
 
+
 def make_training_data(direc_name, file_name_save, channel_names, dimensionality,
                        training_direcs=None,
                        window_size_x=30,
@@ -843,6 +880,5 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
     else:
         raise NotImplementedError('make_training_data is not implemented for '
                                   'dimensionality {}'.format(dimensionality))
-
 
     return None
