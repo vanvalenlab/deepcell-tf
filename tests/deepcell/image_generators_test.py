@@ -57,7 +57,7 @@ class TestSampleDataGenerator(test.TestCase):
                 height_shift_range=0.1,
                 shear_range=0.5,
                 zoom_range=0.2,
-                channel_shift_range=0.,
+                channel_shift_range=1.,
                 brightness_range=(1, 5),
                 fill_mode='nearest',
                 cval=0.5,
@@ -75,9 +75,8 @@ class TestSampleDataGenerator(test.TestCase):
             }
             generator.flow(train_dict)
 
-            # Test save image
-            # temp_dir = self.get_temp_dir()
-            # generator.flow(train_dict, save_to_dir=temp_dir)
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
 
             # Fit
             generator.fit(images, augment=True, seed=1)
@@ -85,6 +84,7 @@ class TestSampleDataGenerator(test.TestCase):
             train_dict['y'] = np.arange(images.shape[0])
             for x, _ in generator.flow(
                     train_dict,
+                    save_to_dir=temp_dir,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], (2 * win_x + 1, 2 * win_y + 1, x.shape[-1]))
                 break
@@ -111,12 +111,16 @@ class TestSampleDataGenerator(test.TestCase):
             }
             generator.flow(train_dict)
 
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
+
             # Fit
             generator.fit(images, augment=True)
             train_dict['X'] = images
             train_dict['y'] = np.arange(images.shape[0])
             for x, _ in generator.flow(
                     train_dict,
+                    save_to_dir=temp_dir,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], (x.shape[1], 2 * win_x + 1, 2 * win_y + 1))
                 break
@@ -191,7 +195,7 @@ class TestFullyConvDataGenerator(test.TestCase):
                 height_shift_range=0.1,
                 shear_range=0.5,
                 zoom_range=0.2,
-                channel_shift_range=0.,
+                channel_shift_range=1.,
                 brightness_range=(1, 5),
                 fill_mode='nearest',
                 cval=0.5,
@@ -205,9 +209,8 @@ class TestFullyConvDataGenerator(test.TestCase):
             }
             generator.flow(train_dict)
 
-            # Test save image
-            # temp_dir = self.get_temp_dir()
-            # generator.flow(train_dict, save_to_dir=temp_dir)
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
 
             # Fit
             generator.fit(images, augment=True, seed=1)
@@ -216,6 +219,7 @@ class TestFullyConvDataGenerator(test.TestCase):
             train_dict['y'] = np.random.random(y_shape)
             for x, y in generator.flow(
                     train_dict,
+                    save_to_dir=temp_dir,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], images.shape[1:])
                 self.assertEqual(y.shape[1:], y_shape[1:])
@@ -239,9 +243,8 @@ class TestFullyConvDataGenerator(test.TestCase):
             }
             generator.flow(train_dict)
 
-            # Test save image
-            # temp_dir = self.get_temp_dir()
-            # generator.flow(train_dict, save_to_dir=temp_dir)
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
 
             # Fit
             generator.fit(images, augment=True, seed=1)
@@ -251,6 +254,7 @@ class TestFullyConvDataGenerator(test.TestCase):
 
             for x, y in generator.flow(
                     train_dict,
+                    save_to_dir=temp_dir,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], images.shape[1:])
                 self.assertEqual(y.shape[1:], y_shape[1:])
@@ -338,8 +342,9 @@ class TestFullyConvDataGenerator(test.TestCase):
                 width_shift_range=0.1,
                 height_shift_range=0.1,
                 shear_range=0.5,
+                rescale=.95,
                 zoom_range=0.2,
-                channel_shift_range=0.,
+                channel_shift_range=1.,
                 brightness_range=(1, 5),
                 fill_mode='nearest',
                 cval=0.5,
@@ -349,7 +354,7 @@ class TestFullyConvDataGenerator(test.TestCase):
 
             transformed = np.copy(images)
             for i, im in enumerate(transformed):
-                transformed[i] = generator.random_transform(im)
+                transformed[i] = generator.random_transform(im, seed=1)
             transformed = generator.standardize(transformed)
 
 
@@ -380,7 +385,7 @@ class TestMovieDataGenerator(test.TestCase):
                 height_shift_range=0.1,
                 shear_range=0.5,
                 zoom_range=0.2,
-                channel_shift_range=0.,
+                channel_shift_range=1.,
                 brightness_range=(1, 5),
                 fill_mode='nearest',
                 cval=0.5,
@@ -394,9 +399,8 @@ class TestMovieDataGenerator(test.TestCase):
             }
             generator.flow(train_dict, number_of_frames=1)
 
-            # Test save image
-            # temp_dir = self.get_temp_dir()
-            # generator.flow(train_dict, save_to_dir=temp_dir)
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
 
             # Fit
             generator.fit(images, augment=True, seed=1)
@@ -407,6 +411,7 @@ class TestMovieDataGenerator(test.TestCase):
             for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
+                    save_to_dir=temp_dir,
                     number_of_frames=number_of_frames):
                 batch_x_shape = (number_of_frames, *images.shape[2:])
                 batch_y_shape = (number_of_frames, *y_shape[2:])
@@ -439,9 +444,8 @@ class TestMovieDataGenerator(test.TestCase):
             }
             generator.flow(train_dict)
 
-            # Test save image
-            # temp_dir = self.get_temp_dir()
-            # generator.flow(train_dict, save_to_dir=temp_dir)
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
 
             # Fit
             generator.fit(images, augment=True, seed=1)
@@ -453,6 +457,7 @@ class TestMovieDataGenerator(test.TestCase):
             for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
+                    save_to_dir=temp_dir,
                     number_of_frames=number_of_frames):
                 batch_x_shape = (images.shape[1], number_of_frames, *images.shape[3:])
                 batch_y_shape = (y_shape[1], number_of_frames, *y_shape[3:])
@@ -567,7 +572,7 @@ class TestMovieDataGenerator(test.TestCase):
                 height_shift_range=0.1,
                 shear_range=0.5,
                 zoom_range=0.2,
-                channel_shift_range=0.,
+                channel_shift_range=1.,
                 brightness_range=(1, 5),
                 fill_mode='nearest',
                 cval=0.5,
@@ -577,7 +582,7 @@ class TestMovieDataGenerator(test.TestCase):
 
             transformed = np.copy(images)
             for i, im in enumerate(transformed):
-                transformed[i] = generator.random_transform(im)
+                transformed[i] = generator.random_transform(im, seed=1)
             transformed = generator.standardize(transformed)
 
 
@@ -602,7 +607,7 @@ class TestWatershedDataGenerator(test.TestCase):
                 height_shift_range=0.1,
                 shear_range=0.5,
                 zoom_range=0.2,
-                channel_shift_range=0.,
+                channel_shift_range=1.,
                 brightness_range=(1, 5),
                 fill_mode='nearest',
                 cval=0.5,
@@ -616,9 +621,8 @@ class TestWatershedDataGenerator(test.TestCase):
             }
             generator.flow(train_dict, distance_bins=distance_bins)
 
-            # Test save image
-            # temp_dir = self.get_temp_dir()
-            # generator.flow(train_dict, save_to_dir=temp_dir)
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
 
             # Fit
             generator.fit(images, augment=True, seed=1)
@@ -626,6 +630,7 @@ class TestWatershedDataGenerator(test.TestCase):
             train_dict['y'] = np.random.random(tuple(list(images.shape)[:-1] + [3]))
             for x, y in generator.flow(
                     train_dict,
+                    save_to_dir=temp_dir,
                     distance_bins=distance_bins,
                     shuffle=True):
                 shape = tuple(list(images.shape)[1:-1] + [distance_bins])
@@ -652,9 +657,8 @@ class TestWatershedDataGenerator(test.TestCase):
             }
             generator.flow(train_dict, distance_bins=distance_bins)
 
-            # Test save image
-            # temp_dir = self.get_temp_dir()
-            # generator.flow(train_dict, save_to_dir=temp_dir)
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
 
             # Fit
             generator.fit(images, augment=True, seed=1)
@@ -665,6 +669,7 @@ class TestWatershedDataGenerator(test.TestCase):
 
             for x, y in generator.flow(
                     train_dict,
+                    save_to_dir=temp_dir,
                     distance_bins=distance_bins,
                     shuffle=True):
                 shape = tuple([distance_bins] + list(images.shape)[2:])
@@ -700,11 +705,143 @@ class TestWatershedDataGenerator(test.TestCase):
         generator.flow({'X': x, 'y': y}, distance_bins=distance_bins)
 
         with self.assertRaises(ValueError):
-            generator = image_generators.ImageFullyConvDataGenerator(
+            generator = image_generators.WatershedDataGenerator(
                 data_format='unknown')
 
         generator = image_generators.WatershedDataGenerator(
             zoom_range=(2, 2))
         with self.assertRaises(ValueError):
             generator = image_generators.WatershedDataGenerator(
+                zoom_range=(2, 2, 2))
+
+
+class TestDiscDataGenerator(test.TestCase):
+
+    def test_disc_data_generator(self):
+        for test_images in _generate_test_images():
+            img_list = []
+            for im in test_images:
+                img_list.append(img_to_array(im)[None, ...])
+
+            images = np.vstack(img_list)
+            generator = image_generators.DiscDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True)
+
+            # Basic test before fit
+            train_dict = {
+                'X': np.random.random((32, 10, 10, 3)),
+                'y': np.random.random((32, 10, 10, 3)),
+            }
+            generator.flow(train_dict)
+
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
+
+            # Fit
+            generator.fit(images, augment=True, seed=1)
+            train_dict['X'] = images
+            # y expects 3 channels, cell edge, cell interior, background
+            train_dict['y'] = np.random.random(tuple(list(images.shape)[:-1] + [3]))
+
+            # TODO: Why does this work?
+            y_channel = np.ceil(np.amax(train_dict['y'][:, 1, :, :]))
+
+            for x, y in generator.flow(
+                    train_dict,
+                    save_to_dir=temp_dir,
+                    shuffle=True):
+                shape = tuple(list(images.shape)[1:-1] + [y_channel])
+                self.assertEqual(x.shape[1:], images.shape[1:])
+                self.assertEqual(y.shape[1:], shape)
+                break
+
+    def test_disc_data_generator_channels_first(self):
+        for test_images in _generate_test_images():
+            img_list = []
+            for im in test_images:
+                img_list.append(img_to_array(im)[None, ...])
+
+            images = np.vstack(img_list)
+            images = np.rollaxis(images, 3, 1)
+            generator = image_generators.DiscDataGenerator(
+                data_format='channels_first')
+
+            # Basic test before fit
+            train_dict = {
+                'X': np.random.random((32, 3, 10, 10)),
+                'y': np.random.random((32, 3, 10, 10)),
+            }
+            generator.flow(train_dict)
+
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
+
+            # Fit
+            generator.fit(images, augment=True, seed=1)
+            train_dict['X'] = images
+            # y expects 3 channels, cell edge, cell interior, background
+            train_dict['y'] = np.random.random(tuple([images.shape[0], 3] +
+                                                     list(images.shape)[2:]))
+
+            # TODO: Why does this work?
+            y_channel = np.ceil(np.amax(train_dict['y'][:, 1, :, :]))
+
+            for x, y in generator.flow(
+                    train_dict,
+                    save_to_dir=temp_dir,
+                    shuffle=True):
+                shape = tuple([y_channel] + list(images.shape)[2:])
+                self.assertEqual(x.shape[1:], images.shape[1:])
+                self.assertEqual(y.shape[1:], shape)
+                break
+
+    def test_disc_data_generator_invalid_data(self):
+        generator = image_generators.DiscDataGenerator(
+            featurewise_center=True,
+            samplewise_center=True,
+            featurewise_std_normalization=True,
+            samplewise_std_normalization=True,
+            zca_whitening=True,
+            data_format='channels_last')
+
+        # Test fit with invalid data
+        with self.assertRaises(ValueError):
+            x = np.random.random((3, 10, 10))
+            generator.fit(x)
+
+        # Test flow with invalid dimensions
+        with self.assertRaises(ValueError):
+            train_dict = {
+                'X': np.random.random((32, 10, 10)),
+                'y': np.random.random((32, 10, 10))
+            }
+            generator.flow(train_dict)
+        # Invalid number of channels: will work but raise a warning
+        x = np.random.random((32, 10, 10, 5))
+        y = np.random.random((32, 10, 10, 5))
+        generator.flow({'X': x, 'y': y})
+
+        with self.assertRaises(ValueError):
+            generator = image_generators.DiscDataGenerator(
+                data_format='unknown')
+
+        generator = image_generators.DiscDataGenerator(
+            zoom_range=(2, 2))
+        with self.assertRaises(ValueError):
+            generator = image_generators.DiscDataGenerator(
                 zoom_range=(2, 2, 2))

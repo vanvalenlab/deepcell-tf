@@ -1427,7 +1427,8 @@ class DiscIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        super(DiscIterator, self).__init__(self.x.shape[0], batch_size, shuffle, seed)
+        super(DiscIterator, self).__init__(
+            self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
