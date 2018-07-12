@@ -211,12 +211,14 @@ class TestFullyConvDataGenerator(test.TestCase):
 
             # Fit
             generator.fit(images, augment=True, seed=1)
+            y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
-            train_dict['y'] = np.random.random(tuple(list(images.shape)[:-1] + [1]))
-            for x, _ in generator.flow(
+            train_dict['y'] = np.random.random(y_shape)
+            for x, y in generator.flow(
                     train_dict,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], images.shape[1:])
+                self.assertEqual(y.shape[1:], y_shape[1:])
                 break
 
     def test_fully_conv_data_generator_channels_first(self):
@@ -243,14 +245,15 @@ class TestFullyConvDataGenerator(test.TestCase):
 
             # Fit
             generator.fit(images, augment=True, seed=1)
+            y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
             train_dict['X'] = images
-            train_dict['y'] = np.random.random(tuple([images.shape[0], 1] +
-                                                     list(images.shape)[2:]))
+            train_dict['y'] = np.random.random(y_shape)
 
-            for x, _ in generator.flow(
+            for x, y in generator.flow(
                     train_dict,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], images.shape[1:])
+                self.assertEqual(y.shape[1:], y_shape[1:])
                 break
 
     def test_fully_conv_data_generator_invalid_data(self):
@@ -337,15 +340,18 @@ class TestMovieDataGenerator(test.TestCase):
 
             # Fit
             generator.fit(images, augment=True, seed=1)
+            y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
-            train_dict['y'] = np.random.random(tuple(list(images.shape)[:-1] + [1]))
+            train_dict['y'] = np.random.random(y_shape)
             number_of_frames = 10
-            for x, _ in generator.flow(
+            for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
                     number_of_frames=number_of_frames):
-                batch_shape = (number_of_frames, *images.shape[2:])
-                self.assertEqual(x.shape[1:], batch_shape)
+                batch_x_shape = (number_of_frames, *images.shape[2:])
+                batch_y_shape = (number_of_frames, *y_shape[2:])
+                self.assertEqual(x.shape[1:], batch_x_shape)
+                self.assertEqual(y.shape[1:], batch_y_shape)
                 break
 
     def test_movie_data_generator_channels_first(self):
@@ -379,17 +385,19 @@ class TestMovieDataGenerator(test.TestCase):
 
             # Fit
             generator.fit(images, augment=True, seed=1)
+            y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
             train_dict['X'] = images
-            train_dict['y'] = np.random.random(tuple([images.shape[0], 1] +
-                                                     list(images.shape)[2:]))
+            train_dict['y'] = np.random.random(y_shape)
 
             number_of_frames = 10
-            for x, _ in generator.flow(
+            for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
                     number_of_frames=number_of_frames):
-                batch_shape = (images.shape[1], number_of_frames, *images.shape[3:])
-                self.assertEqual(x.shape[1:], batch_shape)
+                batch_x_shape = (images.shape[1], number_of_frames, *images.shape[3:])
+                batch_y_shape = (y_shape[1], number_of_frames, *y_shape[3:])
+                self.assertEqual(x.shape[1:], batch_x_shape)
+                self.assertEqual(y.shape[1:], batch_y_shape)
                 break
 
     def test_movie_data_generator_invalid_data(self):
