@@ -13,7 +13,8 @@ setup(
         'tifffile>=0.14.0,<1'
     ],
     extras_require={
-        'tests': ['pytest'],
+        'tests': ['pytest',
+                  'pytest-cov'],
     },
     license='LICENSE.txt',
     author='David Van Valen',

@@ -27,6 +27,7 @@ def _to_tensor(x, dtype):
         x = tf.cast(x, dtype)
     return x
 
+
 def categorical_crossentropy(target, output, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
     # Arguments
@@ -45,7 +46,7 @@ def categorical_crossentropy(target, output, class_weights=None, axis=None, from
         axis = 1 if K.image_data_format() == 'channels_first' else len(output.get_shape()) - 1
     if not from_logits:
         # scale preds so that the class probas of each sample sum to 1
-        output /= tf.reduce_sum(output, axis=axis, keep_dims=True)
+        output = output / tf.reduce_sum(output, axis=axis, keepdims=True)
         # manual computation of crossentropy
         _epsilon = _to_tensor(K.epsilon(), output.dtype.base_dtype)
         output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
@@ -53,6 +54,7 @@ def categorical_crossentropy(target, output, class_weights=None, axis=None, from
             return - tf.reduce_sum(target * tf.log(output), axis=axis)
         return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
     return tf.nn.softmax_cross_entropy_with_logits(labels=target, logits=output)
+
 
 def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
@@ -76,7 +78,7 @@ def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, fr
         axis = 1 if K.image_data_format() == 'channels_first' else len(output.get_shape()) - 1
     reduce_axis = [x for x in list(range(len(output.get_shape()))) if x != axis]
     # scale preds so that the class probas of each sample sum to 1
-    output /= tf.reduce_sum(output, axis=axis, keepdims=True)
+    output = output / tf.reduce_sum(output, axis=axis, keepdims=True)
     # manual computation of crossentropy
     _epsilon = _to_tensor(K.epsilon(), output.dtype.base_dtype)
     output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
@@ -85,6 +87,7 @@ def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, fr
     class_sum = tf.reduce_sum(target_cast, axis=reduce_axis, keepdims=True)
     class_weights = 1.0 / np.float(n_classes) * tf.divide(total_sum, class_sum + 1.)
     return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
+
 
 def sample_categorical_crossentropy(target, output, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor. Only the sampled
@@ -105,7 +108,7 @@ def sample_categorical_crossentropy(target, output, class_weights=None, axis=Non
         axis = 1 if K.image_data_format() == 'channels_first' else len(output.get_shape()) - 1
     if not from_logits:
         # scale preds so that the class probabilities of each sample sum to 1
-        output /= tf.reduce_sum(output, axis=axis, keep_dims=True)
+        output = output / tf.reduce_sum(output, axis=axis, keepdims=True)
 
         # Multiply with mask so that only the sampled pixels are used
         output = tf.multiply(output, target)
@@ -118,19 +121,22 @@ def sample_categorical_crossentropy(target, output, class_weights=None, axis=Non
         return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
     return tf.nn.softmax_cross_entropy_with_logits(labels=target, logits=output)
 
+
 def dice_coef(y_true, y_pred, smooth=1):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
     return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
 
+
 def dice_coef_loss(y_true, y_pred, smooth=1):
     return -dice_coef(y_true, y_pred, smooth)
+
 
 def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order=2, gamma=1e-3):
     def temp_norm(ten, axis=-1):
         return tf.sqrt(K.epsilon() + tf.reduce_sum(tf.square(ten), axis=axis))
-    
+
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     other_axes = [0, 1, 2] if channel_axis == -1 else [0, 2, 3]
 
@@ -153,16 +159,17 @@ def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order
 
     diff_matrix = tf.subtract(mu_b, mu_a)
     L_dist_1 = temp_norm(diff_matrix, axis=channel_axis)
-    L_dist_2 = tf.square(tf.nn.relu(tf.constant(2*delta_d, dtype=K.floatx()) - L_dist_1))
+    L_dist_2 = tf.square(tf.nn.relu(tf.constant(2 * delta_d, dtype=K.floatx()) - L_dist_1))
     diag = tf.constant(0, dtype=K.floatx()) * tf.diag_part(L_dist_2)
     L_dist_3 = tf.matrix_set_diag(L_dist_2, diag)
     L_dist = tf.reduce_mean(L_dist_3)
 
     # Compute regularization loss
     L_reg = gamma * temp_norm(mu, axis=-1)
-    L =  L_var + L_dist + tf.reduce_mean(L_reg)
+    L = L_var + L_dist + tf.reduce_mean(L_reg)
 
     return L
+
 
 def discriminative_instance_loss_3D(y_true, y_pred, delta_v=0.5, delta_d=1.5, order=2, gamma=1e-3):
 
