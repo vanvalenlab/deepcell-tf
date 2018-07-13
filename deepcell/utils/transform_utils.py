@@ -102,7 +102,7 @@ def distance_transform_3d(maskstack, bins=16):
     min_dist = np.amin(distance.flatten())
     max_dist = np.amax(distance.flatten())
     bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins)
-    distance = np.digitize(distance, bins, right=True)
+    distance = np.digitize(distance, bins)
 
     # change back to channels_first, if necessary
     if K.image_data_format() == 'channels_first':
