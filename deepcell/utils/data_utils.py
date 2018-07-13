@@ -862,9 +862,6 @@ def make_training_data_3d(direc_name,
                                  annotation_name, num_frames, image_size,
                                  montage_mode=montage_mode)
 
-    if output_mode != 'disc':  # TODO: hacky workaround, must fix
-        y[y > 0] = 1  # make each cell instance equal to 1.
-
     # Trim annotation images
     if border_mode == 'valid':
         y = trim_padding(y, window_size_x, window_size_y, window_size_z)
@@ -884,6 +881,9 @@ def make_training_data_3d(direc_name,
             d = distance_transform_3d(y[b], bins=distance_bins)
             new_y[b] = np.expand_dims(d, axis=channel_axis)
         y = to_categorical(new_y)
+
+    elif output_mode != 'disc':  # TODO: hacky workaround, must fix
+        y[y > 0] = 1  # make each cell instance equal to 1.
 
     feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
         y=y,
