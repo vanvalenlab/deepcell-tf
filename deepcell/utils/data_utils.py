@@ -884,6 +884,7 @@ def make_training_data_3d(direc_name,
 
     elif output_mode != 'disc':  # TODO: hacky workaround, must fix
         y[y > 0] = 1  # make each cell instance equal to 1.
+        y = to_categorical(y)
 
     feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
         y=y,
