@@ -52,6 +52,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     y = training_data['y']
     win_x = training_data['win_x']
     win_y = training_data['win_y']
+    win_z = None
 
     class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
 
@@ -105,6 +106,9 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         'win_x': win_x,
         'win_y': win_y
     }
+
+    if win_z:
+        train_dict['win_z'] = win_z
 
     return train_dict, (X_test, y_test)
 
