@@ -85,7 +85,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         if CHANNELS_FIRST:
             sample_shape = (len(batch), X.shape[1], 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1)
         else:
-            sample_shape = (len(batch), 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1, X.shape[3])
+            sample_shape = (len(batch), 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1, X.shape[4])
         X_sample = np.zeros(sample_shape, dtype=K.floatx())
 
         for i, (b, px, py, pz) in enumerate(zip(batch, pixels_x, pixels_y, pixels_z)):
