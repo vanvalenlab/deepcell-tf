@@ -29,6 +29,7 @@ from .misc_utils import sorted_nicely
 from .plot_utils import plot_training_data_2d
 from .plot_utils import plot_training_data_3d
 from .transform_utils import distance_transform_2d
+from .transform_utils import distance_transform_3d
 
 
 CHANNELS_FIRST = K.image_data_format() == 'channels_first'
@@ -503,7 +504,9 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
     return y
 
 
-def make_training_data_2d(direc_name, file_name_save, channel_names,
+def make_training_data_2d(direc_name,
+                          file_name_save,
+                          channel_names,
                           raw_image_direc='raw',
                           annotation_direc='annotated',
                           training_direcs=None,
@@ -761,7 +764,9 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
     return y
 
 
-def make_training_data_3d(direc_name, file_name_save, channel_names,
+def make_training_data_3d(direc_name,
+                          file_name_save,
+                          channel_names,
                           training_direcs=None,
                           annotation_name='corrected',
                           raw_image_direc='raw',
@@ -777,6 +782,8 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
                           num_of_frames_to_display=5,
                           montage_mode=True,
                           max_training_examples=1e7,
+                          distance_transform=False,
+                          distance_bins=4,
                           verbose=True):
     """
     Read all images in training directories and save as npz file.
@@ -836,13 +843,6 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
         window_size_z=window_size_z,
         max_training_examples=max_training_examples)
 
-    # Sample pixels from the label matrix
-    if output_mode == 'sample':
-        # Save training data in npz format
-        np.savez(file_name_save, X=X, y=feat_label, batch=feat_batch,
-                 pixels_x=feat_rows, pixels_y=feat_cols, pixels_z=feat_frames,
-                 win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
-
     # Trim annotation images
     if border_mode == 'valid':
         if CHANNELS_FIRST:
@@ -853,6 +853,33 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
     # Reshape X and y
     if reshape_size is not None:
         X, y = reshape_movie(X, y, reshape_size=reshape_size)
+
+    if distance_transform:
+        if K.image_data_format() == 'channels_first':
+            channel_axis = 1
+            new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3], y.shape[4]))
+        else:
+            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1))
+            channel_axis = -1
+        for b in range(y.shape[0]):
+            if K.image_data_format() == 'channels_first':
+                d = np.expand_dims(y[b, 0, :, :], axis=channel_axis)
+            else:
+                d = np.expand_dims(y[b, :, :, :, 0], axis=channel_axis)
+            new_y[b] = distance_transform_3d(d, bins=distance_bins)
+
+        y = to_categorical(new_y)
+        # not really edge_feature anymore, but there will be the fewest
+        # "center" pixels, so lets call that the edge_feature for now
+        edge_feature = [0] * y.shape[channel_axis]
+        edge_feature[-1] = 1
+
+    # Sample pixels from the label matrix
+    if output_mode == 'sample':
+        # Save training data in npz format
+        np.savez(file_name_save, X=X, y=feat_label, batch=feat_batch,
+                 pixels_x=feat_rows, pixels_y=feat_cols, pixels_z=feat_frames,
+                 win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
 
     # Convert training data to format compatible with discriminative loss function
     if output_mode == 'disc':
@@ -903,6 +930,8 @@ def make_training_data(direc_name,
                        reshape_size=None,
                        display=False,
                        max_training_examples=1e7,
+                       distance_transform=False,
+                       distance_bins=4,
                        **kwargs):
     """
     Wrapper function for other make_training_data functions (2d, 3d)
