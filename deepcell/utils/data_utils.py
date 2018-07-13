@@ -863,7 +863,7 @@ def make_training_data_3d(direc_name,
                                  montage_mode=montage_mode)
 
     if output_mode != 'disc':  # TODO: hacky workaround, must fix
-        y = y[y > 0] = 1  # make each cell instance equal to 1.
+        y[y > 0] = 1  # make each cell instance equal to 1.
 
     # Trim annotation images
     if border_mode == 'valid':
