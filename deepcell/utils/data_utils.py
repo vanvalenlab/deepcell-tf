@@ -264,11 +264,11 @@ def sample_label_movie(y, window_size_x=30, window_size_y=30, window_size_z=5,
     limit = min(non_rand_ind.size, max_training_examples)
     rand_ind = np.random.choice(non_rand_ind, size=limit, replace=False)
 
-    feature_frames = np.array(feature_frames, dtype='int32')[rand_ind]
-    feature_rows = np.array(feature_rows, dtype='int32')[rand_ind]
-    feature_cols = np.array(feature_cols, dtype='int32')[rand_ind]
-    feature_batch = np.array(feature_batch, dtype='int32')[rand_ind]
-    feature_label = np.array(feature_label, dtype='int32')[rand_ind]
+    feature_frames = np.array(feature_frames, dtype=get_min_int_size(feature_frames))[rand_ind]
+    feature_rows = np.array(feature_rows, dtype=get_min_int_size(feature_rows))[rand_ind]
+    feature_cols = np.array(feature_cols, dtype=get_min_int_size(feature_cols))[rand_ind]
+    feature_batch = np.array(feature_batch, dtype=get_min_int_size(feature_batch))[rand_ind]
+    feature_label = np.array(feature_label, dtype=get_min_int_size(feature_label))[rand_ind]
 
     return feature_frames, feature_rows, feature_cols, feature_batch, feature_label
 
@@ -359,6 +359,21 @@ def reshape_matrix(X, y, reshape_size=256):
     print('Reshaped feature data from {} to {}'.format(y.shape, new_y.shape))
     print('Reshaped training data from {} to {}'.format(X.shape, new_X.shape))
     return new_X, new_y
+
+
+def get_min_int_size(y):
+    """Based on unique values of y-array, return an efficient integer type
+    # Arguments
+        y: label array of integers
+    # Returns
+        numpy integer dtype that takes minimum memory
+    """
+    count = np.unique(y).size
+    if count < 2 ** 8:
+        return np.int8
+    elif count < 2 ** 16:
+        return np.int16
+    return np.int32
 
 
 def relabel_movie(y):
@@ -873,9 +888,9 @@ def make_training_data_3d(direc_name,
     if distance_transform:
         if K.image_data_format() == 'channels_first':
             channel_axis = 1
-            new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3], y.shape[4]))
+            new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3], y.shape[4]), dtype=np.int8)
         else:
-            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1))
+            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1), dtype=np.int8)
             channel_axis = -1
         for b in range(y.shape[0]):
             d = distance_transform_3d(y[b], bins=distance_bins)
