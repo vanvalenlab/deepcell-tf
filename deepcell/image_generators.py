@@ -1199,6 +1199,122 @@ class MovieArrayIterator(Iterator):
         return self._get_batches_of_transformed_samples(index_array)
 
 
+class SampleMovieArrayIterator(Iterator):
+    def __init__(self,
+                 train_dict,
+                 movie_data_generator,
+                 batch_size=32,
+                 shuffle=False,
+                 seed=None,
+                 data_format=None,
+                 save_to_dir=None,
+                 save_prefix='',
+                 save_format='png'):
+        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+            raise ValueError(
+                'Data movie and label movie should have the same size. '
+                'Found data movie size = {} and and label movie size = {}'.format(
+                    train_dict['X'].shape, train_dict['y'].shape))
+
+        if data_format is None:
+            data_format = K.image_data_format()
+
+        self.channel_axis = 4 if data_format == 'channels_last' else 1
+        self.time_axis = 1 if data_format == 'channels_last' else 2
+        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.y = np.asarray(train_dict['y'], dtype=np.int32)
+
+        if self.x.ndim != 5:
+            raise ValueError(
+                'Input data in `MovieArrayIterator` should have rank 5. '
+                'You passed an array with shape', self.x.shape)
+
+        self.win_x = train_dict['win_x']
+        self.win_y = train_dict['win_y']
+        self.win_z = train_dict['win_z']
+        self.movie_data_generator = movie_data_generator
+        self.data_format = data_format
+        self.save_to_dir = save_to_dir
+        self.save_prefix = save_prefix
+        self.save_format = save_format
+        super(SampleMovieArrayIterator, self).__init__(
+            len(self.y), batch_size, shuffle, seed)
+
+    def _get_batches_of_transformed_samples(self, index_array):
+        if self.channel_axis == 1:
+            batch_x = np.zeros((len(index_array),
+                                self.x.shape[self.channel_axis],
+                                2 * self.win_z + 1,
+                                2 * self.win_x + 1,
+                                2 * self.win_y + 1))
+        else:
+            batch_x = np.zeros((len(index_array),
+                                2 * self.win_z + 1,
+                                2 * self.win_x + 1,
+                                2 * self.win_y + 1,
+                                self.x.shape[self.channel_axis]))
+
+        for i, j in enumerate(index_array):
+            x = self.x[j]
+            x = self.movie_data_generator.random_transform(x.astype(K.floatx()))
+            x = self.movie_data_generator.standardize(x)
+
+            batch_x[i] = x
+
+        if self.save_to_dir:
+            time_axis = 2 if self.data_format == 'channels_first' else 1
+            for i, j in enumerate(index_array):
+                for frame in range(batch_x.shape[time_axis]):
+                    if time_axis == 2:
+                        img = array_to_img(batch_x[i, :, frame], self.data_format, scale=True)
+                    else:
+                        img = array_to_img(batch_x[i, frame], self.data_format, scale=True)
+                    fname = '{prefix}_{index}_{hash}.{format}'.format(
+                        prefix=self.save_prefix,
+                        index=j,
+                        hash=np.random.randint(1e4),
+                        format=self.save_format)
+                    img.save(os.path.join(self.save_to_dir, fname))
+
+        if self.y is None:
+            return batch_x
+        batch_y = self.y[index_array]
+        return batch_x, batch_y
+
+    def next(self):
+        """For python 2.x.
+        # Returns the next batch.
+        """
+        # Keeps under lock only the mechanism which advances
+        # the indexing of each batch.
+        with self.lock:
+            index_array = next(self.index_generator)
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
+        return self._get_batches_of_transformed_samples(index_array)
+
+
+class SampleMovieDataGenerator(MovieDataGenerator):
+    def flow(self,
+             train_dict,
+             batch_size=32,
+             shuffle=True,
+             seed=None,
+             save_to_dir=None,
+             save_prefix='',
+             save_format='png'):
+        return SampleMovieArrayIterator(
+            train_dict,
+            self,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            seed=seed,
+            data_format=self.data_format,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
+
+
 class WatershedMovieDataGenerator(MovieDataGenerator):
     """
     Generate minibatches of distance-transformed movie data
