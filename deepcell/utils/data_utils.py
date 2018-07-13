@@ -55,7 +55,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 
     class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
 
-    if mode == 'sample':
+    if mode == 'sample' and X.ndim == 4:
         batch = training_data['batch']
         pixels_x = training_data['pixels_x']
         pixels_y = training_data['pixels_y']
@@ -70,6 +70,26 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
                 X_sample[i] = X[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
             else:
                 X_sample[i] = X[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
+
+        X = X_sample
+
+    elif mode == 'sample' and X.ndim == 5:
+        batch = training_data['batch']
+        pixels_x = training_data['pixels_x']
+        pixels_y = training_data['pixels_y']
+        pixels_z = training_data['pixels_z']
+        win_z = training_data['win_z']
+
+        if CHANNELS_FIRST:
+            X_sample = np.zeros((len(batch), X.shape[1], 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1))
+        else:
+            X_sample = np.zeros((len(batch), 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1, X.shape[3]))
+
+        for i, (b, px, py, pz) in enumerate(zip(batch, pixels_x, pixels_y, pixels_z)):
+            if CHANNELS_FIRST:
+                X_sample[i] = X[b, :, pz - win_z:pz + win_z + 1, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
+            else:
+                X_sample[i] = X[b, pz - win_z:pz + win_z + 1, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
 
         X = X_sample
 
