@@ -253,7 +253,7 @@ def sample_label_movie(y, window_size_x=30, window_size_y=30, window_size_z=5,
     return feature_frames, feature_rows, feature_cols, feature_batch, feature_label
 
 
-def trim_padding(nparr, win_x, win_y):
+def trim_padding(nparr, win_x, win_y, win_z=None):
     """Trim the boundaries of the numpy array to allow for a sliding
     window of size (win_x, win_y) to not slide over regions without pixel data
     Aguments:
@@ -271,9 +271,17 @@ def trim_padding(nparr, win_x, win_y):
             trimmed = nparr[:, win_x:-win_x, win_y:-win_y, :]
     elif nparr.ndim == 5:
         if is_channels_first:
-            trimmed = nparr[:, :, :, win_x:-win_x, win_y:-win_y]
+            if win_z:
+                win_z = int(win_z)
+                trimmed = nparr[:, :, win_z:-win_z, win_x:-win_x, win_y:-win_y]
+            else:
+                trimmed = nparr[:, :, :, win_x:-win_x, win_y:-win_y]
         else:
-            trimmed = nparr[:, :, win_x:-win_x, win_y:-win_y, :]
+            if win_z:
+                win_z = int(win_z)
+                trimmed = nparr[:, win_z:-win_z, win_x:-win_x, win_y:-win_y, :]
+            else:
+                trimmed = nparr[:, :, win_x:-win_x, win_y:-win_y, :]
     else:
         raise ValueError('Expected to trim numpy array of ndim 4 or 5, got "{}"'.format(
             nparr.ndim))
@@ -836,10 +844,7 @@ def make_training_data_3d(direc_name,
 
     # Trim annotation images
     if border_mode == 'valid':
-        if CHANNELS_FIRST:
-            y = y[:, :, window_size_z:-window_size_z, window_size_x:-window_size_x, window_size_y:-window_size_y]
-        else:
-            y = y[:, window_size_z:-window_size_z, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
+        y = trim_padding(y, window_size_x, window_size_y, window_size_z)
 
     # Reshape X and y
     if reshape_size is not None:
