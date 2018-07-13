@@ -206,9 +206,9 @@ def sample_label_movie(y, window_size_x=30, window_size_y=30, window_size_z=5,
     for d in range(num_dirs):
         for k in range(num_features):
             if is_channel_first:
-                frames_temp, rows_temp, cols_temp = np.where(y[d, k, :, :, :] == 1)
+                frames_temp, rows_temp, cols_temp = np.where(y[d, k, :, :, :] > 0)
             else:
-                frames_temp, rows_temp, cols_temp = np.where(y[d, :, :, :, k] == 1)
+                frames_temp, rows_temp, cols_temp = np.where(y[d, :, :, :, k] > 0)
 
             # Check to make sure the features are actually present
             if not rows_temp.size > 0:
@@ -820,7 +820,6 @@ def make_training_data_3d(direc_name,
         montage_mode: data is broken into several "montage"
                       sub-directories for easier annoation
     """
-
     # Load one file to get image sizes
     rand_train_dir = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
     if montage_mode:
@@ -834,14 +833,6 @@ def make_training_data_3d(direc_name,
     y = load_annotated_images_3d(direc_name, training_direcs, annotation_direc,
                                  annotation_name, num_frames, image_size,
                                  montage_mode=montage_mode)
-
-    feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
-        y=y,
-        border_mode=border_mode,
-        window_size_x=window_size_x,
-        window_size_y=window_size_y,
-        window_size_z=window_size_z,
-        max_training_examples=max_training_examples)
 
     # Trim annotation images
     if border_mode == 'valid':
@@ -862,17 +853,17 @@ def make_training_data_3d(direc_name,
             new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1))
             channel_axis = -1
         for b in range(y.shape[0]):
-            if K.image_data_format() == 'channels_first':
-                d = np.expand_dims(y[b, 0, :, :], axis=channel_axis)
-            else:
-                d = np.expand_dims(y[b, :, :, :, 0], axis=channel_axis)
-            new_y[b] = distance_transform_3d(d, bins=distance_bins)
-
+            d = distance_transform_3d(y[b], bins=distance_bins)
+            new_y[b] = np.expand_dims(d, axis=channel_axis)
         y = to_categorical(new_y)
-        # not really edge_feature anymore, but there will be the fewest
-        # "center" pixels, so lets call that the edge_feature for now
-        edge_feature = [0] * y.shape[channel_axis]
-        edge_feature[-1] = 1
+
+    feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
+        y=y,
+        border_mode=border_mode,
+        window_size_x=window_size_x,
+        window_size_y=window_size_y,
+        window_size_z=window_size_z,
+        max_training_examples=max_training_examples)
 
     # Sample pixels from the label matrix
     if output_mode == 'sample':
@@ -966,8 +957,8 @@ def make_training_data(direc_name,
                               window_size_x=window_size_x,
                               window_size_y=window_size_y,
                               edge_feature=edge_feature,
-                              distance_transform=kwargs.get('distance_transform', False),
-                              distance_bins=kwargs.get('distance_bins', 4),
+                              distance_transform=distance_transform,
+                              distance_bins=distance_bins,
                               display=display,
                               verbose=verbose,
                               reshape_size=reshape_size,
@@ -987,6 +978,9 @@ def make_training_data(direc_name,
                               annotation_direc=annotation_direc,
                               window_size_x=window_size_x,
                               window_size_y=window_size_y,
+                              window_size_z=kwargs.get('window_size_z', 5),
+                              distance_transform=distance_transform,
+                              distance_bins=distance_bins,
                               border_mode=border_mode,
                               output_mode=output_mode,
                               reshape_size=reshape_size,
