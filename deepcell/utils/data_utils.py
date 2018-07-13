@@ -226,9 +226,9 @@ def sample_label_movie(y, window_size_x=30, window_size_y=30, window_size_z=5,
     for d in range(num_dirs):
         for k in range(num_features):
             if is_channel_first:
-                frames_temp, rows_temp, cols_temp = np.where(y[d, k, :, :, :] > 0)
+                frames_temp, rows_temp, cols_temp = np.where(y[d, k, :, :, :] == 1)
             else:
-                frames_temp, rows_temp, cols_temp = np.where(y[d, :, :, :, k] > 0)
+                frames_temp, rows_temp, cols_temp = np.where(y[d, :, :, :, k] == 1)
 
             # Check to make sure the features are actually present
             if not rows_temp.size > 0:
@@ -861,6 +861,9 @@ def make_training_data_3d(direc_name,
     y = load_annotated_images_3d(direc_name, training_direcs, annotation_direc,
                                  annotation_name, num_frames, image_size,
                                  montage_mode=montage_mode)
+
+    if output_mode != 'disc':  # TODO: hacky workaround, must fix
+        y = y[y > 0] = 1  # make each cell instance equal to 1.
 
     # Trim annotation images
     if border_mode == 'valid':
