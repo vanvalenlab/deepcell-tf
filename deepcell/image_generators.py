@@ -11,6 +11,8 @@ from __future__ import division
 
 import os
 import warnings
+import threading
+import random
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -1723,7 +1725,7 @@ class Retinanet_Generator(object):
         max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
 
         # construct an image batch object
-        image_batch = np.zeros((self.batch_size,) + max_shape, dtype=keras.backend.floatx())
+        image_batch = np.zeros((self.batch_size,) + max_shape, dtype=K.floatx())
 
         # copy all images to the upper left part of the image batch object
         for image_index, image in enumerate(image_group):
@@ -1741,8 +1743,8 @@ class Retinanet_Generator(object):
         max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
         anchors   = self.generate_anchors(max_shape)
 
-        regression_batch = np.empty((self.batch_size, anchors.shape[0], 4 + 1), dtype=keras.backend.floatx())
-        labels_batch     = np.empty((self.batch_size, anchors.shape[0], self.num_classes() + 1), dtype=keras.backend.floatx())
+        regression_batch = np.empty((self.batch_size, anchors.shape[0], 4 + 1), dtype=K.floatx())
+        labels_batch     = np.empty((self.batch_size, anchors.shape[0], self.num_classes() + 1), dtype=K.floatx())
 
         # compute labels and regression targets
         for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):

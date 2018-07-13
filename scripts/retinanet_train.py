@@ -25,7 +25,7 @@ import pandas as pd
 import keras
 import keras.preprocessing.image
 import tensorflow as tf
-
+import threading
 import keras_retinanet.layers as layers # noqa: F401
 import keras_retinanet.losses as losses
 import keras_retinanet.models as models
@@ -48,6 +48,7 @@ import csv
 import sys
 import os.path
 from skimage.io import imread
+import cv2
 
 def get_image(file_name):
     ext = os.path.splitext(file_name.lower())[-1]
@@ -495,9 +496,8 @@ def create_generators(args, preprocess_image):
         train_generator = CSVGenerator(
             args.annotations,
             args.classes,
-            transform_generator=transform_generator,
             **common_args
-        )
+        )   
 
         if args.val_annotations:
             validation_generator = CSVGenerator(
@@ -625,7 +625,7 @@ def main(args=None):
     'Making the annotations and organising them'
     cell_data=[]
     for cnt,file in enumerate(train_anotedlist):
-        image=get_image(file)
+        image=cv2.imread(file,0)
         p=regionprops(label(image))
         for index in range(len(np.unique(label(image)))-1):
             rect = [train_imlist[cnt],p[index].bbox[1],p[index].bbox[0],p[index].bbox[3],p[index].bbox[2],"cell"]
