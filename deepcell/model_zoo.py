@@ -1775,3 +1775,62 @@ def watershed_net(input_shape=(256, 256, 1), n_features=16, reg=1e-5, init='he_n
 
     model = Model(inputs=inputs1, outputs=conv10)
     return model
+
+
+def bn_feature_net_11x61x61_3D(n_features=3, n_channels=1, reg=1e-5, init='he_normal', norm_method='whole_image'):
+    if K.image_data_format() == 'channels_first':
+        channel_axis = 1
+        input_shape = (n_channels, 11, 61, 61)
+    else:
+        channel_axis = -1
+        input_shape = (11, 61, 61, n_channels)
+
+    model = Sequential()
+    # First layer block
+    model.add(ImageNormalization3D(norm_method=norm_method, filter_size=61, input_shape=input_shape))
+    model.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+
+    model.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+    model.add(MaxPool3D(pool_size=(2, 2, 2)))
+
+    # Second layer block
+    model.add(Conv3D(128, (1, 3, 3), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+
+    model.add(Conv3D(128, (1, 3, 3), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+    model.add(MaxPool3D(pool_size=(2, 2, 2)))
+
+    # Third layer block
+    model.add(Conv3D(256, (1, 3, 3), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+
+    model.add(Conv3D(256, (1, 3, 3), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+    model.add(MaxPool3D(pool_size=(2, 2, 2)))
+
+    # Final layer block
+    model.add(Conv3D(256, (1, 3, 3), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+
+    model.add(TensorProd3D(256, 256, kernel_initializer=init, kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+
+    model.add(TensorProd3D(256, n_features, kernel_initializer=init, kernel_regularizer=l2(reg)))
+
+    model.add(Flatten())
+    model.add(Dense(n_features))
+
+    model.add(Activation('softmax'))
+
+    return model
