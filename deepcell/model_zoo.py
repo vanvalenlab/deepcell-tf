@@ -23,7 +23,7 @@ from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.regularizers import l2
 
 from .layers import Resize
-from .layers import DilatedMaxPool2D
+from .layers import DilatedMaxPool2D, DilatedMaxPool3D
 from .layers import TensorProd2D, TensorProd3D
 from .layers import Location, Location3D
 from .layers import ImageNormalization2D, ImageNormalization3D
@@ -1827,6 +1827,67 @@ def bn_feature_net_11x61x61_3D(n_features=3, n_channels=1, reg=1e-5, init='he_no
     model.add(Activation('relu'))
 
     model.add(TensorProd3D(256, n_features, kernel_initializer=init, kernel_regularizer=l2(reg)))
+
+    model.add(Flatten())
+    model.add(Dense(n_features))
+
+    model.add(Activation('softmax'))
+
+    return model
+
+
+def dilated_bn_feature_net_11x61x61_3D(input_shape=(2, 1080, 1280), batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, norm_method='whole_image'):
+    if K.image_data_format() == 'channels_first':
+        channel_axis = 1
+    else:
+        channel_axis = -1
+
+    model = Sequential()
+    # First layer block
+    d = 1
+    model.add(ImageNormalization3D(norm_method=norm_method, filter_size=61, input_shape=input_shape))
+    model.add(Conv3D(64, (1, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+
+    model.add(Conv3D(64, (1, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+    model.add(DilatedMaxPool3D(dilation_rate=d, pool_size=(2, 2, 2)))
+    d *= 2
+
+    # Second layer block
+    model.add(Conv3D(128, (1, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+
+    model.add(Conv3D(128, (1, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+    model.add(DilatedMaxPool3D(dilation_rate=d, pool_size=(2, 2, 2)))
+    d *= 2
+
+    # Third layer block
+    model.add(Conv3D(256, (1, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+
+    model.add(Conv3D(256, (1, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+    model.add(DilatedMaxPool3D(dilation_rate=d, pool_size=(2, 2, 2)))
+    d *= 2
+
+    # Final layer block
+    model.add(Conv3D(256, (1, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+
+    model.add(TensorProd3D(256, 256, dilation_rate=d, kernel_initializer=init, kernel_regularizer=l2(reg)))
+    model.add(BatchNormalization(axis=channel_axis))
+    model.add(Activation('relu'))
+
+    model.add(TensorProd3D(256, n_features, dilation_rate=d, kernel_initializer=init, kernel_regularizer=l2(reg)))
 
     model.add(Flatten())
     model.add(Dense(n_features))
