@@ -172,8 +172,10 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
 
     # Randomize
     non_rand_ind = np.arange(len(feature_rows), dtype='int32')
-    if max_training_examples:
+    if not max_training_examples:
         max_training_examples = non_rand_ind.size
+    else:
+        max_training_examples = int(max_training_examples)
 
     limit = min(non_rand_ind.size, max_training_examples)
     rand_ind = np.random.choice(non_rand_ind, size=limit, replace=False)
