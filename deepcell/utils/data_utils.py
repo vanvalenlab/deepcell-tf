@@ -61,9 +61,10 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         pixels_y = training_data['pixels_y']
 
         if CHANNELS_FIRST:
-            X_sample = np.zeros((len(batch), X.shape[1], 2 * win_x + 1, 2 * win_y + 1))
+            sample_shape = (len(batch), X.shape[1], 2 * win_x + 1, 2 * win_y + 1)
         else:
-            X_sample = np.zeros((len(batch), 2 * win_x + 1, 2 * win_y + 1, X.shape[3]))
+            sample_shape = (len(batch), 2 * win_x + 1, 2 * win_y + 1, X.shape[3])
+        X_sample = np.zeros(sample_shape, dtype=K.floatx())
 
         for i, (b, px, py) in enumerate(zip(batch, pixels_x, pixels_y)):
             if CHANNELS_FIRST:
@@ -81,9 +82,10 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         win_z = training_data['win_z']
 
         if CHANNELS_FIRST:
-            X_sample = np.zeros((len(batch), X.shape[1], 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1))
+            sample_shape = (len(batch), X.shape[1], 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1)
         else:
-            X_sample = np.zeros((len(batch), 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1, X.shape[3]))
+            sample_shape = (len(batch), 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1, X.shape[3])
+        X_sample = np.zeros(sample_shape, dtype=K.floatx())
 
         for i, (b, px, py, pz) in enumerate(zip(batch, pixels_x, pixels_y, pixels_z)):
             if CHANNELS_FIRST:
@@ -481,7 +483,7 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
     else:
         y_shape = (len(training_direcs), image_size_x, image_size_y, len(edge_feature))
 
-    y = np.zeros(y_shape)
+    y = np.zeros(y_shape, dtype='int32')
 
     for b, direc in enumerate(training_direcs):
         imglist = os.listdir(os.path.join(direc_name, direc, annotation_direc))
@@ -595,9 +597,9 @@ def make_training_data_2d(direc_name,
     if distance_transform:
         if K.image_data_format() == 'channels_first':
             channel_axis = 1
-            new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3]))
+            new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3]), dtype='int32')
         else:
-            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1))
+            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1), dtype='int32')
             channel_axis = -1
         for b in range(y.shape[0]):
             if K.image_data_format() == 'channels_first':
@@ -770,7 +772,7 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
     else:
         y_shape = (len(y_dirs), num_frames, image_size_x, image_size_y, len(annotation_name))
 
-    y = np.zeros(y_shape)
+    y = np.zeros(y_shape, dtype='int32')
 
     for b, direc in enumerate(y_dirs):
         for c, name in enumerate(annotation_name):
@@ -873,9 +875,9 @@ def make_training_data_3d(direc_name,
     if distance_transform:
         if K.image_data_format() == 'channels_first':
             channel_axis = 1
-            new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3], y.shape[4]))
+            new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3], y.shape[4]), dtype='int32')
         else:
-            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1))
+            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1), dtype='int32')
             channel_axis = -1
         for b in range(y.shape[0]):
             d = distance_transform_3d(y[b], bins=distance_bins)
