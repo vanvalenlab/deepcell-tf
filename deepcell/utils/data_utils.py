@@ -188,6 +188,70 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     return feature_rows, feature_cols, feature_batch, feature_label
 
 
+def sample_label_movie(y, window_size_x=30, window_size_y=30, window_size_z=5,
+                       border_mode='valid', max_training_examples=1e7):
+    """Create a list of the maximum pixels to sample from each feature in each
+    data set. If output_mode is 'sample', then this will be set to the number
+    of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
+    """
+    is_channel_first = K.image_data_format() == 'channels_first'
+    if is_channel_first:
+        num_dirs, num_features, image_size_z, image_size_x, image_size_y = y.shape
+    else:
+        num_dirs, image_size_z, image_size_x, image_size_y, num_features = y.shape
+
+    feature_rows, feature_cols, feature_frames, feature_batch, feature_label = [], [], [], [], []
+
+    for d in range(num_dirs):
+        for k in range(num_features):
+            if is_channel_first:
+                frames_temp, rows_temp, cols_temp = np.where(y[d, k, :, :, :] == 1)
+            else:
+                frames_temp, rows_temp, cols_temp = np.where(y[d, :, :, :, k] == 1)
+
+            # Check to make sure the features are actually present
+            if not rows_temp.size > 0:
+                continue
+
+            # Randomly permute index vector
+            non_rand_ind = np.arange(len(rows_temp))
+            rand_ind = np.random.choice(non_rand_ind, size=len(rows_temp), replace=False)
+
+            for i in rand_ind:
+                condition = border_mode == 'valid' and \
+                    frames_temp[i] - window_size_z > 0 and \
+                    frames_temp[i] + window_size_z < image_size_z and \
+                    rows_temp[i] - window_size_x > 0 and \
+                    rows_temp[i] + window_size_x < image_size_x and \
+                    cols_temp[i] - window_size_y > 0 and \
+                    cols_temp[i] + window_size_y < image_size_y
+
+                if border_mode == 'same' or condition:
+                    feature_rows.append(rows_temp[i])
+                    feature_cols.append(cols_temp[i])
+                    feature_frames.append(frames_temp[i])
+                    feature_batch.append(d)
+                    feature_label.append(k)
+
+    # Randomize
+    non_rand_ind = np.arange(len(feature_rows), dtype='int32')
+    if not max_training_examples:
+        max_training_examples = non_rand_ind.size
+    else:
+        max_training_examples = int(max_training_examples)
+
+    limit = min(non_rand_ind.size, max_training_examples)
+    rand_ind = np.random.choice(non_rand_ind, size=limit, replace=False)
+
+    feature_frames = np.array(feature_frames, dtype='int32')[rand_ind]
+    feature_rows = np.array(feature_rows, dtype='int32')[rand_ind]
+    feature_cols = np.array(feature_cols, dtype='int32')[rand_ind]
+    feature_batch = np.array(feature_batch, dtype='int32')[rand_ind]
+    feature_label = np.array(feature_label, dtype='int32')[rand_ind]
+
+    return feature_frames, feature_rows, feature_cols, feature_batch, feature_label
+
+
 def trim_padding(nparr, win_x, win_y):
     """Trim the boundaries of the numpy array to allow for a sliding
     window of size (win_x, win_y) to not slide over regions without pixel data
@@ -704,6 +768,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
                           annotation_direc='annotated',
                           window_size_x=30,
                           window_size_y=30,
+                          window_size_z=5,
                           border_mode='same',
                           output_mode='disc',
                           reshape_size=None,
@@ -711,6 +776,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
                           display=True,
                           num_of_frames_to_display=5,
                           montage_mode=True,
+                          max_training_examples=1e7,
                           verbose=True):
     """
     Read all images in training directories and save as npz file.
@@ -762,12 +828,27 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
                                  annotation_name, num_frames, image_size,
                                  montage_mode=montage_mode)
 
+    feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
+        y=y,
+        border_mode=border_mode,
+        window_size_x=window_size_x,
+        window_size_y=window_size_y,
+        window_size_z=window_size_z,
+        max_training_examples=max_training_examples)
+
+    # Sample pixels from the label matrix
+    if output_mode == 'sample':
+        # Save training data in npz format
+        np.savez(file_name_save, X=X, y=feat_label, batch=feat_batch,
+                 pixels_x=feat_rows, pixels_y=feat_cols, pixels_z=feat_frames,
+                 win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
+
     # Trim annotation images
     if border_mode == 'valid':
         if CHANNELS_FIRST:
-            y = y[:, :, : window_size_x:-window_size_x, window_size_y:-window_size_y]
+            y = y[:, :, window_size_z:-window_size_z, window_size_x:-window_size_x, window_size_y:-window_size_y]
         else:
-            y = y[:, :, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
+            y = y[:, window_size_z:-window_size_z, window_size_x:-window_size_x, window_size_y:-window_size_y, :]
 
     # Reshape X and y
     if reshape_size is not None:
@@ -794,8 +875,11 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
         if verbose:
             print('Number of cells: {}'.format(max_cells))
 
-    # Save training data in npz format
-    np.savez(file_name_save, X=X, y=y, win_x=window_size_x, win_y=window_size_y)
+        # Save training data in npz format
+        np.savez(file_name_save, X=X, y=y, win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
+
+    if output_mode == 'conv':
+        np.savez(file_name_save, X=X, y=y, win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
 
     if display:
         plot_training_data_3d(X, y, len(training_direcs), num_of_frames_to_display)
@@ -803,7 +887,10 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
     return None
 
 
-def make_training_data(direc_name, file_name_save, channel_names, dimensionality,
+def make_training_data(direc_name,
+                       file_name_save,
+                       channel_names,
+                       dimensionality,
                        training_direcs=None,
                        window_size_x=30,
                        window_size_y=30,
@@ -815,6 +902,7 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                        verbose=False,
                        reshape_size=None,
                        display=False,
+                       max_training_examples=1e7,
                        **kwargs):
     """
     Wrapper function for other make_training_data functions (2d, 3d)
@@ -860,7 +948,7 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               annotation_direc=annotation_direc,
                               dilation_radius=kwargs.get('dilation_radius', 1),
                               max_plotted=kwargs.get('max_plotted', 5),
-                              max_training_examples=kwargs.get('max_training_examples', 1e7))
+                              max_training_examples=max_training_examples)
 
     elif dimensionality == 3:
         make_training_data_3d(direc_name, file_name_save, channel_names,
@@ -875,6 +963,7 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               reshape_size=reshape_size,
                               verbose=verbose,
                               display=display,
+                              max_training_examples=max_training_examples,
                               montage_mode=kwargs.get('montage_mode', False),
                               num_frames=kwargs.get('num_frames', 50),
                               num_of_frames_to_display=kwargs.get('num_of_frames_to_display', 5))
