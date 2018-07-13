@@ -4,7 +4,6 @@ FROM nvcr.io/vvlab/tensorflow:18.04-py3
 # System maintenance
 RUN apt update && apt-get install -y python3-tk
 RUN pip install --upgrade pip
-
 # Set working directory
 WORKDIR /deepcell-tf
 
@@ -34,6 +33,14 @@ COPY scripts /deepcell-tf/scripts
 RUN cd /deepcell-tf/lib/deepcell-tf/ && \
     python setup.py install
 
+RUN cd /deepcell-tf/lib && \
+    rm -r keras-retinanet && \
+    git clone https://github.com/fizyr/keras-retinanet && \
+    cd keras-retinanet && \
+    pip install .
+
+RUN pip install pandas
+RUN apt-get install -y libsm6
 # Change matplotlibrc file to use the Agg backend
 RUN echo "backend : Agg" > /usr/local/lib/python3.5/dist-packages/matplotlib/mpl-data/matplotlibrc
 
