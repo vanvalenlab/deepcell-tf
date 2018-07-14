@@ -1402,14 +1402,24 @@ class WatershedMovieIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.data_format == 'channels_first':
-            batch_x = np.zeros(tuple([len(index_array), self.x.shape[1], self.number_of_frames] + list(self.x.shape)[3:]))
+            batch_x = np.zeros((len(index_array),
+                                self.x.shape[1],
+                                self.number_of_frames,
+                                self.x.shape[3],
+                                self.x.shape[4]))
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.distance_bins, self.number_of_frames] + list(self.y.shape)[3:]))
+                batch_y = np.zeros((len(index_array),
+                                    self.distance_bins,
+                                    self.number_of_frames,
+                                    self.y.shape[3],
+                                    self.y.shape[4]))
 
         else:
-            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.x.shape)[2:]))
+            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] +
+                                     list(self.x.shape)[2:]))
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.y.shape)[2:4] + [self.distance_bins]))
+                batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] +
+                                         list(self.y.shape)[2:4] + [self.distance_bins]))
 
         for i, j in enumerate(index_array):
             # Sample along the time axis
