@@ -1364,6 +1364,12 @@ class WatershedMovieIterator(Iterator):
         if data_format is None:
             data_format = K.image_data_format()
 
+        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+            raise ValueError(
+                'Data movie and label movie should have the same size. '
+                'Found data movie size = {} and and label movie size = {}'.format(
+                    train_dict['X'].shape, train_dict['y'].shape))
+
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
