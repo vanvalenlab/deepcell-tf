@@ -732,16 +732,17 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
     for b, direc in enumerate(X_dirs):
 
         for c, channel in enumerate(channel_names):
-            print('Loading {} channel data from training dir {}: {}'.format(
-                channel, b + 1, direc))
 
             imglist = nikon_getfiles(direc, channel)
 
             for i, img in enumerate(imglist):
                 if i >= num_frames:
-                    print('Skipping final {} frames, as num_frames is {} but '
-                          'there are {} total frames'.format(
-                              len(imglist) - num_frames, num_frames, len(imglist)))
+                    print('Skipped final {skip} frames of {dir}, as num_frames '
+                          'is {num} but there are {total} total frames'.format(
+                              skip=len(imglist) - num_frames,
+                              dir=direc,
+                              num=num_frames,
+                              total=len(imglist)))
                     break
 
                 image_data = np.asarray(get_image(os.path.join(direc, img)))
@@ -784,9 +785,12 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
 
             for z, img_file in enumerate(imglist):
                 if z >= num_frames:
-                    print('Skipping final {} frames, as num_frames is {} but '
-                          'there are {} total frames'.format(
-                              len(imglist) - num_frames, num_frames, len(imglist)))
+                    print('Skipped final {skip} frames of {dir}, as num_frames '
+                          'is {num} but there are {total} total frames'.format(
+                              skip=len(imglist) - num_frames,
+                              dir=direc,
+                              num=num_frames,
+                              total=len(imglist)))
                     break
 
                 annotation_img = get_image(os.path.join(direc, img_file))
