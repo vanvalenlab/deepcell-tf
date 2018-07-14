@@ -984,7 +984,11 @@ class MovieDataGenerator(ImageDataGenerator):
                 h, w = y.shape[img_row_axis], y.shape[img_col_axis]
                 transform_matrix_y = transform_matrix_offset_center(transform_matrix, h, w)
                 for frame in range(y.shape[img_time_axis]):
-                    y_trans = apply_transform(y[frame], transform_matrix_y, img_channel_axis - 1,
+                    if self.time_axis == 2:
+                        y_frame = y[:, frame]
+                    else:
+                        y_frame = y[frame]
+                    y_trans = apply_transform(y_frame, transform_matrix_y, img_channel_axis - 1,
                                               fill_mode='constant', cval=0)
                     y_new.append(np.rint(y_trans))
                 y = np.stack(y_new, axis=0)
@@ -994,7 +998,11 @@ class MovieDataGenerator(ImageDataGenerator):
             h, w = x.shape[img_row_axis], x.shape[img_col_axis]
             transform_matrix_x = transform_matrix_offset_center(transform_matrix, h, w)
             for frame in range(x.shape[img_time_axis]):
-                x_new.append(apply_transform(x[frame], transform_matrix_x, img_channel_axis - 1,
+                if self.time_axis == 2:
+                    x_frame = x[:, frame]
+                else:
+                    x_frame = x[frame]
+                x_new.append(apply_transform(x_frame, transform_matrix_x, img_channel_axis - 1,
                                              fill_mode=self.fill_mode, cval=self.cval))
             x = np.stack(x_new)
 
@@ -1434,26 +1442,35 @@ class WatershedMovieIterator(Iterator):
                 batch_y[i] = y
 
         if self.save_to_dir:
+            time_axis = 2 if self.data_format == 'channels_first' else 1
             for i, j in enumerate(index_array):
-                # Save X batch
-                img_x = np.expand_dims(batch_x[i, :, :, :, 0], -1)
-                img = array_to_img(img_x, self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(
-                    prefix=self.save_prefix,
-                    index=j,
-                    hash=np.random.randint(1e4),
-                    format=self.save_format)
-                img.save(os.path.join(self.save_to_dir, fname))
-
-                if self.y is not None:
-                    img_y = np.expand_dims(batch_y[i, :, :, :, 0], -1)
-                    img = array_to_img(img_y, self.data_format, scale=True)
-                    fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
+                for frame in range(batch_x.shape[time_axis]):
+                    if time_axis == 2:
+                        img = array_to_img(batch_x[i, :, frame], self.data_format, scale=True)
+                    else:
+                        img = array_to_img(batch_x[i, frame], self.data_format, scale=True)
+                    fname = '{prefix}_{index}_{hash}.{format}'.format(
                         prefix=self.save_prefix,
                         index=j,
                         hash=np.random.randint(1e4),
                         format=self.save_format)
                     img.save(os.path.join(self.save_to_dir, fname))
+
+                    if self.y is not None:
+                        # Save y batch, but just the MAX distance for each pixel
+                        if time_axis == 2:
+                            img_y = array_to_img(batch_y[i, :, frame], self.data_format, scale=True)
+                        else:
+                            img_y = array_to_img(batch_y[i, frame], self.data_format, scale=True)
+                        img_y = np.argmax(img_y, axis=self.channel_axis - 1)
+                        img_y = np.expand_dims(img_y, axis=self.channel_axis - 1)
+                        img = array_to_img(img_y, self.data_format, scale=True)
+                        fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
+                            prefix=self.save_prefix,
+                            index=j,
+                            hash=np.random.randint(1e4),
+                            format=self.save_format)
+                        img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
             return batch_x
