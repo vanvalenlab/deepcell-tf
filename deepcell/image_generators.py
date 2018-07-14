@@ -1130,7 +1130,7 @@ class MovieArrayIterator(Iterator):
                                     self.y.shape[1],
                                     self.number_of_frames,
                                     self.y.shape[3],
-                                    self.y.shape[3]))
+                                    self.y.shape[4]))
 
         else:
             batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] +
@@ -1181,6 +1181,18 @@ class MovieArrayIterator(Iterator):
                         hash=np.random.randint(1e4),
                         format=self.save_format)
                     img.save(os.path.join(self.save_to_dir, fname))
+
+                    if self.y is not None:
+                        if time_axis == 2:
+                            img_y = array_to_img(batch_y[i, :, frame], self.data_format, scale=True)
+                        else:
+                            img_y = array_to_img(batch_y[i, frame], self.data_format, scale=True)
+                        fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
+                            prefix=self.save_prefix,
+                            index=j,
+                            hash=np.random.randint(1e4),
+                            format=self.save_format)
+                        img_y.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
             return batch_x
