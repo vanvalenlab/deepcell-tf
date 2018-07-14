@@ -888,20 +888,18 @@ def make_training_data_3d(direc_name,
             new_y[b] = np.expand_dims(d, axis=channel_axis)
         y = to_categorical(new_y)
 
-    elif output_mode != 'disc':  # TODO: hacky workaround, must fix
+    # Sample pixels from the label matrix
+    if output_mode == 'sample':
         y[y > 0] = 1  # make each cell instance equal to 1.
         y = to_categorical(y)
 
-    feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
-        y=y,
-        border_mode=border_mode,
-        window_size_x=window_size_x,
-        window_size_y=window_size_y,
-        window_size_z=window_size_z,
-        max_training_examples=max_training_examples)
-
-    # Sample pixels from the label matrix
-    if output_mode == 'sample':
+        feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
+            y=y,
+            border_mode=border_mode,
+            window_size_x=window_size_x,
+            window_size_y=window_size_y,
+            window_size_z=window_size_z,
+            max_training_examples=max_training_examples)
         # Save training data in npz format
         np.savez(file_name_save, X=X, y=feat_label, batch=feat_batch,
                  pixels_x=feat_rows, pixels_y=feat_cols, pixels_z=feat_frames,
