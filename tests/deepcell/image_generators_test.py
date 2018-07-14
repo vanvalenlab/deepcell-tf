@@ -518,7 +518,7 @@ class TestMovieDataGenerator(test.TestCase):
             generator = image_generators.MovieDataGenerator(
                 zoom_range=(2, 2, 2))
 
-    def test_fully_conv_data_generator_fit(self):
+    def test_movie_data_generator_fit(self):
         generator = image_generators.MovieDataGenerator(
             featurewise_center=True,
             samplewise_center=True,
