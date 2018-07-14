@@ -1452,10 +1452,9 @@ class WatershedMovieIterator(Iterator):
                 batch_y[i] = y
 
         if self.save_to_dir:
-            time_axis = 2 if self.data_format == 'channels_first' else 1
             for i, j in enumerate(index_array):
-                for frame in range(batch_x.shape[time_axis]):
-                    if time_axis == 2:
+                for frame in range(batch_x.shape[self.time_axis]):
+                    if self.time_axis == 2:
                         img = array_to_img(batch_x[i, :, frame], self.data_format, scale=True)
                     else:
                         img = array_to_img(batch_x[i, frame], self.data_format, scale=True)
@@ -1468,12 +1467,14 @@ class WatershedMovieIterator(Iterator):
 
                     if self.y is not None:
                         # Save y batch, but just the MAX distance for each pixel
-                        if time_axis == 2:
-                            img_y = array_to_img(batch_y[i, :, frame], self.data_format, scale=True)
+                        if self.time_axis == 2:
+                            img_channel_axis = 0
+                            img_y = batch_y[i, :, frame]
                         else:
-                            img_y = array_to_img(batch_y[i, frame], self.data_format, scale=True)
-                        img_y = np.argmax(img_y, axis=self.channel_axis - 1)
-                        img_y = np.expand_dims(img_y, axis=self.channel_axis - 1)
+                            img_channel_axis = -1
+                            img_y = batch_y[i, frame]
+                        img_y = np.argmax(img_y, axis=img_channel_axis)
+                        img_y = np.expand_dims(img_y, axis=img_channel_axis)
                         img = array_to_img(img_y, self.data_format, scale=True)
                         fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
                             prefix=self.save_prefix,
