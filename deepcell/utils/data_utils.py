@@ -886,11 +886,11 @@ def make_training_data_3d(direc_name,
         for b in range(y.shape[0]):
             d = distance_transform_3d(y[b], bins=distance_bins)
             new_y[b] = np.expand_dims(d, axis=channel_axis)
-        y = to_categorical(new_y)
 
     # Sample pixels from the label matrix
     if output_mode == 'sample':
-        y[y > 0] = 1  # make each cell instance equal to 1.
+        if not distance_transform:
+            y[y > 0] = 1  # make each cell instance equal to 1.
         y = to_categorical(y)
 
         feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
