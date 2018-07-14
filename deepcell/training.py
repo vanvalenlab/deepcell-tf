@@ -540,21 +540,6 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
             y=train_dict['y'].reshape(train_dict['y'].size),
             classes=np.unique(train_dict['y']))
 
-    # keras to_categorical will not work with channels_first data.
-    # if channels_first, convert to channels_last
-    if K.image_data_format() == 'channels_first':
-        train_dict['y'] = np.rollaxis(train_dict['y'], 1, 5)
-        y_test = np.rollaxis(y_test, 1, 5)
-
-    # use to_categorical to one-hot encode each feaeture
-    train_dict['y'] = keras_to_categorical(train_dict['y'])
-    y_test = keras_to_categorical(y_test)
-
-    # if channels_first, roll axis back to expected shape
-    if K.image_data_format() == 'channels_first':
-        train_dict['y'] = np.rollaxis(train_dict['y'], 4, 1)
-        y_test = np.rollaxis(y_test, 4, 1)
-
     validation_dict = {'X': X_test, 'y': y_test}
 
     time_axis = 2 if CHANNELS_FIRST else 1
