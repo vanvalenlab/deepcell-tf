@@ -47,7 +47,7 @@ class ImageSampleArrayIterator(Iterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
-        if train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
             raise ValueError('Training batches and labels should have the same'
                              'length. Found X.shape: {} y.shape: {}'.format(
                                  train_dict['X'].shape, train_dict['y'].shape))
@@ -1402,14 +1402,24 @@ class WatershedMovieIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.data_format == 'channels_first':
-            batch_x = np.zeros(tuple([len(index_array), self.x.shape[1], self.number_of_frames] + list(self.x.shape)[3:]))
+            batch_x = np.zeros((len(index_array),
+                                self.x.shape[1],
+                                self.number_of_frames,
+                                self.x.shape[3],
+                                self.x.shape[4]))
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.distance_bins, self.number_of_frames] + list(self.y.shape)[3:]))
+                batch_y = np.zeros((len(index_array),
+                                    self.distance_bins,
+                                    self.number_of_frames,
+                                    self.y.shape[3],
+                                    self.y.shape[4]))
 
         else:
-            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.x.shape)[2:]))
+            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] +
+                                     list(self.x.shape)[2:]))
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] + list(self.y.shape)[2:4] + [self.distance_bins]))
+                batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] +
+                                         list(self.y.shape)[2:4] + [self.distance_bins]))
 
         for i, j in enumerate(index_array):
             # Sample along the time axis
@@ -1442,10 +1452,9 @@ class WatershedMovieIterator(Iterator):
                 batch_y[i] = y
 
         if self.save_to_dir:
-            time_axis = 2 if self.data_format == 'channels_first' else 1
             for i, j in enumerate(index_array):
-                for frame in range(batch_x.shape[time_axis]):
-                    if time_axis == 2:
+                for frame in range(batch_x.shape[self.time_axis]):
+                    if self.time_axis == 2:
                         img = array_to_img(batch_x[i, :, frame], self.data_format, scale=True)
                     else:
                         img = array_to_img(batch_x[i, frame], self.data_format, scale=True)
@@ -1458,12 +1467,14 @@ class WatershedMovieIterator(Iterator):
 
                     if self.y is not None:
                         # Save y batch, but just the MAX distance for each pixel
-                        if time_axis == 2:
-                            img_y = array_to_img(batch_y[i, :, frame], self.data_format, scale=True)
+                        if self.time_axis == 2:
+                            img_channel_axis = 0
+                            img_y = batch_y[i, :, frame]
                         else:
-                            img_y = array_to_img(batch_y[i, frame], self.data_format, scale=True)
-                        img_y = np.argmax(img_y, axis=self.channel_axis - 1)
-                        img_y = np.expand_dims(img_y, axis=self.channel_axis - 1)
+                            img_channel_axis = -1
+                            img_y = batch_y[i, frame]
+                        img_y = np.argmax(img_y, axis=img_channel_axis)
+                        img_y = np.expand_dims(img_y, axis=img_channel_axis)
                         img = array_to_img(img_y, self.data_format, scale=True)
                         fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
                             prefix=self.save_prefix,
