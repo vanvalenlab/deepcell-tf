@@ -47,7 +47,7 @@ class ImageSampleArrayIterator(Iterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
-        if train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
             raise ValueError('Training batches and labels should have the same'
                              'length. Found X.shape: {} y.shape: {}'.format(
                                  train_dict['X'].shape, train_dict['y'].shape))
