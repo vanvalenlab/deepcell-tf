@@ -1894,4 +1894,7 @@ def dilated_bn_feature_net_11x61x61_3D(input_shape=(2, 1080, 1280), batch_size=N
 
     model.add(Activation('softmax'))
 
+    if weights_path is not None:
+        model.load_weights(weights_path, by_name=True)
+
     return model
