@@ -11,6 +11,7 @@ import numpy as np
 import numpy.testing as np_test
 from skimage.io import imread
 from tensorflow.python.platform import test
+from tensorflow.python.keras import backend as K
 
 from deepcell.utils.transform_utils import to_categorical
 from deepcell.utils.transform_utils import distance_transform_2d
@@ -30,16 +31,36 @@ TEST_IMG_180 = imread(os.path.join(RES_DIR, 'rotated_180.tif'))
 TEST_IMG_270 = imread(os.path.join(RES_DIR, 'rotated_270.tif'))
 
 
+def _generate_test_masks():
+    img_w = img_h = 30
+    mask_images = []
+    for _ in range(8):
+        imarray = np.random.randint(2, size=(img_w, img_h, 1))
+        mask_images.append(imarray)
+    return mask_images
+
+
 class TransformUtilsTest(test.TestCase):
     def test_distance_transform_2d(self):
-        # TODO: questionable test results.  Should it be bin_size - 1?
-        bin_size = 3
-        distance = distance_transform_2d(TEST_MASK, bins=bin_size)
-        assert np.unique(distance).size == bin_size - 1
+        for img in _generate_test_masks():
+            K.set_image_data_format('channels_last')
+            bin_size = 3
+            distance = distance_transform_2d(img, bins=bin_size)
+            assert np.unique(distance).size == bin_size - 1
 
-        bin_size = 4
-        distance = distance_transform_2d(TEST_MASK, bins=bin_size)
-        assert np.unique(distance).size == bin_size - 1
+            bin_size = 4
+            distance = distance_transform_2d(img, bins=bin_size)
+            assert np.unique(distance).size == bin_size - 1
+
+            K.set_image_data_format('channels_first')
+            img = np.rollaxis(img, 2, 1)
+            bin_size = 3
+            distance = distance_transform_2d(img, bins=bin_size)
+            assert np.unique(distance).size == bin_size - 1
+
+            bin_size = 4
+            distance = distance_transform_2d(img, bins=bin_size)
+            assert np.unique(distance).size == bin_size - 1
 
     def test_to_categorical(self):
         num_classes = 5
