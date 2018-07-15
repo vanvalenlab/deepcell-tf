@@ -890,6 +890,7 @@ def make_training_data_3d(direc_name,
         for b in range(y.shape[0]):
             d = distance_transform_3d(y[b], bins=distance_bins)
             new_y[b] = np.expand_dims(d, axis=channel_axis)
+        y = new_y
 
     # Sample pixels from the label matrix
     if output_mode == 'sample':
