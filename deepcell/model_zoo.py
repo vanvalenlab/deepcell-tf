@@ -1889,7 +1889,6 @@ def dilated_bn_feature_net_11x61x61_3D(input_shape=(2, 1080, 1280), batch_size=N
 
     model.add(TensorProd3D(256, n_features, kernel_initializer=init, kernel_regularizer=l2(reg)))
 
-    model.add(Flatten())
     model.add(Dense(n_features))
 
     model.add(Activation('softmax'))
