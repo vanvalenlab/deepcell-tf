@@ -68,8 +68,8 @@ class TestSampleDataGenerator(test.TestCase):
 
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((32, 10, 10, 3)),
-                'y': np.random.random((32, 10, 10, 3)),
+                'X': np.random.random((32, win_x, win_y, 3)),
+                'y': np.random.random((32, win_x, win_y, 3)),
                 'win_x': win_x,
                 'win_y': win_y
             }
@@ -98,14 +98,30 @@ class TestSampleDataGenerator(test.TestCase):
             images = np.vstack(img_list)
             images = np.rollaxis(images, 3, 1)
             generator = image_generators.SampleDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                # brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True,
                 data_format='channels_first')
 
             win_x, win_y = 10, 10
 
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((32, 3, 10, 10)),
-                'y': np.random.random((32, 3, 10, 10)),
+                'X': np.random.random((32, 3, win_x, win_y)),
+                'y': np.random.random((32, 3, win_x, win_y)),
                 'win_x': win_x,
                 'win_y': win_y
             }
@@ -160,7 +176,7 @@ class TestSampleDataGenerator(test.TestCase):
             }
             generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
-        x = np.random.random((32, 10, 10, 5))
+        x = np.random.random((32, win_x, win_y, 5))
         y = np.arange(32)
         generator.flow({'X': x, 'y': y, 'win_x': win_x, 'win_y': win_y})
 
