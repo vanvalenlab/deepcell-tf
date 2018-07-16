@@ -120,7 +120,7 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='
     # Arguments
         y: mask to indicate which pixels belong to which class
         edge_feature: [1, 0, 0], the 1 indicates the feature is the cell edge
-        output_mode:  'sample', 'conv', or 'disc'
+        output_mode:  'sample' or 'conv'
         border_mode:  'valid' or 'same'
     # Returns
         list_of_max_sample_numbers: list of maximum sample size for all classes
@@ -579,7 +579,7 @@ def make_training_data_2d(direc_name,
         verbose:  print more output to screen, similar to DEBUG mode
         reshape_size: If provided, will reshape the images to the given size
         border_mode:  'valid' or 'same'
-        output_mode:  'sample', 'conv', or 'disc'
+        output_mode:  'sample' or 'conv'
     """
     # Load one file to get image sizes (all images same size as they are from same microscope)
     image_path = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
@@ -649,48 +649,6 @@ def make_training_data_2d(direc_name,
         np.savez(file_name_save, class_weights=weights, X=X, y=y,
                  y_sample=y_sample, win_x=window_size_x, win_y=window_size_y)
 
-    elif output_mode == 'disc':
-        if y.shape[1 if CHANNELS_FIRST else -1] > 3:
-            raise ValueError('Only one interior feature is allowed for disc output mode')
-
-        # Create mask with labeled cells
-        if CHANNELS_FIRST:
-            y_label = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3]), dtype='int32')
-        else:
-            y_label = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1), dtype='int32')
-
-        for b in range(y.shape[0]):
-            if CHANNELS_FIRST:
-                interior_mask = y[b, 1, :, :]
-                y_label[b, 0, :, :] = label(interior_mask)
-            else:
-                interior_mask = y[b, :, :, 1]
-                y_label[b, :, :, 0] = label(interior_mask)
-
-        max_cells = np.amax(y_label) + 1
-        if CHANNELS_FIRST:
-            y_binary = np.zeros((y.shape[0], max_cells, y.shape[2], y.shape[3]), dtype='int32')
-        else:
-            y_binary = np.zeros((y.shape[0], y.shape[1], y.shape[2], max_cells), dtype='int32')
-
-        for b in range(y.shape[0]):
-            label_mask = y_label[b]
-            for l in range(max_cells):
-                if CHANNELS_FIRST:
-                    y_binary[b, l, :, :] = label_mask == l
-                else:
-                    y_binary[b, :, :, l] = label_mask == l
-
-        # Trim the sides of the mask to ensure a sliding window does not slide
-        # past before or after the boundary of y_label or y_binary
-        if border_mode == 'valid':
-            y_label = trim_padding(y_label, window_size_x, window_size_y)
-            y_binary = trim_padding(y_binary, window_size_x, window_size_y)
-
-        # Save training data in npz format
-        np.savez(file_name_save, class_weights=weights, X=X, y=y_binary,
-                 win_x=window_size_x, win_y=window_size_y)
-
     if verbose:
         print('Number of features: {}'.format(y.shape[1 if CHANNELS_FIRST else -1]))
         print('Number of training data points: {}'.format(len(feature_label)))
@@ -699,8 +657,6 @@ def make_training_data_2d(direc_name,
     if display:
         if output_mode == 'conv':
             display_mask = y_sample
-        elif output_mode == 'disc':
-            display_mask = y_label
         else:
             display_mask = y
         plot_training_data_2d(X, display_mask, max_plotted=max_plotted)
@@ -813,7 +769,7 @@ def make_training_data_3d(direc_name,
                           window_size_y=30,
                           window_size_z=5,
                           border_mode='same',
-                          output_mode='disc',
+                          output_mode='conv',
                           reshape_size=None,
                           num_frames=50,
                           display=True,
@@ -843,7 +799,7 @@ def make_training_data_3d(direc_name,
         window_size_x: number of pixels to +/- x direction to be sampled in sample mode
         window_size_y: number of pixels to +/- y direction to be sampled in sample mode
         border_mode:  'valid' or 'same'
-        output_mode:  'sample', 'conv', or 'disc'
+        output_mode:  'sample' or 'conv'
         reshape_size: If provided, will reshape the images to the given size.
         num_of_features: number of classes (e.g. cell interior, cell edge, background)
         edge_feature: List which determines the cell edge feature (usually [1, 0, 0])
@@ -910,30 +866,6 @@ def make_training_data_3d(direc_name,
                  pixels_x=feat_rows, pixels_y=feat_cols, pixels_z=feat_frames,
                  win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
 
-    # Convert training data to format compatible with discriminative loss function
-    if output_mode == 'disc':
-        max_cells = np.int(np.amax(y))
-        if CHANNELS_FIRST:
-            binary_mask_shape = (y.shape[0], max_cells + 1, y.shape[1], y.shape[2], y.shape[3])
-        else:
-            binary_mask_shape = (y.shape[0], y.shape[1], y.shape[2], y.shape[3], max_cells + 1)
-        y_binary = np.zeros(binary_mask_shape, dtype='int32')
-        for b in range(y.shape[0]):
-            label_mask = y[b]
-            for l in range(max_cells + 1):
-                if CHANNELS_FIRST:
-                    y_binary[b, l, :, :, :] = label_mask == l
-                else:
-                    y_binary[b, :, :, :, l] = label_mask == l
-
-        y = y_binary
-
-        if verbose:
-            print('Number of cells: {}'.format(max_cells))
-
-        # Save training data in npz format
-        np.savez(file_name_save, X=X, y=y, win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
-
     if output_mode == 'conv':
         np.savez(file_name_save, X=X, y=y, win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
 
@@ -977,8 +909,8 @@ def make_training_data(direc_name,
     if border_mode not in {'valid', 'same'}:
         raise ValueError('border_mode should be set to either valid or same')
 
-    if output_mode not in {'sample', 'conv', 'disc'}:
-        raise ValueError('output_mode should be set to either sample, conv, or disc')
+    if output_mode not in {'sample', 'conv'}:
+        raise ValueError('output_mode should be set to either sample or conv')
 
     if not isinstance(channel_names, list):
         raise ValueError('channel_names should be a list of strings (e.g. [\'DAPI\']). '
