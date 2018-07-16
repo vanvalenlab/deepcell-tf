@@ -110,7 +110,7 @@ def train_model_on_training_data():
         dataset=DATA_FILE,
         optimizer=sgd,
         batch_size=batch_size,
-        number_of_frames=frames_per_batch,
+        frames_per_batch=frames_per_batch,
         n_epoch=n_epoch,
         direc_save=direc_save,
         direc_data=direc_data,
@@ -128,7 +128,7 @@ def run_model_on_dir():
     model_name = '2018-06-17_MouseBrain_channels_last_conv__0.h5'
     weights = os.path.join(MODEL_DIR, PREFIX, model_name)
 
-    number_of_frames = 30
+    frames_per_batch = 30
     batch_size = 1
     win_x, win_y = 30, 30
     n_features = 2
@@ -139,14 +139,14 @@ def run_model_on_dir():
         channel_names=channel_names,
         raw_image_direc=os.path.join('stacked_raw', 'set_0_x_3_y_2'),
         image_size=(256, 256),
-        num_frames=number_of_frames)
+        num_frames=frames_per_batch)
 
     if K.image_data_format() == 'channels_first':
         row_size, col_size = images.shape[3:]
-        batch_shape = (batch_size, images.shape[1], number_of_frames, row_size, col_size)
+        batch_shape = (batch_size, images.shape[1], frames_per_batch, row_size, col_size)
     else:
         row_size, col_size = images.shape[2:4]
-        batch_shape = (batch_size, number_of_frames, row_size, col_size, images.shape[4])
+        batch_shape = (batch_size, frames_per_batch, row_size, col_size, images.shape[4])
 
     model = the_model(batch_shape=batch_shape, n_features=n_features, norm_method='whole_image')
 

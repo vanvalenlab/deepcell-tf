@@ -840,7 +840,7 @@ class MovieDataGenerator(ImageDataGenerator):
     def flow(self,
              train_dict,
              batch_size=1,
-             number_of_frames=10,
+             frames_per_batch=10,
              shuffle=True,
              seed=None,
              save_to_dir=None,
@@ -853,7 +853,7 @@ class MovieDataGenerator(ImageDataGenerator):
             shuffle=shuffle,
             seed=seed,
             data_format=self.data_format,
-            number_of_frames=number_of_frames,
+            frames_per_batch=frames_per_batch,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
@@ -1094,7 +1094,7 @@ class MovieArrayIterator(Iterator):
                  shuffle=False,
                  seed=None,
                  data_format=None,
-                 number_of_frames=10,
+                 frames_per_batch=10,
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
@@ -1118,12 +1118,12 @@ class MovieArrayIterator(Iterator):
                              'should have rank 5. You passed an array '
                              'with shape', self.x.shape)
 
-        if self.x.shape[self.time_axis] - number_of_frames < 0:
+        if self.x.shape[self.time_axis] - frames_per_batch < 0:
             raise ValueError(
                 'The number of frames used in each training batch should '
                 'be less than the number of frames in the training data!')
 
-        self.number_of_frames = number_of_frames
+        self.frames_per_batch = frames_per_batch
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -1136,21 +1136,21 @@ class MovieArrayIterator(Iterator):
         if self.data_format == 'channels_first':
             batch_x = np.zeros((len(index_array),
                                 self.x.shape[1],
-                                self.number_of_frames,
+                                self.frames_per_batch,
                                 self.x.shape[3],
                                 self.x.shape[4]))
             if self.y is not None:
                 batch_y = np.zeros((len(index_array),
                                     self.y.shape[1],
-                                    self.number_of_frames,
+                                    self.frames_per_batch,
                                     self.y.shape[3],
                                     self.y.shape[4]))
 
         else:
-            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] +
+            batch_x = np.zeros(tuple([len(index_array), self.frames_per_batch] +
                                      list(self.x.shape)[2:]))
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] +
+                batch_y = np.zeros(tuple([len(index_array), self.frames_per_batch] +
                                          list(self.y.shape)[2:]))
 
         for i, j in enumerate(index_array):
@@ -1158,9 +1158,9 @@ class MovieArrayIterator(Iterator):
                 y = self.y[j]
 
             # Sample along the time axis
-            last_frame = self.x.shape[self.time_axis] - self.number_of_frames
+            last_frame = self.x.shape[self.time_axis] - self.frames_per_batch
             time_start = np.random.randint(0, high=last_frame)
-            time_end = time_start + self.number_of_frames
+            time_end = time_start + self.frames_per_batch
             if self.time_axis == 1:
                 x = self.x[j, time_start:time_end, :, :, :]
                 if self.y is not None:
@@ -1351,7 +1351,7 @@ class WatershedMovieDataGenerator(MovieDataGenerator):
              batch_size=1,
              shuffle=True,
              seed=None,
-             number_of_frames=10,
+             frames_per_batch=10,
              save_to_dir=None,
              save_prefix='',
              distance_bins=16,
@@ -1362,7 +1362,7 @@ class WatershedMovieDataGenerator(MovieDataGenerator):
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
-            number_of_frames=number_of_frames,
+            frames_per_batch=frames_per_batch,
             data_format=self.data_format,
             distance_bins=distance_bins,
             save_to_dir=save_to_dir,
@@ -1377,7 +1377,7 @@ class WatershedMovieIterator(Iterator):
                  batch_size=1,
                  shuffle=False,
                  seed=None,
-                 number_of_frames=10,
+                 frames_per_batch=10,
                  data_format=None,
                  distance_bins=16,
                  save_to_dir=None,
@@ -1402,12 +1402,12 @@ class WatershedMovieIterator(Iterator):
                              'should have rank 5. You passed an array '
                              'with shape', self.x.shape)
 
-        if self.x.shape[self.time_axis] < number_of_frames:
+        if self.x.shape[self.time_axis] < frames_per_batch:
             raise ValueError('The number of frames used in each training batch '
                              'should be less than the number of frames in the '
                              'training data.')
 
-        self.number_of_frames = number_of_frames
+        self.frames_per_batch = frames_per_batch
         self.distance_bins = distance_bins
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
@@ -1421,29 +1421,29 @@ class WatershedMovieIterator(Iterator):
         if self.data_format == 'channels_first':
             batch_x = np.zeros((len(index_array),
                                 self.x.shape[1],
-                                self.number_of_frames,
+                                self.frames_per_batch,
                                 self.x.shape[3],
                                 self.x.shape[4]))
             if self.y is not None:
                 batch_y = np.zeros((len(index_array),
                                     self.distance_bins,
-                                    self.number_of_frames,
+                                    self.frames_per_batch,
                                     self.y.shape[3],
                                     self.y.shape[4]))
 
         else:
-            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] +
+            batch_x = np.zeros(tuple([len(index_array), self.frames_per_batch] +
                                      list(self.x.shape)[2:]))
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] +
+                batch_y = np.zeros(tuple([len(index_array), self.frames_per_batch] +
                                          list(self.y.shape)[2:4] +
                                          [self.distance_bins]))
 
         for i, j in enumerate(index_array):
             # Sample along the time axis
-            last_frame = self.x.shape[self.time_axis] - self.number_of_frames
+            last_frame = self.x.shape[self.time_axis] - self.frames_per_batch
             time_start = np.random.randint(0, high=last_frame)
-            time_end = time_start + self.number_of_frames
+            time_end = time_start + self.frames_per_batch
             if self.time_axis == 1:
                 x = self.x[j, time_start:time_end, :, :, :]
                 if self.y is not None:

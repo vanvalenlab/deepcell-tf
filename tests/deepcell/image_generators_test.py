@@ -397,7 +397,7 @@ class TestMovieDataGenerator(test.TestCase):
                 'X': np.random.random((32, 30, 10, 10, 3)),
                 'y': np.random.random((32, 30, 10, 10, 3)),
             }
-            generator.flow(train_dict, number_of_frames=1)
+            generator.flow(train_dict, frames_per_batch=1)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -407,14 +407,14 @@ class TestMovieDataGenerator(test.TestCase):
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.random(y_shape)
-            number_of_frames = 10
+            frames_per_batch = 10
             for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
                     save_to_dir=temp_dir,
-                    number_of_frames=number_of_frames):
-                batch_x_shape = (number_of_frames, *images.shape[2:])
-                batch_y_shape = (number_of_frames, *y_shape[2:])
+                    frames_per_batch=frames_per_batch):
+                batch_x_shape = (frames_per_batch, *images.shape[2:])
+                batch_y_shape = (frames_per_batch, *y_shape[2:])
                 self.assertEqual(x.shape[1:], batch_x_shape)
                 self.assertEqual(y.shape[1:], batch_y_shape)
                 break
@@ -453,14 +453,14 @@ class TestMovieDataGenerator(test.TestCase):
             train_dict['X'] = images
             train_dict['y'] = np.random.random(y_shape)
 
-            number_of_frames = 10
+            frames_per_batch = 10
             for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
                     save_to_dir=temp_dir,
-                    number_of_frames=number_of_frames):
-                batch_x_shape = (images.shape[1], number_of_frames, *images.shape[3:])
-                batch_y_shape = (y_shape[1], number_of_frames, *y_shape[3:])
+                    frames_per_batch=frames_per_batch):
+                batch_x_shape = (images.shape[1], frames_per_batch, *images.shape[3:])
+                batch_y_shape = (y_shape[1], frames_per_batch, *y_shape[3:])
                 self.assertEqual(x.shape[1:], batch_x_shape)
                 self.assertEqual(y.shape[1:], batch_y_shape)
                 break
@@ -495,13 +495,13 @@ class TestMovieDataGenerator(test.TestCase):
             }
             generator.flow(train_dict)
 
-        # Test flow with bigger number_of_frames than frames
+        # Test flow with bigger frames_per_batch than frames
         with self.assertRaises(Exception):
             train_dict = {
                 'X': np.random.random((32, 30, 10, 10, 1)),
                 'y': np.random.random((32, 30, 10, 10, 1))
             }
-            generator.flow(train_dict, number_of_frames=31)
+            generator.flow(train_dict, frames_per_batch=31)
 
         # Invalid number of channels: will work but raise a warning
         x = np.random.random((32, 30, 10, 10, 5))
