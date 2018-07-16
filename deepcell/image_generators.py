@@ -1297,9 +1297,10 @@ class SampleMovieArrayIterator(Iterator):
             for i, j in enumerate(index_array):
                 for frame in range(batch_x.shape[time_axis]):
                     if time_axis == 2:
-                        img = array_to_img(batch_x[i, :, frame], self.data_format, scale=True)
+                        img = batch_x[i, :, frame]
                     else:
-                        img = array_to_img(batch_x[i, frame], self.data_format, scale=True)
+                        img = batch_x[i, frame]
+                    img = array_to_img(img, self.data_format, scale=True)
                     fname = '{prefix}_{index}_{hash}.{format}'.format(
                         prefix=self.save_prefix,
                         index=j,
