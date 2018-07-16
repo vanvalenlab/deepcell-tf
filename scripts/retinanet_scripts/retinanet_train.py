@@ -558,6 +558,12 @@ def parse_args(args):
     csv_parser.add_argument('classes', help='Path to a CSV file containing class label mapping.')
     csv_parser.add_argument('--val-annotations', help='Path to CSV file containing annotations for validation (optional).')
 
+    csv_parser_run = subparsers.add_parser('run')
+    csv_parser_run.add_argument('run_path', help='Path to folder containing test data')
+    csv_parser_run.add_argument('model_path',help='Path to the model(.h5) file')
+    csv_parser_run.add_argument('--save_path', help='Path to save data', default='./test_output')
+ 
+
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--snapshot',          help='Resume training from a snapshot.')
     group.add_argument('--imagenet-weights',  help='Initialize the model with pretrained imagenet weights. This is the default behaviour.', action='store_const', const=True, default=True)
@@ -596,6 +602,56 @@ def main(args=None):
     # make sure keras is the minimum required version
     check_keras_version()
 
+    if args.dataset_type == 'run':
+    	model = models.load_model(args.model_path, backbone_name=args.backbone,convert=True)
+    	labels_to_names = {0: 'cell'}
+    	makedirs(args.save_path)
+    	test_imlist=os.walk(args.run_path).next()[2]
+    	for testimgcnt,img_path in enumerate(test_imlist):
+
+		    image = get_image(img_path)
+		    #draw2=np.tile(np.expand_dims(draw2,axis=-1),(1,1,3))
+
+		    #image=draw2
+		    draw2 = get_image(img_path)
+		    draw2 = draw2/np.max(draw2)
+		    #print(np.unique(image))
+		    # copy to draw on
+
+		    #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+		    print(image.shape)
+		    # preprocess image for network
+		    image = preprocess_image(image)
+		    #print(np.unique(image))
+		    image2=image
+		    image, scale = resize_image(image)
+		    print(scale)
+		    # process image
+		    start = time.time()
+		    boxes, scores, labels = model.predict_on_batch(np.expand_dims(image, axis=0))
+		    print("processing time: ", time.time() - start)
+
+		    # correct for image scale
+		    boxes /= scale
+
+		    # visualize detections
+		    for box, score, label in zip(boxes[0], scores[0], labels[0]):
+		        # scores are sorted so we can break
+		        if score < 0.5:
+		            break
+
+		        color = label_color(label)
+		        color=[255,0,255]
+		        b = box.astype(int)
+		        draw_box(draw2, b, color=color)
+
+		        caption = "{} {:.3f}".format(labels_to_names[label], score)
+		        draw_caption(draw2, b, caption)
+		    plt.imsave(os.path.join(args.save_path,"retinanet_output_"+str(testimgcnt)),draw2)
+
+
+
+
     # optionally choose specific GPU
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -627,11 +683,13 @@ def main(args=None):
     for cnt,file in enumerate(train_anotedlist):
         image=cv2.imread(file,0)
         p=regionprops(label(image))
+        cell_count=[]
         for index in range(len(np.unique(label(image)))-1):
             rect = [train_imlist[cnt],p[index].bbox[1],p[index].bbox[0],p[index].bbox[3],p[index].bbox[2],"cell"]
             cell_data.append(rect)
-        print(len(cell_data)/(cnt+1))
+            cell_count.append(rect)
         print("-----------------Completed "+file+"-----------")
+        print("The number of cells in this image : "+str(cell_count))
     print(len(cell_data))
 
 
