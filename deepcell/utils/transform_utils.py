@@ -70,10 +70,6 @@ def distance_transform_3d(maskstack, bins=16):
         new_shape = (mask.shape[0], mask.shape[1], mask.shape[2])
         return np.reshape(img_out, new_shape)
 
-    # if channels_first, switch to channels last for transform
-    if K.image_data_format() == 'channels_first':
-        maskstack = np.rollaxis(maskstack, 0, 4)
-
     weighted_mask = weightmask(maskstack)
     distance_slices = [ndimage.distance_transform_edt(m) for m in weighted_mask]
     distance_slices = np.array(distance_slices)
@@ -103,11 +99,6 @@ def distance_transform_3d(maskstack, bins=16):
     max_dist = np.amax(distance.flatten())
     bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins)
     distance = np.digitize(distance, bins)
-
-    # change back to channels_first, if necessary
-    if K.image_data_format() == 'channels_first':
-        distance = np.rollaxis(distance, 3, 0)
-
     return distance
 
 
