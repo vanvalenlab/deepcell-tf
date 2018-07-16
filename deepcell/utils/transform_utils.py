@@ -54,12 +54,7 @@ def distance_transform_3d(maskstack, bins=16):
     """
     def weightmask(mask):
         # if mask is binary create unique labels
-        if np.unique(mask).size <= 2:
-            raise NotImplementedError('3D distance transform assumes data to be'
-                                      'uniquely labeled. Currently, no function'
-                                      'to transform semantic masks to unique'
-                                      'labels in 3D.')
-        # img = label(mask) if np.unique(mask).size <= 2 else mask
+        img = label(mask) if np.unique(mask).size <= 2 else mask
         img = mask.flatten()
         unique, counts = np.unique(img, return_counts=True)
         counts = 1 / np.sqrt(counts)
