@@ -10,11 +10,13 @@ import os
 import numpy as np
 import numpy.testing as np_test
 from skimage.io import imread
+from skimage.measure import label
 from tensorflow.python.platform import test
 from tensorflow.python.keras import backend as K
 
 from deepcell.utils.transform_utils import to_categorical
 from deepcell.utils.transform_utils import distance_transform_2d
+from deepcell.utils.transform_utils import distance_transform_3d
 from deepcell.utils.transform_utils import rotate_array_0
 from deepcell.utils.transform_utils import rotate_array_90
 from deepcell.utils.transform_utils import rotate_array_180
@@ -41,6 +43,37 @@ def _generate_test_masks():
 
 
 class TransformUtilsTest(test.TestCase):
+    def test_distance_transform_3d(self):
+        unique_mask_stack = []
+        mask_stack = np.array(_generate_test_masks())
+        for mask in _generate_test_masks():
+            unique_mask = label(mask)
+            unique_mask_stack.append(unique_mask)
+        unique_mask_stack = np.array(unique_mask_stack)
+        no_channel_mask = np.reshape(mask_stack, unique_mask_stack.shape[:-1])
+
+        K.set_image_data_format('channels_last')
+        bin_size = 3
+        distance = distance_transform_3d(no_channel_mask, bins=bin_size)
+        assert np.unique(distance).size == bin_size - 1
+        assert distance.shape == no_channel_mask.shape
+
+        bin_size = 4
+        distance = distance_transform_3d(no_channel_mask, bins=bin_size)
+        assert np.unique(distance).size == bin_size - 1
+        assert distance.shape == no_channel_mask.shape
+
+        K.set_image_data_format('channels_first')
+        bin_size = 3
+        distance = distance_transform_3d(no_channel_mask, bins=bin_size)
+        assert np.unique(distance).size == bin_size - 1
+        assert distance.shape == no_channel_mask.shape
+
+        bin_size = 4
+        distance = distance_transform_3d(no_channel_mask, bins=bin_size)
+        assert np.unique(distance).size == bin_size - 1
+        assert distance.shape == no_channel_mask.shape
+
     def test_distance_transform_2d(self):
         for img in _generate_test_masks():
             K.set_image_data_format('channels_last')
