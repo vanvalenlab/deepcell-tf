@@ -250,6 +250,22 @@ class TestFullyConvDataGenerator(test.TestCase):
             images = np.vstack(img_list)
             images = np.rollaxis(images, 3, 1)
             generator = image_generators.ImageFullyConvDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True,
                 data_format='channels_first')
 
             # Basic test before fit
@@ -451,6 +467,22 @@ class TestMovieDataGenerator(test.TestCase):
             images = np.reshape(images, (batch_count, frames, *images.shape[1:]))
             images = np.rollaxis(images, 4, 1)
             generator = image_generators.MovieDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True,
                 data_format='channels_first')
 
             # Basic test before fit
@@ -664,6 +696,22 @@ class TestWatershedDataGenerator(test.TestCase):
             images = np.vstack(img_list)
             images = np.rollaxis(images, 3, 1)
             generator = image_generators.WatershedDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True,
                 data_format='channels_first')
 
             # Basic test before fit
@@ -795,6 +843,22 @@ class TestDiscDataGenerator(test.TestCase):
             images = np.vstack(img_list)
             images = np.rollaxis(images, 3, 1)
             generator = image_generators.DiscDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True,
                 data_format='channels_first')
 
             # Basic test before fit
