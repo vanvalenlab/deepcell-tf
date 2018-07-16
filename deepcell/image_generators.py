@@ -1450,6 +1450,7 @@ class WatershedMovieIterator(Iterator):
             last_frame = self.x.shape[self.time_axis] - self.frames_per_batch
             time_start = np.random.randint(0, high=last_frame)
             time_end = time_start + self.frames_per_batch
+
             if self.time_axis == 1:
                 x = self.x[j, time_start:time_end, :, :, :]
                 if self.y is not None:
@@ -1460,17 +1461,26 @@ class WatershedMovieIterator(Iterator):
                 if self.y is not None:
                     y = self.y[j, :, time_start:time_end, :, :]
 
+            # hardcoded for image mask
+            if self.time_axis == 1:
+                mask = y[:, :, :, 0]
+            else:
+                mask = y[0, :, :, :]
+
+            distance = distance_transform_3d(mask, self.distance_bins)
+            # add channel_axis back in, assume channels_last for OHE
+            distance = np.expand_dims(distance, axis=-1)
+            # convert to one hot notation
+            y = keras_to_categorical(distance)
+            if self.channel_axis == 1:
+                y = np.rollaxis(y, -1, 0)
+
             if self.y is not None:
                 x, y = self.movie_data_generator.random_transform(x.astype(K.floatx()), y)
             else:
                 x = self.movie_data_generator.random_transform(x.astype(K.floatx()))
 
             x = self.movie_data_generator.standardize(x)
-            distance = distance_transform_3d(y, self.distance_bins)
-
-            # convert to one hot notation
-            if self.y is not None:
-                y = keras_to_categorical(distance)
 
             batch_x[i] = x
             if self.y is not None:
