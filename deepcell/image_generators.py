@@ -992,12 +992,14 @@ class MovieDataGenerator(ImageDataGenerator):
                 for frame in range(y.shape[img_time_axis]):
                     if self.time_axis == 2:
                         y_frame = y[:, frame]
+                        trans_channel_axis = img_channel_axis
                     else:
                         y_frame = y[frame]
-                    y_trans = apply_transform(y_frame, transform_matrix_y, img_channel_axis - 1,
+                        trans_channel_axis = img_channel_axis - 1
+                    y_trans = apply_transform(y_frame, transform_matrix_y, trans_channel_axis,
                                               fill_mode='constant', cval=0)
                     y_new.append(np.rint(y_trans))
-                y = np.stack(y_new, axis=0)
+                y = np.stack(y_new, axis=img_time_axis)
 
         if transform_matrix is not None:
             x_new = []
@@ -1006,11 +1008,14 @@ class MovieDataGenerator(ImageDataGenerator):
             for frame in range(x.shape[img_time_axis]):
                 if self.time_axis == 2:
                     x_frame = x[:, frame]
+                    trans_channel_axis = img_channel_axis
                 else:
                     x_frame = x[frame]
-                x_new.append(apply_transform(x_frame, transform_matrix_x, img_channel_axis - 1,
-                                             fill_mode=self.fill_mode, cval=self.cval))
-            x = np.stack(x_new)
+                    trans_channel_axis = img_channel_axis - 1
+                x_trans = apply_transform(x_frame, transform_matrix_x, trans_channel_axis,
+                                          fill_mode=self.fill_mode, cval=self.cval)
+                x_new.append(x_trans)
+            x = np.stack(x_new, axis=img_time_axis)
 
         if self.channel_shift_range != 0:
             x = random_channel_shift(x, self.channel_shift_range, img_channel_axis)
@@ -1111,7 +1116,7 @@ class MovieArrayIterator(Iterator):
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.y = np.asarray(train_dict['y'], dtype=K.floatx())
+        self.y = np.asarray(train_dict['y'], dtype=np.int32)
 
         if self.x.ndim != 5:
             raise ValueError('Input data in `MovieArrayIterator` '
@@ -1130,7 +1135,7 @@ class MovieArrayIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
         super(MovieArrayIterator, self).__init__(
-            len(train_dict['y']), batch_size, shuffle, seed)
+            len(self.y), batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.data_format == 'channels_first':
