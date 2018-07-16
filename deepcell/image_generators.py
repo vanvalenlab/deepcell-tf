@@ -200,6 +200,7 @@ class ImageFullyConvIterator(Iterator):
             x = self.image_data_generator.standardize(x)
 
             if self.target_format == 'direction':
+                # TODO: hardcoded for cell interior = 1
                 if self.channel_axis == 1:
                     interior = y[1, :, :]
                 else:
@@ -322,6 +323,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         """Randomly augment a single image tensor.
         # Arguments
             x: 4D tensor, single image.
+            labels: 4D tensor, single image mask.
             seed: random seed.
         # Returns
             A randomly transformed version of the input (same shape).
@@ -750,6 +752,7 @@ class WatershedIterator(Iterator):
 
             x = self.image_data_generator.standardize(x)
 
+            # TODO: hardcoded for cell interior = 1
             if self.channel_axis == 1:
                 interior = y[1, :, :]
             else:
@@ -893,10 +896,11 @@ class MovieDataGenerator(ImageDataGenerator):
 
         return x
 
-    def random_transform(self, x, label_movie=None, seed=None):
+    def random_transform(self, x, labels=None, seed=None):
         """Randomly augment a single image tensor.
         # Arguments
-            x: 5D tensor, single image.
+            x: 5D tensor, image stack.
+            labels: 5D tensor, image mask stack.
             seed: random seed.
         # Returns
             A randomly transformed version of the input (same shape).
@@ -978,8 +982,8 @@ class MovieDataGenerator(ImageDataGenerator):
             transform_matrix = zoom_matrix if transform_matrix is None else np.dot(
                 transform_matrix, zoom_matrix)
 
-        if label_movie is not None:
-            y = label_movie
+        if labels is not None:
+            y = labels
 
             if transform_matrix is not None:
                 y_new = []
@@ -1014,16 +1018,16 @@ class MovieDataGenerator(ImageDataGenerator):
         if self.horizontal_flip:
             if np.random.random() < 0.5:
                 x = flip_axis(x, img_col_axis)
-                if label_movie is not None:
+                if labels is not None:
                     y = flip_axis(y, img_col_axis)
 
         if self.vertical_flip:
             if np.random.random() < 0.5:
                 x = flip_axis(x, img_row_axis)
-                if label_movie is not None:
+                if labels is not None:
                     y = flip_axis(y, img_row_axis)
 
-        if label_movie is not None:
+        if labels is not None:
             return x, y
 
         return x
@@ -1169,7 +1173,7 @@ class MovieArrayIterator(Iterator):
 
             if self.y is not None:
                 x, y = self.movie_data_generator.random_transform(
-                    x.astype(K.floatx()), label_movie=y)
+                    x.astype(K.floatx()), labels=y)
                 x = self.movie_data_generator.standardize(x)
                 batch_y[i] = y
             else:
@@ -1770,6 +1774,7 @@ class DiscIterator(Iterator):
 
             x = self.image_data_generator.standardize(x)
 
+            # TODO: hardcoded for cell interior = 1
             if self.channel_axis == 1:
                 interior = y[1, :, :]
             else:
