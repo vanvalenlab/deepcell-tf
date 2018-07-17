@@ -31,7 +31,7 @@ import cv2
 from skimage.external.tifffile import TiffFile
 
 
-from deepcell_gen import Generator
+from deepcell import Retinanet_Generator
 from keras_retinanet.utils.image import read_image_bgr
 
 import numpy as np
@@ -140,7 +140,7 @@ def _read_annotations(masks_list):
     return result
 
 
-class CSVGenerator(Generator):
+class CSVGenerator(Retinanet_Generator):
 
     def __init__(
         self,
