@@ -14,7 +14,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.activations import softmax
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.python.keras.models import Sequential, Model
-from tensorflow.python.keras.layers import Add, Permute, Input, Concatenate
+from tensorflow.python.keras.layers import Add, Input, Concatenate
 from tensorflow.python.keras.layers import Conv2D, Conv3D, MaxPool2D, AvgPool2D
 from tensorflow.python.keras.layers import Flatten, Dense, Dropout, MaxPooling2D
 from tensorflow.python.keras.layers import MaxPooling2D, UpSampling2D
@@ -278,7 +278,7 @@ def bn_feature_net_61x61(n_features=3, n_channels=1, reg=1e-5, init='he_normal',
     return model
 
 
-def dilated_bn_feature_net_61x61(input_shape=(2, 1080, 1280), batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, permute=False, norm_method='std'):
+def dilated_bn_feature_net_61x61(input_shape=(2, 1080, 1280), batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, norm_method='std'):
     print('Using dilated feature net 61x61 with batch normalization')
 
     if K.image_data_format() == 'channels_first':
@@ -329,10 +329,6 @@ def dilated_bn_feature_net_61x61(input_shape=(2, 1080, 1280), batch_size=None, n
 
     model.add(TensorProd2D(200, n_features, kernel_initializer=init, kernel_regularizer=l2(reg)))
     model.add(Softmax(axis=channel_axis))
-
-    if permute:
-        if K.image_data_format() == 'channels_first':
-            model.add(Permute((2, 3, 1)))
 
     if weights_path is not None:
         model.load_weights(weights_path, by_name=True)
@@ -541,7 +537,7 @@ def bn_multires_feature_net_61x61(n_features=3, n_channels=1, reg=1e-5, init='he
     return model
 
 
-def dilated_bn_multires_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', softmax=False, location=False, permute=False, weights_path=None, from_logits=False, norm_method='std'):
+def dilated_bn_multires_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', softmax=False, location=False, weights_path=None, from_logits=False, norm_method='std'):
     print('Using dilated multi-resolution feature net 61x61 with batch normalization')
 
     if K.image_data_format() == 'channels_first':
@@ -611,11 +607,7 @@ def dilated_bn_multires_feature_net_61x61(input_shape=(2, 1080, 1280), n_feature
     else:
         act8 = tensor_prod2
 
-    if permute:
-        if channel_axis == 1:
-            final_layer = Permute((2, 3, 1))(act8)
-    else:
-        final_layer = act8
+    final_layer = act8
 
     model = Model(inputs=inputs, outputs=final_layer)
 
@@ -625,7 +617,7 @@ def dilated_bn_multires_feature_net_61x61(input_shape=(2, 1080, 1280), n_feature
     return model
 
 
-def bn_multires_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', permute=False, softmax=True, location=False, norm_method='std', filter_size=61):
+def bn_multires_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', softmax=True, location=False, norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -711,18 +703,14 @@ def bn_multires_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_fea
     else:
         act11 = tensor_prod3
 
-    if permute:
-        if channel_axis == 1:
-            final_layer = Permute((2, 3, 1))(act11)
-    else:
-        final_layer = act11
+    final_layer = act11
 
     model = Model(inputs=input1, outputs=final_layer)
 
     return model
 
 
-def bn_multires_pool_feature_net(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', permute=False, norm_method='std', filter_size=61):
+def bn_multires_pool_feature_net(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -802,18 +790,14 @@ def bn_multires_pool_feature_net(input_shape=(2, 1080, 1280), n_features=3, reg=
     tensor_prod3 = TensorProd2D(128, n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(act10)
     act11 = Softmax(axis=channel_axis)(tensor_prod3)
 
-    if permute:
-        if channel_axis == 1:
-            final_layer = Permute((2, 3, 1))(act11)
-    else:
-        final_layer = act11
+    final_layer = act11
 
     model = Model(inputs=input1, outputs=final_layer)
 
     return model
 
 
-def bn_dense_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', permute=False, softmax=True, location=False, norm_method='std', filter_size=61):
+def bn_dense_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', softmax=True, location=False, norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -877,13 +861,7 @@ def bn_dense_feature_net(input_shape=(2, 1080, 1280), batch_shape=None, n_featur
     if softmax:
         tensor_prod3 = Softmax(axis=channel_axis)(tensor_prod3)
 
-    if permute:
-        if channel_axis == 1:
-            final_layer = Permute((2, 3, 1))(tensor_prod3)
-        else:
-            final_layer = tensor_prod3
-    else:
-        final_layer = tensor_prod3
+    final_layer = tensor_prod3
 
     model = Model(inputs=input1, outputs=final_layer)
 
@@ -1169,7 +1147,7 @@ def ASPP_block(input_tensor, kernel_size, filters, stage, block):
     return x
 
 
-def resnet_custom(input_shape=(2, 512, 512), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', permute=False, upsample=True, softmax=False, norm_method='std', filter_size=61):
+def resnet_custom(input_shape=(2, 512, 512), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', upsample=True, softmax=False, norm_method='std', filter_size=61):
     print("Using resnet_custom")
 
     if K.image_data_format() == 'channels_last':
@@ -1221,15 +1199,12 @@ def resnet_custom(input_shape=(2, 512, 512), batch_shape=None, n_features=3, reg
     if softmax:
         x = Activation(axis_softmax)(x)
 
-    if permute:
-        x = Permute((2, 3, 1))(x)
-
     model = Model(inputs=inputs, outputs=x)
 
     return model
 
 
-def dilated_bn_res_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', permute=False, weights_path=None, from_logits=False, norm_method='std'):
+def dilated_bn_res_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, reg=1e-5, init='he_normal', weights_path=None, from_logits=False, norm_method='std'):
     print("Using dilated multi-resolution feature net 61x61 with batch normalization")
 
     if K.image_data_format() == 'channels_first':
@@ -1287,13 +1262,7 @@ def dilated_bn_res_feature_net_61x61(input_shape=(2, 1080, 1280), n_features=3, 
 
     act8 = Softmax(axis=channel_axis)(tensor_prod2)
 
-    if permute:
-        if channel_axis == 1:
-            final_layer = Permute((2, 3, 1))(act8)
-        else:
-            final_layer = act8
-    else:
-        final_layer = act8
+    final_layer = act8
 
     model = Model(inputs=inputs, outputs=final_layer)
 
@@ -1308,7 +1277,7 @@ Multiple input conv-nets for fully convolutional training
 """
 
 
-def dilated_bn_feature_net_gather_61x61(input_shape=(2, 1080, 1280), training_examples=1e5, batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, permute=False, norm_method='std'):
+def dilated_bn_feature_net_gather_61x61(input_shape=(2, 1080, 1280), training_examples=1e5, batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, norm_method='std'):
     print('Using dilated feature net 61x61 with batch normalization')
 
     if K.image_data_format() == 'channels_first':
@@ -1361,11 +1330,6 @@ def dilated_bn_feature_net_gather_61x61(input_shape=(2, 1080, 1280), training_ex
     tensorprod2 = TensorProd2D(200, n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(act8)
     act9 = Softmax(axis=channel_axis)(tensorprod2)
 
-    if channel_axis == 1:
-        permute1 = Permute((2, 3, 1))(act9)
-    else:
-        permute1 = act9
-
     batch_index_input = Input(batch_shape=(training_examples,), dtype='int32')
     row_index_input = Input(batch_shape=(training_examples,), dtype='int32')
     col_index_input = Input(batch_shape=(training_examples,), dtype='int32')
@@ -1375,7 +1339,7 @@ def dilated_bn_feature_net_gather_61x61(input_shape=(2, 1080, 1280), training_ex
     def gather_indices(x):
         return tf.gather_nd(x, index1)
 
-    gather1 = Lambda(gather_indices)(permute1)
+    gather1 = Lambda(gather_indices)(act9)
 
     model = Model(inputs=[input1, batch_index_input, row_index_input, col_index_input], outputs=[gather1])
 
@@ -1428,7 +1392,7 @@ def multires_block(input_tensor, num_filters=16, init='he_normal', reg=1e-5):
     return merge6
 
 
-def bn_dense_multires_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_blocks=10, n_features=3, reg=1e-5, init='he_normal', permute=False, norm_method='std', filter_size=61):
+def bn_dense_multires_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_blocks=10, n_features=3, reg=1e-5, init='he_normal', norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -1456,18 +1420,14 @@ def bn_dense_multires_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_blocks=
     if softmax:
         tensor_prod3 = Activation(axis_softmax)(tensor_prod3)
 
-    if permute:
-        if channel_axis == 1:
-            final_layer = Permute((2, 3, 4, 1))(tensor_prod3)
-    else:
-        final_layer = tensor_prod3
+    final_layer = tensor_prod3
 
     model = Model(inputs=input1, outputs=final_layer)
 
     return model
 
 
-def bn_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_features=3, reg=1e-5, init='he_normal', location=False, permute=False, softmax=True, norm_method='std', filter_size=61):
+def bn_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_features=3, reg=1e-5, init='he_normal', location=False, softmax=True, norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -1524,17 +1484,14 @@ def bn_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_features=3, reg=1e-5, 
     if softmax:
         tensor_prod3 = Softmax(axis=channel_axis)(tensor_prod3)
 
-    if permute:
-        final_layer = Permute((2, 3, 4, 1))(tensor_prod3)
-    else:
-        final_layer = tensor_prod3
+    final_layer = tensor_prod3
 
     model = Model(inputs=input1, outputs=final_layer)
 
     return model
 
 
-def bn_dense_feature_net_3D(batch_shape=(1, 1, 5, 256, 256), n_features=3, reg=1e-5, init='he_normal', location=False, permute=False, softmax=True, norm_method='std', filter_size=61):
+def bn_dense_feature_net_3D(batch_shape=(1, 1, 5, 256, 256), n_features=3, reg=1e-5, init='he_normal', location=False, softmax=True, norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -1595,17 +1552,14 @@ def bn_dense_feature_net_3D(batch_shape=(1, 1, 5, 256, 256), n_features=3, reg=1
     if softmax:
         tensor_prod3 = Softmax(axis=channel_axis)(tensor_prod3)
 
-    if permute:
-        final_layer = Permute((2, 3, 4, 1))(tensor_prod3)
-    else:
-        final_layer = tensor_prod3
+    final_layer = tensor_prod3
 
     model = Model(inputs=input1, outputs=final_layer)
 
     return model
 
 
-def bn_dense_feature_net_lstm(input_shape=(1, 60, 256, 256), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', permute=False, softmax=True, norm_method='std', filter_size=61):
+def bn_dense_feature_net_lstm(input_shape=(1, 60, 256, 256), batch_shape=None, n_features=3, reg=1e-5, init='he_normal', softmax=True, norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -1652,10 +1606,7 @@ def bn_dense_feature_net_lstm(input_shape=(1, 60, 256, 256), batch_shape=None, n
 
     tensorprod1 = TensorProd2D(64 * 6, 256, kernel_initializer=init, kernel_regularizer=l2(reg))(merge6)
 
-    if channel_axis == 1:
-        permute1 = Permute((2, 1, 3, 4))(tensorprod1)
-
-    lstm1 = ConvLSTM2D(64, (3, 3), dilation_rate=(1, 1), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True)(permute1)
+    lstm1 = ConvLSTM2D(64, (3, 3), dilation_rate=(1, 1), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True)(tensorprod1)
     lstm2 = ConvLSTM2D(64, (3, 3), dilation_rate=(1, 1), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True, go_backwards=True)(lstm1)
 
     lstm3 = ConvLSTM2D(64, (3, 3), dilation_rate=(2, 2), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True)(lstm2)
@@ -1673,17 +1624,14 @@ def bn_dense_feature_net_lstm(input_shape=(1, 60, 256, 256), batch_shape=None, n
     lstm11 = ConvLSTM2D(64, (3, 3), dilation_rate=(32, 32), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True)(lstm10)
     lstm12 = ConvLSTM2D(64, (3, 3), dilation_rate=(32, 32), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), return_sequences=True, go_backwards=True)(lstm11)
 
-    if channel_axis == 1:
-        final_layer = Permute((2, 1, 3, 4))(lstm12)
-    else:
-        final_layer = lstm12
+    final_layer = lstm12
 
     model = Model(inputs=input1, outputs=final_layer)
 
     return model
 
 
-def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal', permute=False, softmax=True, norm_method='std', filter_size=61):
+def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal', softmax=True, norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
