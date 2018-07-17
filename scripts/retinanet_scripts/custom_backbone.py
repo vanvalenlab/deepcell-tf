@@ -50,7 +50,6 @@ def backbone(backbone_name):
     """
     if 'resnet' in backbone_name:
         from keras_retinanet.models.resnet import ResNetBackbone as b
-        print(".......................................................Hello Shivam...............................")
     elif 'mobilenet' in backbone_name:
         from keras_retinanet.models.mobilenet import MobileNetBackbone as b
     elif 'vgg' in backbone_name:
@@ -58,6 +57,7 @@ def backbone(backbone_name):
     elif 'densenet' in backbone_name:
         from keras_retinanet.models.densenet import DenseNetBackbone as b
     elif 'shvm' in backbone_name:
+        #Import your custom written backbone class here
         from shvm_backbone import shvmBackbone as b
     else:
         raise NotImplementedError('Backbone class for  \'{}\' not implemented.'.format(backbone))
