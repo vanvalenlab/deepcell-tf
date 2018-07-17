@@ -18,6 +18,7 @@ try:  # tf v1.9 moves conv_utils from _impl to keras.utils
 except ImportError:
     from tensorflow.python.keras._impl.keras.utils import conv_utils
 
+
 class DilatedMaxPool2D(Layer):
     def __init__(self, pool_size=(2, 2), strides=None, dilation_rate=1,
                  padding='valid', data_format=None, **kwargs):
