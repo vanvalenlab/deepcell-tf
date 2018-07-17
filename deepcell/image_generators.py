@@ -1401,7 +1401,6 @@ class WatershedMovieIterator(Iterator):
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.y = np.asarray(train_dict['y'], dtype=K.floatx())
 
         if self.x.ndim != 5:
             raise ValueError('Input data in `WatershedMovieIterator` '
@@ -1420,6 +1419,25 @@ class WatershedMovieIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
+
+        if self.data_format == 'channels_first':
+            y_shape = (train_dict['y'].shape[0], *train_dict['y'].shape[2:])
+        else:
+            y_shape = train_dict['y'].shape[0:-1]
+
+        y_distance = np.zeros(y_shape)
+        for batch in range(y_distance.shape[0]):
+            # hardcoded for image mask
+            if self.time_axis == 1:
+                mask = train_dict['y'][batch, :, :, :, 0]
+            else:
+                mask = train_dict['y'][batch, 0, :, :, :]
+            y_distance[batch] = distance_transform_3d(mask, self.distance_bins)
+        # convert to one hot notation
+        y_distance = keras_to_categorical(np.expand_dims(y_distance, axis=-1))
+        if self.channel_axis == 1:
+            y_distance = np.rollaxis(y_distance, -1, 1)
+        self.y = y_distance
         super(WatershedMovieIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
 
@@ -1460,20 +1478,6 @@ class WatershedMovieIterator(Iterator):
                 x = self.x[j, :, time_start:time_end, :, :]
                 if self.y is not None:
                     y = self.y[j, :, time_start:time_end, :, :]
-
-            # hardcoded for image mask
-            if self.time_axis == 1:
-                mask = y[:, :, :, 0]
-            else:
-                mask = y[0, :, :, :]
-
-            distance = distance_transform_3d(mask, self.distance_bins)
-            # add channel_axis back in, assume channels_last for OHE
-            distance = np.expand_dims(distance, axis=-1)
-            # convert to one hot notation
-            y = keras_to_categorical(distance)
-            if self.channel_axis == 1:
-                y = np.rollaxis(y, -1, 0)
 
             if self.y is not None:
                 x, y = self.movie_data_generator.random_transform(x.astype(K.floatx()), y)

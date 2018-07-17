@@ -957,7 +957,7 @@ class TestWatershedDataGenerator(test.TestCase):
 class TestWatershedMovieDataGenerator(test.TestCase):
 
     def test_watershed_movie_data_generator(self):
-        frames = 30
+        frames = 5
         distance_bins = 4
         for test_images in _generate_test_images():
             img_list = []
@@ -1004,7 +1004,7 @@ class TestWatershedMovieDataGenerator(test.TestCase):
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(2, size=y_shape)
-            frames_per_batch = 10
+            frames_per_batch = 2
             for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
@@ -1018,7 +1018,7 @@ class TestWatershedMovieDataGenerator(test.TestCase):
                 break
 
     def test_watershed_movie_data_generator_channels_first(self):
-        frames = 30
+        frames = 5
         distance_bins = 4
         for test_images in _generate_test_images():
             img_list = []
@@ -1057,7 +1057,7 @@ class TestWatershedMovieDataGenerator(test.TestCase):
                 'X': np.random.random((32, 3, frames, 10, 10)),
                 'y': np.random.random((32, 3, frames, 10, 10)),
             }
-            generator.flow(train_dict, distance_bins=distance_bins)
+            generator.flow(train_dict, frames_per_batch=1, distance_bins=distance_bins)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -1067,7 +1067,7 @@ class TestWatershedMovieDataGenerator(test.TestCase):
             y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(2, size=y_shape)
-            frames_per_batch = 10
+            frames_per_batch = 2
             for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
@@ -1120,9 +1120,9 @@ class TestWatershedMovieDataGenerator(test.TestCase):
             generator.flow(train_dict, frames_per_batch=31, distance_bins=distance_bins)
 
         # Invalid number of channels: will work but raise a warning
-        x = np.random.random((32, 30, 10, 10, 5))
-        y = np.random.random((32, 30, 10, 10, 5))
-        generator.flow({'X': x, 'y': y})
+        x = np.random.random((32, 5, 10, 10, 5))
+        y = np.random.random((32, 5, 10, 10, 5))
+        generator.flow({'X': x, 'y': y}, frames_per_batch=2)
 
         with self.assertRaises(ValueError):
             generator = image_generators.WatershedMovieDataGenerator(
