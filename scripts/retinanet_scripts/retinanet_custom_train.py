@@ -129,12 +129,12 @@ def _read_annotations(masks_list):
         result[cnt] = []
         p=regionprops(label(image))
         cell_count=0
-        total = len(np.unique(label(image)))-1
+        total = len(masks_list)
         for index in range(len(np.unique(label(image)))-1):
             x1, y1, x2, y2 = p[index].bbox[1],p[index].bbox[0],p[index].bbox[3],p[index].bbox[2]
             result[cnt].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2})
             cell_count=cell_count+1
-        print("-----------------Completed "+str(index)+" of "+str(total)+"-----------")
+        print("-----------------Completed "+str(cnt)+" of "+str(total)+"-----------")
         print("The number of cells in this image : "+str(cell_count))
     return result
 
