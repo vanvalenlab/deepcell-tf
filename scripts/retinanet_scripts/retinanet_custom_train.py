@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import argparse
 import os
 import sys
@@ -28,7 +30,7 @@ import cv2
 from skimage.external.tifffile import TiffFile
 
 
-from deepcell_gen import Generator
+from deepcell import Retinanet_Generator
 from keras_retinanet.utils.image import read_image_bgr
 
 import numpy as np
@@ -57,9 +59,9 @@ def _parse(value, function, fmt):
         raise_from(ValueError(fmt.format(e)), None)
 
 
-def _read_classes(csv_reader):
+def _read_classes(classname):
     result = {}
-    result['cell'] = 0
+    result[str(classname)] = 0
     return result
 
 def list_file_deepcell(direc_name,training_direcs,raw_image_direc,channel_names):
@@ -126,90 +128,26 @@ def _read_annotations(masks_list):
     for cnt,image in enumerate(masks_list):
         result[cnt] = []
         p=regionprops(label(image))
+        cell_count=0
+        total = len(np.unique(label(image)))-1
         for index in range(len(np.unique(label(image)))-1):
             x1, y1, x2, y2 = p[index].bbox[1],p[index].bbox[0],p[index].bbox[3],p[index].bbox[2]
             result[cnt].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2})
-        print("-----------------Completed "+str(index)+"-----------")
-    #print(len(cell_data))
-    '''
-    cell_data2=[]
-    for img_path in train_imlist:
-        cell_data2.append(get_image(img_path))
-        
-    cell_data2=np.array(cell_data2)
-    '''
+            cell_count=cell_count+1
+        print("-----------------Completed "+str(index)+" of "+str(total)+"-----------")
+        print("The number of cells in this image : "+str(cell_count))
     return result
-'''    
-    result = {}
-    for line, row in enumerate(csv_reader):
-        line += 1
-
-        try:
-            img_file, x1, y1, x2, y2, class_name = row[:6]
-        except ValueError:
-            raise_from(ValueError('line {}: format should be \'img_file,x1,y1,x2,y2,class_name\' or \'img_file,,,,,\''.format(line)), None)
-
-        if img_file not in result:
-            result[img_file] = []
-
-        # If a row contains only an image path, it's an image without annotations.
-        if (x1, y1, x2, y2, class_name) == ('', '', '', '', ''):
-            continue
-
-        x1 = _parse(x1, int, 'line {}: malformed x1: {{}}'.format(line))
-        y1 = _parse(y1, int, 'line {}: malformed y1: {{}}'.format(line))
-        x2 = _parse(x2, int, 'line {}: malformed x2: {{}}'.format(line))
-        y2 = _parse(y2, int, 'line {}: malformed y2: {{}}'.format(line))
-
-        # Check that the bounding box is valid.
-        if x2 <= x1:
-            raise ValueError('line {}: x2 ({}) must be higher than x1 ({})'.format(line, x2, x1))
-        if y2 <= y1:
-            raise ValueError('line {}: y2 ({}) must be higher than y1 ({})'.format(line, y2, y1))
-
-        # check if the current class name is correctly present
-        if class_name not in classes:
-            raise ValueError('line {}: unknown class name: \'{}\' (classes: {})'.format(line, class_name, classes))
-
-        result[img_file].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2, 'class': class_name})
-    return result
-'''
-
-def _open_for_csv(path):
-    """ Open a file with flags suitable for csv.reader.
-
-    This is different for python2 it means with mode 'rb',
-    for python3 this means 'r' with "universal newlines".
-    """
-    if sys.version_info[0] < 3:
-        return open(path, 'rb')
-    else:
-        return open(path, 'r', newline='')
 
 
-class CSVGenerator(Generator):
-    """ Generate data for a custom CSV dataset.
-
-    See https://github.com/fizyr/keras-retinanet#csv-datasets for more information.
-    """
+class CSVGenerator(Retinanet_Generator):
 
     def __init__(
         self,
-        csv_data_file,
-        csv_class_file,
-        base_dir=None,
         **kwargs
     ):
-        """ Initialize a CSV data generator.
 
-        Args
-            csv_data_file: Path to the CSV annotations file.
-            csv_class_file: Path to the CSV classes file.
-            base_dir: Directory w.r.t. where the files are to be searched (defaults to the directory containing the csv_data_file).
-        """
         self.image_names = []
         self.image_data  = {}
-        self.base_dir    = base_dir
         self.image_stack = []
         self.mask_stack  = []
         
@@ -235,29 +173,14 @@ class CSVGenerator(Generator):
         
         self.image_stack = Genrate_Subimage(train_imlist,3,3,True)
         self.mask_stack  = Genrate_Subimage(train_anotedlist,3,3,False)
-        
-
-        # Take base_dir from annotations file if not explicitly specified.
-        if self.base_dir is None:
-            self.base_dir = os.path.dirname(csv_data_file)
-
-        # parse the provided class file
-        try:
-            with _open_for_csv(csv_class_file) as file:
-                self.classes = _read_classes(csv.reader(file, delimiter=','))
-        except ValueError as e:
-            raise_from(ValueError('invalid CSV class file: {}: {}'.format(csv_class_file, e)), None)
+            
+        self.classes = _read_classes('cell')
 
         self.labels = {}
         for key, value in self.classes.items():
             self.labels[value] = key
-
-        # csv with img_path, x1, y1, x2, y2, class_name
-        try:
-            with _open_for_csv(csv_data_file) as file:
-                self.image_data= _read_annotations(self.mask_stack)
-        except ValueError as e:
-            raise_from(ValueError('invalid CSV annotations file: {}: {}'.format(csv_data_file, e)), None)
+        
+        self.image_data= _read_annotations(self.mask_stack)
         self.image_names = list(self.image_data.keys())
 
         super(CSVGenerator, self).__init__(**kwargs)
@@ -290,15 +213,12 @@ class CSVGenerator(Generator):
     def image_aspect_ratio(self, image_index):
         """ Compute the aspect ratio for an image with image_index.
         """
-        # PIL is fast for metadata
-        #image = Image.open(self.image_path(image_index))
         image = self.image_stack[image_index]
         return float(image.shape[1]) / float(image.shape[0])
 
     def load_image(self, image_index):
         """ Load an image at the image_index.
         """
-        #return get_image(self.image_path(image_index))
         return self.image_stack[image_index]
 
     def load_annotations(self, image_index):
@@ -317,11 +237,6 @@ class CSVGenerator(Generator):
             boxes[idx, 4] = self.name_to_label(class_name)
 
         return boxes
-
-
-
-
-
 
 
 
@@ -505,17 +420,17 @@ def create_generators(args, preprocess_image):
     else:
         transform_generator = random_transform_generator(flip_x_chance=0.5)
 
-    if args.dataset_type == 'csv':
+    if args.dataset_type == 'train':
         train_generator = CSVGenerator(
-            args.annotations,
-            args.classes,
+            #args.annotations,
+            #args.classes,
             **common_args
         )   
 
         if args.val_annotations:
             validation_generator = CSVGenerator(
-                args.val_annotations,
-                args.classes,
+                #args.val_annotations,
+                #args.classes,
                 **common_args
             )
         else:
@@ -566,9 +481,7 @@ def parse_args(args):
     def csv_list(string):
         return string.split(',')
 
-    csv_parser = subparsers.add_parser('csv')
-    csv_parser.add_argument('annotations', help='Path to CSV file containing annotations for training.')
-    csv_parser.add_argument('classes', help='Path to a CSV file containing class label mapping.')
+    csv_parser = subparsers.add_parser('train')
     csv_parser.add_argument('--val-annotations', help='Path to CSV file containing annotations for validation (optional).')
 
     csv_parser_run = subparsers.add_parser('run')
@@ -616,51 +529,51 @@ def main(args=None):
     check_keras_version()
 
     if args.dataset_type == 'run':
-    	model = models.load_model(args.model_path, backbone_name=args.backbone,convert=True)
-    	labels_to_names = {0: 'cell'}
-    	makedirs(args.save_path)
-    	test_imlist=os.walk(args.run_path).next()[2]
-    	for testimgcnt,img_path in enumerate(test_imlist):
+        model = models.load_model(args.model_path, backbone_name=args.backbone,convert=True)
+        labels_to_names = {0: 'cell'}
+        makedirs(args.save_path)
+        test_imlist=os.walk(args.run_path).next()[2]
+        for testimgcnt,img_path in enumerate(test_imlist):
 
-		    image = get_image(img_path)
-		    #draw2=np.tile(np.expand_dims(draw2,axis=-1),(1,1,3))
+            image = get_image(img_path)
+            #draw2=np.tile(np.expand_dims(draw2,axis=-1),(1,1,3))
 
-		    #image=draw2
-		    draw2 = get_image(img_path)
-		    draw2 = draw2/np.max(draw2)
-		    #print(np.unique(image))
-		    # copy to draw on
+            #image=draw2
+            draw2 = get_image(img_path)
+            draw2 = draw2/np.max(draw2)
+            #print(np.unique(image))
+            # copy to draw on
 
-		    #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-		    print(image.shape)
-		    # preprocess image for network
-		    image = preprocess_image(image)
-		    #print(np.unique(image))
-		    image2=image
-		    image, scale = resize_image(image)
-		    print(scale)
-		    # process image
-		    start = time.time()
-		    boxes, scores, labels = model.predict_on_batch(np.expand_dims(image, axis=0))
-		    print("processing time: ", time.time() - start)
+            #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            print(image.shape)
+            # preprocess image for network
+            image = preprocess_image(image)
+            #print(np.unique(image))
+            image2=image
+            image, scale = resize_image(image)
+            print(scale)
+            # process image
+            start = time.time()
+            boxes, scores, labels = model.predict_on_batch(np.expand_dims(image, axis=0))
+            print("processing time: ", time.time() - start)
 
-		    # correct for image scale
-		    boxes /= scale
+            # correct for image scale
+            boxes /= scale
 
-		    # visualize detections
-		    for box, score, label in zip(boxes[0], scores[0], labels[0]):
-		        # scores are sorted so we can break
-		        if score < 0.5:
-		            break
+            # visualize detections
+            for box, score, label in zip(boxes[0], scores[0], labels[0]):
+                # scores are sorted so we can break
+                if score < 0.5:
+                    break
 
-		        color = label_color(label)
-		        color=[255,0,255]
-		        b = box.astype(int)
-		        draw_box(draw2, b, color=color)
+                color = label_color(label)
+                color=[255,0,255]
+                b = box.astype(int)
+                draw_box(draw2, b, color=color)
 
-		        caption = "{} {:.3f}".format(labels_to_names[label], score)
-		        draw_caption(draw2, b, caption)
-		    plt.imsave(os.path.join(args.save_path,"retinanet_output_"+str(testimgcnt)),draw2)
+                caption = "{} {:.3f}".format(labels_to_names[label], score)
+                draw_caption(draw2, b, caption)
+            plt.imsave(os.path.join(args.save_path,"retinanet_output_"+str(testimgcnt)),draw2)
 
 
 
@@ -669,58 +582,6 @@ def main(args=None):
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     keras.backend.tensorflow_backend.set_session(get_session())
-
-
-    'Getting the data now'
-    direc_name = "/data/data/cells/HeLa/S3"
-    training_direcs = ['set0']
-    raw_image_direc = 'raw'
-    annoted_image_direc = 'annotated_unique'
-    channel_names = ['FITC']
-    train_imlist=list_file_deepcell(
-        direc_name = direc_name,
-        training_direcs = training_direcs,
-        raw_image_direc = raw_image_direc,
-        channel_names = channel_names)
-    print(len(train_imlist))
-    print("----------------")
-    train_anotedlist=list_file_deepcell(
-        direc_name = direc_name,
-        training_direcs = training_direcs,
-        raw_image_direc = annoted_image_direc,
-        channel_names = ['corrected'])
-    print(len(train_anotedlist))
-
-    'Making the annotations and organising them'
-    cell_data=[]
-    for cnt,file in enumerate(train_anotedlist):
-        image=cv2.imread(file,0)
-        p=regionprops(label(image))
-        cell_count=[]
-        for index in range(len(np.unique(label(image)))-1):
-            rect = [train_imlist[cnt],p[index].bbox[1],p[index].bbox[0],p[index].bbox[3],p[index].bbox[2],"cell"]
-            cell_data.append(rect)
-            cell_count.append(rect)
-        print("-----------------Completed "+file+"-----------")
-        print("The number of cells in this image : "+str(cell_count))
-    print(len(cell_data))
-
-
-    'Writing it into a csv file'
-    with open(args.annotations, 'w') as csvFile:
-        writer = csv.writer(csvFile,dialect = 'excel')
-        cell_data=tuple(cell_data)
-        writer.writerows(cell_data)
-
-    csvFile.close()
-    df = pd.read_csv(args.annotations)
-    df.to_csv(args.annotations, index=False)
-
-    with open(args.classes, 'w') as csvFile:
-        writer = csv.writer(csvFile,dialect = 'excel')
-        writer.writerows(tuple([["cell",0]]))
-
-    csvFile.close()
 
     # create the generators
     train_generator, validation_generator = create_generators(args, backbone.preprocess_image)
