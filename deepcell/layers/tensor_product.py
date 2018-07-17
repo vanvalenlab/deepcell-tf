@@ -17,7 +17,10 @@ from tensorflow.python.keras import initializers
 from tensorflow.python.keras import regularizers
 from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras.layers import InputSpec
-from tensorflow.python.keras.utils import conv_utils
+try:
+    from tensorflow.python.keras.utils import conv_utils
+except ImportError:
+    from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 
 class TensorProd2D(Layer):

@@ -13,8 +13,10 @@ import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras.layers import InputSpec
-from tensorflow.python.keras.utils import conv_utils
-
+try:
+    from tensorflow.python.keras.utils import conv_utils
+except ImportError:
+    from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 class DilatedMaxPool2D(Layer):
     def __init__(self, pool_size=(2, 2), strides=None, dilation_rate=1,
