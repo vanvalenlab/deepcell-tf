@@ -29,7 +29,7 @@ class TestDataUtils(test.TestCase):
         # test non-sample mode
         max_nums = get_max_sample_num_list(y, edge_feature,
                                            output_mode='conv',
-                                           border_mode='same',
+                                           padding='same',
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [np.Inf, np.Inf]
@@ -37,7 +37,7 @@ class TestDataUtils(test.TestCase):
         # test sample mode, no padding
         max_nums = get_max_sample_num_list(y, edge_feature,
                                            output_mode='sample',
-                                           border_mode='same',
+                                           padding='same',
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [2, 2]
@@ -45,7 +45,7 @@ class TestDataUtils(test.TestCase):
         # test sample mode, valid padding
         max_nums = get_max_sample_num_list(y, edge_feature,
                                            output_mode='sample',
-                                           border_mode='valid',
+                                           padding='valid',
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [1, 1]
@@ -59,7 +59,7 @@ class TestDataUtils(test.TestCase):
         r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
                                          window_size_x=win_x,
                                          window_size_y=win_y,
-                                         border_mode='valid',
+                                         padding='valid',
                                          output_mode='sample')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
@@ -69,7 +69,7 @@ class TestDataUtils(test.TestCase):
         r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
                                          window_size_x=win_x,
                                          window_size_y=win_y,
-                                         border_mode='same',
+                                         padding='same',
                                          output_mode='conv')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(r).size == np.unique(c).size == 2
@@ -84,7 +84,7 @@ class TestDataUtils(test.TestCase):
         r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
                                          window_size_x=win_x,
                                          window_size_y=win_y,
-                                         border_mode='valid',
+                                         padding='valid',
                                          output_mode='sample')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
@@ -94,7 +94,7 @@ class TestDataUtils(test.TestCase):
         r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
                                          window_size_x=win_x,
                                          window_size_y=win_y,
-                                         border_mode='same',
+                                         padding='same',
                                          output_mode='conv')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
@@ -112,7 +112,7 @@ class TestDataUtils(test.TestCase):
         # test sample mode, no padding
         max_nums = get_max_sample_num_list(y, edge_feature,
                                            output_mode='sample',
-                                           border_mode='same',
+                                           padding='same',
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [2, 2]
@@ -120,7 +120,7 @@ class TestDataUtils(test.TestCase):
         # test sample mode, valid padding
         max_nums = get_max_sample_num_list(y, edge_feature,
                                            output_mode='sample',
-                                           border_mode='valid',
+                                           padding='valid',
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [1, 1]

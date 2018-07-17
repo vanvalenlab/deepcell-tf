@@ -21,7 +21,7 @@ from deepcell import export_model
 
 # data options
 DATA_OUTPUT_MODE = 'conv'
-BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
+PADDING = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
 RESIZE = False
 RESHAPE_SIZE = 128
 NUM_FRAMES = 30 # get first N frames from each training folder
@@ -59,7 +59,7 @@ def generate_training_data():
         output_mode=DATA_OUTPUT_MODE,
         window_size_x=30,
         window_size_y=30,
-        border_mode=BORDER_MODE,
+        padding=PADDING,
         reshape_size=None if not RESIZE else RESHAPE_SIZE,
         process=True,
         process_std=True,

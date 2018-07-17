@@ -20,7 +20,7 @@ from deepcell import export_model
 # data options
 DATA_OUTPUT_MODE = 'conv'
 DATA_OUTPUT_MODE = 'sample'
-BORDER_MODE = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
+PADDING = 'valid' if DATA_OUTPUT_MODE == 'sample' else 'same'
 RESIZE = True
 RESHAPE_SIZE = 512
 
@@ -56,7 +56,7 @@ def generate_training_data():
         max_training_examples=1e6, # Define maximum number of training examples
         window_size_x=window_size[0],
         window_size_y=window_size[1],
-        border_mode=BORDER_MODE,
+        padding=PADDING,
         file_name_save=file_name_save,
         training_direcs=training_direcs,
         channel_names=channel_names,

@@ -21,6 +21,11 @@ from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.utils import to_categorical
 
+try:
+    from tensorflow.python.keras.utils.conv_utils import normalize_padding
+except ImportError:
+    from tensorflow.python.keras._impl.keras.utils.conv_utils import normalize_padding
+
 from .io_utils import get_image
 from .io_utils import get_image_sizes
 from .io_utils import nikon_getfiles
@@ -86,7 +91,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     return train_dict, (X_test, y_test)
 
 
-def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='valid',
+def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='valid',
                             window_size_x=30, window_size_y=30):
     """For each set of images and each feature, find the maximum number
     of samples for to be used. This will be used to balance class sampling.
@@ -94,18 +99,18 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='
         y: mask to indicate which pixels belong to which class
         edge_feature: [1, 0, 0], the 1 indicates the feature is the cell edge
         output_mode:  'sample', 'conv', or 'disc'
-        border_mode:  'valid' or 'same'
+        padding:  'valid' or 'same'
     # Returns
         list_of_max_sample_numbers: list of maximum sample size for all classes
     """
     list_of_max_sample_numbers = []
 
-    if border_mode.lower() == 'valid':
+    if padding == 'valid':
         y = trim_padding(y, window_size_x, window_size_y)
 
     # for each set of images
     for j in range(y.shape[0]):
-        if output_mode.lower() == 'sample':
+        if output_mode == 'sample':
             for k, edge_feat in enumerate(edge_feature):
                 if edge_feat == 1:
                     if K.image_data_format() == 'channels_first':
@@ -121,7 +126,7 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='
 
 
 def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
-                        border_mode='valid', output_mode='sample',
+                        padding='valid', output_mode='sample',
                         max_training_examples=1e7):
     """Create a list of the maximum pixels to sample from each feature in each
     data set. If output_mode is 'sample', then this will be set to the number
@@ -134,7 +139,7 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
         num_dirs, image_size_x, image_size_y, num_features = y.shape
 
     list_of_max_sample_numbers = get_max_sample_num_list(
-        y=y, edge_feature=edge_feature, output_mode=output_mode, border_mode=border_mode,
+        y=y, edge_feature=edge_feature, output_mode=output_mode, padding=padding,
         window_size_x=window_size_x, window_size_y=window_size_y)
 
     feature_rows, feature_cols, feature_batch, feature_label = [], [], [], []
@@ -157,13 +162,13 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
             pixel_counter = 0
             for i in rand_ind:
                 if pixel_counter < list_of_max_sample_numbers[direc]:
-                    condition = border_mode == 'valid' and \
+                    condition = padding == 'valid' and \
                         feature_rows_temp[i] - window_size_x > 0 and \
                         feature_rows_temp[i] + window_size_x < image_size_x and \
                         feature_cols_temp[i] - window_size_y > 0 and \
                         feature_cols_temp[i] + window_size_y < image_size_y
 
-                    if border_mode == 'same' or condition:
+                    if padding == 'same' or condition:
                         feature_rows.append(feature_rows_temp[i])
                         feature_cols.append(feature_cols_temp[i])
                         feature_batch.append(direc)
@@ -452,7 +457,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
                           max_plotted=5,
                           verbose=False,
                           reshape_size=None,
-                          border_mode='valid',
+                          padding='valid',
                           output_mode='sample'):
     """
     Read all images in training directories and save as npz file
@@ -475,7 +480,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
         max_plotted: how many points to plot if display is True
         verbose:  print more output to screen, similar to DEBUG mode
         reshape_size: If provided, will reshape the images to the given size
-        border_mode:  'valid' or 'same'
+        padding:  'valid' or 'same'
         output_mode:  'sample', 'conv', or 'disc'
     """
     # Load one file to get image sizes (all images same size as they are from same microscope)
@@ -516,7 +521,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
     # Create mask of sampled pixels
     feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
-        y, edge_feature, output_mode=output_mode, border_mode=border_mode,
+        y, edge_feature, output_mode=output_mode, padding=padding,
         window_size_x=window_size_x, window_size_y=window_size_y,
         max_training_examples=max_training_examples)
 
@@ -539,7 +544,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
                 y_sample[b, r, c, l] = 1
 
         # Trim the feature mask so that each window does not overlap with the border of the image
-        if border_mode == 'valid':
+        if padding == 'valid':
             y = trim_padding(y, window_size_x, window_size_y)
 
         # Save training data in npz format
@@ -580,7 +585,7 @@ def make_training_data_2d(direc_name, file_name_save, channel_names,
 
         # Trim the sides of the mask to ensure a sliding window does not slide
         # past before or after the boundary of y_label or y_binary
-        if border_mode == 'valid':
+        if padding == 'valid':
             y_label = trim_padding(y_label, window_size_x, window_size_y)
             y_binary = trim_padding(y_binary, window_size_x, window_size_y)
 
@@ -702,7 +707,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
                           annotation_direc='annotated',
                           window_size_x=30,
                           window_size_y=30,
-                          border_mode='same',
+                          padding='same',
                           output_mode='disc',
                           reshape_size=None,
                           num_frames=50,
@@ -729,7 +734,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
         raw_image_direc:  name of folder with raw images
         window_size_x: number of pixels to +/- x direction to be sampled in sample mode
         window_size_y: number of pixels to +/- y direction to be sampled in sample mode
-        border_mode:  'valid' or 'same'
+        padding:  'valid' or 'same'
         output_mode:  'sample', 'conv', or 'disc'
         reshape_size: If provided, will reshape the images to the given size.
         num_of_features: number of classes (e.g. cell interior, cell edge, background)
@@ -761,7 +766,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
                                  montage_mode=montage_mode)
 
     # Trim annotation images
-    if border_mode == 'valid':
+    if padding == 'valid':
         if CHANNELS_FIRST:
             y = y[:, :, : window_size_x:-window_size_x, window_size_y:-window_size_y]
         else:
@@ -806,7 +811,7 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                        window_size_x=30,
                        window_size_y=30,
                        edge_feature=[1, 0, 0],
-                       border_mode='valid',
+                       padding='valid',
                        output_mode='sample',
                        raw_image_direc='raw',
                        annotation_direc='annotated',
@@ -826,8 +831,7 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
     if np.sum(edge_feature) > 1:
         raise ValueError('Only one edge feature is allowed')
 
-    if border_mode not in {'valid', 'same'}:
-        raise ValueError('border_mode should be set to either valid or same')
+    padding = normalize_padding(padding)
 
     if output_mode not in {'sample', 'conv', 'disc'}:
         raise ValueError('output_mode should be set to either sample, conv, or disc')
@@ -852,7 +856,7 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               display=display,
                               verbose=verbose,
                               reshape_size=reshape_size,
-                              border_mode=border_mode,
+                              padding=padding,
                               output_mode=output_mode,
                               raw_image_direc=raw_image_direc,
                               annotation_direc=annotation_direc,
@@ -868,7 +872,7 @@ def make_training_data(direc_name, file_name_save, channel_names, dimensionality
                               annotation_direc=annotation_direc,
                               window_size_x=window_size_x,
                               window_size_y=window_size_y,
-                              border_mode=border_mode,
+                              padding=padding,
                               output_mode=output_mode,
                               reshape_size=reshape_size,
                               verbose=verbose,
