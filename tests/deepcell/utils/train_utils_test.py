@@ -16,11 +16,6 @@ from deepcell.utils.train_utils import axis_softmax
 from deepcell.utils.train_utils import rate_scheduler
 
 
-TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-RES_DIR = os.path.join(TEST_DIR, 'resources')
-TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
-
-
 class TrainUtilsTest(test.TestCase):
     def test_rate_scheduler(self):
         # if decay is small, learning rate should decrease as epochs increase
@@ -56,13 +51,18 @@ class TrainUtilsTest(test.TestCase):
             x = keras.backend.placeholder(ndim=1)
             keras.activations.softmax(x)
 
+        img_w, img_h = 300, 300
+        bias = np.random.rand(img_w, img_h, 1) * 64
+        variance = np.random.rand(img_w, img_h, 1) * (255 - 64)
+        img = np.random.rand(img_w, img_h, 3) * variance + bias
+
         # Testing that the axis_softmax function fails when passed a NumPy array.
         with self.assertRaises(AttributeError):
-            axis_softmax(TEST_IMG, 0)
+            axis_softmax(img, 0)
         with self.assertRaises(AttributeError):
-            axis_softmax(TEST_IMG, 1)
+            axis_softmax(img, 1)
         with self.assertRaises(AttributeError):
-            axis_softmax(TEST_IMG)
+            axis_softmax(img)
 
 if __name__ == '__main__':
     test.main()

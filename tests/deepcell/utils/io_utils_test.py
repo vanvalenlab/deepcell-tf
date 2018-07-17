@@ -29,9 +29,10 @@ class TestIOUtils(test.TestCase):
 
     def test_get_immediate_subdirs(self):
         dirs = []
-        tmp_dir = os.path.join(RES_DIR, 'tmp')
+        temp_dir = self.get_temp_dir()
+        self.addCleanup(shutil.rmtree, temp_dir)
         for x in range(2, -1, -1):  # iterate backwards to test sorting
-            sub_dir = os.path.join(tmp_dir, str(x))
+            sub_dir = os.path.join(temp_dir, str(x))
             try:
                 os.makedirs(sub_dir)
             except OSError as err:
@@ -39,10 +40,7 @@ class TestIOUtils(test.TestCase):
                     raise
             dirs.append(str(x))
 
-        assert get_immediate_subdirs(tmp_dir) == list(reversed(dirs))
-        shutil.rmtree(tmp_dir)
-        # now tmp_dir is removed, so RES_DIR should have no subdirs
-        assert get_immediate_subdirs(RES_DIR) == []
+        assert get_immediate_subdirs(temp_dir) == list(reversed(dirs))
 
     def test_get_image(self):
         # test tiff files
