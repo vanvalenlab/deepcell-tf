@@ -14,13 +14,12 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.activations import softmax
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.python.keras.models import Sequential, Model
-from tensorflow.python.keras.layers import Add, Input, Concatenate
-from tensorflow.python.keras.layers import Conv2D, Conv3D, MaxPool2D, AvgPool2D
-from tensorflow.python.keras.layers import Flatten, Dense, Dropout, MaxPooling2D
-from tensorflow.python.keras.layers import MaxPooling2D, UpSampling2D
+from tensorflow.python.keras.layers import Conv2D, Conv3D, ConvLSTM2D
+from tensorflow.python.keras.layers import Add, Input, Concatenate, Lambda
+from tensorflow.python.keras.layers import MaxPool2D, AvgPool2D, UpSampling2D
+from tensorflow.python.keras.layers import Flatten, Dense, Dropout
 from tensorflow.python.keras.layers import Activation, Softmax
 from tensorflow.python.keras.layers import BatchNormalization
-from tensorflow.python.keras.layers import UpSampling2D, AveragePooling2D, Conv2DTranspose, MaxPooling2D
 from tensorflow.python.keras.regularizers import l2
 
 from .layers import Resize
@@ -1681,20 +1680,20 @@ def watershed_net(input_shape=(256, 256, 1), n_features=16, reg=1e-5, init='he_n
 
     conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer=init)(img_norm)
     conv1 = Conv2D(64, 3, activation='relu', padding='same', kernel_initializer=init)(conv1)
-    pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
+    pool1 = MaxPool2D(pool_size=(2, 2))(conv1)
 
     conv2 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer=init)(pool1)
     conv2 = Conv2D(128, 3, activation='relu', padding='same', kernel_initializer=init)(conv2)
-    pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
+    pool2 = MaxPool2D(pool_size=(2, 2))(conv2)
 
     conv3 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer=init)(pool2)
     conv3 = Conv2D(256, 3, activation='relu', padding='same', kernel_initializer=init)(conv3)
-    pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
+    pool3 = MaxPool2D(pool_size=(2, 2))(conv3)
 
     conv4 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer=init)(pool3)
     conv4 = Conv2D(512, 3, activation='relu', padding='same', kernel_initializer=init)(conv4)
     drop4 = Dropout(0.5)(conv4)
-    pool4 = MaxPooling2D(pool_size=(2, 2))(drop4)
+    pool4 = MaxPool2D(pool_size=(2, 2))(drop4)
 
     conv5 = Conv2D(1024, 3, activation='relu', padding='same', kernel_initializer=init)(pool4)
     conv5 = Conv2D(1024, 3, activation='relu', padding='same', kernel_initializer=init)(conv5)
