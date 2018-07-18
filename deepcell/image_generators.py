@@ -28,25 +28,11 @@ from tensorflow.python.keras.preprocessing.image import flip_axis
 from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
+from keras_retinanet.utils import retinanet_utils
 
 from .utils.transform_utils import transform_matrix_offset_center
 from .utils.transform_utils import distance_transform_2d
 
-
-from keras_retinanet.utils.anchors import (
-    anchor_targets_bbox,
-    bbox_transform,
-    anchors_for_shape,
-    guess_shapes
-)
-from keras_retinanet.utils.image import (
-    TransformParameters,
-    adjust_transform_for_image,
-    apply_transform,
-    preprocess_image,
-    resize_image,
-)
-from keras_retinanet.utils.transform import transform_aabb
 
 """
 Custom image generators
@@ -1531,105 +1517,117 @@ class BoundingBoxIterator(Iterator):
         return self._get_batches_of_transformed_samples(index_array)
 
 
-''' Retina Net Implementation '''
+"""
+Retina Net Implementation
+"""
 
 
+class RetinanetGenerator(object):
+    """Abstract RetinanetGenerator class."""
 
-class Retinanet_Generator(object):
-    """ Abstract Retinanet_Generator class.
-    """
-
-    def __init__(
-        self,
-        transform_Retinanet_Generator = None,
-        batch_size=1,
-        group_method='ratio',  # one of 'none', 'random', 'ratio'
-        shuffle_groups=True,
-        image_min_side=800,
-        image_max_side=1333,
-        transform_parameters=None,
-        compute_anchor_targets=anchor_targets_bbox,
-        compute_shapes=guess_shapes,
-        preprocess_image=preprocess_image,
-    ):
-        """ Initialize Retinanet_Generator object.
-
-        Args
-            transform_Retinanet_Generator    : A Retinanet_Generator used to randomly transform images and annotations.
-            batch_size             : The size of the batches to generate.
-            group_method           : Determines how images are grouped together (defaults to 'ratio', one of ('none', 'random', 'ratio')).
-            shuffle_groups         : If True, shuffles the groups each epoch.
-            image_min_side         : After resizing the minimum side of an image is equal to image_min_side.
-            image_max_side         : If after resizing the maximum side is larger than image_max_side, scales down further so that the max side is equal to image_max_side.
-            transform_parameters   : The transform parameters used for data augmentation.
-            compute_anchor_targets : Function handler for computing the targets of anchors for an image and its annotations.
-            compute_shapes         : Function handler for computing the shapes of the pyramid for a given input.
-            preprocess_image       : Function handler for preprocessing an image (scaling / normalizing) for passing through a network.
+    def __init__(self,
+                 transform_generator=None,
+                 batch_size=1,
+                 group_method='ratio',  # one of 'none', 'random', 'ratio'
+                 shuffle_groups=True,
+                 image_min_side=800,
+                 image_max_side=1333,
+                 transform_parameters=None,
+                 compute_anchor_targets=None,
+                 compute_shapes=None,
+                 preprocess_image=None):
+        """Initialize Retinanet_Generator object.
+        # Arguments
+            transform_generator: A Retinanet_Generator used to
+                                 randomly transform images and annotations
+            batch_size: The size of the batches to generate
+            group_method: Determines how images are grouped together
+                          defaults to 'ratio', one of {'none', 'random', 'ratio'}
+            shuffle_groups: If True, shuffles the groups each epoch.
+            image_min_side: After resizing the minimum side of an image is
+                            equal to image_min_side.
+            image_max_side: If after resizing the maximum side is larger than
+                            image_max_side, scales down further so that the
+                            max side is equal to image_max_side
+            transform_parameters: The transform parameters used for data augmentation
+            compute_anchor_targets: Function handler for computing the targets
+                                    of anchors for an image and its annotations
+            compute_shapes: Function handler for computing the shapes of the
+                            pyramid for a given input.
+            preprocess_image: Function handler for preprocessing an image
+                              (scaling / normalizing) for passing through a network
         """
-        self.transform_Retinanet_Generator    = transform_Retinanet_Generator
-        self.batch_size             = int(batch_size)
-        self.group_method           = group_method
-        self.shuffle_groups         = shuffle_groups
-        self.image_min_side         = image_min_side
-        self.image_max_side         = image_max_side
-        self.transform_parameters   = transform_parameters or TransformParameters()
+        if transform_parameters is None:
+            transform_parameters = retinanet_utils.image.TransformParameters()
+        if compute_anchor_targets is None:
+            compute_anchor_targets = retinanet_utils.anchors.anchor_targets_bbox
+        if compute_shapes is None:
+            compute_shapes = retinanet_utils.anchors.guess_shapes
+        if preprocess_image is None:
+            preprocess_image = retinanet_utils.image.preprocess_image
+
+        self.transform_generator = transform_generator
+        self.batch_size = int(batch_size)
+        self.group_method = group_method
+        self.shuffle_groups = shuffle_groups
+        self.image_min_side = image_min_side
+        self.image_max_side = image_max_side
+        self.transform_parameters = transform_parameters
         self.compute_anchor_targets = compute_anchor_targets
-        self.compute_shapes         = compute_shapes
-        self.preprocess_image       = preprocess_image
+        self.compute_shapes = compute_shapes
+        self.preprocess_image = preprocess_image
 
         self.group_index = 0
-        self.lock        = threading.Lock()
+        self.lock = threading.Lock()
 
         self.group_images()
 
     def size(self):
-        """ Size of the dataset.
-        """
+        """Size of the dataset."""
         raise NotImplementedError('size method not implemented')
 
     def num_classes(self):
-        """ Number of classes in the dataset.
-        """
+        """Number of classes in the dataset."""
         raise NotImplementedError('num_classes method not implemented')
 
     def name_to_label(self, name):
-        """ Map name to label.
-        """
+        """Map name to label."""
         raise NotImplementedError('name_to_label method not implemented')
 
     def label_to_name(self, label):
-        """ Map label to name.
-        """
+        """Map label to name."""
         raise NotImplementedError('label_to_name method not implemented')
 
     def image_aspect_ratio(self, image_index):
-        """ Compute the aspect ratio for an image with image_index.
-        """
+        """Compute the aspect ratio for an image with image_index."""
         raise NotImplementedError('image_aspect_ratio method not implemented')
 
     def load_image(self, image_index):
-        """ Load an image at the image_index.
-        """
+        """Load an image at the image_index."""
         raise NotImplementedError('load_image method not implemented')
 
     def load_annotations(self, image_index):
-        """ Load annotations for an image_index.
-        """
+        """Load annotations for an image_index."""
         raise NotImplementedError('load_annotations method not implemented')
 
     def load_annotations_group(self, group):
-        """ Load annotations for all images in group.
-        """
+        """Load annotations for all images in group."""
         return [self.load_annotations(image_index) for image_index in group]
 
     def filter_annotations(self, image_group, annotations_group, group):
-        """ Filter annotations by removing those that are outside of the image bounds or whose width/height < 0.
+        """
+        Filter annotations by removing those that are outside
+        of the image bounds or whose width/height < 0.
         """
         # test all annotations
         for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
-            assert(isinstance(annotations, np.ndarray)), '\'load_annotations\' should return a list of numpy arrays, received: {}'.format(type(annotations))
+            if not isinstance(annotations, np.ndarray):
+                raise ValueError('`load_annotations` should return a list of '
+                                 'numpy arrays, received: {}'.format(
+                                     type(annotations)))
 
-            # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 | y2 <= 0 | x2 >= image.shape[1] | y2 >= image.shape[0]
+            # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 | y2 <= 0
+            # test x2 >= image.shape[1] | y2 >= image.shape[0]
             invalid_indices = np.where(
                 (annotations[:, 2] <= annotations[:, 0]) |
                 (annotations[:, 3] <= annotations[:, 1]) |
@@ -1640,45 +1638,48 @@ class Retinanet_Generator(object):
             )[0]
 
             # delete invalid indices
-            if len(invalid_indices):
-                warnings.warn('Image with id {} (shape {}) contains the following invalid boxes: {}.'.format(
-                    group[index],
-                    image.shape,
-                    [annotations[invalid_index, :] for invalid_index in invalid_indices]
-                ))
+            if invalid_indices.size > 0:
+                warnings.warn('Image with id {} and shape {} contains '
+                              'the following invalid boxes: {}.'.format(
+                                  group[index],
+                                  image.shape,
+                                  [annotations[i, :] for i in invalid_indices]))
+
                 annotations_group[index] = np.delete(annotations, invalid_indices, axis=0)
 
         return image_group, annotations_group
 
     def load_image_group(self, group):
-        """ Load images for all images in a group.
-        """
+        """Load images for all images in a group"""
         return [self.load_image(image_index) for image_index in group]
 
     def random_transform_group_entry(self, image, annotations):
-        """ Randomly transforms image and annotation.
-        """
+        """Randomly transforms image and annotation"""
         # randomly transform both image and annotations
-        if self.transform_Retinanet_Generator:
-            transform = adjust_transform_for_image(next(self.transform_Retinanet_Generator), image, self.transform_parameters.relative_translation)
-            image     = apply_transform(transform, image, self.transform_parameters)
+        if self.transform_generator:
+            transform = retinanet_utils.image.adjust_transform_for_image(
+                next(self.transform_generator),
+                image,
+                self.transform_parameters.relative_translation)
+
+            image = retinanet_utils.image.apply_transform(
+                transform, image, self.transform_parameters)
 
             # Transform the bounding boxes in the annotations.
             annotations = annotations.copy()
             for index in range(annotations.shape[0]):
-                annotations[index, :4] = transform_aabb(transform, annotations[index, :4])
+                annotations[index, :4] = retinanet_utils.transform.transform_aabb(
+                    transform, annotations[index, :4])
 
         return image, annotations
 
     def resize_image(self, image):
-        """ Resize an image using image_min_side and image_max_side.
-        """
-        return resize_image(image, min_side=self.image_min_side, max_side=self.image_max_side)
+        """Resize an image using image_min_side and image_max_side"""
+        return retinanet_utils.image.resize_image(
+            image, min_side=self.image_min_side, max_side=self.image_max_side)
 
     def preprocess_group_entry(self, image, annotations):
-        """ Preprocess image and its annotations.
-        """
-        # preprocess the image
+        """Preprocess image and its annotations"""
         image = self.preprocess_image(image)
 
         # randomly transform image and annotations
@@ -1693,34 +1694,31 @@ class Retinanet_Generator(object):
         return image, annotations
 
     def preprocess_group(self, image_group, annotations_group):
-        """ Preprocess each image and its annotations in its group.
-        """
+        """Preprocess each image and its annotations in its group"""
         for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
             # preprocess a single group entry
             image, annotations = self.preprocess_group_entry(image, annotations)
 
             # copy processed data back to group
-            image_group[index]       = image
+            image_group[index] = image
             annotations_group[index] = annotations
 
         return image_group, annotations_group
 
     def group_images(self):
-        """ Order the images according to self.order and makes groups of self.batch_size.
-        """
+        """Order the images and makes groups of batch_size"""
         # determine the order of the images
         order = list(range(self.size()))
         if self.group_method == 'random':
             random.shuffle(order)
         elif self.group_method == 'ratio':
-            order.sort(key=lambda x: self.image_aspect_ratio(x))
+            order.sort(key=self.image_aspect_ratio)
 
         # divide into groups, one group = one batch
         self.groups = [[order[x % len(order)] for x in range(i, i + self.batch_size)] for i in range(0, len(order), self.batch_size)]
 
     def compute_inputs(self, image_group):
-        """ Compute inputs for the network using an image_group.
-        """
+        """Compute inputs for the network using an image_group"""
         # get the max image shape
         max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
 
@@ -1734,41 +1732,46 @@ class Retinanet_Generator(object):
         return image_batch
 
     def generate_anchors(self, image_shape):
-        return anchors_for_shape(image_shape, shapes_callback=self.compute_shapes)
+        return retinanet_utils.anchors.anchors_for_shape(
+            image_shape, shapes_callback=self.compute_shapes)
 
     def compute_targets(self, image_group, annotations_group):
-        """ Compute target outputs for the network using images and their annotations.
+        """
+        Compute target outputs for the network using images and their annotations
         """
         # get the max image shape
-        max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
-        anchors   = self.generate_anchors(max_shape)
+        max_shape = tuple(max(im.shape[x] for im in image_group) for x in range(3))
+        anchors = self.generate_anchors(max_shape)
 
-        regression_batch = np.empty((self.batch_size, anchors.shape[0], 4 + 1), dtype=K.floatx())
-        labels_batch     = np.empty((self.batch_size, anchors.shape[0], self.num_classes() + 1), dtype=K.floatx())
+        regression_shape = (self.batch_size, anchors.shape[0], 4 + 1)
+        regression = np.empty(regression_shape, dtype=K.floatx())
+
+        label_shape = (self.batch_size, anchors.shape[0], self.num_classes() + 1)
+        labels = np.empty(label_shape, dtype=K.floatx())
 
         # compute labels and regression targets
-        for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
+        for i, (image, annotations) in enumerate(zip(image_group, annotations_group)):
             # compute regression targets
-            labels_batch[index, :, :-1], annotations, labels_batch[index, :, -1] = self.compute_anchor_targets(
+            labels[i, :, :-1], annotations, labels[i, :, -1] = self.compute_anchor_targets(
                 anchors,
                 annotations,
                 self.num_classes(),
-                mask_shape=image.shape,
-            )
-            regression_batch[index, :, :-1] = bbox_transform(anchors, annotations)
-            regression_batch[index, :, -1]  = labels_batch[index, :, -1]  # copy the anchor states to the regression batch
+                mask_shape=image.shape)
+            regression[i, :, :-1] = retinanet_utils.anchors.bbox_transform(anchors, annotations)
+            # copy the anchor states to the regression batch
+            regression[i, :, -1] = labels[i, :, -1]
 
-        return [regression_batch, labels_batch]
+        return [regression, labels]
 
     def compute_input_output(self, group):
-        """ Compute inputs and target outputs for the network.
-        """
+        """Compute inputs and target outputs for the network"""
         # load images and annotations
-        image_group       = self.load_image_group(group)
+        image_group = self.load_image_group(group)
         annotations_group = self.load_annotations_group(group)
 
         # check validity of annotations
-        image_group, annotations_group = self.filter_annotations(image_group, annotations_group, group)
+        image_group, annotations_group = self.filter_annotations(
+            image_group, annotations_group, group)
 
         # perform preprocessing steps
         image_group, annotations_group = self.preprocess_group(image_group, annotations_group)

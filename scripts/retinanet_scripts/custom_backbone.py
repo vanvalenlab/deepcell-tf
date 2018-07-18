@@ -1,6 +1,7 @@
 import keras
 import keras_retinanet
 import keras_retinanet.models
+
 class Backbone(object):
     """ This class stores additional information on backbones.
     """

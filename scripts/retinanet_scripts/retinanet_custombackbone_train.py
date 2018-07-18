@@ -31,7 +31,7 @@ import cv2
 from skimage.external.tifffile import TiffFile
 
 
-from deepcell import Retinanet_Generator
+from deepcell import RetinanetGenerator
 from keras_retinanet.utils.image import read_image_bgr
 
 import numpy as np
@@ -123,7 +123,7 @@ def Genrate_Subimage(img_pathstack,HorizontalP,VerticalP,flag):
     return sub_img
 
 
-    
+
 def _read_annotations(masks_list):
     result = {}
     for cnt,image in enumerate(masks_list):
@@ -140,7 +140,7 @@ def _read_annotations(masks_list):
     return result
 
 
-class CSVGenerator(Retinanet_Generator):
+class CSVGenerator(RetinanetGenerator):
 
     def __init__(
         self,
@@ -151,7 +151,7 @@ class CSVGenerator(Retinanet_Generator):
         self.image_data  = {}
         self.image_stack = []
         self.mask_stack  = []
-        
+
         direc_name = "/data/data/cells/HeLa/S3"
         training_direcs = ['set0','set1']
         raw_image_direc = 'raw'
@@ -171,16 +171,16 @@ class CSVGenerator(Retinanet_Generator):
         print(len(train_anotedlist))
 
         result={}
-        
+
         self.image_stack = Genrate_Subimage(train_imlist,3,3,True)
         self.mask_stack  = Genrate_Subimage(train_anotedlist,3,3,False)
-            
+
         self.classes = _read_classes('cell')
 
         self.labels = {}
         for key, value in self.classes.items():
             self.labels[value] = key
-        
+
         self.image_data= _read_annotations(self.mask_stack)
         self.image_names = list(self.image_data.keys())
 
@@ -426,7 +426,7 @@ def create_generators(args, preprocess_image):
             #args.annotations,
             #args.classes,
             **common_args
-        )   
+        )
 
         if args.val_annotations:
             validation_generator = CSVGenerator(
@@ -453,20 +453,24 @@ def check_args(parsed_args):
     """
 
     if parsed_args.multi_gpu > 1 and parsed_args.batch_size < parsed_args.multi_gpu:
-        raise ValueError(
-            "Batch size ({}) must be equal to or higher than the number of GPUs ({})".format(parsed_args.batch_size,
-                                                                                             parsed_args.multi_gpu))
+        raise ValueError('Batch size ({}) must be equal to or higher than '
+                         'the number of GPUs ({})'.format(
+                             parsed_args.batch_size,
+                             parsed_args.multi_gpu))
 
     if parsed_args.multi_gpu > 1 and parsed_args.snapshot:
-        raise ValueError(
-            "Multi GPU training ({}) and resuming from snapshots ({}) is not supported.".format(parsed_args.multi_gpu,
-                                                                                                parsed_args.snapshot))
+        raise ValueError('Multi GPU training ({}) and resuming from snapshots '
+                         '({}) is not supported.'.format(
+                             parsed_args.multi_gpu,
+                             parsed_args.snapshot))
 
     if parsed_args.multi_gpu > 1 and not parsed_args.multi_gpu_force:
-        raise ValueError("Multi-GPU support is experimental, use at own risk! Run with --multi-gpu-force if you wish to continue.")
+        raise ValueError('Multi-GPU support is experimental, use at own risk! '
+                         'Run with --multi-gpu-force if you wish to continue.')
 
     if 'resnet' not in parsed_args.backbone:
-        warnings.warn('Using experimental backbone {}. Only resnet50 has been properly tested.'.format(parsed_args.backbone))
+        warnings.warn('Using experimental backbone {}. Only resnet50 has been '
+                      'properly tested.'.format(parsed_args.backbone))
 
     return parsed_args
 
@@ -474,10 +478,9 @@ def check_args(parsed_args):
 def parse_args(args):
     """ Parse the arguments.
     """
-    parser     = argparse.ArgumentParser(description='Simple training script for training a RetinaNet network.')
+    parser = argparse.ArgumentParser(description='Simple training script for training a RetinaNet network.')
     subparsers = parser.add_subparsers(help='Arguments for specific dataset types.', dest='dataset_type')
     subparsers.required = True
-
 
     def csv_list(string):
         return string.split(',')
@@ -489,7 +492,7 @@ def parse_args(args):
     csv_parser_run.add_argument('run_path', help='Path to folder containing test data')
     csv_parser_run.add_argument('model_path',help='Path to the model(.h5) file')
     csv_parser_run.add_argument('--save_path', help='Path to save data', default='./test_output')
- 
+
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--snapshot',          help='Resume training from a snapshot.')

@@ -30,7 +30,7 @@ import cv2
 from skimage.external.tifffile import TiffFile
 
 
-from deepcell import Retinanet_Generator
+from deepcell import RetinanetGenerator
 from keras_retinanet.utils.image import read_image_bgr
 
 import numpy as np
@@ -47,10 +47,11 @@ def get_image(file_name):
     if ext == '.tif' or ext == '.tiff':
         img=np.asarray(np.float32(TiffFile(file_name).asarray()))
         img = np.tile(np.expand_dims(img,axis=-1),(1,1,3))
-        return img/np.max(img)
+        return img / np.max(img)
     img = np.asarray(np.float32(imread(file_name)))
     img = np.tile(np.expand_dims(img,axis=-1),(1,1,3))
     return ((img/np.max(img))*255).astype(int)
+
 
 def _parse(value, function, fmt):
     try:
@@ -64,8 +65,9 @@ def _read_classes(classname):
     result[str(classname)] = 0
     return result
 
-def list_file_deepcell(direc_name,training_direcs,raw_image_direc,channel_names):
-    filelist=[]
+
+def list_file_deepcell(direc_name, training_direcs, raw_image_direc, channel_names):
+    filelist = []
     for b, direc in enumerate(training_direcs):
         imglist = os.listdir(os.path.join(direc_name, direc, raw_image_direc))
         #print(imglist)
@@ -78,109 +80,106 @@ def list_file_deepcell(direc_name,training_direcs,raw_image_direc,channel_names)
                 filelist.append(image_file)
     return sorted(filelist)
 
-def Genrate_Subimage(img_pathstack,HorizontalP,VerticalP,flag):
-    sub_img=[]
+
+def generate_subimage(img_pathstack, HorizontalP, VerticalP, flag):
+    sub_img = []
     for img_path in img_pathstack:
-        img=np.asarray(np.float32(imread(img_path)))
+        img = np.asarray(np.float32(imread(img_path)))
         #img=((img/np.max(img))*255).astype(int)
         if flag:
-            img=(img/np.max(img))
-        vway=np.zeros(VerticalP+1)      #The dimentions of vertical cuts
-        hway=np.zeros(HorizontalP+1)    #The dimentions of horizontal cuts
-        vcnt=0                          #The initial value for vertical
-        hcnt=0                          #The initial value for horizontal
+            img = (img / np.max(img))
+        vway = np.zeros(VerticalP+1)  # The dimentions of vertical cuts
+        hway = np.zeros(HorizontalP+1)  # The dimentions of horizontal cuts
+        vcnt = 0  # The initial value for vertical
+        hcnt = 0  # The initial value for horizontal
 
-        for i in range(VerticalP+1):
-            vway[i]=int(vcnt)
-            vcnt=vcnt+(img.shape[1]/VerticalP)
-        #print(vway)
+        for i in range(VerticalP + 1):
+            vway[i] = int(vcnt)
+            vcnt = vcnt+(img.shape[1] / VerticalP)
 
-        for j in range(HorizontalP+1):
-            hway[j]=int(hcnt)
-            hcnt=hcnt+(img.shape[0]/HorizontalP)
-        #print(hway)
+        for j in range(HorizontalP + 1):
+            hway[j] = int(hcnt)
+            hcnt = hcnt + (img.shape[0] / HorizontalP)
 
+        vb = 0
 
-        vb=0
-        columns = 5
-        rows = 5
-
-        for i in range(len(hway)-1):
-            for j in range(len(vway)-1):
-                vb=vb+1
+        for i in range(len(hway) - 1):
+            for j in range(len(vway) - 1):
+                vb += 1
 
         for i in range(len(hway)-1):
             for j in range(len(vway)-1):
-                sub_img.append(img[int(hway[i]):int(hway[i+1]),int(vway[j]):int(vway[j+1])])
-    sub_img2=[]
+                sub_img.append(img[int(hway[i]):int(hway[i +1 ]), int(vway[j]):int(vway[j + 1])])
+
+    sub_img2 = []
     print(len(sub_img))
     if flag:
         for img in sub_img:
-            sub_img2.append(np.tile(np.expand_dims(img,axis=-1),(1,1,3)))
-        sub_img=sub_img2
+            sub_img2.append(np.tile(np.expand_dims(img, axis=-1), (1, 1, 3)))
+        sub_img = sub_img2
 
     return sub_img
 
 
-    
 def _read_annotations(masks_list):
     result = {}
-    for cnt,image in enumerate(masks_list):
+    for cnt, image in enumerate(masks_list):
         result[cnt] = []
-        p=regionprops(label(image))
-        cell_count=0
+        props = regionprops(label(image))
+        cell_count = 0
         total = len(masks_list)
-        for index in range(len(np.unique(label(image)))-1):
-            x1, y1, x2, y2 = p[index].bbox[1],p[index].bbox[0],p[index].bbox[3],p[index].bbox[2]
+        for index in range(len(np.unique(label(image))) - 1):
+            prop = props[index]
+            x1, y1, x2, y2 = prop.bbox[1], prop.bbox[0], prop.bbox[3], prop.bbox[2]
             result[cnt].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2})
-            cell_count=cell_count+1
-        print("-----------------Completed "+str(cnt)+" of "+str(total)+"-----------")
-        print("The number of cells in this image : "+str(cell_count))
+            cell_count += 1
+
+        print('-----------------Completed {} of {}-----------'.format(cnt, total))
+        print('The number of cells in this image:', cell_count)
     return result
 
 
-class CSVGenerator(Retinanet_Generator):
+class CSVGenerator(RetinanetGenerator):
 
-    def __init__(
-        self,
-        **kwargs
-    ):
+    def __init__(self, **kwargs):
 
         self.image_names = []
-        self.image_data  = {}
+        self.image_data = {}
         self.image_stack = []
-        self.mask_stack  = []
-        
-        direc_name = "/data/data/cells/HeLa/S3"
-        training_direcs = ['set0','set1']
+        self.mask_stack = []
+
+        direc_name = '/data/data/cells/HeLa/S3'
+        training_direcs = ['set0', 'set1']
         raw_image_direc = 'raw'
         channel_names = ['FITC']
-        train_imlist=list_file_deepcell(
-            direc_name = direc_name,
-            training_direcs = training_direcs,
-            raw_image_direc = raw_image_direc,
-            channel_names = channel_names)
+        train_imlist = list_file_deepcell(
+            direc_name=direc_name,
+            training_direcs=training_direcs,
+            raw_image_direc=raw_image_direc,
+            channel_names=channel_names)
+
         print(len(train_imlist))
-        print("----------------")
-        train_anotedlist=list_file_deepcell(
-            direc_name = direc_name,
-            training_direcs = training_direcs,
-            raw_image_direc = 'annotated_unique',
-            channel_names = ['corrected'])
+        print('----------------')
+
+        train_anotedlist = list_file_deepcell(
+            direc_name=direc_name,
+            training_direcs=training_direcs,
+            raw_image_direc='annotated_unique',
+            channel_names=['corrected'])
         print(len(train_anotedlist))
 
-        result={}
-        
-        self.image_stack = Genrate_Subimage(train_imlist,3,3,True)
-        self.mask_stack  = Genrate_Subimage(train_anotedlist,3,3,False)
-            
+        result = {}
+
+        self.image_stack = generate_subimage(train_imlist, 3, 3, True)
+        self.mask_stack = generate_subimage(train_anotedlist, 3, 3, False)
+
         self.classes = _read_classes('cell')
 
         self.labels = {}
         for key, value in self.classes.items():
             self.labels[value] = key
-        
-        self.image_data= _read_annotations(self.mask_stack)
+
+        self.image_data = _read_annotations(self.mask_stack)
         self.image_names = list(self.image_data.keys())
 
         super(CSVGenerator, self).__init__(**kwargs)
@@ -224,9 +223,9 @@ class CSVGenerator(Retinanet_Generator):
     def load_annotations(self, image_index):
         """ Load annotations for an image_index.
         """
-        path   = self.image_names[image_index]
+        path = self.image_names[image_index]
         annots = self.image_data[path]
-        boxes  = np.zeros((len(annots), 5))
+        boxes = np.zeros((len(annots), 5))
 
         for idx, annot in enumerate(annots):
             class_name = 'cell'
@@ -237,8 +236,6 @@ class CSVGenerator(Retinanet_Generator):
             boxes[idx, 4] = self.name_to_label(class_name)
 
         return boxes
-
-
 
 
 def makedirs(path):
@@ -397,10 +394,10 @@ def create_generators(args, preprocess_image):
         preprocess_image : Function that preprocesses an image for the network.
     """
     common_args = {
-        'batch_size'       : args.batch_size,
-        'image_min_side'   : args.image_min_side,
-        'image_max_side'   : args.image_max_side,
-        'preprocess_image' : preprocess_image,
+        'batch_size': args.batch_size,
+        'image_min_side': args.image_min_side,
+        'image_max_side': args.image_max_side,
+        'preprocess_image': preprocess_image,
     }
 
     # create random transform generator for augmenting training data
@@ -415,8 +412,7 @@ def create_generators(args, preprocess_image):
             min_scaling=(0.9, 0.9),
             max_scaling=(1.1, 1.1),
             flip_x_chance=0.5,
-            flip_y_chance=0.5,
-        )
+            flip_y_chance=0.5)
     else:
         transform_generator = random_transform_generator(flip_x_chance=0.5)
 
@@ -425,7 +421,7 @@ def create_generators(args, preprocess_image):
             #args.annotations,
             #args.classes,
             **common_args
-        )   
+        )
 
         if args.val_annotations:
             validation_generator = CSVGenerator(
@@ -452,20 +448,24 @@ def check_args(parsed_args):
     """
 
     if parsed_args.multi_gpu > 1 and parsed_args.batch_size < parsed_args.multi_gpu:
-        raise ValueError(
-            "Batch size ({}) must be equal to or higher than the number of GPUs ({})".format(parsed_args.batch_size,
-                                                                                             parsed_args.multi_gpu))
+        raise ValueError('Batch size ({}) must be equal to or higher than '
+                         'the number of GPUs ({})'.format(
+                             parsed_args.batch_size,
+                             parsed_args.multi_gpu))
 
     if parsed_args.multi_gpu > 1 and parsed_args.snapshot:
-        raise ValueError(
-            "Multi GPU training ({}) and resuming from snapshots ({}) is not supported.".format(parsed_args.multi_gpu,
-                                                                                                parsed_args.snapshot))
+        raise ValueError('Multi GPU training ({}) and resuming from snapshots '
+                         '({}) is not supported.'.format(
+                             parsed_args.multi_gpu,
+                             parsed_args.snapshot))
 
     if parsed_args.multi_gpu > 1 and not parsed_args.multi_gpu_force:
-        raise ValueError("Multi-GPU support is experimental, use at own risk! Run with --multi-gpu-force if you wish to continue.")
+        raise ValueError('Multi-GPU support is experimental, use at own risk! '
+                         'Run with --multi-gpu-force if you wish to continue.')
 
     if 'resnet' not in parsed_args.backbone:
-        warnings.warn('Using experimental backbone {}. Only resnet50 has been properly tested.'.format(parsed_args.backbone))
+        warnings.warn('Using experimental backbone {}. Only resnet50 has been '
+                      'properly tested.'.format(parsed_args.backbone))
 
     return parsed_args
 
@@ -488,7 +488,7 @@ def parse_args(args):
     csv_parser_run.add_argument('run_path', help='Path to folder containing test data')
     csv_parser_run.add_argument('model_path',help='Path to the model(.h5) file')
     csv_parser_run.add_argument('--save_path', help='Path to save data', default='./test_output')
- 
+
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--snapshot',          help='Resume training from a snapshot.')
@@ -516,7 +516,6 @@ def parse_args(args):
 
 
 def main(args=None):
-
     # parse arguments
     if args is None:
         args = sys.argv[1:]
@@ -529,10 +528,10 @@ def main(args=None):
     check_keras_version()
 
     if args.dataset_type == 'run':
-        model = models.load_model(args.model_path, backbone_name=args.backbone,convert=True)
+        model = models.load_model(args.model_path, backbone_name=args.backbone, convert=True)
         labels_to_names = {0: 'cell'}
         makedirs(args.save_path)
-        test_imlist=os.walk(args.run_path).next()[2]
+        test_imlist = os.walk(args.run_path).next()[2]
         for testimgcnt,img_path in enumerate(test_imlist):
 
             image = get_image(img_path)
@@ -540,7 +539,7 @@ def main(args=None):
 
             #image=draw2
             draw2 = get_image(img_path)
-            draw2 = draw2/np.max(draw2)
+            draw2 = draw2 / np.max(draw2)
             #print(np.unique(image))
             # copy to draw on
 

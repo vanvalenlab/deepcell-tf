@@ -26,7 +26,7 @@ import keras
 import keras.preprocessing.image
 import tensorflow as tf
 import threading
-import keras_retinanet.layers as layers # noqa: F401
+import keras_retinanet.layers as layers  # noqa: F401
 import keras_retinanet.losses as losses
 import keras_retinanet.models as models
 from keras_retinanet.callbacks import RedirectModel
@@ -36,7 +36,7 @@ from keras_retinanet.utils.anchors import make_shapes_callback
 from keras_retinanet.utils.keras_version import check_keras_version
 from keras_retinanet.utils.model import freeze as freeze_model
 from keras_retinanet.utils.transform import random_transform_generator
-from deepcell import Retinanet_Generator
+from deepcell import RetinanetGenerator
 
 import numpy as np
 from PIL import Image
@@ -50,15 +50,17 @@ import os.path
 from skimage.io import imread
 import cv2
 
+
 def get_image(file_name):
     ext = os.path.splitext(file_name.lower())[-1]
     if ext == '.tif' or ext == '.tiff':
-        img=np.asarray(np.float32(TiffFile(file_name).asarray()))
-        img = np.tile(np.expand_dims(img,axis=-1),(1,1,3))
-        return img/np.max(img)
+        img = np.asarray(np.float32(TiffFile(file_name).asarray()))
+        img = np.tile(np.expand_dims(img, axis=-1),(1, 1, 3))
+        return img / np.max(img)
     img = np.asarray(np.float32(imread(file_name)))
-    img = np.tile(np.expand_dims(img,axis=-1),(1,1,3))
-    return ((img/np.max(img))*255).astype(int)
+    img = np.tile(np.expand_dims(img, axis=-1),(1, 1, 3))
+    return ((img / np.max(img)) * 255).astype(int)
+
 
 def _parse(value, function, fmt):
     """
@@ -84,7 +86,7 @@ def _read_classes(csv_reader):
         try:
             class_name, class_id = row
         except ValueError:
-            raise_from(ValueError('line {}: format should be \'class_name,class_id\''.format(line)), None)
+            raise_from(ValueError('line {}: format should be "class_name,class_id"'.format(line)), None)
         class_id = _parse(class_id, int, 'line {}: malformed class ID: {{}}'.format(line))
 
         if class_name in result:
@@ -143,25 +145,24 @@ def _open_for_csv(path):
         return open(path, 'r', newline='')
 
 
-class CSVGenerator(Retinanet_Generator):
+class CSVGenerator(RetinanetGenerator):
     """ Generate data for a custom CSV dataset.
 
     See https://github.com/fizyr/keras-retinanet#csv-datasets for more information.
     """
 
-    def __init__(
-        self,
-        csv_data_file,
-        csv_class_file,
-        base_dir=None,
-        **kwargs
-    ):
+    def __init__(self,
+                 csv_data_file,
+                 csv_class_file,
+                 base_dir=None,
+                 **kwargs):
         """ Initialize a CSV data generator.
 
         Args
             csv_data_file: Path to the CSV annotations file.
             csv_class_file: Path to the CSV classes file.
-            base_dir: Directory w.r.t. where the files are to be searched (defaults to the directory containing the csv_data_file).
+            base_dir: Directory w.r.t. where the files are to be searched
+                      (defaults to the directory containing the csv_data_file).
         """
         self.image_names = []
         self.image_data  = {}
@@ -247,22 +248,8 @@ class CSVGenerator(Retinanet_Generator):
         return boxes
 
 
-
-
-
-def get_image(file_name):
-    ext = os.path.splitext(file_name.lower())[-1]
-    if ext == '.tif' or ext == '.tiff':
-        img=np.asarray(np.float32(TiffFile(file_name).asarray()))
-        img = np.tile(np.expand_dims(img,axis=-1),(1,1,3))
-        return img/np.max(img)
-    img = np.asarray(np.float32(imread(file_name)))
-    img = np.tile(np.expand_dims(img,axis=-1),(1,1,3))
-    return ((img/np.max(img))*255).astype(int)
-
-
-def list_file_deepcell(direc_name,training_direcs,raw_image_direc,channel_names):
-    filelist=[]
+def list_file_deepcell(direc_name, training_direcs, raw_image_direc, channel_names):
+    filelist = []
     for b, direc in enumerate(training_direcs):
         imglist = os.listdir(os.path.join(direc_name, direc, raw_image_direc))
         #print(imglist)
@@ -274,43 +261,6 @@ def list_file_deepcell(direc_name,training_direcs,raw_image_direc,channel_names)
                 image_file = os.path.join(direc_name, direc, raw_image_direc, img)
                 filelist.append(image_file)
     return sorted(filelist)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def makedirs(path):
@@ -362,15 +312,16 @@ def create_models(backbone_retinanet, num_classes, weights, multi_gpu=0, freeze_
     """
     modifier = freeze_model if freeze_backbone else None
 
-    # Keras recommends initialising a multi-gpu model on the CPU to ease weight sharing, and to prevent OOM errors.
-    # optionally wrap in a parallel model
+    # Keras recommends initialising a multi-gpu model on the CPU to ease weight
+    # sharing, and to prevent OOM errors.  Optionally wrap in a parallel model
     if multi_gpu > 1:
         from keras.utils import multi_gpu_model
         with tf.device('/cpu:0'):
             model = model_with_weights(backbone_retinanet(num_classes, modifier=modifier), weights=weights, skip_mismatch=True)
         training_model = multi_gpu_model(model, gpus=multi_gpu)
     else:
-        model          = model_with_weights(backbone_retinanet(num_classes, modifier=modifier), weights=weights, skip_mismatch=True)
+        backbone = backbone_retinanet(num_classes, modifier=modifier)
+        model = model_with_weights(backbone, weights=weights, skip_mismatch=True)
         training_model = model
 
     # make prediction model
@@ -379,12 +330,11 @@ def create_models(backbone_retinanet, num_classes, weights, multi_gpu=0, freeze_
     # compile model
     training_model.compile(
         loss={
-            'regression'    : losses.smooth_l1(),
+            'regression': losses.smooth_l1(),
             'classification': losses.focal()
         },
         optimizer=keras.optimizers.adam(lr=1e-5, clipnorm=0.001)
     )
-
     return model, training_model, prediction_model
 
 
@@ -407,16 +357,15 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
 
     if args.tensorboard_dir:
         tensorboard_callback = keras.callbacks.TensorBoard(
-            log_dir                = args.tensorboard_dir,
-            histogram_freq         = 0,
-            batch_size             = args.batch_size,
-            write_graph            = True,
-            write_grads            = False,
-            write_images           = False,
-            embeddings_freq        = 0,
-            embeddings_layer_names = None,
-            embeddings_metadata    = None
-        )
+            log_dir=args.tensorboard_dir,
+            histogram_freq=0,
+            batch_size=args.batch_size,
+            write_graph=True,
+            write_grads=False,
+            write_images=False,
+            embeddings_freq = 0,
+            embeddings_layer_names=None,
+            embeddings_metadata=None)
         callbacks.append(tensorboard_callback)
 
     if args.evaluation and validation_generator:
@@ -448,14 +397,14 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
         callbacks.append(checkpoint)
 
     callbacks.append(keras.callbacks.ReduceLROnPlateau(
-        monitor  = 'loss',
-        factor   = 0.1,
-        patience = 2,
-        verbose  = 1,
-        mode     = 'auto',
-        epsilon  = 0.0001,
-        cooldown = 0,
-        min_lr   = 0
+        monitor='loss',
+        factor=0.1,
+        patience=2,
+        verbose=1,
+        mode='auto',
+        epsilon=0.0001,
+        cooldown=0,
+        min_lr=0
     ))
 
     return callbacks
@@ -469,10 +418,10 @@ def create_generators(args, preprocess_image):
         preprocess_image : Function that preprocesses an image for the network.
     """
     common_args = {
-        'batch_size'       : args.batch_size,
-        'image_min_side'   : args.image_min_side,
-        'image_max_side'   : args.image_max_side,
-        'preprocess_image' : preprocess_image,
+        'batch_size': args.batch_size,
+        'image_min_side': args.image_min_side,
+        'image_max_side': args.image_max_side,
+        'preprocess_image': preprocess_image,
     }
 
     # create random transform generator for augmenting training data
@@ -487,8 +436,7 @@ def create_generators(args, preprocess_image):
             min_scaling=(0.9, 0.9),
             max_scaling=(1.1, 1.1),
             flip_x_chance=0.5,
-            flip_y_chance=0.5,
-        )
+            flip_y_chance=0.5)
     else:
         transform_generator = random_transform_generator(flip_x_chance=0.5)
 
@@ -497,7 +445,7 @@ def create_generators(args, preprocess_image):
             args.annotations,
             args.classes,
             **common_args
-        )   
+        )
 
         if args.val_annotations:
             validation_generator = CSVGenerator(
@@ -524,20 +472,24 @@ def check_args(parsed_args):
     """
 
     if parsed_args.multi_gpu > 1 and parsed_args.batch_size < parsed_args.multi_gpu:
-        raise ValueError(
-            "Batch size ({}) must be equal to or higher than the number of GPUs ({})".format(parsed_args.batch_size,
-                                                                                             parsed_args.multi_gpu))
+        raise ValueError('Batch size ({}) must be equal to or higher than '
+                         'the number of GPUs ({})'.format(
+                             parsed_args.batch_size,
+                             parsed_args.multi_gpu))
 
     if parsed_args.multi_gpu > 1 and parsed_args.snapshot:
-        raise ValueError(
-            "Multi GPU training ({}) and resuming from snapshots ({}) is not supported.".format(parsed_args.multi_gpu,
-                                                                                                parsed_args.snapshot))
+        raise ValueError('Multi GPU training ({}) and resuming from snapshots '
+                         '({}) is not supported.'.format(
+                             parsed_args.multi_gpu,
+                             parsed_args.snapshot))
 
     if parsed_args.multi_gpu > 1 and not parsed_args.multi_gpu_force:
-        raise ValueError("Multi-GPU support is experimental, use at own risk! Run with --multi-gpu-force if you wish to continue.")
+        raise ValueError('Multi-GPU support is experimental, use at own risk! '
+                         'Run with --multi-gpu-force if you wish to continue.')
 
     if 'resnet' not in parsed_args.backbone:
-        warnings.warn('Using experimental backbone {}. Only resnet50 has been properly tested.'.format(parsed_args.backbone))
+        warnings.warn('Using experimental backbone {}. Only resnet50 has been '
+                      'properly tested.'.format(parsed_args.backbone))
 
     return parsed_args
 
@@ -545,10 +497,9 @@ def check_args(parsed_args):
 def parse_args(args):
     """ Parse the arguments.
     """
-    parser     = argparse.ArgumentParser(description='Simple training script for training a RetinaNet network.')
+    parser = argparse.ArgumentParser(description='Simple training script for training a RetinaNet network.')
     subparsers = parser.add_subparsers(help='Arguments for specific dataset types.', dest='dataset_type')
     subparsers.required = True
-
 
     def csv_list(string):
         return string.split(',')
@@ -562,25 +513,25 @@ def parse_args(args):
     csv_parser_run.add_argument('run_path', help='Path to folder containing test data')
     csv_parser_run.add_argument('model_path',help='Path to the model(.h5) file')
     csv_parser_run.add_argument('--save_path', help='Path to save data', default='./test_output')
- 
+
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('--snapshot',          help='Resume training from a snapshot.')
-    group.add_argument('--imagenet-weights',  help='Initialize the model with pretrained imagenet weights. This is the default behaviour.', action='store_const', const=True, default=True)
-    group.add_argument('--weights',           help='Initialize the model with weights from a file.')
-    group.add_argument('--no-weights',        help='Don\'t initialize the model with any weights.', dest='imagenet_weights', action='store_const', const=False)
+    group.add_argument('--snapshot', help='Resume training from a snapshot.')
+    group.add_argument('--imagenet-weights', help='Initialize the model with pretrained imagenet weights. This is the default behaviour.', action='store_const', const=True, default=True)
+    group.add_argument('--weights', help='Initialize the model with weights from a file.')
+    group.add_argument('--no-weights', help='Don\'t initialize the model with any weights.', dest='imagenet_weights', action='store_const', const=False)
 
-    parser.add_argument('--backbone',        help='Backbone model used by retinanet.', default='resnet50', type=str)
-    parser.add_argument('--batch-size',      help='Size of the batches.', default=1, type=int)
-    parser.add_argument('--gpu',             help='Id of the GPU to use (as reported by nvidia-smi).')
-    parser.add_argument('--multi-gpu',       help='Number of GPUs to use for parallel processing.', type=int, default=0)
+    parser.add_argument('--backbone', help='Backbone model used by retinanet.', default='resnet50', type=str)
+    parser.add_argument('--batch-size', help='Size of the batches.', default=1, type=int)
+    parser.add_argument('--gpu', help='Id of the GPU to use (as reported by nvidia-smi).')
+    parser.add_argument('--multi-gpu', help='Number of GPUs to use for parallel processing.', type=int, default=0)
     parser.add_argument('--multi-gpu-force', help='Extra flag needed to enable (experimental) multi-gpu support.', action='store_true')
-    parser.add_argument('--epochs',          help='Number of epochs to train.', type=int, default=50)
-    parser.add_argument('--steps',           help='Number of steps per epoch.', type=int, default=10000)
-    parser.add_argument('--snapshot-path',   help='Path to store snapshots of models during training (defaults to \'./snapshots\')', default='./snapshots')
+    parser.add_argument('--epochs', help='Number of epochs to train.', type=int, default=50)
+    parser.add_argument('--steps', help='Number of steps per epoch.', type=int, default=10000)
+    parser.add_argument('--snapshot-path', help='Path to store snapshots of models during training (defaults to \'./snapshots\')', default='./snapshots')
     parser.add_argument('--tensorboard-dir', help='Log directory for Tensorboard output', default='./logs')
-    parser.add_argument('--no-snapshots',    help='Disable saving snapshots.', dest='snapshots', action='store_false')
-    parser.add_argument('--no-evaluation',   help='Disable per epoch evaluation.', dest='evaluation', action='store_false')
+    parser.add_argument('--no-snapshots', help='Disable saving snapshots.', dest='snapshots', action='store_false')
+    parser.add_argument('--no-evaluation', help='Disable per epoch evaluation.', dest='evaluation', action='store_false')
     parser.add_argument('--freeze-backbone', help='Freeze training of backbone layers.', action='store_true')
     parser.add_argument('--random-transform', help='Randomly transform image and annotations.', action='store_true')
     parser.add_argument('--image-min-side', help='Rescale the image so the smallest side is min_side.', type=int, default=800)
@@ -590,7 +541,6 @@ def parse_args(args):
 
 
 def main(args=None):
-
     # parse arguments
     if args is None:
         args = sys.argv[1:]
@@ -603,10 +553,10 @@ def main(args=None):
     check_keras_version()
 
     if args.dataset_type == 'run':
-    	model = models.load_model(args.model_path, backbone_name=args.backbone,convert=True)
+    	model = models.load_model(args.model_path, backbone_name=args.backbone, convert=True)
     	labels_to_names = {0: 'cell'}
     	makedirs(args.save_path)
-    	test_imlist=os.walk(args.run_path).next()[2]
+    	test_imlist = os.walk(args.run_path).next()[2]
     	for testimgcnt,img_path in enumerate(test_imlist):
 
 		    image = get_image(img_path)
@@ -623,7 +573,7 @@ def main(args=None):
 		    # preprocess image for network
 		    image = preprocess_image(image)
 		    #print(np.unique(image))
-		    image2=image
+		    image2 = image
 		    image, scale = resize_image(image)
 		    print(scale)
 		    # process image
@@ -649,54 +599,48 @@ def main(args=None):
 		        draw_caption(draw2, b, caption)
 		    plt.imsave(os.path.join(args.save_path,"retinanet_output_"+str(testimgcnt)),draw2)
 
-
-
-
     # optionally choose specific GPU
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     keras.backend.tensorflow_backend.set_session(get_session())
 
-
-    'Getting the data now'
     direc_name = "/data/data/cells/HeLa/S3"
     training_direcs = ['set0']
     raw_image_direc = 'raw'
     annoted_image_direc = 'annotated_unique'
     channel_names = ['FITC']
-    train_imlist=list_file_deepcell(
-        direc_name = direc_name,
-        training_direcs = training_direcs,
-        raw_image_direc = raw_image_direc,
-        channel_names = channel_names)
+    train_imlist = list_file_deepcell(
+        direc_name=direc_name,
+        training_direcs=training_direcs,
+        raw_image_direc=raw_image_direc,
+        channel_names=channel_names)
     print(len(train_imlist))
-    print("----------------")
-    train_anotedlist=list_file_deepcell(
-        direc_name = direc_name,
-        training_direcs = training_direcs,
-        raw_image_direc = annoted_image_direc,
-        channel_names = ['corrected'])
-    print(len(train_anotedlist))
+    print('----------------')
+    train_annotatedlist = list_file_deepcell(
+        direc_name=direc_name,
+        training_direcs=training_direcs,
+        raw_image_direc=annoted_image_direc,
+        channel_names=['corrected'])
+    print(len(train_annotatedlist))
 
     'Making the annotations and organising them'
     cell_data=[]
-    for cnt,file in enumerate(train_anotedlist):
-        image=cv2.imread(file,0)
-        p=regionprops(label(image))
-        cell_count=[]
+    for cnt, f in enumerate(train_annotatedlist):
+        image = cv2.imread(f, 0)
+        p = regionprops(label(image))
+        cell_count = []
         for index in range(len(np.unique(label(image)))-1):
-            rect = [train_imlist[cnt],p[index].bbox[1],p[index].bbox[0],p[index].bbox[3],p[index].bbox[2],"cell"]
+            rect = [train_imlist[cnt], p[index].bbox[1], p[index].bbox[0], p[index].bbox[3], p[index].bbox[2], 'cell']
             cell_data.append(rect)
             cell_count.append(rect)
-        print("-----------------Completed "+file+"-----------")
-        print("The number of cells in this image : "+str(cell_count))
+        print('-----------------Completed {}-----------'.format(f))
+        print('The number of cells in this image:', cell_count)
     print(len(cell_data))
 
-
-    'Writing it into a csv file'
+    # Writing it into a csv file
     with open(args.annotations, 'w') as csvFile:
-        writer = csv.writer(csvFile,dialect = 'excel')
-        cell_data=tuple(cell_data)
+        writer = csv.writer(csvFile, dialect='excel')
+        cell_data = tuple(cell_data)
         writer.writerows(cell_data)
 
     csvFile.close()
@@ -704,8 +648,8 @@ def main(args=None):
     df.to_csv(args.annotations, index=False)
 
     with open(args.classes, 'w') as csvFile:
-        writer = csv.writer(csvFile,dialect = 'excel')
-        writer.writerows(tuple([["cell",0]]))
+        writer = csv.writer(csvFile, dialect='excel')
+        writer.writerows(tuple([['cell', 0]]))
 
     csvFile.close()
 
@@ -715,8 +659,8 @@ def main(args=None):
     # create the model
     if args.snapshot is not None:
         print('Loading model, this may take a second...')
-        model            = models.load_model(args.snapshot, backbone_name=args.backbone)
-        training_model   = model
+        model = models.load_model(args.snapshot, backbone_name=args.backbone)
+        training_model = model
         prediction_model = retinanet_bbox(model=model)
     else:
         weights = args.weights
@@ -730,8 +674,7 @@ def main(args=None):
             num_classes=train_generator.num_classes(),
             weights=weights,
             multi_gpu=args.multi_gpu,
-            freeze_backbone=args.freeze_backbone
-        )
+            freeze_backbone=args.freeze_backbone)
 
     # print model summary
     print(model.summary())
@@ -748,8 +691,7 @@ def main(args=None):
         training_model,
         prediction_model,
         validation_generator,
-        args,
-    )
+        args)
 
     # start training
     training_model.fit_generator(
@@ -757,8 +699,7 @@ def main(args=None):
         steps_per_epoch=args.steps,
         epochs=args.epochs,
         verbose=1,
-        callbacks=callbacks,
-    )
+        callbacks=callbacks)
 
 
 if __name__ == '__main__':
