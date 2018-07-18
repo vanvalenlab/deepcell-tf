@@ -19,14 +19,12 @@ from deepcell.utils.transform_utils import rotate_array_90
 from deepcell.utils.transform_utils import rotate_array_180
 from deepcell.utils.transform_utils import rotate_array_270
 
-TEST_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-RES_DIR = os.path.join(TEST_DIR, 'resources')
 
-# Load images
-TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
-TEST_IMG_90 = imread(os.path.join(RES_DIR, 'rotated_90.tif'))
-TEST_IMG_180 = imread(os.path.join(RES_DIR, 'rotated_180.tif'))
-TEST_IMG_270 = imread(os.path.join(RES_DIR, 'rotated_270.tif'))
+def _get_image(img_h=300, img_w=300):
+    bias = np.random.rand(img_w, img_h) * 64
+    variance = np.random.rand(img_w, img_h) * (255 - 64)
+    img = np.random.rand(img_w, img_h) * variance + bias
+    return img
 
 
 class TransformUtilsTest(test.TestCase):
@@ -64,25 +62,33 @@ class TransformUtilsTest(test.TestCase):
             assert np.all(np.argmax(one_hot, -1).reshape(label.shape) == label)
 
     def test_rotate_array_0(self):
-        unrotated_image = rotate_array_0(TEST_IMG)
-        np_test.assert_array_equal(unrotated_image, TEST_IMG)
+        img = _get_image()
+        unrotated_image = rotate_array_0(img)
+        np_test.assert_array_equal(unrotated_image, img)
 
     def test_rotate_array_90(self):
-        rotated_image = rotate_array_90(TEST_IMG)
-        np_test.assert_array_equal(rotated_image, TEST_IMG_90)
+        img = _get_image()
+        rotated_image = rotate_array_90(img)
+        expected_image = np.rot90(img)
+        np_test.assert_array_equal(rotated_image, expected_image)
 
     def test_rotate_array_180(self):
-        rotated_image = rotate_array_180(TEST_IMG)
-        np_test.assert_array_equal(rotated_image, TEST_IMG_180)
+        img = _get_image()
+        rotated_image = rotate_array_180(img)
+        expected_image = np.rot90(np.rot90(img))
+        np_test.assert_array_equal(rotated_image, expected_image)
 
     def test_rotate_array_270(self):
-        rotated_image = rotate_array_270(TEST_IMG)
-        np_test.assert_array_equal(rotated_image, TEST_IMG_270)
+        img = _get_image()
+        rotated_image = rotate_array_270(img)
+        expected_image = np.rot90(np.rot90(np.rot90(img)))
+        np_test.assert_array_equal(rotated_image, expected_image)
 
     def test_rotate_array_90_and_180(self):
-        rotated_image1 = rotate_array_90(TEST_IMG)
+        img = _get_image()
+        rotated_image1 = rotate_array_90(img)
         rotated_image1 = rotate_array_90(rotated_image1)
-        rotated_image2 = rotate_array_180(TEST_IMG)
+        rotated_image2 = rotate_array_180(img)
         np_test.assert_array_equal(rotated_image1, rotated_image2)
 
 if __name__ == '__main__':
