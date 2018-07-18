@@ -24,7 +24,6 @@ RES_DIR = os.path.join(TEST_DIR, 'resources')
 
 # Load images
 TEST_IMG = imread(os.path.join(RES_DIR, 'phase.tif'))
-TEST_MASK = imread(os.path.join(RES_DIR, 'feature_1.tif'))
 TEST_IMG_90 = imread(os.path.join(RES_DIR, 'rotated_90.tif'))
 TEST_IMG_180 = imread(os.path.join(RES_DIR, 'rotated_180.tif'))
 TEST_IMG_270 = imread(os.path.join(RES_DIR, 'rotated_270.tif'))
@@ -32,13 +31,15 @@ TEST_IMG_270 = imread(os.path.join(RES_DIR, 'rotated_270.tif'))
 
 class TransformUtilsTest(test.TestCase):
     def test_distance_transform_2d(self):
+        mask = np.random.randint(2, size=(300, 300, 1))
+
         # TODO: questionable test results.  Should it be bin_size - 1?
         bin_size = 3
-        distance = distance_transform_2d(TEST_MASK, bins=bin_size)
+        distance = distance_transform_2d(mask, bins=bin_size)
         assert np.unique(distance).size == bin_size - 1
 
         bin_size = 4
-        distance = distance_transform_2d(TEST_MASK, bins=bin_size)
+        distance = distance_transform_2d(mask, bins=bin_size)
         assert np.unique(distance).size == bin_size - 1
 
     def test_to_categorical(self):
