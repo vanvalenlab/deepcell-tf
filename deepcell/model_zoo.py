@@ -27,7 +27,6 @@ from .layers import DilatedMaxPool2D
 from .layers import TensorProd2D, TensorProd3D
 from .layers import Location, Location3D
 from .layers import ImageNormalization2D, ImageNormalization3D
-from .utils.train_utils import axis_softmax
 
 
 """
@@ -886,7 +885,7 @@ def disc_net(input_shape=(256, 256, 1), seg_model=None, n_features=16, reg=1e-5,
     else:
         input2 = img_norm
 
-    input3 = Concatenate(axis=-1)([input2, seg_output])
+    input3 = Concatenate(axis=channel_axis)([input2, seg_output])
 
     conv1 = Conv2D(32, (3, 3), dilation_rate=1, kernel_initializer=init, padding='same', kernel_regularizer=l2(reg))(input3)
     norm1 = BatchNormalization(axis=channel_axis)(conv1)
@@ -1161,7 +1160,7 @@ def resnet_custom(input_shape=(2, 512, 512), batch_shape=None, n_features=3, reg
         input_shape = batch_shape[1:]
     img_norm = ImageNormalization2D(norm_method=norm_method, filter_size=filter_size)(inputs)
     loc0 = Location(in_shape=input_shape)(img_norm)
-    merge0 = Concatenate(axis=1)([img_norm, loc0])
+    merge0 = Concatenate(axis=bn_axis)([img_norm, loc0])
 
     # inputs = Input(shape=input_shape)
     x = Conv2D(64, (7, 7), strides=(2, 2), padding='same', name='conv1')(merge0)
@@ -1196,7 +1195,7 @@ def resnet_custom(input_shape=(2, 512, 512), batch_shape=None, n_features=3, reg
     x = TensorProd2D(1024, n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(x)
 
     if softmax:
-        x = Activation(axis_softmax)(x)
+        x = Softmax(axis=bn_axis)(x)
 
     model = Model(inputs=inputs, outputs=x)
 
@@ -1417,7 +1416,7 @@ def bn_dense_multires_feature_net_3D(batch_shape=(1, 1, 10, 256, 256), n_blocks=
     tensor_prod3 = TensorProd3D(64, n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(act2)
 
     if softmax:
-        tensor_prod3 = Activation(axis_softmax)(tensor_prod3)
+        tensor_prod3 = Softmax(axis=channel_axis)(tensor_prod3)
 
     final_layer = tensor_prod3
 
