@@ -604,7 +604,12 @@ def train_model_sample_movie(model=None, dataset=None, optimizer=None,
     train_dict['y'] = to_categorical(train_dict['y'], n_classes)
     y_test = to_categorical(y_test, n_classes)
 
-    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+    def loss_function(y_true, y_pred):
+        return weighted_categorical_crossentropy(y_true, y_pred,
+                                                 n_classes=n_classes,
+                                                 from_logits=False)
+
+    model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     print('Using real-time data augmentation.')
 
