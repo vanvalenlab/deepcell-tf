@@ -39,9 +39,9 @@ def distance_transform_2d(mask, bins=16):
     # bin each distance value into a class from 1 to bins
     min_dist = np.amin(distance)
     max_dist = np.amax(distance)
-    bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins)
-    distance = np.digitize(distance, bins)
-    return distance
+    bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins + 1)
+    distance = np.digitize(distance, bins, right=True)
+    return distance - 1  # minimum distance should be 0, not 1
 
 
 def distance_transform_3d(maskstack, bins=16):
@@ -92,9 +92,9 @@ def distance_transform_3d(maskstack, bins=16):
 
     min_dist = np.amin(distance.flatten())
     max_dist = np.amax(distance.flatten())
-    bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins)
-    distance = np.digitize(distance, bins)
-    return distance
+    bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins + 1)
+    distance = np.digitize(distance, bins, right=True)
+    return distance - 1  # minimum distance should be 0, not 1
 
 
 def rotate_array_0(arr):
