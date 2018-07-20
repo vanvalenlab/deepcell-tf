@@ -107,7 +107,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         'win_y': win_y
     }
 
-    if win_z:
+    if win_z is not None:
         train_dict['win_z'] = win_z
 
     return train_dict, (X_test, y_test)
