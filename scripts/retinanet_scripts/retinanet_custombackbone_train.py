@@ -65,64 +65,6 @@ def _read_classes(classname):
     result[str(classname)] = 0
     return result
 
-def list_file_deepcell(direc_name,training_direcs,raw_image_direc,channel_names):
-    filelist=[]
-    for b, direc in enumerate(training_direcs):
-        imglist = os.listdir(os.path.join(direc_name, direc, raw_image_direc))
-        #print(imglist)
-        for c, channel in enumerate(channel_names):
-            for img in imglist:
-                # if channel string is NOT in image file name, skip it.
-                if not fnmatch(img, '*{}*'.format(channel)):
-                    continue
-                image_file = os.path.join(direc_name, direc, raw_image_direc, img)
-                filelist.append(image_file)
-    return sorted(filelist)
-
-def Genrate_Subimage(img_pathstack,HorizontalP,VerticalP,flag):
-    sub_img=[]
-    for img_path in img_pathstack:
-        img=np.asarray(np.float32(imread(img_path)))
-        #img=((img/np.max(img))*255).astype(int)
-        if flag:
-            img=(img/np.max(img))
-        vway=np.zeros(VerticalP+1)      #The dimentions of vertical cuts
-        hway=np.zeros(HorizontalP+1)    #The dimentions of horizontal cuts
-        vcnt=0                          #The initial value for vertical
-        hcnt=0                          #The initial value for horizontal
-
-        for i in range(VerticalP+1):
-            vway[i]=int(vcnt)
-            vcnt=vcnt+(img.shape[1]/VerticalP)
-        #print(vway)
-
-        for j in range(HorizontalP+1):
-            hway[j]=int(hcnt)
-            hcnt=hcnt+(img.shape[0]/HorizontalP)
-        #print(hway)
-
-
-        vb=0
-        columns = 5
-        rows = 5
-
-        for i in range(len(hway)-1):
-            for j in range(len(vway)-1):
-                vb=vb+1
-
-        for i in range(len(hway)-1):
-            for j in range(len(vway)-1):
-                sub_img.append(img[int(hway[i]):int(hway[i+1]),int(vway[j]):int(vway[j+1])])
-    sub_img2=[]
-    print(len(sub_img))
-    if flag:
-        for img in sub_img:
-            sub_img2.append(np.tile(np.expand_dims(img,axis=-1),(1,1,3)))
-        sub_img=sub_img2
-
-    return sub_img
-
-
 
 def _read_annotations(masks_list):
     result = {}
@@ -146,6 +88,63 @@ class CSVGenerator(RetinanetGenerator):
         self,
         **kwargs
     ):
+
+        def list_file_deepcell(direc_name,training_direcs,raw_image_direc,channel_names):
+            filelist=[]
+            for b, direc in enumerate(training_direcs):
+                imglist = os.listdir(os.path.join(direc_name, direc, raw_image_direc))
+                #print(imglist)
+                for c, channel in enumerate(channel_names):
+                    for img in imglist:
+                        # if channel string is NOT in image file name, skip it.
+                        if not fnmatch(img, '*{}*'.format(channel)):
+                            continue
+                        image_file = os.path.join(direc_name, direc, raw_image_direc, img)
+                        filelist.append(image_file)
+            return sorted(filelist)
+
+        def Genrate_Subimage(img_pathstack,HorizontalP,VerticalP,flag):
+            sub_img=[]
+            for img_path in img_pathstack:
+                img=np.asarray(np.float32(imread(img_path)))
+                #img=((img/np.max(img))*255).astype(int)
+                if flag:
+                    img=(img/np.max(img))
+                vway=np.zeros(VerticalP+1)      #The dimentions of vertical cuts
+                hway=np.zeros(HorizontalP+1)    #The dimentions of horizontal cuts
+                vcnt=0                          #The initial value for vertical
+                hcnt=0                          #The initial value for horizontal
+
+                for i in range(VerticalP+1):
+                    vway[i]=int(vcnt)
+                    vcnt=vcnt+(img.shape[1]/VerticalP)
+                #print(vway)
+
+                for j in range(HorizontalP+1):
+                    hway[j]=int(hcnt)
+                    hcnt=hcnt+(img.shape[0]/HorizontalP)
+                #print(hway)
+
+
+                vb=0
+                columns = 5
+                rows = 5
+
+                for i in range(len(hway)-1):
+                    for j in range(len(vway)-1):
+                        vb=vb+1
+
+                for i in range(len(hway)-1):
+                    for j in range(len(vway)-1):
+                        sub_img.append(img[int(hway[i]):int(hway[i+1]),int(vway[j]):int(vway[j+1])])
+            sub_img2=[]
+            print(len(sub_img))
+            if flag:
+                for img in sub_img:
+                    sub_img2.append(np.tile(np.expand_dims(img,axis=-1),(1,1,3)))
+                sub_img=sub_img2
+
+            return sub_img
 
         self.image_names = []
         self.image_data  = {}
