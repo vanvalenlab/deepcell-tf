@@ -28,7 +28,7 @@ from tensorflow.python.keras.preprocessing.image import flip_axis
 from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
-from keras_retinanet.utils import retinanet_utils
+import keras_retinanet.utils as retinanet_utils
 
 from .utils.transform_utils import transform_matrix_offset_center
 from .utils.transform_utils import distance_transform_2d
