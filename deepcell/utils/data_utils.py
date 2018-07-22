@@ -829,7 +829,7 @@ def make_training_data_3d(direc_name,
                                  montage_mode=montage_mode)
 
     # Trim annotation images
-    if border_mode == 'valid' and mode != 'sample':
+    if border_mode == 'valid' and output_mode != 'sample':
         y = trim_padding(y, window_size_x, window_size_y, window_size_z)
 
     # Reshape X and y
