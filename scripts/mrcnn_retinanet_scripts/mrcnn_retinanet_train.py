@@ -138,8 +138,8 @@ def create_generators(args):
             'val2017',
             batch_size=args.batch_size,
         )
-    elif args.dataset_type == 'csv':
-        #from ..preprocessing.csv_generator import CSVGenerator
+    elif args.dataset_type == 'train':
+        
 
         train_generator = CSVGenerator(
             transform_generator=transform_generator,
