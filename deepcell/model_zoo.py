@@ -1832,14 +1832,6 @@ def bn_feature_net_1x61x61_3D(n_features=3, n_channels=1, reg=1e-5, init='he_nor
 
 
 def dilated_bn_feature_net_1x61x61_3D(input_shape=(2, 1080, 1280), n_channels=None, flatten=False, batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, norm_method='whole_image'):
-    if n_channels is not None:
-        if K.image_data_format() == 'channels_first':
-            channel_axis = 1
-            input_shape = (n_channels, 1, 61, 61)
-        else:
-            channel_axis = -1
-            input_shape = (1, 61, 61, n_channels)
-
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
     else:
