@@ -25,7 +25,7 @@ class ImageNormalization2D(Layer):
         if self.data_format == 'channels_first':
             self.channel_axis = 1
         else:
-            self.channel_axis = 3 # hardcoded for 2D data
+            self.channel_axis = 3  # hardcoded for 2D data
 
         if isinstance(self.norm_method, str):
             self.norm_method = self.norm_method.lower()
@@ -109,7 +109,7 @@ class ImageNormalization3D(Layer):
         if self.data_format == 'channels_first':
             self.channel_axis = 1
         else:
-            self.channel_axis = 4 # hardcoded for 3D data
+            self.channel_axis = 4  # hardcoded for 3D data
 
         if isinstance(self.norm_method, str):
             self.norm_method = self.norm_method.lower()

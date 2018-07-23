@@ -52,6 +52,7 @@ class Location(Layer):
             loc = tf.stack([loc_x, loc_y], axis=0)
 
         location = tf.expand_dims(loc, 0)
+        location = tf.tile(location, [tf.shape(inputs)[0], 1, 1, 1])
 
         return location
 

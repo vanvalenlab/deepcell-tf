@@ -12,6 +12,7 @@ from __future__ import division
 import matplotlib.pyplot as plt
 from tensorflow.python.keras import backend as K
 
+
 def cf(x_coord, y_coord, sample_image):
     numrows, numcols = sample_image.shape
     col = int(x_coord + 0.5)
@@ -20,6 +21,7 @@ def cf(x_coord, y_coord, sample_image):
         z_coord = sample_image[row, col]
         return 'x=%1.4f, y=%1.4f, z=%1.4f' % (x_coord, y_coord, z_coord)
     return 'x=%1.4f, y=%1.4f' % (x_coord, y_coord)
+
 
 def plot_training_data_2d(X, y, max_plotted=5):
     data_format = K.image_data_format()
@@ -48,6 +50,7 @@ def plot_training_data_2d(X, y, max_plotted=5):
             ax[i, j].axes.get_yaxis().set_visible(False)
 
     plt.show()
+
 
 def plot_training_data_3d(X, y, num_image_stacks, frames_to_display=5):
     data_format = K.image_data_format()
