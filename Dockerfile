@@ -39,6 +39,13 @@ RUN cd /deepcell-tf/lib && \
     cd keras-retinanet && \
     pip install .
 
+
+# Install Keras Retinanet MRCNN (After Retinanet )
+RUN git clone https://github.com/fizyr/keras-maskrcnn /deepcell-tf/lib/keras-maskrcnn && \
+    cd /deepcell-tf/lib/keras-maskrcnn && \
+    python setup.py install && \
+    cd /deepcell-tf
+
 RUN pip install pandas
 RUN apt-get install -y libsm6
 # Change matplotlibrc file to use the Agg backend
