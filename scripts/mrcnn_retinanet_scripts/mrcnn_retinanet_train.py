@@ -179,9 +179,7 @@ def parse_args(args):
     coco_parser = subparsers.add_parser('coco')
     coco_parser.add_argument('coco_path', help='Path to dataset directory (ie. /tmp/COCO).')
 
-    csv_parser = subparsers.add_parser('csv')
-    csv_parser.add_argument('annotations', help='Path to CSV file containing annotations for training.')
-    csv_parser.add_argument('classes', help='Path to a CSV file containing class label mapping.')
+    csv_parser = subparsers.add_parser('train')
     csv_parser.add_argument('--val-annotations', help='Path to CSV file containing annotations for validation (optional).')
 
     group = parser.add_mutually_exclusive_group()
