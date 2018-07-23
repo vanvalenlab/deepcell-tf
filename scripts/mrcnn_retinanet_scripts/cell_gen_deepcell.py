@@ -1,5 +1,5 @@
 
-from keras_maskrcnn.preprocessing.generator import Generator
+from keras_mrcnn_generator import Generator
 from keras_retinanet.utils.image import read_image_bgr
 
 import numpy as np
