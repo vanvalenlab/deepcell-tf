@@ -1,4 +1,9 @@
 
+'''
+Custom Image loader, used for converting desired image and mask files into a format
+accepted by the Retinanet MRCNN model.
+'''
+
 from keras_mrcnn_generator import Generator
 from keras_retinanet.utils.image import read_image_bgr
 

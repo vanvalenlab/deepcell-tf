@@ -1,4 +1,6 @@
-
+'''
+To train Retinanet MRCNN , uses the cell_gen_deepcell file to generate the data used to load in the model.
+'''
 
 import argparse
 import os

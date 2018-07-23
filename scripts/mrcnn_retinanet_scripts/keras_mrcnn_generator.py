@@ -1,17 +1,7 @@
 """
-Copyright 2017-2018 Fizyr (https://fizyr.com)
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+The main Generator object for Retinanet MRCNN.
+It uses data augmentation methods from Retinanet Library and a custom python file creating
+anchor boxes for the bounding box coordinates as well as the mask.
 """
 
 import numpy as np
@@ -45,8 +35,8 @@ class Generator(object):
         batch_size=1,
         group_method='ratio',  # one of 'none', 'random', 'ratio'
         shuffle_groups=True,
-        image_min_side=800,
-        image_max_side=1333,
+        image_min_side=200,
+        image_max_side=200,
         transform_parameters=None,
         compute_shapes=guess_shapes,
         compute_anchor_targets=anchor_targets_bbox,
