@@ -124,7 +124,7 @@ def deepcell_data_load():
     
     
 
-def _read_annotations(csv_reader, classes,maskarr):
+def _read_annotations(maskarr):
     result = {}
     #store = deepcell_data_load()
     for cnt,image in enumerate(maskarr):
@@ -158,8 +158,6 @@ def _open_for_csv(path):
 class CSVGenerator(Generator):
     def __init__(
         self,
-        csv_data_file,
-        csv_class_file,
         base_dir=None,
         **kwargs
     ):
@@ -171,26 +169,16 @@ class CSVGenerator(Generator):
         store = deepcell_data_load()
         self.image_stack = store[0]
         # Take base_dir from annotations file if not explicitly specified.
-        if self.base_dir is None:
-            self.base_dir = os.path.dirname(csv_data_file)
 
         # parse the provided class file
-        try:
-            with _open_for_csv(csv_class_file) as file:
-                self.classes = _read_classes('cell')
-        except ValueError as e:
-            raise_from(ValueError('invalid CSV class file: {}: {}'.format(csv_class_file, e)), None)
+        self.classes = _read_classes('cell')
 
         self.labels = {}
         for key, value in self.classes.items():
             self.labels[value] = key
 
-        # csv with img_path, x1, y1, x2, y2, class_name, mask_path
-        try:
-            with _open_for_csv(csv_data_file) as file:
-                self.image_data = _read_annotations(csv.reader(file, delimiter=','), self.classes,store[1])
-        except ValueError as e:
-            raise_from(ValueError('invalid CSV annotations file: {}: {}'.format(csv_data_file, e)), None)
+        self.image_data = _read_annotations(store[1])
+
         self.image_names = list(self.image_data.keys())
 
         super(CSVGenerator, self).__init__(**kwargs)

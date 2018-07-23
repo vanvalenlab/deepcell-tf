@@ -142,16 +142,12 @@ def create_generators(args):
         #from ..preprocessing.csv_generator import CSVGenerator
 
         train_generator = CSVGenerator(
-            args.annotations,
-            args.classes,
             transform_generator=transform_generator,
             batch_size=args.batch_size
         )
 
         if args.val_annotations:
             validation_generator = CSVGenerator(
-                args.val_annotations,
-                args.classes,
                 batch_size=args.batch_size
             )
         else:
