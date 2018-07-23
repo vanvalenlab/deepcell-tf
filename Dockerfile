@@ -46,7 +46,6 @@ RUN git clone https://github.com/fizyr/keras-maskrcnn /deepcell-tf/lib/keras-mas
     python setup.py install && \
     cd /deepcell-tf
 
-RUN pip install pandas
 RUN apt-get install -y libsm6
 # Change matplotlibrc file to use the Agg backend
 RUN echo "backend : Agg" > /usr/local/lib/python3.5/dist-packages/matplotlib/mpl-data/matplotlibrc
