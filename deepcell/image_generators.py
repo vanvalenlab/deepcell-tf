@@ -1587,32 +1587,20 @@ class RetinanetGenerator(object):
             image_shape, shapes_callback=self.compute_shapes)
 
     def compute_targets(self, image_group, annotations_group):
-        """
-        Compute target outputs for the network using images and their annotations
+        """ Compute target outputs for the network using images and their annotations.
         """
         # get the max image shape
-        max_shape = tuple(max(im.shape[x] for im in image_group) for x in range(3))
-        anchors = self.generate_anchors(max_shape)
+        max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
+        anchors   = self.generate_anchors(max_shape)
 
-        regression_shape = (self.batch_size, anchors.shape[0], 4 + 1)
-        regression = np.empty(regression_shape, dtype=K.floatx())
+        labels_batch, regression_batch, _ = self.compute_anchor_targets(
+            anchors,
+            image_group,
+            annotations_group,
+            self.num_classes()
+        )
 
-        label_shape = (self.batch_size, anchors.shape[0], self.num_classes() + 1)
-        labels = np.empty(label_shape, dtype=K.floatx())
-
-        # compute labels and regression targets
-        for i, (image, annotations) in enumerate(zip(image_group, annotations_group)):
-            # compute regression targets
-            labels[i, :, :-1], annotations, labels[i, :, -1] = self.compute_anchor_targets(
-                anchors,
-                annotations,
-                self.num_classes(),
-                mask_shape=image.shape)
-            regression[i, :, :-1] = retinanet_utils.anchors.bbox_transform(anchors, annotations)
-            # copy the anchor states to the regression batch
-            regression[i, :, -1] = labels[i, :, -1]
-
-        return [regression, labels]
+        return [regression_batch, labels_batch]
 
     def compute_input_output(self, group):
         """Compute inputs and target outputs for the network"""
