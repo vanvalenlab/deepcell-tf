@@ -418,7 +418,7 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
                      expt='', it=0, batch_size=1, n_epoch=100,
                      direc_save='/data/models', direc_data='/data/npz_data',
                      lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-                     rotation_range=0, flip=True, shear=0, class_weight=None):
+                     rotation_range=0, flip=True, shear=0, class_weight=None, zoom_range=[0.5,2]):
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
 
@@ -454,7 +454,8 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
         rotation_range=180,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=0,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=True,  # randomly flip images
-        vertical_flip=True)  # randomly flip images
+        vertical_flip=True,  # randomly flip images
+        zoom_range = zoom_range)  # randomly zoom in/out images
 
     datagen_test = DiscDataGenerator(
         rotation_range=0,
