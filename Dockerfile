@@ -1,7 +1,7 @@
 # Use the nvidia tensorflow:18.07-py3 image as the parent image
-FROM nvcr.io/vvlab/tensorflow:18.07-py3
+FROM nvcr.io/vvlab/tensorflow:18.04-py3
 # System maintenance
-RUN apt-get update && apt-get install -y
+RUN apt-get update && apt-get install -y \
         python3-tk \
         libsm6 && \
     rm -rf /var/lib/apt/lists/* && \
