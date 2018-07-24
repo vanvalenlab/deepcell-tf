@@ -9,17 +9,10 @@ except ImportError:
 
 
 def _parse_requirements(file_path):
-    pip_ver = pkg_resources.get_distribution('pip').version
-    pip_version = list(map(int, pip_ver.split('.')[:2]))
-    if pip_version >= [6, 0]:
-        raw = pip.req.parse_requirements(file_path,
-                                         session=pip.download.PipSession())
-    else:
-        raw = pip.req.parse_requirements(file_path)
-    return [str(i.req) for i in raw]
+    lineiter = (line.strip() for line in open(file_path))
+    return [line for line in lineiter if line and not line.startswith("#")]
 
 
-# parse_requirements() returns generator of pip.req.InstallRequirement objects
 try:
     install_reqs = _parse_requirements('requirements.txt')
 except Exception:
