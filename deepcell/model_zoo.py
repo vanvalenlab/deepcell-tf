@@ -1827,10 +1827,8 @@ def dilated_bn_feature_net_31x31_3D(input_shape=(1, 1080, 1280, 2), n_features=3
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
-        n_frames = input_shape[2]
     else:
         channel_axis = -1
-        n_frames = input_shape[1]
 
     model = Sequential()
     d = 1
@@ -1855,7 +1853,7 @@ def dilated_bn_feature_net_31x31_3D(input_shape=(1, 1080, 1280, 2), n_features=3
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
 
-    model.add(Conv3D(200, (n_frames, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(Conv3D(200, (1, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
 
@@ -1930,10 +1928,8 @@ def bn_feature_net_61x61_3D(n_features=3, n_channels=1, n_frames=1, reg=1e-5, in
 def dilated_bn_feature_net_61x61_3D(input_shape=(1, 1080, 1280, 2), n_channels=None, flatten=False, batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, norm_method='whole_image'):
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
-        n_frames = input_shape[1]
     else:
         channel_axis = -1
-        n_frames = input_shape[0]
 
     model = Sequential()
 
@@ -1969,7 +1965,7 @@ def dilated_bn_feature_net_61x61_3D(input_shape=(1, 1080, 1280, 2), n_channels=N
     model.add(DilatedMaxPool3D(dilation_rate=d, pool_size=(1, 2, 2)))
     d *= 2
 
-    model.add(Conv3D(200, (n_frames, 4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
+    model.add(Conv3D(200, (1, 4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
 
