@@ -67,7 +67,7 @@ class TensorProd2D(Layer):
             raise ValueError('The channel dimension of the inputs '
                              'should be defined. Found `None`.')
         input_dim = int(input_shape[channel_axis])
-        kernel_shape = tensor_shape.TensorShape((input_dim, self.output_dim))
+        kernel_shape = (input_dim, self.output_dim)
 
         self.kernel = self.add_weight(
             name='kernel',
@@ -113,13 +113,13 @@ class TensorProd2D(Layer):
         return output
 
     def compute_output_shape(self, input_shape):
-
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
             output_shape = tuple(input_shape[0], self.output_dim, input_shape[2], input_shape[3])
         else:
             output_shape = tuple(input_shape[0], input_shape[1], input_shape[2], self.output_dim)
 
-        return output_shape
+        return tensor_shape.TensorShape(output_shape)
 
     def get_config(self):
         config = {
@@ -227,12 +227,13 @@ class TensorProd3D(Layer):
         return output
 
     def compute_output_shape(self, input_shape):
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
             output_shape = tuple(input_shape[0], self.output_dim, input_shape[2], input_shape[3], input_shape[4])
         else:
             output_shape = tuple(input_shape[0], input_shape[1], input_shape[2], input_shape[3], self.output_dim)
 
-        return output_shape
+        return tensor_shape.TensorShape(output_shape)
 
     def get_config(self):
         config = {
