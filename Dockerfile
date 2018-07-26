@@ -1,5 +1,5 @@
-# Use the nvidia tensorflow:18.04-py3 image as the parent image
-FROM nvcr.io/vvlab/tensorflow:18.04-py3
+# Use the nvidia tensorflow:18.07-py3 image as the parent image
+FROM nvcr.io/vvlab/tensorflow:18.07-py3
 
 # System maintenance
 RUN apt update && apt-get install -y python3-tk
