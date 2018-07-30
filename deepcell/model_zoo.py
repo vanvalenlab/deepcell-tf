@@ -1965,7 +1965,7 @@ def dilated_bn_feature_net_61x61_3D(input_shape=(1, 1080, 1280, 2), n_frames=1, 
     model.add(Conv3D(64, (1, 4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
-    model.add(DilatedMaxPool3D(dilation_rate=(1,d,d), pool_size=(1, 2, 2)))
+    model.add(DilatedMaxPool3D(dilation_rate=(1, d, d), pool_size=(1, 2, 2)))
     d *= 2
 
     model.add(Conv3D(64, (1, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
@@ -1975,7 +1975,7 @@ def dilated_bn_feature_net_61x61_3D(input_shape=(1, 1080, 1280, 2), n_frames=1, 
     model.add(Conv3D(64, (1, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
-    model.add(DilatedMaxPool3D(dilation_rate=(1,d,d), pool_size=(1, 2, 2)))
+    model.add(DilatedMaxPool3D(dilation_rate=(1, d, d), pool_size=(1, 2, 2)))
     d *= 2
 
     model.add(Conv3D(64, (1, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
@@ -1985,7 +1985,7 @@ def dilated_bn_feature_net_61x61_3D(input_shape=(1, 1080, 1280, 2), n_frames=1, 
     model.add(Conv3D(64, (1, 3, 3), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
     model.add(BatchNormalization(axis=channel_axis))
     model.add(Activation('relu'))
-    model.add(DilatedMaxPool3D(dilation_rate=(1,d,d), pool_size=(1, 2, 2)))
+    model.add(DilatedMaxPool3D(dilation_rate=(1, d, d), pool_size=(1, 2, 2)))
     d *= 2
 
     model.add(Conv3D(200, (1, 4, 4), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg)))
