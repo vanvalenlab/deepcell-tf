@@ -37,56 +37,31 @@ def _generate_test_masks():
     img_w = img_h = 30
     mask_images = []
     for _ in range(8):
-        imarray = np.random.randint(2, size=(img_w, img_h, 1))
+        imarray = np.random.randint(2, size=(img_w, img_h))
         mask_images.append(imarray)
     return mask_images
 
 
 class TransformUtilsTest(test.TestCase):
     def test_distance_transform_3d(self):
-        unique_mask_stack = []
         mask_stack = np.array(_generate_test_masks())
-        for mask in _generate_test_masks():
-            unique_mask = label(mask)
-            unique_mask_stack.append(unique_mask)
-        unique_mask_stack = np.array(unique_mask_stack)
-        no_channel_mask = np.reshape(mask_stack, unique_mask_stack.shape[:-1])
+        unique_mask_stack = np.zeros(mask_stack.shape)
 
-        K.set_image_data_format('channels_last')
+        for i, mask in enumerate(_generate_test_masks()):
+            unique_mask_stack[i] = label(mask)
+
         bin_size = 3
-        distance = distance_transform_3d(no_channel_mask, bins=bin_size)
+        distance = distance_transform_3d(unique_mask_stack, bins=bin_size)
         assert np.array_equal(np.unique(distance), np.array([0, 1, 2]))
-        assert distance.shape == no_channel_mask.shape
+        assert distance.shape == unique_mask_stack.shape
 
         bin_size = 4
-        distance = distance_transform_3d(no_channel_mask, bins=bin_size)
+        distance = distance_transform_3d(unique_mask_stack, bins=bin_size)
         assert np.array_equal(np.unique(distance), np.array([0, 1, 2, 3]))
-        assert distance.shape == no_channel_mask.shape
-
-        K.set_image_data_format('channels_first')
-        bin_size = 3
-        distance = distance_transform_3d(no_channel_mask, bins=bin_size)
-        assert np.array_equal(np.unique(distance), np.array([0, 1, 2]))
-        assert distance.shape == no_channel_mask.shape
-
-        bin_size = 4
-        distance = distance_transform_3d(no_channel_mask, bins=bin_size)
-        assert np.array_equal(np.unique(distance), np.array([0, 1, 2, 3]))
-        assert distance.shape == no_channel_mask.shape
+        assert distance.shape == unique_mask_stack.shape
 
     def test_distance_transform_2d(self):
         for img in _generate_test_masks():
-            K.set_image_data_format('channels_last')
-            bin_size = 3
-            distance = distance_transform_2d(img, bins=bin_size)
-            assert np.array_equal(np.unique(distance), np.array([0, 1, 2]))
-
-            bin_size = 4
-            distance = distance_transform_2d(img, bins=bin_size)
-            assert np.array_equal(np.unique(distance), np.array([0, 1, 2, 3]))
-
-            K.set_image_data_format('channels_first')
-            img = np.rollaxis(img, 2, 1)
             bin_size = 3
             distance = distance_transform_2d(img, bins=bin_size)
             assert np.array_equal(np.unique(distance), np.array([0, 1, 2]))
