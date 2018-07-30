@@ -13,6 +13,8 @@ import numpy as np
 from scipy import ndimage
 from skimage.measure import label
 from skimage.measure import regionprops
+from skimage.morphology import ball
+from skimage.morphology import binary_erosion
 from tensorflow.python.keras import backend as K
 
 
@@ -44,8 +46,9 @@ def distance_transform_2d(mask, bins=16):
     return distance - 1  # minimum distance should be 0, not 1
 
 
-def distance_transform_3d(maskstack, bins=16):
-    """Transform a label mask into distance classes for a z-stack of images
+def _distance_transform_3d(maskstack, bins=16):
+    """ # DEPRECATED
+    Transform a label mask into distance classes for a z-stack of images
     # Arguments
         mask: a z-stack of label masks (y data)
         bins: the number of transformed distance classes
@@ -90,6 +93,37 @@ def distance_transform_3d(maskstack, bins=16):
         distance[maskstack == cell_label] = normalized_distance
     distance = np.reshape(distance, distance.shape[:-1])  # remove channels again
 
+    min_dist = np.amin(distance.flatten())
+    max_dist = np.amax(distance.flatten())
+    bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins + 1)
+    distance = np.digitize(distance, bins, right=True)
+    return distance - 1  # minimum distance should be 0, not 1
+
+
+def distance_transform_3d(maskstack, bins=4):
+    """
+    Transforms a label mask for a z stack into distance classes
+    Uses scipy's distance_transform_edt
+    """
+    # Erode masks
+    # maskstack = np.squeeze(maskstack)
+    # new_masks = np.zeros(maskstack.shape)
+    # strel = ball(1)
+    # for cell_label in np.unique(maskstack):
+    #     if cell_label != 0:
+    #         temp_img = maskstack == cell_label
+    #         temp_img = binary_erosion(temp_img, strel)
+    #         new_masks += temp_img
+    # maskstack = np.multiply(new_masks, maskstack)
+    distance = ndimage.distance_transform_edt(maskstack, sampling=[0.5, 0.217, 0.217])
+
+    # normalize by maximum distance
+    for cell_label in np.unique(maskstack):
+        if cell_label == 0:  # distance is only found for non-zero regions
+            continue
+        index = np.nonzero(maskstack == cell_label)
+        distance[index] = distance[index] / np.amax(distance[index])
+    # divide into bins
     min_dist = np.amin(distance.flatten())
     max_dist = np.amax(distance.flatten())
     bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins + 1)
