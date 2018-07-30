@@ -2,56 +2,48 @@
 
 import argparse
 import os
+import csv
 import sys
 import warnings
 
-import keras
-import keras.preprocessing.image
-import tensorflow as tf
-
+from PIL import Image
+from six import raise_from
 from fnmatch import fnmatch
+
+import numpy as np
+
+import tensorflow as tf
+from tensorflow.python import keras
+
+import cv2
+
 from skimage.measure import label, regionprops
-import keras_retinanet.layers as layers # noqa: F401
+from skimage.external.tifffile import TiffFile
+from skimage.io import imread
+
 import keras_retinanet.losses as losses
-#import keras_retinanet.models as models
-import custom_backbone as models
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.callbacks.eval import Evaluate
 from keras_retinanet.models.retinanet import retinanet_bbox
-#from deepcell_csvGenerator import CSVGenerator
-from keras_retinanet.preprocessing.kitti import KittiGenerator
-from keras_retinanet.preprocessing.open_images import OpenImagesGenerator
-from keras_retinanet.preprocessing.pascal_voc import PascalVocGenerator
 from keras_retinanet.utils.anchors import make_shapes_callback
 from keras_retinanet.utils.keras_version import check_keras_version
 from keras_retinanet.utils.model import freeze as freeze_model
 from keras_retinanet.utils.transform import random_transform_generator
 
-import cv2
-from skimage.external.tifffile import TiffFile
-
-
+import custom_backbone as models
 from deepcell import RetinanetGenerator
-from keras_retinanet.utils.image import read_image_bgr
 
-import numpy as np
-from PIL import Image
-from six import raise_from
-from skimage.io import imread
-import csv
-import sys
-import os.path
-from skimage.io import imread
 
 def get_image(file_name):
     ext = os.path.splitext(file_name.lower())[-1]
     if ext == '.tif' or ext == '.tiff':
         img=np.asarray(np.float32(TiffFile(file_name).asarray()))
-        img = np.tile(np.expand_dims(img,axis=-1),(1,1,3))
-        return img/np.max(img)
+        img = np.tile(np.expand_dims(img, axis=-1), (1, 1, 3))
+        return img / np.max(img)
     img = np.asarray(np.float32(imread(file_name)))
-    img = np.tile(np.expand_dims(img,axis=-1),(1,1,3))
-    return ((img/np.max(img))*255).astype(int)
+    img = np.tile(np.expand_dims(img, axis=-1), (1, 1, 3))
+    return ((img / np.max(img)) * 255).astype(int)
+
 
 def _parse(value, function, fmt):
     try:
@@ -70,24 +62,21 @@ def _read_annotations(masks_list):
     result = {}
     for cnt,image in enumerate(masks_list):
         result[cnt] = []
-        p=regionprops(label(image))
+        p = regionprops(label(image))
         cell_count=0
         total = len(masks_list)
         for index in range(len(np.unique(label(image)))-1):
-            x1, y1, x2, y2 = p[index].bbox[1],p[index].bbox[0],p[index].bbox[3],p[index].bbox[2]
+            y1, x1, y2, x2 = p[index].bbox
             result[cnt].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2})
-            cell_count=cell_count+1
-        print("-----------------Completed "+str(cnt)+" of "+str(total)+"-----------")
-        print("The number of cells in this image : "+str(cell_count))
+            cell_count += 1
+        print('-----------------Completed {} of {}-----------'.format(cnt, total))
+        print('The number of cells in this image : {}'.format(cell_count))
     return result
 
 
 class CSVGenerator(RetinanetGenerator):
 
-    def __init__(
-        self,
-        **kwargs
-    ):
+    def __init__(self, **kwargs):
 
         def list_file_deepcell(direc_name,training_direcs,raw_image_direc,channel_names):
             filelist=[]
@@ -103,30 +92,27 @@ class CSVGenerator(RetinanetGenerator):
                         filelist.append(image_file)
             return sorted(filelist)
 
-        def Genrate_Subimage(img_pathstack,HorizontalP,VerticalP,flag):
+        def generate_subimage(img_pathstack,HorizontalP,VerticalP,flag):
             sub_img=[]
             for img_path in img_pathstack:
                 img=np.asarray(np.float32(imread(img_path)))
                 #img=((img/np.max(img))*255).astype(int)
                 if flag:
-                    img=(img/np.max(img))
-                vway=np.zeros(VerticalP+1)      #The dimentions of vertical cuts
-                hway=np.zeros(HorizontalP+1)    #The dimentions of horizontal cuts
-                vcnt=0                          #The initial value for vertical
-                hcnt=0                          #The initial value for horizontal
+                    img = (img / np.max(img))
+                vway=np.zeros(VerticalP + 1)  # The dimentions of vertical cuts
+                hway=np.zeros(HorizontalP + 1)  # The dimentions of horizontal cuts
+                vcnt = 0  # The initial value for vertical
+                hcnt = 0  # The initial value for horizontal
 
                 for i in range(VerticalP+1):
                     vway[i]=int(vcnt)
                     vcnt=vcnt+(img.shape[1]/VerticalP)
-                #print(vway)
 
                 for j in range(HorizontalP+1):
                     hway[j]=int(hcnt)
                     hcnt=hcnt+(img.shape[0]/HorizontalP)
-                #print(hway)
 
-
-                vb=0
+                vb = 0
                 columns = 5
                 rows = 5
 
@@ -136,12 +122,12 @@ class CSVGenerator(RetinanetGenerator):
 
                 for i in range(len(hway)-1):
                     for j in range(len(vway)-1):
-                        sub_img.append(img[int(hway[i]):int(hway[i+1]),int(vway[j]):int(vway[j+1])])
+                        sub_img.append(img[int(hway[i]):int(hway[i+1]), int(vway[j]):int(vway[j+1])])
             sub_img2=[]
             print(len(sub_img))
             if flag:
                 for img in sub_img:
-                    sub_img2.append(np.tile(np.expand_dims(img,axis=-1),(1,1,3)))
+                    sub_img2.append(np.tile(np.expand_dims(img,axis=-1), (1, 1, 3)))
                 sub_img=sub_img2
 
             return sub_img
@@ -161,7 +147,7 @@ class CSVGenerator(RetinanetGenerator):
             raw_image_direc = raw_image_direc,
             channel_names = channel_names)
         print(len(train_imlist))
-        print("----------------")
+        print('----------------')
         train_anotedlist=list_file_deepcell(
             direc_name = direc_name,
             training_direcs = training_direcs,
@@ -171,8 +157,8 @@ class CSVGenerator(RetinanetGenerator):
 
         result={}
 
-        self.image_stack = Genrate_Subimage(train_imlist,3,3,True)
-        self.mask_stack  = Genrate_Subimage(train_anotedlist,3,3,False)
+        self.image_stack = generate_subimage(train_imlist, 3, 3, True)
+        self.mask_stack  = generate_subimage(train_anotedlist, 3, 3, False)
 
         self.classes = _read_classes('cell')
 
@@ -237,8 +223,6 @@ class CSVGenerator(RetinanetGenerator):
             boxes[idx, 4] = self.name_to_label(class_name)
 
         return boxes
-
-
 
 
 def makedirs(path):
@@ -440,14 +424,13 @@ def create_generators(args, preprocess_image):
 
 
 def check_args(parsed_args):
-    """ Function to check for inherent contradictions within parsed arguments.
+    """
+    Function to check for inherent contradictions within parsed arguments.
     For example, batch_size < num_gpus
     Intended to raise errors prior to backend initialisation.
-
-    Args
+    # Args
         parsed_args: parser.parse_args()
-
-    Returns
+    # Returns
         parsed_args
     """
 

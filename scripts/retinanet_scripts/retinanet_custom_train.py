@@ -3,44 +3,34 @@
 import argparse
 import os
 import sys
+import csv
 import warnings
-
-import keras
-import keras.preprocessing.image
-import tensorflow as tf
-
 from fnmatch import fnmatch
+from six import raise_from
+from PIL import Image
+
+import cv2
+
+import numpy as np
+import tensorflow as tf
+from tensorflow.python import keras
+from skimage.io import imread
 from skimage.measure import label, regionprops
-import keras_retinanet.layers as layers # noqa: F401
+from skimage.external.tifffile import TiffFile
+
 import keras_retinanet.losses as losses
 import keras_retinanet.models as models
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.callbacks.eval import Evaluate
 from keras_retinanet.models.retinanet import retinanet_bbox
-#from deepcell_csvGenerator import CSVGenerator
-from keras_retinanet.preprocessing.kitti import KittiGenerator
-from keras_retinanet.preprocessing.open_images import OpenImagesGenerator
-from keras_retinanet.preprocessing.pascal_voc import PascalVocGenerator
 from keras_retinanet.utils.anchors import make_shapes_callback
 from keras_retinanet.utils.keras_version import check_keras_version
 from keras_retinanet.utils.model import freeze as freeze_model
 from keras_retinanet.utils.transform import random_transform_generator
 
-import cv2
-from skimage.external.tifffile import TiffFile
-
-
 from deepcell import RetinanetGenerator
 from keras_retinanet.utils.image import read_image_bgr
 
-import numpy as np
-from PIL import Image
-from six import raise_from
-from skimage.io import imread
-import csv
-import sys
-import os.path
-from skimage.io import imread
 
 def get_image(file_name):
     ext = os.path.splitext(file_name.lower())[-1]

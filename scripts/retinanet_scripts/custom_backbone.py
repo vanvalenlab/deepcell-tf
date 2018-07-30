@@ -1,10 +1,11 @@
-import keras
-import keras_retinanet
-import keras_retinanet.models
+"""
+Backbone class
+"""
 
 class Backbone(object):
-    """ This class stores additional information on backbones.
-    """
+
+    """This class stores additional information on backbones."""
+
     def __init__(self, backbone):
         # a dictionary mapping custom layer names to the correct classes
         from keras_retinanet import layers
@@ -25,29 +26,29 @@ class Backbone(object):
         self.validate()
 
     def retinanet(self, *args, **kwargs):
-        """ Returns a retinanet model using the correct backbone.
-        """
+        """Returns a retinanet model using the correct backbone."""
         raise NotImplementedError('retinanet method not implemented.')
 
     def download_imagenet(self):
-        """ Downloads ImageNet weights and returns path to weights file.
-        """
+        """Downloads ImageNet weights and returns path to weights file."""
         raise NotImplementedError('download_imagenet method not implemented.')
 
     def validate(self):
-        """ Checks whether the backbone string is correct.
-        """
+        """Checks whether the backbone string is correct."""
         raise NotImplementedError('validate method not implemented.')
 
     def preprocess_image(self, inputs):
-        """ Takes as input an image and prepares it for being passed through the network.
-        Having this function in Backbone allows other backbones to define a specific preprocessing step.
+        """
+        Takes as input an image and prepares it for being
+        passed through the network. Having this function in Backbone allows
+        other backbones to define a specific preprocessing step.
         """
         raise NotImplementedError('preprocess_image method not implemented.')
 
 
 def backbone(backbone_name):
-    """ Returns a backbone object for the given backbone.
+    """
+    Returns a backbone object for the given backbone.
     """
     if 'resnet' in backbone_name:
         from keras_retinanet.models.resnet import ResNetBackbone as b
@@ -67,8 +68,7 @@ def backbone(backbone_name):
 
 
 def load_model(filepath, backbone_name='resnet50', convert=False, nms=True, class_specific_filter=True):
-    """ Loads a retinanet model using the correct custom objects.
-
+    """Loads a retinanet model using the correct custom objects.
     # Arguments
         filepath: one of the following:
             - string, path to the saved model, or
@@ -77,15 +77,13 @@ def load_model(filepath, backbone_name='resnet50', convert=False, nms=True, clas
         convert               : Boolean, whether to convert the model to an inference model.
         nms                   : Boolean, whether to add NMS filtering to the converted model. Only valid if convert=True.
         class_specific_filter : Whether to use class specific filtering or filter for the best scoring class only.
-
     # Returns
         A keras.models.Model object.
-
     # Raises
         ImportError: if h5py is not available.
         ValueError: In case of an invalid savefile.
     """
-    import keras.models
+    from tensorflow.python import keras.models
 
     model = keras.models.load_model(filepath, custom_objects=backbone(backbone_name).custom_objects)
     if convert:
