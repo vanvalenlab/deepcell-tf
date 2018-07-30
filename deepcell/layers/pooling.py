@@ -66,6 +66,8 @@ class DilatedMaxPool2D(Layer):
         padding_input = self.padding.upper()
         if not isinstance(self.dilation_rate, tuple):
             dilation_rate = (self.dilation_rate, self.dilation_rate)
+        else:
+            dilation_rate = self.dilation_rate
 
         output = tf.nn.pool(inputs, window_shape=self.pool_size, pooling_type='MAX',
                             padding=padding_input, dilation_rate=dilation_rate,
@@ -137,6 +139,8 @@ class DilatedMaxPool3D(Layer):
         padding_input = self.padding.upper()
         if not isinstance(self.dilation_rate, tuple):
             dilation_rate = (self.dilation_rate, self.dilation_rate, self.dilation_rate)
+        else:
+            dilation_rate = self.dilation_rate
 
         output = tf.nn.pool(inputs, window_shape=self.pool_size, pooling_type='MAX',
                             padding=padding_input, dilation_rate=dilation_rate,
