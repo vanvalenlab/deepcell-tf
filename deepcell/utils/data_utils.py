@@ -607,10 +607,11 @@ def make_training_data_2d(direc_name,
             channel_axis = -1
         for b in range(y.shape[0]):
             if K.image_data_format() == 'channels_first':
-                d = np.expand_dims(y[b, 1, :, :], axis=channel_axis)
+                dist_batch = y[b, 1, :, :]
             else:
-                d = np.expand_dims(y[b, :, :, 1], axis=channel_axis)
-            new_y[b] = distance_transform_2d(d, bins=distance_bins)
+                dist_batch = y[b, :, :, 1]
+            d = distance_transform_2d(dist_batch, bins=distance_bins)
+            new_y[b] = np.expand_dims(d, axis=channel_axis)
         y = to_categorical(new_y)
         # not really edge_feature anymore, but there will be the fewest
         # "center" pixels, so lets call that the edge_feature for now
@@ -844,7 +845,11 @@ def make_training_data_3d(direc_name,
             new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1), dtype='int32')
             channel_axis = -1
         for b in range(y.shape[0]):
-            d = distance_transform_3d(y[b], bins=distance_bins)
+            if K.image_data_format() == 'channels_first':
+                dist_batch = y[b, 0, :, :, :]
+            else:
+                dist_batch = y[b, :, :, :, 0]
+            d = distance_transform_3d(dist_batch, bins=distance_bins)
             new_y[b] = np.expand_dims(d, axis=channel_axis)
         y = new_y
 
