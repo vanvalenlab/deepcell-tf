@@ -135,7 +135,7 @@ class DilatedMaxPool3D(Layer):
         df = 'NCDHW' if self.data_format == 'channels_first' else 'NDHWC'
 
         padding_input = self.padding.upper()
-        if not isinstance(dilation_rate, tuple):
+        if not isinstance(self.dilation_rate, tuple):
             dilation_rate = (self.dilation_rate, self.dilation_rate, self.dilation_rate)
 
         output = tf.nn.pool(inputs, window_shape=self.pool_size, pooling_type='MAX',
