@@ -25,7 +25,7 @@ from deepcell.utils.retinanet_anchor_utils import anchors_for_shape
 from deepcell.utils.retinanet_anchor_utils import guess_shapes
 
 
-class Generator(object):
+class MaskRCNNGenerator(object):
     def __init__(self,
                  transform_generator=None,
                  batch_size=1,

@@ -4,30 +4,16 @@ accepted by the Retinanet MRCNN model.
 """
 
 import os
-import sys
 import random
 from fnmatch import fnmatch
-from six import raise_from
 
 import numpy as np
 from skimage.measure import label, regionprops
 
 import cv2
 
-from keras_mrcnn_generator import Generator
+from keras_mrcnn_generator import MaskRCNNGenerator
 
-
-def _parse(value, function, fmt):
-    try:
-        return function(value)
-    except ValueError as e:
-        raise_from(ValueError(fmt.format(e)), None)
-
-
-def _read_classes(classname):
-    result = {}
-    result[str(classname)] = 0
-    return result
 
 def deepcell_data_load():
     def list_file_deepcell(direc_name, training_direcs, raw_image_direc, channel_names):
@@ -97,40 +83,7 @@ def deepcell_data_load():
     return store
 
 
-def _read_annotations(maskarr):
-    result = {}
-    # store = deepcell_data_load()
-    for cnt, image in enumerate(maskarr):
-        result[cnt] = []
-        l = label(image)
-        p = regionprops(l)
-        cell_count = 0
-        for index in range(len(np.unique(l)) - 1):
-            y1, x1, y2, x2 = p[index].bbox
-            result[cnt].append({
-                'x1': x1,
-                'x2': x2,
-                'y1': y1,
-                'y2': y2,
-                'class': 'cell',
-                'mask_path':np.where(l == index + 1, 1, 0)
-            })
-            cell_count += 1
-        print('Image number {} has {} cells'.format(cnt, cell_count))
-    return result
-
-
-def _open_for_csv(path):
-    """Open a file with flags suitable for csv.reader.
-    This is different for python2 it means with mode 'rb',
-    for python3 this means 'r' with "universal newlines".
-    """
-    if sys.version_info[0] < 3:
-        return open(path, 'rb')
-    return open(path, 'r', newline='')
-
-
-class CSVGenerator(Generator):
+class CSVGenerator(MaskRCNNGenerator):
     def __init__(self, base_dir=None, **kwargs):
         self.image_names = []
         self.image_data = {}
@@ -142,17 +95,38 @@ class CSVGenerator(Generator):
         # Take base_dir from annotations file if not explicitly specified.
 
         # parse the provided class file
-        self.classes = _read_classes('cell')
+        self.classes = {'cell': 0}
 
         self.labels = {}
         for key, value in self.classes.items():
             self.labels[value] = key
 
-        self.image_data = _read_annotations(store[1])
+        self.image_data = self._read_annotations(store[1])
 
         self.image_names = list(self.image_data.keys())
 
         super(CSVGenerator, self).__init__(**kwargs)
+
+    def _read_annotations(self, maskarr):
+        result = {}
+        for cnt, image in enumerate(maskarr):
+            result[cnt] = []
+            l = label(image)
+            p = regionprops(l)
+            cell_count = 0
+            for index in range(len(np.unique(l)) - 1):
+                y1, x1, y2, x2 = p[index].bbox
+                result[cnt].append({
+                    'x1': x1,
+                    'x2': x2,
+                    'y1': y1,
+                    'y2': y2,
+                    'class': 'cell',
+                    'mask_path':np.where(l == index + 1, 1, 0)
+                })
+                cell_count += 1
+            print('Image number {} has {} cells'.format(cnt, cell_count))
+        return result
 
     def size(self):
         return len(self.image_names)
