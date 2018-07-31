@@ -136,7 +136,7 @@ class CSVGenerator(RetinanetGenerator):
         self.mask_stack = []
 
         direc_name = '/data/data/cells/HeLa/S3'
-        training_direcs = ['set0', 'set1']
+        training_direcs = ['set1', 'set2']
         raw_image_direc = 'raw'
         channel_names = ['FITC']
         train_imlist = list_file_deepcell(
@@ -149,7 +149,7 @@ class CSVGenerator(RetinanetGenerator):
         train_anotedlist = list_file_deepcell(
             direc_name=direc_name,
             training_direcs=training_direcs,
-            raw_image_direc='annotated_unique',
+            raw_image_direc='annotated',
             channel_names=['corrected'])
         print(len(train_anotedlist))
 
