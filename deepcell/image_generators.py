@@ -1771,8 +1771,8 @@ class MaskRCNNGenerator(_MaskRCNNGenerator):
         while iteration > 0:
             cropindex = []
             for path in dirpaths:
-                rand_x = random.randint(0, act_x)
-                rand_y = random.randint(0, act_y)
+                rand_x = np.random.randint(0, act_x)
+                rand_y = np.random.randint(0, act_y)
                 cropindex.append((rand_x, rand_y))
                 image = cv2.imread(path, 0)
                 newimg = image[rand_y:rand_y + size_y, rand_x:rand_x + size_x]
