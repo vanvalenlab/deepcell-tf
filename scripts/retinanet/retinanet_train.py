@@ -244,7 +244,7 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
                     dataset_type=args.dataset_type)
             ),
             verbose=1,
-            save_best_only=True,
+            # save_best_only=True,
             # monitor="mAP",
             # mode='max'
         )
