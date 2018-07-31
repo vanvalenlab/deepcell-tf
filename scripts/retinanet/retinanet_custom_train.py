@@ -229,11 +229,11 @@ def create_generators(args, preprocess_image):
     if args.dataset_type == 'train':
         train_generator = RetinaNetCSVGenerator(
             direc_name='/data/data/cells/HeLa/S3',
-            training_direcs=['set1', 'set2'],
-            raw_image_direc='raw',
+            training_dirs=['set1', 'set2'],
+            raw_image_dir='raw',
             channel_names=['FITC'],
-            annotation_names=['corrected'],
             annotation_dir='annotated',
+            annotation_names=['corrected'],
             # args.annotations,
             # args.classes,
             **common_args
@@ -242,11 +242,11 @@ def create_generators(args, preprocess_image):
         if args.val_annotations:
             validation_generator = RetinaNetCSVGenerator(
                 direc_name='/data/data/cells/HeLa/S3',
-                training_direcs=['set1', 'set2'],
-                raw_image_direc='raw',
+                training_dirs=['set1', 'set2'],
+                raw_image_dir='raw',
                 channel_names=['FITC'],
-                annotation_names=['corrected'],
                 annotation_dir='annotated',
+                annotation_names=['corrected'],
                 # args.val_annotations,
                 # args.classes,
                 **common_args
