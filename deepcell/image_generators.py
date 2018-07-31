@@ -10,9 +10,7 @@ from __future__ import print_function
 from __future__ import division
 
 import os
-import warnings
 import threading
-import random
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -164,7 +162,7 @@ class ImageFullyConvIterator(Iterator):
                              'have rank 4. Got array with shape', self.x.shape)
 
         self.channel_axis = -1 if data_format == 'channels_last' else 1
-        self.y = np.int32(train_dict['y'])
+        self.y = np.array(train_dict['y'], dtype='int32')
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -497,7 +495,7 @@ class SiameseIterator(Iterator):
             self.col_axis = 3
             self.time_axis = 1
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.y = np.int32(train_dict['y'])
+        self.y = np.array(train_dict['y'], dtype='int32')
         self.crop_dim = crop_dim
         self.min_track_length = min_track_length
         self.image_data_generator = image_data_generator
@@ -1490,11 +1488,11 @@ class RetinanetGenerator(object):
 
             # delete invalid indices
             if invalid_indices.size > 0:
-                warnings.warn('Image with id {} and shape {} contains '
-                              'the following invalid boxes: {}.'.format(
-                                  group[index],
-                                  image.shape,
-                                  [annotations[i, :] for i in invalid_indices]))
+                logging.warning('Image with id {} and shape {} contains '
+                                'the following invalid boxes: {}.'.format(
+                                    group[index],
+                                    image.shape,
+                                    [annotations[i, :] for i in invalid_indices]))
 
                 annotations_group[index] = np.delete(annotations, invalid_indices, axis=0)
 
@@ -1561,7 +1559,7 @@ class RetinanetGenerator(object):
         # determine the order of the images
         order = list(range(self.size()))
         if self.group_method == 'random':
-            random.shuffle(order)
+            np.random.shuffle(order)
         elif self.group_method == 'ratio':
             order.sort(key=self.image_aspect_ratio)
 
@@ -1591,7 +1589,7 @@ class RetinanetGenerator(object):
         """
         # get the max image shape
         max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
-        anchors   = self.generate_anchors(max_shape)
+        anchors = self.generate_anchors(max_shape)
 
         labels_batch, regression_batch, _ = self.compute_anchor_targets(
             anchors,
@@ -1631,7 +1629,7 @@ class RetinanetGenerator(object):
         with self.lock:
             if self.group_index == 0 and self.shuffle_groups:
                 # shuffle groups at start of epoch
-                random.shuffle(self.groups)
+                np.random.shuffle(self.groups)
             group = self.groups[self.group_index]
             self.group_index = (self.group_index + 1) % len(self.groups)
 
@@ -1786,4 +1784,3 @@ class DiscIterator(Iterator):
         # The transformation of images is not under thread lock
         # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
-

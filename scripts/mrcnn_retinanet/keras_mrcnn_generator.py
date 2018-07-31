@@ -4,56 +4,49 @@ It uses data augmentation methods from Retinanet Library and a custom python fil
 anchor boxes for the bounding box coordinates as well as the mask.
 """
 
-import numpy as np
 import random
 import threading
-import time
 import warnings
 
-import keras
+import numpy as np
 
-from retinanet_anchor_utils import (
-    anchor_targets_bbox,
-    bbox_transform,
-    anchors_for_shape,
-    guess_shapes
-)
-from keras_retinanet.utils.image import (
-    TransformParameters,
-    adjust_transform_for_image,
-    apply_transform,
-    preprocess_image,
-    resize_image,
-)
+from keras_retinanet.utils.image import TransformParameters
+from keras_retinanet.utils.image import adjust_transform_for_image
+from keras_retinanet.utils.image import apply_transform
+from keras_retinanet.utils.image import preprocess_image
+from keras_retinanet.utils.image import resize_image
 from keras_retinanet.utils.transform import transform_aabb
+
+from tensorflow.python import keras
+
+from retinanet_anchor_utils import anchor_targets_bbox
+from retinanet_anchor_utils import bbox_transform
+from retinanet_anchor_utils import anchors_for_shape
+from retinanet_anchor_utils import guess_shapes
 
 
 class Generator(object):
-    def __init__(
-        self,
-        transform_generator = None,
-        batch_size=1,
-        group_method='ratio',  # one of 'none', 'random', 'ratio'
-        shuffle_groups=True,
-        image_min_side=200,
-        image_max_side=200,
-        transform_parameters=None,
-        compute_shapes=guess_shapes,
-        compute_anchor_targets=anchor_targets_bbox,
-    ):
-        self.transform_generator    = transform_generator
-        self.batch_size             = int(batch_size)
-        self.group_method           = group_method
-        self.shuffle_groups         = shuffle_groups
-        self.image_min_side         = image_min_side
-        self.image_max_side         = image_max_side
-        self.transform_parameters   = transform_parameters or TransformParameters()
-        self.compute_shapes         = compute_shapes
+    def __init__(self,
+                 transform_generator=None,
+                 batch_size=1,
+                 group_method='ratio',  # one of 'none', 'random', 'ratio'
+                 shuffle_groups=True,
+                 image_min_side=200,
+                 image_max_side=200,
+                 transform_parameters=None,
+                 compute_shapes=guess_shapes,
+                 compute_anchor_targets=anchor_targets_bbox):
+        self.transform_generator = transform_generator
+        self.batch_size = int(batch_size)
+        self.group_method = group_method
+        self.shuffle_groups = shuffle_groups
+        self.image_min_side = image_min_side
+        self.image_max_side = image_max_side
+        self.transform_parameters = transform_parameters or TransformParameters()
+        self.compute_shapes = compute_shapes
         self.compute_anchor_targets = compute_anchor_targets
-
         self.group_index = 0
-        self.lock        = threading.Lock()
-
+        self.lock = threading.Lock()
         self.group_images()
 
     def size(self):
@@ -83,13 +76,21 @@ class Generator(object):
     def filter_annotations(self, image_group, annotations_group, masks_group, group):
         # test all annotations
         for index, (image, annotations, masks) in enumerate(zip(image_group, annotations_group, masks_group)):
-            assert(isinstance(annotations, np.ndarray)), '\'load_annotations\' should return a list of numpy arrays, received: {}'.format(type(annotations))
+            if not isinstance(annotations, np.ndarray):
+                raise TypeError('`load_annotations` should return a list of '
+                                'numpy arrays, received: ' + str(annotations))
 
             # check if all masks have the same size of the respective image
-            for idx in range(len(masks)):
-                assert(image.shape[:2] == masks[idx].shape[:2]), 'Found different image ({}) and mask ({}) size in image {}'.format(image.shape, masks[idx].shape, group[index])
+            for mask in masks:
+                if not image.shape[:2] == mask.shape[:2]:
+                    raise ValueError('Found different image ({}) and mask ({}) '
+                                     'size in image {}'.format(
+                                         image.shape,
+                                         mask.shape,
+                                         group[index]))
 
-            # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 | y2 <= 0 | x2 >= image.shape[1] | y2 >= image.shape[0]
+            # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 | y2 <= 0
+            # test x2 >= image.shape[1] | y2 >= image.shape[0]
             invalid_indices = np.where(
                 (annotations[:, 2] <= annotations[:, 0]) |
                 (annotations[:, 3] <= annotations[:, 1]) |
@@ -100,14 +101,15 @@ class Generator(object):
             )[0]
 
             # delete invalid indices
-            if len(invalid_indices):
-                warnings.warn('Image with id {} (shape {}) contains the following invalid boxes: {}.'.format(
-                    group[index],
-                    image.shape,
-                    [annotations[invalid_index, :] for invalid_index in invalid_indices]
-                ))
+            if invalid_indices:
+                bad_boxes = [annotations[i, :] for i in invalid_indices]
+                warnings.warn('Image with id {} (shape {}) contains the '
+                              'following invalid boxes: {}.'.format(
+                                  group[index],
+                                  image.shape,
+                                  bad_boxes))
                 annotations_group[index] = np.delete(annotations, invalid_indices, axis=0)
-                masks_group[index]       = np.delete(masks, invalid_indices, axis=0)
+                masks_group[index] = np.delete(masks, invalid_indices, axis=0)
 
         return image_group, annotations_group, masks_group
 
@@ -117,13 +119,16 @@ class Generator(object):
     def random_transform_group_entry(self, image, annotations, masks):
         # randomly transform both image and annotations
         if self.transform_generator:
-            transform = adjust_transform_for_image(next(self.transform_generator), image, self.transform_parameters.relative_translation)
-            image     = apply_transform(transform, image, self.transform_parameters)
+            transform = adjust_transform_for_image(
+                next(self.transform_generator),
+                image,
+                self.transform_parameters.relative_translation)
+            image = apply_transform(transform, image, self.transform_parameters)
 
             # randomly transform the masks and expand so to have a fake channel dimension
-            for m in range(len(masks)):
-                masks[m] = apply_transform(transform, masks[m], self.transform_parameters)
-                masks[m] = np.expand_dims(masks[m], axis=2)
+            for m, mask in enumerate(masks):
+                masks[m] = apply_transform(transform, mask, self.transform_parameters)
+                masks[m] = np.expand_dims(mask, axis=2)
 
             # randomly transform the bounding boxes
             annotations = annotations.copy()
@@ -149,11 +154,11 @@ class Generator(object):
         image, image_scale = self.resize_image(image)
 
         # resize masks
-        for i in range(len(masks)):
-            masks[i], _ = self.resize_image(masks[i])
+        for i, mask in enumerate(masks):
+            masks[i], _ = self.resize_image(mask)
 
         # apply resizing to annotations too
-        annotations[:, :4]  *= image_scale
+        annotations[:, :4] *= image_scale
 
         return image, annotations, masks
 
@@ -163,9 +168,9 @@ class Generator(object):
             image, annotations, masks = self.preprocess_group_entry(image, annotations, masks)
 
             # copy processed data back to group
-            image_group[index]       = image
+            image_group[index] = image
             annotations_group[index] = annotations
-            masks_group[index]       = masks
+            masks_group[index] = masks
 
         return image_group, annotations_group, masks_group
 
@@ -175,7 +180,7 @@ class Generator(object):
         if self.group_method == 'random':
             random.shuffle(order)
         elif self.group_method == 'ratio':
-            order.sort(key=lambda x: self.image_aspect_ratio(x))
+            order.sort(key=self.image_aspect_ratio)
 
         # divide into groups, one group = one batch
         self.groups = [[order[x % len(order)] for x in range(i, i + self.batch_size)] for i in range(0, len(order), self.batch_size)]
@@ -197,31 +202,36 @@ class Generator(object):
         return anchors_for_shape(image_shape, shapes_callback=self.compute_shapes)
 
     def compute_targets(self, image_group, annotations_group, masks_group):
-        """ Compute target outputs for the network using images and their annotations.
+        """
+        Compute target outputs for the network using images and their annotations.
         """
         # get the max image shape
         max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
-        anchors   = self.generate_anchors(max_shape)
+        anchors = self.generate_anchors(max_shape)
 
-        regression_batch = np.empty((self.batch_size, anchors.shape[0], 4 + 1), dtype=keras.backend.floatx())
-        labels_batch     = np.empty((self.batch_size, anchors.shape[0], self.num_classes() + 1), dtype=keras.backend.floatx())
+        regression_shape = (self.batch_size, anchors.shape[0], 4 + 1)
+        regression_batch = np.empty(regression_shape, dtype=keras.backend.floatx())
+        label_shape = (self.batch_size, anchors.shape[0], self.num_classes() + 1)
+        labels_batch = np.empty(label_shape, dtype=keras.backend.floatx())
 
         # compute labels and regression targets
-        for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
+        for i, (image, annotations) in enumerate(zip(image_group, annotations_group)):
             # compute regression targets
-            labels_batch[index, :, :-1], annotations, labels_batch[index, :, -1] = self.compute_anchor_targets(
+            labels_batch[i, :, :-1], annotations, labels_batch[i, :, -1] = self.compute_anchor_targets(
                 anchors,
                 annotations,
                 self.num_classes(),
                 mask_shape=image.shape,
             )
-            regression_batch[index, :, :-1] = bbox_transform(anchors, annotations)
-            regression_batch[index, :, -1]  = labels_batch[index, :, -1]  # copy the anchor states to the regression batch
+            regression_batch[i, :, :-1] = bbox_transform(anchors, annotations)
+            # copy the anchor states to the regression batch
+            regression_batch[i, :, -1] = labels_batch[i, :, -1]
 
         # copy all annotations / masks to the batch
         max_annotations = max(a.shape[0] for a in annotations_group)
-        # masks_batch has shape: (batch size, max_annotations, bbox_x1 + bbox_y1 + bbox_x2 + bbox_y2 + prediction_label + width + height + max_image_dimension)
-        masks_batch     = np.zeros((self.batch_size, max_annotations, 5 + 2 + max_shape[0] * max_shape[1]), dtype=keras.backend.floatx())
+
+        mask_shape = (self.batch_size, max_annotations, 5 + 2 + max_shape[0] * max_shape[1])
+        masks_batch = np.zeros(mask_shape, dtype=keras.backend.floatx())
         for index, (annotations, masks) in enumerate(zip(annotations_group, masks_group)):
             masks_batch[index, :annotations.shape[0], :annotations.shape[1]] = annotations
             masks_batch[index, :, 5] = max_shape[1]  # width
@@ -235,18 +245,20 @@ class Generator(object):
 
     def compute_input_output(self, group):
         # load images and annotations
-        image_group       = self.load_image_group(group)
+        image_group = self.load_image_group(group)
         annotations_group = self.load_annotations_group(group)
 
         # split annotations and masks
-        masks_group       = [m for _, m in annotations_group]
+        masks_group = [m for _, m in annotations_group]
         annotations_group = [a for a, _ in annotations_group]
 
         # check validity of annotations
-        image_group, annotations_group, masks_group = self.filter_annotations(image_group, annotations_group, masks_group, group)
+        image_group, annotations_group, masks_group = self.filter_annotations(
+            image_group, annotations_group, masks_group, group)
 
         # perform preprocessing steps
-        image_group, annotations_group, masks_group = self.preprocess_group(image_group, annotations_group, masks_group)
+        image_group, annotations_group, masks_group = self.preprocess_group(
+            image_group, annotations_group, masks_group)
 
         # compute network inputs
         inputs = self.compute_inputs(image_group)

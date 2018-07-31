@@ -6,20 +6,20 @@ import argparse
 import os
 import sys
 
-import keras
-import keras.preprocessing.image
-import tensorflow as tf
-
 import keras_retinanet.losses
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.utils.transform import random_transform_generator
 from keras_retinanet.utils.keras_version import check_keras_version
 from keras_retinanet.utils.model import freeze as freeze_model
-from cell_gen_deepcell import CSVGenerator
 
 from keras_maskrcnn import losses
 from keras_maskrcnn import models
 from keras_maskrcnn.callbacks.eval import Evaluate
+
+import tensorflow as tf
+from tensorflow.python import keras
+
+from cell_gen_deepcell import CSVGenerator
 
 
 def get_session():
@@ -37,22 +37,22 @@ def model_with_weights(model, weights, skip_mismatch):
 def create_models(backbone_retinanet, num_classes, weights, freeze_backbone=False, class_specific_filter=True):
     modifier = freeze_model if freeze_backbone else None
 
-    model            = model_with_weights(
+    model = model_with_weights(
         backbone_retinanet(
             num_classes,
             nms=True,
             class_specific_filter=class_specific_filter,
             modifier=modifier
         ), weights=weights, skip_mismatch=True)
-    training_model   = model
+    training_model = model
     prediction_model = model
 
     # compile model
     training_model.compile(
         loss={
-            'regression'    : keras_retinanet.losses.smooth_l1(),
+            'regression' : keras_retinanet.losses.smooth_l1(),
             'classification': keras_retinanet.losses.focal(),
-            'boxes_masks'   : losses.mask(),
+            'boxes_masks' : losses.mask(),
         },
         optimizer=keras.optimizers.adam(lr=1e-5, clipnorm=0.001)
     )
@@ -70,7 +70,9 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
         checkpoint = keras.callbacks.ModelCheckpoint(
             os.path.join(
                 args.snapshot_path,
-                '2{backbone}_{dataset_type}_{{epoch:02d}}.h5'.format(backbone=args.backbone, dataset_type=args.dataset_type)
+                '2{backbone}_{dataset_type}_{{epoch:02d}}.h5'.format(
+                    backbone=args.backbone,
+                    dataset_type=args.dataset_type)
             ),
             verbose=1
         )
@@ -81,16 +83,15 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
 
     if args.tensorboard_dir:
         tensorboard_callback = keras.callbacks.TensorBoard(
-            log_dir                = args.tensorboard_dir,
-            histogram_freq         = 0,
-            batch_size             = args.batch_size,
-            write_graph            = True,
-            write_grads            = False,
-            write_images           = False,
-            embeddings_freq        = 0,
-            embeddings_layer_names = None,
-            embeddings_metadata    = None
-        )
+            log_dir=args.tensorboard_dir,
+            histogram_freq=0,
+            batch_size=args.batch_size,
+            write_graph=True,
+            write_grads=False,
+            write_images=False,
+            embeddings_freq=0,
+            embeddings_layer_names=None,
+            embeddings_metadata=None)
         callbacks.append(tensorboard_callback)
 
     if args.evaluation and validation_generator:
@@ -105,15 +106,14 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
         callbacks.append(evaluation)
 
     callbacks.append(keras.callbacks.ReduceLROnPlateau(
-        monitor  = 'loss',
-        factor   = 0.1,
-        patience = 2,
-        verbose  = 1,
-        mode     = 'auto',
-        epsilon  = 0.0001,
-        cooldown = 0,
-        min_lr   = 0
-    ))
+        monitor='loss',
+        factor=0.1,
+        patience=2,
+        verbose=1,
+        mode='auto',
+        min_delta=0.0001,
+        cooldown=0,
+        min_lr=0))
 
     return callbacks
 
@@ -123,7 +123,6 @@ def create_generators(args):
     transform_generator = random_transform_generator(flip_x_chance=0.5)
 
     if args.dataset_type == 'train':
-        
 
         train_generator = CSVGenerator(
             transform_generator=transform_generator,
@@ -156,8 +155,11 @@ def check_args(parsed_args):
 
 
 def parse_args(args):
-    parser     = argparse.ArgumentParser(description='Simple training script for training a RetinaNet mask network.')
-    subparsers = parser.add_subparsers(help='Arguments for specific dataset types.', dest='dataset_type')
+    parser = argparse.ArgumentParser(
+        description='Simple training script for training a RetinaNet mask network.')
+    subparsers = parser.add_subparsers(
+        help='Arguments for specific dataset types.',
+        dest='dataset_type')
     subparsers.required = True
 
 
@@ -165,20 +167,20 @@ def parse_args(args):
     csv_parser.add_argument('--val-annotations', help='Path to CSV file containing annotations for validation (optional).')
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('--snapshot',          help='Resume training from a snapshot.')
-    group.add_argument('--imagenet-weights',  help='Initialize the model with pretrained imagenet weights. This is the default behaviour.', action='store_const', const=True, default=False)
-    group.add_argument('--weights',           help='Initialize the model with weights from a file.')
-    group.add_argument('--no-weights',        help='Don\'t initialize the model with any weights.', dest='imagenet_weights', action='store_const', const=False,default=1)
+    group.add_argument('--snapshot', help='Resume training from a snapshot.')
+    group.add_argument('--imagenet-weights', help='Initialize the model with pretrained imagenet weights. This is the default behaviour.', action='store_const', const=True, default=False)
+    group.add_argument('--weights', help='Initialize the model with weights from a file.')
+    group.add_argument('--no-weights', help='Don\'t initialize the model with any weights.', dest='imagenet_weights', action='store_const', const=False, default=1)
 
-    parser.add_argument('--backbone',        help='Backbone model used by retinanet.', default='resnet50', type=str)
-    parser.add_argument('--batch-size',      help='Size of the batches.', default=1, type=int)
-    parser.add_argument('--gpu',             help='Id of the GPU to use (as reported by nvidia-smi).')
-    parser.add_argument('--epochs',          help='Number of epochs to train.', type=int, default=10)
-    parser.add_argument('--steps',           help='Number of steps per epoch.', type=int, default=1000)
-    parser.add_argument('--snapshot-path',   help='Path to store snapshots of models during training (defaults to \'./snapshots\')', default='./snapshots')
+    parser.add_argument('--backbone', help='Backbone model used by retinanet.', default='resnet50', type=str)
+    parser.add_argument('--batch-size', help='Size of the batches.', default=1, type=int)
+    parser.add_argument('--gpu', help='Id of the GPU to use (as reported by nvidia-smi).')
+    parser.add_argument('--epochs', help='Number of epochs to train.', type=int, default=10)
+    parser.add_argument('--steps', help='Number of steps per epoch.', type=int, default=1000)
+    parser.add_argument('--snapshot-path', help='Path to store snapshots of models during training (defaults to \'./snapshots\')', default='./snapshots')
     parser.add_argument('--tensorboard-dir', help='Log directory for Tensorboard output', default='./logs')
-    parser.add_argument('--no-snapshots',    help='Disable saving snapshots.', dest='snapshots', action='store_false')
-    parser.add_argument('--no-evaluation',   help='Disable per epoch evaluation.', dest='evaluation', action='store_false')
+    parser.add_argument('--no-snapshots', help='Disable saving snapshots.', dest='snapshots', action='store_false')
+    parser.add_argument('--no-evaluation', help='Disable per epoch evaluation.', dest='evaluation', action='store_false')
     parser.add_argument('--freeze-backbone', help='Freeze training of backbone layers.', action='store_true')
     parser.add_argument('--no-class-specific-filter', help='Disables class specific filtering.', dest='class_specific_filter', action='store_false')
 
@@ -208,8 +210,8 @@ def main(args=None):
     # create the model
     if args.snapshot is not None:
         print('Loading model, this may take a second...')
-        model            = models.load_model(args.snapshot, backbone_name=args.backbone)
-        training_model   = model
+        model = models.load_model(args.snapshot, backbone_name=args.backbone)
+        training_model = model
         prediction_model = model
     else:
         weights = args.weights
@@ -223,8 +225,7 @@ def main(args=None):
             num_classes=train_generator.num_classes(),
             weights=weights,
             freeze_backbone=args.freeze_backbone,
-            class_specific_filter=args.class_specific_filter
-        )
+            class_specific_filter=args.class_specific_filter)
 
     # print model summary
     print(model.summary())
@@ -235,8 +236,7 @@ def main(args=None):
         training_model,
         prediction_model,
         validation_generator,
-        args,
-    )
+        args)
 
     # start training
     training_model.fit_generator(
@@ -245,8 +245,7 @@ def main(args=None):
         epochs=args.epochs,
         verbose=1,
         callbacks=callbacks,
-        max_queue_size=1,
-    )
+        max_queue_size=1)
 
 if __name__ == '__main__':
     main()
