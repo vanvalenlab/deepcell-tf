@@ -24,7 +24,7 @@ from keras_retinanet.utils.model import freeze as freeze_model
 from keras_retinanet.utils.transform import random_transform_generator
 
 import tensorflow as tf
-from tensorflow.python import keras
+import keras
 
 import cv2
 

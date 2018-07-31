@@ -17,7 +17,7 @@ from keras_maskrcnn import models
 from keras_maskrcnn.callbacks.eval import Evaluate
 
 import tensorflow as tf
-from tensorflow.python import keras
+import keras
 
 from cell_gen_deepcell import CSVGenerator
 

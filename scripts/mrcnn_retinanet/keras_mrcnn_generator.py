@@ -17,7 +17,7 @@ from keras_retinanet.utils.image import preprocess_image
 from keras_retinanet.utils.image import resize_image
 from keras_retinanet.utils.transform import transform_aabb
 
-from tensorflow.python import keras
+import keras
 
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
 from deepcell.utils.retinanet_anchor_utils import bbox_transform

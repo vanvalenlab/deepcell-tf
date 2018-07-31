@@ -16,8 +16,8 @@ from keras_retinanet.models import retinanet
 from keras_retinanet.models import Backbone
 from keras_retinanet.utils.image import preprocess_image
 
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Input, Conv2D, MaxPooling2D, Dropout
+from keras.models import Model
+from keras.layers import Input, Conv2D, MaxPooling2D, Dropout
 
 """
 First one needs to import the Backbone class from the custom_backbone defination"

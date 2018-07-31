@@ -15,7 +15,7 @@ from skimage.external.tifffile import TiffFile
 
 from keras_retinanet import losses
 from keras_retinanet import models
-from keras_retinanet.preprocessing import Generator
+from keras_retinanet.preprocessing.generator import Generator
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.callbacks.eval import Evaluate
 from keras_retinanet.models.retinanet import retinanet_bbox
@@ -25,9 +25,7 @@ from keras_retinanet.utils.model import freeze as freeze_model
 from keras_retinanet.utils.transform import random_transform_generator
 
 import tensorflow as tf
-from tensorflow.python import keras
-
-import cv2
+import keras
 
 
 def get_image(file_name):
@@ -60,17 +58,17 @@ def generate_subimage(img_pathstack, HorizontalP, VerticalP, flag):
     sub_img = []
     for img_path in img_pathstack:
         img = np.asarray(np.float32(imread(img_path)))
-        #img=((img/np.max(img))*255).astype(int)
+        # img=((img / np.max(img)) * 255).astype(int)
         if flag:
             img = (img / np.max(img))
-        vway = np.zeros(VerticalP+1)  # The dimentions of vertical cuts
-        hway = np.zeros(HorizontalP+1)  # The dimentions of horizontal cuts
+        vway = np.zeros(VerticalP + 1)  # The dimentions of vertical cuts
+        hway = np.zeros(HorizontalP + 1)  # The dimentions of horizontal cuts
         vcnt = 0  # The initial value for vertical
         hcnt = 0  # The initial value for horizontal
 
         for i in range(VerticalP + 1):
             vway[i] = int(vcnt)
-            vcnt = vcnt+(img.shape[1] / VerticalP)
+            vcnt = vcnt + (img.shape[1] / VerticalP)
 
         for j in range(HorizontalP + 1):
             hway[j] = int(hcnt)
@@ -94,24 +92,6 @@ def generate_subimage(img_pathstack, HorizontalP, VerticalP, flag):
         sub_img = sub_img2
 
     return sub_img
-
-
-def _read_annotations(masks_list):
-    result = {}
-    for cnt, image in enumerate(masks_list):
-        result[cnt] = []
-        props = regionprops(label(image))
-        cell_count = 0
-        total = len(masks_list)
-        for index in range(len(np.unique(label(image))) - 1):
-            prop = props[index]
-            x1, y1, x2, y2 = prop.bbox[1], prop.bbox[0], prop.bbox[3], prop.bbox[2]
-            result[cnt].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2})
-            cell_count += 1
-
-        print('-----------------Completed {} of {}-----------'.format(cnt, total))
-        print('The number of cells in this image:', cell_count)
-    return result
 
 
 class CSVGenerator(Generator):
@@ -559,13 +539,10 @@ def main(args=None):
                 draw_caption(draw2, b, caption)
             plt.imsave(os.path.join(args.save_path, 'retinanet_output_' + str(testimgcnt)), draw2)
 
-
-
-
     # optionally choose specific GPU
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-    keras.backend.tensorflow_backend.set_session(get_session())
+    keras.backend.set_session(get_session())
 
     # create the generators
     train_generator, validation_generator = create_generators(args, backbone.preprocess_image)
