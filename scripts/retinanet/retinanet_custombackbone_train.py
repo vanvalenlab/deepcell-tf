@@ -26,8 +26,6 @@ from keras_retinanet.utils.transform import random_transform_generator
 import tensorflow as tf
 import keras
 
-import cv2
-
 import custom_backbone as models
 from deepcell import RetinanetGenerator
 
@@ -520,7 +518,6 @@ def main(args=None):
             # print(np.unique(image))
             # copy to draw on
 
-            # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             print(image.shape)
             # preprocess image for network
             image = preprocess_image(image)

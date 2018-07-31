@@ -505,10 +505,9 @@ def main(args=None):
             #image=draw2
             draw2 = get_image(img_path)
             draw2 = draw2 / np.max(draw2)
-            #print(np.unique(image))
+            # print(np.unique(image))
             # copy to draw on
 
-            #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             print(image.shape)
             # preprocess image for network
             image = preprocess_image(image)
