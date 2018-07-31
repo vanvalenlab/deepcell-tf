@@ -1,4 +1,19 @@
 #!/usr/bin/env python
+"""
+retinanet_train.py
+
+@author Shivam Patel
+
+Training script adapted from keras_retinanet.
+Loads images from disk instead of CSV data.
+Can use custom backbones featured in deepcell_backbone.py
+
+Usage: python retinanet_train.py \
+       --no-weights --image-min-side 360 --image-max-side 426 \
+       --random-transform --backbone deepcell --steps=1000 --epochs=10 \
+       --gpu 0 --tensorboard-dir logs \
+       csv ./annotation.csv ./classes.csv
+"""
 
 import argparse
 import os
@@ -24,13 +39,73 @@ from keras_retinanet.utils.transform import random_transform_generator
 
 import tensorflow as tf
 
-import custom_backbone as models
 from deepcell.image_generators import RetinaNetCSVGenerator
+
+"""
+Functions to load custom backbone from deepcell_backbone
+"""
+
+def get_backbone(backbone_name):
+    """
+    Returns a backbone object for the given backbone.
+    """
+    if 'resnet' in backbone_name:
+        from keras_retinanet.models.resnet import ResNetBackbone as b
+    elif 'mobilenet' in backbone_name:
+        from keras_retinanet.models.mobilenet import MobileNetBackbone as b
+    elif 'vgg' in backbone_name:
+        from keras_retinanet.models.vgg import VGGBackbone as b
+    elif 'densenet' in backbone_name:
+        from keras_retinanet.models.densenet import DenseNetBackbone as b
+    elif 'deepcell' in backbone_name:
+        # Import custom written backbone class here
+        from deepcell_backbone import DeepcellBackbone as b
+    else:
+        raise NotImplementedError('Backbone class for  \'{}\' not implemented.'.format(backbone))
+
+    return b(backbone_name)
+
+
+def load_model(filepath,
+               backbone_name='resnet50',
+               convert=False,
+               nms=True,
+               class_specific_filter=True):
+    """Loads a retinanet model using the correct custom objects.
+    # Arguments
+        filepath: one of the following:
+            - string, path to the saved model, or
+            - h5py.File object from which to load the model
+        backbone_name: Backbone with which the model was trained.
+        convert: Boolean, whether to convert the model to an inference model.
+        nms: Boolean, whether to add NMS filtering to the converted model.
+             Only valid if convert=True.
+        class_specific_filter: Whether to use class specific filtering or filter
+                               for the best scoring class only.
+    # Returns
+        A keras.models.Model object.
+    # Raises
+        ImportError: if h5py is not available.
+        ValueError: In case of an invalid savefile.
+    """
+    from keras.models import load_model as keras_load_model
+
+    model = keras_load_model(filepath, custom_objects=get_backbone(backbone_name).custom_objects)
+    if convert:
+        from keras_retinanet.models.retinanet import retinanet_bbox
+        model = retinanet_bbox(model=model, nms=nms, class_specific_filter=class_specific_filter)
+
+    return model
+
+
+"""
+Functions to train retinanet models
+"""
 
 
 def get_image(file_name):
     ext = os.path.splitext(file_name.lower())[-1]
-    if ext == '.tif' or ext == '.tiff':
+    if ext in {'.tif', '.tiff'}:
         img = np.asarray(np.float32(TiffFile(file_name).asarray()))
         img = np.tile(np.expand_dims(img, axis=-1), (1, 1, 3))
         return img / np.max(img)
@@ -223,11 +298,11 @@ def create_generators(args, preprocess_image):
     if args.dataset_type == 'train':
         train_generator = RetinaNetCSVGenerator(
             direc_name='/data/data/cells/HeLa/S3',
-            training_direcs=['set1', 'set2'],
-            raw_image_direc='raw',
+            training_dirs=['set1', 'set2'],
+            raw_image_dir='raw',
             channel_names=['FITC'],
-            annotation_names=['corrected'],
             annotation_dir='annotated',
+            annotation_names=['corrected'],
             # args.annotations,
             # args.classes,
             **common_args
@@ -236,11 +311,11 @@ def create_generators(args, preprocess_image):
         if args.val_annotations:
             validation_generator = RetinaNetCSVGenerator(
                 direc_name='/data/data/cells/HeLa/S3',
-                training_direcs=['set1', 'set2'],
-                raw_image_direc='raw',
+                training_dirs=['set1', 'set2'],
+                raw_image_dir='raw',
                 channel_names=['FITC'],
-                annotation_names=['corrected'],
                 annotation_dir='annotated',
+                annotation_names=['corrected'],
                 # args.val_annotations,
                 # args.classes,
                 **common_args
@@ -291,9 +366,6 @@ def parse_args(args):
     subparsers = parser.add_subparsers(help='Arguments for specific dataset types.', dest='dataset_type')
     subparsers.required = True
 
-    def csv_list(string):
-        return string.split(',')
-
     csv_parser = subparsers.add_parser('train')
     csv_parser.add_argument('--val-annotations', help='Path to CSV file containing annotations for validation (optional).')
 
@@ -329,39 +401,33 @@ def parse_args(args):
 
 
 def main(args=None):
-
     # parse arguments
     if args is None:
         args = sys.argv[1:]
     args = parse_args(args)
 
     # create object that stores backbone information
-    backbone = models.backbone(args.backbone)
+    backbone = get_backbone(args.backbone)
 
     # make sure keras is the minimum required version
     check_keras_version()
 
     if args.dataset_type == 'run':
-        model = models.load_model(
+        model = load_model(
             args.model_path,
             backbone_name=args.backbone,
             convert=True)
         labels_to_names = {0: 'cell'}
         makedirs(args.save_path)
-        test_imlist = os.walk(args.run_path).next()[2]
+        test_imlist = next(os.walk(args.run_path))[2]
         for testimgcnt, img_path in enumerate(test_imlist):
             image = get_image(img_path)
-            # draw2 = np.tile(np.expand_dims(draw2,axis=-1), (1, 1, 3))
-            # image = draw2
             draw2 = get_image(img_path)
-            draw2 = draw2/np.max(draw2)
-            # print(np.unique(image))
+            draw2 = draw2 / np.max(draw2)
             # copy to draw on
 
-            print(image.shape)
             # preprocess image for network
             image = preprocess_image(image)
-            # print(np.unique(image))
             image, scale = resize_image(image)
             print(scale)
             # process image
@@ -398,7 +464,7 @@ def main(args=None):
     # create the model
     if args.snapshot is not None:
         print('Loading model, this may take a second...')
-        model = models.load_model(args.snapshot, backbone_name=args.backbone)
+        model = load_model(args.snapshot, backbone_name=args.backbone)
         training_model = model
         prediction_model = retinanet_bbox(model=model)
     else:
@@ -419,7 +485,7 @@ def main(args=None):
     print(model.summary())
 
     # this lets the generator compute backbone layer shapes using the actual backbone model
-    if 'vgg' in args.backbone or 'densenet' in args.backbone or 'shvm' in args.backbone:
+    if any(x in args.backbone for x in ['vgg', 'densenet', 'deepcell']):
         train_generator.compute_shapes = make_shapes_callback(model)
         if validation_generator:
             validation_generator.compute_shapes = train_generator.compute_shapes
