@@ -542,7 +542,7 @@ def main(args=None):
     # optionally choose specific GPU
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
-    keras.backend.set_session(get_session())
+    keras.backend.tensorflow_backend.set_session(get_session())
 
     # create the generators
     train_generator, validation_generator = create_generators(args, backbone.preprocess_image)
