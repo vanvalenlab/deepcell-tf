@@ -9,6 +9,7 @@ import threading
 import warnings
 
 import numpy as np
+import keras
 
 from keras_retinanet.utils.image import TransformParameters
 from keras_retinanet.utils.image import adjust_transform_for_image
@@ -17,15 +18,13 @@ from keras_retinanet.utils.image import preprocess_image
 from keras_retinanet.utils.image import resize_image
 from keras_retinanet.utils.transform import transform_aabb
 
-from tensorflow.python import keras
-
-from retinanet_anchor_utils import anchor_targets_bbox
-from retinanet_anchor_utils import bbox_transform
-from retinanet_anchor_utils import anchors_for_shape
-from retinanet_anchor_utils import guess_shapes
+from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
+from deepcell.utils.retinanet_anchor_utils import bbox_transform
+from deepcell.utils.retinanet_anchor_utils import anchors_for_shape
+from deepcell.utils.retinanet_anchor_utils import guess_shapes
 
 
-class Generator(object):
+class MaskRCNNGenerator(object):
     def __init__(self,
                  transform_generator=None,
                  batch_size=1,

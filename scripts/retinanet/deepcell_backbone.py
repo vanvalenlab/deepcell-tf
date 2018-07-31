@@ -3,21 +3,18 @@ deepcell_backbone.py
 
 @author: Shivam Patel
 
-Usage: python retinanet_custombackbone_train.py \
-       --no-weights --image-min-side 360 --image-max-side 426 \
-       --random-transform --backbone shvm --steps=1000 --epochs=10 \
-       --gpu 0 --tensorboard-dir logs \
-       csv ./annotation.csv ./classes.csv
+Custom Backbone models for RetinaNet.
+Imported and used in retinanet_train.py
 """
 
-import keras_resnet
+from keras.models import Model
+from keras.layers import Input, Conv2D, MaxPooling2D, Dropout
 
+import keras_resnet
 from keras_retinanet.models import retinanet
 from keras_retinanet.models import Backbone
 from keras_retinanet.utils.image import preprocess_image
 
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Input, Conv2D, MaxPooling2D, Dropout
 
 """
 First one needs to import the Backbone class from the custom_backbone defination"

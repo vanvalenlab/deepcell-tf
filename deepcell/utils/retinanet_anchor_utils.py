@@ -20,13 +20,20 @@ def anchor_targets_bbox(anchors,
         anchors: np.array of annotations of shape (N, 4) for (x1, y1, x2, y2).
         annotations: np.array of shape (N, 5) for (x1, y1, x2, y2, label).
         num_classes: Number of classes to predict.
-        mask_shape: If the image is padded with zeros, mask_shape can be used to mark the relevant part of the image.
-        negative_overlap: IoU overlap for negative anchors (all anchors with overlap < negative_overlap are negative).
-        positive_overlap: IoU overlap or positive anchors (all anchors with overlap > positive_overlap are positive).
+        mask_shape: If the image is padded with zeros, mask_shape can be used
+            to mark the relevant part of the image.
+        negative_overlap: IoU overlap for negative anchors
+            (all anchors with overlap < negative_overlap are negative).
+        positive_overlap: IoU overlap or positive anchors
+            (all anchors with overlap > positive_overlap are positive).
     # Returns
-        labels: np.array of shape (A, num_classes) where a row consists of 0 for negative and 1 for positive for a certain class.
-        annotations: np.array of shape (A, 5) for (x1, y1, x2, y2, label) containing the annotations corresponding to each anchor or 0 if there is no corresponding anchor.
-        anchor_states: np.array of shape (N,) containing the state of an anchor (-1 for ignore, 0 for bg, 1 for fg).
+        labels: np.array of shape (A, num_classes) where a row consists of 0
+            for negative and 1 for positive for a certain class.
+        annotations: np.array of shape (A, 5) for (x1, y1, x2, y2, label)
+            containing the annotations corresponding to each anchor or 0 if
+            there is no corresponding anchor.
+        anchor_states: np.array of shape (N,) containing the state of an anchor
+            (-1 for ignore, 0 for bg, 1 for fg).
     """
     # anchor states: 1 is positive, 0 is negative, -1 is dont care
     anchor_states = np.zeros((anchors.shape[0],))
@@ -66,7 +73,8 @@ def layer_shapes(image_shape, model):
     """Compute layer shapes given input image shape and the model.
     # Args
         image_shape: The shape of the image.
-        model: The model to use for computing how the image shape is transformed in the pyramid.
+        model: The model to use for computing how the image shape is
+            transformed in the pyramid.
     # Returns
         A dictionary mapping layer names to image shapes.
     """
@@ -119,14 +127,19 @@ def anchors_for_shape(image_shape,
     """Generators anchors for a given shape.
     # Args
         image_shape: The shape of the image.
-        pyramid_levels: List of ints representing which pyramids to use (defaults to [3, 4, 5, 6, 7]).
-        ratios: List of ratios with which anchors are generated (defaults to [0.5, 1, 2]).
-        scales: List of scales with which anchors are generated (defaults to [2^0, 2^(1/3), 2^(2/3)]).
+        pyramid_levels: List of ints representing which pyramids to use
+            (defaults to [3, 4, 5, 6, 7]).
+        ratios: List of ratios with which anchors are generated
+            (defaults to [0.5, 1, 2]).
+        scales: List of scales with which anchors are generated
+            (defaults to [2^0, 2^(1/3), 2^(2/3)]).
         strides: Stride per pyramid level, defines how the pyramids are constructed.
         sizes: Sizes of the anchors per pyramid level.
-        shapes_callback: Function to call for getting the shape of the image at different pyramid levels.
+        shapes_callback: Function to call for getting the shape of the image
+            at different pyramid levels.
     # Returns
-        np.array of shape (N, 4) containing the (x1, y1, x2, y2) coordinates for the anchors.
+        np.array of shape (N, 4) containing the (x1, y1, x2, y2) coordinates
+        for the anchors.
     """
     if pyramid_levels is None:
         pyramid_levels = [3, 4, 5, 6, 7]

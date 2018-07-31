@@ -1,40 +1,34 @@
 #!/usr/bin/env python
-
 """
-Copyright 2017-2018 Fizyr (https://fizyr.com)
+retinanet_train.py
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+@author Shivam Patel
 
-    http://www.apache.org/licenses/LICENSE-2.0
+Training script adapted from keras_retinanet.
+Loads images from disk instead of CSV data.
+Can use custom backbones featured in deepcell_backbone.py
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Usage: python retinanet_train.py \
+       --no-weights --image-min-side 360 --image-max-side 426 \
+       --random-transform --backbone deepcell --steps=1000 --epochs=10 \
+       --gpu 0 --tensorboard-dir logs \
+       csv ./annotation.csv ./classes.csv
 """
 
 import argparse
 import os
-import csv
 import sys
 import time
 import warnings
-from six import raise_from
-from fnmatch import fnmatch
 
 import numpy as np
-import pandas as pd
-from PIL import Image
 
-from skimage.io import imread
 from skimage.external.tifffile import TiffFile
-from skimage.measure import label, regionprops
+from skimage.io import imread
+
+import keras
 
 from keras_retinanet import losses
-from keras_retinanet import models
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.callbacks.eval import Evaluate
 from keras_retinanet.models.retinanet import retinanet_bbox
@@ -44,221 +38,80 @@ from keras_retinanet.utils.model import freeze as freeze_model
 from keras_retinanet.utils.transform import random_transform_generator
 
 import tensorflow as tf
-from tensorflow.python import keras
 
-import cv2
+from deepcell.image_generators import RetinaNetCSVGenerator
 
-from deepcell import RetinanetGenerator
+"""
+Functions to load custom backbone from deepcell_backbone
+"""
+
+def get_backbone(backbone_name):
+    """
+    Returns a backbone object for the given backbone.
+    """
+    if 'resnet' in backbone_name:
+        from keras_retinanet.models.resnet import ResNetBackbone as b
+    elif 'mobilenet' in backbone_name:
+        from keras_retinanet.models.mobilenet import MobileNetBackbone as b
+    elif 'vgg' in backbone_name:
+        from keras_retinanet.models.vgg import VGGBackbone as b
+    elif 'densenet' in backbone_name:
+        from keras_retinanet.models.densenet import DenseNetBackbone as b
+    elif 'deepcell' in backbone_name:
+        # Import custom written backbone class here
+        from deepcell_backbone import DeepcellBackbone as b
+    else:
+        raise NotImplementedError('Backbone class for  \'{}\' not implemented.'.format(backbone))
+
+    return b(backbone_name)
+
+
+def load_model(filepath,
+               backbone_name='resnet50',
+               convert=False,
+               nms=True,
+               class_specific_filter=True):
+    """Loads a retinanet model using the correct custom objects.
+    # Arguments
+        filepath: one of the following:
+            - string, path to the saved model, or
+            - h5py.File object from which to load the model
+        backbone_name: Backbone with which the model was trained.
+        convert: Boolean, whether to convert the model to an inference model.
+        nms: Boolean, whether to add NMS filtering to the converted model.
+             Only valid if convert=True.
+        class_specific_filter: Whether to use class specific filtering or filter
+                               for the best scoring class only.
+    # Returns
+        A keras.models.Model object.
+    # Raises
+        ImportError: if h5py is not available.
+        ValueError: In case of an invalid savefile.
+    """
+    from keras.models import load_model as keras_load_model
+
+    model = keras_load_model(filepath, custom_objects=get_backbone(backbone_name).custom_objects)
+    if convert:
+        from keras_retinanet.models.retinanet import retinanet_bbox
+        model = retinanet_bbox(model=model, nms=nms, class_specific_filter=class_specific_filter)
+
+    return model
+
+
+"""
+Functions to train retinanet models
+"""
 
 
 def get_image(file_name):
     ext = os.path.splitext(file_name.lower())[-1]
-    if ext == '.tif' or ext == '.tiff':
+    if ext in {'.tif', '.tiff'}:
         img = np.asarray(np.float32(TiffFile(file_name).asarray()))
-        img = np.tile(np.expand_dims(img, axis=-1),(1, 1, 3))
+        img = np.tile(np.expand_dims(img, axis=-1), (1, 1, 3))
         return img / np.max(img)
     img = np.asarray(np.float32(imread(file_name)))
-    img = np.tile(np.expand_dims(img, axis=-1),(1, 1, 3))
+    img = np.tile(np.expand_dims(img, axis=-1), (1, 1, 3))
     return ((img / np.max(img)) * 255).astype(int)
-
-
-def _parse(value, function, fmt):
-    """
-    Parse a string into a value, and format a nice ValueError if it fails.
-
-    Returns `function(value)`.
-    Any `ValueError` raised is catched and a new `ValueError` is raised
-    with message `fmt.format(e)`, where `e` is the caught `ValueError`.
-    """
-    try:
-        return function(value)
-    except ValueError as e:
-        raise_from(ValueError(fmt.format(e)), None)
-
-
-def _read_classes(csv_reader):
-    """ Parse the classes file given by csv_reader.
-    """
-    result = {}
-    for line, row in enumerate(csv_reader):
-        line += 1
-
-        try:
-            class_name, class_id = row
-        except ValueError:
-            raise_from(ValueError('line {}: format should be "class_name,class_id"'.format(line)), None)
-        class_id = _parse(class_id, int, 'line {}: malformed class ID: {{}}'.format(line))
-
-        if class_name in result:
-            raise ValueError('line {}: duplicate class name: \'{}\''.format(line, class_name))
-        result[class_name] = class_id
-    return result
-
-
-def _read_annotations(csv_reader, classes):
-    """ Read annotations from the csv_reader.
-    """
-    result = {}
-    for line, row in enumerate(csv_reader):
-        line += 1
-
-        try:
-            img_file, x1, y1, x2, y2, class_name = row[:6]
-        except ValueError:
-            raise_from(ValueError('line {}: format should be \'img_file,x1,y1,x2,y2,class_name\' or \'img_file,,,,,\''.format(line)), None)
-
-        if img_file not in result:
-            result[img_file] = []
-
-        # If a row contains only an image path, it's an image without annotations.
-        if (x1, y1, x2, y2, class_name) == ('', '', '', '', ''):
-            continue
-
-        x1 = _parse(x1, int, 'line {}: malformed x1: {{}}'.format(line))
-        y1 = _parse(y1, int, 'line {}: malformed y1: {{}}'.format(line))
-        x2 = _parse(x2, int, 'line {}: malformed x2: {{}}'.format(line))
-        y2 = _parse(y2, int, 'line {}: malformed y2: {{}}'.format(line))
-
-        # Check that the bounding box is valid.
-        if x2 <= x1:
-            raise ValueError('line {}: x2 ({}) must be higher than x1 ({})'.format(line, x2, x1))
-        if y2 <= y1:
-            raise ValueError('line {}: y2 ({}) must be higher than y1 ({})'.format(line, y2, y1))
-
-        # check if the current class name is correctly present
-        if class_name not in classes:
-            raise ValueError('line {}: unknown class name: "{}" (classes: {})'.format(line, class_name, classes))
-
-        result[img_file].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2, 'class': class_name})
-    return result
-
-
-def _open_for_csv(path):
-    """ Open a file with flags suitable for csv.reader.
-
-    This is different for python2 it means with mode 'rb',
-    for python3 this means 'r' with "universal newlines".
-    """
-    if sys.version_info[0] < 3:
-        return open(path, 'rb')
-    return open(path, 'r', newline='')
-
-
-class CSVGenerator(RetinanetGenerator):
-    """ Generate data for a custom CSV dataset.
-
-    See https://github.com/fizyr/keras-retinanet#csv-datasets for more information.
-    """
-
-    def __init__(self,
-                 csv_data_file,
-                 csv_class_file,
-                 base_dir=None,
-                 **kwargs):
-        """ Initialize a CSV data generator.
-
-        Args
-            csv_data_file: Path to the CSV annotations file.
-            csv_class_file: Path to the CSV classes file.
-            base_dir: Directory w.r.t. where the files are to be searched
-                      (defaults to the directory containing the csv_data_file).
-        """
-        self.image_names = []
-        self.image_data = {}
-        self.base_dir = base_dir
-
-        # Take base_dir from annotations file if not explicitly specified.
-        if self.base_dir is None:
-            self.base_dir = os.path.dirname(csv_data_file)
-
-        # parse the provided class file
-        try:
-            with _open_for_csv(csv_class_file) as file:
-                self.classes = _read_classes(csv.reader(file, delimiter=','))
-        except ValueError as e:
-            raise_from(ValueError('invalid CSV class file: {}: {}'.format(csv_class_file, e)), None)
-
-        self.labels = {}
-        for key, value in self.classes.items():
-            self.labels[value] = key
-
-        # csv with img_path, x1, y1, x2, y2, class_name
-        try:
-            with _open_for_csv(csv_data_file) as file:
-                self.image_data = _read_annotations(csv.reader(file, delimiter=','), self.classes)
-        except ValueError as e:
-            raise_from(ValueError('invalid CSV annotations file: {}: {}'.format(csv_data_file, e)), None)
-        self.image_names = list(self.image_data.keys())
-
-        super(CSVGenerator, self).__init__(**kwargs)
-
-    def size(self):
-        """ Size of the dataset.
-        """
-        return len(self.image_names)
-
-    def num_classes(self):
-        """ Number of classes in the dataset.
-        """
-        return max(self.classes.values()) + 1
-
-    def name_to_label(self, name):
-        """ Map name to label.
-        """
-        return self.classes[name]
-
-    def label_to_name(self, label):
-        """ Map label to name.
-        """
-        return self.labels[label]
-
-    def image_path(self, image_index):
-        """ Returns the image path for image_index.
-        """
-        return os.path.join(self.base_dir, self.image_names[image_index])
-
-    def image_aspect_ratio(self, image_index):
-        """ Compute the aspect ratio for an image with image_index.
-        """
-        # PIL is fast for metadata
-        image = Image.open(self.image_path(image_index))
-        return float(image.width) / float(image.height)
-
-    def load_image(self, image_index):
-        """ Load an image at the image_index.
-        """
-        return get_image(self.image_path(image_index))
-
-    def load_annotations(self, image_index):
-        """ Load annotations for an image_index.
-        """
-        path = self.image_names[image_index]
-        annots = self.image_data[path]
-        boxes = np.zeros((len(annots), 5))
-
-        for idx, annot in enumerate(annots):
-            class_name = annot['class']
-            boxes[idx, 0] = float(annot['x1'])
-            boxes[idx, 1] = float(annot['y1'])
-            boxes[idx, 2] = float(annot['x2'])
-            boxes[idx, 3] = float(annot['y2'])
-            boxes[idx, 4] = self.name_to_label(class_name)
-
-        return boxes
-
-
-def list_file_deepcell(direc_name, training_direcs, raw_image_direc, channel_names):
-    filelist = []
-    for direc in training_direcs:
-        imglist = os.listdir(os.path.join(direc_name, direc, raw_image_direc))
-        for channel in channel_names:
-            for img in imglist:
-                # if channel string is NOT in image file name, skip it.
-                if not fnmatch(img, '*{}*'.format(channel)):
-                    continue
-                image_file = os.path.join(direc_name, direc, raw_image_direc, img)
-                filelist.append(image_file)
-    return sorted(filelist)
 
 
 def makedirs(path):
@@ -273,17 +126,15 @@ def makedirs(path):
 
 
 def get_session():
-    """ Construct a modified tf session.
-    """
+    """Construct a modified tf session."""
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     return tf.Session(config=config)
 
 
 def model_with_weights(model, weights, skip_mismatch):
-    """ Load weights for model.
-
-    Args
+    """Load weights for model.
+    # Args
         model         : The model to load weights for.
         weights       : The weights to load.
         skip_mismatch : If True, skips layers whose shape of weights doesn't match with the model.
@@ -294,32 +145,37 @@ def model_with_weights(model, weights, skip_mismatch):
 
 
 def create_models(backbone_retinanet, num_classes, weights, multi_gpu=0, freeze_backbone=False):
-    """ Creates three models (model, training_model, prediction_model).
-
-    Args
-        backbone_retinanet : A function to call to create a retinanet model with a given backbone.
-        num_classes        : The number of classes to train.
-        weights            : The weights to load into the model.
-        multi_gpu          : The number of GPUs to use for training.
-        freeze_backbone    : If True, disables learning for the backbone.
-
-    Returns
-        model            : The base model. This is also the model that is saved in snapshots.
-        training_model   : The training model. If multi_gpu=0, this is identical to model.
-        prediction_model : The model wrapped with utility functions to perform object detection (applies regression values and performs NMS).
+    """Creates three models (model, training_model, prediction_model).
+    # Args
+        backbone_retinanet: A function to call to create a retinanet model with a given backbone.
+        num_classes: The number of classes to train.
+        weights: The weights to load into the model.
+        multi_gpu: The number of GPUs to use for training.
+        freeze_backbone: If True, disables learning for the backbone.
+    # Returns
+        model: The base model. This is also the model that is saved in snapshots.
+        training_model: The training model. If multi_gpu=0, this is identical to model.
+        prediction_model: The model wrapped with utility functions to perform object detection
+                           (applies regression values and performs NMS).
     """
     modifier = freeze_model if freeze_backbone else None
 
-    # Keras recommends initialising a multi-gpu model on the CPU to ease weight
-    # sharing, and to prevent OOM errors.  Optionally wrap in a parallel model
+    # Keras recommends initialising a multi-gpu model on the CPU
+    # to ease weight sharing, and to prevent OOM errors.
+    # optionally wrap in a parallel model
     if multi_gpu > 1:
         from keras.utils import multi_gpu_model
         with tf.device('/cpu:0'):
-            model = model_with_weights(backbone_retinanet(num_classes, modifier=modifier), weights=weights, skip_mismatch=True)
+            model = model_with_weights(
+                backbone_retinanet(num_classes, modifier=modifier),
+                weights=weights,
+                skip_mismatch=True)
         training_model = multi_gpu_model(model, gpus=multi_gpu)
     else:
-        backbone = backbone_retinanet(num_classes, modifier=modifier)
-        model = model_with_weights(backbone, weights=weights, skip_mismatch=True)
+        model = model_with_weights(
+            backbone_retinanet(num_classes, modifier=modifier),
+            weights=weights,
+            skip_mismatch=True)
         training_model = model
 
     # make prediction model
@@ -333,20 +189,19 @@ def create_models(backbone_retinanet, num_classes, weights, multi_gpu=0, freeze_
         },
         optimizer=keras.optimizers.adam(lr=1e-5, clipnorm=0.001)
     )
+
     return model, training_model, prediction_model
 
 
 def create_callbacks(model, training_model, prediction_model, validation_generator, args):
-    """ Creates the callbacks to use during training.
-
-    Args
+    """Creates the callbacks to use during training.
+    # Args
         model: The base model.
         training_model: The model that is used for training.
         prediction_model: The model that should be used for validation.
         validation_generator: The generator for creating validation data.
         args: parseargs args object.
-
-    Returns:
+    # Returns:
         A list of callbacks used for training.
     """
     callbacks = []
@@ -361,7 +216,7 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
             write_graph=True,
             write_grads=False,
             write_images=False,
-            embeddings_freq = 0,
+            embeddings_freq=0,
             embeddings_layer_names=None,
             embeddings_metadata=None)
         callbacks.append(tensorboard_callback)
@@ -384,10 +239,12 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
         checkpoint = keras.callbacks.ModelCheckpoint(
             os.path.join(
                 args.snapshot_path,
-                '{backbone}_{dataset_type}_{{epoch:02d}}.h5'.format(backbone=args.backbone, dataset_type=args.dataset_type)
+                '{backbone}_{dataset_type}_{{epoch:02d}}.h5'.format(
+                    backbone=args.backbone,
+                    dataset_type=args.dataset_type)
             ),
             verbose=1,
-            # save_best_only=True,
+            save_best_only=True,
             # monitor="mAP",
             # mode='max'
         )
@@ -400,7 +257,7 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
         patience=2,
         verbose=1,
         mode='auto',
-        epsilon=0.0001,
+        min_delta=0.0001,
         cooldown=0,
         min_lr=0
     ))
@@ -409,11 +266,10 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
 
 
 def create_generators(args, preprocess_image):
-    """ Create generators for training and validation.
-
-    Args
-        args             : parseargs object containing configuration for generators.
-        preprocess_image : Function that preprocesses an image for the network.
+    """Create generators for training and validation.
+    # Args
+        args: parseargs object containing configuration for generators.
+        preprocess_image: Function that preprocesses an image for the network.
     """
     common_args = {
         'batch_size': args.batch_size,
@@ -434,21 +290,34 @@ def create_generators(args, preprocess_image):
             min_scaling=(0.9, 0.9),
             max_scaling=(1.1, 1.1),
             flip_x_chance=0.5,
-            flip_y_chance=0.5)
+            flip_y_chance=0.5,
+        )
     else:
         transform_generator = random_transform_generator(flip_x_chance=0.5)
 
-    if args.dataset_type == 'csv':
-        train_generator = CSVGenerator(
-            args.annotations,
-            args.classes,
+    if args.dataset_type == 'train':
+        train_generator = RetinaNetCSVGenerator(
+            direc_name='/data/data/cells/HeLa/S3',
+            training_dirs=['set1', 'set2'],
+            raw_image_dir='raw',
+            channel_names=['FITC'],
+            annotation_dir='annotated',
+            annotation_names=['corrected'],
+            # args.annotations,
+            # args.classes,
             **common_args
         )
 
         if args.val_annotations:
-            validation_generator = CSVGenerator(
-                args.val_annotations,
-                args.classes,
+            validation_generator = RetinaNetCSVGenerator(
+                direc_name='/data/data/cells/HeLa/S3',
+                training_dirs=['set1', 'set2'],
+                raw_image_dir='raw',
+                channel_names=['FITC'],
+                annotation_dir='annotated',
+                annotation_names=['corrected'],
+                # args.val_annotations,
+                # args.classes,
                 **common_args
             )
         else:
@@ -458,14 +327,13 @@ def create_generators(args, preprocess_image):
 
 
 def check_args(parsed_args):
-    """ Function to check for inherent contradictions within parsed arguments.
+    """
+    Function to check for inherent contradictions within parsed arguments.
     For example, batch_size < num_gpus
     Intended to raise errors prior to backend initialisation.
-
-    Args
+    # Args
         parsed_args: parser.parse_args()
-
-    Returns
+    # Returns
         parsed_args
     """
 
@@ -493,39 +361,33 @@ def check_args(parsed_args):
 
 
 def parse_args(args):
-    """ Parse the arguments.
-    """
+    """Parse the arguments."""
     parser = argparse.ArgumentParser(description='Simple training script for training a RetinaNet network.')
     subparsers = parser.add_subparsers(help='Arguments for specific dataset types.', dest='dataset_type')
     subparsers.required = True
 
-    def csv_list(string):
-        return string.split(',')
-
-    csv_parser = subparsers.add_parser('csv')
-    csv_parser.add_argument('annotations', help='Path to CSV file containing annotations for training.')
-    csv_parser.add_argument('classes', help='Path to a CSV file containing class label mapping.')
+    csv_parser = subparsers.add_parser('train')
     csv_parser.add_argument('--val-annotations', help='Path to CSV file containing annotations for validation (optional).')
 
     csv_parser_run = subparsers.add_parser('run')
     csv_parser_run.add_argument('run_path', help='Path to folder containing test data')
-    csv_parser_run.add_argument('model_path',help='Path to the model(.h5) file')
+    csv_parser_run.add_argument('model_path', help='Path to the model(.h5) file')
     csv_parser_run.add_argument('--save_path', help='Path to save data', default='./test_output')
 
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--snapshot', help='Resume training from a snapshot.')
-    group.add_argument('--imagenet-weights', help='Initialize the model with pretrained imagenet weights. This is the default behaviour.', action='store_const', const=True, default=True)
+    group.add_argument('--imagenet-weights', help='Initialize the model with pretrained imagenet weights. This is the default behaviour.', action='store_const', const=True, default=False)
     group.add_argument('--weights', help='Initialize the model with weights from a file.')
-    group.add_argument('--no-weights', help='Don\'t initialize the model with any weights.', dest='imagenet_weights', action='store_const', const=False)
+    group.add_argument('--no-weights', help='Don\'t initialize the model with any weights.', dest='imagenet_weights', action='store_const', const=False, default=True)
 
     parser.add_argument('--backbone', help='Backbone model used by retinanet.', default='resnet50', type=str)
     parser.add_argument('--batch-size', help='Size of the batches.', default=1, type=int)
     parser.add_argument('--gpu', help='Id of the GPU to use (as reported by nvidia-smi).')
     parser.add_argument('--multi-gpu', help='Number of GPUs to use for parallel processing.', type=int, default=0)
     parser.add_argument('--multi-gpu-force', help='Extra flag needed to enable (experimental) multi-gpu support.', action='store_true')
-    parser.add_argument('--epochs', help='Number of epochs to train.', type=int, default=50)
-    parser.add_argument('--steps', help='Number of steps per epoch.', type=int, default=10000)
+    parser.add_argument('--epochs', help='Number of epochs to train.', type=int, default=10)
+    parser.add_argument('--steps', help='Number of steps per epoch.', type=int, default=1000)
     parser.add_argument('--snapshot-path', help='Path to store snapshots of models during training (defaults to \'./snapshots\')', default='./snapshots')
     parser.add_argument('--tensorboard-dir', help='Log directory for Tensorboard output', default='./logs')
     parser.add_argument('--no-snapshots', help='Disable saving snapshots.', dest='snapshots', action='store_false')
@@ -545,111 +407,56 @@ def main(args=None):
     args = parse_args(args)
 
     # create object that stores backbone information
-    backbone = models.backbone(args.backbone)
+    backbone = get_backbone(args.backbone)
 
     # make sure keras is the minimum required version
     check_keras_version()
 
     if args.dataset_type == 'run':
-    	model = models.load_model(args.model_path, backbone_name=args.backbone, convert=True)
-    	labels_to_names = {0: 'cell'}
-    	makedirs(args.save_path)
-    	test_imlist = os.walk(args.run_path).next()[2]
-    	for testimgcnt,img_path in enumerate(test_imlist):
+        model = load_model(
+            args.model_path,
+            backbone_name=args.backbone,
+            convert=True)
+        labels_to_names = {0: 'cell'}
+        makedirs(args.save_path)
+        test_imlist = next(os.walk(args.run_path))[2]
+        for testimgcnt, img_path in enumerate(test_imlist):
+            image = get_image(img_path)
+            draw2 = get_image(img_path)
+            draw2 = draw2 / np.max(draw2)
+            # copy to draw on
 
-		    image = get_image(img_path)
-		    #draw2=np.tile(np.expand_dims(draw2,axis=-1),(1,1,3))
+            # preprocess image for network
+            image = preprocess_image(image)
+            image, scale = resize_image(image)
+            print(scale)
+            # process image
+            start = time.time()
+            boxes, scores, labels = model.predict_on_batch(np.expand_dims(image, axis=0))
+            print('processing time: ', time.time() - start)
 
-		    #image=draw2
-		    draw2 = get_image(img_path)
-		    draw2 = draw2/np.max(draw2)
-		    #print(np.unique(image))
-		    # copy to draw on
+            # correct for image scale
+            boxes /= scale
 
-		    #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-		    print(image.shape)
-		    # preprocess image for network
-		    image = preprocess_image(image)
-		    #print(np.unique(image))
-		    image2 = image
-		    image, scale = resize_image(image)
-		    print(scale)
-		    # process image
-		    start = time.time()
-		    boxes, scores, labels = model.predict_on_batch(np.expand_dims(image, axis=0))
-		    print('processing time: ', time.time() - start)
+            # visualize detections
+            for box, score, label in zip(boxes[0], scores[0], labels[0]):
+                # scores are sorted so we can break
+                if score < 0.5:
+                    break
 
-		    # correct for image scale
-		    boxes /= scale
+                color = label_color(label)
+                color = [255, 0, 255]
+                b = box.astype(int)
+                draw_box(draw2, b, color=color)
 
-		    # visualize detections
-		    for box, score, label in zip(boxes[0], scores[0], labels[0]):
-		        # scores are sorted so we can break
-		        if score < 0.5:
-		            break
-
-		        color = label_color(label)
-		        color=[255, 0, 255]
-		        b = box.astype(int)
-		        draw_box(draw2, b, color=color)
-
-		        caption = '{} {:.3f}'.format(labels_to_names[label], score)
-		        draw_caption(draw2, b, caption)
-		    plt.imsave(os.path.join(args.save_path, 'retinanet_output_' + str(testimgcnt)), draw2)
+                caption = '{} {:.3f}'.format(labels_to_names[label], score)
+                draw_caption(draw2, b, caption)
+            plt.imsave(os.path.join(args.save_path, 'retinanet_output_' + str(testimgcnt)), draw2)
 
     # optionally choose specific GPU
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     keras.backend.tensorflow_backend.set_session(get_session())
-
-    direc_name = '/data/data/cells/HeLa/S3'
-    training_direcs = ['set0']
-    raw_image_direc = 'raw'
-    annoted_image_direc = 'annotated_unique'
-    channel_names = ['FITC']
-    train_imlist = list_file_deepcell(
-        direc_name=direc_name,
-        training_direcs=training_direcs,
-        raw_image_direc=raw_image_direc,
-        channel_names=channel_names)
-    print(len(train_imlist))
-    print('----------------')
-    train_annotatedlist = list_file_deepcell(
-        direc_name=direc_name,
-        training_direcs=training_direcs,
-        raw_image_direc=annoted_image_direc,
-        channel_names=['corrected'])
-    print(len(train_annotatedlist))
-
-    'Making the annotations and organising them'
-    cell_data=[]
-    for cnt, f in enumerate(train_annotatedlist):
-        image = cv2.imread(f, 0)
-        p = regionprops(label(image))
-        cell_count = []
-        for index in range(len(np.unique(label(image)))-1):
-            rect = [train_imlist[cnt], p[index].bbox[1], p[index].bbox[0], p[index].bbox[3], p[index].bbox[2], 'cell']
-            cell_data.append(rect)
-            cell_count.append(rect)
-        print('-----------------Completed {}-----------'.format(f))
-        print('The number of cells in this image:', cell_count)
-    print(len(cell_data))
-
-    # Writing it into a csv file
-    with open(args.annotations, 'w') as csvFile:
-        writer = csv.writer(csvFile, dialect='excel')
-        cell_data = tuple(cell_data)
-        writer.writerows(cell_data)
-
-    csvFile.close()
-    df = pd.read_csv(args.annotations)
-    df.to_csv(args.annotations, index=False)
-
-    with open(args.classes, 'w') as csvFile:
-        writer = csv.writer(csvFile, dialect='excel')
-        writer.writerows(tuple([['cell', 0]]))
-
-    csvFile.close()
 
     # create the generators
     train_generator, validation_generator = create_generators(args, backbone.preprocess_image)
@@ -657,7 +464,7 @@ def main(args=None):
     # create the model
     if args.snapshot is not None:
         print('Loading model, this may take a second...')
-        model = models.load_model(args.snapshot, backbone_name=args.backbone)
+        model = load_model(args.snapshot, backbone_name=args.backbone)
         training_model = model
         prediction_model = retinanet_bbox(model=model)
     else:
@@ -672,12 +479,13 @@ def main(args=None):
             num_classes=train_generator.num_classes(),
             weights=weights,
             multi_gpu=args.multi_gpu,
-            freeze_backbone=args.freeze_backbone)
+            freeze_backbone=args.freeze_backbone
+        )
 
     print(model.summary())
 
     # this lets the generator compute backbone layer shapes using the actual backbone model
-    if 'vgg' in args.backbone or 'densenet' in args.backbone:
+    if any(x in args.backbone for x in ['vgg', 'densenet', 'deepcell']):
         train_generator.compute_shapes = make_shapes_callback(model)
         if validation_generator:
             validation_generator.compute_shapes = train_generator.compute_shapes
@@ -688,7 +496,8 @@ def main(args=None):
         training_model,
         prediction_model,
         validation_generator,
-        args)
+        args,
+    )
 
     # start training
     training_model.fit_generator(
@@ -696,7 +505,8 @@ def main(args=None):
         steps_per_epoch=args.steps,
         epochs=args.epochs,
         verbose=1,
-        callbacks=callbacks)
+        callbacks=callbacks,
+    )
 
 
 if __name__ == '__main__':
