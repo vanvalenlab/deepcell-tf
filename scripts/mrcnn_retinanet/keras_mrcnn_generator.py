@@ -16,12 +16,13 @@ from keras_retinanet.utils.image import adjust_transform_for_image
 from keras_retinanet.utils.image import apply_transform
 from keras_retinanet.utils.image import preprocess_image
 from keras_retinanet.utils.image import resize_image
+from keras_retinanet.utils.anchors import guess_shapes
+from keras_retinanet.utils.anchors import anchors_for_shape
+from keras_retinanet.utils.anchors import bbox_transform
 from keras_retinanet.utils.transform import transform_aabb
+from keras_maskrcnn.preprocessing.generator import Generator
 
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
-from deepcell.utils.retinanet_anchor_utils import bbox_transform
-from deepcell.utils.retinanet_anchor_utils import anchors_for_shape
-from deepcell.utils.retinanet_anchor_utils import guess_shapes
 
 
 class MaskRCNNGenerator(object):
