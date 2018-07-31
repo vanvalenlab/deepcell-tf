@@ -14,6 +14,8 @@ from skimage.measure import label, regionprops
 from skimage.external.tifffile import TiffFile
 from skimage.io import imread
 
+import keras
+
 from keras_retinanet import losses
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.callbacks.eval import Evaluate
@@ -24,7 +26,6 @@ from keras_retinanet.utils.model import freeze as freeze_model
 from keras_retinanet.utils.transform import random_transform_generator
 
 import tensorflow as tf
-import keras
 
 import custom_backbone as models
 from deepcell import RetinanetGenerator

@@ -10,14 +10,14 @@ Usage: python retinanet_custombackbone_train.py \
        csv ./annotation.csv ./classes.csv
 """
 
-import keras_resnet
+from keras.models import Model
+from keras.layers import Input, Conv2D, MaxPooling2D, Dropout
 
+import keras_resnet
 from keras_retinanet.models import retinanet
 from keras_retinanet.models import Backbone
 from keras_retinanet.utils.image import preprocess_image
 
-from keras.models import Model
-from keras.layers import Input, Conv2D, MaxPooling2D, Dropout
 
 """
 First one needs to import the Backbone class from the custom_backbone defination"

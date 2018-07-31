@@ -13,6 +13,8 @@ from skimage.io import imread
 from skimage.measure import label, regionprops
 from skimage.external.tifffile import TiffFile
 
+import keras
+
 from keras_retinanet import losses
 from keras_retinanet import models
 from keras_retinanet.preprocessing.generator import Generator
@@ -25,7 +27,6 @@ from keras_retinanet.utils.model import freeze as freeze_model
 from keras_retinanet.utils.transform import random_transform_generator
 
 import tensorflow as tf
-import keras
 
 
 def get_image(file_name):

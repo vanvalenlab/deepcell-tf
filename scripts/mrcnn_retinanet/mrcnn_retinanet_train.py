@@ -6,6 +6,8 @@ import argparse
 import os
 import sys
 
+import keras
+
 import keras_retinanet.losses
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.utils.transform import random_transform_generator
@@ -17,7 +19,6 @@ from keras_maskrcnn import models
 from keras_maskrcnn.callbacks.eval import Evaluate
 
 import tensorflow as tf
-import keras
 
 from cell_gen_deepcell import CSVGenerator
 
