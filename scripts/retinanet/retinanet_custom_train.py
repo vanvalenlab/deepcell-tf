@@ -6,7 +6,6 @@ import sys
 import time
 import warnings
 from fnmatch import fnmatch
-from six import raise_from
 
 import numpy as np
 from skimage.io import imread
@@ -28,6 +27,8 @@ from keras_retinanet.utils.transform import random_transform_generator
 
 import tensorflow as tf
 
+from deepcell.image_generators import RetinaNetCSVGenerator
+
 
 def get_image(file_name):
     ext = os.path.splitext(file_name.lower())[-1]
@@ -38,167 +39,6 @@ def get_image(file_name):
     img = np.asarray(np.float32(imread(file_name)))
     img = np.tile(np.expand_dims(img, axis=-1), (1, 1, 3))
     return ((img / np.max(img)) * 255).astype(int)
-
-
-def list_file_deepcell(direc_name, training_direcs, raw_image_direc, channel_names):
-    filelist = []
-    for direc in training_direcs:
-        imglist = os.listdir(os.path.join(direc_name, direc, raw_image_direc))
-
-        for channel in channel_names:
-            for img in imglist:
-                # if channel string is NOT in image file name, skip it.
-                if not fnmatch(img, '*{}*'.format(channel)):
-                    continue
-                image_file = os.path.join(direc_name, direc, raw_image_direc, img)
-                filelist.append(image_file)
-    return sorted(filelist)
-
-
-def generate_subimage(img_pathstack, HorizontalP, VerticalP, flag):
-    sub_img = []
-    for img_path in img_pathstack:
-        img = np.asarray(np.float32(imread(img_path)))
-        # img=((img / np.max(img)) * 255).astype(int)
-        if flag:
-            img = (img / np.max(img))
-        vway = np.zeros(VerticalP + 1)  # The dimentions of vertical cuts
-        hway = np.zeros(HorizontalP + 1)  # The dimentions of horizontal cuts
-        vcnt = 0  # The initial value for vertical
-        hcnt = 0  # The initial value for horizontal
-
-        for i in range(VerticalP + 1):
-            vway[i] = int(vcnt)
-            vcnt = vcnt + (img.shape[1] / VerticalP)
-
-        for j in range(HorizontalP + 1):
-            hway[j] = int(hcnt)
-            hcnt = hcnt + (img.shape[0] / HorizontalP)
-
-        vb = 0
-
-        for i in range(len(hway) - 1):
-            for j in range(len(vway) - 1):
-                vb += 1
-
-        for i in range(len(hway)-1):
-            for j in range(len(vway)-1):
-                sub_img.append(img[int(hway[i]):int(hway[i + 1]), int(vway[j]):int(vway[j + 1])])
-
-    sub_img2 = []
-    print(len(sub_img))
-    if flag:
-        for img in sub_img:
-            sub_img2.append(np.tile(np.expand_dims(img, axis=-1), (1, 1, 3)))
-        sub_img = sub_img2
-
-    return sub_img
-
-
-class CSVGenerator(Generator):
-
-    def __init__(self, **kwargs):
-
-        self.image_names = []
-        self.image_data = {}
-        self.image_stack = []
-        self.mask_stack = []
-
-        direc_name = '/data/data/cells/HeLa/S3'
-        training_direcs = ['set1', 'set2']
-        raw_image_direc = 'raw'
-        channel_names = ['FITC']
-        train_imlist = list_file_deepcell(
-            direc_name=direc_name,
-            training_direcs=training_direcs,
-            raw_image_direc=raw_image_direc,
-            channel_names=channel_names)
-
-        print(len(train_imlist))
-        print('----------------')
-
-        train_anotedlist = list_file_deepcell(
-            direc_name=direc_name,
-            training_direcs=training_direcs,
-            raw_image_direc='annotated',
-            channel_names=['corrected'])
-        print(len(train_anotedlist))
-
-        self.image_stack = generate_subimage(train_imlist, 3, 3, True)
-        self.mask_stack = generate_subimage(train_anotedlist, 3, 3, False)
-
-        self.classes = {'cell': 0}
-
-        self.labels = {}
-        for key, value in self.classes.items():
-            self.labels[value] = key
-
-        self.image_data = self._read_annotations(self.mask_stack)
-        self.image_names = list(self.image_data.keys())
-
-        super(CSVGenerator, self).__init__(**kwargs)
-
-    def _read_annotations(self, masks_list):
-        result = {}
-        for cnt, image in enumerate(masks_list):
-            result[cnt] = []
-            props = regionprops(label(image))
-            cell_count = 0
-            total = len(masks_list)
-            for index in range(len(np.unique(label(image))) - 1):
-                prop = props[index]
-                x1, y1, x2, y2 = prop.bbox[1], prop.bbox[0], prop.bbox[3], prop.bbox[2]
-                result[cnt].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2})
-                cell_count += 1
-
-            print('-----------------Completed {} of {}-----------'.format(cnt, total))
-            print('The number of cells in this image:', cell_count)
-        return result
-
-    def size(self):
-        """Size of the dataset."""
-        return len(self.image_names)
-
-    def num_classes(self):
-        """Number of classes in the dataset."""
-        return max(self.classes.values()) + 1
-
-    def name_to_label(self, name):
-        """Map name to label."""
-        return self.classes[name]
-
-    def label_to_name(self, label):
-        """Map label to name."""
-        return self.labels[label]
-
-    def image_path(self, image_index):
-        """Returns the image path for image_index."""
-        return os.path.join(self.base_dir, self.image_names[image_index])
-
-    def image_aspect_ratio(self, image_index):
-        """Compute the aspect ratio for an image with image_index."""
-        image = self.image_stack[image_index]
-        return float(image.shape[1]) / float(image.shape[0])
-
-    def load_image(self, image_index):
-        """Load an image at the image_index."""
-        return self.image_stack[image_index]
-
-    def load_annotations(self, image_index):
-        """Load annotations for an image_index."""
-        path = self.image_names[image_index]
-        annots = self.image_data[path]
-        boxes = np.zeros((len(annots), 5))
-
-        for idx, annot in enumerate(annots):
-            class_name = 'cell'
-            boxes[idx, 0] = float(annot['x1'])
-            boxes[idx, 1] = float(annot['y1'])
-            boxes[idx, 2] = float(annot['x2'])
-            boxes[idx, 3] = float(annot['y2'])
-            boxes[idx, 4] = self.name_to_label(class_name)
-
-        return boxes
 
 
 def makedirs(path):
@@ -387,14 +227,26 @@ def create_generators(args, preprocess_image):
         transform_generator = random_transform_generator(flip_x_chance=0.5)
 
     if args.dataset_type == 'train':
-        train_generator = CSVGenerator(
+        train_generator = RetinaNetCSVGenerator(
+            direc_name='/data/data/cells/HeLa/S3',
+            training_direcs=['set1', 'set2'],
+            raw_image_direc='raw',
+            channel_names=['FITC'],
+            annotation_names=['corrected'],
+            annotation_dir='annotated',
             # args.annotations,
             # args.classes,
             **common_args
         )
 
         if args.val_annotations:
-            validation_generator = CSVGenerator(
+            validation_generator = RetinaNetCSVGenerator(
+                direc_name='/data/data/cells/HeLa/S3',
+                training_direcs=['set1', 'set2'],
+                raw_image_direc='raw',
+                channel_names=['FITC'],
+                annotation_names=['corrected'],
+                annotation_dir='annotated',
                 # args.val_annotations,
                 # args.classes,
                 **common_args

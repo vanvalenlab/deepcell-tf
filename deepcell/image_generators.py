@@ -10,7 +10,7 @@ from __future__ import print_function
 from __future__ import division
 
 import os
-import threading
+from fnmatch import fnmatch
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -19,6 +19,8 @@ from skimage.filters import sobel_v
 from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.transform import resize
+from skimage.io import imread
+
 from tensorflow.python.platform import tf_logging as logging
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.preprocessing.image import random_channel_shift
@@ -27,7 +29,8 @@ from tensorflow.python.keras.preprocessing.image import flip_axis
 from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
-import keras_retinanet.utils as retinanet_utils
+
+from keras_retinanet.preprocessing.generator import Generator
 
 from .utils.transform_utils import transform_matrix_offset_center
 from .utils.transform_utils import distance_transform_2d
@@ -1518,270 +1521,159 @@ class DiscIterator(Iterator):
 
 
 """
-Retina Net and MaskRCNN 
+RetinaNet and MaskRCNN Generators
 """
 
 
-class RetinanetGenerator(object):
-    """Abstract RetinanetGenerator class."""
+class RetinaNetCSVGenerator(Generator):
 
     def __init__(self,
-                 transform_generator=None,
-                 batch_size=1,
-                 group_method='ratio',  # one of 'none', 'random', 'ratio'
-                 shuffle_groups=True,
-                 image_min_side=800,
-                 image_max_side=1333,
-                 transform_parameters=None,
-                 compute_anchor_targets=None,
-                 compute_shapes=None,
-                 preprocess_image=None):
-        """Initialize Retinanet_Generator object.
-        # Arguments
-            transform_generator: A Retinanet_Generator used to
-                randomly transform images and annotations
-            batch_size: The size of the batches to generate
-            group_method: Determines how images are grouped together
-                defaults to 'ratio', one of {'none', 'random', 'ratio'}
-            shuffle_groups: If True, shuffles the groups each epoch.
-            image_min_side: After resizing the minimum side of an image is
-                equal to image_min_side.
-            image_max_side: If after resizing the maximum side is larger than
-                image_max_side, scales down further so that the
-                max side is equal to image_max_side
-            transform_parameters: The transform parameters used for data augmentation
-            compute_anchor_targets: Function handler for computing the targets
-                of anchors for an image and its annotations
-            compute_shapes: Function handler for computing the shapes of the
-                pyramid for a given input.
-            preprocess_image: Function handler for preprocessing an image
-                (scaling / normalizing) for passing through a network
+                 direc_name,
+                 training_dirs,
+                 raw_image_dir,
+                 channel_names,
+                 annotation_dir,
+                 annotation_names,
+                 **kwargs):
+        self.image_names = []
+        self.image_data = {}
+        self.image_stack = []
+        self.mask_stack = []
+        self.base_dir = kwargs.get('base_dir')
+
+        train_files = self.list_file_deepcell(
+            dir_name=direc_name,
+            training_dirs=training_dirs,
+            image_dir=raw_image_dir,
+            channel_names=channel_names)
+
+        annotation_files = self.list_file_deepcell(
+            dir_name=direc_name,
+            training_dirs=training_dirs,
+            image_dir=annotation_dir,
+            channel_names=annotation_names)
+
+        self.image_stack = self.generate_subimage(train_files, 3, 3, True)
+        self.mask_stack = self.generate_subimage(annotation_files, 3, 3, False)
+
+        self.classes = {'cell': 0}
+
+        self.labels = {}
+        for key, value in self.classes.items():
+            self.labels[value] = key
+
+        self.image_data = self._read_annotations(self.mask_stack)
+        self.image_names = list(self.image_data.keys())
+        super(RetinaNetCSVGenerator, self).__init__(**kwargs)
+
+    def list_file_deepcell(self, dir_name, training_dirs, image_dir, channel_names):
         """
-        if transform_parameters is None:
-            transform_parameters = retinanet_utils.image.TransformParameters()
-        if compute_anchor_targets is None:
-            compute_anchor_targets = retinanet_utils.anchors.anchor_targets_bbox
-        if compute_shapes is None:
-            compute_shapes = retinanet_utils.anchors.guess_shapes
-        if preprocess_image is None:
-            preprocess_image = retinanet_utils.image.preprocess_image
+        List all image files inside each `dir_name/training_dir/image_dir`
+        with "channel_name" in the filename.
+        """
+        filelist = []
+        for direc in training_dirs:
+            imglist = os.listdir(os.path.join(dir_name, direc, image_dir))
 
-        self.transform_generator = transform_generator
-        self.batch_size = int(batch_size)
-        self.group_method = group_method
-        self.shuffle_groups = shuffle_groups
-        self.image_min_side = image_min_side
-        self.image_max_side = image_max_side
-        self.transform_parameters = transform_parameters
-        self.compute_anchor_targets = compute_anchor_targets
-        self.compute_shapes = compute_shapes
-        self.preprocess_image = preprocess_image
+            for channel in channel_names:
+                for img in imglist:
+                    # if channel string is NOT in image file name, skip it.
+                    if not fnmatch(img, '*{}*'.format(channel)):
+                        continue
+                    image_file = os.path.join(dir_name, direc, image_dir, img)
+                    filelist.append(image_file)
+        return sorted(filelist)
 
-        self.group_index = 0
-        self.lock = threading.Lock()
+    def _read_annotations(self, masks_list):
+        result = {}
+        for cnt, image in enumerate(masks_list):
+            result[cnt] = []
+            p = regionprops(label(image))
 
-        self.group_images()
+            cell_count = 0
+            for index in range(len(np.unique(label(image)))-1):
+                y1, x1, y2, x2 = p[index].bbox
+                result[cnt].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2})
+                cell_count += 1
+            if cell_count == 0:
+                logging.warning('No cells found in image {}'.format(cnt))
+        return result
+
+    def generate_subimage(self, img_pathstack, horizontal, vertical, flag):
+        sub_img = []
+        for img_path in img_pathstack:
+            img = np.asarray(np.float32(imread(img_path)))
+            if flag:
+                img = (img / np.max(img))
+            vway = np.zeros(vertical + 1)  # The dimentions of vertical cuts
+            hway = np.zeros(horizontal + 1)  # The dimentions of horizontal cuts
+            vcnt = 0  # The initial value for vertical
+            hcnt = 0  # The initial value for horizontal
+
+            for i in range(vertical + 1):
+                vway[i] = int(vcnt)
+                vcnt += (img.shape[1] / vertical)
+
+            for j in range(horizontal + 1):
+                hway[j] = int(hcnt)
+                hcnt += (img.shape[0] / horizontal)
+
+            vb = 0
+
+            for i in range(len(hway) - 1):
+                for j in range(len(vway) - 1):
+                    vb += 1
+
+            for i in range(len(hway) - 1):
+                for j in range(len(vway) - 1):
+                    sub_img.append(img[int(hway[i]):int(hway[i+1]), int(vway[j]):int(vway[j+1])])
+
+        if flag:
+            sub_img = [np.tile(np.expand_dims(i, axis=-1), (1, 1, 3)) for i in sub_img]
+
+        return sub_img
 
     def size(self):
         """Size of the dataset."""
-        raise NotImplementedError('size method not implemented')
+        return len(self.image_names)
 
     def num_classes(self):
         """Number of classes in the dataset."""
-        raise NotImplementedError('num_classes method not implemented')
+        return max(self.classes.values()) + 1
 
     def name_to_label(self, name):
         """Map name to label."""
-        raise NotImplementedError('name_to_label method not implemented')
+        return self.classes[name]
 
     def label_to_name(self, label):
         """Map label to name."""
-        raise NotImplementedError('label_to_name method not implemented')
+        return self.labels[label]
+
+    def image_path(self, image_index):
+        """Returns the image path for image_index."""
+        return os.path.join(self.base_dir, self.image_names[image_index])
 
     def image_aspect_ratio(self, image_index):
         """Compute the aspect ratio for an image with image_index."""
-        raise NotImplementedError('image_aspect_ratio method not implemented')
+        image = self.image_stack[image_index]
+        return float(image.shape[1]) / float(image.shape[0])
 
     def load_image(self, image_index):
         """Load an image at the image_index."""
-        raise NotImplementedError('load_image method not implemented')
+        return self.image_stack[image_index]
 
     def load_annotations(self, image_index):
         """Load annotations for an image_index."""
-        raise NotImplementedError('load_annotations method not implemented')
+        path = self.image_names[image_index]
+        annots = self.image_data[path]
+        boxes = np.zeros((len(annots), 5))
 
-    def load_annotations_group(self, group):
-        """Load annotations for all images in group."""
-        return [self.load_annotations(image_index) for image_index in group]
+        for idx, annot in enumerate(annots):
+            class_name = 'cell'
+            boxes[idx, 0] = float(annot['x1'])
+            boxes[idx, 1] = float(annot['y1'])
+            boxes[idx, 2] = float(annot['x2'])
+            boxes[idx, 3] = float(annot['y2'])
+            boxes[idx, 4] = self.name_to_label(class_name)
 
-    def filter_annotations(self, image_group, annotations_group, group):
-        """
-        Filter annotations by removing those that are outside
-        of the image bounds or whose width/height < 0.
-        """
-        # test all annotations
-        for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
-            if not isinstance(annotations, np.ndarray):
-                raise ValueError('`load_annotations` should return a list of '
-                                 'numpy arrays, received: {}'.format(
-                                     type(annotations)))
-
-            # test x2 < x1 | y2 < y1 | x1 < 0 | y1 < 0 | x2 <= 0 | y2 <= 0
-            # test x2 >= image.shape[1] | y2 >= image.shape[0]
-            invalid_indices = np.where(
-                (annotations[:, 2] <= annotations[:, 0]) |
-                (annotations[:, 3] <= annotations[:, 1]) |
-                (annotations[:, 0] < 0) |
-                (annotations[:, 1] < 0) |
-                (annotations[:, 2] > image.shape[1]) |
-                (annotations[:, 3] > image.shape[0])
-            )[0]
-
-            # delete invalid indices
-            if invalid_indices.size > 0:
-                logging.warning('Image with id {} and shape {} contains '
-                                'the following invalid boxes: {}.'.format(
-                                    group[index],
-                                    image.shape,
-                                    [annotations[i, :] for i in invalid_indices]))
-
-                annotations_group[index] = np.delete(annotations, invalid_indices, axis=0)
-
-        return image_group, annotations_group
-
-    def load_image_group(self, group):
-        """Load images for all images in a group"""
-        return [self.load_image(image_index) for image_index in group]
-
-    def random_transform_group_entry(self, image, annotations):
-        """Randomly transforms image and annotation"""
-        # randomly transform both image and annotations
-        if self.transform_generator:
-            transform = retinanet_utils.image.adjust_transform_for_image(
-                next(self.transform_generator),
-                image,
-                self.transform_parameters.relative_translation)
-
-            image = retinanet_utils.image.apply_transform(
-                transform, image, self.transform_parameters)
-
-            # Transform the bounding boxes in the annotations.
-            annotations = annotations.copy()
-            for index in range(annotations.shape[0]):
-                annotations[index, :4] = retinanet_utils.transform.transform_aabb(
-                    transform, annotations[index, :4])
-
-        return image, annotations
-
-    def resize_image(self, image):
-        """Resize an image using image_min_side and image_max_side"""
-        return retinanet_utils.image.resize_image(
-            image, min_side=self.image_min_side, max_side=self.image_max_side)
-
-    def preprocess_group_entry(self, image, annotations):
-        """Preprocess image and its annotations"""
-        image = self.preprocess_image(image)
-
-        # randomly transform image and annotations
-        image, annotations = self.random_transform_group_entry(image, annotations)
-
-        # resize image
-        image, image_scale = self.resize_image(image)
-
-        # apply resizing to annotations too
-        annotations[:, :4] *= image_scale
-
-        return image, annotations
-
-    def preprocess_group(self, image_group, annotations_group):
-        """Preprocess each image and its annotations in its group"""
-        for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
-            # preprocess a single group entry
-            image, annotations = self.preprocess_group_entry(image, annotations)
-
-            # copy processed data back to group
-            image_group[index] = image
-            annotations_group[index] = annotations
-
-        return image_group, annotations_group
-
-    def group_images(self):
-        """Order the images and makes groups of batch_size"""
-        # determine the order of the images
-        order = list(range(self.size()))
-        if self.group_method == 'random':
-            np.random.shuffle(order)
-        elif self.group_method == 'ratio':
-            order.sort(key=self.image_aspect_ratio)
-
-        # divide into groups, one group = one batch
-        self.groups = [[order[x % len(order)] for x in range(i, i + self.batch_size)] for i in range(0, len(order), self.batch_size)]
-
-    def compute_inputs(self, image_group):
-        """Compute inputs for the network using an image_group"""
-        # get the max image shape
-        max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
-
-        # construct an image batch object
-        image_batch = np.zeros((self.batch_size,) + max_shape, dtype=K.floatx())
-
-        # copy all images to the upper left part of the image batch object
-        for image_index, image in enumerate(image_group):
-            image_batch[image_index, :image.shape[0], :image.shape[1], :image.shape[2]] = image
-
-        return image_batch
-
-    def generate_anchors(self, image_shape):
-        return retinanet_utils.anchors.anchors_for_shape(
-            image_shape, shapes_callback=self.compute_shapes)
-
-    def compute_targets(self, image_group, annotations_group):
-        """ Compute target outputs for the network using images and their annotations.
-        """
-        # get the max image shape
-        max_shape = tuple(max(image.shape[x] for image in image_group) for x in range(3))
-        anchors = self.generate_anchors(max_shape)
-
-        labels_batch, regression_batch, _ = self.compute_anchor_targets(
-            anchors,
-            image_group,
-            annotations_group,
-            self.num_classes()
-        )
-
-        return [regression_batch, labels_batch]
-
-    def compute_input_output(self, group):
-        """Compute inputs and target outputs for the network"""
-        # load images and annotations
-        image_group = self.load_image_group(group)
-        annotations_group = self.load_annotations_group(group)
-
-        # check validity of annotations
-        image_group, annotations_group = self.filter_annotations(
-            image_group, annotations_group, group)
-
-        # perform preprocessing steps
-        image_group, annotations_group = self.preprocess_group(image_group, annotations_group)
-
-        # compute network inputs
-        inputs = self.compute_inputs(image_group)
-
-        # compute network targets
-        targets = self.compute_targets(image_group, annotations_group)
-
-        return inputs, targets
-
-    def __next__(self):
-        return self.next()
-
-    def next(self):
-        # advance the group index
-        with self.lock:
-            if self.group_index == 0 and self.shuffle_groups:
-                # shuffle groups at start of epoch
-                np.random.shuffle(self.groups)
-            group = self.groups[self.group_index]
-            self.group_index = (self.group_index + 1) % len(self.groups)
-
-        return self.compute_input_output(group)
+        return boxes
