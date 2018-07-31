@@ -1525,7 +1525,7 @@ RetinaNet and MaskRCNN Generators
 """
 
 
-class RetinaNetCSVGenerator(Generator):
+class RetinaNetGenerator(Generator):
 
     def __init__(self,
                  direc_name,
@@ -1564,7 +1564,7 @@ class RetinaNetCSVGenerator(Generator):
 
         self.image_data = self._read_annotations(self.mask_stack)
         self.image_names = list(self.image_data.keys())
-        super(RetinaNetCSVGenerator, self).__init__(**kwargs)
+        super(RetinaNetGenerator, self).__init__(**kwargs)
 
     def list_file_deepcell(self, dir_name, training_dirs, image_dir, channel_names):
         """

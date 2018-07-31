@@ -41,7 +41,7 @@ from keras_retinanet.utils.transform import random_transform_generator
 
 import tensorflow as tf
 
-from deepcell.image_generators import RetinaNetCSVGenerator
+from deepcell.image_generators import RetinaNetGenerator
 
 """
 Functions to load custom backbone from deepcell_backbone
@@ -298,7 +298,7 @@ def create_generators(args, preprocess_image):
         transform_generator = random_transform_generator(flip_x_chance=0.5)
 
     if args.dataset_type == 'train':
-        train_generator = RetinaNetCSVGenerator(
+        train_generator = RetinaNetGenerator(
             direc_name='/data/data/cells/HeLa/S3',
             training_dirs=['set1', 'set2'],
             raw_image_dir='raw',
@@ -311,7 +311,7 @@ def create_generators(args, preprocess_image):
         )
 
         if args.val_annotations:
-            validation_generator = RetinaNetCSVGenerator(
+            validation_generator = RetinaNetGenerator(
                 direc_name='/data/data/cells/HeLa/S3',
                 training_dirs=['set1', 'set2'],
                 raw_image_dir='raw',
