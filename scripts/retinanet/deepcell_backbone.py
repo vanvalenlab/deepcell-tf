@@ -10,43 +10,36 @@ Usage: python retinanet_custombackbone_train.py \
        csv ./annotation.csv ./classes.csv
 """
 
-import os
-
-import numpy as np
-import skimage.io as io
-import skimage.transform as trans
-import numpy as np
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Input, Conv2D, MaxPooling2D, Dropout
-
 import keras_resnet
 
 from keras_retinanet.models import retinanet
 from keras_retinanet.models import Backbone
 from keras_retinanet.utils.image import preprocess_image
 
+from tensorflow.python.keras.models import Model
+from tensorflow.python.keras.layers import Input, Conv2D, MaxPooling2D, Dropout
+
 """
 First one needs to import the Backbone class from the custom_backbone defination"
 """
 
 class DeepcellBackbone(Backbone):
-    """
-    Describes backbone information and provides utility functions.
-    """
+    """Describes backbone information and provides utility functions."""
 
     def __init__(self, backbone):
-        super(shvmBackbone, self).__init__(backbone)
+        super(DeepcellBackbone, self).__init__(backbone)
         self.custom_objects.update(keras_resnet.custom_objects)
 
     def retinanet(self, *args, **kwargs):
         """
         Returns a retinanet model using the correct backbone.
         """
-        return shvm_retinanet(*args, backbone=self.backbone, **kwargs)
+        return deepcell_retinanet(*args, backbone=self.backbone, **kwargs)
 
     def download_imagenet(self):
         """
-        If your custom model ha spretrained weights on imagenet you could write the method to download it here
+        If your custom model has pretrained weights on imagenet
+        you could write the method to download it here
         else return None and use the --no-weights flag while training.
         """
         return None
@@ -55,8 +48,8 @@ class DeepcellBackbone(Backbone):
         """
         Checks whether the backbone string is correct.
         """
-        allowed_backbones = ['shvm']
-        backbone = self.backbone.split('_')[0]  # To allow diffrent versions of same backbone
+        allowed_backbones = ['deepcell']
+        backbone = self.backbone.split('_')[0]  # Allows different versions of same backbone
 
     def preprocess_image(self, inputs):
         """
@@ -109,7 +102,6 @@ def tempnetwork(inputs):
     conv6 = Conv2D(2048, 3, activation='relu', padding='same', kernel_initializer='he_normal', name='deepcell3')(conv6)
     drop6 = Dropout(0.5)(conv6)
 
-
     model = Model(inputs=inputs, outputs=conv6)
 
     return model
@@ -121,7 +113,8 @@ def deepcell_retinanet(num_classes, backbone='deepcell', inputs=None, modifier=N
         num_classes: Number of classes to predict.
         backbone: Our custom backbone.
         inputs: The inputs to the network (defaults to a Tensor of shape (None, None, 3)).
-        modifier: A function handler which can modify the backbone like it could be used to freeze the training of the backbone.
+        modifier: A function handler which can modify the backbone.
+                  It could be used to freeze the training of the backbone.
     # Returns
         RetinaNet model with a custom backbone.
     """

@@ -2,26 +2,19 @@
 
 import argparse
 import os
-import csv
 import sys
+import time
 import warnings
-
-from PIL import Image
-from six import raise_from
 from fnmatch import fnmatch
+from six import raise_from
 
 import numpy as np
-
-import tensorflow as tf
-from tensorflow.python import keras
-
-import cv2
 
 from skimage.measure import label, regionprops
 from skimage.external.tifffile import TiffFile
 from skimage.io import imread
 
-import keras_retinanet.losses as losses
+from keras_retinanet import losses
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.callbacks.eval import Evaluate
 from keras_retinanet.models.retinanet import retinanet_bbox
@@ -30,6 +23,11 @@ from keras_retinanet.utils.keras_version import check_keras_version
 from keras_retinanet.utils.model import freeze as freeze_model
 from keras_retinanet.utils.transform import random_transform_generator
 
+import tensorflow as tf
+from tensorflow.python import keras
+
+import cv2
+
 import custom_backbone as models
 from deepcell import RetinanetGenerator
 
@@ -37,7 +35,7 @@ from deepcell import RetinanetGenerator
 def get_image(file_name):
     ext = os.path.splitext(file_name.lower())[-1]
     if ext == '.tif' or ext == '.tiff':
-        img=np.asarray(np.float32(TiffFile(file_name).asarray()))
+        img = np.asarray(np.float32(TiffFile(file_name).asarray()))
         img = np.tile(np.expand_dims(img, axis=-1), (1, 1, 3))
         return img / np.max(img)
     img = np.asarray(np.float32(imread(file_name)))
@@ -60,10 +58,10 @@ def _read_classes(classname):
 
 def _read_annotations(masks_list):
     result = {}
-    for cnt,image in enumerate(masks_list):
+    for cnt, image in enumerate(masks_list):
         result[cnt] = []
         p = regionprops(label(image))
-        cell_count=0
+        cell_count = 0
         total = len(masks_list)
         for index in range(len(np.unique(label(image)))-1):
             y1, x1, y2, x2 = p[index].bbox
@@ -78,12 +76,15 @@ class CSVGenerator(RetinanetGenerator):
 
     def __init__(self, **kwargs):
 
-        def list_file_deepcell(direc_name,training_direcs,raw_image_direc,channel_names):
-            filelist=[]
-            for b, direc in enumerate(training_direcs):
+        def list_file_deepcell(direc_name,
+                               training_direcs,
+                               raw_image_direc,
+                               channel_names):
+            filelist = []
+            for direc in training_direcs:
                 imglist = os.listdir(os.path.join(direc_name, direc, raw_image_direc))
                 #print(imglist)
-                for c, channel in enumerate(channel_names):
+                for channel in channel_names:
                     for img in imglist:
                         # if channel string is NOT in image file name, skip it.
                         if not fnmatch(img, '*{}*'.format(channel)):
@@ -92,73 +93,68 @@ class CSVGenerator(RetinanetGenerator):
                         filelist.append(image_file)
             return sorted(filelist)
 
-        def generate_subimage(img_pathstack,HorizontalP,VerticalP,flag):
-            sub_img=[]
+        def generate_subimage(img_pathstack, HorizontalP, VerticalP, flag):
+            sub_img = []
             for img_path in img_pathstack:
-                img=np.asarray(np.float32(imread(img_path)))
-                #img=((img/np.max(img))*255).astype(int)
+                img = np.asarray(np.float32(imread(img_path)))
                 if flag:
                     img = (img / np.max(img))
-                vway=np.zeros(VerticalP + 1)  # The dimentions of vertical cuts
-                hway=np.zeros(HorizontalP + 1)  # The dimentions of horizontal cuts
+                vway = np.zeros(VerticalP + 1)  # The dimentions of vertical cuts
+                hway = np.zeros(HorizontalP + 1)  # The dimentions of horizontal cuts
                 vcnt = 0  # The initial value for vertical
                 hcnt = 0  # The initial value for horizontal
 
                 for i in range(VerticalP+1):
-                    vway[i]=int(vcnt)
-                    vcnt=vcnt+(img.shape[1]/VerticalP)
+                    vway[i] = int(vcnt)
+                    vcnt += (img.shape[1] / VerticalP)
 
                 for j in range(HorizontalP+1):
-                    hway[j]=int(hcnt)
-                    hcnt=hcnt+(img.shape[0]/HorizontalP)
+                    hway[j] = int(hcnt)
+                    hcnt += (img.shape[0] / HorizontalP)
 
                 vb = 0
-                columns = 5
-                rows = 5
 
-                for i in range(len(hway)-1):
-                    for j in range(len(vway)-1):
-                        vb=vb+1
+                for i in range(len(hway) - 1):
+                    for j in range(len(vway) - 1):
+                        vb += 1
 
-                for i in range(len(hway)-1):
-                    for j in range(len(vway)-1):
+                for i in range(len(hway) - 1):
+                    for j in range(len(vway) - 1):
                         sub_img.append(img[int(hway[i]):int(hway[i+1]), int(vway[j]):int(vway[j+1])])
-            sub_img2=[]
+            sub_img2 = []
             print(len(sub_img))
             if flag:
                 for img in sub_img:
-                    sub_img2.append(np.tile(np.expand_dims(img,axis=-1), (1, 1, 3)))
-                sub_img=sub_img2
+                    sub_img2.append(np.tile(np.expand_dims(img, axis=-1), (1, 1, 3)))
+                sub_img = sub_img2
 
             return sub_img
 
         self.image_names = []
-        self.image_data  = {}
+        self.image_data = {}
         self.image_stack = []
-        self.mask_stack  = []
+        self.mask_stack = []
 
-        direc_name = "/data/data/cells/HeLa/S3"
-        training_direcs = ['set0','set1']
+        direc_name = '/data/data/cells/HeLa/S3'
+        training_direcs = ['set0', 'set1']
         raw_image_direc = 'raw'
         channel_names = ['FITC']
-        train_imlist=list_file_deepcell(
-            direc_name = direc_name,
-            training_direcs = training_direcs,
-            raw_image_direc = raw_image_direc,
-            channel_names = channel_names)
+        train_imlist = list_file_deepcell(
+            direc_name=direc_name,
+            training_direcs=training_direcs,
+            raw_image_direc=raw_image_direc,
+            channel_names=channel_names)
         print(len(train_imlist))
         print('----------------')
-        train_anotedlist=list_file_deepcell(
-            direc_name = direc_name,
-            training_direcs = training_direcs,
-            raw_image_direc = 'annotated_unique',
-            channel_names = ['corrected'])
+        train_anotedlist = list_file_deepcell(
+            direc_name=direc_name,
+            training_direcs=training_direcs,
+            raw_image_direc='annotated_unique',
+            channel_names=['corrected'])
         print(len(train_anotedlist))
 
-        result={}
-
         self.image_stack = generate_subimage(train_imlist, 3, 3, True)
-        self.mask_stack  = generate_subimage(train_anotedlist, 3, 3, False)
+        self.mask_stack = generate_subimage(train_anotedlist, 3, 3, False)
 
         self.classes = _read_classes('cell')
 
@@ -166,53 +162,45 @@ class CSVGenerator(RetinanetGenerator):
         for key, value in self.classes.items():
             self.labels[value] = key
 
-        self.image_data= _read_annotations(self.mask_stack)
+        self.image_data = _read_annotations(self.mask_stack)
         self.image_names = list(self.image_data.keys())
 
         super(CSVGenerator, self).__init__(**kwargs)
 
     def size(self):
-        """ Size of the dataset.
-        """
+        """Size of the dataset."""
         return len(self.image_names)
 
     def num_classes(self):
-        """ Number of classes in the dataset.
-        """
+        """Number of classes in the dataset."""
         return max(self.classes.values()) + 1
 
     def name_to_label(self, name):
-        """ Map name to label.
-        """
+        """Map name to label."""
         return self.classes[name]
 
     def label_to_name(self, label):
-        """ Map label to name.
-        """
+        """Map label to name."""
         return self.labels[label]
 
     def image_path(self, image_index):
-        """ Returns the image path for image_index.
-        """
+        """Returns the image path for image_index."""
         return os.path.join(self.base_dir, self.image_names[image_index])
 
     def image_aspect_ratio(self, image_index):
-        """ Compute the aspect ratio for an image with image_index.
-        """
+        """Compute the aspect ratio for an image with image_index."""
         image = self.image_stack[image_index]
         return float(image.shape[1]) / float(image.shape[0])
 
     def load_image(self, image_index):
-        """ Load an image at the image_index.
-        """
+        """Load an image at the image_index."""
         return self.image_stack[image_index]
 
     def load_annotations(self, image_index):
-        """ Load annotations for an image_index.
-        """
-        path   = self.image_names[image_index]
+        """Load annotations for an image_index."""
+        path = self.image_names[image_index]
         annots = self.image_data[path]
-        boxes  = np.zeros((len(annots), 5))
+        boxes = np.zeros((len(annots), 5))
 
         for idx, annot in enumerate(annots):
             class_name = 'cell'
@@ -237,17 +225,15 @@ def makedirs(path):
 
 
 def get_session():
-    """ Construct a modified tf session.
-    """
+    """Construct a modified tf session."""
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     return tf.Session(config=config)
 
 
 def model_with_weights(model, weights, skip_mismatch):
-    """ Load weights for model.
-
-    Args
+    """Load weights for model.
+    # Args
         model         : The model to load weights for.
         weights       : The weights to load.
         skip_mismatch : If True, skips layers whose shape of weights doesn't match with the model.
@@ -258,31 +244,37 @@ def model_with_weights(model, weights, skip_mismatch):
 
 
 def create_models(backbone_retinanet, num_classes, weights, multi_gpu=0, freeze_backbone=False):
-    """ Creates three models (model, training_model, prediction_model).
-
-    Args
-        backbone_retinanet : A function to call to create a retinanet model with a given backbone.
-        num_classes        : The number of classes to train.
-        weights            : The weights to load into the model.
-        multi_gpu          : The number of GPUs to use for training.
-        freeze_backbone    : If True, disables learning for the backbone.
-
-    Returns
-        model            : The base model. This is also the model that is saved in snapshots.
-        training_model   : The training model. If multi_gpu=0, this is identical to model.
-        prediction_model : The model wrapped with utility functions to perform object detection (applies regression values and performs NMS).
+    """Creates three models (model, training_model, prediction_model).
+    # Args
+        backbone_retinanet: A function to call to create a retinanet model with a given backbone.
+        num_classes: The number of classes to train.
+        weights: The weights to load into the model.
+        multi_gpu: The number of GPUs to use for training.
+        freeze_backbone: If True, disables learning for the backbone.
+    # Returns
+        model: The base model. This is also the model that is saved in snapshots.
+        training_model: The training model. If multi_gpu=0, this is identical to model.
+        prediction_model: The model wrapped with utility functions to perform object detection
+                           (applies regression values and performs NMS).
     """
     modifier = freeze_model if freeze_backbone else None
 
-    # Keras recommends initialising a multi-gpu model on the CPU to ease weight sharing, and to prevent OOM errors.
+    # Keras recommends initialising a multi-gpu model on the CPU
+    # to ease weight sharing, and to prevent OOM errors.
     # optionally wrap in a parallel model
     if multi_gpu > 1:
         from keras.utils import multi_gpu_model
         with tf.device('/cpu:0'):
-            model = model_with_weights(backbone_retinanet(num_classes, modifier=modifier), weights=weights, skip_mismatch=True)
+            model = model_with_weights(
+                backbone_retinanet(num_classes, modifier=modifier),
+                weights=weights,
+                skip_mismatch=True)
         training_model = multi_gpu_model(model, gpus=multi_gpu)
     else:
-        model          = model_with_weights(backbone_retinanet(num_classes, modifier=modifier), weights=weights, skip_mismatch=True)
+        model = model_with_weights(
+            backbone_retinanet(num_classes, modifier=modifier),
+            weights=weights,
+            skip_mismatch=True)
         training_model = model
 
     # make prediction model
@@ -291,7 +283,7 @@ def create_models(backbone_retinanet, num_classes, weights, multi_gpu=0, freeze_
     # compile model
     training_model.compile(
         loss={
-            'regression'    : losses.smooth_l1(),
+            'regression': losses.smooth_l1(),
             'classification': losses.focal()
         },
         optimizer=keras.optimizers.adam(lr=1e-5, clipnorm=0.001)
@@ -301,16 +293,14 @@ def create_models(backbone_retinanet, num_classes, weights, multi_gpu=0, freeze_
 
 
 def create_callbacks(model, training_model, prediction_model, validation_generator, args):
-    """ Creates the callbacks to use during training.
-
-    Args
+    """Creates the callbacks to use during training.
+    # Args
         model: The base model.
         training_model: The model that is used for training.
         prediction_model: The model that should be used for validation.
         validation_generator: The generator for creating validation data.
         args: parseargs args object.
-
-    Returns:
+    # Returns:
         A list of callbacks used for training.
     """
     callbacks = []
@@ -319,16 +309,15 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
 
     if args.tensorboard_dir:
         tensorboard_callback = keras.callbacks.TensorBoard(
-            log_dir                = args.tensorboard_dir,
-            histogram_freq         = 0,
-            batch_size             = args.batch_size,
-            write_graph            = True,
-            write_grads            = False,
-            write_images           = False,
-            embeddings_freq        = 0,
-            embeddings_layer_names = None,
-            embeddings_metadata    = None
-        )
+            log_dir=args.tensorboard_dir,
+            histogram_freq=0,
+            batch_size=args.batch_size,
+            write_graph=True,
+            write_grads=False,
+            write_images=False,
+            embeddings_freq=0,
+            embeddings_layer_names=None,
+            embeddings_metadata=None)
         callbacks.append(tensorboard_callback)
 
     if args.evaluation and validation_generator:
@@ -349,10 +338,12 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
         checkpoint = keras.callbacks.ModelCheckpoint(
             os.path.join(
                 args.snapshot_path,
-                '{backbone}_{dataset_type}_{{epoch:02d}}.h5'.format(backbone=args.backbone, dataset_type=args.dataset_type)
+                '{backbone}_{dataset_type}_{{epoch:02d}}.h5'.format(
+                    backbone=args.backbone,
+                    dataset_type=args.dataset_type)
             ),
             verbose=1,
-            # save_best_only=True,
+            save_best_only=True,
             # monitor="mAP",
             # mode='max'
         )
@@ -360,31 +351,30 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
         callbacks.append(checkpoint)
 
     callbacks.append(keras.callbacks.ReduceLROnPlateau(
-        monitor    = 'loss',
-        factor     = 0.1,
-        patience   = 2,
-        verbose    = 1,
-        mode       = 'auto',
-        min_delta  = 0.0001,
-        cooldown   = 0,
-        min_lr     = 0
+        monitor='loss',
+        factor=0.1,
+        patience=2,
+        verbose=1,
+        mode='auto',
+        min_delta=0.0001,
+        cooldown=0,
+        min_lr=0
     ))
 
     return callbacks
 
 
 def create_generators(args, preprocess_image):
-    """ Create generators for training and validation.
-
-    Args
-        args             : parseargs object containing configuration for generators.
-        preprocess_image : Function that preprocesses an image for the network.
+    """Create generators for training and validation.
+    # Args
+        args: parseargs object containing configuration for generators.
+        preprocess_image: Function that preprocesses an image for the network.
     """
     common_args = {
-        'batch_size'       : args.batch_size,
-        'image_min_side'   : args.image_min_side,
-        'image_max_side'   : args.image_max_side,
-        'preprocess_image' : preprocess_image,
+        'batch_size': args.batch_size,
+        'image_min_side': args.image_min_side,
+        'image_max_side': args.image_max_side,
+        'preprocess_image': preprocess_image,
     }
 
     # create random transform generator for augmenting training data
@@ -406,15 +396,15 @@ def create_generators(args, preprocess_image):
 
     if args.dataset_type == 'train':
         train_generator = CSVGenerator(
-            #args.annotations,
-            #args.classes,
+            # args.annotations,
+            # args.classes,
             **common_args
         )
 
         if args.val_annotations:
             validation_generator = CSVGenerator(
-                #args.val_annotations,
-                #args.classes,
+                # args.val_annotations,
+                # args.classes,
                 **common_args
             )
         else:
@@ -458,8 +448,7 @@ def check_args(parsed_args):
 
 
 def parse_args(args):
-    """ Parse the arguments.
-    """
+    """Parse the arguments."""
     parser = argparse.ArgumentParser(description='Simple training script for training a RetinaNet network.')
     subparsers = parser.add_subparsers(help='Arguments for specific dataset types.', dest='dataset_type')
     subparsers.required = True
@@ -472,27 +461,27 @@ def parse_args(args):
 
     csv_parser_run = subparsers.add_parser('run')
     csv_parser_run.add_argument('run_path', help='Path to folder containing test data')
-    csv_parser_run.add_argument('model_path',help='Path to the model(.h5) file')
+    csv_parser_run.add_argument('model_path', help='Path to the model(.h5) file')
     csv_parser_run.add_argument('--save_path', help='Path to save data', default='./test_output')
 
 
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('--snapshot',          help='Resume training from a snapshot.')
-    group.add_argument('--imagenet-weights',  help='Initialize the model with pretrained imagenet weights. This is the default behaviour.', action='store_const', const=True, default=False)
-    group.add_argument('--weights',           help='Initialize the model with weights from a file.')
-    group.add_argument('--no-weights',        help='Don\'t initialize the model with any weights.', dest='imagenet_weights', action='store_const', const=False,default=True)
+    group.add_argument('--snapshot', help='Resume training from a snapshot.')
+    group.add_argument('--imagenet-weights', help='Initialize the model with pretrained imagenet weights. This is the default behaviour.', action='store_const', const=True, default=False)
+    group.add_argument('--weights', help='Initialize the model with weights from a file.')
+    group.add_argument('--no-weights', help='Don\'t initialize the model with any weights.', dest='imagenet_weights', action='store_const', const=False, default=True)
 
-    parser.add_argument('--backbone',        help='Backbone model used by retinanet.', default='resnet50', type=str)
-    parser.add_argument('--batch-size',      help='Size of the batches.', default=1, type=int)
-    parser.add_argument('--gpu',             help='Id of the GPU to use (as reported by nvidia-smi).')
-    parser.add_argument('--multi-gpu',       help='Number of GPUs to use for parallel processing.', type=int, default=0)
+    parser.add_argument('--backbone', help='Backbone model used by retinanet.', default='resnet50', type=str)
+    parser.add_argument('--batch-size', help='Size of the batches.', default=1, type=int)
+    parser.add_argument('--gpu', help='Id of the GPU to use (as reported by nvidia-smi).')
+    parser.add_argument('--multi-gpu', help='Number of GPUs to use for parallel processing.', type=int, default=0)
     parser.add_argument('--multi-gpu-force', help='Extra flag needed to enable (experimental) multi-gpu support.', action='store_true')
-    parser.add_argument('--epochs',          help='Number of epochs to train.', type=int, default=10)
-    parser.add_argument('--steps',           help='Number of steps per epoch.', type=int, default=1000)
-    parser.add_argument('--snapshot-path',   help='Path to store snapshots of models during training (defaults to \'./snapshots\')', default='./snapshots')
+    parser.add_argument('--epochs', help='Number of epochs to train.', type=int, default=10)
+    parser.add_argument('--steps', help='Number of steps per epoch.', type=int, default=1000)
+    parser.add_argument('--snapshot-path', help='Path to store snapshots of models during training (defaults to \'./snapshots\')', default='./snapshots')
     parser.add_argument('--tensorboard-dir', help='Log directory for Tensorboard output', default='./logs')
-    parser.add_argument('--no-snapshots',    help='Disable saving snapshots.', dest='snapshots', action='store_false')
-    parser.add_argument('--no-evaluation',   help='Disable per epoch evaluation.', dest='evaluation', action='store_false')
+    parser.add_argument('--no-snapshots', help='Disable saving snapshots.', dest='snapshots', action='store_false')
+    parser.add_argument('--no-evaluation', help='Disable per epoch evaluation.', dest='evaluation', action='store_false')
     parser.add_argument('--freeze-backbone', help='Freeze training of backbone layers.', action='store_true')
     parser.add_argument('--random-transform', help='Randomly transform image and annotations.', action='store_true')
     parser.add_argument('--image-min-side', help='Rescale the image so the smallest side is min_side.', type=int, default=800)
@@ -515,33 +504,33 @@ def main(args=None):
     check_keras_version()
 
     if args.dataset_type == 'run':
-        model = models.load_model(args.model_path, backbone_name=args.backbone,convert=True)
+        model = models.load_model(
+            args.model_path,
+            backbone_name=args.backbone,
+            convert=True)
         labels_to_names = {0: 'cell'}
         makedirs(args.save_path)
-        test_imlist=os.walk(args.run_path).next()[2]
-        for testimgcnt,img_path in enumerate(test_imlist):
-
+        test_imlist = os.walk(args.run_path).next()[2]
+        for testimgcnt, img_path in enumerate(test_imlist):
             image = get_image(img_path)
-            #draw2=np.tile(np.expand_dims(draw2,axis=-1),(1,1,3))
-
-            #image=draw2
+            # draw2 = np.tile(np.expand_dims(draw2,axis=-1), (1, 1, 3))
+            # image = draw2
             draw2 = get_image(img_path)
             draw2 = draw2/np.max(draw2)
-            #print(np.unique(image))
+            # print(np.unique(image))
             # copy to draw on
 
-            #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             print(image.shape)
             # preprocess image for network
             image = preprocess_image(image)
-            #print(np.unique(image))
-            image2=image
+            # print(np.unique(image))
             image, scale = resize_image(image)
             print(scale)
             # process image
             start = time.time()
             boxes, scores, labels = model.predict_on_batch(np.expand_dims(image, axis=0))
-            print("processing time: ", time.time() - start)
+            print('processing time: ', time.time() - start)
 
             # correct for image scale
             boxes /= scale
@@ -553,16 +542,13 @@ def main(args=None):
                     break
 
                 color = label_color(label)
-                color=[255,0,255]
+                color = [255, 0, 255]
                 b = box.astype(int)
                 draw_box(draw2, b, color=color)
 
-                caption = "{} {:.3f}".format(labels_to_names[label], score)
+                caption = '{} {:.3f}'.format(labels_to_names[label], score)
                 draw_caption(draw2, b, caption)
-            plt.imsave(os.path.join(args.save_path,"retinanet_output_"+str(testimgcnt)),draw2)
-
-
-
+            plt.imsave(os.path.join(args.save_path, 'retinanet_output_' + str(testimgcnt)), draw2)
 
     # optionally choose specific GPU
     if args.gpu:
@@ -575,8 +561,8 @@ def main(args=None):
     # create the model
     if args.snapshot is not None:
         print('Loading model, this may take a second...')
-        model            = models.load_model(args.snapshot, backbone_name=args.backbone)
-        training_model   = model
+        model = models.load_model(args.snapshot, backbone_name=args.backbone)
+        training_model = model
         prediction_model = retinanet_bbox(model=model)
     else:
         weights = args.weights
@@ -593,7 +579,6 @@ def main(args=None):
             freeze_backbone=args.freeze_backbone
         )
 
-    # print model summary
     print(model.summary())
 
     # this lets the generator compute backbone layer shapes using the actual backbone model

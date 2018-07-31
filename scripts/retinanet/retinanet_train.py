@@ -18,17 +18,23 @@ limitations under the License.
 
 import argparse
 import os
+import csv
 import sys
+import time
 import warnings
+from six import raise_from
 from fnmatch import fnmatch
+
+import numpy as np
 import pandas as pd
-import keras
-import keras.preprocessing.image
-import tensorflow as tf
-import threading
-import keras_retinanet.layers as layers  # noqa: F401
-import keras_retinanet.losses as losses
-import keras_retinanet.models as models
+from PIL import Image
+
+from skimage.io import imread
+from skimage.external.tifffile import TiffFile
+from skimage.measure import label, regionprops
+
+from keras_retinanet import losses
+from keras_retinanet import models
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.callbacks.eval import Evaluate
 from keras_retinanet.models.retinanet import retinanet_bbox
@@ -36,19 +42,13 @@ from keras_retinanet.utils.anchors import make_shapes_callback
 from keras_retinanet.utils.keras_version import check_keras_version
 from keras_retinanet.utils.model import freeze as freeze_model
 from keras_retinanet.utils.transform import random_transform_generator
-from deepcell import RetinanetGenerator
 
-import numpy as np
-from PIL import Image
-from six import raise_from
-from skimage.io import imread
-from skimage.external.tifffile import TiffFile
-from skimage.measure import label, regionprops
-import csv
-import sys
-import os.path
-from skimage.io import imread
+import tensorflow as tf
+from tensorflow.python import keras
+
 import cv2
+
+from deepcell import RetinanetGenerator
 
 
 def get_image(file_name):
@@ -127,7 +127,7 @@ def _read_annotations(csv_reader, classes):
 
         # check if the current class name is correctly present
         if class_name not in classes:
-            raise ValueError('line {}: unknown class name: \'{}\' (classes: {})'.format(line, class_name, classes))
+            raise ValueError('line {}: unknown class name: "{}" (classes: {})'.format(line, class_name, classes))
 
         result[img_file].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2, 'class': class_name})
     return result
@@ -141,8 +141,7 @@ def _open_for_csv(path):
     """
     if sys.version_info[0] < 3:
         return open(path, 'rb')
-    else:
-        return open(path, 'r', newline='')
+    return open(path, 'r', newline='')
 
 
 class CSVGenerator(RetinanetGenerator):
@@ -165,8 +164,8 @@ class CSVGenerator(RetinanetGenerator):
                       (defaults to the directory containing the csv_data_file).
         """
         self.image_names = []
-        self.image_data  = {}
-        self.base_dir    = base_dir
+        self.image_data = {}
+        self.base_dir = base_dir
 
         # Take base_dir from annotations file if not explicitly specified.
         if self.base_dir is None:
@@ -233,9 +232,9 @@ class CSVGenerator(RetinanetGenerator):
     def load_annotations(self, image_index):
         """ Load annotations for an image_index.
         """
-        path   = self.image_names[image_index]
+        path = self.image_names[image_index]
         annots = self.image_data[path]
-        boxes  = np.zeros((len(annots), 5))
+        boxes = np.zeros((len(annots), 5))
 
         for idx, annot in enumerate(annots):
             class_name = annot['class']
@@ -250,10 +249,9 @@ class CSVGenerator(RetinanetGenerator):
 
 def list_file_deepcell(direc_name, training_direcs, raw_image_direc, channel_names):
     filelist = []
-    for b, direc in enumerate(training_direcs):
+    for direc in training_direcs:
         imglist = os.listdir(os.path.join(direc_name, direc, raw_image_direc))
-        #print(imglist)
-        for c, channel in enumerate(channel_names):
+        for channel in channel_names:
             for img in imglist:
                 # if channel string is NOT in image file name, skip it.
                 if not fnmatch(img, '*{}*'.format(channel)):
@@ -579,7 +577,7 @@ def main(args=None):
 		    # process image
 		    start = time.time()
 		    boxes, scores, labels = model.predict_on_batch(np.expand_dims(image, axis=0))
-		    print("processing time: ", time.time() - start)
+		    print('processing time: ', time.time() - start)
 
 		    # correct for image scale
 		    boxes /= scale
@@ -591,20 +589,20 @@ def main(args=None):
 		            break
 
 		        color = label_color(label)
-		        color=[255,0,255]
+		        color=[255, 0, 255]
 		        b = box.astype(int)
 		        draw_box(draw2, b, color=color)
 
-		        caption = "{} {:.3f}".format(labels_to_names[label], score)
+		        caption = '{} {:.3f}'.format(labels_to_names[label], score)
 		        draw_caption(draw2, b, caption)
-		    plt.imsave(os.path.join(args.save_path,"retinanet_output_"+str(testimgcnt)),draw2)
+		    plt.imsave(os.path.join(args.save_path, 'retinanet_output_' + str(testimgcnt)), draw2)
 
     # optionally choose specific GPU
     if args.gpu:
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     keras.backend.tensorflow_backend.set_session(get_session())
 
-    direc_name = "/data/data/cells/HeLa/S3"
+    direc_name = '/data/data/cells/HeLa/S3'
     training_direcs = ['set0']
     raw_image_direc = 'raw'
     annoted_image_direc = 'annotated_unique'
@@ -676,7 +674,6 @@ def main(args=None):
             multi_gpu=args.multi_gpu,
             freeze_backbone=args.freeze_backbone)
 
-    # print model summary
     print(model.summary())
 
     # this lets the generator compute backbone layer shapes using the actual backbone model
