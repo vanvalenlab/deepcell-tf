@@ -3,11 +3,8 @@ deepcell_backbone.py
 
 @author: Shivam Patel
 
-Usage: python retinanet_custombackbone_train.py \
-       --no-weights --image-min-side 360 --image-max-side 426 \
-       --random-transform --backbone shvm --steps=1000 --epochs=10 \
-       --gpu 0 --tensorboard-dir logs \
-       csv ./annotation.csv ./classes.csv
+Custom Backbone models for RetinaNet.
+Imported and used in retinanet_train.py
 """
 
 from keras.models import Model
