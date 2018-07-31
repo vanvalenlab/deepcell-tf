@@ -19,10 +19,10 @@ from keras_retinanet.utils.transform import transform_aabb
 
 from tensorflow.python import keras
 
-from retinanet_anchor_utils import anchor_targets_bbox
-from retinanet_anchor_utils import bbox_transform
-from retinanet_anchor_utils import anchors_for_shape
-from retinanet_anchor_utils import guess_shapes
+from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
+from deepcell.utils.retinanet_anchor_utils import bbox_transform
+from deepcell.utils.retinanet_anchor_utils import anchors_for_shape
+from deepcell.utils.retinanet_anchor_utils import guess_shapes
 
 
 class Generator(object):

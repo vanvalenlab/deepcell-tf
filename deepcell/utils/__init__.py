@@ -6,6 +6,7 @@ from . import misc_utils
 from . import plot_utils
 from . import train_utils
 from . import transform_utils
+from . import retinanet_anchor_utils
 
 # Globally-importable utils.
 from .data_utils import get_data
