@@ -20,7 +20,7 @@ from keras_maskrcnn.callbacks.eval import Evaluate
 
 import tensorflow as tf
 
-from cell_gen_deepcell import CSVGenerator
+from deepcell.image_generators import MaskRCNNGenerator
 
 
 def get_session():
@@ -125,13 +125,25 @@ def create_generators(args):
 
     if args.dataset_type == 'train':
 
-        train_generator = CSVGenerator(
+        train_generator = MaskRCNNGenerator(
+            direc_name='/data/data/cells/HeLa/S3',
+            training_dirs=['set1', 'set2'],
+            raw_image_dir='raw',
+            channel_names=['FITC'],
+            annotation_dir='annotated',
+            annotation_names=['corrected'],
             transform_generator=transform_generator,
             batch_size=args.batch_size
         )
 
         if args.val_annotations:
-            validation_generator = CSVGenerator(
+            validation_generator = MaskRCNNGenerator(
+                direc_name='/data/data/cells/HeLa/S3',
+                training_dirs=['set1', 'set2'],
+                raw_image_dir='raw',
+                channel_names=['FITC'],
+                annotation_dir='annotated',
+                annotation_names=['corrected'],
                 batch_size=args.batch_size
             )
         else:
