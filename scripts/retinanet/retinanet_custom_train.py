@@ -15,6 +15,7 @@ from skimage.external.tifffile import TiffFile
 
 from keras_retinanet import losses
 from keras_retinanet import models
+from keras_retinanet.preprocessing import Generator
 from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.callbacks.eval import Evaluate
 from keras_retinanet.models.retinanet import retinanet_bbox
@@ -28,8 +29,6 @@ from tensorflow.python import keras
 
 import cv2
 
-from deepcell import RetinanetGenerator
-
 
 def get_image(file_name):
     ext = os.path.splitext(file_name.lower())[-1]
@@ -40,19 +39,6 @@ def get_image(file_name):
     img = np.asarray(np.float32(imread(file_name)))
     img = np.tile(np.expand_dims(img, axis=-1), (1, 1, 3))
     return ((img / np.max(img)) * 255).astype(int)
-
-
-def _parse(value, function, fmt):
-    try:
-        return function(value)
-    except ValueError as e:
-        raise_from(ValueError(fmt.format(e)), None)
-
-
-def _read_classes(classname):
-    result = {}
-    result[str(classname)] = 0
-    return result
 
 
 def list_file_deepcell(direc_name, training_direcs, raw_image_direc, channel_names):
@@ -128,7 +114,7 @@ def _read_annotations(masks_list):
     return result
 
 
-class CSVGenerator(RetinanetGenerator):
+class CSVGenerator(Generator):
 
     def __init__(self, **kwargs):
 
@@ -160,16 +146,33 @@ class CSVGenerator(RetinanetGenerator):
         self.image_stack = generate_subimage(train_imlist, 3, 3, True)
         self.mask_stack = generate_subimage(train_anotedlist, 3, 3, False)
 
-        self.classes = _read_classes('cell')
+        self.classes = {'cell': 0}
 
         self.labels = {}
         for key, value in self.classes.items():
             self.labels[value] = key
 
-        self.image_data = _read_annotations(self.mask_stack)
+        self.image_data = self._read_annotations(self.mask_stack)
         self.image_names = list(self.image_data.keys())
 
         super(CSVGenerator, self).__init__(**kwargs)
+
+    def _read_annotations(self, masks_list):
+        result = {}
+        for cnt, image in enumerate(masks_list):
+            result[cnt] = []
+            props = regionprops(label(image))
+            cell_count = 0
+            total = len(masks_list)
+            for index in range(len(np.unique(label(image))) - 1):
+                prop = props[index]
+                x1, y1, x2, y2 = prop.bbox[1], prop.bbox[0], prop.bbox[3], prop.bbox[2]
+                result[cnt].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2})
+                cell_count += 1
+
+            print('-----------------Completed {} of {}-----------'.format(cnt, total))
+            print('The number of cells in this image:', cell_count)
+        return result
 
     def size(self):
         """Size of the dataset."""
