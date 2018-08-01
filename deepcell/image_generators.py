@@ -1594,7 +1594,7 @@ class RetinaNetGenerator(_RetinaNetGenerator):
             p = regionprops(label(image))
 
             cell_count = 0
-            for index in range(len(np.unique(label(image)))-1):
+            for index in range(len(np.unique(label(image))) - 1):
                 y1, x1, y2, x2 = p[index].bbox
                 result[cnt].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2})
                 cell_count += 1
@@ -1629,7 +1629,8 @@ class RetinaNetGenerator(_RetinaNetGenerator):
 
             for i in range(len(hway) - 1):
                 for j in range(len(vway) - 1):
-                    sub_img.append(img[int(hway[i]):int(hway[i+1]), int(vway[j]):int(vway[j+1])])
+                    s = img[int(hway[i]):int(hway[i + 1]), int(vway[j]):int(vway[j + 1])]
+                    sub_img.append(s)
 
         if flag:
             sub_img = [np.tile(np.expand_dims(i, axis=-1), (1, 1, 3)) for i in sub_img]
@@ -1804,7 +1805,7 @@ class MaskRCNNGenerator(_MaskRCNNGenerator):
                     'y1': y1,
                     'y2': y2,
                     'class': 'cell',
-                    'mask_path':np.where(l == index + 1, 1, 0)
+                    'mask_path': np.where(l == index + 1, 1, 0)
                 })
                 cell_count += 1
             print('Image number {} has {} cells'.format(cnt, cell_count))
