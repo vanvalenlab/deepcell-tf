@@ -97,7 +97,7 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
 
     if args.evaluation and validation_generator:
         if args.dataset_type == 'coco':
-            from ..callbacks.coco import CocoEval
+            from keras_maskrcnn.callbacks.coco import CocoEval
 
             # use prediction model for evaluation
             evaluation = CocoEval(validation_generator)
@@ -163,7 +163,6 @@ def check_args(parsed_args):
     :param parsed_args: parser.parse_args()
     :return: parsed_args
     """
-
     return parsed_args
 
 
@@ -174,7 +173,6 @@ def parse_args(args):
         help='Arguments for specific dataset types.',
         dest='dataset_type')
     subparsers.required = True
-
 
     csv_parser = subparsers.add_parser('train')
     csv_parser.add_argument('--val-annotations', help='Path to CSV file containing annotations for validation (optional).')
@@ -217,7 +215,6 @@ def main(args=None):
         os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     keras.backend.tensorflow_backend.set_session(get_session())
 
-    # create the generators
     train_generator, validation_generator = create_generators(args)
 
     # create the model
@@ -240,10 +237,8 @@ def main(args=None):
             freeze_backbone=args.freeze_backbone,
             class_specific_filter=args.class_specific_filter)
 
-    # print model summary
     print(model.summary())
 
-    # create the callbacks
     callbacks = create_callbacks(
         model,
         training_model,
@@ -251,7 +246,6 @@ def main(args=None):
         validation_generator,
         args)
 
-    # start training
     training_model.fit_generator(
         generator=train_generator,
         steps_per_epoch=args.steps,
