@@ -35,6 +35,3 @@ RUN pip install /opt/deepcell-tf
 
 # Change matplotlibrc file to use the Agg backend
 RUN echo "backend : Agg" > /usr/local/lib/python3.5/dist-packages/matplotlib/mpl-data/matplotlibrc
-
-# Make port 80 available to the world outside this container
-EXPOSE 80
