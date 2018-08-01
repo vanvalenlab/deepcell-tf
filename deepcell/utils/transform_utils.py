@@ -27,6 +27,7 @@ def distance_transform_2d(mask, bins=16):
         distance: a mask of same shape as input mask,
                   with each label being a distance class from 1 to bins
     """
+    mask = np.squeeze(mask)  # squeeze the channels
     distance = ndimage.distance_transform_edt(mask)
     distance = distance.astype(K.floatx())  # normalized distances are floats
 
@@ -100,21 +101,30 @@ def _distance_transform_3d(maskstack, bins=16):
     return distance - 1  # minimum distance should be 0, not 1
 
 
-def distance_transform_3d(maskstack, bins=4):
+def distance_transform_3d(maskstack, bins=4, erode_edges=True):
     """
     Transforms a label mask for a z stack into distance classes
     Uses scipy's distance_transform_edt
+    # Arguments
+        maskstack: a z-stack of label masks (y data)
+        bins: the number of transformed distance classes
+        erode_edges: erode edges of labels to prevent them from touching
+    # Returns
+        distance: 3D Euclidiean Distance Transform
     """
+    maskstack = np.squeeze(maskstack)  # squeeze the channels
     # Erode masks
-    # maskstack = np.squeeze(maskstack)
-    # new_masks = np.zeros(maskstack.shape)
-    # strel = ball(1)
-    # for cell_label in np.unique(maskstack):
-    #     if cell_label != 0:
-    #         temp_img = maskstack == cell_label
-    #         temp_img = binary_erosion(temp_img, strel)
-    #         new_masks += temp_img
-    # maskstack = np.multiply(new_masks, maskstack)
+    new_masks = np.zeros(maskstack.shape)
+    strel = ball(1)
+    for cell_label in np.unique(maskstack):
+        if cell_label != 0:
+            temp_img = maskstack == cell_label
+            temp_img = binary_erosion(temp_img, strel)
+            new_masks = np.where(maskstack == cell_label, temp_img, maskstack)
+
+    if erode_edges:
+        maskstack = np.multiply(new_masks, maskstack)
+
     distance = ndimage.distance_transform_edt(maskstack, sampling=[0.5, 0.217, 0.217])
 
     # normalize by maximum distance

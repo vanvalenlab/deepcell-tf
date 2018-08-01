@@ -37,7 +37,7 @@ def _generate_test_masks():
     img_w = img_h = 30
     mask_images = []
     for _ in range(8):
-        imarray = np.random.randint(2, size=(img_w, img_h))
+        imarray = np.random.randint(2, size=(img_w, img_h, 1))
         mask_images.append(imarray)
     return mask_images
 
@@ -50,25 +50,56 @@ class TransformUtilsTest(test.TestCase):
         for i, mask in enumerate(_generate_test_masks()):
             unique_mask_stack[i] = label(mask)
 
+        K.set_image_data_format('channels_last')
+
         bin_size = 3
         distance = distance_transform_3d(unique_mask_stack, bins=bin_size)
         assert np.array_equal(np.unique(distance), np.array([0, 1, 2]))
-        assert distance.shape == unique_mask_stack.shape
+        assert np.expand_dims(distance, axis=-1).shape == unique_mask_stack.shape
 
         bin_size = 4
         distance = distance_transform_3d(unique_mask_stack, bins=bin_size)
         assert np.array_equal(np.unique(distance), np.array([0, 1, 2, 3]))
-        assert distance.shape == unique_mask_stack.shape
+        assert np.expand_dims(distance, axis=-1).shape == unique_mask_stack.shape
+
+        K.set_image_data_format('channels_first')
+        unique_mask_stack = np.rollaxis(unique_mask_stack, -1, 1)
+
+        bin_size = 3
+        distance = distance_transform_3d(unique_mask_stack, bins=bin_size)
+        assert np.array_equal(np.unique(distance), np.array([0, 1, 2]))
+        assert np.expand_dims(distance, axis=1).shape == unique_mask_stack.shape
+
+        bin_size = 4
+        distance = distance_transform_3d(unique_mask_stack, bins=bin_size)
+        assert np.array_equal(np.unique(distance), np.array([0, 1, 2, 3]))
+        assert np.expand_dims(distance, axis=1).shape == unique_mask_stack.shape
 
     def test_distance_transform_2d(self):
         for img in _generate_test_masks():
+            K.set_image_data_format('channels_last')
             bin_size = 3
             distance = distance_transform_2d(img, bins=bin_size)
             assert np.array_equal(np.unique(distance), np.array([0, 1, 2]))
+            assert np.expand_dims(distance, axis=-1).shape == img.shape
 
             bin_size = 4
             distance = distance_transform_2d(img, bins=bin_size)
             assert np.array_equal(np.unique(distance), np.array([0, 1, 2, 3]))
+            assert np.expand_dims(distance, axis=-1).shape == img.shape
+
+            K.set_image_data_format('channels_first')
+            img = np.rollaxis(img, -1, 1)
+
+            bin_size = 3
+            distance = distance_transform_2d(img, bins=bin_size)
+            assert np.array_equal(np.unique(distance), np.array([0, 1, 2]))
+            assert np.expand_dims(distance, axis=1).shape == img.shape
+
+            bin_size = 4
+            distance = distance_transform_2d(img, bins=bin_size)
+            assert np.array_equal(np.unique(distance), np.array([0, 1, 2, 3]))
+            assert np.expand_dims(distance, axis=1).shape == img.shape
 
     def test_to_categorical(self):
         num_classes = 5
