@@ -13,6 +13,12 @@ RUN apt-get update && apt-get install -y \
 #     git clone https://www.github.com/fizyr/keras-maskrcnn /opt/keras-maskrcnn && \
 #     pip install /opt/keras-retinanet /opt/keras-maskrcnn
 
+# Install Mask R-CNN
+RUN git clone https://www.github.com/vanvalenlab/Mask_RCNN /opt/Mask_RCNN && \
+    cd /opt/Mask_RCNN && \
+    pip install -r requirements.txt && \
+    python setup.py install
+
 # Set working directory
 WORKDIR /deepcell-tf
 
