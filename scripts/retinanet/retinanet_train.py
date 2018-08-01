@@ -33,13 +33,15 @@ from keras_retinanet.callbacks import RedirectModel
 from keras_retinanet.callbacks.eval import Evaluate
 from keras_retinanet.models.retinanet import retinanet_bbox
 from keras_retinanet.utils.anchors import make_shapes_callback
+from keras_retinanet.utils.image import preprocess_image
+from keras_retinanet.utils.image import resize_image
 from keras_retinanet.utils.keras_version import check_keras_version
 from keras_retinanet.utils.model import freeze as freeze_model
 from keras_retinanet.utils.transform import random_transform_generator
 
 import tensorflow as tf
 
-from deepcell.image_generators import RetinaNetCSVGenerator
+from deepcell.image_generators import RetinaNetGenerator
 
 """
 Functions to load custom backbone from deepcell_backbone
@@ -61,7 +63,8 @@ def get_backbone(backbone_name):
         # Import custom written backbone class here
         from deepcell_backbone import DeepcellBackbone as b
     else:
-        raise NotImplementedError('Backbone class for  \'{}\' not implemented.'.format(backbone))
+        raise NotImplementedError('Backbone class for `{}` not implemented.'.format(
+            backbone_name))
 
     return b(backbone_name)
 
@@ -92,7 +95,6 @@ def load_model(filepath,
 
     model = keras_load_model(filepath, custom_objects=get_backbone(backbone_name).custom_objects)
     if convert:
-        from keras_retinanet.models.retinanet import retinanet_bbox
         model = retinanet_bbox(model=model, nms=nms, class_specific_filter=class_specific_filter)
 
     return model
@@ -223,7 +225,7 @@ def create_callbacks(model, training_model, prediction_model, validation_generat
 
     if args.evaluation and validation_generator:
         if args.dataset_type == 'coco':
-            from ..callbacks.coco import CocoEval
+            from keras_retinanet.callbacks.coco import CocoEval
 
             # use prediction model for evaluation
             evaluation = CocoEval(validation_generator, tensorboard=tensorboard_callback)
@@ -296,7 +298,7 @@ def create_generators(args, preprocess_image):
         transform_generator = random_transform_generator(flip_x_chance=0.5)
 
     if args.dataset_type == 'train':
-        train_generator = RetinaNetCSVGenerator(
+        train_generator = RetinaNetGenerator(
             direc_name='/data/data/cells/HeLa/S3',
             training_dirs=['set1', 'set2'],
             raw_image_dir='raw',
@@ -309,7 +311,7 @@ def create_generators(args, preprocess_image):
         )
 
         if args.val_annotations:
-            validation_generator = RetinaNetCSVGenerator(
+            validation_generator = RetinaNetGenerator(
                 direc_name='/data/data/cells/HeLa/S3',
                 training_dirs=['set1', 'set2'],
                 raw_image_dir='raw',
