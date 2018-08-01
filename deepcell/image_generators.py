@@ -1809,6 +1809,9 @@ class MaskRCNNGenerator(_MaskRCNNGenerator):
                 })
                 cell_count += 1
             print('Image number {} has {} cells'.format(cnt, cell_count))
+            # If there are no cells in this image, remove it from the annotations
+            if not result[cnt]:
+                del result[cnt]
         return result
 
     def size(self):
