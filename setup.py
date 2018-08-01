@@ -12,6 +12,8 @@ def _parse_requirements(file_path):
     lineiter = (line.strip() for line in open(file_path))
     reqs = []
     for line in lineiter:
+        # workaround to ignore keras_maskrcnn requirement
+        # which is downloaded directly from github
         if line.startswith('#') or line.startswith('git+'):
             continue
         reqs.append(line)
