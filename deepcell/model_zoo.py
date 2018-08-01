@@ -1826,7 +1826,7 @@ def bn_feature_net_31x31_3D(n_features=3, n_frames=5, n_channels=1, reg=1e-5, in
     return model
 
 
-def dilated_bn_feature_net_31x31_3D(input_shape=(2, 1080, 1280), n_frames=5, n_channels = None, flatten = False, batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, norm_method='whole_image'):
+def dilated_bn_feature_net_31x31_3D(input_shape=(2, 1080, 1280), n_frames=5, n_channels=None, flatten=False, batch_size=None, n_features=3, reg=1e-5, init='he_normal', weights_path=None, norm_method='whole_image'):
 
     if n_channels is not None:
         if K.image_data_format() == 'channels_first':

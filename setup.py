@@ -10,7 +10,14 @@ except ImportError:
 
 def _parse_requirements(file_path):
     lineiter = (line.strip() for line in open(file_path))
-    return [line for line in lineiter if line and not line.startswith("#")]
+    reqs = []
+    for line in lineiter:
+        # workaround to ignore keras_maskrcnn requirement
+        # which is downloaded directly from github
+        if line.startswith('#') or line.startswith('git+'):
+            continue
+        reqs.append(line)
+    return reqs
 
 
 try:
