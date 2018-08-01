@@ -9,9 +9,9 @@ RUN apt-get update && apt-get install -y \
     /usr/local/bin/pip install --upgrade pip
 
 # Install Fizyr's Keras implementations of RetinaNet & Mask R-CNN to /opt
-RUN git clone https://www.github.com/fizyr/keras-retinanet /opt/keras-retinanet && \
-    git clone https://www.github.com/fizyr/keras-maskrcnn /opt/keras-maskrcnn && \
-    pip install /opt/keras-retinanet /opt/keras-maskrcnn
+# RUN git clone https://www.github.com/fizyr/keras-retinanet /opt/keras-retinanet && \
+#     git clone https://www.github.com/fizyr/keras-maskrcnn /opt/keras-maskrcnn && \
+#     pip install /opt/keras-retinanet /opt/keras-maskrcnn
 
 # Set working directory
 WORKDIR /deepcell-tf
