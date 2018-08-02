@@ -1370,6 +1370,7 @@ class WatershedMovieDataGenerator(MovieDataGenerator):
              save_to_dir=None,
              save_prefix='',
              distance_bins=16,
+             erosion_width=None,
              save_format='png'):
         return WatershedMovieIterator(
             train_dict,
@@ -1380,6 +1381,7 @@ class WatershedMovieDataGenerator(MovieDataGenerator):
             frames_per_batch=frames_per_batch,
             data_format=self.data_format,
             distance_bins=distance_bins,
+            erosion_width=erosion_width,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
@@ -1395,6 +1397,7 @@ class WatershedMovieIterator(Iterator):
                  frames_per_batch=10,
                  data_format=None,
                  distance_bins=16,
+                 erosion_width=None,
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
@@ -1423,6 +1426,7 @@ class WatershedMovieIterator(Iterator):
 
         self.frames_per_batch = frames_per_batch
         self.distance_bins = distance_bins
+        self.erosion_width = erosion_width
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -1441,7 +1445,7 @@ class WatershedMovieIterator(Iterator):
                 mask = train_dict['y'][batch, :, :, :, 0]
             else:
                 mask = train_dict['y'][batch, 0, :, :, :]
-            y_distance[batch] = distance_transform_3d(mask, self.distance_bins)
+            y_distance[batch] = distance_transform_3d(mask, self.distance_bins, self.erosion_width)
         # convert to one hot notation
         y_distance = keras_to_categorical(np.expand_dims(y_distance, axis=-1))
         if self.channel_axis == 1:

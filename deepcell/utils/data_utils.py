@@ -779,6 +779,7 @@ def make_training_data_3d(direc_name,
                           max_training_examples=1e7,
                           distance_transform=False,
                           distance_bins=4,
+                          erosion_width=None,
                           verbose=True):
     """
     Read all images in training directories and save as npz file.
@@ -849,7 +850,7 @@ def make_training_data_3d(direc_name,
                 dist_batch = y[b, 0, :, :, :]
             else:
                 dist_batch = y[b, :, :, :, 0]
-            d = distance_transform_3d(dist_batch, bins=distance_bins)
+            d = distance_transform_3d(dist_batch, bins=distance_bins, erosion_width=erosion_width)
             new_y[b] = np.expand_dims(d, axis=channel_axis)
         y = new_y
 
@@ -956,6 +957,7 @@ def make_training_data(direc_name,
                               window_size_z=kwargs.get('window_size_z', 5),
                               distance_transform=distance_transform,
                               distance_bins=distance_bins,
+                              erosion_width=kwargs.get('erosion_width'),
                               border_mode=border_mode,
                               output_mode=output_mode,
                               reshape_size=reshape_size,
