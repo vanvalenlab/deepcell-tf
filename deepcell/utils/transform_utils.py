@@ -122,7 +122,7 @@ def distance_transform_3d(maskstack, bins=4, erosion_width=None):
             if cell_label != 0:
                 temp_img = maskstack == cell_label
                 temp_img = binary_erosion(temp_img, strel)
-                new_masks = np.where(maskstack == cell_label, temp_img, maskstack)
+                new_masks = np.where(maskstack == cell_label, temp_img, new_masks)
 
         maskstack = np.multiply(new_masks, maskstack)
 
