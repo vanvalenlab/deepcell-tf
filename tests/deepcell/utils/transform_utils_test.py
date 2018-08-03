@@ -15,6 +15,7 @@ from tensorflow.python.platform import test
 from tensorflow.python.keras import backend as K
 
 from deepcell.utils.transform_utils import to_categorical
+from deepcell.utils.transform_utils import erode_edges
 from deepcell.utils.transform_utils import distance_transform_2d
 from deepcell.utils.transform_utils import distance_transform_3d
 from deepcell.utils.transform_utils import rotate_array_0
@@ -43,6 +44,38 @@ def _generate_test_masks():
 
 
 class TransformUtilsTest(test.TestCase):
+    def test_erode_edges_2d(self):
+        for img in _generate_test_masks():
+            img = label(img)
+
+            erode_0 = erode_edges(img, erosion_width=0)
+            erode_1 = erode_edges(img, erosion_width=1)
+            erode_2 = erode_edges(img, erosion_width=2)
+
+            assert img.shape == erode_0.shape == erode_1.shape == erode_2.shape
+            assert np.array_equal(erode_0, img)
+            assert np.sum(erode_0) > np.sum(erode_1)
+            assert np.sum(erode_1) > np.sum(erode_2)
+
+    def test_erode_edges_3d(self):
+        mask_stack = np.array(_generate_test_masks())
+        unique_mask_stack = np.zeros(mask_stack.shape)
+
+        for i, mask in enumerate(_generate_test_masks()):
+            unique_mask_stack[i] = label(mask)
+
+        # TODO: why is this required?  Is this a bug for 2D and 3D?
+        unique_mask_stack = np.squeeze(unique_mask_stack)
+
+        erode_0 = erode_edges(unique_mask_stack, erosion_width=0)
+        erode_1 = erode_edges(unique_mask_stack, erosion_width=1)
+        erode_2 = erode_edges(unique_mask_stack, erosion_width=2)
+
+        assert unique_mask_stack.shape == erode_0.shape == erode_1.shape == erode_2.shape
+        assert np.array_equal(erode_0, unique_mask_stack)
+        assert np.sum(erode_0) > np.sum(erode_1)
+        assert np.sum(erode_1) > np.sum(erode_2)
+
     def test_distance_transform_3d(self):
         mask_stack = np.array(_generate_test_masks())
         unique_mask_stack = np.zeros(mask_stack.shape)

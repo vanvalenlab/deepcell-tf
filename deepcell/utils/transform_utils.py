@@ -18,16 +18,39 @@ from skimage.morphology import binary_erosion
 from tensorflow.python.keras import backend as K
 
 
-def distance_transform_2d(mask, bins=16):
+def erode_edges(mask, erosion_width):
+    """Erode edge of objects to prevent them from touching
+    # Arguments:
+        mask: uniquely labeled instance mask
+        erosion_width: integer value for pixel width to erode edges
+    # Returns:
+        mask where each instance has had the edges eroded
+    """
+    if erosion_width:
+        new_mask = np.zeros(mask.shape)
+        strel = ball(erosion_width)
+        for cell_label in np.unique(mask):
+            if cell_label != 0:
+                temp_img = mask == cell_label
+                temp_img = binary_erosion(temp_img, strel)
+                new_mask = np.where(mask == cell_label, temp_img, new_mask)
+        return np.multiply(new_mask, mask)
+    return mask
+
+
+def distance_transform_2d(mask, bins=16, erosion_width=None):
     """Transform a label mask into distance classes.
     # Arguments
         mask: a label mask (y data)
         bins: the number of transformed distance classes
+        erosion_width: number of pixels to erode edges of each labels
     # Returns
         distance: a mask of same shape as input mask,
                   with each label being a distance class from 1 to bins
     """
     mask = np.squeeze(mask)  # squeeze the channels
+    mask = erode_edges(mask, erosion_width)
+
     distance = ndimage.distance_transform_edt(mask)
     distance = distance.astype(K.floatx())  # normalized distances are floats
 
@@ -108,23 +131,12 @@ def distance_transform_3d(maskstack, bins=4, erosion_width=None):
     # Arguments
         maskstack: a z-stack of label masks (y data)
         bins: the number of transformed distance classes
-        erode_edges: erode edges of labels to prevent them from touching
+        erosion_width: number of pixels to erode edges of each labels
     # Returns
         distance: 3D Euclidiean Distance Transform
     """
     maskstack = np.squeeze(maskstack)  # squeeze the channels
-    # Erode masks
-    new_masks = np.zeros(maskstack.shape)
-
-    if erosion_width:
-        strel = ball(erosion_width)
-        for cell_label in np.unique(maskstack):
-            if cell_label != 0:
-                temp_img = maskstack == cell_label
-                temp_img = binary_erosion(temp_img, strel)
-                new_masks = np.where(maskstack == cell_label, temp_img, new_masks)
-
-        maskstack = np.multiply(new_masks, maskstack)
+    maskstack = erode_edges(maskstack, erosion_width)
 
     distance = ndimage.distance_transform_edt(maskstack, sampling=[0.5, 0.217, 0.217])
 
