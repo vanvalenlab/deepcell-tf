@@ -47,15 +47,22 @@ class TransformUtilsTest(test.TestCase):
     def test_erode_edges_2d(self):
         for img in _generate_test_masks():
             img = label(img)
+            img = np.squeeze(img)
 
             erode_0 = erode_edges(img, erosion_width=0)
             erode_1 = erode_edges(img, erosion_width=1)
             erode_2 = erode_edges(img, erosion_width=2)
 
-            assert img.shape == erode_0.shape == erode_1.shape == erode_2.shape
-            assert np.array_equal(erode_0, img)
-            assert np.sum(erode_0) > np.sum(erode_1)
-            assert np.sum(erode_1) > np.sum(erode_2)
+            self.assertEqual(img.shape, erode_0.shape)
+            self.assertEqual(erode_0.shape, erode_1.shape)
+            self.assertEqual(erode_1.shape, erode_2.shape)
+            self.assertAllEqual(erode_0, img)
+            self.assertGreater(np.sum(erode_0), np.sum(erode_1))
+            self.assertGreater(np.sum(erode_1), np.sum(erode_2))
+
+            # test too few dims
+            with self.assertRaises(ValueError):
+                erode_1 = erode_edges(img[0, :], erosion_width=1)
 
     def test_erode_edges_3d(self):
         mask_stack = np.array(_generate_test_masks())
@@ -64,17 +71,22 @@ class TransformUtilsTest(test.TestCase):
         for i, mask in enumerate(_generate_test_masks()):
             unique_mask_stack[i] = label(mask)
 
-        # TODO: why is this required?  Is this a bug for 2D and 3D?
         unique_mask_stack = np.squeeze(unique_mask_stack)
 
         erode_0 = erode_edges(unique_mask_stack, erosion_width=0)
         erode_1 = erode_edges(unique_mask_stack, erosion_width=1)
         erode_2 = erode_edges(unique_mask_stack, erosion_width=2)
 
-        assert unique_mask_stack.shape == erode_0.shape == erode_1.shape == erode_2.shape
-        assert np.array_equal(erode_0, unique_mask_stack)
-        assert np.sum(erode_0) > np.sum(erode_1)
-        assert np.sum(erode_1) > np.sum(erode_2)
+        self.assertEqual(unique_mask_stack.shape, erode_0.shape)
+        self.assertEqual(erode_0.shape, erode_1.shape)
+        self.assertEqual(erode_1.shape, erode_2.shape)
+        self.assertAllEqual(erode_0, unique_mask_stack)
+        self.assertGreater(np.sum(erode_0), np.sum(erode_1))
+        self.assertGreater(np.sum(erode_1), np.sum(erode_2))
+
+        # test too many dims
+        with self.assertRaises(ValueError):
+            erode_1 = erode_edges(np.expand_dims(unique_mask_stack, axis=-1), erosion_width=1)
 
     def test_distance_transform_3d(self):
         mask_stack = np.array(_generate_test_masks())

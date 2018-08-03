@@ -13,7 +13,7 @@ import numpy as np
 from scipy import ndimage
 from skimage.measure import label
 from skimage.measure import regionprops
-from skimage.morphology import ball
+from skimage.morphology import ball, disk
 from skimage.morphology import binary_erosion
 from tensorflow.python.keras import backend as K
 
@@ -28,13 +28,19 @@ def erode_edges(mask, erosion_width):
     """
     if erosion_width:
         new_mask = np.zeros(mask.shape)
-        strel = ball(erosion_width)
+        if mask.ndim == 2:
+            strel = disk(erosion_width)
+        elif mask.ndim == 3:
+            strel = ball(erosion_width)
+        else:
+            raise ValueError('erode_edges expects arrays of ndim 2 or 3.'
+                             'Got ndim: {}'.format(mask.ndim))
         for cell_label in np.unique(mask):
             if cell_label != 0:
                 temp_img = mask == cell_label
                 temp_img = binary_erosion(temp_img, strel)
                 new_mask = np.where(mask == cell_label, temp_img, new_mask)
-        return np.multiply(new_mask, mask)
+        return np.multiply(new_mask, mask).astype('int')
     return mask
 
 
