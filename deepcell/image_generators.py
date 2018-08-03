@@ -10,7 +10,9 @@ from __future__ import print_function
 from __future__ import division
 
 import os
+from fnmatch import fnmatch
 
+import cv2
 import numpy as np
 from scipy import ndimage as ndi
 from skimage.filters import sobel_h
@@ -18,6 +20,8 @@ from skimage.filters import sobel_v
 from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.transform import resize
+from skimage.io import imread
+
 from tensorflow.python.platform import tf_logging as logging
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.preprocessing.image import random_channel_shift
@@ -27,8 +31,13 @@ from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
+from keras_retinanet.preprocessing.generator import Generator as _RetinaNetGenerator
+from keras_maskrcnn.preprocessing.generator import Generator as _MaskRCNNGenerator
+
 from .utils.transform_utils import transform_matrix_offset_center
 from .utils.transform_utils import distance_transform_2d
+from .utils.retinanet_anchor_utils import anchor_targets_bbox
+
 
 """
 Custom image generators
@@ -159,7 +168,7 @@ class ImageFullyConvIterator(Iterator):
                              'have rank 4. Got array with shape', self.x.shape)
 
         self.channel_axis = -1 if data_format == 'channels_last' else 1
-        self.y = np.int32(train_dict['y'])
+        self.y = np.array(train_dict['y'], dtype='int32')
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -492,7 +501,7 @@ class SiameseIterator(Iterator):
             self.col_axis = 3
             self.time_axis = 1
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.y = np.int32(train_dict['y'])
+        self.y = np.array(train_dict['y'], dtype='int32')
         self.crop_dim = crop_dim
         self.min_track_length = min_track_length
         self.image_data_generator = image_data_generator
@@ -1512,3 +1521,341 @@ class DiscIterator(Iterator):
         # The transformation of images is not under thread lock
         # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
+
+
+"""
+RetinaNet and MaskRCNN Generators
+"""
+
+
+class RetinaNetGenerator(_RetinaNetGenerator):
+
+    def __init__(self,
+                 direc_name,
+                 training_dirs,
+                 raw_image_dir,
+                 channel_names,
+                 annotation_dir,
+                 annotation_names,
+                 **kwargs):
+        self.image_names = []
+        self.image_data = {}
+        self.image_stack = []
+        self.mask_stack = []
+        self.base_dir = kwargs.get('base_dir')
+
+        train_files = self.list_file_deepcell(
+            dir_name=direc_name,
+            training_dirs=training_dirs,
+            image_dir=raw_image_dir,
+            channel_names=channel_names)
+
+        annotation_files = self.list_file_deepcell(
+            dir_name=direc_name,
+            training_dirs=training_dirs,
+            image_dir=annotation_dir,
+            channel_names=annotation_names)
+
+        self.image_stack = self.generate_subimage(train_files, 3, 3, True)
+        self.mask_stack = self.generate_subimage(annotation_files, 3, 3, False)
+
+        self.classes = {'cell': 0}
+
+        self.labels = {}
+        for key, value in self.classes.items():
+            self.labels[value] = key
+
+        self.image_data = self._read_annotations(self.mask_stack)
+        self.image_names = list(self.image_data.keys())
+        super(RetinaNetGenerator, self).__init__(**kwargs)
+
+    def list_file_deepcell(self, dir_name, training_dirs, image_dir, channel_names):
+        """
+        List all image files inside each `dir_name/training_dir/image_dir`
+        with "channel_name" in the filename.
+        """
+        filelist = []
+        for direc in training_dirs:
+            imglist = os.listdir(os.path.join(dir_name, direc, image_dir))
+
+            for channel in channel_names:
+                for img in imglist:
+                    # if channel string is NOT in image file name, skip it.
+                    if not fnmatch(img, '*{}*'.format(channel)):
+                        continue
+                    image_file = os.path.join(dir_name, direc, image_dir, img)
+                    filelist.append(image_file)
+        return sorted(filelist)
+
+    def _read_annotations(self, masks_list):
+        result = {}
+        for cnt, image in enumerate(masks_list):
+            result[cnt] = []
+            p = regionprops(label(image))
+
+            cell_count = 0
+            for index in range(len(np.unique(label(image))) - 1):
+                y1, x1, y2, x2 = p[index].bbox
+                result[cnt].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2})
+                cell_count += 1
+            if cell_count == 0:
+                logging.warning('No cells found in image {}'.format(cnt))
+        return result
+
+    def generate_subimage(self, img_pathstack, horizontal, vertical, flag):
+        sub_img = []
+        for img_path in img_pathstack:
+            img = np.asarray(np.float32(imread(img_path)))
+            if flag:
+                img = (img / np.max(img))
+            vway = np.zeros(vertical + 1)  # The dimentions of vertical cuts
+            hway = np.zeros(horizontal + 1)  # The dimentions of horizontal cuts
+            vcnt = 0  # The initial value for vertical
+            hcnt = 0  # The initial value for horizontal
+
+            for i in range(vertical + 1):
+                vway[i] = int(vcnt)
+                vcnt += (img.shape[1] / vertical)
+
+            for j in range(horizontal + 1):
+                hway[j] = int(hcnt)
+                hcnt += (img.shape[0] / horizontal)
+
+            vb = 0
+
+            for i in range(len(hway) - 1):
+                for j in range(len(vway) - 1):
+                    vb += 1
+
+            for i in range(len(hway) - 1):
+                for j in range(len(vway) - 1):
+                    s = img[int(hway[i]):int(hway[i + 1]), int(vway[j]):int(vway[j + 1])]
+                    sub_img.append(s)
+
+        if flag:
+            sub_img = [np.tile(np.expand_dims(i, axis=-1), (1, 1, 3)) for i in sub_img]
+
+        return sub_img
+
+    def size(self):
+        """Size of the dataset."""
+        return len(self.image_names)
+
+    def num_classes(self):
+        """Number of classes in the dataset."""
+        return max(self.classes.values()) + 1
+
+    def name_to_label(self, name):
+        """Map name to label."""
+        return self.classes[name]
+
+    def label_to_name(self, label):
+        """Map label to name."""
+        return self.labels[label]
+
+    def image_path(self, image_index):
+        """Returns the image path for image_index."""
+        return os.path.join(self.base_dir, self.image_names[image_index])
+
+    def image_aspect_ratio(self, image_index):
+        """Compute the aspect ratio for an image with image_index."""
+        image = self.image_stack[image_index]
+        return float(image.shape[1]) / float(image.shape[0])
+
+    def load_image(self, image_index):
+        """Load an image at the image_index."""
+        return self.image_stack[image_index]
+
+    def load_annotations(self, image_index):
+        """Load annotations for an image_index."""
+        path = self.image_names[image_index]
+        annots = self.image_data[path]
+        boxes = np.zeros((len(annots), 5))
+
+        for idx, annot in enumerate(annots):
+            class_name = 'cell'
+            boxes[idx, 0] = float(annot['x1'])
+            boxes[idx, 1] = float(annot['y1'])
+            boxes[idx, 2] = float(annot['x2'])
+            boxes[idx, 3] = float(annot['y2'])
+            boxes[idx, 4] = self.name_to_label(class_name)
+
+        return boxes
+
+
+class MaskRCNNGenerator(_MaskRCNNGenerator):
+    def __init__(self,
+                 direc_name,
+                 training_dirs,
+                 raw_image_dir,
+                 channel_names,
+                 annotation_dir,
+                 annotation_names,
+                 base_dir=None,
+                 image_min_side=200,
+                 image_max_side=200,
+                 crop_iterations=1,
+                 **kwargs):
+        self.image_names = []
+        self.image_data = {}
+        self.base_dir = base_dir
+        self.image_stack = []
+
+        train_files = self.list_file_deepcell(
+            dir_name=direc_name,
+            training_dirs=training_dirs,
+            image_dir=raw_image_dir,
+            channel_names=channel_names)
+
+        annotation_files = self.list_file_deepcell(
+            dir_name=direc_name,
+            training_dirs=training_dirs,
+            image_dir=annotation_dir,
+            channel_names=annotation_names)
+
+        store = self.randomcrops(
+            train_files,
+            annotation_files,
+            image_min_side,
+            image_max_side,
+            iteration=crop_iterations)
+
+        self.image_stack = store[0]
+        self.classes = {'cell': 0}
+
+        self.labels = {}
+        for key, value in self.classes.items():
+            self.labels[value] = key
+
+        self.image_data = self._read_annotations(store[1])
+
+        self.image_names = list(self.image_data.keys())
+
+        # Override default Generator value with custom anchor_targets_bbox
+        if 'compute_anchor_targets' not in kwargs:
+            kwargs['compute_anchor_targets'] = anchor_targets_bbox
+
+        super(MaskRCNNGenerator, self).__init__(
+            image_min_side=image_min_side,
+            image_max_side=image_max_side,
+            **kwargs)
+
+    def list_file_deepcell(self, dir_name, training_dirs, image_dir, channel_names):
+        """
+        List all image files inside each `dir_name/training_dir/image_dir`
+        with "channel_name" in the filename.
+        """
+        filelist = []
+        for direc in training_dirs:
+            imglist = os.listdir(os.path.join(dir_name, direc, image_dir))
+
+            for channel in channel_names:
+                for img in imglist:
+                    # if channel string is NOT in image file name, skip it.
+                    if not fnmatch(img, '*{}*'.format(channel)):
+                        continue
+                    image_file = os.path.join(dir_name, direc, image_dir, img)
+                    filelist.append(image_file)
+        return sorted(filelist)
+
+    def randomcrops(self, dirpaths, maskpaths, size_x, size_y, iteration=1):
+        img = cv2.imread(dirpaths[0], 0)
+        img_y = img.shape[0]
+        img_x = img.shape[1]
+        act_x = img_x - size_x
+        act_y = img_y - size_y
+        if act_x < 0 or act_y < 0:
+            logging.warning('Image to crop is of a smaller size')
+            return ([], [])
+        outputi = []
+        outputm = []
+        while iteration > 0:
+            cropindex = []
+            for path in dirpaths:
+                rand_x = np.random.randint(0, act_x)
+                rand_y = np.random.randint(0, act_y)
+                cropindex.append((rand_x, rand_y))
+                image = cv2.imread(path, 0)
+                newimg = image[rand_y:rand_y + size_y, rand_x:rand_x + size_x]
+                newimg = np.tile(np.expand_dims(newimg, axis=-1), (1, 1, 3))
+                outputi.append(newimg)
+
+            for i, path in enumerate(maskpaths):
+                image = cv2.imread(path, 0)
+                rand_x = cropindex[i][0]
+                rand_y = cropindex[i][1]
+                newimg = image[rand_y:rand_y + size_y, rand_x:rand_x + size_x]
+                outputm.append(newimg)
+
+            iteration -= 1
+        return (outputi, outputm)
+
+    def _read_annotations(self, maskarr):
+        result = {}
+        for cnt, image in enumerate(maskarr):
+            result[cnt] = []
+            l = label(image)
+            p = regionprops(l)
+            cell_count = 0
+            for index in range(len(np.unique(l)) - 1):
+                y1, x1, y2, x2 = p[index].bbox
+                result[cnt].append({
+                    'x1': x1,
+                    'x2': x2,
+                    'y1': y1,
+                    'y2': y2,
+                    'class': 'cell',
+                    'mask_path': np.where(l == index + 1, 1, 0)
+                })
+                cell_count += 1
+            print('Image number {} has {} cells'.format(cnt, cell_count))
+            # If there are no cells in this image, remove it from the annotations
+            if not result[cnt]:
+                del result[cnt]
+        return result
+
+    def size(self):
+        return len(self.image_names)
+
+    def num_classes(self):
+        return max(self.classes.values()) + 1
+
+    def name_to_label(self, name):
+        return self.classes[name]
+
+    def label_to_name(self, label):
+        return self.labels[label]
+
+    def image_path(self, image_index):
+        return os.path.join(self.base_dir, self.image_names[image_index])
+
+    def image_aspect_ratio(self, image_index):
+        # PIL is fast for metadata
+        # image = Image.open(self.image_path(image_index))
+        # return float(image.width) / float(image.height)
+        image = self.image_stack[image_index]
+        return float(image.shape[1]) / float(image.shape[0])
+
+    def load_image(self, image_index):
+        # return read_image_bgr(self.image_path(image_index))
+        return self.image_stack[image_index]
+
+    def load_annotations(self, image_index):
+        path = self.image_names[image_index]
+        annots = self.image_data[path]
+
+        # find mask size in order to allocate the right dimension for the annotations
+        annotations = np.zeros((len(annots), 5))
+        masks = []
+
+        for idx, annot in enumerate(annots):
+            annotations[idx, 0] = float(annot['x1'])
+            annotations[idx, 1] = float(annot['y1'])
+            annotations[idx, 2] = float(annot['x2'])
+            annotations[idx, 3] = float(annot['y2'])
+            annotations[idx, 4] = self.name_to_label(annot['class'])
+            mask = annot['mask_path']
+            mask = (mask > 0).astype(np.uint8)  # convert from 0-255 to binary mask
+            masks.append(np.expand_dims(mask, axis=-1))
+
+        return annotations, masks
