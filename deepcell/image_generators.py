@@ -24,6 +24,7 @@ from skimage.io import imread
 
 from tensorflow.python.platform import tf_logging as logging
 from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.utils import to_categorical as keras_to_categorical
 from tensorflow.python.keras.preprocessing.image import random_channel_shift
 from tensorflow.python.keras.preprocessing.image import apply_transform
 from tensorflow.python.keras.preprocessing.image import flip_axis
@@ -35,7 +36,7 @@ from keras_retinanet.preprocessing.generator import Generator as _RetinaNetGener
 from keras_maskrcnn.preprocessing.generator import Generator as _MaskRCNNGenerator
 
 from .utils.transform_utils import transform_matrix_offset_center
-from .utils.transform_utils import distance_transform_2d
+from .utils.transform_utils import distance_transform_2d, distance_transform_3d
 from .utils.retinanet_anchor_utils import anchor_targets_bbox
 
 
@@ -55,7 +56,7 @@ class ImageSampleArrayIterator(Iterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
-        if train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
             raise ValueError('Training batches and labels should have the same'
                              'length. Found X.shape: {} y.shape: {}'.format(
                                  train_dict['X'].shape, train_dict['y'].shape))
@@ -64,8 +65,9 @@ class ImageSampleArrayIterator(Iterator):
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
 
         if self.x.ndim != 4:
-            raise ValueError('Input data in `ImageSampleArrayIterator` should'
-                             'have rank 4. Got array with shape', self.x.shape)
+            raise ValueError('Input data in `ImageSampleArrayIterator` '
+                             'should have rank 4. You passed an array '
+                             'with shape', self.x.shape)
 
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.y = train_dict['y']
@@ -164,8 +166,9 @@ class ImageFullyConvIterator(Iterator):
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
 
         if self.x.ndim != 4:
-            raise ValueError('Input data in `ImageFullyConvIterator` should'
-                             'have rank 4. Got array with shape', self.x.shape)
+            raise ValueError('Input data in `ImageFullyConvIterator` '
+                             'should have rank 4. You passed an array '
+                             'with shape', self.x.shape)
 
         self.channel_axis = -1 if data_format == 'channels_last' else 1
         self.y = np.array(train_dict['y'], dtype='int32')
@@ -206,6 +209,7 @@ class ImageFullyConvIterator(Iterator):
             x = self.image_data_generator.standardize(x)
 
             if self.target_format == 'direction':
+                # TODO: hardcoded for cell interior = 1
                 if self.channel_axis == 1:
                     interior = y[1, :, :]
                 else:
@@ -328,6 +332,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         """Randomly augment a single image tensor.
         # Arguments
             x: 4D tensor, single image.
+            labels: 4D tensor, single image mask.
             seed: random seed.
         # Returns
             A randomly transformed version of the input (same shape).
@@ -720,9 +725,9 @@ class WatershedIterator(Iterator):
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
 
         if self.x.ndim != 4:
-            raise ValueError(
-                'Input data in `WatershedIterator` should have rank 4. '
-                'You passed an array with shape', self.x.shape)
+            raise ValueError('Input data in `WatershedIterator` '
+                             'should have rank 4. You passed an array '
+                             'with shape', self.x.shape)
 
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.distance_bins = distance_bins
@@ -756,6 +761,7 @@ class WatershedIterator(Iterator):
 
             x = self.image_data_generator.standardize(x)
 
+            # TODO: hardcoded for cell interior = 1
             if self.channel_axis == 1:
                 interior = y[1, :, :]
             else:
@@ -843,7 +849,7 @@ class MovieDataGenerator(ImageDataGenerator):
     def flow(self,
              train_dict,
              batch_size=1,
-             number_of_frames=10,
+             frames_per_batch=10,
              shuffle=True,
              seed=None,
              save_to_dir=None,
@@ -856,7 +862,7 @@ class MovieDataGenerator(ImageDataGenerator):
             shuffle=shuffle,
             seed=seed,
             data_format=self.data_format,
-            number_of_frames=number_of_frames,
+            frames_per_batch=frames_per_batch,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
@@ -899,10 +905,11 @@ class MovieDataGenerator(ImageDataGenerator):
 
         return x
 
-    def random_transform(self, x, label_movie=None, seed=None):
+    def random_transform(self, x, labels=None, seed=None):
         """Randomly augment a single image tensor.
         # Arguments
-            x: 5D tensor, single image.
+            x: 5D tensor, image stack.
+            labels: 5D tensor, image mask stack.
             seed: random seed.
         # Returns
             A randomly transformed version of the input (same shape).
@@ -984,27 +991,40 @@ class MovieDataGenerator(ImageDataGenerator):
             transform_matrix = zoom_matrix if transform_matrix is None else np.dot(
                 transform_matrix, zoom_matrix)
 
-        if label_movie is not None:
-            y = label_movie
+        if labels is not None:
+            y = labels
 
             if transform_matrix is not None:
                 y_new = []
                 h, w = y.shape[img_row_axis], y.shape[img_col_axis]
                 transform_matrix_y = transform_matrix_offset_center(transform_matrix, h, w)
                 for frame in range(y.shape[img_time_axis]):
-                    y_trans = apply_transform(y[frame], transform_matrix_y, img_channel_axis - 1,
+                    if self.time_axis == 2:
+                        y_frame = y[:, frame]
+                        trans_channel_axis = img_channel_axis
+                    else:
+                        y_frame = y[frame]
+                        trans_channel_axis = img_channel_axis - 1
+                    y_trans = apply_transform(y_frame, transform_matrix_y, trans_channel_axis,
                                               fill_mode='constant', cval=0)
                     y_new.append(np.rint(y_trans))
-                y = np.stack(y_new, axis=0)
+                y = np.stack(y_new, axis=img_time_axis)
 
         if transform_matrix is not None:
             x_new = []
             h, w = x.shape[img_row_axis], x.shape[img_col_axis]
             transform_matrix_x = transform_matrix_offset_center(transform_matrix, h, w)
             for frame in range(x.shape[img_time_axis]):
-                x_new.append(apply_transform(x[frame], transform_matrix_x, img_channel_axis - 1,
-                                             fill_mode=self.fill_mode, cval=self.cval))
-            x = np.stack(x_new)
+                if self.time_axis == 2:
+                    x_frame = x[:, frame]
+                    trans_channel_axis = img_channel_axis
+                else:
+                    x_frame = x[frame]
+                    trans_channel_axis = img_channel_axis - 1
+                x_trans = apply_transform(x_frame, transform_matrix_x, trans_channel_axis,
+                                          fill_mode=self.fill_mode, cval=self.cval)
+                x_new.append(x_trans)
+            x = np.stack(x_new, axis=img_time_axis)
 
         if self.channel_shift_range != 0:
             x = random_channel_shift(x, self.channel_shift_range, img_channel_axis)
@@ -1012,16 +1032,16 @@ class MovieDataGenerator(ImageDataGenerator):
         if self.horizontal_flip:
             if np.random.random() < 0.5:
                 x = flip_axis(x, img_col_axis)
-                if label_movie is not None:
+                if labels is not None:
                     y = flip_axis(y, img_col_axis)
 
         if self.vertical_flip:
             if np.random.random() < 0.5:
                 x = flip_axis(x, img_row_axis)
-                if label_movie is not None:
+                if labels is not None:
                     y = flip_axis(y, img_row_axis)
 
-        if label_movie is not None:
+        if labels is not None:
             return x, y
 
         return x
@@ -1088,16 +1108,16 @@ class MovieArrayIterator(Iterator):
                  shuffle=False,
                  seed=None,
                  data_format=None,
-                 number_of_frames=10,
+                 frames_per_batch=10,
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
 
         if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
-            raise ValueError(
-                'Data movie and label movie should have the same size. '
-                'Found data movie size = {} and and label movie size = {}'.format(
-                    train_dict['X'].shape, train_dict['y'].shape))
+            raise ValueError('`X` (movie data) and `y` (labels) '
+                             'should have the same size. Found '
+                             'Found x.shape = {}, y.shape = {}'.format(
+                                 train_dict['X'].shape, train_dict['y'].shape))
 
         if data_format is None:
             data_format = K.image_data_format()
@@ -1105,46 +1125,46 @@ class MovieArrayIterator(Iterator):
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.y = np.asarray(train_dict['y'], dtype=K.floatx())
+        self.y = np.asarray(train_dict['y'], dtype=np.int32)
 
         if self.x.ndim != 5:
-            raise ValueError(
-                'Input data in `MovieArrayIterator` should have rank 5. '
-                'You passed an array with shape', self.x.shape)
+            raise ValueError('Input data in `MovieArrayIterator` '
+                             'should have rank 5. You passed an array '
+                             'with shape', self.x.shape)
 
-        if self.x.shape[self.time_axis] - number_of_frames < 0:
+        if self.x.shape[self.time_axis] - frames_per_batch < 0:
             raise ValueError(
                 'The number of frames used in each training batch should '
                 'be less than the number of frames in the training data!')
 
-        self.number_of_frames = number_of_frames
+        self.frames_per_batch = frames_per_batch
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
         super(MovieArrayIterator, self).__init__(
-            len(train_dict['y']), batch_size, shuffle, seed)
+            len(self.y), batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.data_format == 'channels_first':
             batch_x = np.zeros((len(index_array),
                                 self.x.shape[1],
-                                self.number_of_frames,
+                                self.frames_per_batch,
                                 self.x.shape[3],
                                 self.x.shape[4]))
             if self.y is not None:
                 batch_y = np.zeros((len(index_array),
                                     self.y.shape[1],
-                                    self.number_of_frames,
+                                    self.frames_per_batch,
                                     self.y.shape[3],
-                                    self.y.shape[3]))
+                                    self.y.shape[4]))
 
         else:
-            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] +
+            batch_x = np.zeros(tuple([len(index_array), self.frames_per_batch] +
                                      list(self.x.shape)[2:]))
             if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] +
+                batch_y = np.zeros(tuple([len(index_array), self.frames_per_batch] +
                                          list(self.y.shape)[2:]))
 
         for i, j in enumerate(index_array):
@@ -1152,9 +1172,9 @@ class MovieArrayIterator(Iterator):
                 y = self.y[j]
 
             # Sample along the time axis
-            last_frame = self.x.shape[self.time_axis] - self.number_of_frames
+            last_frame = self.x.shape[self.time_axis] - self.frames_per_batch
             time_start = np.random.randint(0, high=last_frame)
-            time_end = time_start + self.number_of_frames
+            time_end = time_start + self.frames_per_batch
             if self.time_axis == 1:
                 x = self.x[j, time_start:time_end, :, :, :]
                 if self.y is not None:
@@ -1167,7 +1187,7 @@ class MovieArrayIterator(Iterator):
 
             if self.y is not None:
                 x, y = self.movie_data_generator.random_transform(
-                    x.astype(K.floatx()), label_movie=y)
+                    x.astype(K.floatx()), labels=y)
                 x = self.movie_data_generator.standardize(x)
                 batch_y[i] = y
             else:
@@ -1189,6 +1209,333 @@ class MovieArrayIterator(Iterator):
                         hash=np.random.randint(1e4),
                         format=self.save_format)
                     img.save(os.path.join(self.save_to_dir, fname))
+
+                    if self.y is not None:
+                        if time_axis == 2:
+                            img_y = array_to_img(batch_y[i, :, frame], self.data_format, scale=True)
+                        else:
+                            img_y = array_to_img(batch_y[i, frame], self.data_format, scale=True)
+                        fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
+                            prefix=self.save_prefix,
+                            index=j,
+                            hash=np.random.randint(1e4),
+                            format=self.save_format)
+                        img_y.save(os.path.join(self.save_to_dir, fname))
+
+        if self.y is None:
+            return batch_x
+        return batch_x, batch_y
+
+    def next(self):
+        """For python 2.x.
+        # Returns the next batch.
+        """
+        # Keeps under lock only the mechanism which advances
+        # the indexing of each batch.
+        with self.lock:
+            index_array = next(self.index_generator)
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
+        return self._get_batches_of_transformed_samples(index_array)
+
+
+class SampleMovieArrayIterator(Iterator):
+    def __init__(self,
+                 train_dict,
+                 movie_data_generator,
+                 batch_size=32,
+                 shuffle=False,
+                 seed=None,
+                 data_format=None,
+                 save_to_dir=None,
+                 save_prefix='',
+                 save_format='png'):
+        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+            raise ValueError('`X` (movie data) and `y` (labels) '
+                             'should have the same size. Found '
+                             'Found x.shape = {}, y.shape = {}'.format(
+                                 train_dict['X'].shape, train_dict['y'].shape))
+
+        if data_format is None:
+            data_format = K.image_data_format()
+
+        self.channel_axis = 4 if data_format == 'channels_last' else 1
+        self.time_axis = 1 if data_format == 'channels_last' else 2
+        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.y = np.asarray(train_dict['y'], dtype=np.int32)
+
+        if self.x.ndim != 5:
+            raise ValueError('Input data in `SampleMovieArrayIterator` '
+                             'should have rank 5. You passed an array '
+                             'with shape', self.x.shape)
+
+        self.win_x = train_dict['win_x']
+        self.win_y = train_dict['win_y']
+        self.win_z = train_dict['win_z']
+        self.movie_data_generator = movie_data_generator
+        self.data_format = data_format
+        self.save_to_dir = save_to_dir
+        self.save_prefix = save_prefix
+        self.save_format = save_format
+        super(SampleMovieArrayIterator, self).__init__(
+            len(self.y), batch_size, shuffle, seed)
+
+    def _get_batches_of_transformed_samples(self, index_array):
+        if self.channel_axis == 1:
+            batch_x = np.zeros((len(index_array),
+                                self.x.shape[self.channel_axis],
+                                2 * self.win_z + 1,
+                                2 * self.win_x + 1,
+                                2 * self.win_y + 1))
+        else:
+            batch_x = np.zeros((len(index_array),
+                                2 * self.win_z + 1,
+                                2 * self.win_x + 1,
+                                2 * self.win_y + 1,
+                                self.x.shape[self.channel_axis]))
+
+        for i, j in enumerate(index_array):
+            x = self.x[j]
+            x = self.movie_data_generator.random_transform(x.astype(K.floatx()))
+            x = self.movie_data_generator.standardize(x)
+
+            batch_x[i] = x
+
+        if self.save_to_dir:
+            time_axis = 2 if self.data_format == 'channels_first' else 1
+            for i, j in enumerate(index_array):
+                for frame in range(batch_x.shape[time_axis]):
+                    if time_axis == 2:
+                        img = batch_x[i, :, frame]
+                    else:
+                        img = batch_x[i, frame]
+                    img = array_to_img(img, self.data_format, scale=True)
+                    fname = '{prefix}_{index}_{hash}.{format}'.format(
+                        prefix=self.save_prefix,
+                        index=j,
+                        hash=np.random.randint(1e4),
+                        format=self.save_format)
+                    img.save(os.path.join(self.save_to_dir, fname))
+
+        if self.y is None:
+            return batch_x
+        batch_y = self.y[index_array]
+        return batch_x, batch_y
+
+    def next(self):
+        """For python 2.x.
+        # Returns the next batch.
+        """
+        # Keeps under lock only the mechanism which advances
+        # the indexing of each batch.
+        with self.lock:
+            index_array = next(self.index_generator)
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
+        return self._get_batches_of_transformed_samples(index_array)
+
+
+class SampleMovieDataGenerator(MovieDataGenerator):
+    def flow(self,
+             train_dict,
+             batch_size=32,
+             shuffle=True,
+             seed=None,
+             save_to_dir=None,
+             save_prefix='',
+             save_format='png'):
+        return SampleMovieArrayIterator(
+            train_dict,
+            self,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            seed=seed,
+            data_format=self.data_format,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
+
+
+class WatershedMovieDataGenerator(MovieDataGenerator):
+    """
+    Generate minibatches of distance-transformed movie data
+    with real-time data augmentation.
+    """
+    def flow(self,
+             train_dict,
+             batch_size=1,
+             shuffle=True,
+             seed=None,
+             frames_per_batch=10,
+             save_to_dir=None,
+             save_prefix='',
+             distance_bins=16,
+             erosion_width=None,
+             save_format='png'):
+        return WatershedMovieIterator(
+            train_dict,
+            self,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            seed=seed,
+            frames_per_batch=frames_per_batch,
+            data_format=self.data_format,
+            distance_bins=distance_bins,
+            erosion_width=erosion_width,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
+
+
+class WatershedMovieIterator(Iterator):
+    def __init__(self,
+                 train_dict,
+                 movie_data_generator,
+                 batch_size=1,
+                 shuffle=False,
+                 seed=None,
+                 frames_per_batch=10,
+                 data_format=None,
+                 distance_bins=16,
+                 erosion_width=None,
+                 save_to_dir=None,
+                 save_prefix='',
+                 save_format='png'):
+        if data_format is None:
+            data_format = K.image_data_format()
+
+        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+            raise ValueError('`X` (movie data) and `y` (labels) '
+                             'should have the same size. Found '
+                             'Found x.shape = {}, y.shape = {}'.format(
+                                 train_dict['X'].shape, train_dict['y'].shape))
+
+        self.channel_axis = 4 if data_format == 'channels_last' else 1
+        self.time_axis = 1 if data_format == 'channels_last' else 2
+        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+
+        if self.x.ndim != 5:
+            raise ValueError('Input data in `WatershedMovieIterator` '
+                             'should have rank 5. You passed an array '
+                             'with shape', self.x.shape)
+
+        if self.x.shape[self.time_axis] < frames_per_batch:
+            raise ValueError('The number of frames used in each training batch '
+                             'should be less than the number of frames in the '
+                             'training data.')
+
+        self.frames_per_batch = frames_per_batch
+        self.distance_bins = distance_bins
+        self.erosion_width = erosion_width
+        self.movie_data_generator = movie_data_generator
+        self.data_format = data_format
+        self.save_to_dir = save_to_dir
+        self.save_prefix = save_prefix
+        self.save_format = save_format
+
+        if self.data_format == 'channels_first':
+            y_shape = (train_dict['y'].shape[0], *train_dict['y'].shape[2:])
+        else:
+            y_shape = train_dict['y'].shape[0:-1]
+
+        y_distance = np.zeros(y_shape)
+        for batch in range(y_distance.shape[0]):
+            # hardcoded for image mask
+            if self.time_axis == 1:
+                mask = train_dict['y'][batch, :, :, :, 0]
+            else:
+                mask = train_dict['y'][batch, 0, :, :, :]
+            y_distance[batch] = distance_transform_3d(mask, self.distance_bins, self.erosion_width)
+        # convert to one hot notation
+        y_distance = keras_to_categorical(np.expand_dims(y_distance, axis=-1))
+        if self.channel_axis == 1:
+            y_distance = np.rollaxis(y_distance, -1, 1)
+        self.y = y_distance
+        super(WatershedMovieIterator, self).__init__(
+            self.x.shape[0], batch_size, shuffle, seed)
+
+    def _get_batches_of_transformed_samples(self, index_array):
+        if self.data_format == 'channels_first':
+            batch_x = np.zeros((len(index_array),
+                                self.x.shape[1],
+                                self.frames_per_batch,
+                                self.x.shape[3],
+                                self.x.shape[4]))
+            if self.y is not None:
+                batch_y = np.zeros((len(index_array),
+                                    self.distance_bins,
+                                    self.frames_per_batch,
+                                    self.y.shape[3],
+                                    self.y.shape[4]))
+
+        else:
+            batch_x = np.zeros(tuple([len(index_array), self.frames_per_batch] +
+                                     list(self.x.shape)[2:]))
+            if self.y is not None:
+                batch_y = np.zeros(tuple([len(index_array), self.frames_per_batch] +
+                                         list(self.y.shape)[2:4] +
+                                         [self.distance_bins]))
+
+        for i, j in enumerate(index_array):
+            # Sample along the time axis
+            last_frame = self.x.shape[self.time_axis] - self.frames_per_batch
+            time_start = np.random.randint(0, high=last_frame)
+            time_end = time_start + self.frames_per_batch
+
+            if self.time_axis == 1:
+                x = self.x[j, time_start:time_end, :, :, :]
+                if self.y is not None:
+                    y = self.y[j, time_start:time_end, :, :, :]
+
+            elif self.time_axis == 2:
+                x = self.x[j, :, time_start:time_end, :, :]
+                if self.y is not None:
+                    y = self.y[j, :, time_start:time_end, :, :]
+
+            if self.y is not None:
+                x, y = self.movie_data_generator.random_transform(x.astype(K.floatx()), y)
+            else:
+                x = self.movie_data_generator.random_transform(x.astype(K.floatx()))
+
+            x = self.movie_data_generator.standardize(x)
+
+            batch_x[i] = x
+            if self.y is not None:
+                batch_y[i] = y
+
+        if self.save_to_dir:
+            for i, j in enumerate(index_array):
+                for frame in range(batch_x.shape[self.time_axis]):
+                    if self.time_axis == 2:
+                        img = batch_x[i, :, frame]
+                    else:
+                        img = batch_x[i, frame]
+                    img = array_to_img(img, self.data_format, scale=True)
+                    fname = '{prefix}_{index}_{hash}.{format}'.format(
+                        prefix=self.save_prefix,
+                        index=j,
+                        hash=np.random.randint(1e4),
+                        format=self.save_format)
+                    img.save(os.path.join(self.save_to_dir, fname))
+
+                    if self.y is not None:
+                        # Save y batch, but just the MAX distance for each pixel
+                        if self.time_axis == 2:
+                            img_y = np.argmax(batch_y[i, :, frame], axis=0)
+                            img_channel_axis = 0
+                            img_y = batch_y[i, :, frame]
+                        else:
+                            img_channel_axis = -1
+                            img_y = batch_y[i, frame]
+                        img_y = np.argmax(img_y, axis=img_channel_axis)
+                        img_y = np.expand_dims(img_y, axis=img_channel_axis)
+                        img = array_to_img(img_y, self.data_format, scale=True)
+                        fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
+                            prefix=self.save_prefix,
+                            index=j,
+                            hash=np.random.randint(1e4),
+                            format=self.save_format)
+                        img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
             return batch_x
@@ -1222,9 +1569,9 @@ class BoundingBoxIterator(Iterator):
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
 
         if self.x.ndim != 4:
-            raise ValueError(
-                'Input data in `BoundingBoxIterator` should have rank 4. '
-                'You passed an array with shape', self.x.shape)
+            raise ValueError('Input data in `BoundingBoxIterator` '
+                             'should have rank 4. You passed an array '
+                             'with shape', self.x.shape)
 
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.y = train_dict['y']
@@ -1415,9 +1762,9 @@ class DiscIterator(Iterator):
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
 
         if self.x.ndim != 4:
-            raise ValueError(
-                'Input data in `DiscIterator` should have rank 4. '
-                'You passed an array with shape', self.x.shape)
+            raise ValueError('Input data in `DiscIterator` '
+                             'should have rank 4. You passed an array '
+                             'with shape', self.x.shape)
 
         self.channel_axis = -1 if data_format == 'channels_last' else 1
         self.y = train_dict['y']
@@ -1460,6 +1807,7 @@ class DiscIterator(Iterator):
 
             x = self.image_data_generator.standardize(x)
 
+            # TODO: hardcoded for cell interior = 1
             if self.channel_axis == 1:
                 interior = y[1, :, :]
             else:
