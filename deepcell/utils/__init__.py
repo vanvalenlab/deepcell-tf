@@ -6,6 +6,7 @@ from . import misc_utils
 from . import plot_utils
 from . import train_utils
 from . import transform_utils
+from . import retinanet_anchor_utils
 
 # Globally-importable utils.
 from .data_utils import get_data
@@ -21,5 +22,7 @@ from .plot_utils import plot_training_data_2d
 from .plot_utils import plot_training_data_3d
 from .train_utils import rate_scheduler
 from .transform_utils import distance_transform_2d
+from .transform_utils import distance_transform_3d
+from .transform_utils import erode_edges
 from .transform_utils import to_categorical
 from .transform_utils import transform_matrix_offset_center
