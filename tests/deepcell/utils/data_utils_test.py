@@ -10,6 +10,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.platform import test
 
 from deepcell.utils.data_utils import sample_label_matrix
+from deepcell.utils.data_utils import sample_label_movie
 from deepcell.utils.data_utils import get_max_sample_num_list
 from deepcell.utils.data_utils import trim_padding
 from deepcell.utils.data_utils import relabel_movie
@@ -33,6 +34,30 @@ class TestDataUtils(test.TestCase):
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [np.Inf, np.Inf]
+
+        # test sample mode, no padding
+        max_nums = get_max_sample_num_list(y, edge_feature,
+                                           output_mode='sample',
+                                           border_mode='same',
+                                           window_size_x=win_x,
+                                           window_size_y=win_y)
+        assert max_nums == [2, 2]
+
+        # test sample mode, valid padding
+        max_nums = get_max_sample_num_list(y, edge_feature,
+                                           output_mode='sample',
+                                           border_mode='valid',
+                                           window_size_x=win_x,
+                                           window_size_y=win_y)
+        assert max_nums == [1, 1]
+
+    def test_get_max_sample_num_list_channels_first(self):
+        K.set_image_data_format('channels_first')
+        edge_feature = [1, 0, 0]  # first channel index is cell edge
+        win_x, win_y = 10, 10
+        y = np.zeros((2, 3, 30, 30))
+        y[:, 0, 0, 0] = 1  # set value outside valid window range
+        y[:, 0, win_x + 1, win_y + 1] = 1  # set value inside valid window range
 
         # test sample mode, no padding
         max_nums = get_max_sample_num_list(y, edge_feature,
@@ -101,29 +126,56 @@ class TestDataUtils(test.TestCase):
         assert np.unique(r).size == np.unique(c).size == 2
         assert np.unique(l).size == 1
 
-    def test_get_max_sample_num_list_channels_first(self):
+    def test_sample_label_movie(self):
+        K.set_image_data_format('channels_last')
+        win_x, win_y, win_z = 10, 10, 1
+        y = np.zeros((2, 5, 30, 30, 3))
+        y[:, 0, 0, 0, 0] = 1  # set value outside valid window range
+        y[:, win_z + 1, win_x + 1, win_y + 1, 0] = 1  # set value inside valid window range
+        f, r, c, b, l = sample_label_movie(y,
+                                           window_size_x=win_x,
+                                           window_size_y=win_y,
+                                           window_size_z=win_z,
+                                           border_mode='valid')
+        assert len(f) == len(r) == len(c) == len(b) == len(l)
+        assert np.unique(b).size == 2
+        assert np.unique(f).size == np.unique(r).size == np.unique(c).size == 1
+        assert np.unique(l).size == 1
+
+        f, r, c, b, l = sample_label_movie(y,
+                                           window_size_x=win_x,
+                                           window_size_y=win_y,
+                                           window_size_z=win_z,
+                                           border_mode='same')
+        assert len(f) == len(r) == len(c) == len(b) == len(l)
+        assert np.unique(f).size == np.unique(r).size == np.unique(c).size == 2
+        assert np.unique(l).size == 1
+
+    def test_sample_label_movie_channels_first(self):
         K.set_image_data_format('channels_first')
-        edge_feature = [1, 0, 0]  # first channel index is cell edge
-        win_x, win_y = 10, 10
-        y = np.zeros((2, 3, 30, 30))
-        y[:, 0, 0, 0] = 1  # set value outside valid window range
-        y[:, 0, win_x + 1, win_y + 1] = 1  # set value inside valid window range
-
-        # test sample mode, no padding
-        max_nums = get_max_sample_num_list(y, edge_feature,
-                                           output_mode='sample',
-                                           border_mode='same',
+        win_x, win_y, win_z = 10, 10, 1
+        y = np.zeros((2, 3, 5, 30, 30))
+        y[:, 0, 0, 0, 0] = 1  # set value outside valid window range
+        y[:, 0, win_z + 1, win_x + 1, win_y + 1] = 1  # set value inside valid window range
+        f, r, c, b, l = sample_label_movie(y,
                                            window_size_x=win_x,
-                                           window_size_y=win_y)
-        assert max_nums == [2, 2]
+                                           window_size_y=win_y,
+                                           window_size_z=win_z,
+                                           border_mode='valid')
+        assert len(f) == len(r) == len(c) == len(b) == len(l)
+        assert np.unique(b).size == 2
+        assert np.unique(r).size == np.unique(c).size == 1
+        assert np.unique(l).size == 1
 
-        # test sample mode, valid padding
-        max_nums = get_max_sample_num_list(y, edge_feature,
-                                           output_mode='sample',
-                                           border_mode='valid',
+        f, r, c, b, l = sample_label_movie(y,
                                            window_size_x=win_x,
-                                           window_size_y=win_y)
-        assert max_nums == [1, 1]
+                                           window_size_y=win_y,
+                                           window_size_z=win_z,
+                                           border_mode='same')
+        assert len(f) == len(r) == len(c) == len(b) == len(l)
+        assert np.unique(b).size == 2
+        assert np.unique(r).size == np.unique(c).size == 2
+        assert np.unique(l).size == 1
 
     def test_trim_padding(self):
         # test 2d image
