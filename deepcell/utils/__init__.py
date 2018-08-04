@@ -20,7 +20,6 @@ from .export_utils import export_model
 from .misc_utils import sorted_nicely
 from .plot_utils import plot_training_data_2d
 from .plot_utils import plot_training_data_3d
-from .train_utils import axis_softmax
 from .train_utils import rate_scheduler
 from .transform_utils import distance_transform_2d
 from .transform_utils import distance_transform_3d
