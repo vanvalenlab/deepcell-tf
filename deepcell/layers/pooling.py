@@ -10,6 +10,7 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
+from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras.layers import InputSpec
@@ -36,6 +37,7 @@ class DilatedMaxPool2D(Layer):
         self.input_spec = InputSpec(ndim=4)
 
     def compute_output_shape(self, input_shape):
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
             rows = input_shape[2]
             cols = input_shape[3]
@@ -54,7 +56,7 @@ class DilatedMaxPool2D(Layer):
         else:
             output_shape = (input_shape[0], rows, cols, input_shape[3])
 
-        return output_shape
+        return tensor_shape.TensorShape(output_shape)
 
     def call(self, inputs):
         # dilated pooling for tensorflow backend
