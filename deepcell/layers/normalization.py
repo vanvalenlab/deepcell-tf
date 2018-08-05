@@ -11,6 +11,7 @@ from __future__ import division
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
 
@@ -31,7 +32,8 @@ class ImageNormalization2D(Layer):
             self.norm_method = self.norm_method.lower()
 
     def compute_output_shape(self, input_shape):
-        return input_shape
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
+        return tensor_shape.TensorShape(input_shape)
 
     def _average_filter(self, inputs):
         in_channels = inputs.shape[self.channel_axis]
@@ -115,7 +117,8 @@ class ImageNormalization3D(Layer):
             self.norm_method = self.norm_method.lower()
 
     def compute_output_shape(self, input_shape):
-        return input_shape
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
+        return tensor_shape.TensorShape(input_shape)
 
     def _average_filter(self, inputs):
         in_channels = inputs.shape[self.channel_axis]
