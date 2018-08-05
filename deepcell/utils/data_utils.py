@@ -221,7 +221,7 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
 
 
 def sample_label_movie(y, window_size_x=30, window_size_y=30, window_size_z=5,
-                       border_mode='valid', max_training_examples=1e7):
+                       padding='valid', max_training_examples=1e7):
     """Create a list of the maximum pixels to sample from each feature in each
     data set. If output_mode is 'sample', then this will be set to the number
     of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
@@ -250,7 +250,7 @@ def sample_label_movie(y, window_size_x=30, window_size_y=30, window_size_z=5,
             rand_ind = np.random.choice(non_rand_ind, size=len(rows_temp), replace=False)
 
             for i in rand_ind:
-                condition = border_mode == 'valid' and \
+                condition = padding == 'valid' and \
                     frames_temp[i] - window_size_z > 0 and \
                     frames_temp[i] + window_size_z < image_size_z and \
                     rows_temp[i] - window_size_x > 0 and \
@@ -258,7 +258,7 @@ def sample_label_movie(y, window_size_x=30, window_size_y=30, window_size_z=5,
                     cols_temp[i] - window_size_y > 0 and \
                     cols_temp[i] + window_size_y < image_size_y
 
-                if border_mode == 'same' or condition:
+                if padding == 'same' or condition:
                     feature_rows.append(rows_temp[i])
                     feature_cols.append(cols_temp[i])
                     feature_frames.append(frames_temp[i])
@@ -867,7 +867,7 @@ def make_training_data_3d(direc_name,
 
         feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
             y=y,
-            border_mode=border_mode,
+            padding=padding,
             window_size_x=window_size_x,
             window_size_y=window_size_y,
             window_size_z=window_size_z,

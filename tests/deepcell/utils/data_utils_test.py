@@ -62,7 +62,7 @@ class TestDataUtils(test.TestCase):
         # test sample mode, no padding
         max_nums = get_max_sample_num_list(y, edge_feature,
                                            output_mode='sample',
-                                           border_mode='same',
+                                           padding='same',
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [2, 2]
@@ -70,7 +70,7 @@ class TestDataUtils(test.TestCase):
         # test sample mode, valid padding
         max_nums = get_max_sample_num_list(y, edge_feature,
                                            output_mode='sample',
-                                           border_mode='valid',
+                                           padding='valid',
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [1, 1]
