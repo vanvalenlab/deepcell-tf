@@ -111,7 +111,6 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     return train_dict, test_dict
 
 
-
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='valid',
                             window_size_x=30, window_size_y=30):
     """For each set of images and each feature, find the maximum number
