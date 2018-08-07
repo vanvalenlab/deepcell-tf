@@ -14,7 +14,9 @@ from fnmatch import fnmatch
 
 import cv2
 import numpy as np
+from scipy import stats
 from scipy import ndimage as ndi
+from sklearn.utils import resample
 from skimage.filters import sobel_h
 from skimage.filters import sobel_v
 from skimage.measure import label
@@ -56,13 +58,15 @@ class ImageSampleArrayIterator(Iterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
-        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
-            raise ValueError('Training batches and labels should have the same'
-                             'length. Found X.shape: {} y.shape: {}'.format(
-                                 train_dict['X'].shape, train_dict['y'].shape))
+        X, y = train_dict['X'], train_dict['y']
+        # if y is not None and X.shape[0] != y.shape[0]:
+        #     raise ValueError('Training batches and labels should have the same'
+        #                      'length. Found X.shape: {} y.shape: {}'.format(
+        #                          X.shape, y.shape))
         if data_format is None:
             data_format = K.image_data_format()
-        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.x = np.asarray(X, dtype=K.floatx())
+        self.y = np.asarray(y, dtype='int32')
 
         if self.x.ndim != 4:
             raise ValueError('Input data in `ImageSampleArrayIterator` '
@@ -70,7 +74,9 @@ class ImageSampleArrayIterator(Iterator):
                              'with shape', self.x.shape)
 
         self.channel_axis = 3 if data_format == 'channels_last' else 1
-        self.y = train_dict['y']
+        self.batch = train_dict['batch']
+        self.pixels_x = train_dict['pixels_x']
+        self.pixels_y = train_dict['pixels_y']
         self.win_x = train_dict['win_x']
         self.win_y = train_dict['win_y']
         self.image_data_generator = image_data_generator
@@ -78,8 +84,69 @@ class ImageSampleArrayIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
+        # self._class_balance()  # Balance the classes
+        # self.y = keras_to_categorical(self.y)  # Convert to categorical
         super(ImageSampleArrayIterator, self).__init__(
-            len(train_dict['y']), batch_size, shuffle, seed)
+            len(self.y), batch_size, shuffle, seed)
+
+    def _sample_image(self, b, px, py):
+        win_x = self.win_x
+        win_y = self.win_y
+
+        if self.channel_axis == 1:
+            sampled = self.x[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
+        else:
+            sampled = self.x[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
+
+        return sampled
+
+    def _class_balance(self, seed=None):
+        b = self.batch
+        px = self.pixels_x
+        py = self.pixels_y
+        y = self.y
+
+        n_labels = np.amax(self.y)
+
+        # Find the most common class
+        common_label, n_samples = stats.mode(self.y)
+        common_label = common_label[0]
+        n_samples = n_samples[0]
+
+        # Upsample each class
+        new_b, new_px, new_py, new_y = [], [], [], []
+
+        for class_label in range(n_labels + 1):
+            index = np.argwhere(self.y == class_label)
+
+            if class_label != common_label:
+                upsampled_index = resample(index, n_samples=n_samples, random_state=seed)
+                upsampled_index = list(np.squeeze(upsampled_index))
+
+                new_b += list(np.squeeze(b[upsampled_index]))
+                new_px += list(np.squeeze(px[upsampled_index]))
+                new_py += list(np.squeeze(py[upsampled_index]))
+                new_y += list(np.squeeze(y[upsampled_index]))
+            else:
+                new_b += list(np.squeeze(b[index]))
+                new_px += list(np.squeeze(px[index]))
+                new_py += list(np.squeeze(py[index]))
+                new_y += list(np.squeeze(y[index]))
+
+        # Shuffle all of the labels
+        new_b = np.array(new_b, dtype='int32')
+        new_px = np.array(new_px, dtype='int32')
+        new_py = np.array(new_py, dtype='int32')
+        new_y = np.array(new_y, dtype='int32')
+
+        shuffled_index = np.arange(len(new_b), dtype='int32')
+        np.random.shuffle(shuffled_index)
+
+        # Save the upsampled results
+        self.batch = new_b[shuffled_index]
+        self.pixels_x = new_px[shuffled_index]
+        self.pixels_y = new_py[shuffled_index]
+        self.y = new_y[shuffled_index]
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
@@ -94,7 +161,8 @@ class ImageSampleArrayIterator(Iterator):
                                 self.x.shape[self.channel_axis]))
 
         for i, j in enumerate(index_array):
-            x = self.x[j]
+            b, px, py = self.batch[j], self.pixels_x[j], self.pixels_y[j]
+            x = self._sample_image(b, px, py)
             x = self.image_data_generator.random_transform(x.astype(K.floatx()))
             x = self.image_data_generator.standardize(x)
 
@@ -561,7 +629,7 @@ class SiameseIterator(Iterator):
 
         batch_x_1 = np.zeros(batch_shape, dtype=K.floatx())
         batch_x_2 = np.zeros(batch_shape, dtype=K.floatx())
-        batch_y = np.zeros((len(index_array), 2), dtype=np.int32)
+        batch_y = np.zeros((len(index_array), 2), dtype='int32')
 
         for i, j in enumerate(index_array):
             # Identify which tracks are going to be selected
@@ -1125,7 +1193,7 @@ class MovieArrayIterator(Iterator):
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.y = np.asarray(train_dict['y'], dtype=np.int32)
+        self.y = np.asarray(train_dict['y'], dtype='int32')
 
         if self.x.ndim != 5:
             raise ValueError('Input data in `MovieArrayIterator` '
@@ -1250,19 +1318,20 @@ class SampleMovieArrayIterator(Iterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
-        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
-            raise ValueError('`X` (movie data) and `y` (labels) '
-                             'should have the same size. Found '
-                             'Found x.shape = {}, y.shape = {}'.format(
-                                 train_dict['X'].shape, train_dict['y'].shape))
+        X, y = train_dict['X'], train_dict['y']
+        # if y is not None and X.shape[0] != y.shape[0]:
+        #     raise ValueError('`X` (movie data) and `y` (labels) '
+        #                      'should have the same size. Found '
+        #                      'Found x.shape = {}, y.shape = {}'.format(
+        #                          X.shape, y.shape))
 
         if data_format is None:
             data_format = K.image_data_format()
 
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
-        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.y = np.asarray(train_dict['y'], dtype=np.int32)
+        self.x = np.asarray(X, dtype=K.floatx())
+        self.y = np.asarray(y, dtype='int32')
 
         if self.x.ndim != 5:
             raise ValueError('Input data in `SampleMovieArrayIterator` '
@@ -1272,13 +1341,85 @@ class SampleMovieArrayIterator(Iterator):
         self.win_x = train_dict['win_x']
         self.win_y = train_dict['win_y']
         self.win_z = train_dict['win_z']
+        self.pixels_x = train_dict['pixels_x']
+        self.pixels_y = train_dict['pixels_y']
+        self.pixels_z = train_dict['pixels_z']
+        self.batch = train_dict['batch']
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
+        # self._class_balance()  # Balance the classes
+        # self.y = keras_to_categorical(self.y)  # Convert to categorical
         super(SampleMovieArrayIterator, self).__init__(
             len(self.y), batch_size, shuffle, seed)
+
+    def _sample_image(self, b, pz, px, py):
+        win_x = self.win_x
+        win_y = self.win_y
+        win_z = self.win_z
+
+        if self.channel_axis == 1:
+            sampled = self.x[b, :, pz - win_z:pz + win_z + 1, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
+        else:
+            sampled = self.x[b, pz - win_z:pz + win_z + 1, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
+
+        return sampled
+
+    def _class_balance(self, seed=None):
+        b = self.batch
+        pz = self.pixels_z
+        px = self.pixels_x
+        py = self.pixels_y
+        y = self.y
+
+        n_labels = np.amax(self.y)
+
+        # Find the most common class
+        common_label, n_samples = stats.mode(self.y)
+        common_label = common_label[0]
+        n_samples = n_samples[0]
+
+        # Upsample each class
+        new_b, new_pz, new_px, new_py, new_y = [], [], [], [], []
+
+        for class_label in range(n_labels + 1):
+            index = np.argwhere(self.y == class_label)
+
+            if class_label != common_label:
+                upsampled_index = resample(index, n_samples=n_samples, random_state=seed)
+                upsampled_index = list(np.squeeze(upsampled_index))
+
+                new_b += list(np.squeeze(b[upsampled_index]))
+                new_pz += list(np.squeeze(pz[upsampled_index]))
+                new_px += list(np.squeeze(px[upsampled_index]))
+                new_py += list(np.squeeze(py[upsampled_index]))
+                new_y += list(np.squeeze(y[upsampled_index]))
+            else:
+                new_b += list(np.squeeze(b[index]))
+                new_pz += list(np.squeeze(pz[index]))
+                new_px += list(np.squeeze(px[index]))
+                new_py += list(np.squeeze(py[index]))
+                new_y += list(np.squeeze(y[index]))
+
+        # Shuffle all of the labels
+        new_b = np.array(new_b, dtype='int32')
+        new_pz = np.array(new_pz, dtype='int32')
+        new_px = np.array(new_px, dtype='int32')
+        new_py = np.array(new_py, dtype='int32')
+        new_y = np.array(new_y, dtype='int32')
+
+        shuffled_index = np.arange(len(new_b), dtype='int32')
+        np.random.shuffle(shuffled_index)
+
+        # Save the upsampled results
+        self.batch = new_b[shuffled_index]
+        self.pixels_z = new_pz[shuffled_index]
+        self.pixels_x = new_px[shuffled_index]
+        self.pixels_y = new_py[shuffled_index]
+        self.y = new_y[shuffled_index]
+        return None
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
@@ -1295,7 +1436,8 @@ class SampleMovieArrayIterator(Iterator):
                                 self.x.shape[self.channel_axis]))
 
         for i, j in enumerate(index_array):
-            x = self.x[j]
+            b, pz, px, py = self.batch[j], self.pixels_z[j], self.pixels_x[j], self.pixels_y[j]
+            x = self._sample_image(b, pz, px, py)
             x = self.movie_data_generator.random_transform(x.astype(K.floatx()))
             x = self.movie_data_generator.standardize(x)
 
