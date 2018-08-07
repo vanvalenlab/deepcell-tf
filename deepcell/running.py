@@ -19,9 +19,6 @@ from tensorflow.python.keras import backend as K
 from .utils.io_utils import get_images_from_directory
 from .settings import CHANNELS_FIRST, CHANNELS_LAST
 
-"""
-Running convnets
-"""
 
 def run_model(image, model, win_x=30, win_y=30, split=True):
     # pad_width = ((0, 0), (0, 0), (win_x, win_x), (win_y, win_y))
@@ -40,38 +37,39 @@ def run_model(image, model, win_x=30, win_y=30, split=True):
         image_size_y = image.shape[y_axis] // 2
 
         if CHANNELS_FIRST:
-            shape = (n_features, 2*image_size_x-win_x*2, 2*image_size_y-win_y*2)
+            shape = (n_features, 2 * image_size_x - win_x * 2, 2 * image_size_y - win_y * 2)
         else:
-            shape = (2*image_size_x-win_x*2, 2*image_size_y-win_y*2, n_features)
+            shape = (2 * image_size_x - win_x * 2, 2 * image_size_y - win_y * 2, n_features)
 
         model_output = np.zeros(shape, dtype=K.floatx())
 
         if CHANNELS_FIRST:
-            img_0 = image[:, :, 0:image_size_x+win_x, 0:image_size_y+win_y]
-            img_1 = image[:, :, 0:image_size_x+win_x, image_size_y-win_y:]
-            img_2 = image[:, :, image_size_x-win_x:, 0:image_size_y+win_y]
-            img_3 = image[:, :, image_size_x-win_x:, image_size_y-win_y:]
+            img_0 = image[:, :, 0:image_size_x + win_x, 0:image_size_y + win_y]
+            img_1 = image[:, :, 0:image_size_x + win_x, image_size_y - win_y:]
+            img_2 = image[:, :, image_size_x - win_x:, 0:image_size_y + win_y]
+            img_3 = image[:, :, image_size_x - win_x:, image_size_y - win_y:]
 
-            model_output[:, 0:image_size_x-win_x, 0:image_size_y-win_y] = model.predict(img_0)
-            model_output[:, 0:image_size_x-win_x, image_size_y-win_y:] = model.predict(img_1)
-            model_output[:, image_size_x-win_x:, 0:image_size_y-win_y] = model.predict(img_2)
-            model_output[:, image_size_x-win_x:, image_size_y-win_y:] = model.predict(img_3)
+            model_output[:, 0:image_size_x - win_x, 0:image_size_y - win_y] = model.predict(img_0)
+            model_output[:, 0:image_size_x - win_x, image_size_y - win_y:] = model.predict(img_1)
+            model_output[:, image_size_x - win_x:, 0:image_size_y - win_y] = model.predict(img_2)
+            model_output[:, image_size_x - win_x:, image_size_y - win_y:] = model.predict(img_3)
         else:
-            img_0 = image[:, 0:image_size_x+win_x, 0:image_size_y+win_y, :]
-            img_1 = image[:, 0:image_size_x+win_x, image_size_y-win_y:, :]
-            img_2 = image[:, image_size_x-win_x:, 0:image_size_y+win_y, :]
-            img_3 = image[:, image_size_x-win_x:, image_size_y-win_y:, :]
+            img_0 = image[:, 0:image_size_x + win_x, 0:image_size_y + win_y, :]
+            img_1 = image[:, 0:image_size_x + win_x, image_size_y - win_y:, :]
+            img_2 = image[:, image_size_x - win_x:, 0:image_size_y + win_y, :]
+            img_3 = image[:, image_size_x - win_x:, image_size_y - win_y:, :]
 
-            model_output[0:image_size_x-win_x, 0:image_size_y-win_y, :] = model.predict(img_0)
-            model_output[0:image_size_x-win_x, image_size_y-win_y:, :] = model.predict(img_1)
-            model_output[image_size_x-win_x:, 0:image_size_y-win_y, :] = model.predict(img_2)
-            model_output[image_size_x-win_x:, image_size_y-win_y:, :] = model.predict(img_3)
+            model_output[0:image_size_x - win_x, 0:image_size_y - win_y, :] = model.predict(img_0)
+            model_output[0:image_size_x - win_x, image_size_y - win_y:, :] = model.predict(img_1)
+            model_output[image_size_x - win_x:, 0:image_size_y - win_y, :] = model.predict(img_2)
+            model_output[image_size_x - win_x:, image_size_y - win_y:, :] = model.predict(img_3)
 
     else:
         model_output = model.predict(image)
         model_output = model_output[0, :, :, :]
 
     return model_output
+
 
 def run_model_on_directory(data_location, channel_names, output_location, model,
                            win_x=30, win_y=30, split=True, save=True):
@@ -95,6 +93,7 @@ def run_model_on_directory(data_location, channel_names, output_location, model,
                 tiff.imsave(os.path.join(output_location, cnnout_name), feature)
 
     return model_outputs
+
 
 def run_models_on_directory(data_location, channel_names, output_location, model_fn,
                             list_of_weights, n_features=3, win_x=30, win_y=30,

@@ -11,6 +11,7 @@ from __future__ import division
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
 
@@ -25,13 +26,14 @@ class ImageNormalization2D(Layer):
         if self.data_format == 'channels_first':
             self.channel_axis = 1
         else:
-            self.channel_axis = 3 # hardcoded for 2D data
+            self.channel_axis = 3  # hardcoded for 2D data
 
         if isinstance(self.norm_method, str):
             self.norm_method = self.norm_method.lower()
 
     def compute_output_shape(self, input_shape):
-        return input_shape
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
+        return tensor_shape.TensorShape(input_shape)
 
     def _average_filter(self, inputs):
         in_channels = inputs.shape[self.channel_axis]
@@ -109,13 +111,14 @@ class ImageNormalization3D(Layer):
         if self.data_format == 'channels_first':
             self.channel_axis = 1
         else:
-            self.channel_axis = 4 # hardcoded for 3D data
+            self.channel_axis = 4  # hardcoded for 3D data
 
         if isinstance(self.norm_method, str):
             self.norm_method = self.norm_method.lower()
 
     def compute_output_shape(self, input_shape):
-        return input_shape
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
+        return tensor_shape.TensorShape(input_shape)
 
     def _average_filter(self, inputs):
         in_channels = inputs.shape[self.channel_axis]

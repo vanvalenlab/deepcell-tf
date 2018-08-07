@@ -10,6 +10,7 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
+from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
 
@@ -24,11 +25,12 @@ class Location(Layer):
             self.data_format = data_format
 
     def compute_output_shape(self, input_shape):
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
             output_shape = (input_shape[0], 2, input_shape[2], input_shape[3])
         else:
             output_shape = (input_shape[0], input_shape[1], input_shape[2], 2)
-        return output_shape
+        return tensor_shape.TensorShape(output_shape)
 
     def call(self, inputs):
         input_shape = self.in_shape
@@ -52,6 +54,7 @@ class Location(Layer):
             loc = tf.stack([loc_x, loc_y], axis=0)
 
         location = tf.expand_dims(loc, 0)
+        location = tf.tile(location, [tf.shape(inputs)[0], 1, 1, 1])
 
         return location
 
@@ -74,11 +77,12 @@ class Location3D(Layer):
             self.data_format = data_format
 
     def compute_output_shape(self, input_shape):
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
             output_shape = (input_shape[0], 2, input_shape[2], input_shape[3], input_shape[4])
         else:
             output_shape = (input_shape[0], input_shape[1], input_shape[2], input_shape[3], 2)
-        return output_shape
+        return tensor_shape.TensorShape(output_shape)
 
     def call(self, inputs):
         input_shape = self.in_shape

@@ -1,19 +1,39 @@
-from setuptools import setup
-from setuptools import find_packages
+import logging
+import pkg_resources
+import pip
+
+try:
+    from setuptools import setup, find_packages
+except ImportError:
+    from distutils.core import setup, find_packages
+
+
+def _parse_requirements(file_path):
+    lineiter = (line.strip() for line in open(file_path))
+    reqs = []
+    for line in lineiter:
+        # workaround to ignore keras_maskrcnn requirement
+        # which is downloaded directly from github
+        if line.startswith('#') or line.startswith('git+'):
+            continue
+        reqs.append(line)
+    return reqs
+
+
+try:
+    install_reqs = _parse_requirements('requirements.txt')
+except Exception:
+    logging.warning('Failed to load requirements file, using default ones.')
+    install_reqs = []
 
 setup(
     name='DeepCell',
     version='0.1',
     packages=find_packages(),
-    install_requires=[
-        'scikit-image>=0.13.1,<1',
-        'scikit-learn>=0.19.1,<1',
-        'scipy>=1.1.0,<2',
-        'tensorflow-gpu>=1.8.0,<2',
-        'tifffile>=0.14.0,<1'
-    ],
+    install_requires=install_reqs,
     extras_require={
-        'tests': ['pytest'],
+        'tests': ['pytest',
+                  'pytest-cov'],
     },
     license='LICENSE.txt',
     author='David Van Valen',
