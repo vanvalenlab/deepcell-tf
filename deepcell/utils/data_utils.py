@@ -28,6 +28,8 @@ from .misc_utils import sorted_nicely
 from .plot_utils import plot_training_data_2d
 from .plot_utils import plot_training_data_3d
 
+from .transform_utils import centroid_weighted_distance_transform_2d
+
 CHANNELS_FIRST = K.image_data_format() == 'channels_first'
 
 def get_data(file_name, mode='sample', test_size=.1, seed=None):
@@ -68,6 +70,33 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 
         X = X_sample
 
+    # siamese_data mode creates additional channels for tracking data (centroid x, centroid y, etc)
+    if mode == 'siamese_data':     
+        batch_length = X.shape[0]
+
+        if CHANNELS_FIRST:
+            X_new = np.zeros((X.shape[0], X.shape[1]+2, X.shape[2], X.shape[3], X.shape[4]))
+            x_centroid_weight_dist = np.zeros(X.shape[3], X.shape[4])
+            y_centroid_weight_dist = np.zeros(X.shape[3], X.shape[4])
+            num_frames = X.shape[2]
+        else:
+            X_new = np.zeros((X.shape[0], X.shape[1], X.shape[2], X.shape[3], X.shape[4]+2))
+            x_centroid_weight_dist = np.zeros((X.shape[2], X.shape[3]))
+            y_centroid_weight_dist = np.zeros((X.shape[2], X.shape[3]))
+            num_frames = X.shape[1]
+
+        for b in range(batch_length):
+            for f in range(num_frames):
+                if CHANNELS_FIRST:
+                    X_new[b,1,f,:,:] = X[b,0,f,:,:]
+                    X_new[b,1,f,:,:], X_new[b,2,f,:,:] = centroid_weighted_distance_transform_2d(y[b,0,f,:,:])
+                else:
+                    X_new[b,f,:,:,0] = X[b,f,:,:,0]
+                    X_new[b,f,:,:,1], X_new[b,f,:,:,2] = centroid_weighted_distance_transform_2d(y[b,f,:,:,0])
+
+        X = X_new
+    # End changes for data mode
+
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=seed)
 
@@ -78,6 +107,22 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         'win_x': win_x,
         'win_y': win_y
     }
+
+    # siamese_daughters mode is used to import lineage data and associate it with the appropriate batch
+    if mode == 'siamese_daughters':
+        kid_data = np.load(os.path.splitext(file_name)[0]+'_kids.npz')
+        daughters = kid_data['daughters']
+        X_train, X_test, y_train, y_test, lineage_train, lineage_test = train_test_split(X, y, daughters, test_size=test_size, random_state=seed)
+        train_dict = {
+            'X': X_train,
+            'y': y_train,
+            'daughters': lineage_train,
+            'class_weights': class_weights,
+            'win_x': win_x,
+            'win_y': win_y
+        }
+        y_test = [y_test, lineage_test]
+    # End changes for daughter mode
 
     return train_dict, (X_test, y_test)
 
@@ -731,7 +776,7 @@ def make_training_data_3d(direc_name, file_name_save, channel_names,
         y = y_binary
 
         if verbose:
-            print('Number of cells: {}'.format(max_cells))
+            print('Number of cells: {}'.format(max_cells))     
 
     # Save training data in npz format
     np.savez(file_name_save, X=X, y=y, win_x=window_size_x, win_y=window_size_y)

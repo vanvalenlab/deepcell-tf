@@ -1561,8 +1561,12 @@ def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal'
     else:
         channel_axis = -1
 
+    # Define the input shape for the images
     input_1 = Input(shape=input_shape)
     input_2 = Input(shape=input_shape)
+    # Define the input shape for the other data (centroids, etc)
+    input_3 = Input(shape=(2, ))
+    input_4 = Input(shape=(2, ))
     
     # Sequential interface for siamese portion of model
     feature_extractor = Sequential()
@@ -1585,22 +1589,27 @@ def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal'
     output_1 = feature_extractor(input_1)
     output_2 = feature_extractor(input_2)
 
-    # Concatenate outputs from both feature_extractor instances
-    merged_outputs = Concatenate(axis=channel_axis)([output_1, output_2])
-    flat1 = Flatten()(merged_outputs)
+    # Combine the extracted features with other known features (centroids)
+    flat1 = Flatten()(output_1)
+    flat2 = Flatten()(output_2)
+    merge_1 = Concatenate()([flat1, input_3])
+    merge_2 = Concatenate()([flat2, input_4])
 
-    # Implement dense net (or call preexisting one?) with the two outputs as inputs
-    dense1 = Dense(128)(flat1)
+    # Concatenate outputs from both instances
+    merged_outputs = Concatenate(axis=channel_axis)([merge_1, merge_2])
+
+    # Implement dense net (Alternatively, could call preexisting) with the 2 merged outputs as inputs
+    dense1 = Dense(128)(merged_outputs)
     bn1 = BatchNormalization(axis=channel_axis)(dense1)
     relu1 = Activation('relu')(bn1)
     dense2 = Dense(128)(relu1)
     bn2 = BatchNormalization(axis=channel_axis)(dense2)
     relu2 = Activation('relu')(bn2)
-    dense3 = Dense(2, activation='softmax')(relu2)
+    dense3 = Dense(3, activation='softmax')(relu2)
 
     # Instantiate model
     final_layer = dense3
-    model = Model(inputs=[input_1, input_2], outputs=final_layer)
+    model = Model(inputs=[input_1, input_2, input_3, input_4], outputs=final_layer)
 
     return model
     

@@ -560,6 +560,9 @@ class SiameseIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
+        if 'daughters' in train_dict:
+            self.daughters = train_dict['daughters']
+
         self.track_ids = self._get_track_ids()
 
         super(SiameseIterator, self).__init__(len(self.track_ids), batch_size, shuffle, seed)
@@ -586,21 +589,26 @@ class SiameseIterator(Iterator):
                     track_ids[track_counter] = {
                         'batch': batch,
                         'label': cell,
-                        'frames': y_index
+                        'frames': y_index,
+                        'daughters': self.daughters[batch][cell] #not [cell-1]!
                     }
                     track_counter += 1
         return track_ids
 
     def _get_batches_of_transformed_samples(self, index_array):
-        # initialize batch_x_1, batch_x_2, and batch_y
+        # initialize batch_x_1, batch_x_2, and batch_y, as well as centroid data
         if self.data_format == 'channels_first':
-            batch_shape = (len(index_array), self.x.shape[self.channel_axis], self.crop_dim, self.crop_dim)
+            img_shape = (len(index_array), self.x.shape[self.channel_axis], self.crop_dim, self.crop_dim)
         else:
-            batch_shape = (len(index_array), self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis])
+            img_shape = (len(index_array), self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis])
 
-        batch_x_1 = np.zeros(batch_shape, dtype=K.floatx())
-        batch_x_2 = np.zeros(batch_shape, dtype=K.floatx())
-        batch_y = np.zeros((len(index_array), 2), dtype=np.int32)
+        data_shape = (len(index_array), 2,)
+
+        batch_x_1 = np.zeros(img_shape, dtype=K.floatx())
+        batch_x_2 = np.zeros(img_shape, dtype=K.floatx())
+        centroid_1 = np.zeros(data_shape, dtype=K.floatx())
+        centroid_2 = np.zeros(data_shape, dtype=K.floatx())
+        batch_y = np.zeros((len(index_array), 3), dtype=np.int32)
 
         for i, j in enumerate(index_array):
             # Identify which tracks are going to be selected
@@ -614,19 +622,48 @@ class SiameseIterator(Iterator):
             y = self.y[batch]
 
             # Choose comparison cell
-            # Determine what class the track will be - different (0), same (1)
-            is_same_cell = np.random.random_integers(0, 1)
+            # Determine what class the track will be - different (0), same (1), division (2)
+            #is_same_cell = np.random.random_integers(0, 1)
+            type_cell = np.random.randint(0, 3)
 
-            # Select another frame from the same track
-            if is_same_cell:
+            # There may be instances where training images only have one cell
+            # In this case, we won't be able to find a diff cell to compare to
+            # So we begin by compiling a list of valid cell labels (ie: all 
+            # cell labels except the first chosen label) 
+            all_labels = np.delete(np.unique(y), 0) # all labels in y but 0 (background)
+            acceptable_labels = np.delete(all_labels, np.where(all_labels == label_1))
+            
+            # If there is only 1 cell in the sample, we can safely assume it is the same
+            if len(acceptable_labels) == 0:
+                type_cell = 1
+            
+            # If class is division, check if the first cell divides 
+            # If not, change class to same/dif randomly
+            if type_cell == 2:
+                daughters = track_id['daughters']
+                if len(daughters) == 0:
+                    type_cell = np.random.random_integers(0, 1) # No children so randomly choose a diff class
+                else:
+                    frame_1 = np.amax(tracked_frames) # Get the last frame of the parent
+                    frame_2 = frame_1 + 1
+                    #There should always be 2 daughters but not always a valid label
+                    label_2 = int(daughters[np.random.random_integers(0, len(daughters)-1)])
+
+            # If class is same, select another frame from the same track
+            if type_cell == 1:
                 label_2 = label_1
-                frame_2 = np.random.choice(track_id['frames'])
+                # The second frame should not be equal to the first (an exact comparison)
+                # We need to assembly a new list of valid frames 
+                tracked_frames = np.delete(tracked_frames, np.where(tracked_frames == frame_1))
+                # And verify the cell exists in more than one frame (otherwise it must be different class)
+                if len(tracked_frames) > 0:         
+                    frame_2 = np.random.choice(tracked_frames)
+                else: 
+                    type_cell = 0
 
-            # Select another frame from a different track
-            if not is_same_cell:
-                # all_labels = np.arange(1, np.amax(y) + 1)
-                all_labels = np.delete(np.unique(y), 0) # all labels in y but 0 (background)
-                acceptable_labels = np.delete(all_labels, np.where(all_labels == label_1))
+            # If class is different, select another frame from a different track
+            if type_cell == 0:
+
                 is_valid_label = False
                 while not is_valid_label:
                     # get a random cell label from our acceptable list
@@ -645,11 +682,19 @@ class SiameseIterator(Iterator):
 
                 frame_2 = np.random.choice(y_index) # get random frame with label_2
 
-            # Get appearances
+            # Get appearances and centroid data
             frames = [frame_1, frame_2]
             labels = [label_1, label_2]
 
             appearances = self._get_appearances(X, y, frames, labels)
+
+            # Save centroids for the pair of images
+            centroid_1[i] = np.array(appearances[1][0])
+            centroid_2[i] = np.array(appearances[1][1])
+
+            # Save images of the cells in the pair of images
+            appearances = appearances[0]
+
             if self.data_format == 'channels_first':
                 appearances = [appearances[:, 0], appearances[:, 1]]
             else:
@@ -663,9 +708,9 @@ class SiameseIterator(Iterator):
 
             batch_x_1[i] = appearances[0]
             batch_x_2[i] = appearances[1]
-            batch_y[i, is_same_cell] = 1
+            batch_y[i, type_cell] = 1
 
-        return [batch_x_1, batch_x_2], batch_y
+        return ([batch_x_1, batch_x_2, centroid_1, centroid_2], batch_y)
 
     def _get_appearances(self, X, y, frames, labels):
         channel_axis = self.channel_axis - 1
@@ -673,12 +718,17 @@ class SiameseIterator(Iterator):
             appearance_shape = (X.shape[channel_axis], len(frames), self.crop_dim, self.crop_dim)
         else:
             appearance_shape = (len(frames), self.crop_dim, self.crop_dim, X.shape[channel_axis])
+        
+        #Initialize storage for appearances and centroids 
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
+        centroids = []
+        
         for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
             # Get the bounding box
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
             props = regionprops(np.int32(y_frame == cell_label))
             minr, minc, maxr, maxc = props[0].bbox
+            centroids.append(props[0].centroid)
 
             # Extract images from bounding boxes
             if self.data_format == 'channels_first':
@@ -698,7 +748,7 @@ class SiameseIterator(Iterator):
             else:
                 appearances[counter] = appearance
 
-        return appearances
+        return [appearances, centroids]
 
     def next(self):
         """For python 2.x.

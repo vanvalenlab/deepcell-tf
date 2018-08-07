@@ -42,6 +42,39 @@ def distance_transform_2d(mask, bins=16):
     distance = np.digitize(distance, bins)
     return distance
 
+def centroid_weighted_distance_transform_2d(mask):
+    """Transform a label mask into 2 scaled distance masks weighted by the element's centroid.
+    # Arguments
+        mask: a label mask (y data)
+    # Returns
+        distance: two masks of the same shape as input mask,
+                  with each label being a distance class scaled by the labels centroid
+                  (one image by the x-component of the centroid and another by the y)
+    """
+    distance = ndimage.distance_transform_edt(np.int32(mask))
+    distance_x = ndimage.distance_transform_edt(np.int32(mask))
+    distance_y = ndimage.distance_transform_edt(np.int32(mask))
+    
+    distance_x = distance.astype(K.floatx())  # normalized distances are floats
+    distance_y = distance.astype(K.floatx())
+
+    # uniquely label each cell and normalize the distance values
+    # by that cells maximum distance value before multiplying by 
+    # either the x-component of the centroid or y-component
+    label_matrix = label(np.int32(mask))
+    for prop in regionprops(label_matrix):
+        labeled_distance = distance[label_matrix == prop.label]
+        normalized_distance = labeled_distance / np.amax(labeled_distance)
+        y, x = prop.centroid
+        distance_x[label_matrix == prop.label] = normalized_distance * x
+        distance_y[label_matrix == prop.label] = normalized_distance * y
+        #may be better to use the following to cut down on discrepancies in distance 
+        #transform due to noise
+        #distance_x[label_matrix == prop.label] = x
+        #distance_y[label_matrix == prop.label] = y
+ 
+    return distance_x, distance_y
+
 def rotate_array_0(arr):
     return arr
 
