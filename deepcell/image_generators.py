@@ -84,7 +84,7 @@ class ImageSampleArrayIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        # self._class_balance()  # Balance the classes
+        self._class_balance()  # Balance the classes
         # self.y = keras_to_categorical(self.y)  # Convert to categorical
         super(ImageSampleArrayIterator, self).__init__(
             len(self.y), batch_size, shuffle, seed)
@@ -106,8 +106,6 @@ class ImageSampleArrayIterator(Iterator):
         py = self.pixels_y
         y = self.y
 
-        n_labels = np.amax(self.y)
-
         # Find the most common class
         common_label, n_samples = stats.mode(self.y)
         common_label = common_label[0]
@@ -116,28 +114,23 @@ class ImageSampleArrayIterator(Iterator):
         # Upsample each class
         new_b, new_px, new_py, new_y = [], [], [], []
 
-        for class_label in range(n_labels + 1):
+        for class_label in np.unique(self.y):
             index = np.argwhere(self.y == class_label)
-
             if class_label != common_label:
-                upsampled_index = resample(index, n_samples=n_samples, random_state=seed)
-                upsampled_index = list(np.squeeze(upsampled_index))
+                index = resample(index, n_samples=n_samples, random_state=seed)
 
-                new_b += list(np.squeeze(b[upsampled_index]))
-                new_px += list(np.squeeze(px[upsampled_index]))
-                new_py += list(np.squeeze(py[upsampled_index]))
-                new_y += list(np.squeeze(y[upsampled_index]))
-            else:
-                new_b += list(np.squeeze(b[index]))
-                new_px += list(np.squeeze(px[index]))
-                new_py += list(np.squeeze(py[index]))
-                new_y += list(np.squeeze(y[index]))
+            index = np.squeeze(index)
+
+            new_b.append(b[index])
+            new_px.append(px[index])
+            new_py.append(py[index])
+            new_y.append(y[index])
 
         # Shuffle all of the labels
-        new_b = np.array(new_b, dtype='int32')
-        new_px = np.array(new_px, dtype='int32')
-        new_py = np.array(new_py, dtype='int32')
-        new_y = np.array(new_y, dtype='int32')
+        new_b = np.array(new_b, dtype='int32').flatten()
+        new_px = np.array(new_px, dtype='int32').flatten()
+        new_py = np.array(new_py, dtype='int32').flatten()
+        new_y = np.array(new_y, dtype='int32').flatten()
 
         shuffled_index = np.arange(len(new_b), dtype='int32')
         np.random.shuffle(shuffled_index)
@@ -1324,7 +1317,6 @@ class SampleMovieArrayIterator(Iterator):
         #                      'should have the same size. Found '
         #                      'Found x.shape = {}, y.shape = {}'.format(
         #                          X.shape, y.shape))
-
         if data_format is None:
             data_format = K.image_data_format()
 
@@ -1350,7 +1342,7 @@ class SampleMovieArrayIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        # self._class_balance()  # Balance the classes
+        self._class_balance()  # Balance the classes
         # self.y = keras_to_categorical(self.y)  # Convert to categorical
         super(SampleMovieArrayIterator, self).__init__(
             len(self.y), batch_size, shuffle, seed)
@@ -1374,41 +1366,33 @@ class SampleMovieArrayIterator(Iterator):
         py = self.pixels_y
         y = self.y
 
-        n_labels = np.amax(self.y)
-
         # Find the most common class
-        common_label, n_samples = stats.mode(self.y)
+        common_label, n_samples = stats.mode(self.y, axis=None)
         common_label = common_label[0]
         n_samples = n_samples[0]
 
         # Upsample each class
         new_b, new_pz, new_px, new_py, new_y = [], [], [], [], []
 
-        for class_label in range(n_labels + 1):
+        for class_label in np.unique(self.y):
             index = np.argwhere(self.y == class_label)
-
             if class_label != common_label:
-                upsampled_index = resample(index, n_samples=n_samples, random_state=seed)
-                upsampled_index = list(np.squeeze(upsampled_index))
+                index = resample(index, n_samples=n_samples, random_state=seed)
 
-                new_b += list(np.squeeze(b[upsampled_index]))
-                new_pz += list(np.squeeze(pz[upsampled_index]))
-                new_px += list(np.squeeze(px[upsampled_index]))
-                new_py += list(np.squeeze(py[upsampled_index]))
-                new_y += list(np.squeeze(y[upsampled_index]))
-            else:
-                new_b += list(np.squeeze(b[index]))
-                new_pz += list(np.squeeze(pz[index]))
-                new_px += list(np.squeeze(px[index]))
-                new_py += list(np.squeeze(py[index]))
-                new_y += list(np.squeeze(y[index]))
+            index = np.squeeze(index)
+
+            new_b.append(b[index])
+            new_pz.append(pz[index])
+            new_px.append(px[index])
+            new_py.append(py[index])
+            new_y.append(y[index])
 
         # Shuffle all of the labels
-        new_b = np.array(new_b, dtype='int32')
-        new_pz = np.array(new_pz, dtype='int32')
-        new_px = np.array(new_px, dtype='int32')
-        new_py = np.array(new_py, dtype='int32')
-        new_y = np.array(new_y, dtype='int32')
+        new_b = np.array(new_b, dtype='int32').flatten()
+        new_pz = np.array(new_pz, dtype='int32').flatten()
+        new_px = np.array(new_px, dtype='int32').flatten()
+        new_py = np.array(new_py, dtype='int32').flatten()
+        new_y = np.array(new_y, dtype='int32').flatten()
 
         shuffled_index = np.arange(len(new_b), dtype='int32')
         np.random.shuffle(shuffled_index)
@@ -1419,7 +1403,6 @@ class SampleMovieArrayIterator(Iterator):
         self.pixels_x = new_px[shuffled_index]
         self.pixels_y = new_py[shuffled_index]
         self.y = new_y[shuffled_index]
-        return None
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
