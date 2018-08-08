@@ -81,7 +81,6 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     train_dict = {
         'X': X_train,
         'y': y_train,
-        'batch': batch_train,
         'win_x': win_x,
         'win_y': win_y,
         'class_weights': class_weights
@@ -90,15 +89,16 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     test_dict = {
         'X': X_test,
         'y': y_test,
-        'batch': batch_test,
         'win_x': win_x,
         'win_y': win_y,
         'class_weights': class_weights
     }
 
     if mode == 'sample':
+        train_dict['batch'] = batch_train
         train_dict['pixels_x'] = px_train
         train_dict['pixels_y'] = py_train
+        test_dict['batch'] = batch_test
         test_dict['pixels_x'] = px_test
         test_dict['pixels_y'] = py_test
 
