@@ -61,6 +61,8 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
 
     if mode == 'sample':
+        if not seed:
+            seed = np.random.randint(0, 1000000)
         # don't split train/test X data, just split the pixel values
         X_train, X_test = X, X
 
