@@ -62,6 +62,8 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 
     if mode == 'sample':
         if not seed:
+            # if not passed randomly generate seed so
+            # the multiple train_test_splits are kept the same
             seed = np.random.randint(0, 1000000)
         # don't split train/test X data, just split the pixel values
         X_train, X_test = X, X
