@@ -65,6 +65,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
             # if not passed randomly generate seed so
             # the multiple train_test_splits are kept the same
             seed = np.random.randint(0, 1000000)
+
         # don't split train/test X data, just split the pixel values
         X_train, X_test = X, X
 
@@ -77,7 +78,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
             training_data['pixels_x'], test_size=test_size, random_state=seed)
 
         py_train, py_test = train_test_split(
-            training_data['pixels_x'], test_size=test_size, random_state=seed)
+            training_data['pixels_y'], test_size=test_size, random_state=seed)
 
         # 3D sample mode takes pixels_z and win_z as well
         if X.ndim == 5:
