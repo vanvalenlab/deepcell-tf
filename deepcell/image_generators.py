@@ -37,6 +37,7 @@ from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 from keras_retinanet.preprocessing.generator import Generator as _RetinaNetGenerator
 from keras_maskrcnn.preprocessing.generator import Generator as _MaskRCNNGenerator
 
+from .utils.transform_utils import to_categorical
 from .utils.transform_utils import transform_matrix_offset_center
 from .utils.transform_utils import distance_transform_2d, distance_transform_3d
 from .utils.retinanet_anchor_utils import anchor_targets_bbox
@@ -85,11 +86,11 @@ class ImageSampleArrayIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        # Convert to categorical if not already categorical
         if len(self.y.shape) == 1:
             self.y = keras_to_categorical(self.y).astype('int32')
 
         self._class_balance()  # Balance the classes
+        self.y = to_categorical(self.y).astype('int32')
 
         super(ImageSampleArrayIterator, self).__init__(
             len(self.y), batch_size, shuffle, seed)
@@ -122,7 +123,7 @@ class ImageSampleArrayIterator(Iterator):
             new_b.extend(self.batch[index])
             new_px.extend(self.pixels_x[index])
             new_py.extend(self.pixels_y[index])
-            new_y.extend(self.y[index])
+            new_y.extend(self.y[index, class_label])
 
         # Shuffle all of the labels
         new_b = np.array(new_b, dtype='int32')
@@ -1341,11 +1342,12 @@ class SampleMovieArrayIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        # Convert to categorical if not already categorical
         if len(self.y.shape) == 1:
             self.y = keras_to_categorical(self.y).astype('int32')
 
         self._class_balance()  # Balance the classes
+
+        self.y = to_categorical(self.y).astype('int32')
 
         super(SampleMovieArrayIterator, self).__init__(
             len(self.y), batch_size, shuffle, seed)
@@ -1380,7 +1382,7 @@ class SampleMovieArrayIterator(Iterator):
             new_pz.extend(self.pixels_z[index])
             new_px.extend(self.pixels_x[index])
             new_py.extend(self.pixels_y[index])
-            new_y.extend(self.y[index])
+            new_y.extend(self.y[index, class_label])
 
         # Shuffle all of the labels
         new_b = np.array(new_b, dtype='int32')
