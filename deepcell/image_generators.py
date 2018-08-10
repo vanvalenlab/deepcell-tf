@@ -118,17 +118,17 @@ class ImageSampleArrayIterator(Iterator):
             index = self.y[:, class_label]
             if class_label != common_label:
                 index = resample(index, n_samples=n_samples, random_state=seed)
-            logging.warning(index)
+
             new_b.extend(self.batch[index])
             new_px.extend(self.pixels_x[index])
             new_py.extend(self.pixels_y[index])
             new_y.extend(self.y[index])
 
         # Shuffle all of the labels
-        new_b = np.array(new_b, dtype='int32').flatten()
-        new_px = np.array(new_px, dtype='int32').flatten()
-        new_py = np.array(new_py, dtype='int32').flatten()
-        new_y = np.array(new_y, dtype='int32').flatten()
+        new_b = np.array(new_b, dtype='int32')
+        new_px = np.array(new_px, dtype='int32')
+        new_py = np.array(new_py, dtype='int32')
+        new_y = np.array(new_y, dtype='int32')
 
         shuffled_index = np.arange(len(new_b), dtype='int32')
         np.random.shuffle(shuffled_index)
@@ -1375,8 +1375,6 @@ class SampleMovieArrayIterator(Iterator):
             index = self.y[:, class_label]
             if class_label != common_label:
                 index = resample(index, n_samples=n_samples, random_state=seed)
-
-            logging.warning(index.shape)
 
             new_b.extend(self.batch[index])
             new_pz.extend(self.pixels_z[index])
