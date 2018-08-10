@@ -1512,3 +1512,176 @@ class DiscIterator(Iterator):
         # The transformation of images is not under thread lock
         # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
+
+
+class DiscDataGenerator3D(MovieDataGenerator):
+
+    def flow(self,
+             train_dict,
+             batch_size=1,
+             number_of_frames=10,
+             shuffle=True,
+             seed=None,
+             save_to_dir=None,
+             save_prefix='',
+             save_format='png'):
+        return DiscIterator3D(
+            train_dict,
+            self,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            seed=seed,
+            number_of_frames=number_of_frames,
+            data_format=self.data_format,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
+
+
+class DiscIterator3D(Iterator):
+    def __init__(self,
+                 train_dict,
+                 movie_data_generator,
+                 batch_size=1,
+                 shuffle=False,
+                 seed=None,
+                 number_of_frames=10,
+                 data_format=None,
+                 save_to_dir=None,
+                 save_prefix='',
+                 save_format='png'):
+        if data_format is None:
+            data_format = K.image_data_format()
+        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+
+        if self.x.ndim != 5:
+            raise ValueError(
+                'Input data in `DiscIterator` should have rank 5. '
+                'You passed an array with shape', self.x.shape)
+
+        self.channel_axis = -1 if data_format == 'channels_last' else 1
+        self.time_axis = 1 if data_format == 'channels_last' else 2
+        self.y = np.asarray(train_dict['y'], dtype=K.floatx())
+        self.max_label = 0
+        for batch in range(self.y.shape[0]):
+            if self.channel_axis == 1:
+                label_matrix = label(self.y[batch, 0, :, :, :])
+            else:
+                label_matrix = label(self.y[batch, :, :, :, 0])
+            max_label = np.amax(label_matrix)
+            if max_label > self.max_label:
+                self.max_label = max_label
+
+        self.number_of_frames = number_of_frames
+        self.movie_data_generator = movie_data_generator
+        self.data_format = data_format
+        self.save_to_dir = save_to_dir
+        self.save_prefix = save_prefix
+        self.save_format = save_format
+        super(DiscIterator3D, self).__init__(
+            self.x.shape[0], batch_size, shuffle, seed)
+
+    def _get_batches_of_transformed_samples(self, index_array):
+        if self.channel_axis == -1:
+            batch_x = np.zeros(tuple([len(index_array), self.number_of_frames] +
+                                     list(self.x.shape)[2:]))
+            batch_y = np.zeros(tuple([len(index_array), self.number_of_frames] +
+                                     list(self.y.shape)[2:-1] + [self.max_label+1]))
+        else:
+            batch_x = np.zeros((len(index_array),
+                                self.x.shape[1],
+                                self.number_of_frames,
+                                self.x.shape[3],
+                                self.x.shape[4]))
+            batch_y = np.zeros((len(index_array),
+                                self.max_label+1,
+                                self.number_of_frames,
+                                self.y.shape[3],
+                                self.y.shape[4]))
+
+        for i, j in enumerate(index_array):
+
+            if self.y is not None:
+                y = self.y[j]
+
+            # Sample along the time axis
+            last_frame = self.x.shape[self.time_axis] - self.number_of_frames
+            time_start = np.random.randint(0, high=last_frame)
+            time_end = time_start + self.number_of_frames
+            if self.time_axis == 1:
+                x = self.x[j, time_start:time_end, :, :, :]
+                if self.y is not None:
+                    y = self.y[j, time_start:time_end, :, :, :]
+
+            elif self.time_axis == 2:
+                x = self.x[j, :, time_start:time_end, :, :]
+                if self.y is not None:
+                    y = self.y[j, :, time_start:time_end, :, :]
+
+            if self.y is not None:
+                x, y = self.movie_data_generator.random_transform(
+                    x.astype(K.floatx()), label_movie=y)
+                x = self.movie_data_generator.standardize(x)
+                batch_y[i] = y
+            else:
+                x = self.movie_data_generator.random_transform(x.astype(K.floatx()))
+
+            if self.channel_axis == 1:
+                interior = y[0, :, :, :]
+            else:
+                interior = y[:, :, :, 0]
+
+#            label_matrix = label(interior)
+
+            # convert to one hot notation
+            if self.channel_axis == 1:
+                y_shape = (self.max_label + 1, self.number_of_frames, self.y.shape[3], self.y.shape[4])
+            else:
+                y_shape = (self.number_of_frames, self.y.shape[2], self.y.shape[3], self.max_label + 1)
+
+            y_ohe = np.zeros(y_shape)
+            for label_val in range(self.max_label + 1):
+                if self.channel_axis == 1:
+                    y_ohe[label_val, :, :, :] = interior == label_val
+                else:
+                    y_ohe[:, :, :, label_val] = interior == label_val
+            batch_x[i] = x
+            batch_y[i] = y_ohe
+
+        if self.save_to_dir:
+            for i, j in enumerate(index_array):
+                # Save X batch
+                img_x = np.expand_dims(batch_x[i, :, :, 0], -1)
+                img = array_to_img(img_x, self.data_format, scale=True)
+                fname = '{prefix}_{index}_{hash}.{format}'.format(
+                    prefix=self.save_prefix,
+                    index=j,
+                    hash=np.random.randint(1e4),
+                    format=self.save_format)
+                img.save(os.path.join(self.save_to_dir, fname))
+
+                if self.y is not None:
+                    img_y = np.expand_dims(batch_y[i, :, :, 0], -1)
+                    img = array_to_img(img_y, self.data_format, scale=True)
+                    fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
+                        prefix=self.save_prefix,
+                        index=j,
+                        hash=np.random.randint(1e4),
+                        format=self.save_format)
+                    img.save(os.path.join(self.save_to_dir, fname))
+
+        if self.y is None:
+            return batch_x
+        return batch_x, batch_y
+
+    def next(self):
+        """For python 2.x.
+        # Returns the next batch.
+        """
+        # Keeps under lock only the mechanism which advances
+        # the indexing of each batch.
+        with self.lock:
+            index_array = next(self.index_generator)
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
+        return self._get_batches_of_transformed_samples(index_array)

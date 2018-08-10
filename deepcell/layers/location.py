@@ -85,37 +85,42 @@ class Location3D(Layer):
         input_shape = self.in_shape
 
         if self.data_format == 'channels_last':
+            z = tf.range(0, input_shape[1], dtype=K.floatx())
             x = tf.range(0, input_shape[2], dtype=K.floatx())
             y = tf.range(0, input_shape[3], dtype=K.floatx())
         else:
+            z = tf.range(0, input_shape[2], dtype=K.floatx())
             x = tf.range(0, input_shape[3], dtype=K.floatx())
             y = tf.range(0, input_shape[4], dtype=K.floatx())
 
         x = tf.divide(x, tf.reduce_max(x))
         y = tf.divide(y, tf.reduce_max(y))
+        z = tf.divide(z, tf.reduce_max(z))
 
-        loc_x, loc_y = tf.meshgrid(y, x)
-
+        loc_z, loc_x, loc_y = tf.meshgrid(x, z, y)
+        
         if self.data_format == 'channels_last':
-            loc = tf.stack([loc_x, loc_y], axis=-1)
+            loc = tf.stack([loc_z, loc_x, loc_y], axis=-1)
         else:
-            loc = tf.stack([loc_x, loc_y], axis=0)
+            loc = tf.stack([loc_z, loc_x, loc_y], axis=0)
+        
+#        if self.data_format == 'channels_last':
+#            location = tf.expand_dims(loc, 0)
+#        else:
+#            location = tf.expand_dims(loc, 1)
 
-        if self.data_format == 'channels_last':
-            location = tf.expand_dims(loc, 0)
-        else:
-            location = tf.expand_dims(loc, 1)
+        location_output = tf.expand_dims(loc, 0)
 
-        number_of_frames = input_shape[1] if self.data_format == 'channels_last' else input_shape[2]
+#        number_of_frames = input_shape[1] if self.data_format == 'channels_last' else input_shape[2]
 
-        location_list = [tf.identity(location) for _ in range(number_of_frames)]
+#        location_list = [tf.identity(location) for _ in range(number_of_frames)]
 
-        if self.data_format == 'channels_last':
-            location_concat = tf.concat(location_list, axis=0)
-        else:
-            location_concat = tf.concat(location_list, axis=1)
+#        if self.data_format == 'channels_last':
+#            location_concat = tf.concat(location_list, axis=0)
+#        else:
+#            location_concat = tf.concat(location_list, axis=1)
 
-        location_output = tf.expand_dims(location_concat, 0)
+#        location_output = tf.expand_dims(location_concat, 0)
 
         return location_output
 
