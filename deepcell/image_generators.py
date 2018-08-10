@@ -90,7 +90,7 @@ class ImageSampleArrayIterator(Iterator):
             self.y = keras_to_categorical(self.y).astype('int32')
 
         self._class_balance()  # Balance the classes
-        self.y = to_categorical(self.y).astype('int32')
+        self.y = keras_to_categorical(self.y).astype('int32')
 
         super(ImageSampleArrayIterator, self).__init__(
             len(self.y), batch_size, shuffle, seed)
@@ -1347,7 +1347,7 @@ class SampleMovieArrayIterator(Iterator):
 
         self._class_balance()  # Balance the classes
 
-        self.y = to_categorical(self.y).astype('int32')
+        self.y = keras_to_categorical(self.y).astype('int32')
 
         super(SampleMovieArrayIterator, self).__init__(
             len(self.y), batch_size, shuffle, seed)
