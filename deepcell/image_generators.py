@@ -105,7 +105,6 @@ class ImageSampleArrayIterator(Iterator):
 
     def _class_balance(self, seed=None):
         # Find the most common class
-        logging.warning(self.y.shape)
         common_label, n_samples = stats.mode(self.y)
         common_label = common_label[0]
         n_samples = n_samples[0]
