@@ -115,15 +115,15 @@ class ImageSampleArrayIterator(Iterator):
         # Upsample each class
         new_b, new_px, new_py, new_y = [], [], [], []
 
-        for class_label in range(self.y.shape[1]):
-            index = self.y[:, class_label]
+        for class_label in np.unique(self.y):
+            index = (self.y == class_label).nonzero()[0]
             if class_label != common_label:
                 index = resample(index, n_samples=n_samples, random_state=seed)
 
             new_b.extend(self.batch[index])
             new_px.extend(self.pixels_x[index])
             new_py.extend(self.pixels_y[index])
-            new_y.extend(self.y[index, class_label])
+            new_y.extend(self.y[index])
 
         # Shuffle all of the labels
         new_b = np.array(new_b, dtype='int32')
@@ -1342,9 +1342,6 @@ class SampleMovieArrayIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        if len(self.y.shape) == 1:
-            self.y = keras_to_categorical(self.y).astype('int32')
-
         self._class_balance()  # Balance the classes
 
         self.y = keras_to_categorical(self.y).astype('int32')
@@ -1373,8 +1370,8 @@ class SampleMovieArrayIterator(Iterator):
         # Upsample each class
         new_b, new_pz, new_px, new_py, new_y = [], [], [], [], []
 
-        for class_label in range(self.y.shape[1]):
-            index = self.y[:, class_label]
+        for class_label in np.unique(self.y):
+            index = (self.y == class_label).nonzero()[0]
             if class_label != common_label:
                 index = resample(index, n_samples=n_samples, random_state=seed)
 
@@ -1382,7 +1379,7 @@ class SampleMovieArrayIterator(Iterator):
             new_pz.extend(self.pixels_z[index])
             new_px.extend(self.pixels_x[index])
             new_py.extend(self.pixels_y[index])
-            new_y.extend(self.y[index, class_label])
+            new_y.extend(self.y[index])
 
         # Shuffle all of the labels
         new_b = np.array(new_b, dtype='int32')
