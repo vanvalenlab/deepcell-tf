@@ -67,7 +67,7 @@ class TestSampleDataGenerator(test.TestCase):
             img_w, img_h = 21, 21
             win_x, win_y = 5, 5
             test_batches = 8
-            classes = np.random.randint(2, 10, size=1)[0]
+            classes = np.random.randint(2, 5, size=1)[0]
 
             size = img_w * img_h * test_batches
 
@@ -131,7 +131,7 @@ class TestSampleDataGenerator(test.TestCase):
             img_w, img_h = 21, 21
             win_x, win_y = 5, 5
             test_batches = 8
-            classes = np.random.randint(2, 10, size=1)[0]
+            classes = np.random.randint(2, 5, size=1)[0]
 
             size = img_w * img_h * test_batches
 
@@ -177,7 +177,7 @@ class TestSampleDataGenerator(test.TestCase):
         win_x = win_y = 5
         img_w, img_h = 21, 21
         test_batches = 8
-        classes = np.random.randint(2, 10, size=1)[0]
+        classes = np.random.randint(2, 5, size=1)[0]
 
         size = img_w * img_h * test_batches
 
@@ -278,7 +278,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
             img_w, img_h = 21, 21
             win_x, win_y, win_z = 5, 5, frames // 2
             test_batches = 8
-            classes = np.random.randint(2, 10, size=1)[0]
+            classes = np.random.randint(2, 5, size=1)[0]
 
             size = img_w * img_h * frames * test_batches
 
@@ -354,7 +354,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
             img_w, img_h = 21, 21
             win_x, win_y, win_z = 5, 5, frames // 2
             test_batches = 8
-            classes = np.random.randint(2, 10, size=1)[0]
+            classes = np.random.randint(2, 5, size=1)[0]
 
             size = img_w * img_h * frames * test_batches
 
@@ -406,7 +406,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
         win_x = win_y = win_z = 5
         img_w, img_h, frames = 10, 10, 5
         test_batches = 8
-        classes = np.random.randint(2, 10, size=1)[0]
+        classes = np.random.randint(2, 5, size=1)[0]
 
         size = img_w * img_h * frames * test_batches
 
