@@ -86,9 +86,6 @@ class ImageSampleArrayIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        if len(self.y.shape) == 1:
-            self.y = keras_to_categorical(self.y).astype('int32')
-
         self._class_balance()  # Balance the classes
         self.y = keras_to_categorical(self.y).astype('int32')
 
@@ -108,7 +105,8 @@ class ImageSampleArrayIterator(Iterator):
 
     def _class_balance(self, seed=None):
         # Find the most common class
-        common_label, n_samples = stats.mode(self.y, axis=None)
+        logging.warning(self.y.shape)
+        common_label, n_samples = stats.mode(self.y)
         common_label = common_label[0]
         n_samples = n_samples[0]
 
