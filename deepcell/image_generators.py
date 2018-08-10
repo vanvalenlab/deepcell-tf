@@ -1361,7 +1361,7 @@ class SampleMovieArrayIterator(Iterator):
 
     def _class_balance(self, seed=None):
         # Find the most common class
-        common_label, n_samples = stats.mode(self.y, axis=None)
+        common_label, n_samples = stats.mode(self.y)
         common_label = common_label[0]
         n_samples = n_samples[0]
 
