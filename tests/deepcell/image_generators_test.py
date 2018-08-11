@@ -1281,3 +1281,170 @@ class TestDiscDataGenerator(test.TestCase):
         with self.assertRaises(ValueError):
             generator = image_generators.DiscDataGenerator(
                 zoom_range=(2, 2, 2))
+
+
+class TestSiameseDataGenerator(test.TestCase):
+
+    def test_siamese_data_generator(self):
+        frames = 5
+        for test_images in _generate_test_images():
+            img_list = []
+            for im in test_images:
+                frame_list = []
+                for _ in range(frames):
+                    frame_list.append(img_to_array(im)[None, ...])
+                img_stack = np.vstack(frame_list)
+                img_list.append(img_stack)
+
+            images = np.vstack(img_list)
+            batch_count = images.shape[0] // frames
+            images = np.reshape(images, (batch_count, frames, *images.shape[1:]))
+            generator = image_generators.SiameseDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True)
+
+            # Basic test before fit
+            train_dict = {
+                'X': np.random.random((32, 10, 10, 10, 3)),
+                'y': np.random.random((32, 10, 10, 10, 3)),
+            }
+            generator.flow(train_dict, crop_dim=32, min_track_length=5)
+
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
+
+            # Fit on 2D data, but flow on 3D?
+            generator.fit(np.random.random((32, 10, 10, 3)), augment=True, seed=1)
+            train_dict['X'] = images
+            # TODO: This needs to change
+            # y expects .....
+            train_dict['y'] = np.random.randint(10, size=tuple(list(images.shape)[:-1] + [1]))
+
+            # TODO: Why does this work?
+            y_channel = np.ceil(np.amax(train_dict['y'][:, :, :, 0]))
+
+            for (x1, x2, c1, c2), y in generator.flow(
+                    train_dict,
+                    min_track_length=5,
+                    crop_dim=32,
+                    save_to_dir=temp_dir,
+                    shuffle=True):
+                shape = tuple(list(images.shape)[1:-1] + [y_channel])
+                self.assertEqual(x.shape[1:], images.shape[1:])
+                self.assertEqual(y.shape[1:], shape)
+                break
+
+    def test_siamese_data_generator_channels_first(self):
+        frames = 5
+        for test_images in _generate_test_images():
+            img_list = []
+            for im in test_images:
+                frame_list = []
+                for _ in range(frames):
+                    frame_list.append(img_to_array(im)[None, ...])
+                img_stack = np.vstack(frame_list)
+                img_list.append(img_stack)
+
+            images = np.vstack(img_list)
+            batch_count = images.shape[0] // frames
+            images = np.reshape(images, (batch_count, frames, *images.shape[1:]))
+            images = np.rollaxis(images, 4, 1)
+            generator = image_generators.SiameseDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                # brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True,
+                data_format='channels_first')
+
+            # Basic test before fit
+            train_dict = {
+                'X': np.random.random((32, 3, 10, 10, 10)),
+                'y': np.random.random((32, 3, 10, 10, 10)),
+            }
+            generator.flow(train_dict, crop_dim=32, min_track_length=5)
+
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
+
+            # Fit on 2D data, but flow on 3D?
+            generator.fit(np.random.random((32, 3, 10, 10)), augment=True, seed=1)
+            train_dict['X'] = images
+            # y expects 3 channels, cell edge, cell interior, background
+            train_dict['y'] = np.random.randint(1, 10, size=tuple([images.shape[0], 1] +
+                                                            list(images.shape)[2:]))
+
+            # TODO: Why does this work?
+            y_channel = np.ceil(np.amax(train_dict['y'][:, 0, :, :]))
+
+            for (x1, x2, c1, c2), y in generator.flow(
+                    train_dict,
+                    crop_dim=32,
+                    min_track_length=5,
+                    save_to_dir=temp_dir,
+                    shuffle=True):
+                shape = tuple([y_channel] + list(images.shape)[2:])
+                self.assertEqual(x.shape[1:], images.shape[1:])
+                self.assertEqual(y.shape[1:], shape)
+                break
+
+    def test_siamese_data_generator_invalid_data(self):
+        generator = image_generators.SiameseDataGenerator(
+            featurewise_center=True,
+            samplewise_center=True,
+            featurewise_std_normalization=True,
+            samplewise_std_normalization=True,
+            zca_whitening=True,
+            data_format='channels_last')
+
+        # Test fit with invalid data
+        with self.assertRaises(ValueError):
+            x = np.random.random((3, 10, 10))
+            generator.fit(x)
+
+        # Test flow with invalid dimensions
+        with self.assertRaises(ValueError):
+            train_dict = {
+                'X': np.random.random((32, 10, 10)),
+                'y': np.random.random((32, 10, 10))
+            }
+            generator.flow(train_dict)
+        # Invalid number of channels: will work but raise a warning
+        x = np.random.random((32, 10, 10, 10, 5))
+        y = np.random.random((32, 10, 10, 10, 5))
+        generator.flow({'X': x, 'y': y})
+
+        with self.assertRaises(ValueError):
+            generator = image_generators.SiameseDataGenerator(
+                data_format='unknown')
+
+        generator = image_generators.SiameseDataGenerator(
+            zoom_range=(2, 2))
+        with self.assertRaises(ValueError):
+            generator = image_generators.SiameseDataGenerator(
+                zoom_range=(2, 2, 2))

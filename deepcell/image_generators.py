@@ -507,6 +507,12 @@ class SiameseIterator(Iterator):
             self.time_axis = 1
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
         self.y = np.array(train_dict['y'], dtype='int32')
+
+        if self.x.ndim != 5:
+            raise ValueError('Input data in `SiameseIterator` '
+                             'should have rank 5. You passed an array '
+                             'with shape', self.x.shape)
+
         self.crop_dim = crop_dim
         self.min_track_length = min_track_length
         self.image_data_generator = image_data_generator
@@ -517,6 +523,8 @@ class SiameseIterator(Iterator):
 
         if 'daughters' in train_dict:
             self.daughters = train_dict['daughters']
+        else:
+            self.daughters = None
 
         self.track_ids = self._get_track_ids()
 
@@ -540,14 +548,22 @@ class SiameseIterator(Iterator):
                 # get indices of frames where cell is present
                 y_index = np.where(y_true > 0)[0]
                 if y_index.size > 0:  # if cell is present at all
-                    start_frame = np.amin(y_index)
-                    stop_frame = np.amax(y_index)
-                    track_ids[track_counter] = {
-                        'batch': batch,
-                        'label': cell,
-                        'frames': y_index,
-                        'daughters': self.daughters[batch][cell] #not [cell-1]!
-                    }
+                    #start_frame = np.amin(y_index)
+                    #stop_frame = np.amax(y_index)
+                    if self.daughters is not None:
+                        track_ids[track_counter] = {
+                            'batch': batch,
+                            'label': cell,
+                            'frames': y_index,
+                            'daughters': self.daughters[batch][cell]  # not [cell-1]!
+                        }
+                    else:
+                        track_ids[track_counter] = {
+                            'batch': batch,
+                            'label': cell,
+                            'frames': y_index,
+                            'daughters': []
+                        }
                     track_counter += 1
         return track_ids
 
@@ -579,17 +595,17 @@ class SiameseIterator(Iterator):
 
             # Choose comparison cell
             # Determine what class the track will be - different (0), same (1), division (2)
-            #is_same_cell = np.random.random_integers(0, 1)
+            # is_same_cell = np.random.random_integers(0, 1)
             type_cell = np.random.randint(0, 3)
 
             # There may be instances where training images only have one cell
             # In this case, we won't be able to find a diff cell to compare to
             # So we begin by compiling a list of valid cell labels (ie: all
             # cell labels except the first chosen label)
-            all_labels = np.delete(np.unique(y), 0) # all labels in y but 0 (background)
+            all_labels = np.delete(np.unique(y), 0)  # all labels in y but 0 (background)
             acceptable_labels = np.delete(all_labels, np.where(all_labels == label_1))
 
-            # If there is only 1 cell in the sample, we can safely assume it is the same
+            # If there is only 1 cell in every frame, we can only choose the class to be same
             if len(acceptable_labels) == 0:
                 type_cell = 1
 
@@ -598,28 +614,46 @@ class SiameseIterator(Iterator):
             if type_cell == 2:
                 daughters = track_id['daughters']
                 if len(daughters) == 0:
-                    type_cell = np.random.random_integers(0, 1) # No children so randomly choose a diff class
+                    type_cell = np.random.random_integers(0, 1)  # No children so randomly choose a diff class
                 else:
-                    frame_1 = np.amax(tracked_frames) # Get the last frame of the parent
+                    frame_1 = np.amax(tracked_frames)  # Get the last frame of the parent
                     frame_2 = frame_1 + 1
-                    #There should always be 2 daughters but not always a valid label
+                    # There should always be 2 daughters but not always a valid label
                     label_2 = int(daughters[np.random.random_integers(0, len(daughters)-1)])
 
             # If class is same, select another frame from the same track
             if type_cell == 1:
                 label_2 = label_1
                 # The second frame should not be equal to the first (an exact comparison)
-                # We need to assembly a new list of valid frames
+                # We need to assemble a new list of valid frames
                 tracked_frames = np.delete(tracked_frames, np.where(tracked_frames == frame_1))
-                # And verify the cell exists in more than one frame (otherwise it must be different class)
+                # And verify the cell exists in more than one frame (otherwise cell it can't be tracked)
                 if len(tracked_frames) > 0:
                     frame_2 = np.random.choice(tracked_frames)
                 else:
-                    type_cell = 0
+                    # The cell only appears in one frame so it either split in frame 2 or it can't 
+                    # (doesn't need to) be tracked. Either way, we need to select randomly from one of
+                    # the other classes (different or daughter)
+                    type_cell = np.random.randint(0, 2) * 2
+                    if type_cell == 2:
+                        daughters = track_id['daughters']
+                        if len(daughters) == 0:
+                            type_cell = 0 # No children & only appears in 1 frame, class must be different
+                        else:
+                            frame_1 = np.amax(tracked_frames)  # Get the last frame of the parent
+                            frame_2 = frame_1 + 1
+                            # There should always be 2 daughters but not always a valid label
+                            label_2 = int(daughters[np.random.random_integers(0, len(daughters)-1)])
+                    # A failure mode could be that we assumed that the class must be same because there's only
+                    #  one label present but now we're enforcing class = different (which is a contradiction. 
+                    if type_cell == 0 and len(acceptable_labels) == 0:
+                        raise ValueError('Invalid input data. There is only one labeled cell and it only '
+                                         'exists in one frame. This type of data is unsuitable for tracking'
+                                         'Batch #{} and Label {}'.format(batch, label_1))
 
             # If class is different, select another frame from a different track
             if type_cell == 0:
-
+                   
                 is_valid_label = False
                 while not is_valid_label:
                     # get a random cell label from our acceptable list
@@ -666,7 +700,7 @@ class SiameseIterator(Iterator):
             batch_x_2[i] = appearances[1]
             batch_y[i, type_cell] = 1
 
-        return ([batch_x_1, batch_x_2, centroid_1, centroid_2], batch_y)
+        return [batch_x_1, batch_x_2, centroid_1, centroid_2], batch_y
 
     def _get_appearances(self, X, y, frames, labels):
         channel_axis = self.channel_axis - 1
