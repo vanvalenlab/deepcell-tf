@@ -155,12 +155,10 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='vali
     return list_of_max_sample_numbers
 
 
-def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
-                        padding='valid', output_mode='sample',
+def sample_label_matrix(y, window_size_x=30, window_size_y=30, padding='valid',
                         max_training_examples=1e7):
-    """Create a list of the maximum pixels to sample from each feature in each
-    data set. If output_mode is 'sample', then this will be set to the number
-    of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
+    """Create a list of the maximum pixels to sample
+    from each feature in each data set.
     """
     is_channel_first = K.image_data_format() == 'channels_first'
     if is_channel_first:
@@ -168,9 +166,9 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     else:
         num_dirs, image_size_x, image_size_y, num_features = y.shape
 
-    list_of_max_sample_numbers = get_max_sample_num_list(
-        y=y, edge_feature=edge_feature, output_mode=output_mode, padding=padding,
-        window_size_x=window_size_x, window_size_y=window_size_y)
+    # list_of_max_sample_numbers = get_max_sample_num_list(
+    #     y=y, edge_feature=edge_feature, output_mode=output_mode, padding=padding,
+    #     window_size_x=window_size_x, window_size_y=window_size_y)
 
     feature_rows, feature_cols, feature_batch, feature_label = [], [], [], []
 
@@ -317,8 +315,8 @@ def trim_padding(nparr, win_x, win_y, win_z=None):
             else:
                 trimmed = nparr[:, :, win_x:-win_x, win_y:-win_y, :]
     else:
-        raise ValueError('Expected to trim numpy array of ndim 4 or 5, got "{}"'.format(
-            nparr.ndim))
+        raise ValueError('Expected to trim numpy array of ndim 4 or 5, '
+                         'got "{}"'.format(nparr.ndim))
     return trimmed
 
 
@@ -611,8 +609,9 @@ def make_training_data_2d(direc_name,
             channel_axis = 1
             new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3]), dtype='int32')
         else:
-            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1), dtype='int32')
             channel_axis = -1
+            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1), dtype='int32')
+
         for b in range(y.shape[0]):
             if K.image_data_format() == 'channels_first':
                 dist_batch = y[b, 1, :, :]
@@ -628,8 +627,7 @@ def make_training_data_2d(direc_name,
 
     # Create mask of sampled pixels
     feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
-        y, edge_feature, output_mode=output_mode, padding=padding,
-        window_size_x=window_size_x, window_size_y=window_size_y,
+        y, padding=padding, window_size_x=window_size_x, window_size_y=window_size_y,
         max_training_examples=max_training_examples)
 
     weights = compute_class_weight('balanced', y=feature_label, classes=np.unique(feature_label))
@@ -851,8 +849,9 @@ def make_training_data_3d(direc_name,
             channel_axis = 1
             new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3], y.shape[4]), dtype='int32')
         else:
-            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1), dtype='int32')
             channel_axis = -1
+            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1), dtype='int32')
+
         for b in range(y.shape[0]):
             if K.image_data_format() == 'channels_first':
                 dist_batch = y[b, 0, :, :, :]
