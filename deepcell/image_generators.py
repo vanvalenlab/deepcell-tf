@@ -52,7 +52,6 @@ class ImageSampleArrayIterator(Iterator):
     def __init__(self,
                  train_dict,
                  image_data_generator,
-                 max_samples=None,
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -81,7 +80,6 @@ class ImageSampleArrayIterator(Iterator):
         self.pixels_y = train_dict['pixels_y']
         self.win_x = train_dict['win_x']
         self.win_y = train_dict['win_y']
-        self.max_samples = max_samples
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -110,8 +108,6 @@ class ImageSampleArrayIterator(Iterator):
         common_label, n_samples = stats.mode(self.y)
         common_label = common_label[0]
         n_samples = n_samples[0]
-        if self.max_samples is not None and n_samples > self.max_samples:
-            n_samples = self.max_samples
 
         # Upsample each class
         new_b, new_px, new_py, new_y = [], [], [], []
@@ -192,7 +188,6 @@ class ImageSampleArrayIterator(Iterator):
 class SampleDataGenerator(ImageDataGenerator):
     def flow(self,
              train_dict,
-             max_samples=None,
              batch_size=32,
              shuffle=True,
              seed=None,
@@ -202,7 +197,6 @@ class SampleDataGenerator(ImageDataGenerator):
         return ImageSampleArrayIterator(
             train_dict,
             self,
-            max_samples=max_samples,
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
@@ -1306,7 +1300,6 @@ class SampleMovieArrayIterator(Iterator):
     def __init__(self,
                  train_dict,
                  movie_data_generator,
-                 max_samples=None,
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -1340,7 +1333,6 @@ class SampleMovieArrayIterator(Iterator):
         self.pixels_y = train_dict['pixels_y']
         self.pixels_z = train_dict['pixels_z']
         self.batch = train_dict['batch']
-        self.max_samples = max_samples
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -1371,8 +1363,6 @@ class SampleMovieArrayIterator(Iterator):
         common_label, n_samples = stats.mode(self.y)
         common_label = common_label[0]
         n_samples = n_samples[0]
-        if self.max_samples is not None and n_samples > self.max_samples:
-            n_samples = self.max_samples
 
         # Upsample each class
         new_b, new_pz, new_px, new_py, new_y = [], [], [], [], []
@@ -1464,7 +1454,6 @@ class SampleMovieArrayIterator(Iterator):
 class SampleMovieDataGenerator(MovieDataGenerator):
     def flow(self,
              train_dict,
-             max_samples=None,
              batch_size=32,
              shuffle=True,
              seed=None,
@@ -1474,7 +1463,6 @@ class SampleMovieDataGenerator(MovieDataGenerator):
         return SampleMovieArrayIterator(
             train_dict,
             self,
-            max_samples=max_samples,
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
