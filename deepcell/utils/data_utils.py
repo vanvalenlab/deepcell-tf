@@ -137,6 +137,14 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         'win_y': win_y
     }
 
+    val_dict = {
+        'X': X_test,
+        'y': y_test,
+        'class_weights': class_weights,
+        'win_x': win_x,
+        'win_y': win_y
+    }
+
     # siamese_daughters mode is used to import lineage data and associate it with the appropriate batch
     if mode == 'siamese_daughters':
         kid_data = np.load(os.path.splitext(file_name)[0]+'_kids.npz')
@@ -150,14 +158,23 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
             'win_x': win_x,
             'win_y': win_y
         }
-        y_test = [y_test, lineage_test]
+
+        val_dict = {
+            'X': X_test,
+            'y': y_test,
+            'daughters': lineage_test,
+            'class_weights': class_weights,
+            'win_x': win_x,
+            'win_y': win_y
+        }
+       
     # End changes for daughter mode
 
     if win_z is not None:
         train_dict['win_z'] = win_z
+        val_dict['win_z'] = win_z
 
-
-    return train_dict, (X_test, y_test)
+    return train_dict, val_dict
 
 
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', border_mode='valid',

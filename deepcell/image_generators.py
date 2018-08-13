@@ -488,6 +488,7 @@ class SiameseIterator(Iterator):
                  batch_size=32,
                  shuffle=False,
                  seed=None,
+                 squeeze=False,
                  data_format=None,
                  save_to_dir=None,
                  save_prefix='',
@@ -516,6 +517,7 @@ class SiameseIterator(Iterator):
         self.crop_dim = crop_dim
         self.min_track_length = min_track_length
         self.image_data_generator = image_data_generator
+        self.squeeze = squeeze
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
@@ -526,12 +528,44 @@ class SiameseIterator(Iterator):
         else:
             self.daughters = None
 
-        self.track_ids = self._get_track_ids()
+        self._remove_bad_images()
+        self._create_track_ids()
+        self._create_appearances()
 
         super(SiameseIterator, self).__init__(
             len(self.track_ids), batch_size, shuffle, seed)
 
-    def _get_track_ids(self):
+    def _remove_bad_images(self):
+        """
+        This function goes through all of the batches of images and removes the 
+        images that only have one cell.
+        This could be expanded to include questionable annotations
+        """
+        good_batches = []
+        number_of_batches = self.x.shape[0]
+        for batch in range(number_of_batches):
+            y = self.y[batch]
+            unique_ids = np.unique(y.flatten())
+            if len(unique_ids) > 2: # You should have at least 3 id's - 2 cells and 1 background
+                good_batches.append(batch)
+
+        X_new_shape = tuple([len(good_batches)] + list(self.x.shape[1:]))
+        y_new_shape = tuple([len(good_batches)] + list(self.y.shape[1:]))
+
+        X_new = np.zeros(X_new_shape, dtype = K.floatx())
+        y_new = np.zeros(y_new_shape, dtype = np.int32)
+
+        counter = 0
+        for k, batch in enumerate(good_batches):
+            X_new[k] = self.x[batch]
+            y_new[k] = self.y[batch]
+
+        self.x = X_new
+        self.y = y_new
+
+        return None
+
+    def _create_track_ids(self):
         """
         This function builds the track id's. It returns a dictionary that
         contains the batch number and label number of each each track.
@@ -547,160 +581,60 @@ class SiameseIterator(Iterator):
                 y_true = np.sum(y_batch == cell, axis=(self.row_axis - 1, self.col_axis - 1))
                 # get indices of frames where cell is present
                 y_index = np.where(y_true > 0)[0]
-                if y_index.size > 0:  # if cell is present at all
-                    #start_frame = np.amin(y_index)
-                    #stop_frame = np.amax(y_index)
+                if y_index.size > self.min_track_length+1:  # if cell is present at all
                     if self.daughters is not None:
-                        track_ids[track_counter] = {
-                            'batch': batch,
-                            'label': cell,
-                            'frames': y_index,
-                            'daughters': self.daughters[batch][cell]  # not [cell-1]!
-                        }
-                    else:
-                        track_ids[track_counter] = {
-                            'batch': batch,
-                            'label': cell,
-                            'frames': y_index,
-                            'daughters': []
-                        }
-                    track_counter += 1
-        return track_ids
-
-    def _get_batches_of_transformed_samples(self, index_array):
-        # initialize batch_x_1, batch_x_2, and batch_y, as well as centroid data
-        if self.data_format == 'channels_first':
-            img_shape = (len(index_array), self.x.shape[self.channel_axis], self.crop_dim, self.crop_dim)
-        else:
-            img_shape = (len(index_array), self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis])
-
-        data_shape = (len(index_array), 2,)
-
-        batch_x_1 = np.zeros(img_shape, dtype=K.floatx())
-        batch_x_2 = np.zeros(img_shape, dtype=K.floatx())
-        centroid_1 = np.zeros(data_shape, dtype=K.floatx())
-        centroid_2 = np.zeros(data_shape, dtype=K.floatx())
-        batch_y = np.zeros((len(index_array), 3), dtype=np.int32)
-
-        for i, j in enumerate(index_array):
-            # Identify which tracks are going to be selected
-            track_id = self.track_ids[j]
-            batch = track_id['batch']
-            label_1 = track_id['label']
-            tracked_frames = track_id['frames']
-            frame_1 = np.random.choice(tracked_frames)  # Select a frame from the track
-
-            X = self.x[batch]
-            y = self.y[batch]
-
-            # Choose comparison cell
-            # Determine what class the track will be - different (0), same (1), division (2)
-            # is_same_cell = np.random.random_integers(0, 1)
-            type_cell = np.random.randint(0, 3)
-
-            # There may be instances where training images only have one cell
-            # In this case, we won't be able to find a diff cell to compare to
-            # So we begin by compiling a list of valid cell labels (ie: all
-            # cell labels except the first chosen label)
-            all_labels = np.delete(np.unique(y), 0)  # all labels in y but 0 (background)
-            acceptable_labels = np.delete(all_labels, np.where(all_labels == label_1))
-
-            # If there is only 1 cell in every frame, we can only choose the class to be same
-            if len(acceptable_labels) == 0:
-                type_cell = 1
-
-            # If class is division, check if the first cell divides
-            # If not, change class to same/dif randomly
-            if type_cell == 2:
-                daughters = track_id['daughters']
-                if len(daughters) == 0:
-                    type_cell = np.random.random_integers(0, 1)  # No children so randomly choose a diff class
-                else:
-                    frame_1 = np.amax(tracked_frames)  # Get the last frame of the parent
-                    frame_2 = frame_1 + 1
-                    # There should always be 2 daughters but not always a valid label
-                    label_2 = int(daughters[np.random.random_integers(0, len(daughters)-1)])
-
-            # If class is same, select another frame from the same track
-            if type_cell == 1:
-                label_2 = label_1
-                # The second frame should not be equal to the first (an exact comparison)
-                # We need to assemble a new list of valid frames
-                tracked_frames = np.delete(tracked_frames, np.where(tracked_frames == frame_1))
-                # And verify the cell exists in more than one frame (otherwise cell it can't be tracked)
-                if len(tracked_frames) > 0:
-                    frame_2 = np.random.choice(tracked_frames)
-                else:
-                    # The cell only appears in one frame so it either split in frame 2 or it can't 
-                    # (doesn't need to) be tracked. Either way, we need to select randomly from one of
-                    # the other classes (different or daughter)
-                    type_cell = np.random.randint(0, 2) * 2
-                    if type_cell == 2:
-                        daughters = track_id['daughters']
-                        if len(daughters) == 0:
-                            type_cell = 0 # No children & only appears in 1 frame, class must be different
+                        # Only include daughters if there are enough frames in their tracks
+                        daughter_ids = self.daughters[batch][cell]
+                        if len(daughter_ids) > 0:
+                            daughter_track_lengths = []
+                            for did in daughter_ids:
+                                d_true = np.sum(y_batch == did, axis=(self.row_axis - 1, self.col_axis - 1))
+                                d_track_length = len(np.where(d_true>0)[0])
+                                daughter_track_lengths.append(d_track_length > self.min_track_length+1)
+                            keep_daughters = all(daughter_track_lengths)
+                            daughters = daughter_ids if keep_daughters else []
                         else:
-                            frame_1 = np.amax(tracked_frames)  # Get the last frame of the parent
-                            frame_2 = frame_1 + 1
-                            # There should always be 2 daughters but not always a valid label
-                            label_2 = int(daughters[np.random.random_integers(0, len(daughters)-1)])
-                    # A failure mode could be that we assumed that the class must be same because there's only
-                    #  one label present but now we're enforcing class = different (which is a contradiction. 
-                    if type_cell == 0 and len(acceptable_labels) == 0:
-                        raise ValueError('Invalid input data. There is only one labeled cell and it only '
-                                         'exists in one frame. This type of data is unsuitable for tracking'
-                                         'Batch #{} and Label {}'.format(batch, label_1))
+                            daughters = []
+                    else:
+                        daughters = []
+                            
+                    track_ids[track_counter] = {
+                        'batch': batch,
+                        'label': cell,
+                        'frames': y_index,
+                        'daughters': daughters  # not [cell-1]!
+                    }
+                    track_counter += 1
+                    
+                else:
+                    y_batch[y_batch == cell] = 0
+                    self.y[batch] = y_batch
+                    
+        # Add a field to the track_ids dict that locates all of the different cells
+        # in each frame
 
-            # If class is different, select another frame from a different track
-            if type_cell == 0:
-                   
-                is_valid_label = False
-                while not is_valid_label:
-                    # get a random cell label from our acceptable list
-                    label_2 = np.random.choice(acceptable_labels)
-
-                    # count number of pixels cell occupies in each frame
-                    y_true = np.sum(y == label_2, axis=(
-                        self.row_axis - 1, self.col_axis - 1, self.channel_axis - 1))
-
-                    y_index = np.where(y_true > 0)[0]  # get frames where cell is present
-                    is_valid_label = y_index.any()  # label_2 is in a frame
-                    if not is_valid_label:
-                        # remove invalid label from list of acceptable labels
-                        acceptable_labels = np.delete(
-                            acceptable_labels, np.where(acceptable_labels == label_2))
-
-                frame_2 = np.random.choice(y_index)  # get random frame with label_2
-
-            # Get appearances and centroid data
-            frames = [frame_1, frame_2]
-            labels = [label_1, label_2]
-
-            appearances = self._get_appearances(X, y, frames, labels)
-
-            # Save centroids for the pair of images
-            centroid_1[i] = np.array(appearances[1][0])
-            centroid_2[i] = np.array(appearances[1][1])
-
-            # Save images of the cells in the pair of images
-            appearances = appearances[0]
-
-            if self.data_format == 'channels_first':
-                appearances = [appearances[:, 0], appearances[:, 1]]
-            else:
-                appearances = [appearances[0], appearances[1]]
-
-            # Apply random transformations
-            for k, appearance in enumerate(appearances):
-                appearance = self.image_data_generator.random_transform(appearance)
-                appearance = self.image_data_generator.standardize(appearance)
-                appearances[k] = appearance
-
-            batch_x_1[i] = appearances[0]
-            batch_x_2[i] = appearances[1]
-            batch_y[i, type_cell] = 1
-
-        return [batch_x_1, batch_x_2, centroid_1, centroid_2], batch_y
+        for track in track_ids.keys():
+            track_ids[track]['different'] = {}
+            batch = track_ids[track]['batch']
+            label = track_ids[track]['label']
+            for frame in track_ids[track]['frames']:
+                y_unique = np.unique(self.y[batch][frame])
+                y_unique = np.delete(y_unique, np.where(y_unique == 0))
+                y_unique = np.delete(y_unique, np.where(y_unique == label))
+                track_ids[track]['different'][frame] = y_unique  
+                        
+        # We will need to look up the track_ids of cells if we know their batch and label. We will 
+        # create a dictionary that stores this information
+        reverse_track_ids = {}
+        for batch in range(self.y.shape[0]):
+            reverse_track_ids[batch] = {}
+        for track in track_ids.keys():
+            batch = track_ids[track]['batch']
+            label = track_ids[track]['label']
+            reverse_track_ids[batch][label] = track
+        self.track_ids = track_ids
+        self.reverse_track_ids = reverse_track_ids
+        return None
 
     def _get_appearances(self, X, y, frames, labels):
         channel_axis = self.channel_axis - 1
@@ -745,6 +679,244 @@ class SiameseIterator(Iterator):
                 appearances[counter] = appearance
 
         return [appearances, centroids]
+
+    def _create_appearances(self):
+        """
+        This function gets the appearances of every cell, crops them out, resizes them, 
+        and stores them in an matrix. Pre-fetching the appearances should significantly 
+        speed up the generator
+        """
+        number_of_tracks = len(self.track_ids.keys())
+
+        # Initialize the array for the appearances and centroids
+        if self.data_format =='channels_first':
+            all_appearances_shape = (number_of_tracks, self.x.shape[self.channel_axis], self.x.shape[self.time_axis], self.crop_dim, self.crop_dim)
+        if self.data_format == 'channels_last':
+            all_appearances_shape = (number_of_tracks, self.x.shape[self.time_axis], self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis])
+        all_appearances = np.zeros(all_appearances_shape, dtype = K.floatx())
+
+        all_centroids_shape = (number_of_tracks, self.x.shape[self.time_axis],2)
+        all_centroids = np.zeros(all_centroids_shape, dtype = K.floatx())
+
+        for track in self.track_ids.keys():
+            batch = self.track_ids[track]['batch']
+            label = self.track_ids[track]['label']
+            frames = self.track_ids[track]['frames']
+
+            # Make an array of labels that the same length as the frames array
+            labels = [label] * len(frames)
+            X = self.x[batch]
+            y = self.y[batch]
+
+            app = self._get_appearances(X, y, frames, labels)
+            appearance = app[0]
+            centroid = app[1]
+
+            if self.data_format == 'channels_first':
+                all_appearances[track,:,np.array(frames),:,:] = appearance 
+            if self.data_format == 'channels_last':
+                all_appearances[track,np.array(frames),:,:,:] = appearance
+
+            all_centroids[track,np.array(frames),:] = centroid
+
+        self.all_appearances = all_appearances
+        self.all_centroids = all_centroids
+
+        return None
+
+    def _fetch_appearances(self, track, frames):
+        """
+        This function gets the appearances after they have been 
+        cropped out of the image
+        """
+        # TO DO: Check to make sure the frames are acceptable
+
+        if self.data_format == 'channels_first':
+            appearances = self.all_appearances[track,:,np.array(frames),:,:]
+        if self.data_format == 'channels_last':
+            appearances = self.all_appearances[track,np.array(frames),:,:,:]
+        return appearances
+
+    def _fetch_centroids(self, track, frames):
+        """
+        This function gets the centroids after they have been
+        extracted and stored
+        """
+        # TO DO: Check to make sure the frames are acceptable
+        
+        centroids = self.all_centroids[track,np.array(frames),:]
+        return centroids
+
+    def _fetch_frames(self, track, division=False):
+        """
+        This function fetches a random list of frames for a given track.
+        If the division flag is true, then the list of frames ends at the cell's
+        last appearance if the division flag is true.
+        """
+        track_id = self.track_ids[track]
+        batch = track_id['batch']
+        tracked_frames = list(track_id['frames'])
+
+        # We need to have at least one future frame to pick from, so if 
+        # the last frame of the movie is a tracked frame, remove it
+        last_frame = self.x.shape[self.time_axis] - 1
+        if last_frame in tracked_frames:
+            tracked_frames.remove(last_frame)
+
+        # Get the indices of the tracked_frames list - sometimes frames
+        # are skipped
+        tracked_frames_index = np.arange(len(tracked_frames))
+        
+        # Check if there are enough frames
+        enough_frames = len(tracked_frames_index) > self.min_track_length + 1
+
+        # We need to exclude the last frame so that we will always be able to make a comparison
+        acceptable_indices = tracked_frames_index[self.min_track_length-1:-1] if enough_frames else tracked_frames_index[:-1]
+
+        # Take the last frame if there is a division, otherwise randomly pick a frame
+#         print(tracked_frames_index)
+#         print(division)
+#         print(acceptable_indices)
+        index = -1 if division else np.random.choice(acceptable_indices) 
+
+        # Select the frames. If there aren't enough frames, repeat the first frame
+        # the necessary number of times
+        if enough_frames:
+            frames = tracked_frames[index+1-self.min_track_length:index+1]
+        else:
+            frames_temp = tracked_frames[0:index+1]
+            missing_frames = self.min_track_length - len(frames_temp)
+            frames = tracked_frames[0] * missing_frames + frames_temp
+
+        return frames
+
+    def _get_batches_of_transformed_samples(self, index_array):
+        # Initialize batch_x_1, batch_x_2, and batch_y, as well as cell distance data
+        # DVV Notes - I'm changing how this works. We will now only compare cells in neighboring
+        # frames. I am also modifying it so it will select a sequence of cells/distances for x1
+        # and 1 cell/distance for x2
+
+        if self.data_format == 'channels_first':
+            x1_shape = (len(index_array), self.x.shape[self.channel_axis], self.min_track_length, self.crop_dim, self.crop_dim)
+            x2_shape = (len(index_array), self.x.shape[self.channel_axis], self.crop_dim, self.crop_dim)
+        else:
+            x1_shape = (len(index_array), self.min_track_length, self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis])
+            x2_shape = (len(index_array), 1, self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis])
+        distance_shape_1 = (len(index_array), self.min_track_length, 2)
+        distance_shape_2 = (len(index_array), 1, 2)
+        y_shape = (len(index_array), 3)
+
+        batch_x_1 = np.zeros(x1_shape, dtype=K.floatx())
+        batch_x_2 = np.zeros(x2_shape, dtype=K.floatx())
+        batch_distance_1 = np.zeros(distance_shape_1, dtype=K.floatx())
+        batch_distance_2 = np.zeros(distance_shape_2, dtype=K.floatx())
+        batch_y = np.zeros(y_shape, dtype=np.int32)
+
+        for i, j in enumerate(index_array):
+            # Identify which tracks are going to be selected
+            track_id = self.track_ids[j]
+            batch = track_id['batch']
+            label_1 = track_id['label']  
+            
+            X = self.x[batch]
+            y = self.y[batch]
+
+            # Choose comparison cell
+            # Determine what class the track will be - different (0), same (1), division (2)
+            # is_same_cell = np.random.random_integers(0, 1)
+            division = False
+            type_cell = np.random.randint(0, 3)
+
+            # Dealing with edge cases
+
+            # If class is division, check if the first cell divides. If not, change class to same/dif randomly
+            if type_cell == 2:
+                daughters = track_id['daughters']
+                if len(daughters) == 0:
+                    type_cell = np.random.random_integers(0, 1)  # No children so randomly choose a diff class
+                else:
+                    division == True
+                    
+            # Get the frames for cell 1 and frames/label for cell 2
+            frames_1 = self._fetch_frames(j, division=division)
+            
+            # For frame_2, choose the next frame cell 1 appears in 
+            last_frame_1 = np.amax(frames_1)
+            frame_2 = np.amin( [x for x in track_id['frames'] if x > last_frame_1] )
+            frames_2 = [frame_2]
+
+            different_cells = track_id['different'][frame_2]
+                    
+            if type_cell == 0:
+                # If there are no different cells in the subsequent frame, we must choose 
+                # the same cell
+                if len(different_cells) == 0:
+                    type_cell = 1
+                else:
+                    label_2 = np.random.choice(different_cells)
+
+            if type_cell == 1:
+                # If there is only 1 cell in frame_2, we can only choose the class to be same
+                label_2 = label_1
+                        
+            if type_cell == 2:
+                # There should always be 2 daughters but not always a valid label
+                label_2 = int(daughters[np.random.random_integers(0, len(daughters)-1)])
+
+            track_1 = j
+            track_2 = self.reverse_track_ids[batch][label_2]
+
+            # Get appearances and centroid data
+            appearance_1 = self._fetch_appearances(track_1, frames_1)
+            appearance_2 = self._fetch_appearances(track_2, frames_2)
+            centroid_1 = self._fetch_centroids(track_1, frames_1)
+            centroid_2 = self._fetch_centroids(track_2, frames_2)
+
+            # Apply random transforms
+            new_appearance_1 = np.zeros(appearance_1.shape, dtype = K.floatx())
+            new_appearance_2 = np.zeros(appearance_2.shape, dtype = K.floatx())
+
+            for frame in range(appearance_1.shape[self.time_axis-1]):
+                if self.data_format == 'channels_first':
+                    app_temp = self.image_data_generator.random_transform(appearance_1[:,frame,:,:])
+                    app_temp = self.image_data_generator.standardize(app_temp)
+                    new_appearance_1[:,frame,:,:] = app_temp                        
+
+                if self.data_format == 'channels_last':
+                    app_temp = self.image_data_generator.random_transform(appearance_1[frame])
+                    app_temp = self.image_data_generator.standardize(app_temp)
+                    new_appearance_1[frame] = app_temp
+
+            if self.data_format == 'channels_first':
+                app_temp = self.image_data_generator.random_transform(appearance_2[:,0,:,:])
+                app_temp = self.image_data_generator.standardize(app_temp)
+                new_appearance_2[:,0,:,:] = app_temp   
+                
+            if self.data_format == 'channels_last':
+                app_temp = self.image_data_generator.random_transform(appearance_2[0])
+                app_temp = self.image_data_generator.standardize(app_temp)
+                new_appearance_2[0] = app_temp
+
+            # Compute distances between centroids
+            centroids = np.concatenate([centroid_1, centroid_2], axis=0)
+            distance = np.diff(centroids, axis=0)
+            zero_pad = np.zeros((1,2), dtype = K.floatx())
+            distance = np.concatenate([zero_pad, distance], axis=0)
+
+            # Save images and distances to the batch arrays
+            batch_x_1[i] = appearance_1
+            batch_x_2[i] = appearance_2
+            batch_distance_1[i] = distance[0:-1,:]
+            batch_distance_2[i,0,:] = distance[-1,:]
+            batch_y[i, type_cell] = 1
+   
+        # Remove singleton dimensions (if min_track_length is 1)
+        if self.squeeze:
+            batch_x_1 = np.squeeze(batch_x_1, axis=self.time_axis)
+            batch_x_2 = np.squeeze(batch_x_2, axis=self.time_axis)
+            batch_distance_1 = np.squeeze(batch_distance_1, axis=1)
+            batch_distance_2 = np.squeeze(batch_distance_2, axis=1)
+        return [batch_x_1, batch_x_2, batch_distance_1, batch_distance_2], batch_y
 
     def next(self):
         """For python 2.x.

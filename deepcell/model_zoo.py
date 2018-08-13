@@ -17,7 +17,7 @@ from tensorflow.python.keras.models import Sequential, Model
 from tensorflow.python.keras.layers import Conv2D, Conv3D, ConvLSTM2D
 from tensorflow.python.keras.layers import Add, Input, Concatenate, Lambda
 from tensorflow.python.keras.layers import MaxPool2D, MaxPool3D, AvgPool2D, UpSampling2D
-from tensorflow.python.keras.layers import Flatten, Dense, Dropout
+from tensorflow.python.keras.layers import Flatten, Dense, Dropout, Reshape
 from tensorflow.python.keras.layers import Activation, Softmax
 from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.regularizers import l2
@@ -1629,46 +1629,63 @@ def bn_dense_feature_net_lstm(input_shape=(1, 60, 256, 256), batch_shape=None, n
     return model
 
 
-def siamese_model(input_shape=None, batch_shape=None, reg=1e-5, init='he_normal', softmax=True, norm_method='std', filter_size=61):
+def siamese_model(input_shape=None, track_length=1, batch_shape=None, reg=1e-5, init='he_normal', softmax=True, norm_method='std', filter_size=61):
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
+        new_input_shape = tuple([input_shape[0]] + [None] + list(input_shape[1:]))
     else:
         channel_axis = -1
+        new_input_shape = tuple([None] + list(input_shape))
+        
+    input_shape = new_input_shape
 
     # Define the input shape for the images
     input_1 = Input(shape=input_shape)
     input_2 = Input(shape=input_shape)
     # Define the input shape for the other data (centroids, etc)
-    input_3 = Input(shape=(2, ))
-    input_4 = Input(shape=(2, ))
+    input_3 = Input(shape=(None, 2))
+    input_4 = Input(shape=(None, 2))
 
     # Sequential interface for siamese portion of model
     feature_extractor = Sequential()
-    feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), input_shape=input_shape))
+    feature_extractor.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg), input_shape=input_shape))
     feature_extractor.add(BatchNormalization(axis=channel_axis))
     feature_extractor.add(Activation('relu'))
-    feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
+    feature_extractor.add(MaxPool3D(pool_size=(1, 2, 2)))
+    
+    feature_extractor.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
     feature_extractor.add(BatchNormalization(axis=channel_axis))
     feature_extractor.add(Activation('relu'))
-    feature_extractor.add(MaxPool2D(pool_size=(2, 2)))
-    feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
+    feature_extractor.add(MaxPool3D(pool_size=(1, 2, 2)))
+    
+    feature_extractor.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
     feature_extractor.add(BatchNormalization(axis=channel_axis))
     feature_extractor.add(Activation('relu'))
-    feature_extractor.add(Conv2D(64, (3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
+    feature_extractor.add(MaxPool3D(pool_size=(1, 2, 2)))
+
+    feature_extractor.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
     feature_extractor.add(BatchNormalization(axis=channel_axis))
     feature_extractor.add(Activation('relu'))
-    feature_extractor.add(MaxPool2D(pool_size=(2, 2)))
+    feature_extractor.add(MaxPool3D(pool_size=(1, 2, 2)))
+    
+    feature_extractor.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='same', kernel_regularizer=l2(reg)))
+    feature_extractor.add(BatchNormalization(axis=channel_axis))
+    feature_extractor.add(Activation('relu'))
+    feature_extractor.add(MaxPool3D(pool_size=(1, 2, 2)))
+    
+    feature_extractor.add(Reshape(tuple([64])))
 
     # Create two instances of feature_extractor
     output_1 = feature_extractor(input_1)
     output_2 = feature_extractor(input_2)
 
+    input_3_reshape = Reshape((2,))(input_3)
+    input_4_reshape = Reshape((2,))(input_4)
+
     # Combine the extracted features with other known features (centroids)
-    flat1 = Flatten()(output_1)
-    flat2 = Flatten()(output_2)
-    merge_1 = Concatenate()([flat1, input_3])
-    merge_2 = Concatenate()([flat2, input_4])
+    merge_1 = Concatenate(axis=channel_axis)([output_1, output_2])
+    merge_2 = Concatenate(axis=channel_axis)([input_3_reshape, input_4_reshape])
 
     # Concatenate outputs from both instances
     merged_outputs = Concatenate(axis=channel_axis)([merge_1, merge_2])
