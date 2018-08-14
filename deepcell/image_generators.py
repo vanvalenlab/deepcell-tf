@@ -104,25 +104,26 @@ class ImageSampleArrayIterator(Iterator):
         return sampled
 
     def _class_balance(self, seed=None):
-        # Find the least common class
-        unique, counts = np.unique(self.y, return_counts=True)
-        min_index = np.argmin(counts)
-
-        rare_label = unique[min_index]
-        n_samples = counts[min_index]
-
-        # Downsample each class
+        """Downsample to the least common class in each batch"""
         new_b, new_px, new_py, new_y = [], [], [], []
 
-        for class_label in np.unique(self.y):
-            index = (self.y == class_label).nonzero()[0]
-            if class_label != rare_label:
-                index = resample(index, n_samples=n_samples, random_state=seed)
+        for b in np.unique(self.batch):
+            batch_y = self.y[self.batch == b]
+            unique, counts = np.unique(batch_y, return_counts=True)
+            min_index = np.argmin(counts)
+            rare_label = unique[min_index]
+            n_samples = counts[min_index]
 
-            new_b.extend(self.batch[index])
-            new_px.extend(self.pixels_x[index])
-            new_py.extend(self.pixels_y[index])
-            new_y.extend(self.y[index])
+            for class_label in unique:
+                index = (self.batch == b & self.y == class_label).nonzero()[0]
+
+                if class_label != rare_label:
+                    index = resample(index, n_samples=n_samples, random_state=seed)
+
+                new_b.extend(self.batch[index])
+                new_px.extend(self.pixels_x[index])
+                new_py.extend(self.pixels_y[index])
+                new_y.extend(self.y[index])
 
         # Shuffle all of the labels
         new_b = np.array(new_b, dtype='int32')
