@@ -1380,7 +1380,7 @@ class SampleMovieArrayIterator(Iterator):
                 new_b.extend(self.batch[index])
                 new_px.extend(self.pixels_x[index])
                 new_py.extend(self.pixels_y[index])
-                new_pz.extend(self.pixelz_z[index])
+                new_pz.extend(self.pixels_z[index])
                 new_y.extend(self.y[index])
 
         # Shuffle all of the labels
