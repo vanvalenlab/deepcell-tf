@@ -104,17 +104,19 @@ class ImageSampleArrayIterator(Iterator):
         return sampled
 
     def _class_balance(self, seed=None):
-        # Find the most common class
-        common_label, n_samples = stats.mode(self.y)
-        common_label = common_label[0]
-        n_samples = n_samples[0]
+        # Find the least common class
+        unique, counts = np.unique(self.y, return_counts=True)
+        min_index = np.argmin(counts)
 
-        # Upsample each class
+        rare_label = unique[min_index]
+        n_samples = counts[min_index]
+
+        # Downsample each class
         new_b, new_px, new_py, new_y = [], [], [], []
 
         for class_label in np.unique(self.y):
             index = (self.y == class_label).nonzero()[0]
-            if class_label != common_label:
+            if class_label != rare_label:
                 index = resample(index, n_samples=n_samples, random_state=seed)
 
             new_b.extend(self.batch[index])
@@ -1360,22 +1362,18 @@ class SampleMovieArrayIterator(Iterator):
 
     def _class_balance(self, seed=None):
         # Find the least common class
-        unique, counts = np.unique(self.y)
+        unique, counts = np.unique(self.y, return_counts=True)
         min_index = np.argmin(counts)
 
-        rare_class = unique[min_index]
+        rare_label = unique[min_index]
         n_samples = counts[min_index]
-
-        # common_label, n_samples = stats.mode(self.y)
-        # common_label = common_label[0]
-        # n_samples = n_samples[0]
 
         # Downsample each class
         new_b, new_pz, new_px, new_py, new_y = [], [], [], [], []
 
         for class_label in np.unique(self.y):
             index = (self.y == class_label).nonzero()[0]
-            if class_label != rare_class:
+            if class_label != rare_label:
                 index = resample(index, n_samples=n_samples, random_state=seed)
 
             new_b.extend(self.batch[index])
