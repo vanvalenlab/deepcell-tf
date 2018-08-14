@@ -538,7 +538,7 @@ def train_model_sample_movie(model=None, dataset=None, optimizer=None,
         steps_per_epoch=train_data.y.shape[0] // batch_size,
         epochs=n_epoch,
         validation_data=val_data,
-        validation_steps=val_data.y // batch_size,
+        validation_steps=val_data.y.shape[0] // batch_size,
         class_weight=class_weight,
         callbacks=[
             ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
