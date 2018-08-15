@@ -190,19 +190,18 @@ class TestSampleDataGenerator(test.TestCase):
             x = np.random.random((3, 10, 10))
             generator.fit(x)
         # Test flow with invalid data
-        # X and y size mismatch is expected, as X is image data and
         # y is same length as batch, pixels_x, pixels_y
-        # with self.assertRaises(ValueError):
-        #     train_dict = {
-        #         'X': np.random.random((test_batches, imw_w, img_h, 5)),
-        #         'y': np.arange(batch.size),
-        #         'win_x': win_x,
-        #         'win_y': win_y,
-        #         'pixels_x': pixels_x,
-        #         'pixels_y': pixels_y,
-        #         'batch': batch
-        #     }
-        #     generator.flow(train_dict)
+        with self.assertRaises(ValueError):
+            train_dict = {
+                'X': np.random.random((test_batches, img_w, img_h, 5)),
+                'y': np.arange(batch.size),
+                'win_x': win_x,
+                'win_y': win_y,
+                'pixels_x': pixels_x[:-1],
+                'pixels_y': pixels_y[:-2],
+                'batch': batch
+            }
+            generator.flow(train_dict)
 
         # Test flow with invalid dimensions
         with self.assertRaises(ValueError):
@@ -420,21 +419,20 @@ class TestSampleMovieDataGenerator(test.TestCase):
             x = np.random.random((3, img_w, img_h))
             generator.fit(x)
         # Test flow with invalid data
-        # X and y size mismatch is expected, as X is image data and
         # y is same length as batch, pixels_x, pixels_y, pixels_z
-        # with self.assertRaises(ValueError):
-        #     train_dict = {
-        #         'X': np.random.random((test_batches, frames, img_w, img_h, 5)),
-        #         'y': np.arange(batch.size),
-        #         'win_x': win_x,
-        #         'win_y': win_y,
-        #         'win_z': win_z,
-        #         'pixels_x': pixels_x,
-        #         'pixels_y': pixels_y,
-        #         'pixels_z': pixels_z,
-        #         'batch': batch
-        #     }
-        #     generator.flow(train_dict)
+        with self.assertRaises(ValueError):
+            train_dict = {
+                'X': np.random.random((test_batches, frames, img_w, img_h, 5)),
+                'y': np.arange(batch.size),
+                'win_x': win_x,
+                'win_y': win_y,
+                'win_z': win_z,
+                'pixels_x': pixels_x[:-1],
+                'pixels_y': pixels_y[:-2],
+                'pixels_z': pixels_z,
+                'batch': batch
+            }
+            generator.flow(train_dict)
 
         # Test flow with invalid dimensions
         with self.assertRaises(ValueError):
