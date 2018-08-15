@@ -60,7 +60,6 @@ class cell_tracker():
         This function intializes the tracks
         Tracks are stored in a dictionary
         """
-
         self.tracks = {}
         unique_cells = np.unique(self.y[0])
         # Remove background that has value 0
@@ -80,32 +79,6 @@ class cell_tracker():
             
         # Start a tracked label array
         self.y_tracked = self.y[[0]]
-        return None
-
-
-        """
-        self.tracks = {}
-        unique_cells = np.unique(self.y[0])
-        # Remove background that has value 0
-        unique_cells = np.delete(unique_cells, np.where(unique_cells == 0))
-        
-        for track_counter, label in enumerate(unique_cells):
-            # Get the appearance
-            appearance, centroid = self._get_appearances(self.x, self.y, [0], [label])
-            # Save track information
-            self.tracks[track_counter] = {
-                'label': label,
-                'frames': [0],
-                'daughters': [],
-                'parent': None,
-                'appearances': appearance,
-                'centroids': centroid
-                }
-
-        # Start a tracked label array
-        self.y_tracked = self.y[0]
-        """
-    
         return None
         
     def _get_cost_matrix(self, frame):
@@ -173,13 +146,11 @@ class cell_tracker():
         predictions = self.model.predict(model_input) #TODO: implement some splitting function in case this is too much data
         predictions = np.reshape(predictions, (number_of_tracks, number_of_cells, 3))
         assignment_matrix = predictions[:,:,0]
-#         print(assignment_matrix)
         
         # Compute birth matrix
         predictions_birth = predictions[:,:,2]
         birth_diagonal = 1-np.amax(predictions_birth, axis=0)
         birth_matrix = np.diag(birth_diagonal) + np.ones(birth_matrix.shape) - np.eye(number_of_cells)
-#         print(birth_diagonal)
         
         # Compute death matrix
         death_matrix = self.death * np.eye(number_of_tracks) + np.ones(death_matrix.shape) - np.eye(number_of_tracks)
@@ -225,7 +196,7 @@ class cell_tracker():
                 self.tracks[track]['appearances'] = np.concatenate([self.tracks[track]['appearances'], appearance], axis = 0)
                 self.tracks[track]['centroids'] = np.concatenate([self.tracks[track]['centroids'], centroid], axis=0)
                 
-                y_tracked_update[self.y[[frame]] == cell+1] = track
+                y_tracked_update[self.y[[frame]] == cell+1] = track+1
                 
                 existing_tracks.remove(track)
                 cells_to_track.remove(cell)
@@ -235,7 +206,7 @@ class cell_tracker():
                 print('Adding new track')
                 new_track_id = np.amax(list(self.tracks.keys())) + 1
                 self.tracks[new_track_id] = {}
-                self.tracks[new_track_id]['label'] = new_track_id
+                self.tracks[new_track_id]['label'] = new_track_id + 1
                 self.tracks[new_track_id]['frames'] = [frame]
                 self.tracks[new_track_id]['daughters'] = []
                 
@@ -243,15 +214,15 @@ class cell_tracker():
                 self.tracks[new_track_id]['appearances'] = appearance
                 self.tracks[new_track_id]['centroids'] = centroid
                 
-                parent = self._get_parent(frame, cell)
+                parent = self._get_parent(frame, cell+1)
                 if parent is not None:
                     self.tracks[new_track_id]['parent'] = parent
-                    self.tracks[parent]['daughters'].append(new_track_id)
+                    self.tracks[parent]['daughters'].append(new_track_id+1)
                 else:
-                    self.tracks[new_track_id]['parent'] = []
+                    self.tracks[new_track_id]['parent'] = None
                     
                 cells_to_track.remove(cell)
-                y_tracked_update[self.y[[frame]] == cell+1] = new_track_id
+                y_tracked_update[self.y[[frame]] == cell+1] = new_track_id+1
             
             # Dont touch anything if there was a cell that "died"
             if track < number_of_tracks and cell > number_of_cells - 1:
@@ -394,7 +365,6 @@ class cell_tracker():
         This function tracks all of the cells in every frame.
         """
         for frame in range(1, self.x.shape[0]):
-#             print(np.amax(self.y[frame]))
             print('Tracking frame ' + str(frame))
             cost_matrix = self._get_cost_matrix(frame)
             assignments = self._run_lap(cost_matrix)
