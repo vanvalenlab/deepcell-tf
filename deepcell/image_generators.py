@@ -65,7 +65,7 @@ class ImageSampleArrayIterator(Iterator):
         #                      'length. Found X.shape: {} y.shape: {}'.format(
         #                          X.shape, y.shape))
         required_keys = ['pixels_x', 'pixels_y', 'batch', 'y']
-        if not all(len(train_dict[r]) == len(train_dict['y']) for r in required_keys):
+        if any(len(train_dict[r]) != len(train_dict['y']) for r in required_keys):
             raise ValueError('Not all sampled arrays in train_dict '
                              'have the same length')
 
@@ -1322,7 +1322,7 @@ class SampleMovieArrayIterator(Iterator):
         #                      'Found x.shape = {}, y.shape = {}'.format(
         #                          X.shape, y.shape))
         required_keys = ['pixels_z', 'pixels_x', 'pixels_y', 'batch', 'y']
-        if not all(len(train_dict[r]) == len(train_dict['y']) for r in required_keys):
+        if any(train_dict[r].shape != train_dict['y'].shape for r in required_keys):
             raise ValueError('Not all sampled arrays in train_dict '
                              'have the same length')
         if data_format is None:
