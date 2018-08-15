@@ -11,7 +11,7 @@ class cell_tracker():
                  annotation, 
                  model, 
                  crop_dim=32, 
-                 death=0.5, 
+                 death=0.9, 
                  birth=0.9,
                  max_distance=200,
                  track_length=1,
@@ -60,6 +60,30 @@ class cell_tracker():
         This function intializes the tracks
         Tracks are stored in a dictionary
         """
+
+        self.tracks = {}
+        unique_cells = np.unique(self.y[0])
+        # Remove background that has value 0
+        unique_cells = np.delete(unique_cells, np.where(unique_cells == 0))
+        
+        for track_counter, label in enumerate(unique_cells):
+            self.tracks[track_counter] = {}
+            self.tracks[track_counter]['label'] = label
+            self.tracks[track_counter]['frames'] = [0]
+            self.tracks[track_counter]['daughters'] = []
+            self.tracks[track_counter]['parent'] = None
+            
+            # Get the appearance
+            appearance, centroid = self._get_appearances(self.x, self.y, [0], [label])
+            self.tracks[track_counter]['appearances'] = appearance
+            self.tracks[track_counter]['centroids'] = centroid
+            
+        # Start a tracked label array
+        self.y_tracked = self.y[[0]]
+        return None
+
+
+        """
         self.tracks = {}
         unique_cells = np.unique(self.y[0])
         # Remove background that has value 0
@@ -77,11 +101,13 @@ class cell_tracker():
                 'appearances': appearance,
                 'centroids': centroid
                 }
-            # Start a tracked label array
-            self.y_tracked = self.y[0]
+
+        # Start a tracked label array
+        self.y_tracked = self.y[0]
+        """
+    
         return None
         
-
     def _get_cost_matrix(self, frame):
         """
         This function uses the model to create the cost matrix for 
@@ -89,14 +115,14 @@ class cell_tracker():
         """
         
         # Initialize matrices
-        number_of_tracks = len(self.tracks.keys())
-        number_of_cells = np.amax(self.y[frame])
+        number_of_tracks = np.int(len(self.tracks.keys()))
+        number_of_cells = np.int(np.amax(self.y[frame]))
         
         cost_matrix = np.zeros((number_of_tracks + number_of_cells, number_of_tracks + number_of_cells), dtype=K.floatx())
         assignment_matrix = np.zeros((number_of_tracks, number_of_cells), dtype=K.floatx())
         birth_matrix = np.zeros((number_of_cells, number_of_cells), dtype=K.floatx())
         death_matrix = np.zeros((number_of_tracks, number_of_tracks), dtype=K.floatx())
-        mordor_matrix = np.zeros((number_of_cells, number_of_tracks), dtype=K.floatx()) # Bottom right matrix - no assignments here
+        mordor_matrix = np.zeros((number_of_cells, number_of_tracks), dtype=K.floatx()) # Bottom right matrix 
             
         # Compute assignment matrix
         track_appearances = self._fetch_track_appearances()
@@ -147,13 +173,13 @@ class cell_tracker():
         predictions = self.model.predict(model_input) #TODO: implement some splitting function in case this is too much data
         predictions = np.reshape(predictions, (number_of_tracks, number_of_cells, 3))
         assignment_matrix = predictions[:,:,0]
+#         print(assignment_matrix)
         
         # Compute birth matrix
         predictions_birth = predictions[:,:,2]
         birth_diagonal = 1-np.amax(predictions_birth, axis=0)
-        #birth_diagonal = [self.birth]*number_of_cells
         birth_matrix = np.diag(birth_diagonal) + np.ones(birth_matrix.shape) - np.eye(number_of_cells)
-        print(birth_diagonal)
+#         print(birth_diagonal)
         
         # Compute death matrix
         death_matrix = self.death * np.eye(number_of_tracks) + np.ones(death_matrix.shape) - np.eye(number_of_tracks)
@@ -168,12 +194,13 @@ class cell_tracker():
         cost_matrix[number_of_tracks:,number_of_cells:] = mordor_matrix
         return cost_matrix
     
-    def _run_lap(cost_matrix):
+    def _run_lap(self, cost_matrix):
         """
         This function runs the linear assignment function on a cost matrix.
         """
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
         assignments = np.stack([row_ind, col_ind], axis=1)
+        
         return assignments
     
     def _update_tracks(self, assignments, frame):
@@ -194,11 +221,11 @@ class cell_tracker():
             # Take care of everything if cells are tracked
             if track < number_of_tracks and cell < number_of_cells:
                 self.tracks[track]['frames'].append(frame)
-                appearance, centroid = self._get_appearances(self.x, self.y, [frame], [cell])                
+                appearance, centroid = self._get_appearances(self.x, self.y, [frame], [cell+1])                
                 self.tracks[track]['appearances'] = np.concatenate([self.tracks[track]['appearances'], appearance], axis = 0)
                 self.tracks[track]['centroids'] = np.concatenate([self.tracks[track]['centroids'], centroid], axis=0)
                 
-                y_tracked_update[self.y[[frame]] == cell] = track
+                y_tracked_update[self.y[[frame]] == cell+1] = track
                 
                 existing_tracks.remove(track)
                 cells_to_track.remove(cell)
@@ -212,7 +239,7 @@ class cell_tracker():
                 self.tracks[new_track_id]['frames'] = [frame]
                 self.tracks[new_track_id]['daughters'] = []
                 
-                appearance, centroid = self._get_appearances(self.x, self.y, [frame], [cell])
+                appearance, centroid = self._get_appearances(self.x, self.y, [frame], [cell+1])
                 self.tracks[new_track_id]['appearances'] = appearance
                 self.tracks[new_track_id]['centroids'] = centroid
                 
@@ -220,17 +247,19 @@ class cell_tracker():
                 if parent is not None:
                     self.tracks[new_track_id]['parent'] = parent
                     self.tracks[parent]['daughters'].append(new_track_id)
+                else:
+                    self.tracks[new_track_id]['parent'] = []
                     
                 cells_to_track.remove(cell)
-                y_tracked_update[self.y[[frame]] == cell] = new_track_id
+                y_tracked_update[self.y[[frame]] == cell+1] = new_track_id
             
             # Dont touch anything if there was a cell that "died"
             if track < number_of_tracks and cell > number_of_cells - 1:
                 existing_tracks.remove(track)
                 continue
             
-            # Update the tracked label array
-            self.y_tracked = np.concatenate([self.y_tracked, y_tracked_update], axis=0)
+        # Update the tracked label array
+        self.y_tracked = np.concatenate([self.y_tracked, y_tracked_update], axis=0)
             
         return None
     
@@ -256,7 +285,7 @@ class cell_tracker():
                 
         # Compute the probability the cell is a daughter of a track
         model_input = [track_appearances, cell_appearances, track_distances, cell_distances]
-        predictions = model.predict(model_input)
+        predictions = self.model.predict(model_input)
         probs = predictions[:,2]
         
         # Find out if the cell is a daughter of a track
@@ -365,7 +394,7 @@ class cell_tracker():
         This function tracks all of the cells in every frame.
         """
         for frame in range(1, self.x.shape[0]):
-            print(np.amax(self.y[frame]))
+#             print(np.amax(self.y[frame]))
             print('Tracking frame ' + str(frame))
             cost_matrix = self._get_cost_matrix(frame)
             assignments = self._run_lap(cost_matrix)

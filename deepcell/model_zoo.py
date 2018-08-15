@@ -14,7 +14,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.activations import softmax
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.python.keras.models import Sequential, Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D, ConvLSTM2D
+from tensorflow.python.keras.layers import Conv2D, Conv3D, ConvLSTM2D, LSTM
 from tensorflow.python.keras.layers import Add, Input, Concatenate, Lambda
 from tensorflow.python.keras.layers import MaxPool2D, MaxPool3D, AvgPool2D, UpSampling2D
 from tensorflow.python.keras.layers import Flatten, Dense, Dropout, Reshape
@@ -1674,21 +1674,32 @@ def siamese_model(input_shape=None, track_length=1, batch_shape=None, reg=1e-5, 
     feature_extractor.add(Activation('relu'))
     feature_extractor.add(MaxPool3D(pool_size=(1, 2, 2)))
     
-    feature_extractor.add(Reshape(tuple([64])))
+    feature_extractor.add(Reshape(tuple([-1, 64])))
 
     # Create two instances of feature_extractor
     output_1 = feature_extractor(input_1)
     output_2 = feature_extractor(input_2)
-
-    input_3_reshape = Reshape((2,))(input_3)
+    
+    lstm_1 = LSTM(64)(output_1)
+    output_2_reshape = Reshape((64,))(output_2)
+    
+    lstm_3 = LSTM(64)(input_3)
     input_4_reshape = Reshape((2,))(input_4)
 
     # Combine the extracted features with other known features (centroids)
-    merge_1 = Concatenate(axis=channel_axis)([output_1, output_2])
-    merge_2 = Concatenate(axis=channel_axis)([input_3_reshape, input_4_reshape])
-
+    merge_1 = Concatenate(axis=channel_axis)([lstm_1, output_2_reshape])
+    merge_2 = Concatenate(axis=channel_axis)([lstm_3, input_4_reshape])
+    
+    dense_merge_1 = Dense(128)(merge_1)
+    bn_merge_1 = BatchNormalization(axis=channel_axis)(dense_merge_1)
+    dense_relu_1 = Activation('relu')(bn_merge_1)
+    
+    dense_merge_2 = Dense(128)(merge_2)
+    bn_merge_2 = BatchNormalization(axis=channel_axis)(dense_merge_2)
+    dense_relu_2 = Activation('relu')(bn_merge_2)
+    
     # Concatenate outputs from both instances
-    merged_outputs = Concatenate(axis=channel_axis)([merge_1, merge_2])
+    merged_outputs = Concatenate(axis=channel_axis)([dense_relu_1, dense_relu_2])
 
     # Implement dense net (Alternatively, could call preexisting) with the 2 merged outputs as inputs
     dense1 = Dense(128)(merged_outputs)
@@ -1702,7 +1713,7 @@ def siamese_model(input_shape=None, track_length=1, batch_shape=None, reg=1e-5, 
     # Instantiate model
     final_layer = dense3
     model = Model(inputs=[input_1, input_2, input_3, input_4], outputs=final_layer)
-
+    
     return model
 
 

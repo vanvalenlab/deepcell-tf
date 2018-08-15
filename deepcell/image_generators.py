@@ -774,9 +774,6 @@ class SiameseIterator(Iterator):
         acceptable_indices = tracked_frames_index[self.min_track_length-1:-1] if enough_frames else tracked_frames_index[:-1]
 
         # Take the last frame if there is a division, otherwise randomly pick a frame
-#         print(tracked_frames_index)
-#         print(division)
-#         print(acceptable_indices)
         index = -1 if division else np.random.choice(acceptable_indices) 
 
         # Select the frames. If there aren't enough frames, repeat the first frame
@@ -786,15 +783,14 @@ class SiameseIterator(Iterator):
         else:
             frames_temp = tracked_frames[0:index+1]
             missing_frames = self.min_track_length - len(frames_temp)
-            frames = tracked_frames[0] * missing_frames + frames_temp
+            frames = [tracked_frames[0]] * missing_frames + frames_temp
 
         return frames
 
     def _get_batches_of_transformed_samples(self, index_array):
         # Initialize batch_x_1, batch_x_2, and batch_y, as well as cell distance data
-        # DVV Notes - I'm changing how this works. We will now only compare cells in neighboring
-        # frames. I am also modifying it so it will select a sequence of cells/distances for x1
-        # and 1 cell/distance for x2
+        # We only compare cells in neighboring frames. It will select a sequence of 
+        # cells/distances for x1 and 1 cell/distance for x2
 
         if self.data_format == 'channels_first':
             x1_shape = (len(index_array), self.x.shape[self.channel_axis], self.min_track_length, self.crop_dim, self.crop_dim)
@@ -841,7 +837,7 @@ class SiameseIterator(Iterator):
             frames_1 = self._fetch_frames(j, division=division)
             
             # For frame_2, choose the next frame cell 1 appears in 
-            last_frame_1 = np.amax(frames_1)
+            last_frame_1 = np.amax(frames_1)            
             frame_2 = np.amin( [x for x in track_id['frames'] if x > last_frame_1] )
             frames_2 = [frame_2]
 
@@ -902,6 +898,13 @@ class SiameseIterator(Iterator):
             distance = np.diff(centroids, axis=0)
             zero_pad = np.zeros((1,2), dtype = K.floatx())
             distance = np.concatenate([zero_pad, distance], axis=0)
+            
+            # Randomly rotate all the distances
+            theta = 2*np.pi*np.random.random()
+            c, s = np.cos(theta), np.sin(theta)
+            R = np.array(((c,-s), (s, c)))
+            for k in range(distance.shape[0]):
+                distance[k] = np.matmul(R, distance[k])
 
             # Save images and distances to the batch arrays
             batch_x_1[i] = appearance_1
