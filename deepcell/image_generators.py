@@ -1556,7 +1556,7 @@ class DiscIterator3D(Iterator):
 
         if self.x.ndim != 5:
             raise ValueError(
-                'Input data in `DiscIterator` should have rank 5. '
+                'Input data in `DiscIterator3D` should have rank 5. '
                 'You passed an array with shape', self.x.shape)
 
         self.channel_axis = -1 if data_format == 'channels_last' else 1
