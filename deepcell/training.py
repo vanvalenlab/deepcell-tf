@@ -452,11 +452,11 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
     model.compile(loss=loss_function, optimizer=optimizer)
 
     datagen = DiscDataGenerator(
-        rotation_range=180,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=0,  # randomly shear images in the range (radians , -shear_range to shear_range)
-        horizontal_flip=True,  # randomly flip images
-        vertical_flip=True,  # randomly flip images
-        zoom_range = zoom_range)  # randomly zoom in/out images
+        rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
+        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
+        horizontal_flip=flip,  # randomly flip images
+        vertical_flip=flip,  # randomly flip images
+        zoom_range=zoom_range)  # randomly zoom in/out images
 
     datagen_test = DiscDataGenerator(
         rotation_range=0,
@@ -484,7 +484,8 @@ def train_model_disc_3D(model=None, dataset=None, optimizer=None,
                      expt='', it=0, batch_size=1, n_epoch=100,
                      direc_save='/data/models', direc_data='/data/npz_data',
                      lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-                     rotation_range=0, flip=True, shear=0, class_weight=None, zoom_range=[0.5,2]):
+                     number_of_frames=10, rotation_range=0, flip=True, 
+                     shear=0, class_weight=None, zoom_range=[0.5,2]):
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
 
@@ -519,22 +520,23 @@ def train_model_disc_3D(model=None, dataset=None, optimizer=None,
     datagen = DiscDataGenerator3D(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
-        horizontal_flip=True,  # randomly flip images
-        vertical_flip=True,  # randomly flip images
+        horizontal_flip=flip,  # randomly flip images
+        vertical_flip=flip,  # randomly flip images
         zoom_range = zoom_range)  # randomly zoom in/out images
 
     datagen_test = DiscDataGenerator3D(
-        rotation_range=rotation_range,
-        shear_range=shear,
+        rotation_range=0,
+        shear_range=0,
         horizontal_flip=False,
         vertical_flip=False)
 
+    time_axis = 2 if CHANNELS_FIRST else 1
     loss_history = model.fit_generator(
         datagen.flow(train_dict, batch_size=batch_size),
-        steps_per_epoch=train_dict['y'].shape[0] // batch_size,
+        steps_per_epoch=(train_dict['y'].shape[0] * train_dict['y'].shape[time_axis] // number_of_frames) // batch_size,
         epochs=n_epoch,
         validation_data=datagen_test.flow(test_dict, batch_size=batch_size),
-        validation_steps=X_test.shape[0] // batch_size,
+        validation_steps=(X_test.shape[0] * X_test.shape[time_axis] // number_of_frames) // batch_size,
         callbacks=[
             ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
             LearningRateScheduler(lr_sched)
