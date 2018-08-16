@@ -117,7 +117,7 @@ class ImageSampleArrayIterator(Iterator):
             unique, counts = np.unique(batch_y, return_counts=True)
             min_index = np.argmin(counts)
             rare_label = unique[min_index]
-            n_samples = np.median(counts) / len(unique)  # counts[min_index]
+            n_samples = np.median(counts).astype('int32') / len(unique)  # counts[min_index]
 
             for class_label in unique:
                 index = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
@@ -1378,7 +1378,7 @@ class SampleMovieArrayIterator(Iterator):
             unique, counts = np.unique(batch_y, return_counts=True)
             min_index = np.argmin(counts)
             rare_label = unique[min_index]
-            n_samples = n_samples = np.median(counts) / len(unique)  # counts[min_index]
+            n_samples = np.median(counts).astype('int32') / len(unique)  # counts[min_index]
 
             for class_label in unique:
                 index = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
