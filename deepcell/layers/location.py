@@ -10,6 +10,7 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
+from tensorflow.python.platform import tf_logging as logging
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
 
@@ -76,9 +77,9 @@ class Location3D(Layer):
 
     def compute_output_shape(self, input_shape):
         if self.data_format == 'channels_first':
-            output_shape = (input_shape[0], 2, input_shape[2], input_shape[3], input_shape[4])
+            output_shape = (input_shape[0], 3, input_shape[2], input_shape[3], input_shape[4])
         else:
-            output_shape = (input_shape[0], input_shape[1], input_shape[2], input_shape[3], 2)
+            output_shape = (input_shape[0], input_shape[1], input_shape[2], input_shape[3], 3)
         return output_shape
 
     def call(self, inputs):
@@ -97,30 +98,14 @@ class Location3D(Layer):
         y = tf.divide(y, tf.reduce_max(y))
         z = tf.divide(z, tf.reduce_max(z))
 
-        loc_z, loc_x, loc_y = tf.meshgrid(x, z, y)
-        
+        loc_z, loc_x, loc_y = tf.meshgrid(z, x, y, indexing='ij')
+
         if self.data_format == 'channels_last':
             loc = tf.stack([loc_z, loc_x, loc_y], axis=-1)
         else:
             loc = tf.stack([loc_z, loc_x, loc_y], axis=0)
         
-#        if self.data_format == 'channels_last':
-#            location = tf.expand_dims(loc, 0)
-#        else:
-#            location = tf.expand_dims(loc, 1)
-
         location_output = tf.expand_dims(loc, 0)
-
-#        number_of_frames = input_shape[1] if self.data_format == 'channels_last' else input_shape[2]
-
-#        location_list = [tf.identity(location) for _ in range(number_of_frames)]
-
-#        if self.data_format == 'channels_last':
-#            location_concat = tf.concat(location_list, axis=0)
-#        else:
-#            location_concat = tf.concat(location_list, axis=1)
-
-#        location_output = tf.expand_dims(location_concat, 0)
 
         return location_output
 
@@ -131,3 +116,4 @@ class Location3D(Layer):
         }
         base_config = super(Location3D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
+
