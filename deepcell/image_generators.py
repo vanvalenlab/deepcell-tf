@@ -52,6 +52,7 @@ class ImageSampleArrayIterator(Iterator):
                  image_data_generator,
                  batch_size=32,
                  shuffle=False,
+                 balance_classes=False,
                  seed=None,
                  data_format=None,
                  save_to_dir=None,
@@ -89,9 +90,10 @@ class ImageSampleArrayIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        # self._class_balance()  # Balance the classes
-        self.y = keras_to_categorical(self.y).astype('int32')
+        if balance_classes:
+            self._class_balance()  # Balance the classes
 
+        self.y = keras_to_categorical(self.y).astype('int32')
         super(ImageSampleArrayIterator, self).__init__(
             len(self.y), batch_size, shuffle, seed)
 
@@ -193,6 +195,7 @@ class SampleDataGenerator(ImageDataGenerator):
              train_dict,
              batch_size=32,
              shuffle=True,
+             balance_classes=False,
              seed=None,
              save_to_dir=None,
              save_prefix='',
@@ -202,6 +205,7 @@ class SampleDataGenerator(ImageDataGenerator):
             self,
             batch_size=batch_size,
             shuffle=shuffle,
+            balance_classes=balance_classes,
             seed=seed,
             data_format=self.data_format,
             save_to_dir=save_to_dir,
@@ -1305,6 +1309,7 @@ class SampleMovieArrayIterator(Iterator):
                  movie_data_generator,
                  batch_size=32,
                  shuffle=False,
+                 balance_classes=False,
                  seed=None,
                  data_format=None,
                  save_to_dir=None,
@@ -1346,9 +1351,10 @@ class SampleMovieArrayIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        # self._class_balance()  # Balance the classes
-        self.y = keras_to_categorical(self.y).astype('int32')
+        if balance_classes:
+            self._class_balance()  # Balance the classes
 
+        self.y = keras_to_categorical(self.y).astype('int32')
         super(SampleMovieArrayIterator, self).__init__(
             len(self.y), batch_size, shuffle, seed)
 
@@ -1461,6 +1467,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
              train_dict,
              batch_size=32,
              shuffle=True,
+             balance_classes=False,
              seed=None,
              save_to_dir=None,
              save_prefix='',
@@ -1470,6 +1477,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
             self,
             batch_size=batch_size,
             shuffle=shuffle,
+            balance_classes=balance_classes,
             seed=seed,
             data_format=self.data_format,
             save_to_dir=save_to_dir,
