@@ -89,7 +89,7 @@ class ImageSampleArrayIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        self._class_balance()  # Balance the classes
+        # self._class_balance()  # Balance the classes
         self.y = keras_to_categorical(self.y).astype('int32')
 
         super(ImageSampleArrayIterator, self).__init__(
@@ -1346,8 +1346,7 @@ class SampleMovieArrayIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        self._class_balance()  # Balance the classes
-
+        # self._class_balance()  # Balance the classes
         self.y = keras_to_categorical(self.y).astype('int32')
 
         super(SampleMovieArrayIterator, self).__init__(
