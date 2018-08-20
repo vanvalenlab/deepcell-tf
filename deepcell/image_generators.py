@@ -14,9 +14,7 @@ from fnmatch import fnmatch
 
 import cv2
 import numpy as np
-from scipy import stats
 from scipy import ndimage as ndi
-from sklearn.utils import resample
 from skimage.filters import sobel_h
 from skimage.filters import sobel_v
 from skimage.measure import label
@@ -116,14 +114,11 @@ class ImageSampleArrayIterator(Iterator):
             batch_y = self.y[self.batch == b]
             unique, counts = np.unique(batch_y, return_counts=True)
             min_index = np.argmin(counts)
-            rare_label = unique[min_index]
-            n_samples = int(np.median(counts) // len(unique))  # counts[min_index]
+            n_samples = counts[min_index]
 
             for class_label in unique:
-                index = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
-
-                if class_label != rare_label:
-                    index = resample(index, n_samples=n_samples, random_state=seed)
+                non_rand_ind = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
+                index = np.random.choice(non_rand_ind, size=n_samples, replace=False)
 
                 new_b.extend(self.batch[index])
                 new_px.extend(self.pixels_x[index])
@@ -1377,14 +1372,11 @@ class SampleMovieArrayIterator(Iterator):
             batch_y = self.y[self.batch == b]
             unique, counts = np.unique(batch_y, return_counts=True)
             min_index = np.argmin(counts)
-            rare_label = unique[min_index]
-            n_samples = int(np.median(counts) // len(unique))  # counts[min_index]
+            n_samples = counts[min_index]
 
             for class_label in unique:
-                index = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
-
-                if class_label != rare_label:
-                    index = resample(index, n_samples=n_samples, random_state=seed)
+                non_rand_ind = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
+                index = np.random.choice(non_rand_ind, size=n_samples, replace=False)
 
                 new_b.extend(self.batch[index])
                 new_px.extend(self.pixels_x[index])
