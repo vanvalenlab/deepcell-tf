@@ -53,6 +53,7 @@ class ImageSampleArrayIterator(Iterator):
                  batch_size=32,
                  shuffle=False,
                  balance_classes=False,
+                 max_class_samples=None,
                  seed=None,
                  data_format=None,
                  save_to_dir=None,
@@ -91,7 +92,7 @@ class ImageSampleArrayIterator(Iterator):
         self.save_format = save_format
 
         if balance_classes:
-            self._class_balance()  # Balance the classes
+            self._class_balance(max_class_samples, seed=seed)  # Balance the classes
 
         self.y = keras_to_categorical(self.y).astype('int32')
         super(ImageSampleArrayIterator, self).__init__(
@@ -108,7 +109,7 @@ class ImageSampleArrayIterator(Iterator):
 
         return sampled
 
-    def _class_balance(self, seed=None):
+    def _class_balance(self, max_class_samples, seed=None):
         """Downsample to the least common class in each batch"""
         new_b, new_px, new_py, new_y = [], [], [], []
 
@@ -117,6 +118,9 @@ class ImageSampleArrayIterator(Iterator):
             unique, counts = np.unique(batch_y, return_counts=True)
             min_index = np.argmin(counts)
             n_samples = counts[min_index]
+
+            if max_class_samples is not None and max_class_samples < n_samples:
+                n_samples = max_class_samples
 
             for class_label in unique:
                 non_rand_ind = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
@@ -134,6 +138,7 @@ class ImageSampleArrayIterator(Iterator):
         new_y = np.array(new_y, dtype='int32')
 
         shuffled_index = np.arange(len(new_b), dtype='int32')
+        np.random.seed(seed=seed)
         np.random.shuffle(shuffled_index)
 
         # Save the upsampled results
@@ -196,6 +201,7 @@ class SampleDataGenerator(ImageDataGenerator):
              batch_size=32,
              shuffle=True,
              balance_classes=False,
+             max_class_samples=None,
              seed=None,
              save_to_dir=None,
              save_prefix='',
@@ -206,6 +212,7 @@ class SampleDataGenerator(ImageDataGenerator):
             batch_size=batch_size,
             shuffle=shuffle,
             balance_classes=balance_classes,
+            max_class_samples=max_class_samples,
             seed=seed,
             data_format=self.data_format,
             save_to_dir=save_to_dir,
@@ -1310,6 +1317,7 @@ class SampleMovieArrayIterator(Iterator):
                  batch_size=32,
                  shuffle=False,
                  balance_classes=False,
+                 max_class_samples=None,
                  seed=None,
                  data_format=None,
                  save_to_dir=None,
@@ -1352,7 +1360,7 @@ class SampleMovieArrayIterator(Iterator):
         self.save_format = save_format
 
         if balance_classes:
-            self._class_balance()  # Balance the classes
+            self._class_balance(max_class_samples, seed=seed)  # Balance the classes
 
         self.y = keras_to_categorical(self.y).astype('int32')
         super(SampleMovieArrayIterator, self).__init__(
@@ -1370,7 +1378,7 @@ class SampleMovieArrayIterator(Iterator):
 
         return sampled
 
-    def _class_balance(self, seed=None):
+    def _class_balance(self, max_class_samples, seed=None):
         """Downsample to the least common class in each batch"""
         new_b, new_pz, new_px, new_py, new_y = [], [], [], [], []
         for b in np.unique(self.batch):
@@ -1378,6 +1386,9 @@ class SampleMovieArrayIterator(Iterator):
             unique, counts = np.unique(batch_y, return_counts=True)
             min_index = np.argmin(counts)
             n_samples = counts[min_index]
+
+            if max_class_samples is not None and max_class_samples < n_samples:
+                n_samples = max_class_samples
 
             for class_label in unique:
                 non_rand_ind = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
@@ -1397,6 +1408,7 @@ class SampleMovieArrayIterator(Iterator):
         new_y = np.array(new_y, dtype='int32')
 
         shuffled_index = np.arange(len(new_b), dtype='int32')
+        np.random.seed(seed=seed)
         np.random.shuffle(shuffled_index)
 
         # Save the upsampled results
@@ -1468,6 +1480,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
              batch_size=32,
              shuffle=True,
              balance_classes=False,
+             max_class_samples=None,
              seed=None,
              save_to_dir=None,
              save_prefix='',
@@ -1478,6 +1491,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
             batch_size=batch_size,
             shuffle=shuffle,
             balance_classes=balance_classes,
+            max_class_samples=max_class_samples,
             seed=seed,
             data_format=self.data_format,
             save_to_dir=save_to_dir,
