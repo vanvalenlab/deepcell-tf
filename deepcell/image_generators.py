@@ -116,7 +116,7 @@ class ImageSampleArrayIterator(Iterator):
         unique_b = np.unique(self.batch)
 
         if max_class_samples is not None:
-            max_class_samples = max_class_samples // len(unique_b)
+            max_class_samples = int(max_class_samples // len(unique_b))
 
         for b in unique_b:
             batch_y = self.y[self.batch == b]
