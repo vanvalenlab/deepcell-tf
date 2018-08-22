@@ -111,7 +111,7 @@ class ImageSampleArrayIterator(Iterator):
 
     def _class_balance(self, max_class_samples, seed=None):
         """Downsample to the least common class in each batch"""
-        new_b, new_px, new_py, new_y = [], [], [], []
+        balanced_indices = []
 
         unique_b = np.unique(self.batch)
 
@@ -130,27 +130,15 @@ class ImageSampleArrayIterator(Iterator):
             for class_label in unique:
                 non_rand_ind = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
                 index = np.random.choice(non_rand_ind, size=n_samples, replace=False)
+                balanced_indices.extend(index)
 
-                new_b.extend(self.batch[index])
-                new_px.extend(self.pixels_x[index])
-                new_py.extend(self.pixels_y[index])
-                new_y.extend(self.y[index])
-
-        # Shuffle all of the labels
-        new_b = np.array(new_b, dtype='int32')
-        new_px = np.array(new_px, dtype='int32')
-        new_py = np.array(new_py, dtype='int32')
-        new_y = np.array(new_y, dtype='int32')
-
-        shuffled_index = np.arange(len(new_b), dtype='int32')
         np.random.seed(seed=seed)
-        np.random.shuffle(shuffled_index)
+        np.random.shuffle(balanced_indices)
 
-        # Save the upsampled results
-        self.batch = new_b[shuffled_index]
-        self.pixels_x = new_px[shuffled_index]
-        self.pixels_y = new_py[shuffled_index]
-        self.y = new_y[shuffled_index]
+        self.batch = self.batch[balanced_indices]
+        self.pixels_x = self.pixels_x[balanced_indices]
+        self.pixels_y = self.pixels_y[balanced_indices]
+        self.y = self.y[balanced_indices]
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
@@ -1385,7 +1373,7 @@ class SampleMovieArrayIterator(Iterator):
 
     def _class_balance(self, max_class_samples, seed=None):
         """Downsample to the least common class in each batch"""
-        new_b, new_pz, new_px, new_py, new_y = [], [], [], [], []
+        balanced_indices = []
 
         unique_b = np.unique(self.batch)
 
@@ -1404,30 +1392,17 @@ class SampleMovieArrayIterator(Iterator):
             for class_label in unique:
                 non_rand_ind = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
                 index = np.random.choice(non_rand_ind, size=n_samples, replace=False)
+                balanced_indices.extend(index)
 
-                new_b.extend(self.batch[index])
-                new_px.extend(self.pixels_x[index])
-                new_py.extend(self.pixels_y[index])
-                new_pz.extend(self.pixels_z[index])
-                new_y.extend(self.y[index])
-
-        # Shuffle all of the labels
-        new_b = np.array(new_b, dtype='int32')
-        new_pz = np.array(new_pz, dtype='int32')
-        new_px = np.array(new_px, dtype='int32')
-        new_py = np.array(new_py, dtype='int32')
-        new_y = np.array(new_y, dtype='int32')
-
-        shuffled_index = np.arange(len(new_b), dtype='int32')
         np.random.seed(seed=seed)
-        np.random.shuffle(shuffled_index)
+        np.random.shuffle(balanced_indices)
 
         # Save the upsampled results
-        self.batch = new_b[shuffled_index]
-        self.pixels_z = new_pz[shuffled_index]
-        self.pixels_x = new_px[shuffled_index]
-        self.pixels_y = new_py[shuffled_index]
-        self.y = new_y[shuffled_index]
+        self.batch = self.batch[balanced_indices]
+        self.pixels_z = self.pixels_z[balanced_indices]
+        self.pixels_x = self.pixels_x[balanced_indices]
+        self.pixels_y = self.pixels_y[balanced_indices]
+        self.y = self.y[balanced_indices]
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
