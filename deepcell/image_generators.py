@@ -1386,7 +1386,13 @@ class SampleMovieArrayIterator(Iterator):
     def _class_balance(self, max_class_samples, seed=None):
         """Downsample to the least common class in each batch"""
         new_b, new_pz, new_px, new_py, new_y = [], [], [], [], []
-        for b in np.unique(self.batch):
+
+        unique_b = np.unique(self.batch)
+
+        if max_class_samples is not None:
+            max_class_samples = int(max_class_samples // len(unique_b))
+
+        for b in unique_b:
             batch_y = self.y[self.batch == b]
             unique, counts = np.unique(batch_y, return_counts=True)
             min_index = np.argmin(counts)
