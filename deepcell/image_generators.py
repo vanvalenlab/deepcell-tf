@@ -91,8 +91,7 @@ class ImageSampleArrayIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        if balance_classes:
-            self._class_balance(max_class_samples, seed=seed)  # Balance the classes
+        self.class_balance(max_class_samples, balance_classes, seed=seed)
 
         self.y = keras_to_categorical(self.y).astype('int32')
         super(ImageSampleArrayIterator, self).__init__(
@@ -109,8 +108,15 @@ class ImageSampleArrayIterator(Iterator):
 
         return sampled
 
-    def _class_balance(self, max_class_samples, seed=None):
-        """Downsample to the least common class in each batch"""
+    def class_balance(self, max_class_samples=None, downsample=False, seed=None):
+        """Balance classes based on the number of samples of each class
+        # Arguments
+            max_class_samples: if not None, a maximum count for each class
+            downsample: if True, all sample sizes will be the rarest count
+            seed: random state initalization
+        # Returns
+            Does not return anything but shuffles and resizes the sample size
+        """
         balanced_indices = []
 
         unique_b = np.unique(self.batch)
@@ -129,7 +135,15 @@ class ImageSampleArrayIterator(Iterator):
 
             for class_label in unique:
                 non_rand_ind = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
-                index = np.random.choice(non_rand_ind, size=n_samples, replace=False)
+
+                if downsample:
+                    size = n_samples
+                elif max_class_samples:
+                    size = min(max_class_samples, len(non_rand_ind))
+                else:
+                    size = len(non_rand_ind)
+
+                index = np.random.choice(non_rand_ind, size=size, replace=False)
                 balanced_indices.extend(index)
 
         np.random.seed(seed=seed)
@@ -1352,8 +1366,7 @@ class SampleMovieArrayIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        if balance_classes:
-            self._class_balance(max_class_samples, seed=seed)  # Balance the classes
+        self.class_balance(max_class_samples, balance_classes, seed=seed)
 
         self.y = keras_to_categorical(self.y).astype('int32')
         super(SampleMovieArrayIterator, self).__init__(
@@ -1371,8 +1384,15 @@ class SampleMovieArrayIterator(Iterator):
 
         return sampled
 
-    def _class_balance(self, max_class_samples, seed=None):
-        """Downsample to the least common class in each batch"""
+    def class_balance(self, max_class_samples=None, downsample=False, seed=None):
+        """Balance classes based on the number of samples of each class
+        # Arguments
+            max_class_samples: if not None, a maximum count for each class
+            downsample: if True, all sample sizes will be the rarest count
+            seed: random state initalization
+        # Returns
+            Does not return anything but shuffles and resizes the sample size
+        """
         balanced_indices = []
 
         unique_b = np.unique(self.batch)
@@ -1391,7 +1411,15 @@ class SampleMovieArrayIterator(Iterator):
 
             for class_label in unique:
                 non_rand_ind = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
-                index = np.random.choice(non_rand_ind, size=n_samples, replace=False)
+
+                if downsample:
+                    size = n_samples
+                elif max_class_samples:
+                    size = min(max_class_samples, len(non_rand_ind))
+                else:
+                    size = len(non_rand_ind)
+
+                index = np.random.choice(non_rand_ind, size=size, replace=False)
                 balanced_indices.extend(index)
 
         np.random.seed(seed=seed)
