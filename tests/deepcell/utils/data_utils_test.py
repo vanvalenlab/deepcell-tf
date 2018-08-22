@@ -81,21 +81,19 @@ class TestDataUtils(test.TestCase):
         y = np.zeros((2, 30, 30, 3))
         y[:, 0, 0, 0] = 1  # set value outside valid window range
         y[:, win_x + 1, win_y + 1, 0] = 1  # set value inside valid window range
-        r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
+        r, c, b, l = sample_label_matrix(y,
                                          window_size_x=win_x,
                                          window_size_y=win_y,
-                                         padding='valid',
-                                         output_mode='sample')
+                                         padding='valid')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
         assert np.unique(r).size == np.unique(c).size == 1
         assert np.unique(l).size == 1
 
-        r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
+        r, c, b, l = sample_label_matrix(y,
                                          window_size_x=win_x,
                                          window_size_y=win_y,
-                                         padding='same',
-                                         output_mode='conv')
+                                         padding='same')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(r).size == np.unique(c).size == 2
         assert np.unique(l).size == 1
@@ -106,21 +104,19 @@ class TestDataUtils(test.TestCase):
         y = np.zeros((2, 3, 30, 30))
         y[:, 0, 0, 0] = 1  # set value outside valid window range
         y[:, 0, win_x + 1, win_y + 1] = 1  # set value inside valid window range
-        r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
+        r, c, b, l = sample_label_matrix(y,
                                          window_size_x=win_x,
                                          window_size_y=win_y,
-                                         padding='valid',
-                                         output_mode='sample')
+                                         padding='valid')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
         assert np.unique(r).size == np.unique(c).size == 1
         assert np.unique(l).size == 1
 
-        r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
+        r, c, b, l = sample_label_matrix(y,
                                          window_size_x=win_x,
                                          window_size_y=win_y,
-                                         padding='same',
-                                         output_mode='conv')
+                                         padding='same')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
         assert np.unique(r).size == np.unique(c).size == 2
