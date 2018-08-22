@@ -182,7 +182,7 @@ def stats_objectbased(y_true,
     on a per-object basis
     """
     stats_iou_matrix = get_iou_matrix_quick(
-        y_pred, y_true, dice_iou_threshold, crop_size)
+        y_true, y_pred, dice_iou_threshold, crop_size)
 
     dice, jaccard = get_dice_jaccard(stats_iou_matrix)
 
@@ -198,7 +198,7 @@ def stats_objectbased(y_true,
 
     # Calculate merge/division error rates
     merge_div_iou_matrix = get_iou_matrix_quick(
-        y_pred, y_true, merge_iou_threshold, crop_size)
+        y_true, y_pred, merge_iou_threshold, crop_size)
 
     divided = count_false_divisions(merge_div_iou_matrix)
     merged = count_false_merges(merge_div_iou_matrix)
