@@ -1,5 +1,5 @@
 # Use the nvidia tensorflow:18.04-py3 image as the parent image
-FROM nvcr.io/vvlab/tensorflow:18.04-py3
+FROM nvcr.io/nvidia/tensorflow:18.04-py3
 
 # System maintenance
 RUN apt-get update && apt-get install -y \
@@ -7,11 +7,6 @@ RUN apt-get update && apt-get install -y \
         libsm6 && \
     rm -rf /var/lib/apt/lists/* && \
     /usr/local/bin/pip install --upgrade pip
-
-# Install Fizyr's Keras implementations of RetinaNet & Mask R-CNN to /opt
-# RUN git clone https://www.github.com/fizyr/keras-retinanet /opt/keras-retinanet && \
-#     git clone https://www.github.com/fizyr/keras-maskrcnn /opt/keras-maskrcnn && \
-#     pip install /opt/keras-retinanet /opt/keras-maskrcnn
 
 # Install Mask R-CNN
 RUN git clone https://www.github.com/vanvalenlab/Mask_RCNN /opt/Mask_RCNN && \
