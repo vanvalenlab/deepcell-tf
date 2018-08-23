@@ -10,14 +10,28 @@ from __future__ import print_function
 from __future__ import division
 
 import matplotlib.pyplot as plt
+from matplotlib import animation
 from tensorflow.python.keras import backend as K
+
+
+def get_js_video(images, batch=0, channel=0, cmap='jet'):
+    """Create a JavaScript video as HTML for visualizing 3D data as a movie"""
+    fig = plt.figure()
+
+    ims = []
+    for i in range(images.shape[1]):
+        im = plt.imshow(images[batch, i, :, :, channel], animated=True, cmap=cmap)
+        ims.append([im])
+
+    ani = animation.ArtistAnimation(fig, ims, interval=150, repeat_delay=1000)
+    return ani.to_jshtml()
 
 
 def cf(x_coord, y_coord, sample_image):
     numrows, numcols = sample_image.shape
     col = int(x_coord + 0.5)
     row = int(y_coord + 0.5)
-    if col >= 0 and col < numcols and row >= 0 and row < numrows:
+    if 0 <= col < numcols and 0 <= row < numrows:
         z_coord = sample_image[row, col]
         return 'x=%1.4f, y=%1.4f, z=%1.4f' % (x_coord, y_coord, z_coord)
     return 'x=%1.4f, y=%1.4f' % (x_coord, y_coord)
