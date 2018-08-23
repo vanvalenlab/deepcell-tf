@@ -16,13 +16,13 @@ def im_prep(mask, prediction, win_size):
     """Reads images into ndarrays, and trims them to fit each other"""
     # if trimming not needed, return
     if win_size == 0 or prediction.shape == mask.shape:
-        return prediction, mask
+        return mask, prediction
 
     # otherwise, pad prediction to imsize and zero out the outer layer of mask
     mask = mask[win_size:-win_size, win_size:-win_size]
     mask = np.pad(mask, (win_size, win_size), 'constant')
     prediction = np.pad(prediction, (win_size, win_size), 'constant')
-    return prediction, mask
+    return mask, prediction
 
 
 def calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix):
@@ -68,11 +68,11 @@ def get_iou_matrix_quick(y_true, y_pred, threshold, crop_size, im_size=2048):
     iou_matrix = np.zeros((labeled_truth.max(), y_pred.max()))
 
     # crop input images and calculate the iou's for the cells present
-    for x in range(im_size, crop_size):
-        for y in range(im_size, crop_size):
+    for x in range(0, im_size, crop_size):
+        for y in range(0, im_size, crop_size):
             crop_pred = y_pred[x:x + crop_size, y:y + crop_size]
-            crop_truth = y_true[x:x + crop_size, y:y + crop_size]
-            iou_matrix = calc_cropped_ious(crop_pred, crop_truth, threshold, iou_matrix)
+            crop_truth = labeled_truth[x:x + crop_size, y:y + crop_size]
+            iou_matrix = calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix)
     return iou_matrix
 
 
@@ -94,83 +94,6 @@ def get_dice_jaccard(iou_matrix):
     return dice, jaccard
 
 
-def count_false_negatives(iou_matrix):
-    """Compare each predicted mask with ground truth and count the
-    false negatives (failed to predict a ground truth mask)
-    """
-    false_negatives = 0
-    # for each ground truth cellID
-    for n in range(iou_matrix.shape[0]):
-        # check each predicted mask
-        for m in range(iou_matrix.shape[1]):
-            # if any of the mask predictions match the cellID
-            # move on to the next cell
-            if iou_matrix[n, m] == 1:
-                break
-        else:
-            # if no matches are found, then a false negative has occurred.
-            false_negatives += 1
-    return false_negatives
-
-
-def count_false_positives(iou_matrix):
-    """Compare each predicted mask with ground truth and count the
-    false positives (predicted a mask where there is no ground truth mask)
-    """
-    false_positives = 0
-    # for each mask prediction
-    for m in range(iou_matrix.shape[1]):
-        # check all ground truth cells
-        for n in range(iou_matrix.shape[0]):
-            # if any of the ground truth cells match the predicted mask
-            # move on to the next
-            if iou_matrix[n, m] == 1:
-                break
-        else:
-            # if no matches are found, then a false positive has occured
-            false_positives += 1
-    return false_positives
-
-
-def count_false_divisions(iou_matrix):
-    """Count the number of incorrectly divided cells.
-    For each ground truth mask, find the number of predicted masks.
-    Each predicted mask > 1 counts as a "false division"
-    """
-    # for each unique cell in the ground truth mask
-    # count the number of overlapping predicted masks.
-    # every predicted mask beyond the first represents an incorrect division.
-    divided = 0
-    for n in range(iou_matrix.shape[0]):
-        counter = 0
-        for m in range(iou_matrix.shape[1]):
-            if iou_matrix[n, m] == 1:
-                counter += 1
-        # 1 overlap is expected, but extras are false "divisions"
-        if counter > 1:
-            divided += counter - 1
-    return divided
-
-
-def count_false_merges(iou_matrix):
-    """Count the number of incorrectly merged cells.
-    For each predicted mask, find the number of overlaps with the ground truth.
-    Each ground truth mask > 1 counts as a "false merge"
-    """
-    # for each predicted mask, count the # of overlapping cells in the ground truth.
-    # every overlapping cell beyond the first represents an incorrect merge
-    merged = 0
-    for m in range(iou_matrix.shape[1]):
-        counter = 0
-        for n in range(1, iou_matrix.shape[0]):
-            if iou_matrix[n, m] == 1:
-                counter += 1
-        # 1 overlap is expected, but extras are false "merges"
-        if counter > 1:
-            merged += counter - 1
-    return merged
-
-
 def stats_objectbased(y_true,
                       y_pred,
                       dice_iou_threshold=.5,
@@ -187,44 +110,65 @@ def stats_objectbased(y_true,
     dice, jaccard = get_dice_jaccard(stats_iou_matrix)
 
     # Calculate false negative/positive rates
-    false_neg = count_false_negatives(stats_iou_matrix)
-    false_pos = count_false_positives(stats_iou_matrix)
+    false_negatives = 0
+    for n in range(stats_iou_matrix.shape[0]):
+        if stats_iou_matrix[n, :].sum() == 0:
+            false_negatives += 1
 
-    false_pos_perc_err = false_pos / (false_pos + false_neg)
-    false_neg_perc_err = false_neg / (false_pos + false_neg)
+    false_positives = 0
+    for m in range(stats_iou_matrix.shape[1]):
+        if stats_iou_matrix[:, m].sum() == 0:
+            false_positives += 1
 
-    false_pos_perc_pred = false_pos / stats_iou_matrix.shape[1]
-    false_neg_perc_truth = false_neg / stats_iou_matrix.shape[0]
+    false_pos_perc_err = false_positives / (false_positives + false_negatives)
+    false_neg_perc_err = false_negatives / (false_positives + false_negatives)
+
+    false_pos_perc_pred = false_positives / stats_iou_matrix.shape[1]
+    false_neg_perc_truth = false_negatives / stats_iou_matrix.shape[0]
 
     # Calculate merge/division error rates
     merge_div_iou_matrix = get_iou_matrix_quick(
         y_true, y_pred, merge_iou_threshold, crop_size)
 
-    divided = count_false_divisions(merge_div_iou_matrix)
-    merged = count_false_merges(merge_div_iou_matrix)
+    divided = 0
+    for n in range(merge_div_iou_matrix.shape[0]):
+        overlaps = merge_div_iou_matrix[n, :].sum()
+        if overlaps > 1:
+            divided += overlaps - 1
+
+    merged = 0
+    for m in range(merge_div_iou_matrix.shape[1]):
+        overlaps = merge_div_iou_matrix[:, m].sum()
+        if overlaps > 1:
+            merged += overlaps - 1
 
     perc_merged = merged / stats_iou_matrix.shape[0]
     perc_divided = divided / stats_iou_matrix.shape[0]
 
     print('\n____________________Object-based statistics____________________\n')
     print('Intersection over Union thresholded at:', dice_iou_threshold)
-    print('dice/F1 index: {}\njaccard index:{}\n'.format(
+    print('dice/F1 index: {}\njaccard index: {}'.format(
         round(dice, ndigits), round(jaccard, ndigits)))
+    print('Number of cells predicted:', stats_iou_matrix.shape[1])
+    print('Number of cells present in ground truth:', stats_iou_matrix.shape[0])
+    print('Accuracy: {}%\n'.format(
+        round((100 * (stats_iou_matrix.shape[1] - false_positives)/ stats_iou_matrix.shape[0]), ndigits)
+    ))
 
-    print('#false positives: {}\t%% of total error: {}\t%% of predicted incorrect: {}'.format(
-        round(false_pos, ndigits),
+    print('#false positives: {}\t% of total error: {}\t% of predicted incorrect: {}'.format(
+        round(false_positives, ndigits),
         round(false_pos_perc_err, ndigits),
         round(false_pos_perc_pred, ndigits)))
 
-    print('#false negatives: {}\t%% of total error: {}\t%% of ground truth missed: {}'.format(
-        round(false_neg, ndigits),
+    print('#false negatives: {}\t% of total error: {}\t% of ground truth missed: {}'.format(
+        round(false_negatives, ndigits),
         round(false_neg_perc_err, ndigits),
         round(false_neg_perc_truth, ndigits)))
 
     print('\nIntersection over Union thresholded at:', merge_iou_threshold)
-    print('#incorrect merges: {}\t%% of ground truth merged: {}'.format(
+    print('#incorrect merges: {}\t% of ground truth merged: {}'.format(
         merged, round(perc_merged, ndigits)))
-    print('#incorrect divisions: {}\t%% of ground truth divided: {}'.format(
+    print('#incorrect divisions: {}\t% of ground truth divided: {}'.format(
         divided, round(perc_divided, ndigits)))
 
 
@@ -251,5 +195,7 @@ def stats_pixelbased(y_true, y_pred, ndigits=4):
     print('\n____________________Pixel-based statistics____________________\n')
     print('dice/F1 index: {}\njaccard index: {}'.format(
         round(dice, ndigits), round(jaccard, ndigits)))
+    print('Accuracy: {}%'.format(
+        100 * round(np.count_nonzero(np.logical_and(pred, truth)) / np.count_nonzero(truth), ndigits)))
 
     return dice, jaccard
