@@ -93,25 +93,25 @@ def plot_training_data_3d(X, y, num_image_stacks, frames_to_display=5):
 
 
 def plot_error(loss_hist_file, saved_direc, plot_name):
-	"""Plot the training and validation error from the npz file
-	# Arguments
-		loss_hist_file: full path to .npz loss history file
-		saved_direc: full path to directory where you want to save the plot
-		plot_name: the name of plot
-	"""
-	loss_history = np.load(loss_hist_file)
-	loss_history = loss_history['loss_history'][()]
+    """Plot the training and validation error from the npz file
+    # Arguments
+        loss_hist_file: full path to .npz loss history file
+        saved_direc: full path to directory where you want to save the plot
+        plot_name: the name of plot
+    """
+    loss_history = np.load(loss_hist_file)
+    loss_history = loss_history['loss_history'][()]
 
-	err = np.subtract(1, loss_history['acc'])
-	val_err = np.subtract(1, loss_history['val_acc'])
+    err = np.subtract(1, loss_history['acc'])
+    val_err = np.subtract(1, loss_history['val_acc'])
 
-	epoch = np.arange(1, len(err) + 1, 1)
-	plt.plot(epoch, err)
-	plt.plot(epoch, val_err)
-	plt.title('Model Error')
-	plt.xlabel('Epoch')
-	plt.ylabel('Model Error')
-	plt.legend(['Training error', 'Validation error'], loc='upper right')
+    epoch = np.arange(1, len(err) + 1, 1)
+    plt.plot(epoch, err)
+    plt.plot(epoch, val_err)
+    plt.title('Model Error')
+    plt.xlabel('Epoch')
+    plt.ylabel('Model Error')
+    plt.legend(['Training error', 'Validation error'], loc='upper right')
 
-	filename = os.path.join(saved_direc, plot_name)
-	plt.savefig(filename, format='pdf')
+    filename = os.path.join(saved_direc, plot_name)
+    plt.savefig(filename, format='pdf')
