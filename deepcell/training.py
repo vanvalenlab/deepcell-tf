@@ -522,7 +522,7 @@ def train_model_disc_3D(model=None, dataset=None, optimizer=None,
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip,  # randomly flip images
-        zoom_range = zoom_range)  # randomly zoom in/out images
+        zoom_range=zoom_range)  # randomly zoom in/out images
 
     datagen_test = DiscDataGenerator3D(
         rotation_range=0,
@@ -532,7 +532,7 @@ def train_model_disc_3D(model=None, dataset=None, optimizer=None,
 
     time_axis = 2 if CHANNELS_FIRST else 1
     loss_history = model.fit_generator(
-        datagen.flow(train_dict, batch_size=batch_size),
+        datagen.flow(train_dict, batch_size=batch_size, number_of_frames=number_of_frames),
         steps_per_epoch=(train_dict['y'].shape[0] * train_dict['y'].shape[time_axis] // number_of_frames) // batch_size,
         epochs=n_epoch,
         validation_data=datagen_test.flow(test_dict, batch_size=batch_size),
