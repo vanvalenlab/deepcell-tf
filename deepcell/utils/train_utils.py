@@ -10,11 +10,6 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
-from tensorflow.python.keras import activations
-
-
-def axis_softmax(x, axis=1):
-    return activations.softmax(x, axis=axis)
 
 
 def rate_scheduler(lr=.001, decay=0.95):

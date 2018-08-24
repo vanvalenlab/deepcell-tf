@@ -10,6 +10,7 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
+from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import activations
 from tensorflow.python.keras import constraints
@@ -17,7 +18,10 @@ from tensorflow.python.keras import initializers
 from tensorflow.python.keras import regularizers
 from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras.layers import InputSpec
-from tensorflow.python.keras._impl.keras.utils import conv_utils
+try:  # tf v1.9 moves conv_utils from _impl to keras.utils
+    from tensorflow.python.keras.utils import conv_utils
+except ImportError:
+    from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 
 class TensorProd2D(Layer):
@@ -51,25 +55,33 @@ class TensorProd2D(Layer):
         self.input_spec = InputSpec(min_ndim=2)
 
     def build(self, input_shape):
+        input_shape = tensor_shape.TensorShape(input_shape)
+        if len(input_shape) != 4:
+            raise ValueError('Inputs should have rank 4. Received input shape: ' +
+                             str(input_shape))
         if self.data_format == 'channels_first':
             channel_axis = 1
         else:
             channel_axis = -1
-        if input_shape[channel_axis] is None:
-            raise ValueError('The channel dimension of the inputs should be defined. Found None')
-        input_dim = input_shape[channel_axis]
+        if input_shape[channel_axis].value is None:
+            raise ValueError('The channel dimension of the inputs '
+                             'should be defined. Found `None`.')
+        input_dim = int(input_shape[channel_axis])
+        kernel_shape = (input_dim, self.output_dim)
 
-        self.kernel = self.add_weight(shape=(input_dim, self.output_dim),
-                                      initializer=self.kernel_initializer,
-                                      name='kernel',
-                                      regularizer=self.kernel_regularizer,
-                                      constraint=self.kernel_constraint)
+        self.kernel = self.add_weight(
+            name='kernel',
+            shape=kernel_shape,
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint)
         if self.use_bias:
-            self.bias = self.add_weight(shape=(self.output_dim,),
-                                        initializer=self.bias_initializer,
-                                        name='bias',
-                                        regularizer=self.bias_regularizer,
-                                        constraint=self.bias_constraint)
+            self.bias = self.add_weight(
+                name='bias',
+                shape=(self.output_dim,),
+                initializer=self.bias_initializer,
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint)
         else:
             self.bias = None
 
@@ -101,13 +113,13 @@ class TensorProd2D(Layer):
         return output
 
     def compute_output_shape(self, input_shape):
-
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
             output_shape = tuple(input_shape[0], self.output_dim, input_shape[2], input_shape[3])
         else:
             output_shape = tuple(input_shape[0], input_shape[1], input_shape[2], self.output_dim)
 
-        return output_shape
+        return tensor_shape.TensorShape(output_shape)
 
     def get_config(self):
         config = {
@@ -159,25 +171,33 @@ class TensorProd3D(Layer):
         self.input_spec = InputSpec(min_ndim=2)
 
     def build(self, input_shape):
+        input_shape = tensor_shape.TensorShape(input_shape)
+        if len(input_shape) != 5:
+            raise ValueError('Inputs should have rank 5. Received input shape: ' +
+                             str(input_shape))
         if self.data_format == 'channels_first':
             channel_axis = 1
         else:
             channel_axis = -1
-        if input_shape[channel_axis] is None:
-            raise ValueError('The channel dimension of the inputs should be defined. Found None')
-        input_dim = input_shape[channel_axis]
+        if input_shape[channel_axis].value is None:
+            raise ValueError('The channel dimension of the inputs '
+                             'should be defined. Found `None`.')
+        input_dim = int(input_shape[channel_axis])
+        kernel_shape = (input_dim, self.output_dim)
 
-        self.kernel = self.add_weight(shape=(input_dim, self.output_dim),
-                                      initializer=self.kernel_initializer,
-                                      name='kernel',
-                                      regularizer=self.kernel_regularizer,
-                                      constraint=self.kernel_constraint)
+        self.kernel = self.add_weight(
+            name='kernel',
+            shape=kernel_shape,
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint)
         if self.use_bias:
-            self.bias = self.add_weight(shape=(self.output_dim,),
-                                        initializer=self.bias_initializer,
-                                        name='bias',
-                                        regularizer=self.bias_regularizer,
-                                        constraint=self.bias_constraint)
+            self.bias = self.add_weight(
+                name='bias',
+                shape=(self.output_dim,),
+                initializer=self.bias_initializer,
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint)
         else:
             self.bias = None
 
@@ -207,12 +227,13 @@ class TensorProd3D(Layer):
         return output
 
     def compute_output_shape(self, input_shape):
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
             output_shape = tuple(input_shape[0], self.output_dim, input_shape[2], input_shape[3], input_shape[4])
         else:
             output_shape = tuple(input_shape[0], input_shape[1], input_shape[2], input_shape[3], self.output_dim)
 
-        return output_shape
+        return tensor_shape.TensorShape(output_shape)
 
     def get_config(self):
         config = {

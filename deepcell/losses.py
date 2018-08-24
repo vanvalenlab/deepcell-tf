@@ -175,7 +175,7 @@ def discriminative_instance_loss_3D(y_true, y_pred, delta_v=0.5, delta_d=1.5, or
 
     def temp_norm(ten, axis=-1):
         return tf.sqrt(K.epsilon() + tf.reduce_sum(tf.square(ten), axis=axis))
-    
+
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     other_axes = [0, 1, 2, 3] if channel_axis == -1 else [0, 2, 3, 4]
 
@@ -209,3 +209,26 @@ def discriminative_instance_loss_3D(y_true, y_pred, delta_v=0.5, delta_d=1.5, or
     L = L_var + L_dist + L_reg
 
     return L
+
+
+def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_logits=False):
+    """
+    Computes focal loss with class weights computed on the fly
+    """
+    if from_logits:
+        raise Exception('weighted_focal_loss cannot take logits')
+    if axis is None:
+        axis = 1 if K.image_data_format() == 'channels_first' else len(y_pred.get_shape()) - 1
+    reduce_axis = [x for x in list(range(len(y_pred.get_shape()))) if x != axis]
+    # scale preds so that the class probas of each sample sum to 1
+    y_pred = y_pred / tf.reduce_sum(y_pred, axis=axis, keepdims=True)
+    # manual computation of crossentropy
+    _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
+    y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
+    y_true_cast = tf.cast(y_true, K.floatx())
+    total_sum = tf.reduce_sum(y_true_cast)
+    class_sum = tf.reduce_sum(y_true_cast, axis=reduce_axis, keepdims=True)
+    class_weights = 1.0 / np.float(n_classes) * tf.divide(total_sum, class_sum + 1.)
+    temp_loss = tf.multiply(tf.pow(1. - y_pred, gamma) * tf.log(y_pred), class_weights)
+    focal_loss = - tf.reduce_sum(y_true * temp_loss, axis=axis)
+    return focal_loss
