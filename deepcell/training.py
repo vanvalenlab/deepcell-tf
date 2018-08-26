@@ -31,7 +31,6 @@ from .image_generators import WatershedMovieDataGenerator
 from .losses import sample_categorical_crossentropy
 from .losses import weighted_categorical_crossentropy
 from .losses import discriminative_instance_loss
-from .losses import discriminative_instance_loss_3D
 from .utils.io_utils import get_images_from_directory
 from .utils.data_utils import get_data
 from .utils.train_utils import rate_scheduler
@@ -516,7 +515,7 @@ def train_model_disc_3D(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        return discriminative_instance_loss_3D(y_true, y_pred)
+        return discriminative_instance_loss(y_true, y_pred)
 
     model.compile(loss=loss_function, optimizer=optimizer)
 
