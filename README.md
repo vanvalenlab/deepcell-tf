@@ -56,6 +56,7 @@ NV_GPU='0' nvidia-docker run -it \
 # but the options passed to jupyter come after the image name
 
 NV_GPU='0' nvidia-docker run -it \
+  -p 8888:8888 \
   -v $PWD/deepcell:/usr/local/lib/python3.5/dist-packages/deepcell/ \
   -v $PWD/scripts:/deepcell-tf/scripts \
   -v /data:/data \
