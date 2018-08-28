@@ -959,7 +959,9 @@ class TestWatershedDataGenerator(test.TestCase):
             # Fit
             generator.fit(images, augment=True, seed=1)
             train_dict['X'] = images
-            train_dict['y'] = np.random.random(tuple(list(images.shape)[:-1] + [3]))
+            # y expects 3 channels, cell edge, cell interior, background
+            test_shape = tuple(list(images.shape)[:-1] + [3])
+            train_dict['y'] = np.random.randint(2, size=test_shape)
             for x, y in generator.flow(
                     train_dict,
                     save_to_dir=temp_dir,
@@ -1013,8 +1015,8 @@ class TestWatershedDataGenerator(test.TestCase):
             generator.fit(images, augment=True, seed=1)
             train_dict['X'] = images
             # y expects 3 channels, cell edge, cell interior, background
-            train_dict['y'] = np.random.random(tuple([images.shape[0], 3] +
-                                                     list(images.shape)[2:]))
+            test_shape = tuple([images.shape[0], 3] + list(images.shape)[2:])
+            train_dict['y'] = np.random.randint(2, size=test_shape)
 
             for x, y in generator.flow(
                     train_dict,
