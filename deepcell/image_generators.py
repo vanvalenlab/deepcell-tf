@@ -247,7 +247,6 @@ class ImageFullyConvIterator(Iterator):
                  shuffle=False,
                  seed=None,
                  data_format=None,
-                 target_format=None,
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
@@ -268,16 +267,11 @@ class ImageFullyConvIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        self.target_format = target_format
         super(ImageFullyConvIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-        epsilon = K.epsilon()
-        if self.target_format == 'direction':
-            y_channel_shape = 2
-        else:
-            y_channel_shape = self.y.shape[self.channel_axis]
+        y_channel_shape = self.y.shape[self.channel_axis]
 
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
         if self.channel_axis == 1:
@@ -299,21 +293,6 @@ class ImageFullyConvIterator(Iterator):
 
             x = self.image_data_generator.standardize(x)
 
-            if self.target_format == 'direction':
-                # TODO: hardcoded for cell interior = 1
-                if self.channel_axis == 1:
-                    interior = y[1, :, :]
-                else:
-                    interior = y[:, :, 1]
-                distance = ndi.distance_transform_edt(interior)
-                gradient_x = sobel_h(distance)
-                gradient_y = sobel_v(distance)
-                norm = np.sqrt(gradient_x ** 2 + gradient_y ** 2 + epsilon)
-                direction_x = gradient_x / norm
-                direction_y = gradient_y / norm
-                direction = np.stack([direction_x, direction_y], axis=0)
-                y = direction
-
             batch_x[i] = x
             batch_y[i] = y
 
@@ -328,8 +307,10 @@ class ImageFullyConvIterator(Iterator):
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
-                if self.target_format == 'direction':
-                    img_y = np.expand_dims(batch_y[i, :, :, 0], -1)
+                if self.y is not None:
+                    # Save argmax of y batch
+                    img_y = np.argmax(batch_y[i], axis=self.channel_axis - 1)
+                    img_y = np.expand_dims(img_y, axis=self.channel_axis - 1)
                     img = array_to_img(img_y, self.data_format, scale=True)
                     fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
                         prefix=self.save_prefix,
@@ -372,8 +353,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
              seed=None,
              save_to_dir=None,
              save_prefix='',
-             save_format='png',
-             target_format=None):
+             save_format='png'):
         return ImageFullyConvIterator(
             train_dict,
             self,
@@ -382,7 +362,6 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             shuffle=shuffle,
             seed=seed,
             data_format=self.data_format,
-            target_format=target_format,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
@@ -1318,16 +1297,23 @@ class MovieArrayIterator(Iterator):
                     img.save(os.path.join(self.save_to_dir, fname))
 
                     if self.y is not None:
-                        if time_axis == 2:
-                            img_y = array_to_img(batch_y[i, :, frame], self.data_format, scale=True)
+                        # Save argmax of y batch
+                        if self.time_axis == 2:
+                            img_y = np.argmax(batch_y[i, :, frame], axis=0)
+                            img_channel_axis = 0
+                            img_y = batch_y[i, :, frame]
                         else:
-                            img_y = array_to_img(batch_y[i, frame], self.data_format, scale=True)
+                            img_channel_axis = -1
+                            img_y = batch_y[i, frame]
+                        img_y = np.argmax(img_y, axis=img_channel_axis)
+                        img_y = np.expand_dims(img_y, axis=img_channel_axis)
+                        img = array_to_img(img_y, self.data_format, scale=True)
                         fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
                             prefix=self.save_prefix,
                             index=j,
                             hash=np.random.randint(1e4),
                             format=self.save_format)
-                        img_y.save(os.path.join(self.save_to_dir, fname))
+                        img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
             return batch_x
