@@ -66,10 +66,10 @@ class ImageSampleArrayIterator(Iterator):
                  save_prefix='',
                  save_format='png'):
         X, y = train_dict['X'], train_dict['y']
-        # if y is not None and X.shape[0] != y.shape[0]:
-        #     raise ValueError('Training batches and labels should have the same'
-        #                      'length. Found X.shape: {} y.shape: {}'.format(
-        #                          X.shape, y.shape))
+        if y is not None and X.shape[0] != y.shape[0]:
+            raise ValueError('Training batches and labels should have the same'
+                             'length. Found X.shape: {} y.shape: {}'.format(
+                                 X.shape, y.shape))
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(X, dtype=K.floatx())
@@ -216,6 +216,7 @@ class SampleDataGenerator(ImageDataGenerator):
              train_dict,
              batch_size=32,
              shuffle=True,
+             window_size=(30, 30),
              balance_classes=False,
              max_class_samples=None,
              seed=None,
@@ -227,6 +228,7 @@ class SampleDataGenerator(ImageDataGenerator):
             self,
             batch_size=batch_size,
             shuffle=shuffle,
+            window_size=window_size,
             balance_classes=balance_classes,
             max_class_samples=max_class_samples,
             seed=seed,
@@ -1530,6 +1532,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
              train_dict,
              batch_size=32,
              shuffle=True,
+             window_size=(30, 30, 5),
              balance_classes=False,
              max_class_samples=None,
              seed=None,
@@ -1541,6 +1544,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
             self,
             batch_size=batch_size,
             shuffle=shuffle,
+            window_size=window_size,
             balance_classes=balance_classes,
             max_class_samples=max_class_samples,
             seed=seed,
