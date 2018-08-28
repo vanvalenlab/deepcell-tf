@@ -259,7 +259,7 @@ class ImageFullyConvIterator(Iterator):
                              'should have rank 4. You passed an array '
                              'with shape', self.x.shape)
 
-        self.channel_axis = -1 if data_format == 'channels_last' else 1
+        self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.y = np.array(train_dict['y'], dtype='int32')
         self.skip = skip
         self.image_data_generator = image_data_generator
@@ -1793,7 +1793,7 @@ class DiscIterator(Iterator):
                              'should have rank 4. You passed an array '
                              'with shape', self.x.shape)
 
-        self.channel_axis = -1 if data_format == 'channels_last' else 1
+        self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.y = train_dict['y']
         self.max_label = 0
         for batch in range(self.y.shape[0]):
@@ -1942,7 +1942,7 @@ class DiscMovieIterator(Iterator):
         if data_format is None:
             data_format = K.image_data_format()
 
-        self.channel_axis = -1 if data_format == 'channels_last' else 1
+        self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
         self.y = np.asarray(train_dict['y'], dtype='int')
