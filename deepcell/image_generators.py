@@ -342,7 +342,7 @@ class ImageFullyConvIterator(Iterator):
             return batch_x
 
         if self.skip is not None:
-            batch_y = [batch_y]*(self.skip+1)
+            batch_y = [batch_y] * (self.skip + 1)
         return batch_x, batch_y
 
     def next(self):
@@ -912,7 +912,7 @@ class WatershedIterator(Iterator):
             return batch_x
 
         if self.skip is not None:
-            batch_y = [batch_y]*(self.skip+1)
+            batch_y = [batch_y] * (self.skip + 1)
 
         return batch_x, batch_y
 
@@ -1333,7 +1333,7 @@ class MovieArrayIterator(Iterator):
             return batch_x
 
         if self.skip is not None:
-            batch_y = [batch_y]*(self.skip + 1)
+            batch_y = [batch_y] * (self.skip + 1)
 
         return batch_x, batch_y
 
@@ -1743,7 +1743,7 @@ class WatershedMovieIterator(Iterator):
             return batch_x
 
         if self.skip is not None:
-            batch_y = [batch_y]*(self.skip + 1)
+            batch_y = [batch_y] * (self.skip + 1)
 
         return batch_x, batch_y
 
