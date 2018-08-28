@@ -232,6 +232,7 @@ class ImageFullyConvIterator(Iterator):
                  train_dict,
                  image_data_generator,
                  batch_size=1,
+                 skip=None, 
                  shuffle=False,
                  seed=None,
                  data_format=None,
@@ -250,6 +251,7 @@ class ImageFullyConvIterator(Iterator):
 
         self.channel_axis = -1 if data_format == 'channels_last' else 1
         self.y = np.array(train_dict['y'], dtype='int32')
+        self.skip = skip
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -327,6 +329,9 @@ class ImageFullyConvIterator(Iterator):
 
         if self.y is None:
             return batch_x
+
+        if self.skip is not None:
+            batch_y = [batch_y]*(self.skip+1)
         return batch_x, batch_y
 
     def next(self):
@@ -351,6 +356,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
     def flow(self,
              train_dict,
              batch_size=1,
+             skip=None,
              shuffle=True,
              seed=None,
              save_to_dir=None,
@@ -361,6 +367,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             train_dict,
             self,
             batch_size=batch_size,
+            skip=skip,
             shuffle=shuffle,
             seed=seed,
             data_format=self.data_format,
@@ -772,6 +779,7 @@ class WatershedDataGenerator(ImageFullyConvDataGenerator):
              save_to_dir=None,
              save_prefix='',
              distance_bins=16,
+             skip=None,
              save_format='png'):
         return WatershedIterator(
             train_dict,
@@ -781,6 +789,7 @@ class WatershedDataGenerator(ImageFullyConvDataGenerator):
             seed=seed,
             data_format=self.data_format,
             distance_bins=distance_bins,
+            skip=skip,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
@@ -795,6 +804,7 @@ class WatershedIterator(Iterator):
                  seed=None,
                  data_format=None,
                  distance_bins=16,
+                 skip=None,
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
@@ -810,6 +820,7 @@ class WatershedIterator(Iterator):
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.distance_bins = distance_bins
         self.y = train_dict['y']
+        self.skip = skip
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -888,6 +899,10 @@ class WatershedIterator(Iterator):
 
         if self.y is None:
             return batch_x
+
+        if self.skip is not None:
+            batch_y = [batch_y]*(self.skip+1)
+
         return batch_x, batch_y
 
     def next(self):
@@ -928,6 +943,7 @@ class MovieDataGenerator(ImageDataGenerator):
              train_dict,
              batch_size=1,
              frames_per_batch=10,
+             skip=None,
              shuffle=True,
              seed=None,
              save_to_dir=None,
@@ -941,6 +957,7 @@ class MovieDataGenerator(ImageDataGenerator):
             seed=seed,
             data_format=self.data_format,
             frames_per_batch=frames_per_batch,
+            skip=skip,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
@@ -1185,6 +1202,7 @@ class MovieArrayIterator(Iterator):
                  batch_size=32,
                  shuffle=False,
                  seed=None,
+                 skip=None,
                  data_format=None,
                  frames_per_batch=10,
                  save_to_dir=None,
@@ -1216,6 +1234,7 @@ class MovieArrayIterator(Iterator):
                 'be less than the number of frames in the training data!')
 
         self.frames_per_batch = frames_per_batch
+        self.skip = skip
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -1302,6 +1321,10 @@ class MovieArrayIterator(Iterator):
 
         if self.y is None:
             return batch_x
+
+        if self.skip is not None:
+            batch_y = [batch_y]*(self.skip + 1)
+
         return batch_x, batch_y
 
     def next(self):
@@ -1528,6 +1551,7 @@ class WatershedMovieDataGenerator(MovieDataGenerator):
              save_prefix='',
              distance_bins=16,
              erosion_width=None,
+             skip=None,
              save_format='png'):
         return WatershedMovieIterator(
             train_dict,
@@ -1535,6 +1559,7 @@ class WatershedMovieDataGenerator(MovieDataGenerator):
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
+            skip=skip,
             frames_per_batch=frames_per_batch,
             data_format=self.data_format,
             distance_bins=distance_bins,
@@ -1549,6 +1574,7 @@ class WatershedMovieIterator(Iterator):
                  train_dict,
                  movie_data_generator,
                  batch_size=1,
+                 skip=None,
                  shuffle=False,
                  seed=None,
                  frames_per_batch=10,
@@ -1582,6 +1608,7 @@ class WatershedMovieIterator(Iterator):
                              'training data.')
 
         self.frames_per_batch = frames_per_batch
+        self.skip = skip
         self.distance_bins = distance_bins
         self.erosion_width = erosion_width
         self.movie_data_generator = movie_data_generator
@@ -1696,6 +1723,10 @@ class WatershedMovieIterator(Iterator):
 
         if self.y is None:
             return batch_x
+
+        if self.skip is not None:
+            batch_y = [batch_y]*(self.skip + 1)
+
         return batch_x, batch_y
 
     def next(self):

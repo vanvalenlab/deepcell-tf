@@ -100,25 +100,27 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
             if multires:
                 layers_to_concat.append(len(x)-1)
 
-    if multres:
+    if multires:
         c = []
         for l in layers_to_concat:
-            output_shape = x[l].output_shape
-            row_crop = (output_shape[row_axis] - rf_counter)
+            output_shape = x[l].get_shape().as_list()
+            target_shape = x[-1].get_shape().as_list()
+
+            row_crop = int(output_shape[row_axis] - target_shape[row_axis])
             if row_crop % 2 == 0:
                 row_crop = (row_crop // 2, row_crop // 2)
             else:
                 row_crop = (row_crop // 2, row_crop // 2 + 1)
-
-            col_crop = (output_shape[col_axis] - rf_counter)
-            if col_axis % 2 ==0:
+            
+            col_crop = int(output_shape[col_axis] - target_shape[col_axis])
+            if col_crop % 2 == 0:
                 col_crop = (col_crop // 2, col_crop // 2)
             else:
                 col_crop = (col_crop // 2, col_crop // 2 + 1)
 
             cropping = (row_crop, col_crop)
-
-            c.append(Cropping2D(x[l], cropping)(x[l]))
+           
+            c.append(Cropping2D(cropping=cropping)(x[l]))
         x.append(Concatenate(axis=channel_axis)(c))
 
     x.append(Conv2D(n_dense_filters, (rf_counter, rf_counter), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
@@ -137,7 +139,7 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
     if include_top:
         x.append(Softmax(axis=channel_axis)(x[-1]))
 
-    model = Model(inputs=inputs, outputs=x[-1])
+    model = Model(inputs=x[0], outputs=x[-1])
 
     return model
 
@@ -157,11 +159,14 @@ def bn_feature_net_skip_2D(receptive_field=61, input_shape=(256,256,1), fgbg_mod
     model_outputs = []
 
     if fgbg_model is not None:
-        for layer in fgbg_model:
+        for layer in fgbg_model.layers:
             layer.trainable = False
 
         models.append(fgbg_model)
-        model_outputs.append(fgbg_model(inputs))
+        fgbg_output = fgbg_model(inputs)
+        if isinstance(fgbg_output, list):
+            fgbg_output = fgbg_output[-1]
+        model_outputs.append(fgbg_output)
     
     for skip in range(n_skips+1):
         if len(model_outputs) > 0:
@@ -176,7 +181,7 @@ def bn_feature_net_skip_2D(receptive_field=61, input_shape=(256,256,1), fgbg_mod
     if last_only:
         model = Model(inputs=inputs, outputs = model_outputs[-1])
     else:
-        if fgbg_model is not None:
+        if fgbg_model is None:
             model = Model(inputs=inputs, outputs = model_outputs)
         else:
             model = Model(inputs=inputs, outputs = model_outputs[1:])
@@ -216,10 +221,16 @@ def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1),
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
+        time_axis = 2
+        row_axis = 3
+        col_axis = 4
         if not dilated:
             input_shape = (n_channels, n_frames, receptive_field, receptive_field)
     else:
         channel_axis = -1
+        time_axis = 1
+        row_axis = 2
+        col_axis = 3
         if not dilated:
             input_shape = (n_frames, receptive_field, receptive_field, n_channels)
 
@@ -242,7 +253,7 @@ def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1),
     while rf_counter > 4:
         filter_size = 3 if rf_counter % 2 == 0 else 4 
         x.append(Conv3D(n_conv_filters, (1, filter_size, filter_size), dilation_rate=(1,d,d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
-        x.append(BatchNormalization(axis=channel_axis)([-1]))
+        x.append(BatchNormalization(axis=channel_axis)(x[-1]))
         x.append(Activation('relu')(x[-1]))
 
         block_counter += 1
@@ -260,13 +271,42 @@ def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1),
 
             rf_counter /= 2
 
+            if multires:
+                layers_to_concat.append(len(x)-1)
+
+    if multires:
+        c = []
+        for l in layers_to_concat:
+            output_shape = x[l].get_shape().as_list()
+            target_shape = x[-1].get_shape().as_list()
+            time_crop = (0,0)
+
+            row_crop = int(output_shape[row_axis] - target_shape[row_axis])
+
+            if row_crop % 2 == 0:
+                row_crop = (row_crop // 2, row_crop // 2)
+            else:
+                row_crop = (row_crop // 2, row_crop // 2 + 1)
+            
+            col_crop = int(output_shape[col_axis] - target_shape[col_axis])
+
+            if col_crop % 2 == 0:
+                col_crop = (col_crop // 2, col_crop // 2)
+            else:
+                col_crop = (col_crop // 2, col_crop // 2 + 1)
+
+            cropping = (time_crop, row_crop, col_crop)
+
+            c.append(Cropping3D(cropping=cropping)(x[l]))
+        x.append(Concatenate(axis=channel_axis)(c))
+
     x.append(Conv3D(n_dense_filters, (1, rf_counter, rf_counter), dilation_rate=(1,d,d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
     x.append(Conv3D(n_dense_filters, (n_frames, 1, 1), dilation_rate=(1,d,d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
-    x.append(BatchNormalization(axis=channel_axis))
-    x.append(Activation('relu'))
+    x.append(BatchNormalization(axis=channel_axis)(x[-1]))
+    x.append(Activation('relu')(x[-1]))
 
     x.append(TensorProd3D(n_dense_filters, n_dense_filters, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
@@ -280,7 +320,7 @@ def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1),
     if include_top:
         x.append(Softmax(axis=channel_axis)(x[-1]))
 
-    model = Model(inputs=inputs, outputs=x[-1])
+    model = Model(inputs=x[0], outputs=x[-1])
 
     return model
 
@@ -300,8 +340,13 @@ def bn_feature_net_skip_3D(receptive_field=61, input_shape=(5, 256,256,1), fgbg_
     model_outputs = []
     
     if fgbg_model is not None:
+        for layer in fgbg_model.layers:
+            layer.trainable = False
         models.append(fgbg_model)
-        model_outputs.append(fgbg_model(inputs))
+        fgbg_output = fgbg_model(inputs)
+        if isinstance(fgbg_output, list):
+            fgbg_output = fgbg_output[-1]
+        model_outputs.append(fgbg_output)
 
     for skip in range(n_skips+1):
         if len(model_outputs) > 0:
@@ -315,7 +360,7 @@ def bn_feature_net_skip_3D(receptive_field=61, input_shape=(5, 256,256,1), fgbg_
     if last_only:
         model = Model(inputs=inputs, outputs = model_outputs[-1])
     else:
-        if fgbg_model is not None:
+        if fgbg_model is None:
             model = Model(inputs=inputs, outputs = model_outputs)
         else:
             model = Model(inputs=inputs, outputs = model_outputs[1:])
