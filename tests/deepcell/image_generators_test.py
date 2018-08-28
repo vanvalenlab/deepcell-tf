@@ -951,7 +951,7 @@ class TestWatershedDataGenerator(test.TestCase):
                 'X': np.random.random((32, 10, 10, 3)),
                 'y': np.random.random((32, 10, 10, 3)),
             }
-            generator.flow(train_dict, distance_bins=distance_bins)
+            generator.flow(train_dict, distance_bins=distance_bins, erosion_width=1)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -964,6 +964,7 @@ class TestWatershedDataGenerator(test.TestCase):
                     train_dict,
                     save_to_dir=temp_dir,
                     distance_bins=distance_bins,
+                    erosion_width=1,
                     shuffle=True):
                 shape = tuple(list(images.shape)[1:-1] + [distance_bins])
                 self.assertEqual(x.shape[1:], images.shape[1:])
@@ -1003,7 +1004,7 @@ class TestWatershedDataGenerator(test.TestCase):
                 'X': np.random.random((32, 3, 10, 10)),
                 'y': np.random.random((32, 3, 10, 10)),
             }
-            generator.flow(train_dict, distance_bins=distance_bins)
+            generator.flow(train_dict, distance_bins=distance_bins, erosion_width=1)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -1019,6 +1020,7 @@ class TestWatershedDataGenerator(test.TestCase):
                     train_dict,
                     save_to_dir=temp_dir,
                     distance_bins=distance_bins,
+                    erosion_width=1,
                     shuffle=True):
                 shape = tuple([distance_bins] + list(images.shape)[2:])
                 self.assertEqual(x.shape[1:], images.shape[1:])
@@ -1103,7 +1105,10 @@ class TestWatershedMovieDataGenerator(test.TestCase):
                 'X': np.random.random((32, frames, 10, 10, 3)),
                 'y': np.random.random((32, frames, 10, 10, 3)),
             }
-            generator.flow(train_dict, frames_per_batch=1, distance_bins=distance_bins)
+            generator.flow(train_dict,
+                           frames_per_batch=1,
+                           distance_bins=distance_bins,
+                           erosion_width=1)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -1119,6 +1124,7 @@ class TestWatershedMovieDataGenerator(test.TestCase):
                     shuffle=True,
                     save_to_dir=temp_dir,
                     distance_bins=distance_bins,
+                    erosion_width=1,
                     frames_per_batch=frames_per_batch):
                 batch_x_shape = (frames_per_batch, *images.shape[2:])
                 batch_y_shape = (frames_per_batch, *y_shape[2:-1], distance_bins)
@@ -1166,7 +1172,10 @@ class TestWatershedMovieDataGenerator(test.TestCase):
                 'X': np.random.random((32, 3, frames, 10, 10)),
                 'y': np.random.random((32, 3, frames, 10, 10)),
             }
-            generator.flow(train_dict, frames_per_batch=1, distance_bins=distance_bins)
+            generator.flow(train_dict,
+                           frames_per_batch=1,
+                           distance_bins=distance_bins,
+                           erosion_width=1)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -1182,6 +1191,7 @@ class TestWatershedMovieDataGenerator(test.TestCase):
                     shuffle=True,
                     save_to_dir=temp_dir,
                     distance_bins=distance_bins,
+                    erosion_width=1,
                     frames_per_batch=frames_per_batch):
                 batch_x_shape = (images.shape[1], frames_per_batch, *images.shape[3:])
                 batch_y_shape = (distance_bins, frames_per_batch, *y_shape[3:])
