@@ -40,7 +40,7 @@ from .settings import CHANNELS_FIRST
 
 def train_model_sample(model=None, dataset=None, optimizer=None,
                        expt='', it=0, batch_size=32, n_epoch=100,
-                       window_size=(30, 30, 3),
+                       window_size=(30, 30),
                        balance_classes=True, max_class_samples=None,
                        direc_save='/data/models', direc_data='/data/npz_data',
                        lr_sched=rate_scheduler(lr=0.01, decay=0.95),
@@ -83,12 +83,14 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
     train_data = datagen.flow(
         train_dict,
         batch_size=batch_size,
+        window_size=window_size,
         balance_classes=balance_classes,
         max_class_samples=max_class_samples)
 
     val_data = datagen_val.flow(
         test_dict,
         batch_size=batch_size,
+        window_size=window_size,
         balance_classes=False,
         max_class_samples=max_class_samples)
 
@@ -567,6 +569,7 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
 
 def train_model_sample_movie(model=None, dataset=None, optimizer=None,
                              expt='', it=0, batch_size=32, n_epoch=100,
+                             window_size=(30, 30, 3),
                              balance_classes=True, max_class_samples=None,
                              direc_save='/data/models', direc_data='/data/npz_data',
                              lr_sched=rate_scheduler(lr=0.01, decay=0.95),
@@ -614,12 +617,14 @@ def train_model_sample_movie(model=None, dataset=None, optimizer=None,
     train_data = datagen.flow(
         train_dict,
         batch_size=batch_size,
+        window_size=window_size,
         balance_classes=balance_classes,
         max_class_samples=max_class_samples)
 
     val_data = datagen_val.flow(
         test_dict,
         batch_size=batch_size,
+        window_size=window_size,
         balance_classes=False,
         max_class_samples=max_class_samples)
 
