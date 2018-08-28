@@ -79,48 +79,38 @@ class Location3D(Layer):
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
-            output_shape = (input_shape[0], 2, input_shape[2], input_shape[3], input_shape[4])
+            output_shape = (input_shape[0], 3, input_shape[2], input_shape[3], input_shape[4])
         else:
-            output_shape = (input_shape[0], input_shape[1], input_shape[2], input_shape[3], 2)
+            output_shape = (input_shape[0], input_shape[1], input_shape[2], input_shape[3], 3)
         return tensor_shape.TensorShape(output_shape)
 
     def call(self, inputs):
         input_shape = self.in_shape
 
         if self.data_format == 'channels_last':
+            z = tf.range(0, input_shape[1], dtype=K.floatx())
             x = tf.range(0, input_shape[2], dtype=K.floatx())
             y = tf.range(0, input_shape[3], dtype=K.floatx())
         else:
+            z = tf.range(0, input_shape[2], dtype=K.floatx())
             x = tf.range(0, input_shape[3], dtype=K.floatx())
             y = tf.range(0, input_shape[4], dtype=K.floatx())
 
         x = tf.divide(x, tf.reduce_max(x))
         y = tf.divide(y, tf.reduce_max(y))
+        z = tf.divide(z, tf.reduce_max(z))
 
-        loc_x, loc_y = tf.meshgrid(y, x)
-
-        if self.data_format == 'channels_last':
-            loc = tf.stack([loc_x, loc_y], axis=-1)
-        else:
-            loc = tf.stack([loc_x, loc_y], axis=0)
+        loc_z, loc_x, loc_y = tf.meshgrid(z, x, y, indexing='ij')
 
         if self.data_format == 'channels_last':
-            location = tf.expand_dims(loc, 0)
+            loc = tf.stack([loc_z, loc_x, loc_y], axis=-1)
         else:
-            location = tf.expand_dims(loc, 1)
+            loc = tf.stack([loc_z, loc_x, loc_y], axis=0)
 
-        number_of_frames = input_shape[1] if self.data_format == 'channels_last' else input_shape[2]
+        location = tf.expand_dims(loc, 0)
+        # location = tf.tile(location, [tf.shape(inputs)[0], 1, 1, 1, 1])
 
-        location_list = [tf.identity(location) for _ in range(number_of_frames)]
-
-        if self.data_format == 'channels_last':
-            location_concat = tf.concat(location_list, axis=0)
-        else:
-            location_concat = tf.concat(location_list, axis=1)
-
-        location_output = tf.expand_dims(location_concat, 0)
-
-        return location_output
+        return location
 
     def get_config(self):
         config = {
