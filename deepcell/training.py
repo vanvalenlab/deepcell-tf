@@ -40,6 +40,7 @@ from .settings import CHANNELS_FIRST
 
 def train_model_sample(model=None, dataset=None, optimizer=None,
                        expt='', it=0, batch_size=32, n_epoch=100,
+                       window_size=(30, 30, 3),
                        balance_classes=True, max_class_samples=None,
                        direc_save='/data/models', direc_data='/data/npz_data',
                        lr_sched=rate_scheduler(lr=0.01, decay=0.95),

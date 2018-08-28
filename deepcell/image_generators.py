@@ -32,10 +32,15 @@ from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
+try:
+    from tensorflow.python.keras.utils import conv_utils
+except ImportError:
+    from tensorflow.python.keras._impl.keras.utils import conv_utils
+
 from keras_retinanet.preprocessing.generator import Generator as _RetinaNetGenerator
 from keras_maskrcnn.preprocessing.generator import Generator as _MaskRCNNGenerator
 
-from .utils.transform_utils import to_categorical
+from .utils.data_utils import sample_label_matrix, sample_label_movie
 from .utils.transform_utils import transform_matrix_offset_center
 from .utils.transform_utils import distance_transform_2d, distance_transform_3d
 from .utils.retinanet_anchor_utils import anchor_targets_bbox
@@ -52,6 +57,7 @@ class ImageSampleArrayIterator(Iterator):
                  image_data_generator,
                  batch_size=32,
                  shuffle=False,
+                 window_size=(30, 30),
                  balance_classes=False,
                  max_class_samples=None,
                  seed=None,
@@ -64,27 +70,30 @@ class ImageSampleArrayIterator(Iterator):
         #     raise ValueError('Training batches and labels should have the same'
         #                      'length. Found X.shape: {} y.shape: {}'.format(
         #                          X.shape, y.shape))
-        required_keys = ['pixels_x', 'pixels_y', 'batch', 'y']
-        if any(len(train_dict[r]) != len(train_dict['y']) for r in required_keys):
-            raise ValueError('Not all sampled arrays in train_dict '
-                             'have the same length')
-
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(X, dtype=K.floatx())
-        self.y = np.asarray(y, dtype='int32')
 
         if self.x.ndim != 4:
             raise ValueError('Input data in `ImageSampleArrayIterator` '
                              'should have rank 4. You passed an array '
                              'with shape', self.x.shape)
 
+        window_size = conv_utils.normalize_tuple(window_size, 2, 'window_size')
+
+        pixels_x, pixels_y, batch, y = sample_label_matrix(
+            y=y,
+            padding='valid',
+            window_size=window_size,
+            max_training_examples=None)
+
+        self.y = y
         self.channel_axis = 3 if data_format == 'channels_last' else 1
-        self.batch = train_dict['batch']
-        self.pixels_x = train_dict['pixels_x']
-        self.pixels_y = train_dict['pixels_y']
-        self.win_x = train_dict['win_x']
-        self.win_y = train_dict['win_y']
+        self.batch = batch
+        self.pixels_x = pixels_x
+        self.pixels_y = pixels_y
+        self.win_x = window_size[0]
+        self.win_y = window_size[1]
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -232,7 +241,7 @@ class ImageFullyConvIterator(Iterator):
                  train_dict,
                  image_data_generator,
                  batch_size=1,
-                 skip=None, 
+                 skip=None,
                  shuffle=False,
                  seed=None,
                  data_format=None,
@@ -1208,7 +1217,6 @@ class MovieArrayIterator(Iterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
-
         if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
             raise ValueError('`X` (movie data) and `y` (labels) '
                              'should have the same size. Found '
@@ -1348,41 +1356,47 @@ class SampleMovieArrayIterator(Iterator):
                  shuffle=False,
                  balance_classes=False,
                  max_class_samples=None,
+                 window_size=(30, 30, 5),
                  seed=None,
                  data_format=None,
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
         X, y = train_dict['X'], train_dict['y']
-        # if y is not None and X.shape[0] != y.shape[0]:
-        #     raise ValueError('`X` (movie data) and `y` (labels) '
-        #                      'should have the same size. Found '
-        #                      'Found x.shape = {}, y.shape = {}'.format(
-        #                          X.shape, y.shape))
-        required_keys = ['pixels_z', 'pixels_x', 'pixels_y', 'batch', 'y']
-        if any(train_dict[r].shape != train_dict['y'].shape for r in required_keys):
-            raise ValueError('Not all sampled arrays in train_dict '
-                             'have the same length')
+        if y is not None and X.shape[0] != y.shape[0]:
+            raise ValueError('`X` (movie data) and `y` (labels) '
+                             'should have the same size. Found '
+                             'Found x.shape = {}, y.shape = {}'.format(
+                                 X.shape, y.shape))
+
         if data_format is None:
             data_format = K.image_data_format()
 
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
         self.x = np.asarray(X, dtype=K.floatx())
-        self.y = np.asarray(y, dtype='int32')
 
         if self.x.ndim != 5:
             raise ValueError('Input data in `SampleMovieArrayIterator` '
                              'should have rank 5. You passed an array '
                              'with shape', self.x.shape)
 
-        self.win_x = train_dict['win_x']
-        self.win_y = train_dict['win_y']
-        self.win_z = train_dict['win_z']
-        self.pixels_x = train_dict['pixels_x']
-        self.pixels_y = train_dict['pixels_y']
-        self.pixels_z = train_dict['pixels_z']
-        self.batch = train_dict['batch']
+        window_size = conv_utils.normalize_tuple(window_size, 3, 'window_size')
+
+        pixels_x, pixels_y, pixels_z, batch, y = sample_label_movie(
+            y=y,
+            padding='valid',
+            window_size=window_size,
+            max_training_examples=None)
+
+        self.y = y
+        self.win_x = window_size[0]
+        self.win_y = window_size[1]
+        self.win_z = window_size[2]
+        self.pixels_x = pixels_x
+        self.pixels_y = pixels_y
+        self.pixels_z = pixels_z
+        self.batch = batch
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir

@@ -21,9 +21,9 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.utils import to_categorical
 
 try:
-    from tensorflow.python.keras.utils.conv_utils import normalize_padding
+    from tensorflow.python.keras.utils import conv_utils
 except ImportError:
-    from tensorflow.python.keras._impl.keras.utils.conv_utils import normalize_padding
+    from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 from .io_utils import get_image
 from .io_utils import get_image_sizes
@@ -51,68 +51,33 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     training_data = np.load(file_name)
     X = training_data['X']
     y = training_data['y']
-    win_x = training_data['win_x']
-    win_y = training_data['win_y']
+    # win_x = training_data['win_x']
+    # win_y = training_data['win_y']
 
     class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
 
-    if mode == 'sample':
-        if not seed:
-            # if not passed randomly generate seed so
-            # the multiple train_test_splits are kept the same
-            seed = np.random.randint(0, 1000000)
-
-        # don't split train/test X data, just split the pixel values
-        X_train, X_test = X, X
-
-        y_train, y_test = train_test_split(y, test_size=test_size, random_state=seed)
-
-        batch_train, batch_test = train_test_split(
-            training_data['batch'], test_size=test_size, random_state=seed)
-
-        px_train, px_test = train_test_split(
-            training_data['pixels_x'], test_size=test_size, random_state=seed)
-
-        py_train, py_test = train_test_split(
-            training_data['pixels_y'], test_size=test_size, random_state=seed)
-
-        # 3D sample mode takes pixels_z and win_z as well
-        if X.ndim == 5:
-            pz_train, pz_test = train_test_split(
-                training_data['pixels_z'], test_size=test_size, random_state=seed)
-    else:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=seed)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=seed)
 
     train_dict = {
         'X': X_train,
         'y': y_train,
-        'win_x': win_x,
-        'win_y': win_y,
+        # 'win_x': win_x,
+        # 'win_y': win_y,
         'class_weights': class_weights
     }
 
     test_dict = {
         'X': X_test,
         'y': y_test,
-        'win_x': win_x,
-        'win_y': win_y,
+        # 'win_x': win_x,
+        # 'win_y': win_y,
         'class_weights': class_weights
     }
 
-    if mode == 'sample':
-        train_dict['batch'] = batch_train
-        train_dict['pixels_x'] = px_train
-        train_dict['pixels_y'] = py_train
-        test_dict['batch'] = batch_test
-        test_dict['pixels_x'] = px_test
-        test_dict['pixels_y'] = py_test
-
-        if X.ndim == 5:
-            train_dict['pixels_z'] = pz_train
-            train_dict['win_z'] = training_data['win_z']
-            test_dict['pixels_z'] = pz_test
-            test_dict['win_z'] = training_data['win_z']
+    # if X.ndim == 5:
+    #     train_dict['win_z'] = training_data['win_z']
+    #     test_dict['win_z'] = training_data['win_z']
 
     return train_dict, test_dict
 
@@ -151,8 +116,7 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='vali
     return list_of_max_sample_numbers
 
 
-def sample_label_matrix(y, window_size_x=30, window_size_y=30, padding='valid',
-                        max_training_examples=1e7):
+def sample_label_matrix(y, window_size=(30, 30), padding='valid', max_training_examples=1e7):
     """Create a list of the maximum pixels to sample
     from each feature in each data set.
     """
@@ -162,9 +126,8 @@ def sample_label_matrix(y, window_size_x=30, window_size_y=30, padding='valid',
     else:
         num_dirs, image_size_x, image_size_y, num_features = y.shape
 
-    # list_of_max_sample_numbers = get_max_sample_num_list(
-    #     y=y, edge_feature=edge_feature, output_mode=output_mode, padding=padding,
-    #     window_size_x=window_size_x, window_size_y=window_size_y)
+    window_size = conv_utils.normalize_tuple(window_size, 2, 'window_size')
+    window_size_x, window_size_y = window_size
 
     feature_rows, feature_cols, feature_batch, feature_label = [], [], [], []
 
@@ -217,8 +180,7 @@ def sample_label_matrix(y, window_size_x=30, window_size_y=30, padding='valid',
     return feature_rows, feature_cols, feature_batch, feature_label
 
 
-def sample_label_movie(y, window_size_x=30, window_size_y=30, window_size_z=5,
-                       padding='valid', max_training_examples=1e7):
+def sample_label_movie(y, window_size=(30, 30, 5), padding='valid', max_training_examples=1e7):
     """Create a list of the maximum pixels to sample from each feature in each
     data set. If output_mode is 'sample', then this will be set to the number
     of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
@@ -228,6 +190,9 @@ def sample_label_movie(y, window_size_x=30, window_size_y=30, window_size_z=5,
         num_dirs, num_features, image_size_z, image_size_x, image_size_y = y.shape
     else:
         num_dirs, image_size_z, image_size_x, image_size_y, num_features = y.shape
+
+    window_size = conv_utils.normalize_tuple(window_size, 3, 'window_size')
+    window_size_x, window_size_y, window_size_z = window_size
 
     feature_rows, feature_cols, feature_frames, feature_batch, feature_label = [], [], [], [], []
 
@@ -603,69 +568,70 @@ def make_training_data_2d(direc_name,
     if reshape_size is not None:
         X, y = reshape_matrix(X, y, reshape_size=reshape_size)
 
-    if distance_transform:
-        if is_channels_first:
-            channel_axis = 1
-            new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3]), dtype='int32')
-        else:
-            channel_axis = -1
-            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1), dtype='int32')
-
-        for b in range(y.shape[0]):
-            if is_channels_first:
-                dist_batch = y[b, 1, :, :]
-            else:
-                dist_batch = y[b, :, :, 1]
-            d = distance_transform_2d(dist_batch, bins=distance_bins)
-            new_y[b] = np.expand_dims(d, axis=channel_axis)
-        y = to_categorical(new_y)
+    # if distance_transform:
+    #     if is_channels_first:
+    #         channel_axis = 1
+    #         new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3]), dtype='int32')
+    #     else:
+    #         channel_axis = -1
+    #         new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1), dtype='int32')
+    #
+    #     for b in range(y.shape[0]):
+    #         if is_channels_first:
+    #             dist_batch = y[b, 1, :, :]
+    #         else:
+    #             dist_batch = y[b, :, :, 1]
+    #         d = distance_transform_2d(dist_batch, bins=distance_bins)
+    #         new_y[b] = np.expand_dims(d, axis=channel_axis)
+    #     y = to_categorical(new_y)
         # not really edge_feature anymore, but there will be the fewest
         # "center" pixels, so lets call that the edge_feature for now
         # edge_feature = [0] * y.shape[channel_axis]
         # edge_feature[-1] = 1
 
     # Create mask of sampled pixels
-    feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
-        y, padding=padding, window_size_x=window_size_x, window_size_y=window_size_y,
-        max_training_examples=max_training_examples)
+    # feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
+    #     y, padding=padding, window_size_x=window_size_x, window_size_y=window_size_y,
+    #     max_training_examples=max_training_examples)
 
-    weights = compute_class_weight('balanced', y=feature_label, classes=np.unique(feature_label))
+    # weights = compute_class_weight('balanced', y=feature_label, classes=np.unique(feature_label))
 
     # Sample pixels from the label matrix
-    if output_mode == 'sample':
+    # if output_mode == 'sample':
+    #
+    #     # Save training data in npz format
+    #     np.savez(file_name_save, class_weights=weights, X=X, y=feature_label,
+    #              batch=feature_batch, pixels_x=feature_rows, pixels_y=feature_cols,
+    #              win_x=window_size_x, win_y=window_size_y)
+    #
+    # elif output_mode == 'conv':
+    #     y_sample = np.zeros(y.shape, dtype='int32')
+    #     for b, r, c, l in zip(feature_batch, feature_rows, feature_cols, feature_label):
+    #         if is_channels_first:
+    #             y_sample[b, l, r, c] = 1
+    #         else:
+    #             y_sample[b, r, c, l] = 1
 
-        # Save training data in npz format
-        np.savez(file_name_save, class_weights=weights, X=X, y=feature_label,
-                 batch=feature_batch, pixels_x=feature_rows, pixels_y=feature_cols,
-                 win_x=window_size_x, win_y=window_size_y)
+    # Trim the feature mask so that each window does not overlap with the border of the image
+    if padding == 'valid' and output_mode != 'sample':
+        y = trim_padding(y, window_size_x, window_size_y)
 
-    elif output_mode == 'conv':
-        y_sample = np.zeros(y.shape, dtype='int32')
-        for b, r, c, l in zip(feature_batch, feature_rows, feature_cols, feature_label):
-            if is_channels_first:
-                y_sample[b, l, r, c] = 1
-            else:
-                y_sample[b, r, c, l] = 1
+    # Save training data in npz format
+    np.savez(file_name_save, X=X, y=y)
 
-        # Trim the feature mask so that each window does not overlap with the border of the image
-        if padding == 'valid':
-            y = trim_padding(y, window_size_x, window_size_y)
+    return None
 
-        # Save training data in npz format
-        np.savez(file_name_save, class_weights=weights, X=X, y=y,
-                 y_sample=y_sample, win_x=window_size_x, win_y=window_size_y)
+    # if verbose:
+    #     print('Number of features: {}'.format(y.shape[1 if is_channels_first else -1]))
+    #     print('Number of training data points: {}'.format(len(feature_label)))
+    #     print('Class weights: {}'.format(weights))
 
-    if verbose:
-        print('Number of features: {}'.format(y.shape[1 if is_channels_first else -1]))
-        print('Number of training data points: {}'.format(len(feature_label)))
-        print('Class weights: {}'.format(weights))
-
-    if display:
-        if output_mode == 'conv':
-            display_mask = y_sample
-        else:
-            display_mask = y
-        plot_training_data_2d(X, display_mask, max_plotted=max_plotted)
+    # if display:
+    #     if output_mode == 'conv':
+    #         display_mask = y_sample
+    #     else:
+    #         display_mask = y
+    #     plot_training_data_2d(X, display_mask, max_plotted=max_plotted)
 
 
 def load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
@@ -805,16 +771,11 @@ def make_training_data_3d(direc_name,
                        channel_name should be in the filename (e.g. 'DAPI')
         annotation_direc: name of folder with annotated images
         raw_image_direc:  name of folder with raw images
-        window_size_x: number of pixels to +/- x direction to be sampled in sample mode
-        window_size_y: number of pixels to +/- y direction to be sampled in sample mode
         padding:  'valid' or 'same'
         output_mode:  'sample' or 'conv'
         reshape_size: If provided, will reshape the images to the given size.
         num_of_features: number of classes (e.g. cell interior, cell edge, background)
-        edge_feature: List which determines the cell edge feature (usually [1, 0, 0])
-                   There can be a single 1 in the list, indicating the index of the feature.
         max_training_examples: max number of samples to be given to model
-        dilation_radius:
         verbose:  print more output to screen, similar to DEBUG mode.
         num_frames:
         sub_sample: whether or not to subsamble the training data
@@ -844,44 +805,43 @@ def make_training_data_3d(direc_name,
     # Reshape X and y
     if reshape_size is not None:
         X, y = reshape_movie(X, y, reshape_size=reshape_size)
+    #
+    # if distance_transform:
+    #     if K.image_data_format() == 'channels_first':
+    #         channel_axis = 1
+    #         new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3], y.shape[4]), dtype='int32')
+    #     else:
+    #         channel_axis = -1
+    #         new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1), dtype='int32')
+    #
+    #     for b in range(y.shape[0]):
+    #         if K.image_data_format() == 'channels_first':
+    #             dist_batch = y[b, 0, :, :, :]
+    #         else:
+    #             dist_batch = y[b, :, :, :, 0]
+    #         d = distance_transform_3d(dist_batch, bins=distance_bins, erosion_width=erosion_width)
+    #         new_y[b] = np.expand_dims(d, axis=channel_axis)
+    #     y = new_y
+    #
+    # # Sample pixels from the label matrix
+    # if output_mode == 'sample':
+    #     if not distance_transform:
+    #         y[y > 0] = 1  # make each cell instance equal to 1.
+    #     y = to_categorical(y)
+    #
+    #     feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
+    #         y=y,
+    #         padding=padding,
+    #         window_size_x=window_size_x,
+    #         window_size_y=window_size_y,
+    #         window_size_z=window_size_z,
+    #         max_training_examples=max_training_examples)
+    #     # Save training data in npz format
+    #     np.savez(file_name_save, X=X, y=feat_label, batch=feat_batch,
+    #              pixels_x=feat_rows, pixels_y=feat_cols, pixels_z=feat_frames,
+    #              win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
 
-    if distance_transform:
-        if K.image_data_format() == 'channels_first':
-            channel_axis = 1
-            new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3], y.shape[4]), dtype='int32')
-        else:
-            channel_axis = -1
-            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1), dtype='int32')
-
-        for b in range(y.shape[0]):
-            if K.image_data_format() == 'channels_first':
-                dist_batch = y[b, 0, :, :, :]
-            else:
-                dist_batch = y[b, :, :, :, 0]
-            d = distance_transform_3d(dist_batch, bins=distance_bins, erosion_width=erosion_width)
-            new_y[b] = np.expand_dims(d, axis=channel_axis)
-        y = new_y
-
-    # Sample pixels from the label matrix
-    if output_mode == 'sample':
-        if not distance_transform:
-            y[y > 0] = 1  # make each cell instance equal to 1.
-        y = to_categorical(y)
-
-        feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
-            y=y,
-            padding=padding,
-            window_size_x=window_size_x,
-            window_size_y=window_size_y,
-            window_size_z=window_size_z,
-            max_training_examples=max_training_examples)
-        # Save training data in npz format
-        np.savez(file_name_save, X=X, y=feat_label, batch=feat_batch,
-                 pixels_x=feat_rows, pixels_y=feat_cols, pixels_z=feat_frames,
-                 win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
-
-    if output_mode == 'conv':
-        np.savez(file_name_save, X=X, y=y, win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
+    np.savez(file_name_save, X=X, y=y)
 
     if display:
         plot_training_data_3d(X, y, len(training_direcs), num_of_frames_to_display)
@@ -920,7 +880,7 @@ def make_training_data(direc_name,
     if np.sum(edge_feature) > 1:
         raise ValueError('Only one edge feature is allowed')
 
-    padding = normalize_padding(padding)
+    padding = conv_utils.normalize_padding(padding)
 
     if output_mode not in {'sample', 'conv'}:
         raise ValueError('output_mode should be set to either sample or conv')
