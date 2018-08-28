@@ -81,19 +81,13 @@ class TestDataUtils(test.TestCase):
         y = np.zeros((2, 30, 30, 3))
         y[:, 0, 0, 0] = 1  # set value outside valid window range
         y[:, win_x + 1, win_y + 1, 0] = 1  # set value inside valid window range
-        r, c, b, l = sample_label_matrix(y,
-                                         window_size_x=win_x,
-                                         window_size_y=win_y,
-                                         padding='valid')
+        r, c, b, l = sample_label_matrix(y, window_size=(win_x, win_y), padding='valid')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
         assert np.unique(r).size == np.unique(c).size == 1
         assert np.unique(l).size == 1
 
-        r, c, b, l = sample_label_matrix(y,
-                                         window_size_x=win_x,
-                                         window_size_y=win_y,
-                                         padding='same')
+        r, c, b, l = sample_label_matrix(y, window_size=(win_x, win_y), padding='same')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(r).size == np.unique(c).size == 2
         assert np.unique(l).size == 1
@@ -104,19 +98,13 @@ class TestDataUtils(test.TestCase):
         y = np.zeros((2, 3, 30, 30))
         y[:, 0, 0, 0] = 1  # set value outside valid window range
         y[:, 0, win_x + 1, win_y + 1] = 1  # set value inside valid window range
-        r, c, b, l = sample_label_matrix(y,
-                                         window_size_x=win_x,
-                                         window_size_y=win_y,
-                                         padding='valid')
+        r, c, b, l = sample_label_matrix(y, window_size=(win_x, win_y), padding='valid')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
         assert np.unique(r).size == np.unique(c).size == 1
         assert np.unique(l).size == 1
 
-        r, c, b, l = sample_label_matrix(y,
-                                         window_size_x=win_x,
-                                         window_size_y=win_y,
-                                         padding='same')
+        r, c, b, l = sample_label_matrix(y, window_size=(win_x, win_y), padding='same')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
         assert np.unique(r).size == np.unique(c).size == 2
@@ -129,9 +117,7 @@ class TestDataUtils(test.TestCase):
         y[:, 0, 0, 0, 0] = 1  # set value outside valid window range
         y[:, win_z + 1, win_x + 1, win_y + 1, 0] = 1  # set value inside valid window range
         f, r, c, b, l = sample_label_movie(y,
-                                           window_size_x=win_x,
-                                           window_size_y=win_y,
-                                           window_size_z=win_z,
+                                           window_size=(win_x, win_y, win_z),
                                            padding='valid')
         assert len(f) == len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
@@ -139,9 +125,7 @@ class TestDataUtils(test.TestCase):
         assert np.unique(l).size == 1
 
         f, r, c, b, l = sample_label_movie(y,
-                                           window_size_x=win_x,
-                                           window_size_y=win_y,
-                                           window_size_z=win_z,
+                                           window_size=(win_x, win_y, win_z),
                                            padding='same')
         assert len(f) == len(r) == len(c) == len(b) == len(l)
         assert np.unique(f).size == np.unique(r).size == np.unique(c).size == 2
@@ -154,9 +138,7 @@ class TestDataUtils(test.TestCase):
         y[:, 0, 0, 0, 0] = 1  # set value outside valid window range
         y[:, 0, win_z + 1, win_x + 1, win_y + 1] = 1  # set value inside valid window range
         f, r, c, b, l = sample_label_movie(y,
-                                           window_size_x=win_x,
-                                           window_size_y=win_y,
-                                           window_size_z=win_z,
+                                           window_size=(win_x, win_y, win_z),
                                            padding='valid')
         assert len(f) == len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
@@ -164,9 +146,7 @@ class TestDataUtils(test.TestCase):
         assert np.unique(l).size == 1
 
         f, r, c, b, l = sample_label_movie(y,
-                                           window_size_x=win_x,
-                                           window_size_y=win_y,
-                                           window_size_z=win_z,
+                                           window_size=(win_x, win_y, win_z),
                                            padding='same')
         assert len(f) == len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
