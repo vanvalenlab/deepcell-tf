@@ -1977,12 +1977,7 @@ class DiscMovieIterator(Iterator):
             self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-        if self.channel_axis == -1:
-            batch_x = np.zeros(tuple([len(index_array), self.frames_per_batch] +
-                                     list(self.x.shape)[2:]))
-            batch_y = np.zeros(tuple([len(index_array), self.frames_per_batch] +
-                                     list(self.y.shape)[2:-1] + [self.max_label + 1]))
-        else:
+        if self.channel_axis == 1:
             batch_x = np.zeros((len(index_array),
                                 self.x.shape[1],
                                 self.frames_per_batch,
@@ -1993,6 +1988,11 @@ class DiscMovieIterator(Iterator):
                                 self.frames_per_batch,
                                 self.y.shape[3],
                                 self.y.shape[4]))
+        else:
+            batch_x = np.zeros(tuple([len(index_array), self.frames_per_batch] +
+                                     list(self.x.shape)[2:]))
+            batch_y = np.zeros(tuple([len(index_array), self.frames_per_batch] +
+                                     list(self.y.shape)[2:-1] + [self.max_label + 1]))
 
         for i, j in enumerate(index_array):
 
