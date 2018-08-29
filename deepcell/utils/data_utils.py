@@ -116,11 +116,13 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='vali
     return list_of_max_sample_numbers
 
 
-def sample_label_matrix(y, window_size=(30, 30), padding='valid', max_training_examples=1e7):
+def sample_label_matrix(y, window_size=(30, 30), padding='valid',
+                        max_training_examples=1e7, data_format=None):
     """Create a list of the maximum pixels to sample
     from each feature in each data set.
     """
-    is_channels_first = K.image_data_format() == 'channels_first'
+    data_format = conv_utils.normalize_data_format(data_format)
+    is_channels_first = data_format == 'channels_first'
     if is_channels_first:
         num_dirs, num_features, image_size_x, image_size_y = y.shape
     else:
@@ -180,12 +182,14 @@ def sample_label_matrix(y, window_size=(30, 30), padding='valid', max_training_e
     return feature_rows, feature_cols, feature_batch, feature_label
 
 
-def sample_label_movie(y, window_size=(30, 30, 5), padding='valid', max_training_examples=1e7):
+def sample_label_movie(y, window_size=(30, 30, 5), padding='valid',
+                       max_training_examples=1e7, data_format=None):
     """Create a list of the maximum pixels to sample from each feature in each
     data set. If output_mode is 'sample', then this will be set to the number
     of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
     """
-    is_channels_first = K.image_data_format() == 'channels_first'
+    data_format = conv_utils.normalize_data_format(data_format)
+    is_channels_first = data_format == 'channels_first'
     if is_channels_first:
         num_dirs, num_features, image_size_z, image_size_x, image_size_y = y.shape
     else:

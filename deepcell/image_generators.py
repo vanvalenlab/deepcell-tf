@@ -85,7 +85,8 @@ class ImageSampleArrayIterator(Iterator):
             y=y,
             padding='valid',
             window_size=window_size,
-            max_training_examples=None)
+            max_training_examples=None,
+            data_format=data_format)
 
         self.y = y
         self.channel_axis = 3 if data_format == 'channels_last' else 1
@@ -1215,7 +1216,8 @@ class SampleMovieArrayIterator(Iterator):
             y=y,
             padding='valid',
             window_size=window_size,
-            max_training_examples=None)
+            max_training_examples=None,
+            data_format=data_format)
 
         self.y = y
         self.win_x = window_size[0]
