@@ -14,9 +14,6 @@ from fnmatch import fnmatch
 
 import cv2
 import numpy as np
-from scipy import ndimage as ndi
-from skimage.filters import sobel_h
-from skimage.filters import sobel_v
 from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.transform import resize
@@ -1456,16 +1453,97 @@ class WatershedIterator(ImageFullyConvIterator):
                 mask = self.y[batch, interior_index, :, :]
             else:
                 mask = self.y[batch, :, :, interior_index]
-            logging.warning(np.unique(mask))
             y_distance[batch] = distance_transform_2d(mask, distance_bins, erosion_width)
 
         # convert to one hot notation
-        logging.warning(np.unique(y_distance))
         y_distance = keras_to_categorical(np.expand_dims(y_distance, axis=-1))
         if self.channel_axis == 1:
             y_distance = np.rollaxis(y_distance, -1, 1)
         self.y = y_distance
-        logging.warning(self.y.shape)
+
+
+class WatershedSampleDataGenerator(SampleDataGenerator):
+    def flow(self,
+             train_dict,
+             batch_size=32,
+             shuffle=True,
+             seed=None,
+             save_to_dir=None,
+             save_prefix='',
+             balance_classes=False,
+             max_class_samples=None,
+             distance_bins=16,
+             erosion_width=None,
+             skip=None,
+             save_format='png'):
+        return WatershedSampleIterator(
+            train_dict,
+            self,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            seed=seed,
+            data_format=self.data_format,
+            balance_classes=balance_classes,
+            max_class_samples=max_class_samples,
+            distance_bins=distance_bins,
+            erosion_width=erosion_width,
+            skip=skip,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
+
+
+class WatershedSampleIterator(ImageSampleArrayIterator):
+    def __init__(self,
+                 train_dict,
+                 image_data_generator,
+                 batch_size=1,
+                 shuffle=False,
+                 seed=None,
+                 data_format=None,
+                 balance_classes=False,
+                 max_class_samples=None,
+                 distance_bins=16,
+                 erosion_width=None,
+                 skip=None,
+                 save_to_dir=None,
+                 save_prefix='',
+                 save_format='png'):
+
+        if self.data_format == 'channels_first':
+            y_shape = (self.y.shape[0], *self.y.shape[2:])
+        else:
+            y_shape = self.y.shape[0:-1]
+
+        y_distance = np.zeros(y_shape)
+        interior_index = 1  # hardcoded for cell interior feature
+        for batch in range(y_distance.shape[0]):
+            if self.channel_axis == 1:
+                mask = self.y[batch, interior_index, :, :]
+            else:
+                mask = self.y[batch, :, :, interior_index]
+            y_distance[batch] = distance_transform_2d(mask, distance_bins, erosion_width)
+
+        # convert to one hot notation
+        y_distance = keras_to_categorical(np.expand_dims(y_distance, axis=-1))
+        if self.channel_axis == 1:
+            y_distance = np.rollaxis(y_distance, -1, 1)
+        self.y = y_distance
+        super(WatershedSampleIterator, self).__init__(
+            train_dict,
+            image_data_generator,
+            batch_size=batch_size,
+            skip=skip,
+            shuffle=shuffle,
+            seed=seed,
+            data_format=data_format,
+            balance_classes=balance_classes,
+            max_class_samples=max_class_samples,
+            distance_bins=distance_bins,
+            erosion_width=erosion_width,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
 
 
 class WatershedMovieDataGenerator(MovieDataGenerator):
@@ -1548,6 +1626,100 @@ class WatershedMovieIterator(MovieArrayIterator):
         if self.channel_axis == 1:
             y_distance = np.rollaxis(y_distance, -1, 1)
         self.y = y_distance
+
+
+class WatershedSampleMovieDataGenerator(MovieDataGenerator):
+    """
+    Generate minibatches of distance-transformed movie data
+    with real-time data augmentation.
+    """
+    def flow(self,
+             train_dict,
+             batch_size=1,
+             shuffle=True,
+             seed=None,
+             frames_per_batch=10,
+             balance_classes=False,
+             max_class_samples=None,
+             distance_bins=16,
+             erosion_width=None,
+             save_to_dir=None,
+             save_prefix='',
+             skip=None,
+             save_format='png'):
+        return WatershedSampleMovieIterator(
+            train_dict,
+            self,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            seed=seed,
+            skip=skip,
+            frames_per_batch=frames_per_batch,
+            data_format=self.data_format,
+            balance_classes=balance_classes,
+            max_class_samples=max_class_samples,
+            distance_bins=distance_bins,
+            erosion_width=erosion_width,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
+
+
+class WatershedSampleMovieIterator(SampleMovieArrayIterator):
+    def __init__(self,
+                 train_dict,
+                 movie_data_generator,
+                 batch_size=1,
+                 skip=None,
+                 shuffle=False,
+                 seed=None,
+                 frames_per_batch=10,
+                 balance_classes=False,
+                 max_class_samples=None,
+                 data_format=None,
+                 distance_bins=16,
+                 erosion_width=None,
+                 save_to_dir=None,
+                 save_prefix='',
+                 save_format='png'):
+        if data_format is None:
+            data_format = K.image_data_format()
+
+        y = train_dict['y']
+
+        if self.data_format == 'channels_first':
+            y_shape = (y.shape[0], *y.shape[2:])
+        else:
+            y_shape = y.shape[0:-1]
+
+        y_distance = np.zeros(y_shape)
+        interior_index = 0  # hardcoded for image mask
+        for batch in range(y_distance.shape[0]):
+            if self.time_axis == 1:
+                mask = y[batch, :, :, :, interior_index]
+            else:
+                mask = y[batch, interior_index, :, :, :]
+            y_distance[batch] = distance_transform_3d(mask, distance_bins, erosion_width)
+
+        # convert to one hot notation
+        y_distance = keras_to_categorical(np.expand_dims(y_distance, axis=-1))
+        if data_format == 'channels_first':
+            y_distance = np.rollaxis(y_distance, -1, 1)
+        train_dict['y'] = y_distance
+        super(WatershedSampleMovieIterator, self).__init__(
+            train_dict,
+            movie_data_generator,
+            batch_size=batch_size,
+            skip=skip,
+            shuffle=shuffle,
+            seed=seed,
+            frames_per_batch=frames_per_batch,
+            balance_classes=balance_classes,
+            max_class_samples=max_class_samples,
+            data_format=data_format,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
 
 
 """
