@@ -1212,7 +1212,7 @@ class SampleMovieArrayIterator(Iterator):
 
         window_size = conv_utils.normalize_tuple(window_size, 3, 'window_size')
 
-        pixels_x, pixels_y, pixels_z, batch, y = sample_label_movie(
+        pixels_z, pixels_x, pixels_y, batch, y = sample_label_movie(
             y=y,
             padding='valid',
             window_size=window_size,

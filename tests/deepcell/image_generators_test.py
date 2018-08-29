@@ -65,27 +65,16 @@ class TestSampleDataGenerator(test.TestCase):
                 vertical_flip=True)
 
             img_w, img_h = 21, 21
-            win_x, win_y = 5, 5
+            win_x, win_y = 2, 2
             test_batches = 8
             classes = np.random.randint(2, 5, size=1)[0]
 
-            size = img_w * img_h * test_batches
-
-            batch = np.random.randint(0, test_batches, size=size)
-            pixels_x = np.random.randint(win_x, img_w - win_x, size=size)
-            pixels_y = np.random.randint(win_y, img_h - win_y, size=size)
-
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((test_batches, win_x, win_y, 3)),
-                'y': np.random.randint(classes, size=size),
-                'win_x': win_x,
-                'win_y': win_y,
-                'pixels_x': pixels_x,
-                'pixels_y': pixels_y,
-                'batch': batch
+                'X': np.random.random((test_batches, img_w, img_h, 3)),
+                'y': np.random.randint(2, size=(test_batches, img_w, img_h, classes))
             }
-            generator.flow(train_dict)
+            generator.flow(train_dict, window_size=(win_x, win_y))
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -93,10 +82,14 @@ class TestSampleDataGenerator(test.TestCase):
             # Fit
             generator.fit(images, augment=True, seed=1)
             train_dict['X'] = images
-            train_dict['y'] = np.random.randint(classes, size=size)
+            test_shape = (*images.shape[:-1], classes)
+            train_dict['y'] = np.random.randint(2, size=test_shape)
             for x, _ in generator.flow(
                     train_dict,
                     save_to_dir=temp_dir,
+                    window_size=(win_x, win_y),
+                    balance_classes=True,
+                    max_class_samples=100,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], (2 * win_x + 1, 2 * win_y + 1, x.shape[-1]))
                 break
@@ -129,38 +122,31 @@ class TestSampleDataGenerator(test.TestCase):
                 data_format='channels_first')
 
             img_w, img_h = 21, 21
-            win_x, win_y = 5, 5
+            win_x, win_y = 2, 2
             test_batches = 8
             classes = np.random.randint(2, 5, size=1)[0]
-
-            size = img_w * img_h * test_batches
-
-            batch = np.random.randint(0, test_batches, size=size)
-            pixels_x = np.random.randint(win_x, img_w - win_x, size=size)
-            pixels_y = np.random.randint(win_y, img_h - win_y, size=size)
 
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((test_batches, 3, img_w, img_h)),
-                'y': np.random.randint(classes, size=size),
-                'win_x': win_x,
-                'win_y': win_y,
-                'pixels_x': pixels_x,
-                'pixels_y': pixels_y,
-                'batch': batch
+                'y': np.random.randint(2, size=(test_batches, classes, img_w, img_h))
             }
-            generator.flow(train_dict)
+            generator.flow(train_dict, window_size=(win_x, win_y))
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
 
             # Fit
-            generator.fit(images, augment=True)
+            generator.fit(images, augment=True, seed=1)
             train_dict['X'] = images
-            train_dict['y'] = np.random.randint(classes, size=size)
+            test_shape = (images.shape[0], classes, *images.shape[2:])
+            train_dict['y'] = np.random.randint(2, size=test_shape)
             for x, _ in generator.flow(
                     train_dict,
                     save_to_dir=temp_dir,
+                    window_size=(win_x, win_y),
+                    balance_classes=True,
+                    max_class_samples=100,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], (x.shape[1], 2 * win_x + 1, 2 * win_y + 1))
                 break
@@ -174,60 +160,24 @@ class TestSampleDataGenerator(test.TestCase):
             zca_whitening=True,
             data_format='channels_last')
 
-        win_x = win_y = 5
-        img_w, img_h = 21, 21
-        test_batches = 8
-        classes = np.random.randint(2, 5, size=1)[0]
-
-        size = img_w * img_h * test_batches
-
-        batch = np.random.randint(test_batches, size=size)
-        pixels_x = np.random.randint(img_w, size=size)
-        pixels_y = np.random.randint(img_h, size=size)
+        win_x, win_y = 2, 2
 
         # Test fit with invalid data
         with self.assertRaises(ValueError):
             x = np.random.random((3, 10, 10))
             generator.fit(x)
-        # Test flow with invalid data
-        # y is same length as batch, pixels_x, pixels_y
-        with self.assertRaises(ValueError):
-            train_dict = {
-                'X': np.random.random((test_batches, img_w, img_h, 5)),
-                'y': np.arange(batch.size),
-                'win_x': win_x,
-                'win_y': win_y,
-                'pixels_x': pixels_x[:-1],
-                'pixels_y': pixels_y[:-2],
-                'batch': batch
-            }
-            generator.flow(train_dict)
 
         # Test flow with invalid dimensions
         with self.assertRaises(ValueError):
             train_dict = {
-                'X': np.random.random((test_batches, 10, 10)),
-                'y': np.random.randint(classes, size=size),
-                'win_x': win_x,
-                'win_y': win_y,
-                'pixels_x': pixels_x,
-                'pixels_y': pixels_y,
-                'batch': batch
+                'X': np.random.random((32, 10, 10)),
+                'y': np.random.random((32, 10, 10))
             }
-            generator.flow(train_dict)
+            generator.flow(train_dict, window_size=(win_x, win_y))
         # Invalid number of channels: will work but raise a warning
-        x = np.random.random((test_batches, img_w, img_h, 5))
-        y = np.random.randint(classes, size=size)
-        train_dict = {
-            'X': x,
-            'y': y,
-            'win_x': win_x,
-            'win_y': win_y,
-            'pixels_x': pixels_x,
-            'pixels_y': pixels_y,
-            'batch': batch
-        }
-        generator.flow(train_dict)
+        x = np.random.random((32, 10, 10, 5))
+        y = np.random.randint(2, size=(32, 10, 10, 5))
+        generator.flow({'X': x, 'y': y}, window_size=(win_x, win_y))
 
         with self.assertRaises(ValueError):
             generator = image_generators.SampleDataGenerator(
@@ -243,7 +193,7 @@ class TestSampleDataGenerator(test.TestCase):
 class TestSampleMovieDataGenerator(test.TestCase):
 
     def test_sample_movie_data_generator(self):
-        frames = 10
+        frames = 24
         for test_images in _generate_test_images():
             img_list = []
             for im in test_images:
@@ -275,30 +225,16 @@ class TestSampleMovieDataGenerator(test.TestCase):
                 vertical_flip=True)
 
             img_w, img_h = 21, 21
-            win_x, win_y, win_z = 5, 5, frames // 2
+            win_x, win_y, win_z = 2, 2, 2
             test_batches = 8
             classes = np.random.randint(2, 5, size=1)[0]
-
-            size = img_w * img_h * frames * test_batches
-
-            pixels_x = np.random.randint(win_x, img_w - win_x, size=size)
-            pixels_y = np.random.randint(win_y, img_h - win_y, size=size)
-            pixels_z = np.random.randint(0, frames - win_z, size=size)
-            batch = np.random.randint(test_batches, size=size)
 
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((test_batches, frames, img_w, img_h, 3)),
-                'y': np.random.randint(classes, size=size),
-                'win_x': win_x,
-                'win_y': win_y,
-                'win_z': win_z,
-                'pixels_x': pixels_x,
-                'pixels_y': pixels_y,
-                'pixels_z': pixels_z,
-                'batch': batch
+                'y': np.random.randint(2, size=(test_batches, frames, img_w, img_h, classes))
             }
-            generator.flow(train_dict)
+            generator.flow(train_dict, window_size=(win_x, win_y, win_z))
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -307,17 +243,21 @@ class TestSampleMovieDataGenerator(test.TestCase):
             assert generator.random_transform(images[0]).shape == images[0].shape
             generator.fit(images, augment=True, seed=1)
             train_dict['X'] = images
-            train_dict['y'] = np.random.randint(classes, size=size)
+            test_shape = (images.shape[0], *images.shape[1:-1], classes)
+            train_dict['y'] = np.random.randint(2, size=test_shape)
             for x, _ in generator.flow(
                     train_dict,
                     save_to_dir=temp_dir,
+                    window_size=(win_x, win_y, win_z),
+                    balance_classes=True,
+                    max_class_samples=100,
                     shuffle=True):
                 shape = (2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1, x.shape[-1])
                 self.assertEqual(x.shape[1:], shape)
                 break
 
     def test_sample_movie_data_generator_channels_first(self):
-        frames = 10
+        frames = 24
         for test_images in _generate_test_images():
             img_list = []
             for im in test_images:
@@ -351,30 +291,16 @@ class TestSampleMovieDataGenerator(test.TestCase):
                 data_format='channels_first')
 
             img_w, img_h = 21, 21
-            win_x, win_y, win_z = 5, 5, frames // 2
+            win_x, win_y, win_z = 2, 2, 2
             test_batches = 8
             classes = np.random.randint(2, 5, size=1)[0]
-
-            size = img_w * img_h * frames * test_batches
-
-            pixels_x = np.random.randint(win_x, img_w - win_x, size=size)
-            pixels_y = np.random.randint(win_y, img_h - win_y, size=size)
-            pixels_z = np.random.randint(0, frames - win_z, size=size)
-            batch = np.random.randint(test_batches, size=size)
 
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((test_batches, 3, frames, img_w, img_h)),
-                'y': np.random.randint(classes, size=size),
-                'win_x': win_x,
-                'win_y': win_y,
-                'win_z': win_z,
-                'pixels_x': pixels_x,
-                'pixels_y': pixels_y,
-                'pixels_z': pixels_z,
-                'batch': batch
+                'y': np.random.randint(2, size=(test_batches, classes, frames, img_w, img_h))
             }
-            generator.flow(train_dict)
+            generator.flow(train_dict, window_size=(win_x, win_y, win_z))
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -384,10 +310,14 @@ class TestSampleMovieDataGenerator(test.TestCase):
             generator.fit(images, augment=True, seed=1)
 
             train_dict['X'] = images
-            train_dict['y'] = np.random.randint(classes, size=size)
+            test_shape = (images.shape[0], classes, *images.shape[2:])
+            train_dict['y'] = np.random.randint(2, size=test_shape)
             for x, _ in generator.flow(
                     train_dict,
                     save_to_dir=temp_dir,
+                    window_size=(win_x, win_y, win_z),
+                    balance_classes=True,
+                    max_class_samples=100,
                     shuffle=True):
                 shape = (x.shape[1], 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1)
                 self.assertEqual(x.shape[1:], shape)
@@ -401,68 +331,33 @@ class TestSampleMovieDataGenerator(test.TestCase):
             samplewise_std_normalization=True,
             zca_whitening=True,
             data_format='channels_last')
-
-        win_x = win_y = win_z = 5
-        img_w, img_h, frames = 10, 10, 5
-        test_batches = 8
-        classes = np.random.randint(2, 5, size=1)[0]
-
-        size = img_w * img_h * frames * test_batches
-
-        pixels_x = np.random.randint(img_w, size=size)
-        pixels_y = np.random.randint(img_h, size=size)
-        pixels_z = np.random.randint(frames, size=size)
-        batch = np.random.randint(test_batches, size=size)
+        window_size = (2, 2, 2)
 
         # Test fit with invalid data
         with self.assertRaises(ValueError):
-            x = np.random.random((3, img_w, img_h))
+            x = np.random.random((3, 10, 10))
             generator.fit(x)
-        # Test flow with invalid data
-        # y is same length as batch, pixels_x, pixels_y, pixels_z
-        with self.assertRaises(ValueError):
-            train_dict = {
-                'X': np.random.random((test_batches, frames, img_w, img_h, 5)),
-                'y': np.arange(batch.size),
-                'win_x': win_x,
-                'win_y': win_y,
-                'win_z': win_z,
-                'pixels_x': pixels_x[:-1],
-                'pixels_y': pixels_y[:-2],
-                'pixels_z': pixels_z,
-                'batch': batch
-            }
-            generator.flow(train_dict)
 
         # Test flow with invalid dimensions
         with self.assertRaises(ValueError):
             train_dict = {
-                'X': np.random.random((32, 10, 10)),
-                'y': np.random.randint(classes, size=size),
-                'win_x': win_x,
-                'win_y': win_y,
-                'win_z': win_z,
-                'pixels_x': pixels_x,
-                'pixels_y': pixels_y,
-                'pixels_z': pixels_z,
-                'batch': batch
+                'X': np.random.random((32, 10, 10, 1)),
+                'y': np.random.random((32, 10, 10, 1))
             }
-            generator.flow(train_dict)
+            generator.flow(train_dict, window_size=window_size)
+
+        # Test flow with non-matching batches
+        with self.assertRaises(Exception):
+            train_dict = {
+                'X': np.random.random((32, 30, 10, 10, 1)),
+                'y': np.random.random((25, 30, 10, 10, 1))
+            }
+            generator.flow(train_dict, window_size=window_size)
+
         # Invalid number of channels: will work but raise a warning
-        x = np.random.random((test_batches, frames, img_w, img_h, 5))
-        y = np.random.randint(0, classes, size=size) + 1
-        train_dict = {
-            'X': x,
-            'y': y,
-            'win_x': win_x,
-            'win_y': win_y,
-            'win_z': win_z,
-            'pixels_x': pixels_x,
-            'pixels_y': pixels_y,
-            'pixels_z': pixels_z,
-            'batch': batch
-        }
-        generator.flow(train_dict)
+        x = np.random.random((32, 30, 10, 10, 5))
+        y = np.random.randint(2, size=(32, 30, 10, 10, 5))
+        generator.flow({'X': x, 'y': y}, window_size=window_size)
 
         with self.assertRaises(ValueError):
             generator = image_generators.SampleDataGenerator(
