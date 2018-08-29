@@ -251,6 +251,10 @@ class ImageFullyConvIterator(Iterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
+        if train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+            raise ValueError('Training batches and labels should have the same'
+                             'length. Found X.shape: {} y.shape: {}'.format(
+                                 train_dict['X'].shape, train_dict['y'].shape))
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
@@ -1584,6 +1588,10 @@ class DiscIterator(Iterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
+        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+            raise ValueError('Training batches and labels should have the same'
+                             'length. Found X.shape: {} y.shape: {}'.format(
+                                 train_dict['X'].shape, train_dict['y'].shape))
         if data_format is None:
             data_format = K.image_data_format()
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
@@ -1828,9 +1836,15 @@ class DiscMovieIterator(Iterator):
 
             # convert to one hot notation
             if self.channel_axis == 1:
-                y_shape = (self.max_label + 1, self.frames_per_batch, self.y.shape[3], self.y.shape[4])
+                y_shape = (self.max_label + 1,
+                           self.frames_per_batch,
+                           self.y.shape[3],
+                           self.y.shape[4])
             else:
-                y_shape = (self.frames_per_batch, self.y.shape[2], self.y.shape[3], self.max_label + 1)
+                y_shape = (self.frames_per_batch,
+                           self.y.shape[2],
+                           self.y.shape[3],
+                           self.max_label + 1)
 
             y_ohe = np.zeros(y_shape)
             for label_val in range(self.max_label + 1):

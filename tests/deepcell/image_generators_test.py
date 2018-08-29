@@ -174,6 +174,14 @@ class TestSampleDataGenerator(test.TestCase):
                 'y': np.random.random((32, 10, 10))
             }
             generator.flow(train_dict, window_size=(win_x, win_y))
+
+        # Test flow with non-matching batches
+        with self.assertRaises(Exception):
+            train_dict = {
+                'X': np.random.random((32, 10, 10, 1)),
+                'y': np.random.random((25, 10, 10, 1))
+            }
+            generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
         x = np.random.random((32, 10, 10, 5))
         y = np.random.randint(2, size=(32, 10, 10, 5))
@@ -490,6 +498,14 @@ class TestFullyConvDataGenerator(test.TestCase):
             train_dict = {
                 'X': np.random.random((32, 10, 10)),
                 'y': np.random.random((32, 10, 10))
+            }
+            generator.flow(train_dict)
+
+        # Test flow with non-matching batches
+        with self.assertRaises(Exception):
+            train_dict = {
+                'X': np.random.random((32, 10, 10, 1)),
+                'y': np.random.random((25, 10, 10, 1))
             }
             generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
@@ -946,6 +962,14 @@ class TestWatershedDataGenerator(test.TestCase):
                 'y': np.random.random((32, 10, 10))
             }
             generator.flow(train_dict, distance_bins=distance_bins)
+
+        # Test flow with non-matching batches
+        with self.assertRaises(Exception):
+            train_dict = {
+                'X': np.random.random((32, 10, 10, 1)),
+                'y': np.random.random((25, 10, 10, 1))
+            }
+            generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
         x = np.random.random((32, 10, 10, 5))
         y = np.random.random((32, 10, 10, 5))
@@ -1281,6 +1305,14 @@ class TestDiscDataGenerator(test.TestCase):
             train_dict = {
                 'X': np.random.random((32, 10, 10)),
                 'y': np.random.random((32, 10, 10))
+            }
+            generator.flow(train_dict)
+
+        # Test flow with non-matching batches
+        with self.assertRaises(Exception):
+            train_dict = {
+                'X': np.random.random((32, 10, 10, 1)),
+                'y': np.random.random((25, 10, 10, 1))
             }
             generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
