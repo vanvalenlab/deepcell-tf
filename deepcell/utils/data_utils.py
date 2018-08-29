@@ -148,9 +148,7 @@ def sample_label_matrix(y, window_size=(30, 30), padding='valid',
             non_rand_ind = np.arange(len(feature_rows_temp))
             rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows_temp), replace=False)
 
-            # pixel_counter = 0
             for i in rand_ind:
-                # if pixel_counter < list_of_max_sample_numbers[direc]:
                 condition = padding == 'valid' and \
                     feature_rows_temp[i] - window_size_x > 0 and \
                     feature_rows_temp[i] + window_size_x < image_size_x and \
@@ -162,7 +160,6 @@ def sample_label_matrix(y, window_size=(30, 30), padding='valid',
                     feature_cols.append(feature_cols_temp[i])
                     feature_batch.append(direc)
                     feature_label.append(k)
-                    # pixel_counter += 1
 
     # Randomize
     non_rand_ind = np.arange(len(feature_rows), dtype='int32')
@@ -517,16 +514,10 @@ def make_training_data_2d(direc_name,
                           raw_image_direc='raw',
                           annotation_direc='annotated',
                           training_direcs=None,
-                          max_training_examples=1e7,
-                          distance_transform=False,
-                          distance_bins=4,
                           window_size_x=30,
                           window_size_y=30,
                           edge_feature=[1, 0, 0],
                           dilation_radius=1,
-                          display=False,
-                          max_plotted=5,
-                          verbose=False,
                           reshape_size=None,
                           padding='valid',
                           output_mode='sample'):
@@ -543,13 +534,8 @@ def make_training_data_2d(direc_name,
                        without 'feature' in their name are used.
         edge_feature: List which determines the cell edge feature (usually [1, 0, 0])
                       There can be a single 1 in the list, indicating the index of the feature.
-        max_training_examples: max number of samples to be given to model
         window_size_x: number of pixels to +/- x direction to be sampled in sample mode
         window_size_y: number of pixels to +/- y direction to be sampled in sample mode
-        dilation_radius: radius for dilating cell edges
-        display: whether or not to plot the training data
-        max_plotted: how many points to plot if display is True
-        verbose:  print more output to screen, similar to DEBUG mode
         reshape_size: If provided, will reshape the images to the given size
         padding:  'valid' or 'same'
         output_mode:  'sample' or 'conv'
@@ -572,50 +558,6 @@ def make_training_data_2d(direc_name,
     if reshape_size is not None:
         X, y = reshape_matrix(X, y, reshape_size=reshape_size)
 
-    # if distance_transform:
-    #     if is_channels_first:
-    #         channel_axis = 1
-    #         new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3]), dtype='int32')
-    #     else:
-    #         channel_axis = -1
-    #         new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1), dtype='int32')
-    #
-    #     for b in range(y.shape[0]):
-    #         if is_channels_first:
-    #             dist_batch = y[b, 1, :, :]
-    #         else:
-    #             dist_batch = y[b, :, :, 1]
-    #         d = distance_transform_2d(dist_batch, bins=distance_bins)
-    #         new_y[b] = np.expand_dims(d, axis=channel_axis)
-    #     y = to_categorical(new_y)
-        # not really edge_feature anymore, but there will be the fewest
-        # "center" pixels, so lets call that the edge_feature for now
-        # edge_feature = [0] * y.shape[channel_axis]
-        # edge_feature[-1] = 1
-
-    # Create mask of sampled pixels
-    # feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
-    #     y, padding=padding, window_size_x=window_size_x, window_size_y=window_size_y,
-    #     max_training_examples=max_training_examples)
-
-    # weights = compute_class_weight('balanced', y=feature_label, classes=np.unique(feature_label))
-
-    # Sample pixels from the label matrix
-    # if output_mode == 'sample':
-    #
-    #     # Save training data in npz format
-    #     np.savez(file_name_save, class_weights=weights, X=X, y=feature_label,
-    #              batch=feature_batch, pixels_x=feature_rows, pixels_y=feature_cols,
-    #              win_x=window_size_x, win_y=window_size_y)
-    #
-    # elif output_mode == 'conv':
-    #     y_sample = np.zeros(y.shape, dtype='int32')
-    #     for b, r, c, l in zip(feature_batch, feature_rows, feature_cols, feature_label):
-    #         if is_channels_first:
-    #             y_sample[b, l, r, c] = 1
-    #         else:
-    #             y_sample[b, r, c, l] = 1
-
     # Trim the feature mask so that each window does not overlap with the border of the image
     if padding == 'valid' and output_mode != 'sample':
         y = trim_padding(y, window_size_x, window_size_y)
@@ -624,18 +566,6 @@ def make_training_data_2d(direc_name,
     np.savez(file_name_save, X=X, y=y)
 
     return None
-
-    # if verbose:
-    #     print('Number of features: {}'.format(y.shape[1 if is_channels_first else -1]))
-    #     print('Number of training data points: {}'.format(len(feature_label)))
-    #     print('Class weights: {}'.format(weights))
-
-    # if display:
-    #     if output_mode == 'conv':
-    #         display_mask = y_sample
-    #     else:
-    #         display_mask = y
-    #     plot_training_data_2d(X, display_mask, max_plotted=max_plotted)
 
 
 def load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
@@ -750,14 +680,7 @@ def make_training_data_3d(direc_name,
                           output_mode='conv',
                           reshape_size=None,
                           num_frames=50,
-                          display=True,
-                          num_of_frames_to_display=5,
-                          montage_mode=True,
-                          max_training_examples=1e7,
-                          distance_transform=False,
-                          distance_bins=4,
-                          erosion_width=None,
-                          verbose=True):
+                          montage_mode=True):
     """
     Read all images in training directories and save as npz file.
     3D image sets are "stacks" of images.  For annotation purposes, these images
@@ -778,13 +701,7 @@ def make_training_data_3d(direc_name,
         padding:  'valid' or 'same'
         output_mode:  'sample' or 'conv'
         reshape_size: If provided, will reshape the images to the given size.
-        num_of_features: number of classes (e.g. cell interior, cell edge, background)
-        max_training_examples: max number of samples to be given to model
-        verbose:  print more output to screen, similar to DEBUG mode.
-        num_frames:
-        sub_sample: whether or not to subsamble the training data
-        display: whether or not to plot the training data
-        num_of_frames_to_display:
+        num_frames: number of frames to load from each training directory
         montage_mode: data is broken into several "montage"
                       sub-directories for easier annoation
     """
@@ -809,46 +726,8 @@ def make_training_data_3d(direc_name,
     # Reshape X and y
     if reshape_size is not None:
         X, y = reshape_movie(X, y, reshape_size=reshape_size)
-    #
-    # if distance_transform:
-    #     if K.image_data_format() == 'channels_first':
-    #         channel_axis = 1
-    #         new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3], y.shape[4]), dtype='int32')
-    #     else:
-    #         channel_axis = -1
-    #         new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1), dtype='int32')
-    #
-    #     for b in range(y.shape[0]):
-    #         if K.image_data_format() == 'channels_first':
-    #             dist_batch = y[b, 0, :, :, :]
-    #         else:
-    #             dist_batch = y[b, :, :, :, 0]
-    #         d = distance_transform_3d(dist_batch, bins=distance_bins, erosion_width=erosion_width)
-    #         new_y[b] = np.expand_dims(d, axis=channel_axis)
-    #     y = new_y
-    #
-    # # Sample pixels from the label matrix
-    # if output_mode == 'sample':
-    #     if not distance_transform:
-    #         y[y > 0] = 1  # make each cell instance equal to 1.
-    #     y = to_categorical(y)
-    #
-    #     feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
-    #         y=y,
-    #         padding=padding,
-    #         window_size_x=window_size_x,
-    #         window_size_y=window_size_y,
-    #         window_size_z=window_size_z,
-    #         max_training_examples=max_training_examples)
-    #     # Save training data in npz format
-    #     np.savez(file_name_save, X=X, y=feat_label, batch=feat_batch,
-    #              pixels_x=feat_rows, pixels_y=feat_cols, pixels_z=feat_frames,
-    #              win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
 
     np.savez(file_name_save, X=X, y=y)
-
-    if display:
-        plot_training_data_3d(X, y, len(training_direcs), num_of_frames_to_display)
 
     return None
 
@@ -865,12 +744,7 @@ def make_training_data(direc_name,
                        output_mode='conv',
                        raw_image_direc='raw',
                        annotation_direc='annotated',
-                       verbose=False,
                        reshape_size=None,
-                       display=False,
-                       max_training_examples=1e7,
-                       distance_transform=False,
-                       distance_bins=4,
                        **kwargs):
     """
     Wrapper function for other make_training_data functions (2d, 3d)
@@ -904,18 +778,11 @@ def make_training_data(direc_name,
                               window_size_x=window_size_x,
                               window_size_y=window_size_y,
                               edge_feature=edge_feature,
-                              distance_transform=distance_transform,
-                              distance_bins=distance_bins,
-                              display=display,
-                              verbose=verbose,
                               reshape_size=reshape_size,
                               padding=padding,
                               output_mode=output_mode,
                               raw_image_direc=raw_image_direc,
-                              annotation_direc=annotation_direc,
-                              dilation_radius=kwargs.get('dilation_radius', 1),
-                              max_plotted=kwargs.get('max_plotted', 5),
-                              max_training_examples=max_training_examples)
+                              annotation_direc=annotation_direc)
 
     elif dimensionality == 3:
         make_training_data_3d(direc_name, file_name_save, channel_names,
@@ -926,18 +793,11 @@ def make_training_data(direc_name,
                               window_size_x=window_size_x,
                               window_size_y=window_size_y,
                               window_size_z=kwargs.get('window_size_z', 5),
-                              distance_transform=distance_transform,
-                              distance_bins=distance_bins,
-                              erosion_width=kwargs.get('erosion_width'),
                               padding=padding,
                               output_mode=output_mode,
                               reshape_size=reshape_size,
-                              verbose=verbose,
-                              display=display,
-                              max_training_examples=max_training_examples,
                               montage_mode=kwargs.get('montage_mode', False),
-                              num_frames=kwargs.get('num_frames', 50),
-                              num_of_frames_to_display=kwargs.get('num_of_frames_to_display', 5))
+                              num_frames=kwargs.get('num_frames', 50))
 
     else:
         raise NotImplementedError('make_training_data is not implemented for '
