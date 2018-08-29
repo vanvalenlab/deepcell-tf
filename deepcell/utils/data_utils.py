@@ -514,8 +514,7 @@ def make_training_data_2d(direc_name,
                           raw_image_direc='raw',
                           annotation_direc='annotated',
                           training_direcs=None,
-                          window_size_x=30,
-                          window_size_y=30,
+                          window_size=(30, 30),
                           edge_feature=[1, 0, 0],
                           dilation_radius=1,
                           reshape_size=None,
@@ -534,13 +533,13 @@ def make_training_data_2d(direc_name,
                        without 'feature' in their name are used.
         edge_feature: List which determines the cell edge feature (usually [1, 0, 0])
                       There can be a single 1 in the list, indicating the index of the feature.
-        window_size_x: number of pixels to +/- x direction to be sampled in sample mode
-        window_size_y: number of pixels to +/- y direction to be sampled in sample mode
         reshape_size: If provided, will reshape the images to the given size
         padding:  'valid' or 'same'
         output_mode:  'sample' or 'conv'
     """
-    is_channels_first = K.image_data_format() == 'channels_first'
+    window_size = conv_utils.normalize_tuple(window_size, 2, 'window_size')
+    window_size_x, window_size_y = window_size
+
     # Load one file to get image sizes (all images same size as they are from same microscope)
     image_path = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
     image_size = get_image_sizes(image_path, channel_names)
@@ -673,9 +672,7 @@ def make_training_data_3d(direc_name,
                           annotation_name='corrected',
                           raw_image_direc='raw',
                           annotation_direc='annotated',
-                          window_size_x=30,
-                          window_size_y=30,
-                          window_size_z=5,
+                          window_size=(30, 30, 5),
                           padding='same',
                           output_mode='conv',
                           reshape_size=None,
@@ -705,6 +702,9 @@ def make_training_data_3d(direc_name,
         montage_mode: data is broken into several "montage"
                       sub-directories for easier annoation
     """
+    window_size = conv_utils.normalize_tuple(window_size, 3, 'window_size')
+    window_size_x, window_size_y, window_size_z = window_size
+
     # Load one file to get image sizes
     rand_train_dir = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
     if montage_mode:
@@ -737,8 +737,7 @@ def make_training_data(direc_name,
                        channel_names,
                        dimensionality,
                        training_direcs=None,
-                       window_size_x=30,
-                       window_size_y=30,
+                       window_size=(30, 30),
                        edge_feature=[1, 0, 0],
                        padding='same',
                        output_mode='conv',
@@ -775,8 +774,7 @@ def make_training_data(direc_name,
     if dimensionality == 2:
         make_training_data_2d(direc_name, file_name_save, channel_names,
                               training_direcs=training_direcs,
-                              window_size_x=window_size_x,
-                              window_size_y=window_size_y,
+                              window_size=window_size,
                               edge_feature=edge_feature,
                               reshape_size=reshape_size,
                               padding=padding,
@@ -790,9 +788,7 @@ def make_training_data(direc_name,
                               annotation_name=kwargs.get('annotation_name', 'corrected'),
                               raw_image_direc=raw_image_direc,
                               annotation_direc=annotation_direc,
-                              window_size_x=window_size_x,
-                              window_size_y=window_size_y,
-                              window_size_z=kwargs.get('window_size_z', 5),
+                              window_size=window_size,
                               padding=padding,
                               output_mode=output_mode,
                               reshape_size=reshape_size,
