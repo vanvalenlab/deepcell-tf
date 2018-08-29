@@ -1524,7 +1524,7 @@ class WatershedSampleIterator(ImageSampleArrayIterator):
         y_distance = np.zeros(y_shape)
         interior_index = 1  # hardcoded for cell interior feature
         for batch in range(y_distance.shape[0]):
-            if self.channel_axis == 1:
+            if data_format == 'channels_first':
                 mask = y[batch, interior_index, :, :]
             else:
                 mask = y[batch, :, :, interior_index]
@@ -1532,7 +1532,7 @@ class WatershedSampleIterator(ImageSampleArrayIterator):
 
         # convert to one hot notation
         y_distance = keras_to_categorical(np.expand_dims(y_distance, axis=-1))
-        if self.channel_axis == 1:
+        if data_format == 'channels_first':
             y_distance = np.rollaxis(y_distance, -1, 1)
         train_dict['y'] = y_distance
         super(WatershedSampleIterator, self).__init__(
@@ -1703,10 +1703,10 @@ class WatershedSampleMovieIterator(SampleMovieArrayIterator):
         y_distance = np.zeros(y_shape)
         interior_index = 0  # hardcoded for image mask
         for batch in range(y_distance.shape[0]):
-            if self.time_axis == 1:
-                mask = y[batch, :, :, :, interior_index]
-            else:
+            if data_format == 'channels_first':
                 mask = y[batch, interior_index, :, :, :]
+            else:
+                mask = y[batch, :, :, :, interior_index]
             y_distance[batch] = distance_transform_3d(mask, distance_bins, erosion_width)
 
         # convert to one hot notation
