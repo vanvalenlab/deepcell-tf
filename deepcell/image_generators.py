@@ -1512,26 +1512,29 @@ class WatershedSampleIterator(ImageSampleArrayIterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
+        if data_format is None:
+            data_format = K.image_data_format()
 
-        if self.data_format == 'channels_first':
-            y_shape = (self.y.shape[0], *self.y.shape[2:])
+        y = train_dict['y']
+        if data_format == 'channels_first':
+            y_shape = (y.shape[0], *y.shape[2:])
         else:
-            y_shape = self.y.shape[0:-1]
+            y_shape = y.shape[0:-1]
 
         y_distance = np.zeros(y_shape)
         interior_index = 1  # hardcoded for cell interior feature
         for batch in range(y_distance.shape[0]):
             if self.channel_axis == 1:
-                mask = self.y[batch, interior_index, :, :]
+                mask = y[batch, interior_index, :, :]
             else:
-                mask = self.y[batch, :, :, interior_index]
+                mask = y[batch, :, :, interior_index]
             y_distance[batch] = distance_transform_2d(mask, distance_bins, erosion_width)
 
         # convert to one hot notation
         y_distance = keras_to_categorical(np.expand_dims(y_distance, axis=-1))
         if self.channel_axis == 1:
             y_distance = np.rollaxis(y_distance, -1, 1)
-        self.y = y_distance
+        train_dict['y'] = y_distance
         super(WatershedSampleIterator, self).__init__(
             train_dict,
             image_data_generator,
@@ -1692,7 +1695,7 @@ class WatershedSampleMovieIterator(SampleMovieArrayIterator):
 
         y = train_dict['y']
 
-        if self.data_format == 'channels_first':
+        if data_format == 'channels_first':
             y_shape = (y.shape[0], *y.shape[2:])
         else:
             y_shape = y.shape[0:-1]
