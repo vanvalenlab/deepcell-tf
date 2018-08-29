@@ -1649,7 +1649,6 @@ class WatershedSampleMovieDataGenerator(MovieDataGenerator):
              erosion_width=None,
              save_to_dir=None,
              save_prefix='',
-             skip=None,
              save_format='png'):
         return WatershedSampleMovieIterator(
             train_dict,
@@ -1657,7 +1656,6 @@ class WatershedSampleMovieDataGenerator(MovieDataGenerator):
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
-            skip=skip,
             window_size=window_size,
             data_format=self.data_format,
             balance_classes=balance_classes,
