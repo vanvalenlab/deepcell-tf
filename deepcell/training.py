@@ -13,29 +13,16 @@ import datetime
 import os
 
 import numpy as np
-from skimage.external import tifffile as tiff
 from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.utils import to_categorical as keras_to_categorical
 from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateScheduler
+from tensorflow.python.keras.utils import to_categorical as keras_to_categorical
 
-from .image_generators import DiscDataGenerator
-from .image_generators import DiscMovieDataGenerator
-from .image_generators import SampleDataGenerator
-from .image_generators import SampleMovieDataGenerator
-from .image_generators import ImageFullyConvDataGenerator
-from .image_generators import MovieDataGenerator
-from .image_generators import SiameseDataGenerator
-from .image_generators import WatershedDataGenerator
-from .image_generators import WatershedMovieDataGenerator
-from .losses import sample_categorical_crossentropy
-from .losses import weighted_categorical_crossentropy
-from .losses import discriminative_instance_loss
-from .utils.io_utils import get_images_from_directory
-from .utils.data_utils import get_data
-from .utils.train_utils import rate_scheduler
-from .utils.transform_utils import to_categorical
-from .settings import CHANNELS_FIRST
+from deepcell import losses
+from deepcell import image_generators as generators
+from deepcell.utils.data_utils import get_data
+from deepcell.utils.train_utils import rate_scheduler
+from deepcell.utils.transform_utils import to_categorical
 
 
 def train_model_sample(model=None, dataset=None, optimizer=None,
@@ -68,13 +55,13 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
     print('Using real-time data augmentation.')
 
     # this will do preprocessing and realtime data augmentation
-    datagen = SampleDataGenerator(
+    datagen = generators.SampleDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
-    datagen_val = SampleDataGenerator(
+    datagen_val = generators.SampleDataGenerator(
         rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=0,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=0,  # randomly flip images
@@ -135,22 +122,21 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        return weighted_categorical_crossentropy(y_true, y_pred,
-                                                 n_classes=n_classes,
-                                                 from_logits=False)
+        return losses.weighted_categorical_crossentropy(
+            y_true, y_pred, n_classes=n_classes, from_logits=False)
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     print('Using real-time data augmentation.')
 
     # this will do preprocessing and realtime data augmentation
-    datagen = ImageFullyConvDataGenerator(
+    datagen = generators.ImageFullyConvDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
-    datagen_val = ImageFullyConvDataGenerator(
+    datagen_val = generators.ImageFullyConvDataGenerator(
         rotation_range=0,
         shear_range=0,
         horizontal_flip=0,
@@ -199,22 +185,21 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
     n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
 
     def loss_function(y_true, y_pred):
-        return weighted_categorical_crossentropy(y_true, y_pred,
-                                                 n_classes=n_classes,
-                                                 from_logits=False)
+        return losses.weighted_categorical_crossentropy(
+            y_true, y_pred, n_classes=n_classes, from_logits=False)
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     print('Using real-time data augmentation.')
 
     # this will do preprocessing and realtime data augmentation
-    datagen = SiameseDataGenerator(
+    datagen = generators.SiameseDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
-    datagen_val = SiameseDataGenerator(
+    datagen_val = generators.SiameseDataGenerator(
         rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=0,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=0,  # randomly flip images
@@ -315,14 +300,14 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
     print('Using real-time data augmentation.')
 
     # this will do preprocessing and realtime data augmentation
-    datagen = WatershedDataGenerator(
+    datagen = generators.WatershedDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
     # no augmentation for validation data
-    datagen_val = WatershedDataGenerator(
+    datagen_val = generators.WatershedDataGenerator(
         rotation_range=0,
         shear_range=0,
         horizontal_flip=0,
@@ -372,18 +357,18 @@ def train_model_disc(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        return discriminative_instance_loss(y_true, y_pred)
+        return losses.discriminative_instance_loss(y_true, y_pred)
 
     model.compile(loss=loss_function, optimizer=optimizer)
 
-    datagen = DiscDataGenerator(
+    datagen = generators.DiscDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip,  # randomly flip images
         zoom_range=zoom_range)  # randomly zoom in/out images
 
-    datagen_test = DiscDataGenerator(
+    datagen_test = generators.DiscDataGenerator(
         rotation_range=0,
         shear_range=0,
         horizontal_flip=False,
@@ -417,39 +402,31 @@ def train_model_disc_3D(model=None, dataset=None, optimizer=None,
     file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
     file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
 
-    train_dict, (X_test, y_test) = get_data(training_data_file_name, mode='conv')
-
-    test_dict = {
-        'X': X_test,
-        'y': y_test,
-        'class_weights': train_dict['class_weights'],
-        'win_x': train_dict['win_x'],
-        'win_y': train_dict['win_y']
-    }
+    train_dict, test_dict = get_data(training_data_file_name, mode='conv')
 
     class_weights = train_dict['class_weights']
     n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
     print('y_train shape:', train_dict['y'].shape)
-    print('X_test shape:', X_test.shape)
-    print('y_test shape:', y_test.shape)
+    print('X_test shape:', test_dict['X'].shape)
+    print('y_test shape:', test_dict['y'].shape)
     print('Output Shape:', model.layers[-1].output_shape)
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        return discriminative_instance_loss(y_true, y_pred)
+        return losses.discriminative_instance_loss(y_true, y_pred)
 
     model.compile(loss=loss_function, optimizer=optimizer)
 
-    datagen = DiscMovieDataGenerator(
+    datagen = generators.DiscMovieDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip,  # randomly flip images
         zoom_range=zoom_range)  # randomly zoom in/out images
 
-    datagen_test = DiscMovieDataGenerator(
+    datagen_test = generators.DiscMovieDataGenerator(
         rotation_range=0,
         shear_range=0,
         horizontal_flip=False,
@@ -461,7 +438,7 @@ def train_model_disc_3D(model=None, dataset=None, optimizer=None,
         steps_per_epoch=(train_dict['y'].shape[0] * train_dict['y'].shape[time_axis] // frames_per_batch) // batch_size,
         epochs=n_epoch,
         validation_data=datagen_test.flow(test_dict, batch_size=batch_size, frames_per_batch=frames_per_batch),
-        validation_steps=(X_test.shape[0] * X_test.shape[time_axis] // frames_per_batch) // batch_size,
+        validation_steps=(test_dict['X'].shape[0] * test_dict['X'].shape[time_axis] // frames_per_batch) // batch_size,
         callbacks=[
             ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
             LearningRateScheduler(lr_sched)
@@ -499,24 +476,22 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        # return discriminative_instance_loss_3D(y_true, y_pred)
-        return weighted_categorical_crossentropy(y_true, y_pred,
-                                                 n_classes=n_classes,
-                                                 from_logits=False)
+        return losses.weighted_categorical_crossentropy(
+            y_true, y_pred, n_classes=n_classes, from_logits=False)
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     print('Using real-time data augmentation.')
 
     # this will do preprocessing and realtime data augmentation
-    datagen = MovieDataGenerator(
+    datagen = generators.MovieDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
     # no augmentation for validation data
-    datagen_val = MovieDataGenerator(
+    datagen_val = generators.MovieDataGenerator(
         rotation_range=0,
         shear_range=0,
         horizontal_flip=0,
@@ -593,22 +568,21 @@ def train_model_sample_movie(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        return weighted_categorical_crossentropy(y_true, y_pred,
-                                                 n_classes=n_classes,
-                                                 from_logits=False)
+        return losses.weighted_categorical_crossentropy(
+            y_true, y_pred, n_classes=n_classes, from_logits=False)
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     print('Using real-time data augmentation.')
 
     # this will do preprocessing and realtime data augmentation
-    datagen = SampleMovieDataGenerator(
+    datagen = generators.SampleMovieDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
-    datagen_val = SampleMovieDataGenerator(
+    datagen_val = generators.SampleMovieDataGenerator(
         rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=0,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=0,  # randomly flip images
@@ -680,14 +654,14 @@ def train_model_watershed_3D(model=None, dataset=None, optimizer=None,
     print('Using real-time data augmentation.')
 
     # this will do preprocessing and realtime data augmentation
-    datagen = WatershedMovieDataGenerator(
+    datagen = generators.WatershedMovieDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
     # no augmentation for validation data
-    datagen_val = WatershedMovieDataGenerator(
+    datagen_val = generators.WatershedMovieDataGenerator(
         rotation_range=0,
         shear_range=0,
         horizontal_flip=0,
