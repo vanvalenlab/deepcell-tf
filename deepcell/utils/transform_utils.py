@@ -14,8 +14,53 @@ from scipy import ndimage
 from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.morphology import ball, disk
-from skimage.morphology import binary_erosion
+from skimage.morphology import binary_erosion, binary_dilation
 from tensorflow.python.keras import backend as K
+
+
+def deepcell_transform(maskstack, dilation_radius=None):
+    """
+    Transforms a label mask for a z stack edge, interior, and background
+    # Arguments:
+        maskstack: label masks of uniquely labeled instances
+        dilation_radius:  width to enlarge the edge feature of each instance
+    # Returns:
+        deepcell_stacks: masks of [edge_feature, interior_feature, background]
+    """
+    if K.image_data_format() == 'channels_first':
+        channel_axis = 1
+    else:
+        channel_axis = len(maskstack.shape) - 1
+
+    # Erode masks
+    maskstack = np.squeeze(maskstack)
+    new_masks = np.zeros(maskstack.shape)
+
+    strel = ball(1) if maskstack.ndim > 3 else disk(1)
+    for cell_label in np.unique(maskstack):
+        if cell_label != 0:
+            for i in range(maskstack.shape[0]):
+                img = maskstack[i] == cell_label
+                img = binary_erosion(img, strel)
+                new_masks[i] += img
+
+    interior_maskstack = np.multiply(new_masks, maskstack)
+    edge_maskstack = (maskstack - interior_maskstack > 0).astype('int')
+    interior_maskstack = (interior_maskstack > 0).astype('int')
+
+    if dilation_radius:
+        dil_strel = ball(dilation_radius) if maskstack.ndim > 3 else disk(dilation_radius)
+        # thicken cell edges to be more pronounced
+        for i in range(edge_maskstack.shape[0]):
+            edge_maskstack[i] = binary_dilation(edge_maskstack[i], selem=dil_strel)
+        # Thin the augmented edges by subtracting the interior features.
+        edge_maskstack = edge_maskstack - interior_maskstack > 0
+
+    background_maskstack = 1 - (edge_maskstack + interior_maskstack)
+    all_stacks = [edge_maskstack, interior_maskstack, background_maskstack]
+
+    deepcell_stacks = np.stack(all_stacks, axis=channel_axis)
+    return deepcell_stacks
 
 
 def erode_edges(mask, erosion_width):
