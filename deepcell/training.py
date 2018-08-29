@@ -369,14 +369,14 @@ def train_model_watershed_sample(model=None, dataset=None, optimizer=None,
     print('Using real-time data augmentation.')
 
     # this will do preprocessing and realtime data augmentation
-    datagen = generators.WatershedDataGenerator(
+    datagen = generators.WatershedSampleDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
     # no augmentation for validation data
-    datagen_val = generators.WatershedDataGenerator(
+    datagen_val = generators.WatershedSampleDataGenerator(
         rotation_range=0,
         shear_range=0,
         horizontal_flip=0,
