@@ -45,6 +45,7 @@ def train_model_sample(model,
                        rotation_range=0,
                        flip=False,
                        shear=0,
+                       zoom_range=0,
                        **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
@@ -91,6 +92,7 @@ def train_model_sample(model,
     datagen = DataGenerator(
         rotation_range=rotation_range,
         shear_range=shear,
+        zoom_range=zoom_range,
         horizontal_flip=flip,
         vertical_flip=flip)
 
@@ -98,6 +100,7 @@ def train_model_sample(model,
     datagen_val = DataGenerator(
         rotation_range=0,
         shear_range=0,
+        zoom_range=0,
         horizontal_flip=0,
         vertical_flip=0)
 
@@ -153,6 +156,7 @@ def train_model_conv(model,
                      rotation_range=0,
                      flip=True,
                      shear=0,
+                     zoom_range=0,
                      **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
@@ -180,7 +184,7 @@ def train_model_conv(model,
             return losses.weighted_focal_loss(
                 y_true, y_pred, gamma=gamma, n_classes=n_classes)
         return losses.weighted_categorical_crossentropy(
-            y_true, y_pred, n_classes=n_classes, from_logits=False)
+            y_true, y_pred, n_classes=n_classes)
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
@@ -196,12 +200,14 @@ def train_model_conv(model,
     datagen = DataGenerator(
         rotation_range=rotation_range,
         shear_range=shear,
+        zoom_range=zoom_range,
         horizontal_flip=flip,
         vertical_flip=flip)
 
     datagen_val = DataGenerator(
         rotation_range=0,
         shear_range=0,
+        zoom_range=0,
         horizontal_flip=0,
         vertical_flip=0)
 
