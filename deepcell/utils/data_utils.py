@@ -29,7 +29,6 @@ from .io_utils import get_immediate_subdirs
 from .misc_utils import sorted_nicely
 
 
-
 def get_data(file_name, mode='sample', test_size=.1, seed=None):
     """Load data from NPZ file and split into train and test sets
     # Arguments

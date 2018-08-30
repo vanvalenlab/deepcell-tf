@@ -120,6 +120,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 Custom image generators
 """
 
+
 class ImageSampleArrayIterator(Iterator):
     def __init__(self,
                  train_dict,
@@ -897,7 +898,6 @@ class MovieArrayIterator(Iterator):
                  transform_kwargs={},
                  shuffle=False,
                  seed=None,
-                 skip=None,
                  data_format=None,
                  save_to_dir=None,
                  save_prefix='',
@@ -1337,8 +1337,6 @@ class WatershedSampleDataGenerator(SampleDataGenerator):
              train_dict,
              batch_size=32,
              shuffle=True,
-             balance_classes=False,
-             max_class_samples=None,
              seed=None,
              save_to_dir=None,
              save_prefix='',
@@ -1354,8 +1352,6 @@ class WatershedSampleDataGenerator(SampleDataGenerator):
             self,
             batch_size=batch_size,
             shuffle=shuffle,
-            balance_classes=balance_classes,
-            max_class_samples=max_class_samples,
             seed=seed,
             data_format=self.data_format,
             window_size=window_size,
@@ -1382,7 +1378,6 @@ class WatershedSampleIterator(ImageSampleArrayIterator):
                  max_class_samples=None,
                  distance_bins=16,
                  erosion_width=None,
-                 skip=None,
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
