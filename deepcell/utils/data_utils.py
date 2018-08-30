@@ -30,10 +30,6 @@ from .io_utils import get_image_sizes
 from .io_utils import nikon_getfiles
 from .io_utils import get_immediate_subdirs
 from .misc_utils import sorted_nicely
-from .plot_utils import plot_training_data_2d
-from .plot_utils import plot_training_data_3d
-from .transform_utils import distance_transform_2d
-from .transform_utils import distance_transform_3d
 
 
 def get_data(file_name, mode='sample', test_size=.1, seed=None):
@@ -51,8 +47,6 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     training_data = np.load(file_name)
     X = training_data['X']
     y = training_data['y']
-    # win_x = training_data['win_x']
-    # win_y = training_data['win_y']
 
     class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
 
@@ -62,22 +56,14 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     train_dict = {
         'X': X_train,
         'y': y_train,
-        # 'win_x': win_x,
-        # 'win_y': win_y,
         'class_weights': class_weights
     }
 
     test_dict = {
         'X': X_test,
         'y': y_test,
-        # 'win_x': win_x,
-        # 'win_y': win_y,
         'class_weights': class_weights
     }
-
-    # if X.ndim == 5:
-    #     train_dict['win_z'] = training_data['win_z']
-    #     test_dict['win_z'] = training_data['win_z']
 
     return train_dict, test_dict
 
