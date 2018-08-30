@@ -427,8 +427,8 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
     return X
 
 
-def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_feature,
-                             dilation_radius, annotation_direc):
+def load_annotated_images_2d(direc_name, training_direcs, annotation_name, image_size,
+                             annotation_direc):
     """
     Iterate over every annotated image in the training directories and load
     each into a numpy array.
@@ -437,59 +437,33 @@ def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_featu
     # Unpack size tuple
     image_size_x, image_size_y = image_size
 
+    # wrapping single annotation name in list for consistency
+    if not isinstance(annotation_name, list):
+        annotation_name = [annotation_name]
+
     # Initialize feature mask array
     if is_channels_first:
-        y_shape = (len(training_direcs), len(edge_feature), image_size_x, image_size_y)
+        y_shape = (len(training_direcs), len(annotation_name), image_size_x, image_size_y)
     else:
-        y_shape = (len(training_direcs), image_size_x, image_size_y, len(edge_feature))
+        y_shape = (len(training_direcs), image_size_x, image_size_y, len(annotation_name))
 
     y = np.zeros(y_shape, dtype='int32')
 
     for b, direc in enumerate(training_direcs):
         imglist = os.listdir(os.path.join(direc_name, direc, annotation_direc))
 
-        for l, edge in enumerate(edge_feature):
+        for l, annotation in enumerate(annotation_name):
             for img in imglist:
-                # if feature string is NOT in image file name, skip it.
-                if not fnmatch(img, '*feature_{}*'.format(l)):
+                # if annotation_name is NOT in image file name, skip it.
+                if not fnmatch(img, '*{}*'.format(annotation)):
                     continue
 
                 image_data = get_image(os.path.join(direc_name, direc, annotation_direc, img))
-
-                if np.sum(image_data) > 0:
-                    image_data /= np.amax(image_data)
-
-                if edge == 1 and dilation_radius is not None:
-                    # thicken cell edges to be more pronounced
-                    image_data = binary_dilation(image_data, selem=disk(dilation_radius))
 
                 if is_channels_first:
                     y[b, l, :, :] = image_data
                 else:
                     y[b, :, :, l] = image_data
-
-        # Thin the augmented edges by subtracting the interior features.
-        for l, edge in enumerate(edge_feature):
-            if edge != 1:
-                continue
-
-            for k, non_edge in enumerate(edge_feature):
-                if non_edge == 0:
-                    if is_channels_first:
-                        y[b, l, :, :] -= y[b, k, :, :]
-                    else:
-                        y[b, :, :, l] -= y[b, :, :, k]
-
-            if is_channels_first:
-                y[b, l, :, :] = y[b, l, :, :] > 0
-            else:
-                y[b, :, :, l] = y[b, :, :, l] > 0
-
-        # Compute the mask for the background
-        if is_channels_first:
-            y[b, len(edge_feature) - 1, :, :] = 1 - np.sum(y[b], axis=0)
-        else:
-            y[b, :, :, len(edge_feature) - 1] = 1 - np.sum(y[b], axis=2)
 
     return y
 
@@ -499,10 +473,9 @@ def make_training_data_2d(direc_name,
                           channel_names,
                           raw_image_direc='raw',
                           annotation_direc='annotated',
+                          annotation_name='feature',
                           training_direcs=None,
                           window_size=(30, 30),
-                          edge_feature=[1, 0, 0],
-                          dilation_radius=1,
                           reshape_size=None,
                           padding='valid',
                           output_mode='sample'):
@@ -517,8 +490,6 @@ def make_training_data_2d(direc_name,
                        channel_name should be in the filename (e.g. 'DAPI')
                        If not provided, all images in the training directories
                        without 'feature' in their name are used.
-        edge_feature: List which determines the cell edge feature (usually [1, 0, 0])
-                      There can be a single 1 in the list, indicating the index of the feature.
         reshape_size: If provided, will reshape the images to the given size
         padding:  'valid' or 'same'
         output_mode:  'sample' or 'conv'
@@ -536,9 +507,8 @@ def make_training_data_2d(direc_name,
 
     y = load_annotated_images_2d(direc_name, training_direcs,
                                  image_size=image_size,
-                                 edge_feature=edge_feature,
-                                 annotation_direc=annotation_direc,
-                                 dilation_radius=dilation_radius)
+                                 annotation_name=annotation_name,
+                                 annotation_direc=annotation_direc)
 
     if reshape_size is not None:
         X, y = reshape_matrix(X, y, reshape_size=reshape_size)
@@ -724,11 +694,11 @@ def make_training_data(direc_name,
                        dimensionality,
                        training_direcs=None,
                        window_size=(30, 30),
-                       edge_feature=[1, 0, 0],
                        padding='same',
                        output_mode='conv',
                        raw_image_direc='raw',
                        annotation_direc='annotated',
+                       annotation_name='feature',
                        reshape_size=None,
                        **kwargs):
     """
@@ -739,9 +709,6 @@ def make_training_data(direc_name,
     if not isinstance(dimensionality, int) and not isinstance(dimensionality, float):
         raise ValueError('Data dimensionality should be an integer value, typically 2 or 3. '
                          'Recieved {}'.format(type(dimensionality).__name__))
-
-    if np.sum(edge_feature) > 1:
-        raise ValueError('Only one edge feature is allowed')
 
     padding = conv_utils.normalize_padding(padding)
 
@@ -761,17 +728,17 @@ def make_training_data(direc_name,
         make_training_data_2d(direc_name, file_name_save, channel_names,
                               training_direcs=training_direcs,
                               window_size=window_size,
-                              edge_feature=edge_feature,
                               reshape_size=reshape_size,
                               padding=padding,
                               output_mode=output_mode,
                               raw_image_direc=raw_image_direc,
+                              annotation_name=annotation_name,
                               annotation_direc=annotation_direc)
 
     elif dimensionality == 3:
         make_training_data_3d(direc_name, file_name_save, channel_names,
                               training_direcs=training_direcs,
-                              annotation_name=kwargs.get('annotation_name', 'corrected'),
+                              annotation_name=annotation_name,
                               raw_image_direc=raw_image_direc,
                               annotation_direc=annotation_direc,
                               window_size=window_size,

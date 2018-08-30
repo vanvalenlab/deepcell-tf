@@ -88,9 +88,9 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 # TODO: change 1 to 0 after loading uniquely annotated instead
                 # of feature_1/feature_0
                 if data_format == 'channels_first':
-                    mask = y[batch, 1, :, :, :]
+                    mask = y[batch, 0, :, :]
                 else:
-                    mask = y[batch, :, :, :, 1]
+                    mask = y[batch, :, :, 0]
                 y_transform[batch] = distance_transform_2d(
                     mask, distance_bins, erosion)
         # convert to one hot notation
