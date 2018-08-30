@@ -67,12 +67,11 @@ class TestSampleDataGenerator(test.TestCase):
             img_w, img_h = 21, 21
             win_x, win_y = 2, 2
             test_batches = 8
-            classes = np.random.randint(2, 5, size=1)[0]
 
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((test_batches, img_w, img_h, 3)),
-                'y': np.random.randint(2, size=(test_batches, img_w, img_h, classes))
+                'y': np.random.randint(2, size=(test_batches, img_w, img_h, 1))
             }
             generator.flow(train_dict, window_size=(win_x, win_y))
 
@@ -82,8 +81,7 @@ class TestSampleDataGenerator(test.TestCase):
             # Fit
             generator.fit(images, augment=True, seed=1)
             train_dict['X'] = images
-            test_shape = (*images.shape[:-1], classes)
-            train_dict['y'] = np.random.randint(2, size=test_shape)
+            train_dict['y'] = np.random.randint(2, size=(*images.shape[:-1], 1))
             for x, _ in generator.flow(
                     train_dict,
                     save_to_dir=temp_dir,
@@ -124,12 +122,11 @@ class TestSampleDataGenerator(test.TestCase):
             img_w, img_h = 21, 21
             win_x, win_y = 2, 2
             test_batches = 8
-            classes = np.random.randint(2, 5, size=1)[0]
 
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((test_batches, 3, img_w, img_h)),
-                'y': np.random.randint(2, size=(test_batches, classes, img_w, img_h))
+                'y': np.random.randint(2, size=(test_batches, 1, img_w, img_h))
             }
             generator.flow(train_dict, window_size=(win_x, win_y))
 
@@ -139,7 +136,7 @@ class TestSampleDataGenerator(test.TestCase):
             # Fit
             generator.fit(images, augment=True, seed=1)
             train_dict['X'] = images
-            test_shape = (images.shape[0], classes, *images.shape[2:])
+            test_shape = (images.shape[0], 1, *images.shape[2:])
             train_dict['y'] = np.random.randint(2, size=test_shape)
             for x, _ in generator.flow(
                     train_dict,
@@ -184,7 +181,7 @@ class TestSampleDataGenerator(test.TestCase):
             generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
         x = np.random.random((32, 10, 10, 5))
-        y = np.random.randint(2, size=(32, 10, 10, 5))
+        y = np.random.randint(2, size=(32, 10, 10, 1))
         generator.flow({'X': x, 'y': y}, window_size=(win_x, win_y))
 
         with self.assertRaises(ValueError):
@@ -235,12 +232,11 @@ class TestSampleMovieDataGenerator(test.TestCase):
             img_w, img_h = 21, 21
             win_x, win_y, win_z = 2, 2, 2
             test_batches = 8
-            classes = np.random.randint(2, 5, size=1)[0]
 
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((test_batches, frames, img_w, img_h, 3)),
-                'y': np.random.randint(2, size=(test_batches, frames, img_w, img_h, classes))
+                'y': np.random.randint(2, size=(test_batches, frames, img_w, img_h, 1))
             }
             generator.flow(train_dict, window_size=(win_x, win_y, win_z))
 
@@ -251,7 +247,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
             assert generator.random_transform(images[0]).shape == images[0].shape
             generator.fit(images, augment=True, seed=1)
             train_dict['X'] = images
-            test_shape = (images.shape[0], *images.shape[1:-1], classes)
+            test_shape = (images.shape[0], *images.shape[1:-1], 1)
             train_dict['y'] = np.random.randint(2, size=test_shape)
             for x, _ in generator.flow(
                     train_dict,
@@ -301,12 +297,11 @@ class TestSampleMovieDataGenerator(test.TestCase):
             img_w, img_h = 21, 21
             win_x, win_y, win_z = 2, 2, 2
             test_batches = 8
-            classes = np.random.randint(2, 5, size=1)[0]
 
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((test_batches, 3, frames, img_w, img_h)),
-                'y': np.random.randint(2, size=(test_batches, classes, frames, img_w, img_h))
+                'y': np.random.randint(2, size=(test_batches, 1, frames, img_w, img_h))
             }
             generator.flow(train_dict, window_size=(win_x, win_y, win_z))
 
@@ -318,7 +313,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
             generator.fit(images, augment=True, seed=1)
 
             train_dict['X'] = images
-            test_shape = (images.shape[0], classes, *images.shape[2:])
+            test_shape = (images.shape[0], 1, *images.shape[2:])
             train_dict['y'] = np.random.randint(2, size=test_shape)
             for x, _ in generator.flow(
                     train_dict,
@@ -364,7 +359,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
 
         # Invalid number of channels: will work but raise a warning
         x = np.random.random((32, 30, 10, 10, 5))
-        y = np.random.randint(2, size=(32, 30, 10, 10, 5))
+        y = np.random.randint(2, size=(32, 30, 10, 10, 1))
         generator.flow({'X': x, 'y': y}, window_size=window_size)
 
         with self.assertRaises(ValueError):
