@@ -37,10 +37,83 @@ except ImportError:
 from keras_retinanet.preprocessing.generator import Generator as _RetinaNetGenerator
 from keras_maskrcnn.preprocessing.generator import Generator as _MaskRCNNGenerator
 
-from .utils.data_utils import sample_label_matrix, sample_label_movie
-from .utils.transform_utils import transform_matrix_offset_center
-from .utils.transform_utils import distance_transform_2d, distance_transform_3d
-from .utils.retinanet_anchor_utils import anchor_targets_bbox
+from deepcell.utils.data_utils import sample_label_matrix, sample_label_movie
+from deepcell.utils.transform_utils import transform_matrix_offset_center
+from deepcell.utils.transform_utils import deepcell_transform
+from deepcell.utils.transform_utils import distance_transform_2d, distance_transform_3d
+from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
+
+
+def _transform_masks(y, transform, data_format=None, **kwargs):
+    """Based on the transform key, apply a transform function to the masks
+    # Arguments:
+        y: `labels` of ndim 4 or 5
+        transform: one of {`deepcell`, `disc`, `watershed`, `centroid`, `None`}
+    # Returns:
+        y_transform: the output of the given transform function on y
+    """
+    if data_format is None:
+        data_format = K.image_data_format()
+
+    if y.ndim not in {4, 5}:
+        raise ValueError('`labels` data must be of ndim 4 or 5.  Got', y.ndim)
+
+    if isinstance(transform, str):
+        transform = transform.lower()
+        if transform not in {'deepcell', 'disc', 'watershed', 'centroid'}:
+            raise ValueError('`{}` is not a valid transform'.format(transform))
+
+    if transform == 'deepcell':
+        dilation_radius = kwargs.pop('dilation_radius')
+        y_transform = deepcell_transform(y, dilation_radius)
+
+    elif transform == 'watershed':
+        distance_bins = kwargs.pop('distance_bins', 4)
+        erosion = kwargs.pop('erosion_width', 0)
+
+        if data_format == 'channels_first':
+            y_transform = np.zeros((y.shape[0], *y.shape[2:]))
+        else:
+            y_transform = np.zeros(y.shape[0:-1])
+
+        for batch in range(y_transform.shape[0]):
+            if y.ndim == 5:
+                if data_format == 'channels_first':
+                    mask = y[batch, 0, :, :, :]
+                else:
+                    mask = y[batch, :, :, :, 0]
+                y_transform[batch] = distance_transform_3d(
+                    mask, distance_bins, erosion)
+            else:
+                # TODO: change 1 to 0 after loading uniquely annotated instead
+                # of feature_1/feature_0
+                if data_format == 'channels_first':
+                    mask = y[batch, 1, :, :, :]
+                else:
+                    mask = y[batch, :, :, :, 1]
+                y_transform[batch] = distance_transform_2d(
+                    mask, distance_bins, erosion)
+        # convert to one hot notation
+        y_transform = keras_to_categorical(np.expand_dims(y_transform, axis=-1))
+        if data_format == 'channels_first':
+            y_transform = np.rollaxis(y_transform, -1, 1)
+
+    elif transform == 'centroid':
+        raise NotImplementedError('`centroid` transform has not been finished')
+
+    elif transform == 'disc':
+        raise NotImplementedError('`disc` transform has not been finished')
+
+    elif transform is None:
+        y_transform = np.where(y > 1, 1, y)
+        # convert to one hot notation
+        if data_format == 'channels_first':
+            y_transform = np.rollaxis(y_transform, 1, y.ndim)
+        y_transform = keras_to_categorical(y_transform)
+        if data_format == 'channels_first':
+            y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
+
+    return y_transform
 
 
 """
@@ -55,6 +128,8 @@ class ImageSampleArrayIterator(Iterator):
                  batch_size=32,
                  shuffle=False,
                  window_size=(30, 30),
+                 transform=None,
+                 transform_kwargs={},
                  balance_classes=False,
                  max_class_samples=None,
                  seed=None,
@@ -77,6 +152,8 @@ class ImageSampleArrayIterator(Iterator):
                              'with shape', self.x.shape)
 
         window_size = conv_utils.normalize_tuple(window_size, 2, 'window_size')
+
+        y = _transform_masks(y, transform, data_format=data_format, **transform_kwargs)
 
         pixels_x, pixels_y, batch, y = sample_label_matrix(
             y=y,
@@ -214,6 +291,8 @@ class SampleDataGenerator(ImageDataGenerator):
              train_dict,
              batch_size=32,
              shuffle=True,
+             transform=None,
+             transform_kwargs={},
              window_size=(30, 30),
              balance_classes=False,
              max_class_samples=None,
@@ -226,6 +305,8 @@ class SampleDataGenerator(ImageDataGenerator):
             self,
             batch_size=batch_size,
             shuffle=shuffle,
+            transform=transform,
+            transform_kwargs=transform_kwargs,
             window_size=window_size,
             balance_classes=balance_classes,
             max_class_samples=max_class_samples,
@@ -243,26 +324,29 @@ class ImageFullyConvIterator(Iterator):
                  batch_size=1,
                  skip=None,
                  shuffle=False,
+                 transform=None,
+                 transform_kwargs={},
                  seed=None,
                  data_format=None,
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
-        if train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+        X, y = train_dict['X'], train_dict['y']
+        if X.shape[0] != y.shape[0]:
             raise ValueError('Training batches and labels should have the same'
                              'length. Found X.shape: {} y.shape: {}'.format(
-                                 train_dict['X'].shape, train_dict['y'].shape))
+                                 X.shape, y.shape))
         if data_format is None:
             data_format = K.image_data_format()
-        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.x = np.asarray(X, dtype=K.floatx())
 
         if self.x.ndim != 4:
             raise ValueError('Input data in `ImageFullyConvIterator` '
                              'should have rank 4. You passed an array '
                              'with shape', self.x.shape)
 
+        self.y = _transform_masks(y, transform, data_format=data_format, **transform_kwargs)
         self.channel_axis = 3 if data_format == 'channels_last' else 1
-        self.y = np.array(train_dict['y'], dtype='int32')
         self.skip = skip
         self.image_data_generator = image_data_generator
         self.data_format = data_format
@@ -343,6 +427,8 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
              train_dict,
              batch_size=1,
              skip=None,
+             transform=None,
+             transform_kwargs={},
              shuffle=True,
              seed=None,
              save_to_dir=None,
@@ -352,6 +438,8 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             train_dict,
             self,
             batch_size=batch_size,
+            transform=transform,
+            transform_kwargs=transform_kwargs,
             skip=skip,
             shuffle=shuffle,
             seed=seed,
@@ -518,238 +606,6 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
 
 
 """
-Custom siamese generators
-"""
-
-
-class SiameseDataGenerator(ImageDataGenerator):
-    def flow(self,
-             train_dict,
-             crop_dim=14,
-             min_track_length=5,
-             batch_size=32,
-             shuffle=True,
-             seed=None,
-             data_format=None,
-             save_to_dir=None,
-             save_prefix='',
-             save_format='png'):
-        return SiameseIterator(
-            train_dict,
-            self,
-            crop_dim=crop_dim,
-            min_track_length=min_track_length,
-            batch_size=batch_size,
-            shuffle=shuffle,
-            seed=seed,
-            data_format=data_format,
-            save_to_dir=save_to_dir,
-            save_prefix=save_prefix,
-            save_format=save_format)
-
-
-class SiameseIterator(Iterator):
-    def __init__(self,
-                 train_dict,
-                 image_data_generator,
-                 crop_dim=14,
-                 min_track_length=5,
-                 batch_size=32,
-                 shuffle=False,
-                 seed=None,
-                 data_format=None,
-                 save_to_dir=None,
-                 save_prefix='',
-                 save_format='png'):
-        if data_format is None:
-            data_format = K.image_data_format()
-
-        if data_format == 'channels_first':
-            self.channel_axis = 1
-            self.row_axis = 3
-            self.col_axis = 4
-            self.time_axis = 2
-        if data_format == 'channels_last':
-            self.channel_axis = 4
-            self.row_axis = 2
-            self.col_axis = 3
-            self.time_axis = 1
-        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.y = np.array(train_dict['y'], dtype='int32')
-        self.crop_dim = crop_dim
-        self.min_track_length = min_track_length
-        self.image_data_generator = image_data_generator
-        self.data_format = data_format
-        self.save_to_dir = save_to_dir
-        self.save_prefix = save_prefix
-        self.save_format = save_format
-
-        self.track_ids = self._get_track_ids()
-
-        super(SiameseIterator, self).__init__(
-            len(self.track_ids), batch_size, shuffle, seed)
-
-    def _get_track_ids(self):
-        """
-        This function builds the track id's. It returns a dictionary that
-        contains the batch number and label number of each each track.
-        Creates unique cell IDs, as cell labels are NOT unique across batches.
-        """
-        track_counter = 0
-        track_ids = {}
-        for batch in range(self.y.shape[0]):
-            y_batch = self.y[batch]
-            num_cells = np.amax(y_batch)
-            for cell in range(1, num_cells + 1):
-                # count number of pixels cell occupies in each frame
-                y_true = np.sum(y_batch == cell, axis=(self.row_axis - 1, self.col_axis - 1))
-                # get indices of frames where cell is present
-                y_index = np.where(y_true > 0)[0]
-                if y_index.size > 0:  # if cell is present at all
-                    start_frame = np.amin(y_index)
-                    stop_frame = np.amax(y_index)
-                    track_ids[track_counter] = {
-                        'batch': batch,
-                        'label': cell,
-                        'frames': y_index
-                    }
-                    track_counter += 1
-        return track_ids
-
-    def _get_batches_of_transformed_samples(self, index_array):
-        if self.data_format == 'channels_first':
-            batch_shape = (len(index_array),
-                           self.x.shape[self.channel_axis],
-                           self.crop_dim,
-                           self.crop_dim)
-        else:
-            batch_shape = (len(index_array),
-                           self.crop_dim,
-                           self.crop_dim,
-                           self.x.shape[self.channel_axis])
-
-        batch_x_1 = np.zeros(batch_shape, dtype=K.floatx())
-        batch_x_2 = np.zeros(batch_shape, dtype=K.floatx())
-        batch_y = np.zeros((len(index_array), 2), dtype='int32')
-
-        for i, j in enumerate(index_array):
-            # Identify which tracks are going to be selected
-            track_id = self.track_ids[j]
-            batch = track_id['batch']
-            label_1 = track_id['label']
-            tracked_frames = track_id['frames']
-            frame_1 = np.random.choice(tracked_frames)  # Select a frame from the track
-
-            X = self.x[batch]
-            y = self.y[batch]
-
-            # Choose comparison cell
-            # Determine what class the track will be - different (0), same (1)
-            is_same_cell = np.random.random_integers(0, 1)
-
-            # Select another frame from the same track
-            if is_same_cell:
-                label_2 = label_1
-                frame_2 = np.random.choice(track_id['frames'])
-
-            # Select another frame from a different track
-            if not is_same_cell:
-                # all_labels = np.arange(1, np.amax(y) + 1)
-                all_labels = np.delete(np.unique(y), 0)  # all labels in y but 0 (background)
-                acceptable_labels = np.delete(all_labels, np.where(all_labels == label_1))
-                is_valid_label = False
-                while not is_valid_label:
-                    # get a random cell label from our acceptable list
-                    label_2 = np.random.choice(acceptable_labels)
-
-                    # count number of pixels cell occupies in each frame
-                    y_true = np.sum(y == label_2, axis=(
-                        self.row_axis - 1, self.col_axis - 1, self.channel_axis - 1))
-
-                    y_index = np.where(y_true > 0)[0]  # get frames where cell is present
-                    is_valid_label = y_index.any()  # label_2 is in a frame
-                    if not is_valid_label:
-                        # remove invalid label from list of acceptable labels
-                        acceptable_labels = np.delete(
-                            acceptable_labels, np.where(acceptable_labels == label_2))
-
-                frame_2 = np.random.choice(y_index)  # get random frame with label_2
-
-            # Get appearances
-            frames = [frame_1, frame_2]
-            labels = [label_1, label_2]
-
-            appearances = self._get_appearances(X, y, frames, labels)
-            if self.data_format == 'channels_first':
-                appearances = [appearances[:, 0], appearances[:, 1]]
-            else:
-                appearances = [appearances[0], appearances[1]]
-
-            # Apply random transformations
-            for k, appearance in enumerate(appearances):
-                appearance = self.image_data_generator.random_transform(appearance)
-                appearance = self.image_data_generator.standardize(appearance)
-                appearances[k] = appearance
-
-            batch_x_1[i] = appearances[0]
-            batch_x_2[i] = appearances[1]
-            batch_y[i, is_same_cell] = 1
-
-        return [batch_x_1, batch_x_2], batch_y
-
-    def _get_appearances(self, X, y, frames, labels):
-        channel_axis = self.channel_axis - 1
-        if self.data_format == 'channels_first':
-            appearance_shape = (X.shape[channel_axis],
-                                len(frames),
-                                self.crop_dim,
-                                self.crop_dim)
-        else:
-            appearance_shape = (len(frames),
-                                self.crop_dim,
-                                self.crop_dim,
-                                X.shape[channel_axis])
-        appearances = np.zeros(appearance_shape, dtype=K.floatx())
-        for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
-            # Get the bounding box
-            y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
-            props = regionprops(np.int32(y_frame == cell_label))
-            minr, minc, maxr, maxc = props[0].bbox
-
-            # Extract images from bounding boxes
-            if self.data_format == 'channels_first':
-                appearance = X[:, frame, minr:maxr, minc:maxc]
-                resize_shape = (X.shape[channel_axis], self.crop_dim, self.crop_dim)
-            else:
-                appearance = X[frame, minr:maxr, minc:maxc, :]
-                resize_shape = (self.crop_dim, self.crop_dim, X.shape[channel_axis])
-
-            # Resize images from bounding box
-            max_value = np.amax([np.amax(appearance), np.absolute(np.amin(appearance))])
-            appearance /= max_value
-            appearance = resize(appearance, resize_shape)
-            appearance *= max_value
-            if self.data_format == 'channels_first':
-                appearances[:, counter] = appearance
-            else:
-                appearances[counter] = appearance
-
-        return appearances
-
-    def next(self):
-        """For python 2.x.
-        # Returns the next batch.
-        """
-        # Keeps under lock only the mechanism which advances
-        # the indexing of each batch.
-        with self.lock:
-            index_array = next(self.index_generator)
-        # The transformation of images is not under thread lock
-        # so it can be done in parallel
-        return self._get_batches_of_transformed_samples(index_array)
-
-
-"""
 Custom movie generators
 """
 
@@ -776,6 +632,8 @@ class MovieDataGenerator(ImageDataGenerator):
              batch_size=1,
              frames_per_batch=10,
              skip=None,
+             transform=None,
+             transform_kwargs={},
              shuffle=True,
              seed=None,
              save_to_dir=None,
@@ -785,11 +643,13 @@ class MovieDataGenerator(ImageDataGenerator):
             train_dict,
             self,
             batch_size=batch_size,
+            frames_per_batch=frames_per_batch,
+            skip=skip,
+            transform=transform,
+            transform_kwargs=transform_kwargs,
             shuffle=shuffle,
             seed=seed,
             data_format=self.data_format,
-            frames_per_batch=frames_per_batch,
-            skip=skip,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
@@ -1032,27 +892,30 @@ class MovieArrayIterator(Iterator):
                  train_dict,
                  movie_data_generator,
                  batch_size=32,
+                 frames_per_batch=10,
+                 skip=None,
+                 transform=None,
+                 transform_kwargs={},
                  shuffle=False,
                  seed=None,
-                 skip=None,
                  data_format=None,
-                 frames_per_batch=10,
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
-        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
+        X, y = train_dict['X'], train_dict['y']
+        if y is not None and X.shape[0] != y.shape[0]:
             raise ValueError('`X` (movie data) and `y` (labels) '
                              'should have the same size. Found '
                              'Found x.shape = {}, y.shape = {}'.format(
-                                 train_dict['X'].shape, train_dict['y'].shape))
+                                 X.shape, y.shape))
 
         if data_format is None:
             data_format = K.image_data_format()
 
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
-        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.y = np.asarray(train_dict['y'], dtype='int32')
+        self.x = np.asarray(X, dtype=K.floatx())
+        self.y = _transform_masks(y, transform, data_format=data_format, **transform_kwargs)
 
         if self.x.ndim != 5:
             raise ValueError('Input data in `MovieArrayIterator` '
@@ -1184,6 +1047,8 @@ class SampleMovieArrayIterator(Iterator):
                  movie_data_generator,
                  batch_size=32,
                  shuffle=False,
+                 transform=None,
+                 transform_kwargs={},
                  balance_classes=False,
                  max_class_samples=None,
                  window_size=(30, 30, 5),
@@ -1205,6 +1070,7 @@ class SampleMovieArrayIterator(Iterator):
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
         self.x = np.asarray(X, dtype=K.floatx())
+        y = _transform_masks(y, transform, data_format=data_format)
 
         if self.x.ndim != 5:
             raise ValueError('Input data in `SampleMovieArrayIterator` '
@@ -1361,6 +1227,8 @@ class SampleMovieDataGenerator(MovieDataGenerator):
              train_dict,
              batch_size=32,
              shuffle=True,
+             transform=None,
+             transform_kwargs={},
              window_size=(30, 30, 5),
              balance_classes=False,
              max_class_samples=None,
@@ -1373,6 +1241,8 @@ class SampleMovieDataGenerator(MovieDataGenerator):
             self,
             batch_size=batch_size,
             shuffle=shuffle,
+            transform=transform,
+            transform_kwargs=transform_kwargs,
             window_size=window_size,
             balance_classes=balance_classes,
             max_class_samples=max_class_samples,
@@ -2057,6 +1927,238 @@ class DiscMovieIterator(Iterator):
         if self.y is None:
             return batch_x
         return batch_x, batch_y
+
+    def next(self):
+        """For python 2.x.
+        # Returns the next batch.
+        """
+        # Keeps under lock only the mechanism which advances
+        # the indexing of each batch.
+        with self.lock:
+            index_array = next(self.index_generator)
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
+        return self._get_batches_of_transformed_samples(index_array)
+
+
+"""
+Custom siamese generators
+"""
+
+
+class SiameseDataGenerator(ImageDataGenerator):
+    def flow(self,
+             train_dict,
+             crop_dim=14,
+             min_track_length=5,
+             batch_size=32,
+             shuffle=True,
+             seed=None,
+             data_format=None,
+             save_to_dir=None,
+             save_prefix='',
+             save_format='png'):
+        return SiameseIterator(
+            train_dict,
+            self,
+            crop_dim=crop_dim,
+            min_track_length=min_track_length,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            seed=seed,
+            data_format=data_format,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
+
+
+class SiameseIterator(Iterator):
+    def __init__(self,
+                 train_dict,
+                 image_data_generator,
+                 crop_dim=14,
+                 min_track_length=5,
+                 batch_size=32,
+                 shuffle=False,
+                 seed=None,
+                 data_format=None,
+                 save_to_dir=None,
+                 save_prefix='',
+                 save_format='png'):
+        if data_format is None:
+            data_format = K.image_data_format()
+
+        if data_format == 'channels_first':
+            self.channel_axis = 1
+            self.row_axis = 3
+            self.col_axis = 4
+            self.time_axis = 2
+        if data_format == 'channels_last':
+            self.channel_axis = 4
+            self.row_axis = 2
+            self.col_axis = 3
+            self.time_axis = 1
+        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.y = np.array(train_dict['y'], dtype='int32')
+        self.crop_dim = crop_dim
+        self.min_track_length = min_track_length
+        self.image_data_generator = image_data_generator
+        self.data_format = data_format
+        self.save_to_dir = save_to_dir
+        self.save_prefix = save_prefix
+        self.save_format = save_format
+
+        self.track_ids = self._get_track_ids()
+
+        super(SiameseIterator, self).__init__(
+            len(self.track_ids), batch_size, shuffle, seed)
+
+    def _get_track_ids(self):
+        """
+        This function builds the track id's. It returns a dictionary that
+        contains the batch number and label number of each each track.
+        Creates unique cell IDs, as cell labels are NOT unique across batches.
+        """
+        track_counter = 0
+        track_ids = {}
+        for batch in range(self.y.shape[0]):
+            y_batch = self.y[batch]
+            num_cells = np.amax(y_batch)
+            for cell in range(1, num_cells + 1):
+                # count number of pixels cell occupies in each frame
+                y_true = np.sum(y_batch == cell, axis=(self.row_axis - 1, self.col_axis - 1))
+                # get indices of frames where cell is present
+                y_index = np.where(y_true > 0)[0]
+                if y_index.size > 0:  # if cell is present at all
+                    start_frame = np.amin(y_index)
+                    stop_frame = np.amax(y_index)
+                    track_ids[track_counter] = {
+                        'batch': batch,
+                        'label': cell,
+                        'frames': y_index
+                    }
+                    track_counter += 1
+        return track_ids
+
+    def _get_batches_of_transformed_samples(self, index_array):
+        if self.data_format == 'channels_first':
+            batch_shape = (len(index_array),
+                           self.x.shape[self.channel_axis],
+                           self.crop_dim,
+                           self.crop_dim)
+        else:
+            batch_shape = (len(index_array),
+                           self.crop_dim,
+                           self.crop_dim,
+                           self.x.shape[self.channel_axis])
+
+        batch_x_1 = np.zeros(batch_shape, dtype=K.floatx())
+        batch_x_2 = np.zeros(batch_shape, dtype=K.floatx())
+        batch_y = np.zeros((len(index_array), 2), dtype='int32')
+
+        for i, j in enumerate(index_array):
+            # Identify which tracks are going to be selected
+            track_id = self.track_ids[j]
+            batch = track_id['batch']
+            label_1 = track_id['label']
+            tracked_frames = track_id['frames']
+            frame_1 = np.random.choice(tracked_frames)  # Select a frame from the track
+
+            X = self.x[batch]
+            y = self.y[batch]
+
+            # Choose comparison cell
+            # Determine what class the track will be - different (0), same (1)
+            is_same_cell = np.random.random_integers(0, 1)
+
+            # Select another frame from the same track
+            if is_same_cell:
+                label_2 = label_1
+                frame_2 = np.random.choice(track_id['frames'])
+
+            # Select another frame from a different track
+            if not is_same_cell:
+                # all_labels = np.arange(1, np.amax(y) + 1)
+                all_labels = np.delete(np.unique(y), 0)  # all labels in y but 0 (background)
+                acceptable_labels = np.delete(all_labels, np.where(all_labels == label_1))
+                is_valid_label = False
+                while not is_valid_label:
+                    # get a random cell label from our acceptable list
+                    label_2 = np.random.choice(acceptable_labels)
+
+                    # count number of pixels cell occupies in each frame
+                    y_true = np.sum(y == label_2, axis=(
+                        self.row_axis - 1, self.col_axis - 1, self.channel_axis - 1))
+
+                    y_index = np.where(y_true > 0)[0]  # get frames where cell is present
+                    is_valid_label = y_index.any()  # label_2 is in a frame
+                    if not is_valid_label:
+                        # remove invalid label from list of acceptable labels
+                        acceptable_labels = np.delete(
+                            acceptable_labels, np.where(acceptable_labels == label_2))
+
+                frame_2 = np.random.choice(y_index)  # get random frame with label_2
+
+            # Get appearances
+            frames = [frame_1, frame_2]
+            labels = [label_1, label_2]
+
+            appearances = self._get_appearances(X, y, frames, labels)
+            if self.data_format == 'channels_first':
+                appearances = [appearances[:, 0], appearances[:, 1]]
+            else:
+                appearances = [appearances[0], appearances[1]]
+
+            # Apply random transformations
+            for k, appearance in enumerate(appearances):
+                appearance = self.image_data_generator.random_transform(appearance)
+                appearance = self.image_data_generator.standardize(appearance)
+                appearances[k] = appearance
+
+            batch_x_1[i] = appearances[0]
+            batch_x_2[i] = appearances[1]
+            batch_y[i, is_same_cell] = 1
+
+        return [batch_x_1, batch_x_2], batch_y
+
+    def _get_appearances(self, X, y, frames, labels):
+        channel_axis = self.channel_axis - 1
+        if self.data_format == 'channels_first':
+            appearance_shape = (X.shape[channel_axis],
+                                len(frames),
+                                self.crop_dim,
+                                self.crop_dim)
+        else:
+            appearance_shape = (len(frames),
+                                self.crop_dim,
+                                self.crop_dim,
+                                X.shape[channel_axis])
+        appearances = np.zeros(appearance_shape, dtype=K.floatx())
+        for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
+            # Get the bounding box
+            y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
+            props = regionprops(np.int32(y_frame == cell_label))
+            minr, minc, maxr, maxc = props[0].bbox
+
+            # Extract images from bounding boxes
+            if self.data_format == 'channels_first':
+                appearance = X[:, frame, minr:maxr, minc:maxc]
+                resize_shape = (X.shape[channel_axis], self.crop_dim, self.crop_dim)
+            else:
+                appearance = X[frame, minr:maxr, minc:maxc, :]
+                resize_shape = (self.crop_dim, self.crop_dim, X.shape[channel_axis])
+
+            # Resize images from bounding box
+            max_value = np.amax([np.amax(appearance), np.absolute(np.amin(appearance))])
+            appearance /= max_value
+            appearance = resize(appearance, resize_shape)
+            appearance *= max_value
+            if self.data_format == 'channels_first':
+                appearances[:, counter] = appearance
+            else:
+                appearances[counter] = appearance
+
+        return appearances
 
     def next(self):
         """For python 2.x.

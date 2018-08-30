@@ -16,6 +16,7 @@ import numpy as np
 from sklearn.utils.class_weight import compute_class_weight
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateScheduler
+from tensorflow.python.keras.optimizers import SGD
 from tensorflow.python.keras.utils import to_categorical as keras_to_categorical
 
 from deepcell import losses
@@ -28,22 +29,34 @@ from deepcell.utils.transform_utils import to_categorical
 CHANNELS_FIRST = K.image_data_format() == 'channels_first'
 
 
-def train_model_sample(model=None, dataset=None, optimizer=None,
-                       expt='', it=0, batch_size=32, n_epoch=100,
-                       window_size=(30, 30),
-                       balance_classes=True, max_class_samples=None,
-                       direc_save='/data/models', direc_data='/data/npz_data',
+def train_model_sample(model,
+                       dataset,
+                       expt='',
+                       n_epoch=10,
+                       batch_size=32,
+                       transform=None,
+                       window_size=None,
+                       balance_classes=True,
+                       max_class_samples=None,
+                       direc_save='/data/models',
+                       direc_data='/data/npz_data',
+                       optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
                        lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-                       rotation_range=0, flip=True, shear=0, class_weight=None):
+                       rotation_range=0,
+                       flip=False,
+                       shear=0,
+                       **kwargs):
+    is_channels_first = K.image_data_format() == 'channels_first'
+
+    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+    basename = '{}_{}_{}'.format(todays_date, dataset, expt)
+    file_name_save = os.path.join(direc_save, '{}.h5'.format(basename))
+    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(basename))
 
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
-
     train_dict, test_dict = get_data(training_data_file_name, mode='sample')
-    n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
+
+    n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
 
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
@@ -53,26 +66,43 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
     print('Output Shape:', model.layers[-1].output_shape)
     print('Number of Classes:', n_classes)
 
-    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+    def loss_function(y_true, y_pred):
+        if isinstance(transform, str) and transform.lower() == 'disc':
+            return losses.discriminative_instance_loss(y_true, y_pred)
+        return losses.weighted_categorical_crossentropy(
+            y_true, y_pred, n_classes=n_classes, from_logits=False)
 
-    print('Using real-time data augmentation.')
+    model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
+
+    if train_dict['X'].ndim == 4:
+        DataGenerator = generators.SampleDataGenerator
+        window_size = window_size if window_size else (30, 30)
+    elif train_dict['X'].ndim == 5:
+        DataGenerator = generators.SampleMovieDataGenerator
+        window_size = window_size if window_size else (30, 30, 3)
+    else:
+        raise ValueError('Expected `X` to have ndim 4 or 5. Got',
+                         train_dict['X'].ndim)
 
     # this will do preprocessing and realtime data augmentation
-    datagen = generators.SampleDataGenerator(
-        rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
-        horizontal_flip=flip,  # randomly flip images
-        vertical_flip=flip)  # randomly flip images
+    datagen = DataGenerator(
+        rotation_range=rotation_range,
+        shear_range=shear,
+        horizontal_flip=flip,
+        vertical_flip=flip)
 
-    datagen_val = generators.SampleDataGenerator(
-        rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=0,  # randomly shear images in the range (radians , -shear_range to shear_range)
-        horizontal_flip=0,  # randomly flip images
-        vertical_flip=0)  # randomly flip images
+    # no validation augmentation
+    datagen_val = DataGenerator(
+        rotation_range=0,
+        shear_range=0,
+        horizontal_flip=0,
+        vertical_flip=0)
 
     train_data = datagen.flow(
         train_dict,
         batch_size=batch_size,
+        transform=transform,
+        transform_kwargs=kwargs,
         window_size=window_size,
         balance_classes=balance_classes,
         max_class_samples=max_class_samples)
@@ -80,6 +110,8 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
     val_data = datagen_val.flow(
         test_dict,
         batch_size=batch_size,
+        transform=transform,
+        transform_kwargs=kwargs,
         window_size=window_size,
         balance_classes=False,
         max_class_samples=max_class_samples)
@@ -91,31 +123,43 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
         epochs=n_epoch,
         validation_data=val_data,
         validation_steps=val_data.y.shape[0] // batch_size,
-        class_weight=class_weight,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
+            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True),
             LearningRateScheduler(lr_sched)
         ])
 
     np.savez(file_name_save_loss, loss_history=loss_history.history)
 
+    return model
 
-def train_model_conv(model=None, dataset=None, optimizer=None,
-                     expt='', it=0, batch_size=1, n_epoch=100,
-                     direc_save='/data/models', direc_data='/data/npz_data',
-                     lr_sched=rate_scheduler(lr=0.01, decay=0.95), skip=None,
-                     rotation_range=0, flip=True, shear=0, class_weight=None):
+
+def train_model_conv(model,
+                     dataset,
+                     expt='',
+                     n_epoch=10,
+                     batch_size=1,
+                     frames_per_batch=5,
+                     transform=None,
+                     optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
+                     direc_save='/data/models',
+                     direc_data='/data/npz_data',
+                     lr_sched=rate_scheduler(lr=0.01, decay=0.95),
+                     skip=None,
+                     rotation_range=0,
+                     flip=True,
+                     shear=0,
+                     **kwargs):
+    is_channels_first = K.image_data_format() == 'channels_first'
+
+    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+    basename = '{}_{}_{}'.format(todays_date, dataset, expt)
+    file_name_save = os.path.join(direc_save, '{}.h5'.format(basename))
+    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(basename))
 
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
-
     train_dict, test_dict = get_data(training_data_file_name, mode='conv')
 
-    class_weights = train_dict['class_weights']
-    n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
+    n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
     print('y_train shape:', train_dict['y'].shape)
@@ -125,35 +169,74 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
+        if isinstance(transform, str) and transform.lower() == 'disc':
+            return losses.discriminative_instance_loss(y_true, y_pred)
         return losses.weighted_categorical_crossentropy(
             y_true, y_pred, n_classes=n_classes, from_logits=False)
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
-    print('Using real-time data augmentation.')
+    if train_dict['X'].ndim == 4:
+        DataGenerator = generators.ImageFullyConvDataGenerator
+    elif train_dict['X'].ndim == 5:
+        DataGenerator = generators.MovieDataGenerator
+    else:
+        raise ValueError('Expected `X` to have ndim 4 or 5. Got',
+                         train_dict['X'].ndim)
 
     # this will do preprocessing and realtime data augmentation
-    datagen = generators.ImageFullyConvDataGenerator(
-        rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
-        horizontal_flip=flip,  # randomly flip images
-        vertical_flip=flip)  # randomly flip images
+    datagen = DataGenerator(
+        rotation_range=rotation_range,
+        shear_range=shear,
+        horizontal_flip=flip,
+        vertical_flip=flip)
 
-    datagen_val = generators.ImageFullyConvDataGenerator(
+    datagen_val = DataGenerator(
         rotation_range=0,
         shear_range=0,
         horizontal_flip=0,
         vertical_flip=0)
 
+    if train_dict['X'].ndim == 5:
+        train_data = datagen_val.flow(
+            train_dict,
+            skip=skip,
+            batch_size=batch_size,
+            transform=transform,
+            transform_kwargs=kwargs,
+            frames_per_batch=frames_per_batch)
+
+        val_data = datagen_val.flow(
+            train_dict,
+            skip=skip,
+            batch_size=batch_size,
+            transform=transform,
+            transform_kwargs=kwargs,
+            frames_per_batch=frames_per_batch)
+    else:
+        train_data = datagen.flow(
+            train_dict,
+            skip=skip,
+            batch_size=batch_size,
+            transform=transform,
+            transform_kwargs=kwargs)
+
+        val_data = datagen_val.flow(
+            train_dict,
+            skip=skip,
+            batch_size=batch_size,
+            transform=transform,
+            transform_kwargs=kwargs)
+
     # fit the model on the batches generated by datagen.flow()
     loss_history = model.fit_generator(
-        datagen.flow(train_dict, batch_size=batch_size, skip=skip),
-        steps_per_epoch=train_dict['y'].shape[0] // batch_size,
+        train_data,
+        steps_per_epoch=train_data.y.shape[0] // batch_size,
         epochs=n_epoch,
-        validation_data=datagen_val.flow(test_dict, batch_size=batch_size, skip=skip),
-        validation_steps=test_dict['y'].shape[0] // batch_size,
+        validation_data=val_data,
+        validation_steps=val_data.y.shape[0] // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
+            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True),
             LearningRateScheduler(lr_sched)
         ])
 
@@ -257,159 +340,6 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
         epochs=n_epoch,
         validation_data=datagen_val.flow(test_dict, batch_size=batch_size),
         validation_steps=total_test_pairs // batch_size,
-        callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
-            LearningRateScheduler(lr_sched)
-        ])
-
-    model.save_weights(file_name_save)
-    np.savez(file_name_save_loss, loss_history=loss_history.history)
-
-    return model
-
-
-def train_model_watershed(model=None, dataset=None, optimizer=None, erosion_width=None,
-                          expt='', it=0, batch_size=1, n_epoch=100, distance_bins=16,
-                          direc_save='/data/models', direc_data='/data/npz_data',
-                          lr_sched=rate_scheduler(lr=0.01, decay=0.95), skip=None,
-                          rotation_range=0, flip=True, shear=0, class_weight=None):
-
-    training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
-
-    train_dict, test_dict = get_data(training_data_file_name, mode='conv')
-
-    # if class_weight is None:
-    #     class_weight = train_dict['class_weights']
-
-    n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
-    # the data, shuffled and split between train and test sets
-    print('X_train shape:', train_dict['X'].shape)
-    print('y_train shape:', train_dict['y'].shape)
-    print('X_test shape:', test_dict['X'].shape)
-    print('y_test shape:', test_dict['y'].shape)
-    print('Output Shape:', model.layers[-1].output_shape)
-    print('Number of Classes:', n_classes)
-
-    def loss_function(y_true, y_pred):
-        # TODO: implement direction loss
-        pass
-
-    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
-
-    print('Using real-time data augmentation.')
-
-    # this will do preprocessing and realtime data augmentation
-    datagen = generators.WatershedDataGenerator(
-        rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
-        horizontal_flip=flip,  # randomly flip images
-        vertical_flip=flip)  # randomly flip images
-
-    # no augmentation for validation data
-    datagen_val = generators.WatershedDataGenerator(
-        rotation_range=0,
-        shear_range=0,
-        horizontal_flip=0,
-        vertical_flip=0)
-
-    # fit the model on the batches generated by datagen.flow()
-    loss_history = model.fit_generator(
-        datagen.flow(train_dict, batch_size=batch_size, distance_bins=distance_bins, erosion_width=erosion_width, skip=skip),
-        steps_per_epoch=train_dict['y'].shape[0] // batch_size,
-        epochs=n_epoch,
-        class_weight=class_weight,
-        validation_data=datagen_val.flow(test_dict, batch_size=batch_size, distance_bins=distance_bins, erosion_width=erosion_width, skip=skip),
-        validation_steps=test_dict['X'].shape[0] // batch_size,
-        callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
-            LearningRateScheduler(lr_sched)
-        ])
-
-    model.save_weights(file_name_save)
-    np.savez(file_name_save_loss, loss_history=loss_history.history)
-
-    return model
-
-
-def train_model_watershed_sample(model=None, dataset=None, optimizer=None,
-                                 window_size=(30, 30), balance_classes=True,
-                                 max_class_samples=None, erosion_width=None,
-                                 distance_bins=16, expt='', it=0, batch_size=1, n_epoch=100,
-                                 direc_save='/data/models', direc_data='/data/npz_data',
-                                 lr_sched=rate_scheduler(lr=0.01, decay=0.95), skip=None,
-                                 rotation_range=0, flip=True, shear=0, class_weight=None):
-
-    training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
-
-    train_dict, test_dict = get_data(training_data_file_name, mode='conv')
-
-    n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
-    # the data, shuffled and split between train and test sets
-    print('X_train shape:', train_dict['X'].shape)
-    print('y_train shape:', train_dict['y'].shape)
-    print('X_test shape:', test_dict['X'].shape)
-    print('y_test shape:', test_dict['y'].shape)
-    print('Output Shape:', model.layers[-1].output_shape)
-    print('Number of Classes:', n_classes)
-
-    def loss_function(y_true, y_pred):
-        return losses.weighted_categorical_crossentropy(
-            y_true, y_pred, n_classes=n_classes, from_logits=False)
-
-    model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
-
-    print('Using real-time data augmentation.')
-
-    # this will do preprocessing and realtime data augmentation
-    datagen = generators.WatershedSampleDataGenerator(
-        rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
-        horizontal_flip=flip,  # randomly flip images
-        vertical_flip=flip)  # randomly flip images
-
-    # no augmentation for validation data
-    datagen_val = generators.WatershedSampleDataGenerator(
-        rotation_range=0,
-        shear_range=0,
-        horizontal_flip=0,
-        vertical_flip=0)
-
-    train_data = datagen.flow(
-        train_dict,
-        batch_size=batch_size,
-        window_size=window_size,
-        balance_classes=balance_classes,
-        max_class_samples=max_class_samples,
-        distance_bins=distance_bins,
-        erosion_width=erosion_width,
-        skip=skip)
-
-    val_data = datagen_val.flow(
-        train_dict,
-        batch_size=batch_size,
-        window_size=window_size,
-        balance_classes=balance_classes,
-        max_class_samples=max_class_samples,
-        distance_bins=distance_bins,
-        erosion_width=erosion_width,
-        skip=skip)
-
-    # fit the model on the batches generated by datagen.flow()
-    loss_history = model.fit_generator(
-        train_data,
-        steps_per_epoch=train_data.y.shape[0] // batch_size,
-        epochs=n_epoch,
-        class_weight=class_weight,
-        validation_data=val_data,
-        validation_steps=val_data.y.shape[0] // batch_size,
         callbacks=[
             ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
             LearningRateScheduler(lr_sched)
