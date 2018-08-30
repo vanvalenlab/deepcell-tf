@@ -121,60 +121,6 @@ def distance_transform_2d(mask, bins=16, erosion_width=None):
     return distance - 1  # minimum distance should be 0, not 1
 
 
-def _distance_transform_3d(maskstack, bins=16):
-    """ # DEPRECATED
-    Transform a label mask into distance classes for a z-stack of images
-    # Arguments
-        mask: a z-stack of label masks (y data)
-        bins: the number of transformed distance classes
-    # Returns
-        distance: 3D Euclidiean Distance Transform
-    """
-    def weightmask(mask):
-        # if mask is binary create unique labels
-        img = label(mask) if np.unique(mask).size <= 2 else mask
-        img = mask.flatten()
-        unique, counts = np.unique(img, return_counts=True)
-        counts = 1 / np.sqrt(counts)
-        dic = dict(zip(unique, counts))
-        dic[0] = 0
-        img_out = map(dic.get, img)
-        img_out = list(img_out)
-        new_shape = (mask.shape[0], mask.shape[1], mask.shape[2])
-        return np.reshape(img_out, new_shape)
-
-    weighted_mask = weightmask(maskstack)
-    distance_slices = [ndimage.distance_transform_edt(m) for m in weighted_mask]
-    distance_slices = np.array(distance_slices)
-
-    distance = np.zeros(list(weighted_mask.shape))
-    for k in range(weighted_mask.shape[0]):
-        adder = [np.square(x - k) for x in range(len(distance_slices))]
-        for i in range(weighted_mask.shape[1]):
-            for j in range(weighted_mask.shape[2]):
-                slicearr = np.square(distance_slices[:, i, j])
-                zans = np.argmin(slicearr + adder)
-                zij = np.square(distance_slices[zans, i, j])
-                zk = np.square(zans - k)
-                distance[k][i][j] = np.sqrt(zij + zk)
-
-    # normalize by maximum distance
-    distance = np.expand_dims(distance, axis=-1)  # add channels for comparison
-    for cell_label in np.unique(maskstack):
-        if cell_label == 0:  # distance is only found for non-zero regions
-            continue
-        labeled_distance = distance[maskstack == cell_label]
-        normalized_distance = labeled_distance / np.amax(labeled_distance)
-        distance[maskstack == cell_label] = normalized_distance
-    distance = np.reshape(distance, distance.shape[:-1])  # remove channels again
-
-    min_dist = np.amin(distance.flatten())
-    max_dist = np.amax(distance.flatten())
-    bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins + 1)
-    distance = np.digitize(distance, bins, right=True)
-    return distance - 1  # minimum distance should be 0, not 1
-
-
 def distance_transform_3d(maskstack, bins=4, erosion_width=None):
     """
     Transforms a label mask for a z stack into distance classes
