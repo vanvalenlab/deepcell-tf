@@ -5,3 +5,4 @@ from .normalization import *
 from .pooling import *
 from .resize import *
 from .tensor_product import *
+from .padding import *

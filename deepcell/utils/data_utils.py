@@ -40,6 +40,7 @@ from .transform_utils import distance_transform_3d
 CHANNELS_FIRST = K.image_data_format() == 'channels_first'
 
 
+
 def get_data(file_name, mode='sample', test_size=.1, seed=None):
     """Load data from NPZ file and split into train and test sets
     # Arguments
@@ -49,73 +50,76 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         test_size: percent of data to leave as testing holdout
         seed: seed number for random train/test split repeatability
     # Returns
-        dict of training data, and a tuple of testing data:
-        train_dict, (X_test, y_test)
+        dict of training data, and a dict of testing data:
+        train_dict, test_dict
     """
     training_data = np.load(file_name)
     X = training_data['X']
     y = training_data['y']
     win_x = training_data['win_x']
     win_y = training_data['win_y']
-    win_z = None
 
     class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
 
-    if mode == 'sample' and X.ndim == 4:
-        batch = training_data['batch']
-        pixels_x = training_data['pixels_x']
-        pixels_y = training_data['pixels_y']
+    if mode == 'sample':
+        if not seed:
+            # if not passed randomly generate seed so
+            # the multiple train_test_splits are kept the same
+            seed = np.random.randint(0, 1000000)
 
-        if CHANNELS_FIRST:
-            sample_shape = (len(batch), X.shape[1], 2 * win_x + 1, 2 * win_y + 1)
-        else:
-            sample_shape = (len(batch), 2 * win_x + 1, 2 * win_y + 1, X.shape[3])
-        X_sample = np.zeros(sample_shape, dtype=K.floatx())
+        # don't split train/test X data, just split the pixel values
+        X_train, X_test = X, X
 
-        for i, (b, px, py) in enumerate(zip(batch, pixels_x, pixels_y)):
-            if CHANNELS_FIRST:
-                X_sample[i] = X[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
-            else:
-                X_sample[i] = X[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
+        y_train, y_test = train_test_split(y, test_size=test_size, random_state=seed)
 
-        X = X_sample
+        batch_train, batch_test = train_test_split(
+            training_data['batch'], test_size=test_size, random_state=seed)
 
-    elif mode == 'sample' and X.ndim == 5:
-        batch = training_data['batch']
-        pixels_x = training_data['pixels_x']
-        pixels_y = training_data['pixels_y']
-        pixels_z = training_data['pixels_z']
-        win_z = training_data['win_z']
+        px_train, px_test = train_test_split(
+            training_data['pixels_x'], test_size=test_size, random_state=seed)
 
-        if CHANNELS_FIRST:
-            sample_shape = (len(batch), X.shape[1], 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1)
-        else:
-            sample_shape = (len(batch), 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1, X.shape[4])
-        X_sample = np.zeros(sample_shape, dtype=K.floatx())
+        py_train, py_test = train_test_split(
+            training_data['pixels_y'], test_size=test_size, random_state=seed)
 
-        for i, (b, px, py, pz) in enumerate(zip(batch, pixels_x, pixels_y, pixels_z)):
-            if CHANNELS_FIRST:
-                X_sample[i] = X[b, :, pz - win_z:pz + win_z + 1, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
-            else:
-                X_sample[i] = X[b, pz - win_z:pz + win_z + 1, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
-
-        X = X_sample
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=seed)
+        # 3D sample mode takes pixels_z and win_z as well
+        if X.ndim == 5:
+            pz_train, pz_test = train_test_split(
+                training_data['pixels_z'], test_size=test_size, random_state=seed)
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=seed)
 
     train_dict = {
         'X': X_train,
         'y': y_train,
-        'class_weights': class_weights,
         'win_x': win_x,
-        'win_y': win_y
+        'win_y': win_y,
+        'class_weights': class_weights
     }
 
-    if win_z is not None:
-        train_dict['win_z'] = win_z
+    test_dict = {
+        'X': X_test,
+        'y': y_test,
+        'win_x': win_x,
+        'win_y': win_y,
+        'class_weights': class_weights
+    }
 
-    return train_dict, (X_test, y_test)
+    if mode == 'sample':
+        train_dict['batch'] = batch_train
+        train_dict['pixels_x'] = px_train
+        train_dict['pixels_y'] = py_train
+        test_dict['batch'] = batch_test
+        test_dict['pixels_x'] = px_test
+        test_dict['pixels_y'] = py_test
+
+        if X.ndim == 5:
+            train_dict['pixels_z'] = pz_train
+            train_dict['win_z'] = training_data['win_z']
+            test_dict['pixels_z'] = pz_test
+            test_dict['win_z'] = training_data['win_z']
+
+    return train_dict, test_dict
 
 
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='valid',

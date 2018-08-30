@@ -1,8 +1,6 @@
 """
 image_generators.py
-
 Image generators for training convolutional neural networks
-
 @author: David Van Valen
 """
 from __future__ import absolute_import
@@ -35,6 +33,7 @@ from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 from keras_retinanet.preprocessing.generator import Generator as _RetinaNetGenerator
 from keras_maskrcnn.preprocessing.generator import Generator as _MaskRCNNGenerator
 
+from .utils.transform_utils import to_categorical
 from .utils.transform_utils import transform_matrix_offset_center
 from .utils.transform_utils import distance_transform_2d, distance_transform_3d
 from .utils.retinanet_anchor_utils import anchor_targets_bbox
@@ -44,25 +43,33 @@ from .utils.retinanet_anchor_utils import anchor_targets_bbox
 Custom image generators
 """
 
-
 class ImageSampleArrayIterator(Iterator):
     def __init__(self,
                  train_dict,
                  image_data_generator,
                  batch_size=32,
                  shuffle=False,
+                 balance_classes=False,
+                 max_class_samples=None,
                  seed=None,
                  data_format=None,
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
-        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
-            raise ValueError('Training batches and labels should have the same'
-                             'length. Found X.shape: {} y.shape: {}'.format(
-                                 train_dict['X'].shape, train_dict['y'].shape))
+        X, y = train_dict['X'], train_dict['y']
+        # if y is not None and X.shape[0] != y.shape[0]:
+        #     raise ValueError('Training batches and labels should have the same'
+        #                      'length. Found X.shape: {} y.shape: {}'.format(
+        #                          X.shape, y.shape))
+        required_keys = ['pixels_x', 'pixels_y', 'batch', 'y']
+        if any(len(train_dict[r]) != len(train_dict['y']) for r in required_keys):
+            raise ValueError('Not all sampled arrays in train_dict '
+                             'have the same length')
+
         if data_format is None:
             data_format = K.image_data_format()
-        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+        self.x = np.asarray(X, dtype=K.floatx())
+        self.y = np.asarray(y, dtype='int32')
 
         if self.x.ndim != 4:
             raise ValueError('Input data in `ImageSampleArrayIterator` '
@@ -70,7 +77,9 @@ class ImageSampleArrayIterator(Iterator):
                              'with shape', self.x.shape)
 
         self.channel_axis = 3 if data_format == 'channels_last' else 1
-        self.y = train_dict['y']
+        self.batch = train_dict['batch']
+        self.pixels_x = train_dict['pixels_x']
+        self.pixels_y = train_dict['pixels_y']
         self.win_x = train_dict['win_x']
         self.win_y = train_dict['win_y']
         self.image_data_generator = image_data_generator
@@ -78,8 +87,69 @@ class ImageSampleArrayIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
+
+        self.class_balance(max_class_samples, balance_classes, seed=seed)
+
+        self.y = keras_to_categorical(self.y).astype('int32')
         super(ImageSampleArrayIterator, self).__init__(
-            len(train_dict['y']), batch_size, shuffle, seed)
+            len(self.y), batch_size, shuffle, seed)
+
+    def _sample_image(self, b, px, py):
+        wx = self.win_x
+        wy = self.win_y
+
+        if self.channel_axis == 1:
+            sampled = self.x[b, :, px - wx:px + wx + 1, py - wy:py + wy + 1]
+        else:
+            sampled = self.x[b, px - wx:px + wx + 1, py - wy:py + wy + 1, :]
+
+        return sampled
+
+    def class_balance(self, max_class_samples=None, downsample=False, seed=None):
+        """Balance classes based on the number of samples of each class
+        # Arguments
+            max_class_samples: if not None, a maximum count for each class
+            downsample: if True, all sample sizes will be the rarest count
+            seed: random state initalization
+        # Returns
+            Does not return anything but shuffles and resizes the sample size
+        """
+        balanced_indices = []
+
+        unique_b = np.unique(self.batch)
+
+        if max_class_samples is not None:
+            max_class_samples = int(max_class_samples // len(unique_b))
+
+        for b in unique_b:
+            batch_y = self.y[self.batch == b]
+            unique, counts = np.unique(batch_y, return_counts=True)
+            min_index = np.argmin(counts)
+            n_samples = counts[min_index]
+
+            if max_class_samples is not None and max_class_samples < n_samples:
+                n_samples = max_class_samples
+
+            for class_label in unique:
+                non_rand_ind = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
+
+                if downsample:
+                    size = n_samples
+                elif max_class_samples:
+                    size = min(max_class_samples, len(non_rand_ind))
+                else:
+                    size = len(non_rand_ind)
+
+                index = np.random.choice(non_rand_ind, size=size, replace=False)
+                balanced_indices.extend(index)
+
+        np.random.seed(seed=seed)
+        np.random.shuffle(balanced_indices)
+
+        self.batch = self.batch[balanced_indices]
+        self.pixels_x = self.pixels_x[balanced_indices]
+        self.pixels_y = self.pixels_y[balanced_indices]
+        self.y = self.y[balanced_indices]
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
@@ -94,7 +164,8 @@ class ImageSampleArrayIterator(Iterator):
                                 self.x.shape[self.channel_axis]))
 
         for i, j in enumerate(index_array):
-            x = self.x[j]
+            b, px, py = self.batch[j], self.pixels_x[j], self.pixels_y[j]
+            x = self._sample_image(b, px, py)
             x = self.image_data_generator.random_transform(x.astype(K.floatx()))
             x = self.image_data_generator.standardize(x)
 
@@ -133,6 +204,8 @@ class SampleDataGenerator(ImageDataGenerator):
              train_dict,
              batch_size=32,
              shuffle=True,
+             balance_classes=False,
+             max_class_samples=None,
              seed=None,
              save_to_dir=None,
              save_prefix='',
@@ -142,6 +215,8 @@ class SampleDataGenerator(ImageDataGenerator):
             self,
             batch_size=batch_size,
             shuffle=shuffle,
+            balance_classes=balance_classes,
+            max_class_samples=max_class_samples,
             seed=seed,
             data_format=self.data_format,
             save_to_dir=save_to_dir,
@@ -154,6 +229,7 @@ class ImageFullyConvIterator(Iterator):
                  train_dict,
                  image_data_generator,
                  batch_size=1,
+                 skip=None, 
                  shuffle=False,
                  seed=None,
                  data_format=None,
@@ -172,6 +248,7 @@ class ImageFullyConvIterator(Iterator):
 
         self.channel_axis = -1 if data_format == 'channels_last' else 1
         self.y = np.array(train_dict['y'], dtype='int32')
+        self.skip = skip
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -249,6 +326,9 @@ class ImageFullyConvIterator(Iterator):
 
         if self.y is None:
             return batch_x
+
+        if self.skip is not None:
+            batch_y = [batch_y]*(self.skip+1)
         return batch_x, batch_y
 
     def next(self):
@@ -273,6 +353,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
     def flow(self,
              train_dict,
              batch_size=1,
+             skip=None,
              shuffle=True,
              seed=None,
              save_to_dir=None,
@@ -283,6 +364,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             train_dict,
             self,
             batch_size=batch_size,
+            skip=skip,
             shuffle=shuffle,
             seed=seed,
             data_format=self.data_format,
@@ -561,7 +643,7 @@ class SiameseIterator(Iterator):
 
         batch_x_1 = np.zeros(batch_shape, dtype=K.floatx())
         batch_x_2 = np.zeros(batch_shape, dtype=K.floatx())
-        batch_y = np.zeros((len(index_array), 2), dtype=np.int32)
+        batch_y = np.zeros((len(index_array), 2), dtype='int32')
 
         for i, j in enumerate(index_array):
             # Identify which tracks are going to be selected
@@ -694,6 +776,7 @@ class WatershedDataGenerator(ImageFullyConvDataGenerator):
              save_to_dir=None,
              save_prefix='',
              distance_bins=16,
+             skip=None,
              save_format='png'):
         return WatershedIterator(
             train_dict,
@@ -703,6 +786,7 @@ class WatershedDataGenerator(ImageFullyConvDataGenerator):
             seed=seed,
             data_format=self.data_format,
             distance_bins=distance_bins,
+            skip=skip,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
@@ -717,6 +801,7 @@ class WatershedIterator(Iterator):
                  seed=None,
                  data_format=None,
                  distance_bins=16,
+                 skip=None,
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
@@ -732,6 +817,7 @@ class WatershedIterator(Iterator):
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.distance_bins = distance_bins
         self.y = train_dict['y']
+        self.skip = skip
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -810,6 +896,10 @@ class WatershedIterator(Iterator):
 
         if self.y is None:
             return batch_x
+
+        if self.skip is not None:
+            batch_y = [batch_y]*(self.skip+1)
+
         return batch_x, batch_y
 
     def next(self):
@@ -850,6 +940,7 @@ class MovieDataGenerator(ImageDataGenerator):
              train_dict,
              batch_size=1,
              frames_per_batch=10,
+             skip=None,
              shuffle=True,
              seed=None,
              save_to_dir=None,
@@ -863,6 +954,7 @@ class MovieDataGenerator(ImageDataGenerator):
             seed=seed,
             data_format=self.data_format,
             frames_per_batch=frames_per_batch,
+            skip=skip,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
@@ -1107,6 +1199,7 @@ class MovieArrayIterator(Iterator):
                  batch_size=32,
                  shuffle=False,
                  seed=None,
+                 skip=None,
                  data_format=None,
                  frames_per_batch=10,
                  save_to_dir=None,
@@ -1138,6 +1231,7 @@ class MovieArrayIterator(Iterator):
                 'be less than the number of frames in the training data!')
 
         self.frames_per_batch = frames_per_batch
+        self.skip = skip
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -1224,6 +1318,10 @@ class MovieArrayIterator(Iterator):
 
         if self.y is None:
             return batch_x
+
+        if self.skip is not None:
+            batch_y = [batch_y]*(self.skip + 1)
+
         return batch_x, batch_y
 
     def next(self):
@@ -1245,24 +1343,30 @@ class SampleMovieArrayIterator(Iterator):
                  movie_data_generator,
                  batch_size=32,
                  shuffle=False,
+                 balance_classes=False,
+                 max_class_samples=None,
                  seed=None,
                  data_format=None,
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
-        if train_dict['y'] is not None and train_dict['X'].shape[0] != train_dict['y'].shape[0]:
-            raise ValueError('`X` (movie data) and `y` (labels) '
-                             'should have the same size. Found '
-                             'Found x.shape = {}, y.shape = {}'.format(
-                                 train_dict['X'].shape, train_dict['y'].shape))
-
+        X, y = train_dict['X'], train_dict['y']
+        # if y is not None and X.shape[0] != y.shape[0]:
+        #     raise ValueError('`X` (movie data) and `y` (labels) '
+        #                      'should have the same size. Found '
+        #                      'Found x.shape = {}, y.shape = {}'.format(
+        #                          X.shape, y.shape))
+        required_keys = ['pixels_z', 'pixels_x', 'pixels_y', 'batch', 'y']
+        if any(train_dict[r].shape != train_dict['y'].shape for r in required_keys):
+            raise ValueError('Not all sampled arrays in train_dict '
+                             'have the same length')
         if data_format is None:
             data_format = K.image_data_format()
 
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
-        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
-        self.y = np.asarray(train_dict['y'], dtype=np.int32)
+        self.x = np.asarray(X, dtype=K.floatx())
+        self.y = np.asarray(y, dtype='int32')
 
         if self.x.ndim != 5:
             raise ValueError('Input data in `SampleMovieArrayIterator` '
@@ -1272,13 +1376,81 @@ class SampleMovieArrayIterator(Iterator):
         self.win_x = train_dict['win_x']
         self.win_y = train_dict['win_y']
         self.win_z = train_dict['win_z']
+        self.pixels_x = train_dict['pixels_x']
+        self.pixels_y = train_dict['pixels_y']
+        self.pixels_z = train_dict['pixels_z']
+        self.batch = train_dict['batch']
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
+
+        self.class_balance(max_class_samples, balance_classes, seed=seed)
+
+        self.y = keras_to_categorical(self.y).astype('int32')
         super(SampleMovieArrayIterator, self).__init__(
             len(self.y), batch_size, shuffle, seed)
+
+    def _sample_image(self, b, pz, px, py):
+        wx = self.win_x
+        wy = self.win_y
+        wz = self.win_z
+
+        if self.channel_axis == 1:
+            sampled = self.x[b, :, pz - wz:pz + wz + 1, px - wx:px + wx + 1, py - wy:py + wy + 1]
+        else:
+            sampled = self.x[b, pz - wz:pz + wz + 1, px - wx:px + wx + 1, py - wy:py + wy + 1, :]
+
+        return sampled
+
+    def class_balance(self, max_class_samples=None, downsample=False, seed=None):
+        """Balance classes based on the number of samples of each class
+        # Arguments
+            max_class_samples: if not None, a maximum count for each class
+            downsample: if True, all sample sizes will be the rarest count
+            seed: random state initalization
+        # Returns
+            Does not return anything but shuffles and resizes the sample size
+        """
+        balanced_indices = []
+
+        unique_b = np.unique(self.batch)
+
+        if max_class_samples is not None:
+            max_class_samples = int(max_class_samples // len(unique_b))
+
+        for b in unique_b:
+            batch_y = self.y[self.batch == b]
+            unique, counts = np.unique(batch_y, return_counts=True)
+            min_index = np.argmin(counts)
+            n_samples = counts[min_index]
+
+            if max_class_samples is not None and max_class_samples < n_samples:
+                n_samples = max_class_samples
+
+            for class_label in unique:
+                non_rand_ind = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
+
+                if downsample:
+                    size = n_samples
+                elif max_class_samples:
+                    size = min(max_class_samples, len(non_rand_ind))
+                else:
+                    size = len(non_rand_ind)
+
+                index = np.random.choice(non_rand_ind, size=size, replace=False)
+                balanced_indices.extend(index)
+
+        np.random.seed(seed=seed)
+        np.random.shuffle(balanced_indices)
+
+        # Save the upsampled results
+        self.batch = self.batch[balanced_indices]
+        self.pixels_z = self.pixels_z[balanced_indices]
+        self.pixels_x = self.pixels_x[balanced_indices]
+        self.pixels_y = self.pixels_y[balanced_indices]
+        self.y = self.y[balanced_indices]
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
@@ -1295,7 +1467,8 @@ class SampleMovieArrayIterator(Iterator):
                                 self.x.shape[self.channel_axis]))
 
         for i, j in enumerate(index_array):
-            x = self.x[j]
+            b, pz, px, py = self.batch[j], self.pixels_z[j], self.pixels_x[j], self.pixels_y[j]
+            x = self._sample_image(b, pz, px, py)
             x = self.movie_data_generator.random_transform(x.astype(K.floatx()))
             x = self.movie_data_generator.standardize(x)
 
@@ -1340,6 +1513,8 @@ class SampleMovieDataGenerator(MovieDataGenerator):
              train_dict,
              batch_size=32,
              shuffle=True,
+             balance_classes=False,
+             max_class_samples=None,
              seed=None,
              save_to_dir=None,
              save_prefix='',
@@ -1349,6 +1524,8 @@ class SampleMovieDataGenerator(MovieDataGenerator):
             self,
             batch_size=batch_size,
             shuffle=shuffle,
+            balance_classes=balance_classes,
+            max_class_samples=max_class_samples,
             seed=seed,
             data_format=self.data_format,
             save_to_dir=save_to_dir,
@@ -1371,6 +1548,7 @@ class WatershedMovieDataGenerator(MovieDataGenerator):
              save_prefix='',
              distance_bins=16,
              erosion_width=None,
+             skip=None,
              save_format='png'):
         return WatershedMovieIterator(
             train_dict,
@@ -1378,6 +1556,7 @@ class WatershedMovieDataGenerator(MovieDataGenerator):
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
+            skip=skip,
             frames_per_batch=frames_per_batch,
             data_format=self.data_format,
             distance_bins=distance_bins,
@@ -1392,6 +1571,7 @@ class WatershedMovieIterator(Iterator):
                  train_dict,
                  movie_data_generator,
                  batch_size=1,
+                 skip=None,
                  shuffle=False,
                  seed=None,
                  frames_per_batch=10,
@@ -1425,6 +1605,7 @@ class WatershedMovieIterator(Iterator):
                              'training data.')
 
         self.frames_per_batch = frames_per_batch
+        self.skip = skip
         self.distance_bins = distance_bins
         self.erosion_width = erosion_width
         self.movie_data_generator = movie_data_generator
@@ -1539,6 +1720,10 @@ class WatershedMovieIterator(Iterator):
 
         if self.y is None:
             return batch_x
+
+        if self.skip is not None:
+            batch_y = [batch_y]*(self.skip + 1)
+
         return batch_x, batch_y
 
     def next(self):
