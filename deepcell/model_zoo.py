@@ -7,26 +7,22 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import tensorflow as tf
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.activations import softmax
-from tensorflow.python.keras.callbacks import ModelCheckpoint
-from tensorflow.python.keras.models import Sequential, Model
+from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D, Conv3D
-from tensorflow.python.keras.layers import Add, Input, Concatenate, Lambda
+from tensorflow.python.keras.layers import Input, Concatenate, Flatten
 from tensorflow.python.keras.layers import MaxPool2D, MaxPool3D
 from tensorflow.python.keras.layers import Cropping2D, Cropping3D
-from tensorflow.python.keras.layers import Flatten, Dense, Dropout
 from tensorflow.python.keras.layers import Activation, Softmax
 from tensorflow.python.keras.layers import BatchNormalization
+from tensorflow.python.keras.layers import ZeroPadding2D, ZeroPadding3D
 from tensorflow.python.keras.regularizers import l2
 
-from .layers import Resize
-from .layers import ReflectionPadding2D, ReflectionPadding3D
 from .layers import DilatedMaxPool2D, DilatedMaxPool3D
-from .layers import TensorProd2D, TensorProd3D
-from .layers import Location, Location3D
 from .layers import ImageNormalization2D, ImageNormalization3D
+from .layers import Location, Location3D
+from .layers import ReflectionPadding2D, ReflectionPadding3D
+from .layers import TensorProd2D, TensorProd3D
 
 
 """
@@ -49,7 +45,8 @@ def bn_feature_net_2D(receptive_field=61,
                       padding_mode='reflect',
                       multires=False,
                       include_top=True):
-    # Create layers list (x) to store all of the layers. We need to use the functional API to enable the multiresolution mode
+    # Create layers list (x) to store all of the layers.
+    # We need to use the functional API to enable the multiresolution mode
     x = []
 
     win = (receptive_field - 1) // 2
