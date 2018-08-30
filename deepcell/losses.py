@@ -27,15 +27,14 @@ def _to_tensor(x, dtype):
         x = tf.cast(x, dtype)
     return x
 
-
-def categorical_crossentropy(target, output, class_weights=None, axis=None, from_logits=False):
+def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
     # Arguments
-        target: A tensor of the same shape as `output`.
-        output: A tensor resulting from a softmax
+        y_true: A tensor of the same shape as `output`.
+        y_pred: A tensor resulting from a softmax
         (unless `from_logits` is True, in which
-        case `output` is expected to be the logits).
-        from_logits: Boolean, whether `output` is the
+        case `y_pred` is expected to be the logits).
+        from_logits: Boolean, whether `y_pred` is the
         result of a softmax, or is a tensor of logits.
     # Returns
         Output tensor.
@@ -43,29 +42,29 @@ def categorical_crossentropy(target, output, class_weights=None, axis=None, from
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
     if axis is None:
-        axis = 1 if K.image_data_format() == 'channels_first' else len(output.get_shape()) - 1
+        axis = 1 if K.image_data_format() == 'channels_first' else len(y_pred.get_shape()) - 1
     if not from_logits:
         # scale preds so that the class probas of each sample sum to 1
-        output = output / tf.reduce_sum(output, axis=axis, keepdims=True)
+        y_pred = y_pred / tf.reduce_sum(y_pred, axis=axis, keepdims=True)
         # manual computation of crossentropy
-        _epsilon = _to_tensor(K.epsilon(), output.dtype.base_dtype)
-        output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
+        _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
+        y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
         if class_weights is None:
-            return - tf.reduce_sum(target * tf.log(output), axis=axis)
-        return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
-    return tf.nn.softmax_cross_entropy_with_logits(labels=target, logits=output)
+            return - tf.reduce_sum(y_true * tf.log(y_pred), axis=axis)
+        return - tf.reduce_sum(tf.multiply(y_true * tf.log(y_pred), class_weights), axis=axis)
+    return tf.nn.softmax_cross_entropy_with_logits(labels=y_true, logits=y_pred)
 
 
-def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, from_logits=False):
+def weighted_categorical_crossentropy(y_true, y_pred, n_classes=3, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
     Automatically computes the class weights from the target image and uses
     them to weight the cross entropy
     # Arguments
-        target: A tensor of the same shape as `output`.
-        output: A tensor resulting from a softmax
+        y_true: A tensor of the same shape as `y_pred`.
+        y_pred: A tensor resulting from a softmax
         (unless `from_logits` is True, in which
-        case `output` is expected to be the logits).
-        from_logits: Boolean, whether `output` is the
+        case `y_pred` is expected to be the logits).
+        from_logits: Boolean, whether `y_pred` is the
         result of a softmax, or is a tensor of logits.
     # Returns
         Output tensor.
@@ -75,29 +74,29 @@ def weighted_categorical_crossentropy(target, output, n_classes=3, axis=None, fr
     if from_logits:
         raise Exception('weighted_categorical_crossentropy cannot take logits')
     if axis is None:
-        axis = 1 if K.image_data_format() == 'channels_first' else len(output.get_shape()) - 1
-    reduce_axis = [x for x in list(range(len(output.get_shape()))) if x != axis]
+        axis = 1 if K.image_data_format() == 'channels_first' else len(y_pred.get_shape()) - 1
+    reduce_axis = [x for x in list(range(len(y_pred.get_shape()))) if x != axis]
     # scale preds so that the class probas of each sample sum to 1
-    output = output / tf.reduce_sum(output, axis=axis, keepdims=True)
+    y_pred = y_pred / tf.reduce_sum(y_pred, axis=axis, keepdims=True)
     # manual computation of crossentropy
-    _epsilon = _to_tensor(K.epsilon(), output.dtype.base_dtype)
-    output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
-    target_cast = tf.cast(target, K.floatx())
-    total_sum = tf.reduce_sum(target_cast)
-    class_sum = tf.reduce_sum(target_cast, axis=reduce_axis, keepdims=True)
+    _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
+    y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
+    y_true_cast = tf.cast(y_true, K.floatx())
+    total_sum = tf.reduce_sum(y_true_cast)
+    class_sum = tf.reduce_sum(y_true_cast, axis=reduce_axis, keepdims=True)
     class_weights = 1.0 / np.float(n_classes) * tf.divide(total_sum, class_sum + 1.)
-    return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
+    return - tf.reduce_sum(tf.multiply(y_true * tf.log(y_pred), class_weights), axis=axis)
 
 
-def sample_categorical_crossentropy(target, output, class_weights=None, axis=None, from_logits=False):
+def sample_categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor. Only the sampled
-    pixels are used to compute the cross entropy
+    pixels defined by y_true = 1 are used to compute the cross entropy
     # Arguments
-        target: A tensor of the same shape as `output`.
-        output: A tensor resulting from a softmax
+        y_true: A tensor of the same shape as `y_pred`.
+        y_pred: A tensor resulting from a softmax
         (unless `from_logits` is True, in which
-        case `output` is expected to be the logits).
-        from_logits: Boolean, whether `output` is the
+        case `y_pred` is expected to be the logits).
+        from_logits: Boolean, whether `y_pred` is the
         result of a softmax, or is a tensor of logits.
     # Returns
         Output tensor.
@@ -105,35 +104,40 @@ def sample_categorical_crossentropy(target, output, class_weights=None, axis=Non
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
     if axis is None:
-        axis = 1 if K.image_data_format() == 'channels_first' else len(output.get_shape()) - 1
+        axis = 1 if K.image_data_format() == 'channels_first' else len(y_pred.get_shape()) - 1
     if not from_logits:
         # scale preds so that the class probabilities of each sample sum to 1
-        output = output / tf.reduce_sum(output, axis=axis, keepdims=True)
+        y_pred = y_pred / tf.reduce_sum(y_pred, axis=axis, keepdims=True)
 
         # Multiply with mask so that only the sampled pixels are used
-        output = tf.multiply(output, target)
+        y_pred = tf.multiply(y_pred, y_true)
 
         # manual computation of crossentropy
-        _epsilon = _to_tensor(K.epsilon(), output.dtype.base_dtype)
-        output = tf.clip_by_value(output, _epsilon, 1. - _epsilon)
+        _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
+        y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
         if class_weights is None:
-            return - tf.reduce_sum(target * tf.log(output), axis=axis)
-        return - tf.reduce_sum(tf.multiply(target * tf.log(output), class_weights), axis=axis)
-    return tf.nn.softmax_cross_entropy_with_logits(labels=target, logits=output)
+            return - tf.reduce_sum(y_true * tf.log(y_pred), axis=axis)
+        return - tf.reduce_sum(tf.multiply(y_true * tf.log(y_pred), class_weights), axis=axis)
+    return tf.nn.softmax_cross_entropy_with_logits(labels=y_true, logits=y_pred)
 
-
-def dice_coef(y_true, y_pred, smooth=1):
+def dice_loss(y_true, y_pred, smooth=1):
+    """
+    Computes the dice loss
+    y_true: A tensor of the same shape as `y_pred`.
+    y_pred: A tensor resulting from a softmax
+    """
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
-    return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
-
-
-def dice_coef_loss(y_true, y_pred, smooth=1):
-    return -dice_coef(y_true, y_pred, smooth)
-
+    return - ((2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth))
 
 def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order=2, gamma=1e-3):
+    """
+    Computes the discriminative instance loss
+    y_true: A tensor of the same shape as `y_pred`.
+    y_pred: A tensor of the vector embedding
+    """
+
     def temp_norm(ten, axis=-1):
         return tf.sqrt(K.epsilon() + tf.reduce_sum(tf.square(ten), axis=axis))
 
@@ -170,10 +174,11 @@ def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order
 
     return L
 
-
 def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_logits=False):
     """
     Computes focal loss with class weights computed on the fly
+    y_true: A tensor of the same shape as `y_pred`.
+    y_pred: A tensor resulting from a softmax
     """
     if from_logits:
         raise Exception('weighted_focal_loss cannot take logits')

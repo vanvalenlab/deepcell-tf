@@ -2578,4 +2578,4 @@ class MaskRCNNGenerator(_MaskRCNNGenerator):
             mask = (mask > 0).astype(np.uint8)  # convert from 0-255 to binary mask
             masks.append(np.expand_dims(mask, axis=-1))
 
-return annotations, masks
+        return annotations, masks

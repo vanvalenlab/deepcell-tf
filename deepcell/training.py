@@ -28,6 +28,7 @@ from .image_generators import WatershedDataGenerator
 from .image_generators import WatershedMovieDataGenerator
 from .losses import sample_categorical_crossentropy
 from .losses import weighted_categorical_crossentropy
+from .losses import weighted_focal_loss
 from .losses import discriminative_instance_loss
 from .utils.io_utils import get_images_from_directory
 from .utils.data_utils import get_data
@@ -40,6 +41,7 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
                        expt='', it=0, batch_size=32, n_epoch=100,
                        balance_classes=True, max_class_samples=None,
                        direc_save='/data/models', direc_data='/data/npz_data',
+                       focal=False, gamma=0.5,
                        lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                        rotation_range=0, flip=True, shear=0, class_weight=None):
 
@@ -60,7 +62,18 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
     print('Output Shape:', model.layers[-1].output_shape)
     print('Number of Classes:', n_classes)
 
-    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+    def loss_function(y_true, y_pred):
+        if focal:
+            return weighted_focal_loss(y_true, y_pred,
+                                    gamma=gamma,
+                                    n_classes=n_classes,
+                                    from_logits=False)
+        else:
+            return weighted_categorical_crossentropy(y_true, y_pred,
+                                                 n_classes=n_classes,
+                                                 from_logits=False)
+
+    model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     print('Using real-time data augmentation.')
 
@@ -108,6 +121,7 @@ def train_model_sample(model=None, dataset=None, optimizer=None,
 def train_model_conv(model=None, dataset=None, optimizer=None,
                      expt='', it=0, batch_size=1, n_epoch=100,
                      direc_save='/data/models', direc_data='/data/npz_data',
+                     focal=False, gamma=0.5,
                      lr_sched=rate_scheduler(lr=0.01, decay=0.95), skip=None,
                      rotation_range=0, flip=True, shear=0, class_weight=None):
 
@@ -130,7 +144,13 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        return weighted_categorical_crossentropy(y_true, y_pred,
+        if focal:
+            return weighted_focal_loss(y_true, y_pred,
+                                    gamma=gamma,
+                                    n_classes=n_classes,
+                                    from_logits=False)
+        else:
+            return weighted_categorical_crossentropy(y_true, y_pred,
                                                  n_classes=n_classes,
                                                  from_logits=False)
 
@@ -172,6 +192,7 @@ def train_model_conv(model=None, dataset=None, optimizer=None,
 def train_model_siamese(model=None, dataset=None, optimizer=None,
                         expt='', it=0, batch_size=1, n_epoch=100,
                         direc_save='/data/models', direc_data='/data/npz_data',
+                        focal=False, gamma=0.5,
                         lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                         rotation_range=0, flip=True, shear=0, class_weight=None):
 
@@ -194,7 +215,13 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
     n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
 
     def loss_function(y_true, y_pred):
-        return weighted_categorical_crossentropy(y_true, y_pred,
+        if focal:
+            return weighted_focal_loss(y_true, y_pred,
+                                    gamma=gamma,
+                                    n_classes=n_classes,
+                                    from_logits=False)
+        else:
+            return weighted_categorical_crossentropy(y_true, y_pred,
                                                  n_classes=n_classes,
                                                  from_logits=False)
 
@@ -278,6 +305,7 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
 def train_model_watershed(model=None, dataset=None, optimizer=None,
                           expt='', it=0, batch_size=1, n_epoch=100, distance_bins=16,
                           direc_save='/data/models', direc_data='/data/npz_data',
+                          focal=False, gamma=0.5,
                           lr_sched=rate_scheduler(lr=0.01, decay=0.95), skip=None,
                           rotation_range=0, flip=True, shear=0, class_weight=None):
 
@@ -302,10 +330,17 @@ def train_model_watershed(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        # TODO: implement direction loss
-        pass
+        if focal:
+            return weighted_focal_loss(y_true, y_pred,
+                                    gamma=gamma,
+                                    n_classes=n_classes,
+                                    from_logits=False)
+        else:
+            return weighted_categorical_crossentropy(y_true, y_pred,
+                                                 n_classes=n_classes,
+                                                 from_logits=False)
 
-    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+    model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     print('Using real-time data augmentation.')
 
@@ -470,6 +505,7 @@ def train_model_disc_3D(model=None, dataset=None, optimizer=None,
 def train_model_movie(model=None, dataset=None, optimizer=None,
                       expt='', it=0, batch_size=1, n_epoch=100,
                       direc_save='/data/models', direc_data='/data/npz_data',
+                      focal=False, gamma=0.5,
                       lr_sched=rate_scheduler(lr=0.01, decay=0.95), skip=None,
                       frames_per_batch=10, rotation_range=0, flip=True,
                       shear=0, class_weight=None):
@@ -482,9 +518,9 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
 
     train_dict, test_dict = get_data(training_data_file_name, mode='movie')
     X_train, y_train = train_dict['X'], train_dict['y']
-
     class_weights = train_dict['class_weights']
     n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
+    
     # the data, shuffled and split between train and test sets
     print('X_train shape:', X_train.shape)
     print('y_train shape:', y_train.shape)
@@ -494,8 +530,13 @@ def train_model_movie(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        # return discriminative_instance_loss_3D(y_true, y_pred)
-        return weighted_categorical_crossentropy(y_true, y_pred,
+        if focal:
+            return weighted_focal_loss(y_true, y_pred,
+                                    gamma=gamma,
+                                    n_classes=n_classes,
+                                    from_logits=False)
+        else:
+            return weighted_categorical_crossentropy(y_true, y_pred,
                                                  n_classes=n_classes,
                                                  from_logits=False)
 
@@ -566,6 +607,7 @@ def train_model_sample_movie(model=None, dataset=None, optimizer=None,
                              expt='', it=0, batch_size=32, n_epoch=100,
                              balance_classes=True, max_class_samples=None,
                              direc_save='/data/models', direc_data='/data/npz_data',
+                             focal=False, gamma=0.5,
                              lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                              rotation_range=0, flip=True, shear=0, class_weight=None):
 
@@ -587,7 +629,13 @@ def train_model_sample_movie(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        return weighted_categorical_crossentropy(y_true, y_pred,
+        if focal:
+            return weighted_focal_loss(y_true, y_pred,
+                                    gamma=gamma,
+                                    n_classes=n_classes,
+                                    from_logits=False)
+        else:
+            return weighted_categorical_crossentropy(y_true, y_pred,
                                                  n_classes=n_classes,
                                                  from_logits=False)
 
@@ -639,6 +687,7 @@ def train_model_sample_movie(model=None, dataset=None, optimizer=None,
 def train_model_watershed_3D(model=None, dataset=None, optimizer=None,
                              expt='', it=0, batch_size=1, n_epoch=100,
                              direc_save='/data/models', direc_data='/data/npz_data',
+                             focal=False, gamma=0.5,
                              lr_sched=rate_scheduler(lr=0.01, decay=0.95), skip=None,
                              frames_per_batch=10, rotation_range=0, flip=True,
                              shear=0, class_weight=None, distance_bins=16,
@@ -664,10 +713,17 @@ def train_model_watershed_3D(model=None, dataset=None, optimizer=None,
     print('Number of Classes:', n_classes)
 
     def loss_function(y_true, y_pred):
-        # TODO: implement direction loss
-        pass
+        if focal:
+            return weighted_focal_loss(y_true, y_pred,
+                                    gamma=gamma,
+                                    n_classes=n_classes,
+                                    from_logits=False)
+        else:
+            return weighted_categorical_crossentropy(y_true, y_pred,
+                                                 n_classes=n_classes,
+                                                 from_logits=False)
 
-    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+    model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     print('Using real-time data augmentation.')
 
@@ -702,4 +758,4 @@ def train_model_watershed_3D(model=None, dataset=None, optimizer=None,
     model.save_weights(file_name_save)
     np.savez(file_name_save_loss, loss_history=loss_history.history)
 
-return model
+    return model

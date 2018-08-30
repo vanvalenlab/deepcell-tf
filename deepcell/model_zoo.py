@@ -379,4 +379,4 @@ def bn_feature_net_61x61_3D(**kwargs):
     return bn_feature_net_3D(receptive_field=61, **kwargs)
 
 def bn_feature_net_81x81_3D(**kwargs):
-return bn_feature_net_3D(receptive_field=81, **kwargs)
+    return bn_feature_net_3D(receptive_field=81, **kwargs)
