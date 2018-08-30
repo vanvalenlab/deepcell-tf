@@ -85,8 +85,6 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 y_transform[batch] = distance_transform_3d(
                     mask, distance_bins, erosion)
             else:
-                # TODO: change 1 to 0 after loading uniquely annotated instead
-                # of feature_1/feature_0
                 if data_format == 'channels_first':
                     mask = y[batch, 0, :, :]
                 else:
@@ -98,11 +96,12 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, -1, 1)
 
-    elif transform == 'centroid':
-        raise NotImplementedError('`centroid` transform has not been finished')
-
     elif transform == 'disc':
-        raise NotImplementedError('`disc` transform has not been finished')
+        y_transform = y.squeeze()
+        y_transform = keras_to_categorical(y_transform)
+
+        if data_format == 'channels_first':
+            y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
     elif transform is None:
         y_transform = np.where(y > 1, 1, y)
@@ -112,6 +111,9 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         y_transform = keras_to_categorical(y_transform)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
+
+    elif transform == 'centroid':
+        raise NotImplementedError('`centroid` transform has not been finished')
 
     return y_transform
 
