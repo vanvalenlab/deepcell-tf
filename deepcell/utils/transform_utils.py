@@ -33,7 +33,7 @@ def deepcell_transform(maskstack, dilation_radius=None):
         channel_axis = len(maskstack.shape) - 1
 
     # Erode masks
-    maskstack = np.squeeze(maskstack)
+    maskstack = np.squeeze(maskstack, axis=channel_axis)
     new_masks = np.zeros(maskstack.shape)
 
     strel = ball(1) if maskstack.ndim > 3 else disk(1)
