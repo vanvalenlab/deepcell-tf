@@ -40,6 +40,7 @@ def bn_feature_net_2D(receptive_field=61,
                       VGG_mode=False,
                       init='he_normal',
                       norm_method='std',
+                      location=False,
                       dilated=False,
                       padding=False,
                       padding_mode='reflect',
@@ -77,6 +78,10 @@ def bn_feature_net_2D(receptive_field=61,
             x.append(ReflectionPadding2D(padding=(win, win))(x[-1]))
         elif padding_mode == 'zero':
             x.append(ZeroPadding2D(padding=(win, win))(x[-1]))
+
+    if location:
+        x.append(Location(in_shape=input_shape)(x[-1]))
+        x.append(Concatenate(axis=channel_axis)([x[-2], x[-1]]))
 
     if multires:
         layers_to_concat = []
@@ -243,6 +248,7 @@ def bn_feature_net_3D(receptive_field=61,
                       VGG_mode=False,
                       init='he_normal',
                       norm_method='std',
+                      location=False,
                       dilated=False,
                       padding=False,
                       padding_mode='reflect',
@@ -281,6 +287,10 @@ def bn_feature_net_3D(receptive_field=61,
             x.append(ReflectionPadding3D(padding=(win_z, win, win))(x[-1]))
         elif padding_mode == 'zero':
             x.append(ZeroPadding3D(padding=(win_z, win, win))([-1]))
+
+    if location:
+        x.append(Location3D(in_shape=input_shape)(x[-1]))
+        x.append(Concatenate(axis=channel_axis)([x[-2], x[-1]]))
 
     if multires:
         layers_to_concat = []
