@@ -64,7 +64,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             raise ValueError('`{}` is not a valid transform'.format(transform))
 
     if transform == 'deepcell':
-        dilation_radius = kwargs.pop('dilation_radius')
+        dilation_radius = kwargs.pop('dilation_radius', None)
         y_transform = deepcell_transform(y, dilation_radius)
 
     elif transform == 'watershed':
