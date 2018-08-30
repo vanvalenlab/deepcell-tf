@@ -14,11 +14,8 @@ import os
 import random
 
 import numpy as np
-from skimage.morphology import disk, binary_dilation
-from sklearn.utils.class_weight import compute_class_weight
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.utils import to_categorical
 
 try:
     from tensorflow.python.keras.utils import conv_utils
@@ -48,21 +45,17 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     X = training_data['X']
     y = training_data['y']
 
-    class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
-
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=seed)
 
     train_dict = {
         'X': X_train,
-        'y': y_train,
-        'class_weights': class_weights
+        'y': y_train
     }
 
     test_dict = {
         'X': X_test,
-        'y': y_test,
-        'class_weights': class_weights
+        'y': y_test
     }
 
     return train_dict, test_dict
@@ -276,10 +269,11 @@ def reshape_matrix(X, y, reshape_size=256):
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     if X.ndim != 4:
-        raise ValueError('reshape_matrix expects X dim to be 4, got {}'.format(X.ndim))
+        raise ValueError('reshape_matrix expects X dim to be 4, got', X.ndim)
     elif y.ndim != 4:
-        raise ValueError('reshape_matrix expects y dim to be 4, got {}'.format(y.ndim))
-    image_size_x, image_size_y = X.shape[2:] if is_channels_first else X.shape[1:3]
+        raise ValueError('reshape_matrix expects y dim to be 4, got', y.ndim)
+
+    image_size_x, _ = X.shape[2:] if is_channels_first else X.shape[1:3]
     rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
     new_batch_size = X.shape[0] * (rep_number) ** 2
 
@@ -387,11 +381,18 @@ def reshape_movie(X, y, reshape_size=256):
     return new_X, new_y
 
 
-def load_training_images_2d(direc_name, training_direcs, channel_names, image_size,
-                            raw_image_direc):
-    """
-    Iterate over every image in the training directories and load
-    each into a numpy array.
+def load_training_images_2d(direc_name,
+                            training_direcs,
+                            raw_image_direc,
+                            channel_names,
+                            image_size):
+    """Load each image in the training_direcs into a numpy array.
+    # Arguments
+        direc_name: directory containing folders of training data
+        training_direcs: list of directories of images inside direc_name.
+        raw_image_direc: directory name inside each training dir with raw images
+        channel_names: Loads all raw images with a channel_name in the filename
+        image_size: size of each image as tuple (x, y)
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     # Unpack size tuples
@@ -427,11 +428,18 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
     return X
 
 
-def load_annotated_images_2d(direc_name, training_direcs, annotation_name, image_size,
-                             annotation_direc):
-    """
-    Iterate over every annotated image in the training directories and load
-    each into a numpy array.
+def load_annotated_images_2d(direc_name,
+                             training_direcs,
+                             annotation_direc,
+                             annotation_name,
+                             image_size):
+    """Load each annotated image in the training_direcs into a numpy array.
+    # Arguments
+        direc_name: directory containing folders of training data
+        training_direcs: list of directories of images inside direc_name.
+        annotation_direc: directory name inside each training dir with masks
+        annotation_name: Loads all masks with annotation_name in the filename
+        image_size: size of each image as tuple (x, y)
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     # Unpack size tuple
@@ -475,59 +483,57 @@ def make_training_data_2d(direc_name,
                           annotation_direc='annotated',
                           annotation_name='feature',
                           training_direcs=None,
-                          window_size=(30, 30),
-                          reshape_size=None,
-                          padding='valid',
-                          output_mode='sample'):
+                          reshape_size=None):
     """
     Read all images in training directories and save as npz file
     # Arguments
         direc_name: directory containing folders of training data
         file_name_save: full filepath for npz file where the data will be saved
         training_direcs: directories of images located inside direc_name.
-                         If not provided, all directories in direc_name are used.
-        channel_names: List of particular channel name of images to find.
-                       channel_name should be in the filename (e.g. 'DAPI')
-                       If not provided, all images in the training directories
-                       without 'feature' in their name are used.
+                         If None, all directories in direc_name are used.
+        raw_image_direc: directory name inside each training dir with raw images
+        annotation_direc: directory name inside each training dir with masks
+        channel_names: Loads all raw images with a channel_name in the filename
+        annotation_name: Loads all masks with annotation_name in the filename
         reshape_size: If provided, will reshape the images to the given size
-        padding:  'valid' or 'same'
-        output_mode:  'sample' or 'conv'
     """
-    window_size = conv_utils.normalize_tuple(window_size, 2, 'window_size')
-    window_size_x, window_size_y = window_size
-
-    # Load one file to get image sizes (all images same size as they are from same microscope)
+    # Load one file to get image sizes (assumes all images same size)
     image_path = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
     image_size = get_image_sizes(image_path, channel_names)
 
-    X = load_training_images_2d(direc_name, training_direcs, channel_names,
-                                image_size=image_size,
-                                raw_image_direc=raw_image_direc)
+    X = load_training_images_2d(direc_name, training_direcs,
+                                raw_image_direc=raw_image_direc,
+                                channel_names=channel_names,
+                                image_size=image_size)
 
     y = load_annotated_images_2d(direc_name, training_direcs,
-                                 image_size=image_size,
+                                 annotation_direc=annotation_direc,
                                  annotation_name=annotation_name,
-                                 annotation_direc=annotation_direc)
+                                 image_size=image_size)
 
     if reshape_size is not None:
         X, y = reshape_matrix(X, y, reshape_size=reshape_size)
 
-    # Trim the feature mask so that each window does not overlap with the border of the image
-    if padding == 'valid' and output_mode != 'sample':
-        y = trim_padding(y, window_size_x, window_size_y)
-
     # Save training data in npz format
     np.savez(file_name_save, X=X, y=y)
 
-    return None
 
-
-def load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
-                            image_size, num_frames, montage_mode=False):
-    """
-    Iterate over every image in the training directories and load
-    each into a numpy array.
+def load_training_images_3d(direc_name,
+                            training_direcs,
+                            raw_image_direc,
+                            channel_names,
+                            image_size,
+                            num_frames,
+                            montage_mode=False):
+    """Load each image in the training_direcs into a numpy array.
+    # Arguments
+        direc_name: directory containing folders of training data
+        training_direcs: list of directories of images inside direc_name.
+        raw_image_direc: directory name inside each training dir with raw images
+        channel_names: Loads all raw images with a channel_name in the filename
+        image_size: size of each image as tuple (x, y)
+        num_frames: number of frames to load from each training directory
+        montage_mode: load masks from "montaged" subdirs inside annotation_direc
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     image_size_x, image_size_y = image_size
@@ -573,11 +579,22 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
     return X
 
 
-def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, annotation_name,
-                             num_frames, image_size, montage_mode=False):
-    """
-    Iterate over every annotated image in the training directories and load
-    each into a numpy array.
+def load_annotated_images_3d(direc_name,
+                             training_direcs,
+                             annotation_direc,
+                             annotation_name,
+                             image_size,
+                             num_frames,
+                             montage_mode=False):
+    """Load each annotated image in the training_direcs into a numpy array.
+    # Arguments
+        direc_name: directory containing folders of training data
+        training_direcs: list of directories of images inside direc_name.
+        annotation_direc: directory name inside each training dir with masks
+        annotation_name: Loads all masks with annotation_name in the filename
+        image_size: size of each image as tuple (x, y)
+        num_frames: number of frames to load from each training directory
+        montage_mode: load masks from "montaged" subdirs inside annotation_direc
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     image_size_x, image_size_y = image_size
@@ -628,39 +645,28 @@ def make_training_data_3d(direc_name,
                           annotation_name='corrected',
                           raw_image_direc='raw',
                           annotation_direc='annotated',
-                          window_size=(30, 30, 5),
-                          padding='same',
-                          output_mode='conv',
                           reshape_size=None,
                           num_frames=50,
                           montage_mode=True):
     """
-    Read all images in training directories and save as npz file.
-    3D image sets are "stacks" of images.  For annotation purposes, these images
-    have been sliced into "montages", where a section of each stack has been sliced
-    so they can be efficiently annotated by human users. In this case, the raw_image_direc
-    should be a specific montage (e.g. montage_0_0) and the annotation is the corresponding
-    annotated montage.  Each montage must maintain the full stack, but can be processed
-    independently.
+    Read all images in training directories and save as npz file
+    3D image sets are "stacks" of images. For annotation purposes, these images
+    have been sliced into "montages", where a section of each stack has been
+    sliced for efficient annotated by humans. The raw_image_direc should be a
+    specific montage (e.g. montage_0_0) and the annotation is the corresponding
+    annotated montage.
     # Arguments
         direc_name: directory containing folders of training data
         file_name_save: full filepath for npz file where the data will be saved
         training_direcs: directories of images located inside direc_name
-                         If not provided, all directories in direc_name are used.
-        channel_names: List of particular channel name of images to find.
-                       channel_name should be in the filename (e.g. 'DAPI')
-        annotation_direc: name of folder with annotated images
-        raw_image_direc:  name of folder with raw images
-        padding:  'valid' or 'same'
-        output_mode:  'sample' or 'conv'
+                         If None, all directories in direc_name are used.
+        channel_names: Loads all raw images with a channel_name in the filename
+        raw_image_direc: directory name inside each training dir with raw images
+        annotation_direc: directory name inside each training dir with masks
         reshape_size: If provided, will reshape the images to the given size.
         num_frames: number of frames to load from each training directory
-        montage_mode: data is broken into several "montage"
-                      sub-directories for easier annoation
+        montage_mode: load masks from "montaged" subdirs inside annotation_direc
     """
-    window_size = conv_utils.normalize_tuple(window_size, 3, 'window_size')
-    window_size_x, window_size_y, window_size_z = window_size
-
     # Load one file to get image sizes
     rand_train_dir = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
     if montage_mode:
@@ -668,16 +674,19 @@ def make_training_data_3d(direc_name,
 
     image_size = get_image_sizes(rand_train_dir, channel_names)
 
-    X = load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
-                                image_size, num_frames=num_frames, montage_mode=montage_mode)
+    X = load_training_images_3d(direc_name, training_direcs,
+                                raw_image_direc=raw_image_direc,
+                                channel_names=channel_names,
+                                image_size=image_size,
+                                num_frames=num_frames,
+                                montage_mode=montage_mode)
 
-    y = load_annotated_images_3d(direc_name, training_direcs, annotation_direc,
-                                 annotation_name, num_frames, image_size,
+    y = load_annotated_images_3d(direc_name, training_direcs,
+                                 annotation_direc=annotation_direc,
+                                 annotation_name=annotation_name,
+                                 image_size=image_size,
+                                 num_frames=num_frames,
                                  montage_mode=montage_mode)
-
-    # Trim annotation images
-    if padding == 'valid' and output_mode != 'sample':
-        y = trim_padding(y, window_size_x, window_size_y, window_size_z)
 
     # Reshape X and y
     if reshape_size is not None:
@@ -693,9 +702,6 @@ def make_training_data(direc_name,
                        channel_names,
                        dimensionality,
                        training_direcs=None,
-                       window_size=(30, 30),
-                       padding='same',
-                       output_mode='conv',
                        raw_image_direc='raw',
                        annotation_direc='annotated',
                        annotation_name='feature',
@@ -710,11 +716,6 @@ def make_training_data(direc_name,
         raise ValueError('Data dimensionality should be an integer value, typically 2 or 3. '
                          'Recieved {}'.format(type(dimensionality).__name__))
 
-    padding = conv_utils.normalize_padding(padding)
-
-    if output_mode not in {'sample', 'conv'}:
-        raise ValueError('output_mode should be set to either sample or conv')
-
     if not isinstance(channel_names, list):
         raise ValueError('channel_names should be a list of strings (e.g. [\'DAPI\']). '
                          'Found {}'.format(type(channel_names).__name__))
@@ -727,10 +728,7 @@ def make_training_data(direc_name,
     if dimensionality == 2:
         make_training_data_2d(direc_name, file_name_save, channel_names,
                               training_direcs=training_direcs,
-                              window_size=window_size,
                               reshape_size=reshape_size,
-                              padding=padding,
-                              output_mode=output_mode,
                               raw_image_direc=raw_image_direc,
                               annotation_name=annotation_name,
                               annotation_direc=annotation_direc)
@@ -741,9 +739,6 @@ def make_training_data(direc_name,
                               annotation_name=annotation_name,
                               raw_image_direc=raw_image_direc,
                               annotation_direc=annotation_direc,
-                              window_size=window_size,
-                              padding=padding,
-                              output_mode=output_mode,
                               reshape_size=reshape_size,
                               montage_mode=kwargs.get('montage_mode', False),
                               num_frames=kwargs.get('num_frames', 50))
