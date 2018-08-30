@@ -226,6 +226,10 @@ def bn_feature_net_81x81(**kwargs):
     return bn_feature_net_2D(receptive_field=81, **kwargs)
 
 
+def bn_feature_net_81x81(**kwargs):
+    return bn_feature_net_2D(receptive_field=81, **kwargs)
+
+
 """
 3D feature nets
 """
