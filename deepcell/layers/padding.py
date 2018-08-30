@@ -1,8 +1,6 @@
 """
-reflection_padding.py
-
-Layers for reflection padding for 2D and 3D images
-
+padding.py
+Layers for padding for 2D and 3D images
 @author: David Van Valen
 """
 from __future__ import absolute_import

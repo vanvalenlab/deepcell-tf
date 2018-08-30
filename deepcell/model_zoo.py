@@ -1,8 +1,6 @@
 """
 model_zoo.py
-
 Assortment of CNN architectures for single cell segmentation
-
 @author: David Van Valen
 """
 from __future__ import absolute_import
@@ -34,9 +32,9 @@ from .layers import ImageNormalization2D, ImageNormalization3D
 2D feature nets
 """
 
-def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3, n_channels=1, reg=1e-5, n_conv_filters=64, n_dense_filters= 200, 
+def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3, n_channels=1, reg=1e-5, n_conv_filters=64, n_dense_filters= 200,
     VGG_mode=False, init='he_normal', norm_method='std', dilated=False, padding=False, padding_mode='reflect', multires=False, include_top=True):
-    
+
     # Create layers list (x) to store all of the layers. We need to use the functional API to enable the multiresolution mode
     x = []
 
@@ -52,7 +50,7 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
 
         if not dilated:
             input_shape = (n_channels, receptive_field, receptive_field)
-            
+
     else:
         row_axis = 1
         col_axis = 2
@@ -77,7 +75,7 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
     d = 1
 
     while rf_counter > 4:
-        filter_size = 3 if rf_counter % 2 == 0 else 4 
+        filter_size = 3 if rf_counter % 2 == 0 else 4
         x.append(Conv2D(n_conv_filters, (filter_size, filter_size), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
         x.append(BatchNormalization(axis=channel_axis)(x[-1]))
         x.append(Activation('relu')(x[-1]))
@@ -111,7 +109,7 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
                 row_crop = (row_crop // 2, row_crop // 2)
             else:
                 row_crop = (row_crop // 2, row_crop // 2 + 1)
-            
+
             col_crop = int(output_shape[col_axis] - target_shape[col_axis])
             if col_crop % 2 == 0:
                 col_crop = (col_crop // 2, col_crop // 2)
@@ -119,7 +117,7 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
                 col_crop = (col_crop // 2, col_crop // 2 + 1)
 
             cropping = (row_crop, col_crop)
-           
+
             c.append(Cropping2D(cropping=cropping)(x[l]))
         x.append(Concatenate(axis=channel_axis)(c))
 
@@ -151,7 +149,7 @@ def bn_feature_net_skip_2D(receptive_field=61, input_shape=(256,256,1), fgbg_mod
         channel_axis = 1
     else:
         channel_axis = -1
-        
+
     inputs = Input(shape=input_shape)
     img = ImageNormalization2D(norm_method=norm_method, filter_size=receptive_field)(inputs)
 
@@ -167,7 +165,7 @@ def bn_feature_net_skip_2D(receptive_field=61, input_shape=(256,256,1), fgbg_mod
         if isinstance(fgbg_output, list):
             fgbg_output = fgbg_output[-1]
         model_outputs.append(fgbg_output)
-    
+
     for skip in range(n_skips+1):
         if len(model_outputs) > 0:
             model_input = Concatenate(axis=channel_axis)([img, model_outputs[-1]])
@@ -207,9 +205,9 @@ def bn_feature_net_81x81(**kwargs):
 3D feature nets
 """
 
-def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1), n_features=3, n_channels=1, reg=1e-5, n_conv_filters=64, n_dense_filters= 200, 
+def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1), n_features=3, n_channels=1, reg=1e-5, n_conv_filters=64, n_dense_filters= 200,
     VGG_mode=False, init='he_normal', norm_method='std', dilated=False, padding=False, padding_mode='reflect', multires=False, include_top=True):
-    
+
     # Create layers list (x) to store all of the layers. We need to use the functional API to enable the multiresolution mode
     x = []
 
@@ -251,7 +249,7 @@ def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1),
     d = 1
 
     while rf_counter > 4:
-        filter_size = 3 if rf_counter % 2 == 0 else 4 
+        filter_size = 3 if rf_counter % 2 == 0 else 4
         x.append(Conv3D(n_conv_filters, (1, filter_size, filter_size), dilation_rate=(1,d,d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
         x.append(BatchNormalization(axis=channel_axis)(x[-1]))
         x.append(Activation('relu')(x[-1]))
@@ -287,7 +285,7 @@ def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1),
                 row_crop = (row_crop // 2, row_crop // 2)
             else:
                 row_crop = (row_crop // 2, row_crop // 2 + 1)
-            
+
             col_crop = int(output_shape[col_axis] - target_shape[col_axis])
 
             if col_crop % 2 == 0:
@@ -332,13 +330,13 @@ def bn_feature_net_skip_3D(receptive_field=61, input_shape=(5, 256,256,1), fgbg_
         channel_axis = 1
     else:
         channel_axis = -1
-        
+
     inputs = Input(shape=input_shape)
     img = ImageNormalization3D(norm_method=norm_method, filter_size=receptive_field)(inputs)
 
     models = []
     model_outputs = []
-    
+
     if fgbg_model is not None:
         for layer in fgbg_model.layers:
             layer.trainable = False
@@ -382,6 +380,3 @@ def bn_feature_net_61x61_3D(**kwargs):
 
 def bn_feature_net_81x81_3D(**kwargs):
     return bn_feature_net_3D(receptive_field=81, **kwargs)
-
-
-
