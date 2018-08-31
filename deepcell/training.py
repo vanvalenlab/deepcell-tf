@@ -266,7 +266,7 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
                         focal=False, gamma=0.5,
                         lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                         rotation_range=0, flip=True, shear=0, class_weight=None):
-
+    is_channels_first = K.image_data_format() == 'channels_first'
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
@@ -283,7 +283,7 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
     print('y_test shape:', test_dict['y'].shape)
     print('Output Shape:', model.layers[-1].output_shape)
 
-    n_classes = model.layers[-1].output_shape[1 if CHANNELS_FIRST else -1]
+    n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
 
     def loss_function(y_true, y_pred):
         if focal:
