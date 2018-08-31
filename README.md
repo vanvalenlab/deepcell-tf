@@ -61,7 +61,7 @@ NV_GPU='0' nvidia-docker run -it \
   -v $PWD/scripts:/deepcell-tf/scripts \
   -v /data:/data \
   --entrypoint /usr/local/bin/jupyter \
-  $USER/deepcell-tf:0.1 \
+  $USER/deepcell-tf:latest \
   notebook --allow-root --ip=0.0.0.0
 ```
 > **_Note_**: You will need to authenticate with NGC to pull the DeepCell base image.
