@@ -19,7 +19,7 @@ from skimage.io import imread
 
 from tensorflow.python.platform import tf_logging as logging
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.utils import to_categorical as keras_to_categorical
+from tensorflow.python.keras.utils import to_categorical
 from tensorflow.python.keras.preprocessing.image import random_channel_shift
 from tensorflow.python.keras.preprocessing.image import apply_transform
 from tensorflow.python.keras.preprocessing.image import flip_axis
@@ -96,13 +96,13 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 y_transform[batch] = distance_transform_2d(
                     mask, distance_bins, erosion)
         # convert to one hot notation
-        y_transform = keras_to_categorical(np.expand_dims(y_transform, axis=-1))
+        y_transform = to_categorical(np.expand_dims(y_transform, axis=-1))
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, -1, 1)
 
     elif transform == 'disc':
         y_transform = y.squeeze(channel_axis)
-        y_transform = keras_to_categorical(y_transform)
+        y_transform = to_categorical(y_transform)
 
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
@@ -112,7 +112,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         # convert to one hot notation
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, 1, y.ndim)
-        y_transform = keras_to_categorical(y_transform)
+        y_transform = to_categorical(y_transform)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
@@ -183,7 +183,7 @@ class ImageSampleArrayIterator(Iterator):
 
         self.class_balance(max_class_samples, balance_classes, seed=seed)
 
-        self.y = keras_to_categorical(self.y).astype('int32')
+        self.y = to_categorical(self.y).astype('int32')
         super(ImageSampleArrayIterator, self).__init__(
             len(self.y), batch_size, shuffle, seed)
 
@@ -1108,7 +1108,7 @@ class SampleMovieArrayIterator(Iterator):
 
         self.class_balance(max_class_samples, balance_classes, seed=seed)
 
-        self.y = keras_to_categorical(self.y).astype('int32')
+        self.y = to_categorical(self.y).astype('int32')
         super(SampleMovieArrayIterator, self).__init__(
             len(self.y), batch_size, shuffle, seed)
 
