@@ -403,7 +403,7 @@ class TestFullyConvDataGenerator(test.TestCase):
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((32, 10, 10, 3)),
-                'y': np.random.random((32, 10, 10, 3)),
+                'y': np.random.random((32, 10, 10, 1)),
             }
             generator.flow(train_dict)
 
@@ -453,7 +453,7 @@ class TestFullyConvDataGenerator(test.TestCase):
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((32, 3, 10, 10)),
-                'y': np.random.random((32, 3, 10, 10)),
+                'y': np.random.random((32, 1, 10, 10)),
             }
             generator.flow(train_dict)
 
@@ -505,7 +505,7 @@ class TestFullyConvDataGenerator(test.TestCase):
             generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
         x = np.random.random((32, 10, 10, 5))
-        y = np.random.random((32, 10, 10, 5))
+        y = np.random.random((32, 10, 10, 1))
         generator.flow({'X': x, 'y': y})
 
         with self.assertRaises(ValueError):
@@ -617,7 +617,7 @@ class TestMovieDataGenerator(test.TestCase):
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((32, 30, 10, 10, 3)),
-                'y': np.random.random((32, 30, 10, 10, 3)),
+                'y': np.random.random((32, 30, 10, 10, 1)),
             }
             generator.flow(train_dict, frames_per_batch=1)
 
@@ -678,7 +678,7 @@ class TestMovieDataGenerator(test.TestCase):
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((32, 3, 30, 10, 10)),
-                'y': np.random.random((32, 3, 30, 10, 10)),
+                'y': np.random.random((32, 1, 30, 10, 10)),
             }
             generator.flow(train_dict)
 
@@ -743,7 +743,7 @@ class TestMovieDataGenerator(test.TestCase):
 
         # Invalid number of channels: will work but raise a warning
         x = np.random.random((32, 30, 10, 10, 5))
-        y = np.random.random((32, 30, 10, 10, 5))
+        y = np.random.random((32, 30, 10, 10, 1))
         generator.flow({'X': x, 'y': y})
 
         with self.assertRaises(ValueError):

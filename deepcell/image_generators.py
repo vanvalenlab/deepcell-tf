@@ -56,6 +56,10 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     if y.ndim not in {4, 5}:
         raise ValueError('`labels` data must be of ndim 4 or 5.  Got', y.ndim)
 
+    if y.shape[1 if data_format == 'channels_first' else -1] != 1:
+        raise ValueError('Expected channel axis to be 1 dimension. Got',
+                         y.shape[1 if data_format == 'channels_first' else -1])
+
     if isinstance(transform, str):
         transform = transform.lower()
         if transform not in {'deepcell', 'disc', 'watershed', 'centroid'}:
