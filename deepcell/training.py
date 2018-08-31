@@ -152,7 +152,6 @@ def train_model_conv(model,
                      focal=False,
                      gamma=0.5,
                      lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-                     skip=None,
                      rotation_range=0,
                      flip=True,
                      shear=0,
@@ -187,6 +186,11 @@ def train_model_conv(model,
             y_true, y_pred, n_classes=n_classes)
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
+
+    if isinstance(model.output_shape, list):
+        skip = len(model.output_shape) - 1
+    else:
+        skip = None
 
     if train_dict['X'].ndim == 4:
         DataGenerator = generators.ImageFullyConvDataGenerator
