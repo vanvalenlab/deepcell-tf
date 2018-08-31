@@ -5,19 +5,19 @@ DeepCell is neural network API for single cell analysis, built using [TensorFlow
 
 There are several notebooks with various training methods that can be used as examples:
 
-#### Semantic Segmentation
+#### Edge and Interior Segmentation
 
-* [2D Semantic Segmentation.ipynb](scripts/semantic_segmentation/2D%20Semantic%20Segmentation.ipynb) A notebook for 2D semantic segmentation.
+* [2D DeepCell Transform.ipynb](scripts/deepcell/DeepCell%20Transform%202D.ipynb) A notebook for 2D semantic segmentation.
 
-* [3D Semantic Segmentation.ipynb](scripts/semantic_segmentation/3D%20Semantic%20Segmentation.ipynb) A notebook for 3D semantic segmentation.
+* [3D DeepCell Transform.ipynb](scripts/deepcell/DeepCell%20Transfrom%203D.ipynb) A notebook for 3D semantic segmentation.
 
 #### Instance Segmentation
 
-* [2D Discriminative Loss.ipynb](scripts/discriminative_loss/Discriminative%20Loss%202D%20with%20FG-BG%20Separation.ipynb) A notebook for 2D instance segmentation using a discriminative loss function.
+* [2D Discriminative Loss.ipynb](scripts/discriminative_loss/Discriminative%20Loss%202D.ipynb) A notebook for 2D instance segmentation using a discriminative loss function.
 
-* [2D Watershed.ipynb](scripts/watershed/Watershed%20Transform%202D%20with%20FG-BG%20Separation.ipynb) A notebook for 2D instance segmentation using the deep watershed method.
+* [2D Watershed.ipynb](scripts/watershed/Watershed%20Transform%202D.ipynb) A notebook for 2D instance segmentation using the deep watershed method.
 
-* [3D Watershed.ipynb](scripts/watershed/Watershed%20Transform%203D%20with%20FG-BG%20Separation.ipynb) A notebook for 3D instance segmentation using the deep watershed method.
+* [3D Watershed.ipynb](scripts/watershed/Watershed%20Transform%203D.ipynb) A notebook for 3D instance segmentation using the deep watershed method.
 
 ## Using DeepCell with Docker
 
