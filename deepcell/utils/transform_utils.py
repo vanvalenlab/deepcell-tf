@@ -18,7 +18,7 @@ from skimage.morphology import binary_erosion, binary_dilation
 from tensorflow.python.keras import backend as K
 
 
-def deepcell_transform(maskstack, dilation_radius=None):
+def deepcell_transform(maskstack, dilation_radius=None, data_format=None):
     """
     Transforms a label mask for a z stack edge, interior, and background
     # Arguments:
@@ -27,7 +27,10 @@ def deepcell_transform(maskstack, dilation_radius=None):
     # Returns:
         deepcell_stacks: masks of [edge_feature, interior_feature, background]
     """
-    if K.image_data_format() == 'channels_first':
+    if data_format is None:
+        data_format = K.image_data_format()
+
+    if data_format == 'channels_first':
         channel_axis = 1
     else:
         channel_axis = len(maskstack.shape) - 1
