@@ -56,7 +56,9 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     if y.ndim not in {4, 5}:
         raise ValueError('`labels` data must be of ndim 4 or 5.  Got', y.ndim)
 
-    if y.shape[1 if data_format == 'channels_first' else -1] != 1:
+    channel_axis = 1 if data_format == 'channels_first' else -1
+
+    if y.shape[channel_axis] != 1:
         raise ValueError('Expected channel axis to be 1 dimension. Got',
                          y.shape[1 if data_format == 'channels_first' else -1])
 
@@ -99,7 +101,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.rollaxis(y_transform, -1, 1)
 
     elif transform == 'disc':
-        y_transform = y.squeeze()
+        y_transform = y.squeeze(channel_axis)
         y_transform = keras_to_categorical(y_transform)
 
         if data_format == 'channels_first':
