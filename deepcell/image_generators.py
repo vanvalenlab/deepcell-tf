@@ -101,9 +101,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.rollaxis(y_transform, -1, 1)
 
     elif transform == 'disc':
-        y_transform = y.squeeze(channel_axis)
-        y_transform = to_categorical(y_transform)
-
+        y_transform = to_categorical(y.squeeze(channel_axis))
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
