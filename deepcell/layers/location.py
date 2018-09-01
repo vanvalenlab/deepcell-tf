@@ -88,13 +88,13 @@ class Location3D(Layer):
         input_shape = self.in_shape
 
         if self.data_format == 'channels_last':
+            z = tf.range(0, input_shape[0], dtype=K.floatx())
+            x = tf.range(0, input_shape[1], dtype=K.floatx())
+            y = tf.range(0, input_shape[2], dtype=K.floatx())
+        else:
             z = tf.range(0, input_shape[1], dtype=K.floatx())
             x = tf.range(0, input_shape[2], dtype=K.floatx())
             y = tf.range(0, input_shape[3], dtype=K.floatx())
-        else:
-            z = tf.range(0, input_shape[2], dtype=K.floatx())
-            x = tf.range(0, input_shape[3], dtype=K.floatx())
-            y = tf.range(0, input_shape[4], dtype=K.floatx())
 
         x = tf.divide(x, tf.reduce_max(x))
         y = tf.divide(y, tf.reduce_max(y))
@@ -108,7 +108,7 @@ class Location3D(Layer):
             loc = tf.stack([loc_z, loc_x, loc_y], axis=0)
 
         location = tf.expand_dims(loc, 0)
-        # location = tf.tile(location, [tf.shape(inputs)[0], 1, 1, 1, 1])
+        location = tf.tile(location, [tf.shape(inputs)[0], 1, 1, 1, 1])
 
         return location
 
