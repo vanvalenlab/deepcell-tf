@@ -27,6 +27,7 @@ def get_js_video(images, batch=0, channel=0, cmap='jet'):
         ims.append([im])
 
     ani = animation.ArtistAnimation(fig, ims, interval=150, repeat_delay=1000)
+    plt.close()
     return ani.to_jshtml()
 
 

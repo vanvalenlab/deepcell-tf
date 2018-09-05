@@ -5,19 +5,25 @@ DeepCell is neural network API for single cell analysis, built using [TensorFlow
 
 There are several notebooks with various training methods that can be used as examples:
 
-#### Semantic Segmentation
+#### Cell Edge and Cell Interior Segmentation
 
-* [2D Semantic Segmentation.ipynb](scripts/semantic_segmentation/2D%20Semantic%20Segmentation.ipynb) A notebook for 2D semantic segmentation.
+* [2D DeepCell Transform - Fully Convolutional.ipynb](scripts/deepcell/DeepCell%20Transform%202D%20Fully%20Convolutional.ipynb)
 
-* [3D Semantic Segmentation.ipynb](scripts/semantic_segmentation/3D%20Semantic%20Segmentation.ipynb) A notebook for 3D semantic segmentation.
+* [2D DeepCell Transform - Sample Based.ipynb](scripts/deepcell/DeepCell%20Transform%202D%20Sample%20Based.ipynb)
 
-#### Instance Segmentation
+* [3D DeepCell Transform - Fully Convolutional.ipynb](scripts/deepcell/DeepCell%20Transfrom%203D.ipynb)
 
-* [2D Discriminative Loss.ipynb](scripts/discriminative_loss/Discriminative%20Loss%202D%20with%20FG-BG%20Separation.ipynb) A notebook for 2D instance segmentation using a discriminative loss function.
+* [3D DeepCell Transform - Sample Based.ipynb](scripts/deepcell/DeepCell%20Transfrom%203D%20Sample%20Based.ipynb)
 
-* [2D Watershed.ipynb](scripts/watershed/Watershed%20Transform%202D%20with%20FG-BG%20Separation.ipynb) A notebook for 2D instance segmentation using the deep watershed method.
+#### Deep Watershed Instance Segmentation
 
-* [3D Watershed.ipynb](scripts/watershed/Watershed%20Transform%203D%20with%20FG-BG%20Separation.ipynb) A notebook for 3D instance segmentation using the deep watershed method.
+* [2D Watershed - Fully Convolutional.ipynb](scripts/watershed/Watershed%20Transform%202D%20Fully%20Convolutional.ipynb)
+
+* [2D Watershed - Sample Based.ipynb](scripts/watershed/Watershed%20Transform%202D%20Sample%20Based.ipynb)
+
+* [3D Watershed - Fully Convolutional.ipynb](scripts/watershed/Watershed%20Transform%203D%20Fully%20Convolutional.ipynb)
+
+* [3D Watershed - Sample Based.ipynb](scripts/watershed/Watershed%20Transform%203D%20Sample%20Based.ipynb)
 
 ## Using DeepCell with Docker
 
@@ -61,7 +67,7 @@ NV_GPU='0' nvidia-docker run -it \
   -v $PWD/scripts:/deepcell-tf/scripts \
   -v /data:/data \
   --entrypoint /usr/local/bin/jupyter \
-  $USER/deepcell-tf:0.1 \
+  $USER/deepcell-tf:latest \
   notebook --allow-root --ip=0.0.0.0
 ```
 > **_Note_**: You will need to authenticate with NGC to pull the DeepCell base image.

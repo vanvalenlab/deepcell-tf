@@ -27,6 +27,7 @@ def _to_tensor(x, dtype):
         x = tf.cast(x, dtype)
     return x
 
+
 def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
     # Arguments
@@ -120,22 +121,24 @@ def sample_categorical_crossentropy(y_true, y_pred, class_weights=None, axis=Non
         return - tf.reduce_sum(tf.multiply(y_true * tf.log(y_pred), class_weights), axis=axis)
     return tf.nn.softmax_cross_entropy_with_logits(labels=y_true, logits=y_pred)
 
+
 def dice_loss(y_true, y_pred, smooth=1):
-    """
-    Computes the dice loss
-    y_true: A tensor of the same shape as `y_pred`.
-    y_pred: A tensor resulting from a softmax
+    """Computes the dice loss
+    # Arguments:
+        y_true: A tensor of the same shape as `y_pred`.
+        y_pred: A tensor resulting from a softmax
     """
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
     return - ((2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth))
 
+
 def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order=2, gamma=1e-3):
-    """
-    Computes the discriminative instance loss
-    y_true: A tensor of the same shape as `y_pred`.
-    y_pred: A tensor of the vector embedding
+    """Computes the discriminative instance loss
+    # Arguments:
+        y_true: A tensor of the same shape as `y_pred`.
+        y_pred: A tensor of the vector embedding
     """
 
     def temp_norm(ten, axis=-1):
@@ -174,11 +177,12 @@ def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order
 
     return L
 
+
 def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_logits=False):
-    """
-    Computes focal loss with class weights computed on the fly
-    y_true: A tensor of the same shape as `y_pred`.
-    y_pred: A tensor resulting from a softmax
+    """Computes focal loss with class weights computed on the fly
+    # Arguments:
+        y_true: A tensor of the same shape as `y_pred`.
+        y_pred: A tensor resulting from a softmax
     """
     if from_logits:
         raise Exception('weighted_focal_loss cannot take logits')

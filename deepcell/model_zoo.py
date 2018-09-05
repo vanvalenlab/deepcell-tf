@@ -7,41 +7,53 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import tensorflow as tf
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.activations import softmax
-from tensorflow.python.keras.callbacks import ModelCheckpoint
-from tensorflow.python.keras.models import Sequential, Model
+from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D, Conv3D
-from tensorflow.python.keras.layers import Add, Input, Concatenate, Lambda
+from tensorflow.python.keras.layers import Input, Concatenate, Flatten
 from tensorflow.python.keras.layers import MaxPool2D, MaxPool3D
 from tensorflow.python.keras.layers import Cropping2D, Cropping3D
-from tensorflow.python.keras.layers import Flatten, Dense, Dropout
 from tensorflow.python.keras.layers import Activation, Softmax
 from tensorflow.python.keras.layers import BatchNormalization
+from tensorflow.python.keras.layers import ZeroPadding2D, ZeroPadding3D
 from tensorflow.python.keras.regularizers import l2
 
-from .layers import Resize
-from .layers import ReflectionPadding2D, ReflectionPadding3D
 from .layers import DilatedMaxPool2D, DilatedMaxPool3D
-from .layers import TensorProd2D, TensorProd3D
-from .layers import Location, Location3D
 from .layers import ImageNormalization2D, ImageNormalization3D
+from .layers import Location, Location3D
+from .layers import ReflectionPadding2D, ReflectionPadding3D
+from .layers import TensorProd2D, TensorProd3D
+
 
 """
 2D feature nets
 """
 
-def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3, n_channels=1, reg=1e-5, n_conv_filters=64, n_dense_filters= 200, 
-    VGG_mode=False, init='he_normal', norm_method='std', dilated=False, padding=False, padding_mode='reflect', multires=False, include_top=True):
-    
-    # Create layers list (x) to store all of the layers. We need to use the functional API to enable the multiresolution mode
+
+def bn_feature_net_2D(receptive_field=61,
+                      input_shape=(256, 256, 1),
+                      n_features=3,
+                      n_channels=1,
+                      reg=1e-5,
+                      n_conv_filters=64,
+                      n_dense_filters=200,
+                      VGG_mode=False,
+                      init='he_normal',
+                      norm_method='std',
+                      location=False,
+                      dilated=False,
+                      padding=False,
+                      padding_mode='reflect',
+                      multires=False,
+                      include_top=True):
+    # Create layers list (x) to store all of the layers.
+    # We need to use the functional API to enable the multiresolution mode
     x = []
 
     win = (receptive_field - 1) // 2
 
     if dilated:
-        padding=True
+        padding = True
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -50,7 +62,7 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
 
         if not dilated:
             input_shape = (n_channels, receptive_field, receptive_field)
-            
+
     else:
         row_axis = 1
         col_axis = 2
@@ -65,7 +77,11 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
         if padding_mode == 'reflect':
             x.append(ReflectionPadding2D(padding=(win, win))(x[-1]))
         elif padding_mode == 'zero':
-            x.append(ZeroPadding2D(padding=(win,win))(x[-1]))
+            x.append(ZeroPadding2D(padding=(win, win))(x[-1]))
+
+    if location:
+        x.append(Location(in_shape=tuple(x[-1].shape.as_list()[1:]))(x[-1]))
+        x.append(Concatenate(axis=channel_axis)([x[-2], x[-1]]))
 
     if multires:
         layers_to_concat = []
@@ -75,7 +91,7 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
     d = 1
 
     while rf_counter > 4:
-        filter_size = 3 if rf_counter % 2 == 0 else 4 
+        filter_size = 3 if rf_counter % 2 == 0 else 4
         x.append(Conv2D(n_conv_filters, (filter_size, filter_size), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
         x.append(BatchNormalization(axis=channel_axis)(x[-1]))
         x.append(Activation('relu')(x[-1]))
@@ -91,12 +107,12 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
                 x.append(MaxPool2D(pool_size=(2, 2))(x[-1]))
 
             if VGG_mode:
-                n_conv_filters *=2
+                n_conv_filters *= 2
 
             rf_counter /= 2
 
             if multires:
-                layers_to_concat.append(len(x)-1)
+                layers_to_concat.append(len(x) - 1)
 
     if multires:
         c = []
@@ -109,7 +125,7 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
                 row_crop = (row_crop // 2, row_crop // 2)
             else:
                 row_crop = (row_crop // 2, row_crop // 2 + 1)
-            
+
             col_crop = int(output_shape[col_axis] - target_shape[col_axis])
             if col_crop % 2 == 0:
                 col_crop = (col_crop // 2, col_crop // 2)
@@ -117,7 +133,7 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
                 col_crop = (col_crop // 2, col_crop // 2 + 1)
 
             cropping = (row_crop, col_crop)
-           
+
             c.append(Cropping2D(cropping=cropping)(x[l]))
         x.append(Concatenate(axis=channel_axis)(c))
 
@@ -141,15 +157,20 @@ def bn_feature_net_2D(receptive_field=61, input_shape=(256,256,1), n_features=3,
 
     return model
 
-def bn_feature_net_skip_2D(receptive_field=61, input_shape=(256,256,1), fgbg_model=None, n_skips=2, last_only=True, norm_method='std', padding_mode='reflect',**kwargs):
 
-    win = (receptive_field - 1) // 2
-
+def bn_feature_net_skip_2D(receptive_field=61,
+                           input_shape=(256, 256, 1),
+                           fgbg_model=None,
+                           n_skips=2,
+                           last_only=True,
+                           norm_method='std',
+                           padding_mode='reflect',
+                           **kwargs):
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
     else:
         channel_axis = -1
-        
+
     inputs = Input(shape=input_shape)
     img = ImageNormalization2D(norm_method=norm_method, filter_size=receptive_field)(inputs)
 
@@ -165,9 +186,9 @@ def bn_feature_net_skip_2D(receptive_field=61, input_shape=(256,256,1), fgbg_mod
         if isinstance(fgbg_output, list):
             fgbg_output = fgbg_output[-1]
         model_outputs.append(fgbg_output)
-    
-    for skip in range(n_skips+1):
-        if len(model_outputs) > 0:
+
+    for _ in range(n_skips + 1):
+        if model_outputs:
             model_input = Concatenate(axis=channel_axis)([img, model_outputs[-1]])
         else:
             model_input = img
@@ -177,45 +198,67 @@ def bn_feature_net_skip_2D(receptive_field=61, input_shape=(256,256,1), fgbg_mod
         model_outputs.append(models[-1](model_input))
 
     if last_only:
-        model = Model(inputs=inputs, outputs = model_outputs[-1])
+        model = Model(inputs=inputs, outputs=model_outputs[-1])
     else:
         if fgbg_model is None:
-            model = Model(inputs=inputs, outputs = model_outputs)
+            model = Model(inputs=inputs, outputs=model_outputs)
         else:
-            model = Model(inputs=inputs, outputs = model_outputs[1:])
+            model = Model(inputs=inputs, outputs=model_outputs[1:])
 
     return model
+
 
 def bn_feature_net_21x21(**kwargs):
     return bn_feature_net_2D(receptive_field=21, **kwargs)
 
+
 def bn_feature_net_31x31(**kwargs):
     return bn_feature_net_2D(receptive_field=31, **kwargs)
+
 
 def bn_feature_net_41x41(**kwargs):
     return bn_feature_net_2D(receptive_field=41, **kwargs)
 
+
 def bn_feature_net_61x61(**kwargs):
     return bn_feature_net_2D(receptive_field=61, **kwargs)
 
+
 def bn_feature_net_81x81(**kwargs):
     return bn_feature_net_2D(receptive_field=81, **kwargs)
+
 
 """
 3D feature nets
 """
 
-def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1), n_features=3, n_channels=1, reg=1e-5, n_conv_filters=64, n_dense_filters= 200, 
-    VGG_mode=False, init='he_normal', norm_method='std', dilated=False, padding=False, padding_mode='reflect', multires=False, include_top=True):
-    
-    # Create layers list (x) to store all of the layers. We need to use the functional API to enable the multiresolution mode
+
+def bn_feature_net_3D(receptive_field=61,
+                      n_frames=5,
+                      input_shape=(5, 256, 256, 1),
+                      n_features=3,
+                      n_channels=1,
+                      reg=1e-5,
+                      n_conv_filters=64,
+                      n_dense_filters=200,
+                      VGG_mode=False,
+                      init='he_normal',
+                      norm_method='std',
+                      location=False,
+                      dilated=False,
+                      padding=False,
+                      padding_mode='reflect',
+                      multires=False,
+                      include_top=True):
+    # Create layers list (x) to store all of the layers.
+    # We need to use the functional API to enable the multiresolution mode
     x = []
 
     win = (receptive_field - 1) // 2
     win_z = (n_frames - 1) // 2
 
     if dilated:
-        padding=True
+        padding = True
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -239,7 +282,11 @@ def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1),
         if padding_mode == 'reflect':
             x.append(ReflectionPadding3D(padding=(win_z, win, win))(x[-1]))
         elif padding_mode == 'zero':
-            x.append(ZeroPadding3D(padding=(win_z,win,win))([-1]))
+            x.append(ZeroPadding3D(padding=(win_z, win, win))([-1]))
+
+    if location:
+        x.append(Location3D(in_shape=tuple(x[-1].shape.as_list()[1:]))(x[-1]))
+        x.append(Concatenate(axis=channel_axis)([x[-2], x[-1]]))
 
     if multires:
         layers_to_concat = []
@@ -249,8 +296,8 @@ def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1),
     d = 1
 
     while rf_counter > 4:
-        filter_size = 3 if rf_counter % 2 == 0 else 4 
-        x.append(Conv3D(n_conv_filters, (1, filter_size, filter_size), dilation_rate=(1,d,d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+        filter_size = 3 if rf_counter % 2 == 0 else 4
+        x.append(Conv3D(n_conv_filters, (1, filter_size, filter_size), dilation_rate=(1, d, d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
         x.append(BatchNormalization(axis=channel_axis)(x[-1]))
         x.append(Activation('relu')(x[-1]))
 
@@ -265,19 +312,19 @@ def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1),
                 x.append(MaxPool3D(pool_size=(1, 2, 2))(x[-1]))
 
             if VGG_mode:
-                n_conv_filters *=2
+                n_conv_filters *= 2
 
             rf_counter /= 2
 
             if multires:
-                layers_to_concat.append(len(x)-1)
+                layers_to_concat.append(len(x) - 1)
 
     if multires:
         c = []
         for l in layers_to_concat:
             output_shape = x[l].get_shape().as_list()
             target_shape = x[-1].get_shape().as_list()
-            time_crop = (0,0)
+            time_crop = (0, 0)
 
             row_crop = int(output_shape[row_axis] - target_shape[row_axis])
 
@@ -285,7 +332,7 @@ def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1),
                 row_crop = (row_crop // 2, row_crop // 2)
             else:
                 row_crop = (row_crop // 2, row_crop // 2 + 1)
-            
+
             col_crop = int(output_shape[col_axis] - target_shape[col_axis])
 
             if col_crop % 2 == 0:
@@ -298,11 +345,11 @@ def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1),
             c.append(Cropping3D(cropping=cropping)(x[l]))
         x.append(Concatenate(axis=channel_axis)(c))
 
-    x.append(Conv3D(n_dense_filters, (1, rf_counter, rf_counter), dilation_rate=(1,d,d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+    x.append(Conv3D(n_dense_filters, (1, rf_counter, rf_counter), dilation_rate=(1, d, d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
-    x.append(Conv3D(n_dense_filters, (n_frames, 1, 1), dilation_rate=(1,d,d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+    x.append(Conv3D(n_dense_filters, (n_frames, 1, 1), dilation_rate=(1, d, d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
@@ -322,21 +369,26 @@ def bn_feature_net_3D(receptive_field=61, n_frames=5, input_shape=(5,256,256,1),
 
     return model
 
-def bn_feature_net_skip_3D(receptive_field=61, input_shape=(5, 256,256,1), fgbg_model=None, last_only=True, n_skips=2, norm_method='std', padding_mode='reflect',**kwargs):
 
-    win = (receptive_field - 1) // 2
-
+def bn_feature_net_skip_3D(receptive_field=61,
+                           input_shape=(5, 256, 256, 1),
+                           fgbg_model=None,
+                           last_only=True,
+                           n_skips=2,
+                           norm_method='std',
+                           padding_mode='reflect',
+                           **kwargs):
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
     else:
         channel_axis = -1
-        
+
     inputs = Input(shape=input_shape)
     img = ImageNormalization3D(norm_method=norm_method, filter_size=receptive_field)(inputs)
 
     models = []
     model_outputs = []
-    
+
     if fgbg_model is not None:
         for layer in fgbg_model.layers:
             layer.trainable = False
@@ -346,8 +398,8 @@ def bn_feature_net_skip_3D(receptive_field=61, input_shape=(5, 256,256,1), fgbg_
             fgbg_output = fgbg_output[-1]
         model_outputs.append(fgbg_output)
 
-    for skip in range(n_skips+1):
-        if len(model_outputs) > 0:
+    for _ in range(n_skips + 1):
+        if model_outputs:
             model_input = Concatenate(axis=channel_axis)([img, model_outputs[-1]])
         else:
             model_input = img
@@ -356,12 +408,12 @@ def bn_feature_net_skip_3D(receptive_field=61, input_shape=(5, 256,256,1), fgbg_
         model_outputs.append(models[-1](model_input))
 
     if last_only:
-        model = Model(inputs=inputs, outputs = model_outputs[-1])
+        model = Model(inputs=inputs, outputs=model_outputs[-1])
     else:
         if fgbg_model is None:
-            model = Model(inputs=inputs, outputs = model_outputs)
+            model = Model(inputs=inputs, outputs=model_outputs)
         else:
-            model = Model(inputs=inputs, outputs = model_outputs[1:])
+            model = Model(inputs=inputs, outputs=model_outputs[1:])
 
     return model
 
@@ -369,14 +421,18 @@ def bn_feature_net_skip_3D(receptive_field=61, input_shape=(5, 256,256,1), fgbg_
 def bn_feature_net_21x21_3D(**kwargs):
     return bn_feature_net_3D(receptive_field=21, **kwargs)
 
+
 def bn_feature_net_31x31_3D(**kwargs):
     return bn_feature_net_3D(receptive_field=31, **kwargs)
+
 
 def bn_feature_net_41x41_3D(**kwargs):
     return bn_feature_net_3D(receptive_field=41, **kwargs)
 
+
 def bn_feature_net_61x61_3D(**kwargs):
     return bn_feature_net_3D(receptive_field=61, **kwargs)
+
 
 def bn_feature_net_81x81_3D(**kwargs):
     return bn_feature_net_3D(receptive_field=81, **kwargs)

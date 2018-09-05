@@ -18,46 +18,72 @@ from skimage.morphology import binary_erosion, binary_dilation
 from tensorflow.python.keras import backend as K
 
 
-def deepcell_transform(maskstack, dilation_radius=None):
+def deepcell_transform(maskstack, dilation_radius=None, data_format=None):
     """
     Transforms a label mask for a z stack edge, interior, and background
     # Arguments:
         maskstack: label masks of uniquely labeled instances
         dilation_radius:  width to enlarge the edge feature of each instance
     # Returns:
-        deepcell_stacks: masks of [edge_feature, interior_feature, background]
+        deepcell_stacks: masks of:
+        [background_edge_feature, interior_edge_feature, interior_feature, background]
     """
-    if K.image_data_format() == 'channels_first':
+    if data_format is None:
+        data_format = K.image_data_format()
+
+    if data_format == 'channels_first':
         channel_axis = 1
     else:
         channel_axis = len(maskstack.shape) - 1
 
-    # Erode masks
-    maskstack = np.squeeze(maskstack)
-    new_masks = np.zeros(maskstack.shape)
+    maskstack = np.squeeze(maskstack, axis=channel_axis)
 
+    # Detect the edges and interiors
+    new_masks = np.zeros(maskstack.shape)
+    edge_masks = np.zeros(maskstack.shape)
     strel = ball(1) if maskstack.ndim > 3 else disk(1)
     for cell_label in np.unique(maskstack):
         if cell_label != 0:
             for i in range(maskstack.shape[0]):
+                # get the cell interior
                 img = maskstack[i] == cell_label
                 img = binary_erosion(img, strel)
                 new_masks[i] += img
 
-    interior_maskstack = np.multiply(new_masks, maskstack)
-    edge_maskstack = (maskstack - interior_maskstack > 0).astype('int')
-    interior_maskstack = (interior_maskstack > 0).astype('int')
+    interior_masks = np.multiply(new_masks, maskstack)
+    edge_masks = (maskstack - interior_masks > 0).astype('int')
+    interior_masks = (interior_masks > 0).astype('int')
+
+    # dilate the background masks and subtract from all edges for background-edges
+    dilated_background = np.zeros(maskstack.shape)
+    for i in range(maskstack.shape[0]):
+        background = (maskstack[i] == 0).astype('int')
+        dilated_background[i] = binary_dilation(background, strel)
+
+    background_edge_masks = (edge_masks - dilated_background > 0).astype('int')
+
+    # edges that are not background-edges are interior-edges
+    interior_edge_masks = (edge_masks - background_edge_masks > 0).astype('int')
 
     if dilation_radius:
         dil_strel = ball(dilation_radius) if maskstack.ndim > 3 else disk(dilation_radius)
-        # thicken cell edges to be more pronounced
-        for i in range(edge_maskstack.shape[0]):
-            edge_maskstack[i] = binary_dilation(edge_maskstack[i], selem=dil_strel)
-        # Thin the augmented edges by subtracting the interior features.
-        edge_maskstack = edge_maskstack - interior_maskstack > 0
+        # Thicken cell edges to be more pronounced
+        for i in range(edge_masks.shape[0]):
+            interior_edge_masks[i] = binary_dilation(interior_edge_masks[i], selem=dil_strel)
+            background_edge_masks[i] = binary_dilation(background_edge_masks[i], selem=dil_strel)
 
-    background_maskstack = 1 - (edge_maskstack + interior_maskstack)
-    all_stacks = [edge_maskstack, interior_maskstack, background_maskstack]
+        # Thin the augmented edges by subtracting the interior features.
+        interior_edge_masks = (interior_edge_masks - interior_masks > 0).astype('int')
+        background_edge_masks = (background_edge_masks - interior_masks > 0).astype('int')
+
+    background_masks = (1 - background_edge_masks - interior_edge_masks - interior_masks > 0).astype('int')
+
+    all_stacks = [
+        background_edge_masks,
+        interior_edge_masks,
+        interior_masks,
+        background_masks
+    ]
 
     deepcell_stacks = np.stack(all_stacks, axis=channel_axis)
     return deepcell_stacks
@@ -116,60 +142,6 @@ def distance_transform_2d(mask, bins=16, erosion_width=None):
     # bin each distance value into a class from 1 to bins
     min_dist = np.amin(distance)
     max_dist = np.amax(distance)
-    bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins + 1)
-    distance = np.digitize(distance, bins, right=True)
-    return distance - 1  # minimum distance should be 0, not 1
-
-
-def _distance_transform_3d(maskstack, bins=16):
-    """ # DEPRECATED
-    Transform a label mask into distance classes for a z-stack of images
-    # Arguments
-        mask: a z-stack of label masks (y data)
-        bins: the number of transformed distance classes
-    # Returns
-        distance: 3D Euclidiean Distance Transform
-    """
-    def weightmask(mask):
-        # if mask is binary create unique labels
-        img = label(mask) if np.unique(mask).size <= 2 else mask
-        img = mask.flatten()
-        unique, counts = np.unique(img, return_counts=True)
-        counts = 1 / np.sqrt(counts)
-        dic = dict(zip(unique, counts))
-        dic[0] = 0
-        img_out = map(dic.get, img)
-        img_out = list(img_out)
-        new_shape = (mask.shape[0], mask.shape[1], mask.shape[2])
-        return np.reshape(img_out, new_shape)
-
-    weighted_mask = weightmask(maskstack)
-    distance_slices = [ndimage.distance_transform_edt(m) for m in weighted_mask]
-    distance_slices = np.array(distance_slices)
-
-    distance = np.zeros(list(weighted_mask.shape))
-    for k in range(weighted_mask.shape[0]):
-        adder = [np.square(x - k) for x in range(len(distance_slices))]
-        for i in range(weighted_mask.shape[1]):
-            for j in range(weighted_mask.shape[2]):
-                slicearr = np.square(distance_slices[:, i, j])
-                zans = np.argmin(slicearr + adder)
-                zij = np.square(distance_slices[zans, i, j])
-                zk = np.square(zans - k)
-                distance[k][i][j] = np.sqrt(zij + zk)
-
-    # normalize by maximum distance
-    distance = np.expand_dims(distance, axis=-1)  # add channels for comparison
-    for cell_label in np.unique(maskstack):
-        if cell_label == 0:  # distance is only found for non-zero regions
-            continue
-        labeled_distance = distance[maskstack == cell_label]
-        normalized_distance = labeled_distance / np.amax(labeled_distance)
-        distance[maskstack == cell_label] = normalized_distance
-    distance = np.reshape(distance, distance.shape[:-1])  # remove channels again
-
-    min_dist = np.amin(distance.flatten())
-    max_dist = np.amax(distance.flatten())
     bins = np.linspace(min_dist - K.epsilon(), max_dist + K.epsilon(), num=bins + 1)
     distance = np.digitize(distance, bins, right=True)
     return distance - 1  # minimum distance should be 0, not 1
