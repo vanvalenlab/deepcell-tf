@@ -5,19 +5,25 @@ DeepCell is neural network API for single cell analysis, built using [TensorFlow
 
 There are several notebooks with various training methods that can be used as examples:
 
-#### Edge and Interior Segmentation
+#### Cell Edge and Cell Interior Segmentation
 
-* [2D DeepCell Transform.ipynb](scripts/deepcell/DeepCell%20Transform%202D.ipynb) A notebook for 2D semantic segmentation.
+* [2D DeepCell Transform - Fully Convolutional.ipynb](scripts/deepcell/DeepCell%20Transform%202D%20Fully%20Convolutional.ipynb)
 
-* [3D DeepCell Transform.ipynb](scripts/deepcell/DeepCell%20Transfrom%203D.ipynb) A notebook for 3D semantic segmentation.
+* [2D DeepCell Transform - Sample Based.ipynb](scripts/deepcell/DeepCell%20Transform%202D%20Sample%20Based.ipynb)
 
-#### Instance Segmentation
+* [3D DeepCell Transform - Fully Convolutional.ipynb](scripts/deepcell/DeepCell%20Transfrom%203D.ipynb)
 
-* [2D Discriminative Loss.ipynb](scripts/discriminative_loss/Discriminative%20Loss%202D.ipynb) A notebook for 2D instance segmentation using a discriminative loss function.
+* [3D DeepCell Transform - Sample Based.ipynb](scripts/deepcell/DeepCell%20Transfrom%203D%20Sample%20Based.ipynb)
 
-* [2D Watershed.ipynb](scripts/watershed/Watershed%20Transform%202D.ipynb) A notebook for 2D instance segmentation using the deep watershed method.
+#### Deep Watershed Instance Segmentation
 
-* [3D Watershed.ipynb](scripts/watershed/Watershed%20Transform%203D.ipynb) A notebook for 3D instance segmentation using the deep watershed method.
+* [2D Watershed - Fully Convolutional.ipynb](scripts/watershed/Watershed%20Transform%202D%20Fully%20Convolutional.ipynb)
+
+* [2D Watershed - Sample Based.ipynb](scripts/watershed/Watershed%20Transform%202D%20Sample%20Based.ipynb)
+
+* [3D Watershed - Fully Convolutional.ipynb](scripts/watershed/Watershed%20Transform%203D%20Fully%20Convolutional.ipynb)
+
+* [3D Watershed - Sample Based.ipynb](scripts/watershed/Watershed%20Transform%203D%20Sample%20Based.ipynb)
 
 ## Using DeepCell with Docker
 
