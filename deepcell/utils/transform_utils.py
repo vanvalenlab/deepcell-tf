@@ -25,7 +25,8 @@ def deepcell_transform(maskstack, dilation_radius=None, data_format=None):
         maskstack: label masks of uniquely labeled instances
         dilation_radius:  width to enlarge the edge feature of each instance
     # Returns:
-        deepcell_stacks: masks of [edge_feature, interior_feature, background]
+        deepcell_stacks: masks of:
+        [background_edge_feature, interior_edge_feature, interior_feature, background]
     """
     if data_format is None:
         data_format = K.image_data_format()
@@ -35,32 +36,54 @@ def deepcell_transform(maskstack, dilation_radius=None, data_format=None):
     else:
         channel_axis = len(maskstack.shape) - 1
 
-    # Erode masks
     maskstack = np.squeeze(maskstack, axis=channel_axis)
-    new_masks = np.zeros(maskstack.shape)
 
+    # Detect the edges and interiors
+    new_masks = np.zeros(maskstack.shape)
+    edge_masks = np.zeros(maskstack.shape)
     strel = ball(1) if maskstack.ndim > 3 else disk(1)
     for cell_label in np.unique(maskstack):
         if cell_label != 0:
             for i in range(maskstack.shape[0]):
+                # get the cell interior
                 img = maskstack[i] == cell_label
                 img = binary_erosion(img, strel)
                 new_masks[i] += img
 
-    interior_maskstack = np.multiply(new_masks, maskstack)
-    edge_maskstack = (maskstack - interior_maskstack > 0).astype('int')
-    interior_maskstack = (interior_maskstack > 0).astype('int')
+    interior_masks = np.multiply(new_masks, maskstack)
+    edge_masks = (maskstack - interior_masks > 0).astype('int')
+    interior_masks = (interior_masks > 0).astype('int')
+
+    # dilate the background masks and subtract from all edges for background-edges
+    dilated_background = np.zeros(maskstack.shape)
+    for i in range(maskstack.shape[0]):
+        background = (maskstack[i] == 0).astype('int')
+        dilated_background[i] = binary_dilation(background, strel)
+
+    background_edge_masks = (edge_masks - dilated_background > 0).astype('int')
+
+    # edges that are not background-edges are interior-edges
+    interior_edge_masks = (edge_masks - background_edge_masks > 0).astype('int')
 
     if dilation_radius:
         dil_strel = ball(dilation_radius) if maskstack.ndim > 3 else disk(dilation_radius)
-        # thicken cell edges to be more pronounced
-        for i in range(edge_maskstack.shape[0]):
-            edge_maskstack[i] = binary_dilation(edge_maskstack[i], selem=dil_strel)
-        # Thin the augmented edges by subtracting the interior features.
-        edge_maskstack = edge_maskstack - interior_maskstack > 0
+        # Thicken cell edges to be more pronounced
+        for i in range(edge_masks.shape[0]):
+            interior_edge_masks[i] = binary_dilation(interior_edge_masks[i], selem=dil_strel)
+            background_edge_masks[i] = binary_dilation(background_edge_masks[i], selem=dil_strel)
 
-    background_maskstack = 1 - (edge_maskstack + interior_maskstack)
-    all_stacks = [edge_maskstack, interior_maskstack, background_maskstack]
+        # Thin the augmented edges by subtracting the interior features.
+        interior_edge_masks = (interior_edge_masks - interior_masks > 0).astype('int')
+        background_edge_masks = (background_edge_masks - interior_masks > 0).astype('int')
+
+    background_masks = (1 - background_edge_masks - interior_edge_masks - interior_masks > 0).astype('int')
+
+    all_stacks = [
+        background_edge_masks,
+        interior_edge_masks,
+        interior_masks,
+        background_masks
+    ]
 
     deepcell_stacks = np.stack(all_stacks, axis=channel_axis)
     return deepcell_stacks
