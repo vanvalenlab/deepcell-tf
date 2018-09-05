@@ -67,23 +67,23 @@ class TestTransformMasks(test.TestCase):
         mask = np.random.randint(3, size=(5, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask, transform='deepcell', data_format='channels_last')
-        self.assertEqual(mask_transform.shape, (5, 30, 30, 3))
+        self.assertEqual(mask_transform.shape, (5, 30, 30, 4))
 
         mask = np.random.randint(3, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask, transform='deepcell', data_format='channels_first')
-        self.assertEqual(mask_transform.shape, (5, 3, 30, 30))
+        self.assertEqual(mask_transform.shape, (5, 4, 30, 30))
 
         # test 3D masks
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask, transform='deepcell', data_format='channels_last')
-        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, 3))
+        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, 4))
 
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask, transform='deepcell', data_format='channels_first')
-        self.assertEqual(mask_transform.shape, (5, 3, 10, 30, 30))
+        self.assertEqual(mask_transform.shape, (5, 4, 10, 30, 30))
 
     def test_watershed_transform(self):
         distance_bins = 4

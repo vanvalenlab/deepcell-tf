@@ -45,9 +45,10 @@ class TransformUtilsTest(test.TestCase):
         dc_maskstack_dilated = deepcell_transform(
             maskstack, dilation_radius=1, data_format='channels_last')
 
-        self.assertEqual(dc_maskstack.shape[-1], 3)
-        self.assertEqual(dc_maskstack_dilated.shape[-1], 3)
-        self.assertGreater(dc_maskstack_dilated[:, :, :, 0].sum(), dc_maskstack[:, :, :, 0].sum())
+        self.assertEqual(dc_maskstack.shape[-1], 4)
+        self.assertEqual(dc_maskstack_dilated.shape[-1], 4)
+        self.assertGreater(dc_maskstack_dilated[:, :, :, 0].sum() + dc_maskstack_dilated[:, :, :, 1].sum(),
+                           dc_maskstack[:, :, :, 0].sum() + dc_maskstack[:, :, :, 1].sum())
 
     def test_deepcell_transform_3d(self):
         frames = 10
@@ -65,10 +66,10 @@ class TransformUtilsTest(test.TestCase):
         dc_maskstack = deepcell_transform(maskstack, data_format='channels_last')
         dc_maskstack_dilated = deepcell_transform(
             maskstack, dilation_radius=2, data_format='channels_last')
-        self.assertEqual(dc_maskstack.shape[-1], 3)
-        self.assertEqual(dc_maskstack_dilated.shape[-1], 3)
-        self.assertGreater(dc_maskstack_dilated[:, :, :, :, 0].sum(),
-                           dc_maskstack[:, :, :, :, 0].sum())
+        self.assertEqual(dc_maskstack.shape[-1], 4)
+        self.assertEqual(dc_maskstack_dilated.shape[-1], 4)
+        self.assertGreater(dc_maskstack_dilated[:, :, :, :, 0].sum() + dc_maskstack_dilated[:, :, :, :, 1].sum(),
+                           dc_maskstack[:, :, :, :, 0].sum() + dc_maskstack[:, :, :, :, 1].sum())
 
     def test_erode_edges_2d(self):
         for img in _generate_test_masks():
