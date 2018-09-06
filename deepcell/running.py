@@ -83,11 +83,6 @@ def process_whole_image(model, images, num_crops=4):
     model_output_shape = tuple(list(model.layers[-1].output_shape)[1:])
     output = np.zeros((images.shape[0], *model_output_shape))
 
-    if any([images.shape[i] != output.shape[i] for i in (row_axis, col_axis)]):
-        raise ValueError('Expected images and model output to have same shape,'
-                         ' Got: {} and {}, respectively'.format(
-                             images.shape, output.shape))
-
     expected_input_shape = get_cropped_input_shape(images, num_crops)
     if expected_input_shape != model.input_shape:
         raise ValueError('Expected model.input_shape to be {}. Got {}.  Use '
