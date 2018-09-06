@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 from skimage.measure import regionprops
 from skimage.transform import resize
 from scipy.optimize import linear_sum_assignment
@@ -13,8 +14,11 @@ class cell_tracker():
                  crop_dim=32, 
                  death=0.9, 
                  birth=0.9,
+                 division=0.2,
                  max_distance=200,
                  track_length=1,
+                 occupancy_grid_size=10,
+                 occupancy_window=100,
                  data_format=None):
         
         # TODO: Use a model that is served by tf-serving, not one on a local machine
@@ -22,13 +26,16 @@ class cell_tracker():
         if data_format is None:
             data_format = K.image_data_format()
             
-        self.x = movie
-        self.y = annotation
+        self.x = copy.copy(movie)
+        self.y = copy.copy(annotation)
         self.model = model
         self.crop_dim = crop_dim
         self.death = death
         self.birth = birth
+        self.division = division
         self.max_distance = max_distance
+        self.occupancy_grid_size=occupancy_grid_size
+        self.occupancy_window=occupancy_window
         self.data_format = data_format
         self.track_length = track_length
         self.channel_axis = 0 if data_format == 'channels_first' else -1
@@ -55,6 +62,33 @@ class cell_tracker():
             y[frame] = y_frame_new
         self.y = y
         
+    def _create_new_track(self, frame, cell_id=None):
+        """
+        This function creates new tracks
+        """
+        if len(list(self.tracks.keys())) > 0:
+            new_track = np.amax(list(self.tracks.keys())) + 1
+        else:
+            new_track = 0
+        self.tracks[new_track] = {}
+        
+        if cell_id is None:
+            self.tracks[new_track]['label'] = new_track + 1   
+        else:
+            self.tracks[new_track]['label'] = cell_id
+            
+        self.tracks[new_track]['frames'] = [frame]
+        self.tracks[new_track]['daughters'] = []
+        self.tracks[new_track]['capped'] = False
+        self.tracks[new_track]['parent'] = None
+        
+        appearance, centroid, occupancy_grid = self._get_appearances(self.x, self.y, [frame], [cell_id])
+        self.tracks[new_track]['appearances'] = appearance
+        self.tracks[new_track]['centroids'] = centroid
+        self.tracks[new_track]['occupancy_grids'] = occupancy_grid
+        
+        return None
+        
     def _initialize_tracks(self):
         """
         This function intializes the tracks
@@ -62,20 +96,12 @@ class cell_tracker():
         """
         self.tracks = {}
         unique_cells = np.unique(self.y[0])
+        
         # Remove background that has value 0
         unique_cells = np.delete(unique_cells, np.where(unique_cells == 0))
         
         for track_counter, label in enumerate(unique_cells):
-            self.tracks[track_counter] = {}
-            self.tracks[track_counter]['label'] = label
-            self.tracks[track_counter]['frames'] = [0]
-            self.tracks[track_counter]['daughters'] = []
-            self.tracks[track_counter]['parent'] = None
-            
-            # Get the appearance
-            appearance, centroid = self._get_appearances(self.x, self.y, [0], [label])
-            self.tracks[track_counter]['appearances'] = appearance
-            self.tracks[track_counter]['centroids'] = centroid
+            self._create_new_track(0, label)
             
         # Start a tracked label array
         self.y_tracked = self.y[[0]]
@@ -100,20 +126,29 @@ class cell_tracker():
         # Compute assignment matrix
         track_appearances = self._fetch_track_appearances()
         track_centroids = self._fetch_track_centroids()
+        track_occupancy_grids = self._fetch_track_occupancy_grids()
         
         cell_appearances = np.zeros((number_of_cells, 1, self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis]), dtype=K.floatx())
         cell_centroids = np.zeros((number_of_cells, 2), dtype=K.floatx())
+        cell_occupancy_grids = np.zeros((number_of_cells,1,
+                                         2*self.occupancy_grid_size+1, 
+                                         2*self.occupancy_grid_size+1, 1), dtype=K.floatx())
         
         for cell in range(number_of_cells):
-            cell_appearance, cell_centroid = self._get_appearances(self.x, self.y, [frame], [cell+1])
+            cell_appearance, cell_centroid, cell_occupancy_grid = self._get_appearances(self.x, self.y, [frame], [cell+1])
             cell_appearances[cell] = cell_appearance
             cell_centroids[cell] = cell_centroid
-        
+            cell_occupancy_grids[cell] = cell_occupancy_grid
+            
         # Compute assignment matrix - Initialize and get model inputs
         input_1 = np.zeros((number_of_tracks, number_of_cells, self.track_length, self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis]), dtype = K.floatx())
         input_2 = np.zeros((number_of_tracks, number_of_cells, 1, self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis]), dtype = K.floatx())
         input_3 = np.zeros((number_of_tracks, number_of_cells, self.track_length, 2))
         input_4 = np.zeros((number_of_tracks, number_of_cells, 1, 2))
+        input_5 = np.zeros((number_of_tracks, number_of_cells, self.track_length, 
+                            2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1))
+        input_6 = np.zeros((number_of_tracks, number_of_cells, 1, 
+                            2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1))
         
         for track in range(number_of_tracks):
             for cell in range(number_of_cells):
@@ -129,10 +164,13 @@ class cell_tracker():
                 for j in range(distances.shape[0]):
                     dist = distances[j,:]
                     if np.linalg.norm(dist) > self.max_distance:
-                        distances[j,:] = distances[j,:]/np.linalg.norm(dist)*self.max_distance
+                        distances[j,:] = dist/np.linalg.norm(dist)*self.max_distance
                 
                 input_3[track,cell,:,:] = distances[0:-1,:]
                 input_4[track,cell,:,:] = distances[-1,:]
+                
+                input_5[track,cell,:,:,:,:] = track_occupancy_grids[track]
+                input_6[track,cell,:,:,:,:] = cell_occupancy_grids[cell]
         
         # Compute assignment matrix - reshape model inputs for prediction
         input_1 = np.reshape(input_1, (number_of_tracks*number_of_cells, self.track_length, self.crop_dim, 
@@ -141,16 +179,30 @@ class cell_tracker():
                                       self.crop_dim, self.x.shape[self.channel_axis]))
         input_3 = np.reshape(input_3, (number_of_tracks*number_of_cells, self.track_length, 2))
         input_4 = np.reshape(input_4, (number_of_tracks*number_of_cells, 1, 2))
-        model_input = [input_1, input_2, input_3, input_4]
+        input_5 = np.reshape(input_5, (number_of_tracks*number_of_cells, self.track_length, 
+                                      2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, 1))
+        input_6 = np.reshape(input_6, (number_of_tracks*number_of_cells, 1, 
+                                      2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, 1))
+        model_input = [input_1, input_2, input_3, input_4, input_5, input_6]
         
-        predictions = self.model.predict(model_input) #TODO: implement some splitting function in case this is too much data
+        predictions = model.predict(model_input) #TODO: implement some splitting function in case this is too much data
         predictions = np.reshape(predictions, (number_of_tracks, number_of_cells, 3))
-        assignment_matrix = predictions[:,:,0]
+        assignment_matrix = 1-predictions[:,:,1]
+        
+        # Make sure capped tracks are not allowed to have assignments
+        for track in range(number_of_tracks):
+            if self.tracks[track]['capped']:
+                assignment_matrix[track,0:number_of_cells] = 1
+                continue
+        
+#         print(np.round(assignment_matrix, decimals=2))
         
         # Compute birth matrix
         predictions_birth = predictions[:,:,2]
-        birth_diagonal = 1-np.amax(predictions_birth, axis=0)
+        birth_diagonal = np.array([self.birth] * number_of_cells) # 1-np.amax(predictions_birth, axis=0)
         birth_matrix = np.diag(birth_diagonal) + np.ones(birth_matrix.shape) - np.eye(number_of_cells)
+#         print(np.round(1-birth_diagonal, decimals=2))
+#         print(np.round(np.amax(predictions[:,:,2],axis=0), decimals=2))
         
         # Compute death matrix
         death_matrix = self.death * np.eye(number_of_tracks) + np.ones(death_matrix.shape) - np.eye(number_of_tracks)
@@ -173,7 +225,7 @@ class cell_tracker():
         assignments = np.stack([row_ind, col_ind], axis=1)
         
         return assignments
-    
+        
     def _update_tracks(self, assignments, frame):
         """
         This function will update the tracks if given the assignment matrix
@@ -182,53 +234,73 @@ class cell_tracker():
         number_of_tracks = len(self.tracks.keys())
         number_of_cells = np.amax(self.y[frame])
         
-        existing_tracks = list(np.arange(len(self.tracks.keys())))
-        cells_to_track = list(np.arange(np.amax(self.y[frame])))
-        
         y_tracked_update = np.zeros((1, self.y.shape[1], self.y.shape[2], 1), dtype=K.floatx())
+        
         for a in range(assignments.shape[0]):
             track, cell = assignments[a]
+            track_id = track + 1 # Labels and indices differ by 1
+            cell_id = cell + 1 
             
             # Take care of everything if cells are tracked
             if track < number_of_tracks and cell < number_of_cells:
                 self.tracks[track]['frames'].append(frame)
-                appearance, centroid = self._get_appearances(self.x, self.y, [frame], [cell+1])                
+                appearance, centroid, occupancy_grid = self._get_appearances(self.x, self.y, [frame], [cell_id])                
                 self.tracks[track]['appearances'] = np.concatenate([self.tracks[track]['appearances'], appearance], axis = 0)
                 self.tracks[track]['centroids'] = np.concatenate([self.tracks[track]['centroids'], centroid], axis=0)
+                self.tracks[track]['occupancy_grids'] = np.concatenate([self.tracks[track]['occupancy_grids'], occupancy_grid], axis=0)
+                y_tracked_update[self.y[[frame]] == cell_id] = track_id
                 
-                y_tracked_update[self.y[[frame]] == cell+1] = track+1
-                
-                existing_tracks.remove(track)
-                cells_to_track.remove(cell)
-                
+         
             # Create a new track if there was a birth
             if track > number_of_tracks - 1 and cell < number_of_cells:
-                print('Adding new track')
-                new_track_id = np.amax(list(self.tracks.keys())) + 1
-                self.tracks[new_track_id] = {}
-                self.tracks[new_track_id]['label'] = new_track_id + 1
-                self.tracks[new_track_id]['frames'] = [frame]
-                self.tracks[new_track_id]['daughters'] = []
+                self._create_new_track(frame, cell+1)
+                new_track_id = np.amax(list(self.tracks.keys()))
                 
-                appearance, centroid = self._get_appearances(self.x, self.y, [frame], [cell+1])
-                self.tracks[new_track_id]['appearances'] = appearance
-                self.tracks[new_track_id]['centroids'] = centroid
-                
-                parent = self._get_parent(frame, cell+1)
+                # See if the new track has a parent
+                parent = self._get_parent(frame, cell_id)
                 if parent is not None:
+                    print('Division detected')
                     self.tracks[new_track_id]['parent'] = parent
-                    self.tracks[parent]['daughters'].append(new_track_id+1)
+                    self.tracks[parent]['daughters'].append(new_track_id)
                 else:
                     self.tracks[new_track_id]['parent'] = None
                     
-                cells_to_track.remove(cell)
                 y_tracked_update[self.y[[frame]] == cell+1] = new_track_id+1
             
             # Dont touch anything if there was a cell that "died"
             if track < number_of_tracks and cell > number_of_cells - 1:
-                existing_tracks.remove(track)
                 continue
-            
+                
+        # Cap the tracks of cells that divided
+        number_of_tracks = len(self.tracks.keys())
+        for track in range(number_of_tracks):
+            if len(self.tracks[track]['daughters']) > 0:
+                self.tracks[track]['capped'] = True
+                
+        # Check and make sure cells that divided did not get assigned to the same cell
+        for track in range(number_of_tracks):
+            if len(self.tracks[track]['daughters']) > 0:
+                if frame in self.tracks[track]['frames']:
+                    
+                    # Create new track
+                    cell_id = self.tracks[track]['label']
+                    self._create_new_track(frame, cell_id)
+                    new_track_id = np.amax(list(self.tracks.keys()))
+                    self.tracks[new_track_id]['appearances'] = self.tracks[track]['appearances'][[-1],:,:,:]
+                    self.tracks[new_track_id]['centroids'] = self.tracks[track]['centroids'][[-1],:]
+                    self.tracks[new_track_id]['occupancy_grids'] = self.tracks[track]['occupancy_grids'][[-1],:,:,:]
+                    self.tracks[new_track_id]['parent'] = track
+                    
+                    # Remove frame from old track
+                    self.tracks[track]['frames'].remove(frame)
+                    self.tracks[track]['appearances'] = self.tracks[track]['appearances'][0:-1,:,:,:]
+                    self.tracks[track]['centroids'] = self.tracks[track]['centroids'][0:-1,:]
+                    self.tracks[track]['occupancy_grids'] = self.tracks[track]['occupancy_grids'][0:-1,:,:,:]
+                    self.tracks[track]['daughters'].append(new_track_id)
+                    
+                    # Change y_tracked_update
+                    y_tracked_update[y_tracked_update == track+1] = new_track_id + 1
+
         # Update the tracked label array
         self.y_tracked = np.concatenate([self.y_tracked, y_tracked_update], axis=0)
             
@@ -241,28 +313,58 @@ class cell_tracker():
         """
         track_appearances = self._fetch_track_appearances()
         track_centroids = self._fetch_track_centroids()
+        track_occupancy_grids = self._fetch_track_occupancy_grids()
         
-        cell_appearance, cell_centroid = self._get_appearances(self.x, self.y, [frame], [cell])
+        cell_appearance, cell_centroid, cell_occupancy_grid = self._get_appearances(self.x, self.y, [frame], [cell])
         cell_centroid = np.stack([cell_centroid]*track_centroids.shape[0], axis=0)
         cell_appearances = np.stack( [cell_appearance]*track_appearances.shape[0] , axis=0)
+        cell_occupancy_grids = np.stack([cell_occupancy_grid]*track_occupancy_grids.shape[0], axis=0)
         
         all_centroids = np.concatenate([track_centroids, cell_centroid], axis=1)
         distances = np.diff(all_centroids, axis=1)
         zero_pad = np.zeros((track_centroids.shape[0],1,2), dtype = K.floatx())
         distances = np.concatenate([zero_pad,distances], axis=1)
-        
+                        
         track_distances = distances[:,0:-1,:]
         cell_distances = distances[:,[-1],:]
-                
+        
+        # Make sure the distances are all less than max distance
+        for j in range(cell_distances.shape[0]):
+            dist = cell_distances[j,:,:]
+            if np.linalg.norm(dist) > self.max_distance:
+                cell_distances[j,:,:] = dist/np.linalg.norm(dist)*self.max_distance
+        
+        occupancy_grids = np.concatenate([track_occupancy_grids, cell_occupancy_grids], axis=1)
+        occupancy_generator = MovieDataGenerator(rotation_range=0, horizontal_flip=False, vertical_flip=False)
+        
+        for batch in range(occupancy_grids.shape[0]):
+            og_batch = occupancy_grids[batch]
+            og_batch = occupancy_generator.random_transform(og_batch)
+            occupancy_grids[batch] = og_batch
+        track_occupancy_grids = occupancy_grids[:,0:-1,:,:,:]
+        cell_occupancy_grids = occupancy_grids[:,[-1],:,:,:]
+        
+        
         # Compute the probability the cell is a daughter of a track
-        model_input = [track_appearances, cell_appearances, track_distances, cell_distances]
-        predictions = self.model.predict(model_input)
+        model_input = [track_appearances, cell_appearances, track_distances, cell_distances, 
+                       track_occupancy_grids, cell_occupancy_grids]
+        predictions = model.predict(model_input)
         probs = predictions[:,2]
+        
+        print(np.round(probs, decimals=2))
+        number_of_tracks = len(self.tracks.keys())
+        
+        # Make sure capped tracks can't be assigned parents
+        for track in range(number_of_tracks):
+            if self.tracks[track]['capped']:
+                probs[track] = 0
+                continue
         
         # Find out if the cell is a daughter of a track
         max_prob = np.amax(probs)
-        parent_id = np.where(probs == max_prob)[0][0]
-        if max_prob > self.birth:
+        parent_id = np.where(probs == max_prob)[0][0] 
+        print("New track")
+        if max_prob > self.division:
             parent = parent_id
         else:
             parent = None
@@ -276,7 +378,7 @@ class cell_tracker():
         """
         track_appearances = np.zeros((len(self.tracks.keys()), self.track_length, 
                                         self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis]), 
-                                        dtype = K.floatx())
+                                        dtype=K.floatx())
         
         for track in self.tracks.keys():
             app = self.tracks[track]['appearances']
@@ -296,7 +398,7 @@ class cell_tracker():
         If tracks are shorter than the track length they are filled in with 
         the centroids from the first frame.
         """
-        track_centroids = np.zeros((len(self.tracks.keys()), self.track_length, 2), dtype = K.floatx())
+        track_centroids = np.zeros((len(self.tracks.keys()), self.track_length, 2), dtype=K.floatx())
         
         for track in self.tracks.keys():
             cen = self.tracks[track]['centroids']
@@ -309,6 +411,28 @@ class cell_tracker():
                 track_centroids[track] = cen[frames,:]
                     
         return track_centroids
+    
+    
+    def _fetch_track_occupancy_grids(self):
+        """
+        This function gets the occupancy grids for all of the existing tracks.
+        If tracks are shorter than the track length they are filled in with the
+        centroids from the first frame.
+        """
+        track_occupancy_grids = np.zeros((len(self.tracks.keys()), self.track_length, 
+                                          2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1), 
+                                          dtype=K.floatx())
+        for track in self.tracks.keys():
+            og = self.tracks[track]['occupancy_grids']
+            if og.shape[0] > self.track_length - 1:
+                track_occupancy_grids[track] = og[-self.track_length:,:,:,:]
+            else:
+                track_length = og.shape[0]  
+                missing_frames = self.track_length - track_length
+                frames = np.array(list(range(-1,-track_length-1,-1)) + [-track_length]*missing_frames)
+                track_occupancy_grids[track] = og[frames,:,:,:]
+        
+        return track_occupancy_grids
     
     def _get_appearances(self, X, y, frames, labels):
         """
@@ -328,13 +452,18 @@ class cell_tracker():
                                 self.crop_dim,
                                 X.shape[channel_axis])
         centroid_shape = (len(frames), 2)
+        
+        occupancy_grid_shape = (len(frames), 2*self.occupancy_grid_size+1, 
+                                2*self.occupancy_grid_size+1, 1)
 
         # Initialize storage for appearances and centroids
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
         centroids = np.zeros(centroid_shape, dtype=K.floatx())
-
+        occupancy_grids = np.zeros(occupancy_grid_shape, dtype=K.floatx())
+        
         for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
             # Get the bounding box
+            X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
             props = regionprops(np.int32(y_frame == cell_label))
             minr, minc, maxr, maxc = props[0].bbox
@@ -342,10 +471,10 @@ class cell_tracker():
 
             # Extract images from bounding boxes
             if self.data_format == 'channels_first':
-                appearance = X[:, frame, minr:maxr, minc:maxc]
+                appearance = np.copy(X[:, frame, minr:maxr, minc:maxc])
                 resize_shape = (X.shape[channel_axis], self.crop_dim, self.crop_dim)
             else:
-                appearance = X[frame, minr:maxr, minc:maxc, :]
+                appearance = np.copy(X[frame, minr:maxr, minc:maxc, :])
                 resize_shape = (self.crop_dim, self.crop_dim, X.shape[channel_axis])
 
             # Resize images from bounding box
@@ -357,8 +486,54 @@ class cell_tracker():
                 appearances[:, counter] = appearance
             else:
                 appearances[counter] = appearance
+                
+            # Get the occupancy grid
+            occupancy_grid = np.zeros((2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1), 
+                                      dtype=K.floatx())
+            X_padded = np.pad(X_frame, ((self.occupancy_window, self.occupancy_window), 
+                                        (self.occupancy_window, self.occupancy_window),
+                                        (0,0)), mode='constant', constant_values=0)
+            y_padded = np.pad(y_frame, ((self.occupancy_window, self.occupancy_window), 
+                                        (self.occupancy_window, self.occupancy_window),
+                                        (0,0)), mode='constant', constant_values=0)
+            props = regionprops(np.int32(y_padded == cell_label))
+            center_x, center_y = props[0].centroid
+            center_x, center_y = np.int(center_x), np.int(center_y)
+            X_reduced = X_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
+                                 center_y-self.occupancy_window:center_y+self.occupancy_window,:]
+            y_reduced = y_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
+                                 center_y-self.occupancy_window:center_y+self.occupancy_window,:]
+            
+            # Resize X_reduced in case it is used instead of the occupancy grid method
+            resize_shape = (2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, X.shape[channel_axis])
 
-        return appearances, centroids
+            # Resize images from bounding box
+            max_value = np.amax([np.amax(X_reduced), np.absolute(np.amin(X_reduced))])
+            X_reduced /= max_value
+            X_reduced = resize(X_reduced, resize_shape)
+            X_reduced *= max_value
+            
+            # Fill up the occupancy grid
+            center_x, center_y = self.occupancy_window, self.occupancy_window
+            props = regionprops(np.int32(y_reduced))
+            for prop in props:
+                centroid_x, centroid_y = prop.centroid
+                dist_x, dist_y = np.float(centroid_x - center_x), np.float(centroid_y - center_y)
+                dist_x *= self.occupancy_grid_size/self.occupancy_window
+                dist_y *= self.occupancy_grid_size/self.occupancy_window
+                
+                loc_x = np.int(np.floor(self.occupancy_grid_size + dist_x))
+                loc_y = np.int(np.floor(self.occupancy_grid_size + dist_y))
+                
+                mark_grid = (loc_x >= 0) and (loc_x < occupancy_grid.shape[0]) and (loc_y >=0) and (loc_y < occupancy_grid.shape[1]) 
+                
+                if mark_grid:
+                    occupancy_grid[loc_x, loc_y,0] = 1
+            
+            occupancy_grids[counter,:,:,:] = X_reduced #occupancy_grid
+
+        
+        return appearances, centroids, occupancy_grids
         
     def _track_cells(self):
         """

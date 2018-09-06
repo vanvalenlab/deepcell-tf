@@ -486,6 +486,8 @@ class SiameseIterator(Iterator):
                  crop_dim=14,
                  min_track_length=5,
                  batch_size=32,
+                 occupancy_grid_size = 10,
+                 occupancy_window = 100,
                  shuffle=False,
                  seed=None,
                  squeeze=False,
@@ -516,6 +518,8 @@ class SiameseIterator(Iterator):
 
         self.crop_dim = crop_dim
         self.min_track_length = min_track_length
+        self.occupancy_grid_size = np.int(occupancy_grid_size)
+        self.occupancy_window = np.int(occupancy_window)
         self.image_data_generator = image_data_generator
         self.squeeze = squeeze
         self.data_format = data_format
@@ -539,7 +543,6 @@ class SiameseIterator(Iterator):
         """
         This function goes through all of the batches of images and removes the 
         images that only have one cell.
-        This could be expanded to include questionable annotations
         """
         good_batches = []
         number_of_batches = self.x.shape[0]
@@ -581,16 +584,18 @@ class SiameseIterator(Iterator):
                 y_true = np.sum(y_batch == cell, axis=(self.row_axis - 1, self.col_axis - 1))
                 # get indices of frames where cell is present
                 y_index = np.where(y_true > 0)[0]
-                if y_index.size > self.min_track_length+1:  # if cell is present at all
+                if y_index.size > 3: #self.min_track_length+1:  # if cell is present at all
                     if self.daughters is not None:
                         # Only include daughters if there are enough frames in their tracks
                         daughter_ids = self.daughters[batch][cell]
                         if len(daughter_ids) > 0:
                             daughter_track_lengths = []
                             for did in daughter_ids:
+                                # Screen daughter tracks to make sure they are long enough
+                                # Length currently set to 0
                                 d_true = np.sum(y_batch == did, axis=(self.row_axis - 1, self.col_axis - 1))
                                 d_track_length = len(np.where(d_true>0)[0])
-                                daughter_track_lengths.append(d_track_length > self.min_track_length+1)
+                                daughter_track_lengths.append(d_track_length > 3)
                             keep_daughters = all(daughter_track_lengths)
                             daughters = daughter_ids if keep_daughters else []
                         else:
@@ -602,17 +607,33 @@ class SiameseIterator(Iterator):
                         'batch': batch,
                         'label': cell,
                         'frames': y_index,
-                        'daughters': daughters  # not [cell-1]!
+                        'daughters': daughters  
                     }
-                    track_counter += 1
                     
+                    # We are trying to avoid short tracks, but we need to 
+                    # keep the daughters even if they are short
+#                     daughter_ids = track_ids[track_counter]['daughters']
+#                     if len(daughter_ids) > 0:
+#                         for did in daughter_ids:
+#                             d_true = np.sum(y_batch == did, axis=(self.row_axis - 1, self.col_axis - 1))
+#                             d_track_length = len(np.where(d_true>0)[0])
+#                             if d_track_length <= self.min_track_length+1:
+#                                 track_counter += 1
+#                                 track_ids[track_counter] = {
+#                                     'batch': batch,
+#                                     'label': did,
+#                                     'frames': np.where(d_true>0)[0],
+#                                     'daughters': []  
+#                                 }
+                                
+                    track_counter += 1
+
                 else:
                     y_batch[y_batch == cell] = 0
                     self.y[batch] = y_batch
                     
         # Add a field to the track_ids dict that locates all of the different cells
         # in each frame
-
         for track in track_ids.keys():
             track_ids[track]['different'] = {}
             batch = track_ids[track]['batch']
@@ -632,8 +653,17 @@ class SiameseIterator(Iterator):
             batch = track_ids[track]['batch']
             label = track_ids[track]['label']
             reverse_track_ids[batch][label] = track
+            
+        # Save dictionaries
         self.track_ids = track_ids
         self.reverse_track_ids = reverse_track_ids
+        
+        # Identify which tracks have divisions
+        self.tracks_with_divisions = []
+        for track in self.track_ids.keys():
+            if len(self.track_ids[track]['daughters']) > 0:
+                self.tracks_with_divisions.append(track)
+                
         return None
 
     def _get_appearances(self, X, y, frames, labels):
@@ -649,12 +679,16 @@ class SiameseIterator(Iterator):
                                 self.crop_dim,
                                 X.shape[channel_axis])
 
+        occupancy_grid_shape = (len(frames), 2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1)
+        
         # Initialize storage for appearances and centroids
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
         centroids = []
+        occupancy_grids = np.zeros(occupancy_grid_shape, dtype = K.floatx())
 
         for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
             # Get the bounding box
+            X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
             props = regionprops(np.int32(y_frame == cell_label))
             minr, minc, maxr, maxc = props[0].bbox
@@ -662,10 +696,10 @@ class SiameseIterator(Iterator):
 
             # Extract images from bounding boxes
             if self.data_format == 'channels_first':
-                appearance = X[:, frame, minr:maxr, minc:maxc]
+                appearance = np.copy(X[:, frame, minr:maxr, minc:maxc])
                 resize_shape = (X.shape[channel_axis], self.crop_dim, self.crop_dim)
             else:
-                appearance = X[frame, minr:maxr, minc:maxc, :]
+                appearance = np.copy(X[frame, minr:maxr, minc:maxc, :])
                 resize_shape = (self.crop_dim, self.crop_dim, X.shape[channel_axis])
 
             # Resize images from bounding box
@@ -677,14 +711,59 @@ class SiameseIterator(Iterator):
                 appearances[:, counter] = appearance
             else:
                 appearances[counter] = appearance
+                
+            # Get occupancy grid
+            occupancy_grid = np.zeros((2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1), 
+                                      dtype=K.floatx())
+            X_padded = np.pad(X_frame, ((self.occupancy_window, self.occupancy_window), 
+                                        (self.occupancy_window, self.occupancy_window),
+                                        (0,0)), mode='constant', constant_values=0)
+            y_padded = np.pad(y_frame, ((self.occupancy_window, self.occupancy_window), 
+                                        (self.occupancy_window, self.occupancy_window),
+                                        (0,0)), mode='constant', constant_values=0)
+            props = regionprops(np.int32(y_padded == cell_label))
+            center_x, center_y = props[0].centroid
+            center_x, center_y = np.int(center_x), np.int(center_y)
+            X_reduced = X_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
+                                 center_y-self.occupancy_window:center_y+self.occupancy_window,:]
+            y_reduced = y_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
+                                 center_y-self.occupancy_window:center_y+self.occupancy_window,:]
+            
+            # Resize X_reduced in case it is used instead of the occupancy grid method
+            resize_shape = (2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, X.shape[channel_axis])
 
-        return [appearances, centroids]
+            # Resize images from bounding box
+            max_value = np.amax([np.amax(X_reduced), np.absolute(np.amin(X_reduced))])
+            X_reduced /= max_value
+            X_reduced = resize(X_reduced, resize_shape)
+            X_reduced *= max_value
+            
+            # Fill up the occupancy grid
+            center_x, center_y = self.occupancy_window, self.occupancy_window
+            props = regionprops(np.int32(y_reduced))
+            for prop in props:
+                centroid_x, centroid_y = prop.centroid
+                dist_x, dist_y = np.float(centroid_x - center_x), np.float(centroid_y - center_y)
+                dist_x *= self.occupancy_grid_size/self.occupancy_window
+                dist_y *= self.occupancy_grid_size/self.occupancy_window
+                
+                loc_x = np.int(np.floor(self.occupancy_grid_size + dist_x))
+                loc_y = np.int(np.floor(self.occupancy_grid_size + dist_y))
+                
+                mark_grid = (loc_x >= 0) and (loc_x < occupancy_grid.shape[0]) and (loc_y >=0) and (loc_y < occupancy_grid.shape[1]) 
+                
+                if mark_grid:
+                    occupancy_grid[loc_x, loc_y,0] = 1
+                    
+            occupancy_grids[counter,:,:,:] = X_reduced #occupancy_grid
+            
+        return [appearances, centroids, occupancy_grids]
 
     def _create_appearances(self):
         """
         This function gets the appearances of every cell, crops them out, resizes them, 
         and stores them in an matrix. Pre-fetching the appearances should significantly 
-        speed up the generator
+        speed up the generator. It also gets the centroids and occupancy grids
         """
         number_of_tracks = len(self.track_ids.keys())
 
@@ -697,6 +776,10 @@ class SiameseIterator(Iterator):
 
         all_centroids_shape = (number_of_tracks, self.x.shape[self.time_axis],2)
         all_centroids = np.zeros(all_centroids_shape, dtype = K.floatx())
+        
+        all_occupancy_grids_shape = (number_of_tracks, self.x.shape[self.time_axis], 
+                                     2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, 1)
+        all_occupancy_grids = np.zeros(all_occupancy_grids_shape, dtype = K.floatx())
 
         for track in self.track_ids.keys():
             batch = self.track_ids[track]['batch']
@@ -711,6 +794,7 @@ class SiameseIterator(Iterator):
             app = self._get_appearances(X, y, frames, labels)
             appearance = app[0]
             centroid = app[1]
+            occupancy_grid = app[2]
 
             if self.data_format == 'channels_first':
                 all_appearances[track,:,np.array(frames),:,:] = appearance 
@@ -718,10 +802,13 @@ class SiameseIterator(Iterator):
                 all_appearances[track,np.array(frames),:,:,:] = appearance
 
             all_centroids[track,np.array(frames),:] = centroid
-
+            
+            all_occupancy_grids[track, np.array(frames),:,:] = occupancy_grid
+            
         self.all_appearances = all_appearances
         self.all_centroids = all_centroids
-
+        self.all_occupancy_grids = all_occupancy_grids
+        
         return None
 
     def _fetch_appearances(self, track, frames):
@@ -746,6 +833,16 @@ class SiameseIterator(Iterator):
         
         centroids = self.all_centroids[track,np.array(frames),:]
         return centroids
+    
+    def _fetch_occupancy_grids(self, track, frames):
+        """
+        This function gets the occupancy grids after they have been
+        extracted and stored
+        """
+        # TO DO: Check to make sure the frames are acceptable
+        
+        occupancy_grids = self.all_occupancy_grids[track,np.array(frames),:,:,:]
+        return occupancy_grids
 
     def _fetch_frames(self, track, division=False):
         """
@@ -789,8 +886,9 @@ class SiameseIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         # Initialize batch_x_1, batch_x_2, and batch_y, as well as cell distance data
-        # We only compare cells in neighboring frames. It will select a sequence of 
-        # cells/distances for x1 and 1 cell/distance for x2
+        # DVV Notes - I'm changing how this works. We will now only compare cells in neighboring
+        # frames. I am also modifying it so it will select a sequence of cells/distances for x1
+        # and 1 cell/distance for x2
 
         if self.data_format == 'channels_first':
             x1_shape = (len(index_array), self.x.shape[self.channel_axis], self.min_track_length, self.crop_dim, self.crop_dim)
@@ -800,12 +898,20 @@ class SiameseIterator(Iterator):
             x2_shape = (len(index_array), 1, self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis])
         distance_shape_1 = (len(index_array), self.min_track_length, 2)
         distance_shape_2 = (len(index_array), 1, 2)
+        
+        occupancy_grid_shape_1 = (len(index_array), self.min_track_length, 
+                                  2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, 1)
+        occupancy_grid_shape_2 = (len(index_array), 1, 2*self.occupancy_grid_size+1, 
+                                  2*self.occupancy_grid_size+1, 1)
+        
         y_shape = (len(index_array), 3)
 
         batch_x_1 = np.zeros(x1_shape, dtype=K.floatx())
         batch_x_2 = np.zeros(x2_shape, dtype=K.floatx())
         batch_distance_1 = np.zeros(distance_shape_1, dtype=K.floatx())
         batch_distance_2 = np.zeros(distance_shape_2, dtype=K.floatx())
+        batch_occupancy_grid_1 = np.zeros(occupancy_grid_shape_1, dtype=K.floatx())
+        batch_occupancy_grid_2 = np.zeros(occupancy_grid_shape_2, dtype=K.floatx())
         batch_y = np.zeros(y_shape, dtype=np.int32)
 
         for i, j in enumerate(index_array):
@@ -821,15 +927,23 @@ class SiameseIterator(Iterator):
             # Determine what class the track will be - different (0), same (1), division (2)
             # is_same_cell = np.random.random_integers(0, 1)
             division = False
-            type_cell = np.random.randint(0, 3)
+            type_cell = np.random.choice([0,1,2], p = [1./3., 1./3., 1./3.])
 
             # Dealing with edge cases
 
-            # If class is division, check if the first cell divides. If not, change class to same/dif randomly
+            # If class is division, check if the first cell divides. If not, change tracks
             if type_cell == 2:
-                daughters = track_id['daughters']
-                if len(daughters) == 0:
-                    type_cell = np.random.random_integers(0, 1)  # No children so randomly choose a diff class
+                if len(track_id['daughters']) == 0:
+                    # No divisions so randomly choose a different track that is
+                    # guaranteed to have a division
+                    new_j = np.random.choice(self.tracks_with_divisions)
+                    j = new_j
+                    track_id = self.track_ids[j]
+                    batch = track_id['batch']
+                    label_1 = track_id['label']
+                    X = self.x[batch]
+                    y = self.y[batch]
+                    division == True
                 else:
                     division == True
                     
@@ -857,17 +971,22 @@ class SiameseIterator(Iterator):
                         
             if type_cell == 2:
                 # There should always be 2 daughters but not always a valid label
-                label_2 = int(daughters[np.random.random_integers(0, len(daughters)-1)])
+                label_2 = np.int(np.random.choice(track_id['daughters'])) 
+                daughter_track = self.reverse_track_ids[batch][label_2]
+                frame_2 = np.amin(self.track_ids[daughter_track]['frames'])
+                frames_2 = [frame_2]
 
             track_1 = j
             track_2 = self.reverse_track_ids[batch][label_2]
 
-            # Get appearances and centroid data
+            # Get appearances, centroid, and occupancy grid data
             appearance_1 = self._fetch_appearances(track_1, frames_1)
             appearance_2 = self._fetch_appearances(track_2, frames_2)
             centroid_1 = self._fetch_centroids(track_1, frames_1)
             centroid_2 = self._fetch_centroids(track_2, frames_2)
-
+            occupancy_grid_1 = self._fetch_occupancy_grids(track_1, frames_1)
+            occupancy_grid_2 = self._fetch_occupancy_grids(track_2, frames_2)
+            
             # Apply random transforms
             new_appearance_1 = np.zeros(appearance_1.shape, dtype = K.floatx())
             new_appearance_2 = np.zeros(appearance_2.shape, dtype = K.floatx())
@@ -899,18 +1018,39 @@ class SiameseIterator(Iterator):
             zero_pad = np.zeros((1,2), dtype = K.floatx())
             distance = np.concatenate([zero_pad, distance], axis=0)
             
-            # Randomly rotate all the distances
+            # Randomly rotate and expand all the distances
             theta = 2*np.pi*np.random.random()
             c, s = np.cos(theta), np.sin(theta)
             R = np.array(((c,-s), (s, c)))
             for k in range(distance.shape[0]):
-                distance[k] = np.matmul(R, distance[k])
-
+                theta = 2*np.pi*np.random.random() + np.pi/10* np.random.uniform(low=-1, high=1)
+                c, s = np.cos(theta), np.sin(theta)
+                R = np.array(((c,-s), (s, c)))
+                dilation = np.random.uniform(low=0.8, high=1.2)
+                distance[k] = np.matmul(R, distance[k]*dilation)
+                
+            # Randomly transform the occupancy maps
+            occupancy_generator = ImageDataGenerator(rotation_range=180, 
+                                                    horizontal_flip=True,
+                                                    vertical_flip=True)
+            
+            occupancy_grids = np.concatenate([occupancy_grid_1, occupancy_grid_2], axis=0)
+            
+            for frame in range(occupancy_grids.shape[self.time_axis-1]):
+                og_temp = occupancy_grids[frame]
+                og_temp = self.image_data_generator.random_transform(og_temp)
+                occupancy_grids[frame] = og_temp
+            
+            occupancy_grid_1 = occupancy_grids[0:-1,:,:,:]
+            occupancy_grid_2 = occupancy_grids[[-1],:,:,:]
+                
             # Save images and distances to the batch arrays
             batch_x_1[i] = appearance_1
             batch_x_2[i] = appearance_2
             batch_distance_1[i] = distance[0:-1,:]
             batch_distance_2[i,0,:] = distance[-1,:]
+            batch_occupancy_grid_1[i] = occupancy_grid_1
+            batch_occupancy_grid_2[i,0,:,:,:] = occupancy_grid_2
             batch_y[i, type_cell] = 1
    
         # Remove singleton dimensions (if min_track_length is 1)
@@ -919,7 +1059,9 @@ class SiameseIterator(Iterator):
             batch_x_2 = np.squeeze(batch_x_2, axis=self.time_axis)
             batch_distance_1 = np.squeeze(batch_distance_1, axis=1)
             batch_distance_2 = np.squeeze(batch_distance_2, axis=1)
-        return [batch_x_1, batch_x_2, batch_distance_1, batch_distance_2], batch_y
+            batch_occupancy_grid_1 = np.squeeze(batch_occupancy_grid_1, axis=1)
+            batch_occupancy_grid_2 = np.squeeze(batch_occupancy_grid_2, axis=1)
+        return [batch_x_1, batch_x_2, batch_distance_1, batch_distance_2, batch_occupancy_grid_1, batch_occupancy_grid_2], batch_y
 
     def next(self):
         """For python 2.x.
