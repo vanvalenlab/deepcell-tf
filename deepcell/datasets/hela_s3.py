@@ -1,5 +1,5 @@
 """
-HeLa S3 Movie Dataset
+HeLa S3 Nuclear Dataset
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -23,7 +23,7 @@ def load_data(path='3T3_NIH.npz'):
     """
     path = get_file(path,
                     origin='https://deepcell-data.s3.amazonaws.com/nuclei/HeLa_S3.npz',
-                    file_hash='ffe8819194fa46ee3742a2dd294074bb')
+                    file_hash='42c631726713bbb180d4a0a07c2e8107')
 
     train_dict, test_dict = get_data(path, seed=0, test_size=.2)
 

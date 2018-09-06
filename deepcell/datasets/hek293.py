@@ -1,5 +1,5 @@
 """
-HEK293 Movie Dataset
+HEK293 Nuclear Dataset
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -23,7 +23,7 @@ def load_data(path='HEK293.npz'):
     """
     path = get_file(path,
                     origin='https://deepcell-data.s3.amazonaws.com/nuclei/HEK293.npz',
-                    file_hash='fddb3b324750e1cceb9b4c1bcb4bfa2d')
+                    file_hash='c0bbfba54b90e63a2010133a198e6e63')
 
     train_dict, test_dict = get_data(path, seed=0, test_size=.2)
 

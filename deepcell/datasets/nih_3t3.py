@@ -1,5 +1,5 @@
 """
-3T3 Movie Dataset from the NIH.
+3T3 Nuclear Dataset from the NIH.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -23,7 +23,7 @@ def load_data(path='3T3_NIH.npz'):
     """
     path = get_file(path,
                     origin='https://deepcell-data.s3.amazonaws.com/nuclei/3T3_NIH.npz',
-                    file_hash='e9514a5d25ffea2274798ca585c92688')
+                    file_hash='954b6f4ad6a71435b84c40726837e4ba')
 
     train_dict, test_dict = get_data(path, seed=0, test_size=.2)
 

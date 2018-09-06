@@ -1,5 +1,5 @@
 """
-MouseBrain 3D Dataset from the Long-Cai Group.
+Mouse Brain Nuclear 3D Dataset from the Long Cai Group
 """
 from __future__ import absolute_import
 from __future__ import division
