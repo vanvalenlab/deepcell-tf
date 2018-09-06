@@ -102,10 +102,18 @@ def process_whole_image(model, images, num_crops=4):
     for i in range(num_crops):
         for j in range(num_crops):
             predicted = model.predict(images_split[j][i])
-            if channel_axis == 1:
-                output[:, :, i * crop_x:(i + 1) * crop_x, j * crop_y:(j + 1) * crop_y, :] = predicted
+            a, b = i * crop_x, (i + 1) * crop_x
+            c, d = j * crop_y, (j + 1) * crop_y
+            if images.ndim == 5:
+                if channel_axis == 1:
+                    output[:, :, a:b, c:d, :] = predicted
+                else:
+                    output[:, :, :, a:b, c:d] = predicted
             else:
-                output[:, :, :, i * crop_x:(i + 1) * crop_x, j * crop_y:(j + 1) * crop_y] = predicted
+                if channel_axis == 1:
+                    output[:, a:b, c:d, :] = predicted
+                else:
+                    output[:, :, a:b, c:d] = predicted
     return output
 
 
