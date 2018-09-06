@@ -12,6 +12,7 @@ from tensorflow.python.platform import test
 from tensorflow.python.keras import backend as K
 
 from deepcell.utils.transform_utils import to_categorical
+from deepcell.utils.transform_utils import deepcell_transform
 from deepcell.utils.transform_utils import erode_edges
 from deepcell.utils.transform_utils import distance_transform_2d
 from deepcell.utils.transform_utils import distance_transform_3d
@@ -38,6 +39,38 @@ def _generate_test_masks():
 
 
 class TransformUtilsTest(test.TestCase):
+    def test_deepcell_transform_2d(self):
+        maskstack = np.array([label(i) for i in _generate_test_masks()])
+        dc_maskstack = deepcell_transform(maskstack, data_format='channels_last')
+        dc_maskstack_dilated = deepcell_transform(
+            maskstack, dilation_radius=1, data_format='channels_last')
+
+        self.assertEqual(dc_maskstack.shape[-1], 4)
+        self.assertEqual(dc_maskstack_dilated.shape[-1], 4)
+        self.assertGreater(dc_maskstack_dilated[:, :, :, 0].sum() + dc_maskstack_dilated[:, :, :, 1].sum(),
+                           dc_maskstack[:, :, :, 0].sum() + dc_maskstack[:, :, :, 1].sum())
+
+    def test_deepcell_transform_3d(self):
+        frames = 10
+        img_list = []
+        for im in _generate_test_masks():
+            frame_list = []
+            for _ in range(frames):
+                frame_list.append(label(im))
+            img_stack = np.array(frame_list)
+            img_list.append(img_stack)
+
+        maskstack = np.vstack(img_list)
+        batch_count = maskstack.shape[0] // frames
+        maskstack = np.reshape(maskstack, (batch_count, frames, *maskstack.shape[1:]))
+        dc_maskstack = deepcell_transform(maskstack, data_format='channels_last')
+        dc_maskstack_dilated = deepcell_transform(
+            maskstack, dilation_radius=2, data_format='channels_last')
+        self.assertEqual(dc_maskstack.shape[-1], 4)
+        self.assertEqual(dc_maskstack_dilated.shape[-1], 4)
+        self.assertGreater(dc_maskstack_dilated[:, :, :, :, 0].sum() + dc_maskstack_dilated[:, :, :, :, 1].sum(),
+                           dc_maskstack[:, :, :, :, 0].sum() + dc_maskstack[:, :, :, :, 1].sum())
+
     def test_erode_edges_2d(self):
         for img in _generate_test_masks():
             img = label(img)

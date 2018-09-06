@@ -30,7 +30,7 @@ class TestDataUtils(test.TestCase):
         # test non-sample mode
         max_nums = get_max_sample_num_list(y, edge_feature,
                                            output_mode='conv',
-                                           border_mode='same',
+                                           padding='same',
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [np.Inf, np.Inf]
@@ -38,7 +38,7 @@ class TestDataUtils(test.TestCase):
         # test sample mode, no padding
         max_nums = get_max_sample_num_list(y, edge_feature,
                                            output_mode='sample',
-                                           border_mode='same',
+                                           padding='same',
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [2, 2]
@@ -46,7 +46,7 @@ class TestDataUtils(test.TestCase):
         # test sample mode, valid padding
         max_nums = get_max_sample_num_list(y, edge_feature,
                                            output_mode='sample',
-                                           border_mode='valid',
+                                           padding='valid',
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [1, 1]
@@ -62,7 +62,7 @@ class TestDataUtils(test.TestCase):
         # test sample mode, no padding
         max_nums = get_max_sample_num_list(y, edge_feature,
                                            output_mode='sample',
-                                           border_mode='same',
+                                           padding='same',
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [2, 2]
@@ -70,108 +70,88 @@ class TestDataUtils(test.TestCase):
         # test sample mode, valid padding
         max_nums = get_max_sample_num_list(y, edge_feature,
                                            output_mode='sample',
-                                           border_mode='valid',
+                                           padding='valid',
                                            window_size_x=win_x,
                                            window_size_y=win_y)
         assert max_nums == [1, 1]
 
     def test_sample_label_matrix(self):
-        K.set_image_data_format('channels_last')
         win_x, win_y = 10, 10
         y = np.zeros((2, 30, 30, 3))
         y[:, 0, 0, 0] = 1  # set value outside valid window range
         y[:, win_x + 1, win_y + 1, 0] = 1  # set value inside valid window range
-        r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
-                                         window_size_x=win_x,
-                                         window_size_y=win_y,
-                                         border_mode='valid',
-                                         output_mode='sample')
+        r, c, b, l = sample_label_matrix(
+            y, window_size=(win_x, win_y),
+            padding='valid', data_format='channels_last')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
         assert np.unique(r).size == np.unique(c).size == 1
         assert np.unique(l).size == 1
 
-        r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
-                                         window_size_x=win_x,
-                                         window_size_y=win_y,
-                                         border_mode='same',
-                                         output_mode='conv')
+        r, c, b, l = sample_label_matrix(
+            y, window_size=(win_x, win_y),
+            padding='same', data_format='channels_last')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(r).size == np.unique(c).size == 2
         assert np.unique(l).size == 1
 
-    def test_sample_label_matrix_channels_first(self):
-        K.set_image_data_format('channels_first')
+        # test channels_first
         win_x, win_y = 10, 10
         y = np.zeros((2, 3, 30, 30))
         y[:, 0, 0, 0] = 1  # set value outside valid window range
         y[:, 0, win_x + 1, win_y + 1] = 1  # set value inside valid window range
-        r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
-                                         window_size_x=win_x,
-                                         window_size_y=win_y,
-                                         border_mode='valid',
-                                         output_mode='sample')
+        r, c, b, l = sample_label_matrix(
+            y, window_size=(win_x, win_y),
+            padding='valid', data_format='channels_first')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
         assert np.unique(r).size == np.unique(c).size == 1
         assert np.unique(l).size == 1
 
-        r, c, b, l = sample_label_matrix(y, edge_feature=[1, 0, 0],
-                                         window_size_x=win_x,
-                                         window_size_y=win_y,
-                                         border_mode='same',
-                                         output_mode='conv')
+        r, c, b, l = sample_label_matrix(
+            y, window_size=(win_x, win_y),
+            padding='same', data_format='channels_first')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
         assert np.unique(r).size == np.unique(c).size == 2
         assert np.unique(l).size == 1
 
     def test_sample_label_movie(self):
-        K.set_image_data_format('channels_last')
         win_x, win_y, win_z = 10, 10, 1
         y = np.zeros((2, 5, 30, 30, 3))
         y[:, 0, 0, 0, 0] = 1  # set value outside valid window range
         y[:, win_z + 1, win_x + 1, win_y + 1, 0] = 1  # set value inside valid window range
-        f, r, c, b, l = sample_label_movie(y,
-                                           window_size_x=win_x,
-                                           window_size_y=win_y,
-                                           window_size_z=win_z,
-                                           border_mode='valid')
+        f, r, c, b, l = sample_label_movie(
+            y, window_size=(win_x, win_y, win_z),
+            padding='valid', data_format='channels_last')
         assert len(f) == len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
         assert np.unique(f).size == np.unique(r).size == np.unique(c).size == 1
         assert np.unique(l).size == 1
 
-        f, r, c, b, l = sample_label_movie(y,
-                                           window_size_x=win_x,
-                                           window_size_y=win_y,
-                                           window_size_z=win_z,
-                                           border_mode='same')
+        f, r, c, b, l = sample_label_movie(
+            y, window_size=(win_x, win_y, win_z),
+            padding='same', data_format='channels_last')
         assert len(f) == len(r) == len(c) == len(b) == len(l)
         assert np.unique(f).size == np.unique(r).size == np.unique(c).size == 2
         assert np.unique(l).size == 1
 
-    def test_sample_label_movie_channels_first(self):
-        K.set_image_data_format('channels_first')
+        # test channels_first
         win_x, win_y, win_z = 10, 10, 1
         y = np.zeros((2, 3, 5, 30, 30))
         y[:, 0, 0, 0, 0] = 1  # set value outside valid window range
         y[:, 0, win_z + 1, win_x + 1, win_y + 1] = 1  # set value inside valid window range
-        f, r, c, b, l = sample_label_movie(y,
-                                           window_size_x=win_x,
-                                           window_size_y=win_y,
-                                           window_size_z=win_z,
-                                           border_mode='valid')
+        f, r, c, b, l = sample_label_movie(
+            y, window_size=(win_x, win_y, win_z),
+            padding='valid', data_format='channels_first')
         assert len(f) == len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
         assert np.unique(r).size == np.unique(c).size == 1
         assert np.unique(l).size == 1
 
-        f, r, c, b, l = sample_label_movie(y,
-                                           window_size_x=win_x,
-                                           window_size_y=win_y,
-                                           window_size_z=win_z,
-                                           border_mode='same')
+        f, r, c, b, l = sample_label_movie(
+            y, window_size=(win_x, win_y, win_z),
+            padding='same', data_format='channels_first')
         assert len(f) == len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
         assert np.unique(r).size == np.unique(c).size == 2
