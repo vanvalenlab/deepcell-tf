@@ -84,7 +84,7 @@ def process_whole_image(model, images, num_crops=4):
     output = np.zeros((images.shape[0], *model_output_shape))
 
     expected_input_shape = get_cropped_input_shape(images, num_crops)
-    if expected_input_shape != model.input_shape:
+    if expected_input_shape != model.input_shape[1:]:
         raise ValueError('Expected model.input_shape to be {}. Got {}.  Use '
                          '`get_new_input_shape()` to recreate your model with '
                          'the proper input_shape'.format(
