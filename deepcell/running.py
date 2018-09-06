@@ -20,7 +20,7 @@ from tensorflow.python.keras import backend as K
 from deepcell.utils.io_utils import get_images_from_directory
 
 
-def get_cropped_input_shape(images, channel_dim, num_crops=4):
+def get_cropped_input_shape(images, num_crops=4):
     """Helper function to calculate the input_shape for models
     that will process cropped sub-images.
     # Arguments:
@@ -37,6 +37,8 @@ def get_cropped_input_shape(images, channel_dim, num_crops=4):
         channel_axis = len(images.shape) - 1
         row_axis = len(images.shape) - 3
         col_axis = len(images.shape) - 2
+
+    channel_dim = images.shape[channel_axis]
 
     # Split the frames into quarters, as the full image size is too large
     crop_x = images.shape[row_axis] // num_crops
@@ -86,14 +88,12 @@ def process_whole_image(model, images, num_crops=4):
                          ' Got: {} and {}, respectively'.format(
                              images.shape, output.shape))
 
-    expected_input_shape = get_cropped_input_shape(
-        images, model_output_shape[channel_axis], num_crops)
-
-    if expected_input_shape != model_output_shape:
-        raise ValueError('Expected model.output_shape to be {}. Got {}.  Use '
+    expected_input_shape = get_cropped_input_shape(images, num_crops)
+    if expected_input_shape != model.input_shape:
+        raise ValueError('Expected model.input_shape to be {}. Got {}.  Use '
                          '`get_new_input_shape()` to recreate your model with '
                          'the proper input_shape'.format(
-                             expected_input_shape, model_output_shape))
+                             expected_input_shape, model.input_shape))
 
     # Slice the images into smaller sub-images
     y_split = np.split(images, num_crops, axis=col_axis)
