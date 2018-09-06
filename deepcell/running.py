@@ -20,7 +20,7 @@ from tensorflow.python.keras import backend as K
 from deepcell.utils.io_utils import get_images_from_directory
 
 
-def get_new_input_shape(images, num_crops=4):
+def get_cropped_input_shape(images, num_crops=4):
     """Helper function to calculate the input_shape for models
     that will process cropped sub-images.
     # Arguments:
@@ -88,12 +88,12 @@ def process_whole_image(model, images, num_crops=4):
                          ' Got: {} and {}, respectively'.format(
                              images.shape, output.shape))
 
-    expected_input_shape = get_new_input_shape(images, num_crops)
+    expected_input_shape = get_cropped_input_shape(images, num_crops)
     if expected_input_shape != model_output_shape:
         raise ValueError('Expected model.output_shape to be {}. Got {}.  Use '
                          '`get_new_input_shape()` to recreate your model with '
                          'the proper input_shape'.format(
-                            expected_input_shape, model_output_shape))
+                             expected_input_shape, model_output_shape))
 
     # Slice the images into smaller sub-images
     y_split = np.split(images, num_crops, axis=col_axis)
