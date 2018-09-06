@@ -106,6 +106,7 @@ def process_whole_image(model, images, num_crops=4):
                 output[:, :, i * crop_x:(i + 1) * crop_x, j * crop_y:(j + 1) * crop_y, :] = predicted
             else:
                 output[:, :, :, i * crop_x:(i + 1) * crop_x, j * crop_y:(j + 1) * crop_y] = predicted
+    return output
 
 
 def save_model_output(output, output_dir, feature_name='', channel=None):
