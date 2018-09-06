@@ -103,7 +103,7 @@ def process_whole_image(model, images, num_crops=4):
                 if channel_axis == 1:
                     output[:, :, :, a:b, c:d] = predicted
                 else:
-                    output[:, :, :, a:b, c:d, :] = predicted
+                    output[:, :, a:b, c:d, :] = predicted
             else:
                 if channel_axis == 1:
                     output[:, :, a:b, c:d] = predicted
