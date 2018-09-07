@@ -44,8 +44,8 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     training_data = np.load(file_name)
     X = training_data['X']
     y = training_data['y']
-    win_x = training_data['win_x']
-    win_y = training_data['win_y']
+    #win_x = training_data['win_x']
+    #win_y = training_data['win_y']
     win_z = None
 
     class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
@@ -124,17 +124,17 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     train_dict = {
         'X': X_train,
         'y': y_train,
-        'class_weights': class_weights,
-        'win_x': win_x,
-        'win_y': win_y
+        'class_weights': class_weights
+#        'win_x': win_x,
+#        'win_y': win_y
     }
     
     val_dict = {
         'X': X_test,
         'y': y_test,
-        'class_weights': class_weights,
-        'win_x': win_x,
-        'win_y': win_y
+        'class_weights': class_weights
+#        'win_x': win_x,
+#        'win_y': win_y
     }
 
     # siamese_daughters mode is used to import lineage data and associate it with the appropriate batch
@@ -146,18 +146,18 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
             'X': X_train,
             'y': y_train,
             'daughters': lineage_train,
-            'class_weights': class_weights,
-            'win_x': win_x,
-            'win_y': win_y
+            'class_weights': class_weights
+#            'win_x': win_x,
+#            'win_y': win_y
         }
 
         val_dict = {
             'X': X_test,
             'y': y_test,
             'daughters': lineage_test,
-            'class_weights': class_weights,
-            'win_x': win_x,
-            'win_y': win_y
+            'class_weights': class_weights
+#            'win_x': win_x,
+#            'win_y': win_y
         }
 
     # End changes for daughter mode

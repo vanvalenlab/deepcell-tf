@@ -6,6 +6,11 @@ from scipy.optimize import linear_sum_assignment
 
 from tensorflow.python.keras import backend as K
 
+from tensorflow.python.keras.preprocessing.image import apply_transform
+from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
+
+from deepcell.image_generators import MovieDataGenerator
+
 class cell_tracker():
     def __init__(self, 
                  movie, 
@@ -190,7 +195,7 @@ class cell_tracker():
                                       2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, 1))
         model_input = [input_1, input_2, input_3, input_4, input_5, input_6]
         
-        predictions = model.predict(model_input) #TODO: implement some splitting function in case this is too much data
+        predictions = self.model.predict(model_input) #TODO: implement some splitting function in case this is too much data
         predictions = np.reshape(predictions, (number_of_tracks, number_of_cells, 3))
         assignment_matrix = 1-predictions[:,:,1]
         
@@ -363,7 +368,7 @@ class cell_tracker():
         # Compute the probability the cell is a daughter of a track
         model_input = [track_appearances, cell_appearances, track_distances, cell_distances, 
                        track_occupancy_grids, cell_occupancy_grids]
-        predictions = model.predict(model_input)
+        predictions = self.model.predict(model_input)
         probs = predictions[:,2]
         
         print(np.round(probs, decimals=2))
