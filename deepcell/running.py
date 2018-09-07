@@ -82,7 +82,7 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_
     padding = bool(padding_layers)
     if padding:
         padding_mode = 'reflect' if 'reflect' in padding_layers[0] else 'zero'
-    if padding.lower() not in {'reflect', 'zero'}:
+    if padding_mode.lower() not in {'reflect', 'zero'}:
         raise ValueError('Expected `padding_mode` to be either `zero` or '
                          '`reflect`.  Got ', padding)
 
