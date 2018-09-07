@@ -147,14 +147,14 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_
 
             if images.ndim == 5:
                 if channel_axis == 1:
-                    output[:, :, :, a:b, c:d] = model.predict(predicted)
+                    output[:, :, :, a:b, c:d] = predicted
                 else:
-                    output[:, :, a:b, c:d, :] = model.predict(predicted)
+                    output[:, :, a:b, c:d, :] = predicted
             else:
                 if channel_axis == 1:
-                    output[:, :, a:b, c:d] = model.predict(predicted)
+                    output[:, :, a:b, c:d] = predicted
                 else:
-                    output[:, a:b, c:d, :] = model.predict(predicted)
+                    output[:, a:b, c:d, :] = predicted
 
     return output
 
