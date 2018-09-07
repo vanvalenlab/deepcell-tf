@@ -14,30 +14,19 @@ import os
 import random
 
 import numpy as np
-from skimage.measure import label
-from skimage.morphology import disk, binary_dilation
-from sklearn.utils.class_weight import compute_class_weight
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.utils import to_categorical
 
 try:
-    from tensorflow.python.keras.utils.conv_utils import normalize_padding
+    from tensorflow.python.keras.utils import conv_utils
 except ImportError:
-    from tensorflow.python.keras._impl.keras.utils.conv_utils import normalize_padding
+    from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 from .io_utils import get_image
 from .io_utils import get_image_sizes
 from .io_utils import nikon_getfiles
 from .io_utils import get_immediate_subdirs
 from .misc_utils import sorted_nicely
-from .plot_utils import plot_training_data_2d
-from .plot_utils import plot_training_data_3d
-from .transform_utils import distance_transform_2d
-from .transform_utils import distance_transform_3d
-
-
-CHANNELS_FIRST = K.image_data_format() == 'channels_first'
 
 
 def get_data(file_name, mode='sample', test_size=.1, seed=None):
@@ -49,73 +38,27 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         test_size: percent of data to leave as testing holdout
         seed: seed number for random train/test split repeatability
     # Returns
-        dict of training data, and a tuple of testing data:
-        train_dict, (X_test, y_test)
+        dict of training data, and a dict of testing data:
+        train_dict, test_dict
     """
     training_data = np.load(file_name)
     X = training_data['X']
     y = training_data['y']
-    win_x = training_data['win_x']
-    win_y = training_data['win_y']
-    win_z = None
-
-    class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
-
-    if mode == 'sample' and X.ndim == 4:
-        batch = training_data['batch']
-        pixels_x = training_data['pixels_x']
-        pixels_y = training_data['pixels_y']
-
-        if CHANNELS_FIRST:
-            sample_shape = (len(batch), X.shape[1], 2 * win_x + 1, 2 * win_y + 1)
-        else:
-            sample_shape = (len(batch), 2 * win_x + 1, 2 * win_y + 1, X.shape[3])
-        X_sample = np.zeros(sample_shape, dtype=K.floatx())
-
-        for i, (b, px, py) in enumerate(zip(batch, pixels_x, pixels_y)):
-            if CHANNELS_FIRST:
-                X_sample[i] = X[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
-            else:
-                X_sample[i] = X[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
-
-        X = X_sample
-
-    elif mode == 'sample' and X.ndim == 5:
-        batch = training_data['batch']
-        pixels_x = training_data['pixels_x']
-        pixels_y = training_data['pixels_y']
-        pixels_z = training_data['pixels_z']
-        win_z = training_data['win_z']
-
-        if CHANNELS_FIRST:
-            sample_shape = (len(batch), X.shape[1], 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1)
-        else:
-            sample_shape = (len(batch), 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1, X.shape[4])
-        X_sample = np.zeros(sample_shape, dtype=K.floatx())
-
-        for i, (b, px, py, pz) in enumerate(zip(batch, pixels_x, pixels_y, pixels_z)):
-            if CHANNELS_FIRST:
-                X_sample[i] = X[b, :, pz - win_z:pz + win_z + 1, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
-            else:
-                X_sample[i] = X[b, pz - win_z:pz + win_z + 1, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
-
-        X = X_sample
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=seed)
 
     train_dict = {
         'X': X_train,
-        'y': y_train,
-        'class_weights': class_weights,
-        'win_x': win_x,
-        'win_y': win_y
+        'y': y_train
     }
 
-    if win_z is not None:
-        train_dict['win_z'] = win_z
+    test_dict = {
+        'X': X_test,
+        'y': y_test
+    }
 
-    return train_dict, (X_test, y_test)
+    return train_dict, test_dict
 
 
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='valid',
@@ -152,28 +95,26 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='vali
     return list_of_max_sample_numbers
 
 
-def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
-                        padding='valid', output_mode='sample',
-                        max_training_examples=1e7):
-    """Create a list of the maximum pixels to sample from each feature in each
-    data set. If output_mode is 'sample', then this will be set to the number
-    of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
+def sample_label_matrix(y, window_size=(30, 30), padding='valid',
+                        max_training_examples=1e7, data_format=None):
+    """Create a list of the maximum pixels to sample
+    from each feature in each data set.
     """
-    is_channel_first = K.image_data_format() == 'channels_first'
-    if is_channel_first:
+    data_format = conv_utils.normalize_data_format(data_format)
+    is_channels_first = data_format == 'channels_first'
+    if is_channels_first:
         num_dirs, num_features, image_size_x, image_size_y = y.shape
     else:
         num_dirs, image_size_x, image_size_y, num_features = y.shape
 
-    list_of_max_sample_numbers = get_max_sample_num_list(
-        y=y, edge_feature=edge_feature, output_mode=output_mode, padding=padding,
-        window_size_x=window_size_x, window_size_y=window_size_y)
+    window_size = conv_utils.normalize_tuple(window_size, 2, 'window_size')
+    window_size_x, window_size_y = window_size
 
     feature_rows, feature_cols, feature_batch, feature_label = [], [], [], []
 
     for direc in range(num_dirs):
         for k in range(num_features):
-            if is_channel_first:
+            if is_channels_first:
                 feature_rows_temp, feature_cols_temp = np.where(y[direc, k, :, :] == 1)
             else:
                 feature_rows_temp, feature_cols_temp = np.where(y[direc, :, :, k] == 1)
@@ -186,21 +127,18 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
             non_rand_ind = np.arange(len(feature_rows_temp))
             rand_ind = np.random.choice(non_rand_ind, size=len(feature_rows_temp), replace=False)
 
-            pixel_counter = 0
             for i in rand_ind:
-                if pixel_counter < list_of_max_sample_numbers[direc]:
-                    condition = padding == 'valid' and \
-                        feature_rows_temp[i] - window_size_x > 0 and \
-                        feature_rows_temp[i] + window_size_x < image_size_x and \
-                        feature_cols_temp[i] - window_size_y > 0 and \
-                        feature_cols_temp[i] + window_size_y < image_size_y
+                condition = padding == 'valid' and \
+                    feature_rows_temp[i] - window_size_x > 0 and \
+                    feature_rows_temp[i] + window_size_x < image_size_x and \
+                    feature_cols_temp[i] - window_size_y > 0 and \
+                    feature_cols_temp[i] + window_size_y < image_size_y
 
-                    if padding == 'same' or condition:
-                        feature_rows.append(feature_rows_temp[i])
-                        feature_cols.append(feature_cols_temp[i])
-                        feature_batch.append(direc)
-                        feature_label.append(k)
-                        pixel_counter += 1
+                if padding == 'same' or condition:
+                    feature_rows.append(feature_rows_temp[i])
+                    feature_cols.append(feature_cols_temp[i])
+                    feature_batch.append(direc)
+                    feature_label.append(k)
 
     # Randomize
     non_rand_ind = np.arange(len(feature_rows), dtype='int32')
@@ -220,23 +158,27 @@ def sample_label_matrix(y, edge_feature, window_size_x=30, window_size_y=30,
     return feature_rows, feature_cols, feature_batch, feature_label
 
 
-def sample_label_movie(y, window_size_x=30, window_size_y=30, window_size_z=5,
-                       padding='valid', max_training_examples=1e7):
+def sample_label_movie(y, window_size=(30, 30, 5), padding='valid',
+                       max_training_examples=1e7, data_format=None):
     """Create a list of the maximum pixels to sample from each feature in each
     data set. If output_mode is 'sample', then this will be set to the number
     of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
     """
-    is_channel_first = K.image_data_format() == 'channels_first'
-    if is_channel_first:
+    data_format = conv_utils.normalize_data_format(data_format)
+    is_channels_first = data_format == 'channels_first'
+    if is_channels_first:
         num_dirs, num_features, image_size_z, image_size_x, image_size_y = y.shape
     else:
         num_dirs, image_size_z, image_size_x, image_size_y, num_features = y.shape
+
+    window_size = conv_utils.normalize_tuple(window_size, 3, 'window_size')
+    window_size_x, window_size_y, window_size_z = window_size
 
     feature_rows, feature_cols, feature_frames, feature_batch, feature_label = [], [], [], [], []
 
     for d in range(num_dirs):
         for k in range(num_features):
-            if is_channel_first:
+            if is_channels_first:
                 frames_temp, rows_temp, cols_temp = np.where(y[d, k, :, :, :] == 1)
             else:
                 frames_temp, rows_temp, cols_temp = np.where(y[d, :, :, :, k] == 1)
@@ -314,8 +256,8 @@ def trim_padding(nparr, win_x, win_y, win_z=None):
             else:
                 trimmed = nparr[:, :, win_x:-win_x, win_y:-win_y, :]
     else:
-        raise ValueError('Expected to trim numpy array of ndim 4 or 5, got "{}"'.format(
-            nparr.ndim))
+        raise ValueError('Expected to trim numpy array of ndim 4 or 5, '
+                         'got "{}"'.format(nparr.ndim))
     return trimmed
 
 
@@ -327,10 +269,11 @@ def reshape_matrix(X, y, reshape_size=256):
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     if X.ndim != 4:
-        raise ValueError('reshape_matrix expects X dim to be 4, got {}'.format(X.ndim))
+        raise ValueError('reshape_matrix expects X dim to be 4, got', X.ndim)
     elif y.ndim != 4:
-        raise ValueError('reshape_matrix expects y dim to be 4, got {}'.format(y.ndim))
-    image_size_x, image_size_y = X.shape[2:] if is_channels_first else X.shape[1:3]
+        raise ValueError('reshape_matrix expects y dim to be 4, got', y.ndim)
+
+    image_size_x, _ = X.shape[2:] if is_channels_first else X.shape[1:3]
     rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
     new_batch_size = X.shape[0] * (rep_number) ** 2
 
@@ -438,17 +381,25 @@ def reshape_movie(X, y, reshape_size=256):
     return new_X, new_y
 
 
-def load_training_images_2d(direc_name, training_direcs, channel_names, image_size,
-                            raw_image_direc):
+def load_training_images_2d(direc_name,
+                            training_direcs,
+                            raw_image_direc,
+                            channel_names,
+                            image_size):
+    """Load each image in the training_direcs into a numpy array.
+    # Arguments
+        direc_name: directory containing folders of training data
+        training_direcs: list of directories of images inside direc_name.
+        raw_image_direc: directory name inside each training dir with raw images
+        channel_names: Loads all raw images with a channel_name in the filename
+        image_size: size of each image as tuple (x, y)
     """
-    Iterate over every image in the training directories and load
-    each into a numpy array.
-    """
+    is_channels_first = K.image_data_format() == 'channels_first'
     # Unpack size tuples
     image_size_x, image_size_y = image_size
 
     # Initialize training data array
-    if CHANNELS_FIRST:
+    if K.image_data_format() == 'channels_first':
         X_shape = (len(training_direcs), len(channel_names), image_size_x, image_size_y)
     else:
         X_shape = (len(training_direcs), image_size_x, image_size_y, len(channel_names))
@@ -469,7 +420,7 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
                 image_file = os.path.join(direc_name, direc, raw_image_direc, img)
                 image_data = np.asarray(get_image(image_file), dtype=K.floatx())
 
-                if CHANNELS_FIRST:
+                if is_channels_first:
                     X[b, c, :, :] = image_data
                 else:
                     X[b, :, :, c] = image_data
@@ -477,68 +428,50 @@ def load_training_images_2d(direc_name, training_direcs, channel_names, image_si
     return X
 
 
-def load_annotated_images_2d(direc_name, training_direcs, image_size, edge_feature,
-                             dilation_radius, annotation_direc):
+def load_annotated_images_2d(direc_name,
+                             training_direcs,
+                             annotation_direc,
+                             annotation_name,
+                             image_size):
+    """Load each annotated image in the training_direcs into a numpy array.
+    # Arguments
+        direc_name: directory containing folders of training data
+        training_direcs: list of directories of images inside direc_name.
+        annotation_direc: directory name inside each training dir with masks
+        annotation_name: Loads all masks with annotation_name in the filename
+        image_size: size of each image as tuple (x, y)
     """
-    Iterate over every annotated image in the training directories and load
-    each into a numpy array.
-    """
+    is_channels_first = K.image_data_format() == 'channels_first'
     # Unpack size tuple
     image_size_x, image_size_y = image_size
 
+    # wrapping single annotation name in list for consistency
+    if not isinstance(annotation_name, list):
+        annotation_name = [annotation_name]
+
     # Initialize feature mask array
-    if CHANNELS_FIRST:
-        y_shape = (len(training_direcs), len(edge_feature), image_size_x, image_size_y)
+    if is_channels_first:
+        y_shape = (len(training_direcs), len(annotation_name), image_size_x, image_size_y)
     else:
-        y_shape = (len(training_direcs), image_size_x, image_size_y, len(edge_feature))
+        y_shape = (len(training_direcs), image_size_x, image_size_y, len(annotation_name))
 
     y = np.zeros(y_shape, dtype='int32')
 
     for b, direc in enumerate(training_direcs):
         imglist = os.listdir(os.path.join(direc_name, direc, annotation_direc))
 
-        for l, edge in enumerate(edge_feature):
+        for l, annotation in enumerate(annotation_name):
             for img in imglist:
-                # if feature string is NOT in image file name, skip it.
-                if not fnmatch(img, '*feature_{}*'.format(l)):
+                # if annotation_name is NOT in image file name, skip it.
+                if not fnmatch(img, '*{}*'.format(annotation)):
                     continue
 
                 image_data = get_image(os.path.join(direc_name, direc, annotation_direc, img))
 
-                if np.sum(image_data) > 0:
-                    image_data /= np.amax(image_data)
-
-                if edge == 1 and dilation_radius is not None:
-                    # thicken cell edges to be more pronounced
-                    image_data = binary_dilation(image_data, selem=disk(dilation_radius))
-
-                if CHANNELS_FIRST:
+                if is_channels_first:
                     y[b, l, :, :] = image_data
                 else:
                     y[b, :, :, l] = image_data
-
-        # Thin the augmented edges by subtracting the interior features.
-        for l, edge in enumerate(edge_feature):
-            if edge != 1:
-                continue
-
-            for k, non_edge in enumerate(edge_feature):
-                if non_edge == 0:
-                    if CHANNELS_FIRST:
-                        y[b, l, :, :] -= y[b, k, :, :]
-                    else:
-                        y[b, :, :, l] -= y[b, :, :, k]
-
-            if CHANNELS_FIRST:
-                y[b, l, :, :] = y[b, l, :, :] > 0
-            else:
-                y[b, :, :, l] = y[b, :, :, l] > 0
-
-        # Compute the mask for the background
-        if CHANNELS_FIRST:
-            y[b, len(edge_feature) - 1, :, :] = 1 - np.sum(y[b], axis=0)
-        else:
-            y[b, :, :, len(edge_feature) - 1] = 1 - np.sum(y[b], axis=2)
 
     return y
 
@@ -548,132 +481,61 @@ def make_training_data_2d(direc_name,
                           channel_names,
                           raw_image_direc='raw',
                           annotation_direc='annotated',
+                          annotation_name='feature',
                           training_direcs=None,
-                          max_training_examples=1e7,
-                          distance_transform=False,
-                          distance_bins=4,
-                          window_size_x=30,
-                          window_size_y=30,
-                          edge_feature=[1, 0, 0],
-                          dilation_radius=1,
-                          display=False,
-                          max_plotted=5,
-                          verbose=False,
-                          reshape_size=None,
-                          padding='valid',
-                          output_mode='sample'):
+                          reshape_size=None):
     """
     Read all images in training directories and save as npz file
     # Arguments
         direc_name: directory containing folders of training data
         file_name_save: full filepath for npz file where the data will be saved
         training_direcs: directories of images located inside direc_name.
-                         If not provided, all directories in direc_name are used.
-        channel_names: List of particular channel name of images to find.
-                       channel_name should be in the filename (e.g. 'DAPI')
-                       If not provided, all images in the training directories
-                       without 'feature' in their name are used.
-        edge_feature: List which determines the cell edge feature (usually [1, 0, 0])
-                      There can be a single 1 in the list, indicating the index of the feature.
-        max_training_examples: max number of samples to be given to model
-        window_size_x: number of pixels to +/- x direction to be sampled in sample mode
-        window_size_y: number of pixels to +/- y direction to be sampled in sample mode
-        dilation_radius: radius for dilating cell edges
-        display: whether or not to plot the training data
-        max_plotted: how many points to plot if display is True
-        verbose:  print more output to screen, similar to DEBUG mode
+                         If None, all directories in direc_name are used.
+        raw_image_direc: directory name inside each training dir with raw images
+        annotation_direc: directory name inside each training dir with masks
+        channel_names: Loads all raw images with a channel_name in the filename
+        annotation_name: Loads all masks with annotation_name in the filename
         reshape_size: If provided, will reshape the images to the given size
-        padding:  'valid' or 'same'
-        output_mode:  'sample' or 'conv'
     """
-    # Load one file to get image sizes (all images same size as they are from same microscope)
+    # Load one file to get image sizes (assumes all images same size)
     image_path = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
     image_size = get_image_sizes(image_path, channel_names)
 
-    X = load_training_images_2d(direc_name, training_direcs, channel_names,
-                                image_size=image_size,
-                                raw_image_direc=raw_image_direc)
+    X = load_training_images_2d(direc_name, training_direcs,
+                                raw_image_direc=raw_image_direc,
+                                channel_names=channel_names,
+                                image_size=image_size)
 
     y = load_annotated_images_2d(direc_name, training_direcs,
-                                 image_size=image_size,
-                                 edge_feature=edge_feature,
                                  annotation_direc=annotation_direc,
-                                 dilation_radius=dilation_radius)
+                                 annotation_name=annotation_name,
+                                 image_size=image_size)
 
     if reshape_size is not None:
         X, y = reshape_matrix(X, y, reshape_size=reshape_size)
 
-    if distance_transform:
-        if K.image_data_format() == 'channels_first':
-            channel_axis = 1
-            new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3]), dtype='int32')
-        else:
-            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], 1), dtype='int32')
-            channel_axis = -1
-        for b in range(y.shape[0]):
-            if K.image_data_format() == 'channels_first':
-                dist_batch = y[b, 1, :, :]
-            else:
-                dist_batch = y[b, :, :, 1]
-            d = distance_transform_2d(dist_batch, bins=distance_bins)
-            new_y[b] = np.expand_dims(d, axis=channel_axis)
-        y = to_categorical(new_y)
-        # not really edge_feature anymore, but there will be the fewest
-        # "center" pixels, so lets call that the edge_feature for now
-        edge_feature = [0] * y.shape[channel_axis]
-        edge_feature[-1] = 1
-
-    # Create mask of sampled pixels
-    feature_rows, feature_cols, feature_batch, feature_label = sample_label_matrix(
-        y, edge_feature, output_mode=output_mode, padding=padding,
-        window_size_x=window_size_x, window_size_y=window_size_y,
-        max_training_examples=max_training_examples)
-
-    weights = compute_class_weight('balanced', y=feature_label, classes=np.unique(feature_label))
-
-    # Sample pixels from the label matrix
-    if output_mode == 'sample':
-
-        # Save training data in npz format
-        np.savez(file_name_save, class_weights=weights, X=X, y=feature_label,
-                 batch=feature_batch, pixels_x=feature_rows, pixels_y=feature_cols,
-                 win_x=window_size_x, win_y=window_size_y)
-
-    elif output_mode == 'conv':
-        y_sample = np.zeros(y.shape, dtype='int32')
-        for b, r, c, l in zip(feature_batch, feature_rows, feature_cols, feature_label):
-            if CHANNELS_FIRST:
-                y_sample[b, l, r, c] = 1
-            else:
-                y_sample[b, r, c, l] = 1
-
-        # Trim the feature mask so that each window does not overlap with the border of the image
-        if padding == 'valid':
-            y = trim_padding(y, window_size_x, window_size_y)
-
-        # Save training data in npz format
-        np.savez(file_name_save, class_weights=weights, X=X, y=y,
-                 y_sample=y_sample, win_x=window_size_x, win_y=window_size_y)
-
-    if verbose:
-        print('Number of features: {}'.format(y.shape[1 if CHANNELS_FIRST else -1]))
-        print('Number of training data points: {}'.format(len(feature_label)))
-        print('Class weights: {}'.format(weights))
-
-    if display:
-        if output_mode == 'conv':
-            display_mask = y_sample
-        else:
-            display_mask = y
-        plot_training_data_2d(X, display_mask, max_plotted=max_plotted)
+    # Save training data in npz format
+    np.savez(file_name_save, X=X, y=y)
 
 
-def load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
-                            image_size, num_frames, montage_mode=False):
+def load_training_images_3d(direc_name,
+                            training_direcs,
+                            raw_image_direc,
+                            channel_names,
+                            image_size,
+                            num_frames,
+                            montage_mode=False):
+    """Load each image in the training_direcs into a numpy array.
+    # Arguments
+        direc_name: directory containing folders of training data
+        training_direcs: list of directories of images inside direc_name.
+        raw_image_direc: directory name inside each training dir with raw images
+        channel_names: Loads all raw images with a channel_name in the filename
+        image_size: size of each image as tuple (x, y)
+        num_frames: number of frames to load from each training directory
+        montage_mode: load masks from "montaged" subdirs inside annotation_direc
     """
-    Iterate over every image in the training directories and load
-    each into a numpy array.
-    """
+    is_channels_first = K.image_data_format() == 'channels_first'
     image_size_x, image_size_y = image_size
 
     # flatten list of lists
@@ -683,7 +545,7 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
         X_dirs = sorted_nicely(X_dirs)
 
     # Initialize training data array
-    if CHANNELS_FIRST:
+    if is_channels_first:
         X_shape = (len(X_dirs), len(channel_names), num_frames, image_size_x, image_size_y)
     else:
         X_shape = (len(X_dirs), num_frames, image_size_x, image_size_y, len(channel_names))
@@ -709,7 +571,7 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
 
                 image_data = np.asarray(get_image(os.path.join(direc, img)))
 
-                if CHANNELS_FIRST:
+                if is_channels_first:
                     X[b, c, i, :, :] = image_data
                 else:
                     X[b, i, :, :, c] = image_data
@@ -717,12 +579,24 @@ def load_training_images_3d(direc_name, training_direcs, channel_names, raw_imag
     return X
 
 
-def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, annotation_name,
-                             num_frames, image_size, montage_mode=False):
+def load_annotated_images_3d(direc_name,
+                             training_direcs,
+                             annotation_direc,
+                             annotation_name,
+                             image_size,
+                             num_frames,
+                             montage_mode=False):
+    """Load each annotated image in the training_direcs into a numpy array.
+    # Arguments
+        direc_name: directory containing folders of training data
+        training_direcs: list of directories of images inside direc_name.
+        annotation_direc: directory name inside each training dir with masks
+        annotation_name: Loads all masks with annotation_name in the filename
+        image_size: size of each image as tuple (x, y)
+        num_frames: number of frames to load from each training directory
+        montage_mode: load masks from "montaged" subdirs inside annotation_direc
     """
-    Iterate over every annotated image in the training directories and load
-    each into a numpy array.
-    """
+    is_channels_first = K.image_data_format() == 'channels_first'
     image_size_x, image_size_y = image_size
 
     # wrapping single annotation name in list for consistency
@@ -734,7 +608,7 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
         y_dirs = [os.path.join(t, p) for t in y_dirs for p in os.listdir(t)]
         y_dirs = sorted_nicely(y_dirs)
 
-    if CHANNELS_FIRST:
+    if is_channels_first:
         y_shape = (len(y_dirs), len(annotation_name), num_frames, image_size_x, image_size_y)
     else:
         y_shape = (len(y_dirs), num_frames, image_size_x, image_size_y, len(annotation_name))
@@ -756,7 +630,7 @@ def load_annotated_images_3d(direc_name, training_direcs, annotation_direc, anno
                     break
 
                 annotation_img = get_image(os.path.join(direc, img_file))
-                if CHANNELS_FIRST:
+                if is_channels_first:
                     y[b, c, z, :, :] = annotation_img
                 else:
                     y[b, z, :, :, c] = annotation_img
@@ -771,55 +645,27 @@ def make_training_data_3d(direc_name,
                           annotation_name='corrected',
                           raw_image_direc='raw',
                           annotation_direc='annotated',
-                          window_size_x=30,
-                          window_size_y=30,
-                          window_size_z=5,
-                          padding='same',
-                          output_mode='conv',
                           reshape_size=None,
                           num_frames=50,
-                          display=True,
-                          num_of_frames_to_display=5,
-                          montage_mode=True,
-                          max_training_examples=1e7,
-                          distance_transform=False,
-                          distance_bins=4,
-                          erosion_width=None,
-                          verbose=True):
+                          montage_mode=True):
     """
-    Read all images in training directories and save as npz file.
-    3D image sets are "stacks" of images.  For annotation purposes, these images
-    have been sliced into "montages", where a section of each stack has been sliced
-    so they can be efficiently annotated by human users. In this case, the raw_image_direc
-    should be a specific montage (e.g. montage_0_0) and the annotation is the corresponding
-    annotated montage.  Each montage must maintain the full stack, but can be processed
-    independently.
+    Read all images in training directories and save as npz file
+    3D image sets are "stacks" of images. For annotation purposes, these images
+    have been sliced into "montages", where a section of each stack has been
+    sliced for efficient annotated by humans. The raw_image_direc should be a
+    specific montage (e.g. montage_0_0) and the annotation is the corresponding
+    annotated montage.
     # Arguments
         direc_name: directory containing folders of training data
         file_name_save: full filepath for npz file where the data will be saved
         training_direcs: directories of images located inside direc_name
-                         If not provided, all directories in direc_name are used.
-        channel_names: List of particular channel name of images to find.
-                       channel_name should be in the filename (e.g. 'DAPI')
-        annotation_direc: name of folder with annotated images
-        raw_image_direc:  name of folder with raw images
-        window_size_x: number of pixels to +/- x direction to be sampled in sample mode
-        window_size_y: number of pixels to +/- y direction to be sampled in sample mode
-        padding:  'valid' or 'same'
-        output_mode:  'sample' or 'conv'
+                         If None, all directories in direc_name are used.
+        channel_names: Loads all raw images with a channel_name in the filename
+        raw_image_direc: directory name inside each training dir with raw images
+        annotation_direc: directory name inside each training dir with masks
         reshape_size: If provided, will reshape the images to the given size.
-        num_of_features: number of classes (e.g. cell interior, cell edge, background)
-        edge_feature: List which determines the cell edge feature (usually [1, 0, 0])
-                   There can be a single 1 in the list, indicating the index of the feature.
-        max_training_examples: max number of samples to be given to model
-        dilation_radius:
-        verbose:  print more output to screen, similar to DEBUG mode.
-        num_frames:
-        sub_sample: whether or not to subsamble the training data
-        display: whether or not to plot the training data
-        num_of_frames_to_display:
-        montage_mode: data is broken into several "montage"
-                      sub-directories for easier annoation
+        num_frames: number of frames to load from each training directory
+        montage_mode: load masks from "montaged" subdirs inside annotation_direc
     """
     # Load one file to get image sizes
     rand_train_dir = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
@@ -828,60 +674,25 @@ def make_training_data_3d(direc_name,
 
     image_size = get_image_sizes(rand_train_dir, channel_names)
 
-    X = load_training_images_3d(direc_name, training_direcs, channel_names, raw_image_direc,
-                                image_size, num_frames=num_frames, montage_mode=montage_mode)
+    X = load_training_images_3d(direc_name, training_direcs,
+                                raw_image_direc=raw_image_direc,
+                                channel_names=channel_names,
+                                image_size=image_size,
+                                num_frames=num_frames,
+                                montage_mode=montage_mode)
 
-    y = load_annotated_images_3d(direc_name, training_direcs, annotation_direc,
-                                 annotation_name, num_frames, image_size,
+    y = load_annotated_images_3d(direc_name, training_direcs,
+                                 annotation_direc=annotation_direc,
+                                 annotation_name=annotation_name,
+                                 image_size=image_size,
+                                 num_frames=num_frames,
                                  montage_mode=montage_mode)
-
-    # Trim annotation images
-    if padding == 'valid' and output_mode != 'sample':
-        y = trim_padding(y, window_size_x, window_size_y, window_size_z)
 
     # Reshape X and y
     if reshape_size is not None:
         X, y = reshape_movie(X, y, reshape_size=reshape_size)
 
-    if distance_transform:
-        if K.image_data_format() == 'channels_first':
-            channel_axis = 1
-            new_y = np.zeros((y.shape[0], 1, y.shape[2], y.shape[3], y.shape[4]), dtype='int32')
-        else:
-            new_y = np.zeros((y.shape[0], y.shape[1], y.shape[2], y.shape[3], 1), dtype='int32')
-            channel_axis = -1
-        for b in range(y.shape[0]):
-            if K.image_data_format() == 'channels_first':
-                dist_batch = y[b, 0, :, :, :]
-            else:
-                dist_batch = y[b, :, :, :, 0]
-            d = distance_transform_3d(dist_batch, bins=distance_bins, erosion_width=erosion_width)
-            new_y[b] = np.expand_dims(d, axis=channel_axis)
-        y = new_y
-
-    # Sample pixels from the label matrix
-    if output_mode == 'sample':
-        if not distance_transform:
-            y[y > 0] = 1  # make each cell instance equal to 1.
-        y = to_categorical(y)
-
-        feat_frames, feat_rows, feat_cols, feat_batch, feat_label = sample_label_movie(
-            y=y,
-            padding=padding,
-            window_size_x=window_size_x,
-            window_size_y=window_size_y,
-            window_size_z=window_size_z,
-            max_training_examples=max_training_examples)
-        # Save training data in npz format
-        np.savez(file_name_save, X=X, y=feat_label, batch=feat_batch,
-                 pixels_x=feat_rows, pixels_y=feat_cols, pixels_z=feat_frames,
-                 win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
-
-    if output_mode == 'conv':
-        np.savez(file_name_save, X=X, y=y, win_x=window_size_x, win_y=window_size_y, win_z=window_size_z)
-
-    if display:
-        plot_training_data_3d(X, y, len(training_direcs), num_of_frames_to_display)
+    np.savez(file_name_save, X=X, y=y)
 
     return None
 
@@ -891,19 +702,10 @@ def make_training_data(direc_name,
                        channel_names,
                        dimensionality,
                        training_direcs=None,
-                       window_size_x=30,
-                       window_size_y=30,
-                       edge_feature=[1, 0, 0],
-                       padding='valid',
-                       output_mode='sample',
                        raw_image_direc='raw',
                        annotation_direc='annotated',
-                       verbose=False,
+                       annotation_name='feature',
                        reshape_size=None,
-                       display=False,
-                       max_training_examples=1e7,
-                       distance_transform=False,
-                       distance_bins=4,
                        **kwargs):
     """
     Wrapper function for other make_training_data functions (2d, 3d)
@@ -913,14 +715,6 @@ def make_training_data(direc_name,
     if not isinstance(dimensionality, int) and not isinstance(dimensionality, float):
         raise ValueError('Data dimensionality should be an integer value, typically 2 or 3. '
                          'Recieved {}'.format(type(dimensionality).__name__))
-
-    if np.sum(edge_feature) > 1:
-        raise ValueError('Only one edge feature is allowed')
-
-    padding = normalize_padding(padding)
-
-    if output_mode not in {'sample', 'conv'}:
-        raise ValueError('output_mode should be set to either sample or conv')
 
     if not isinstance(channel_names, list):
         raise ValueError('channel_names should be a list of strings (e.g. [\'DAPI\']). '
@@ -934,43 +728,20 @@ def make_training_data(direc_name,
     if dimensionality == 2:
         make_training_data_2d(direc_name, file_name_save, channel_names,
                               training_direcs=training_direcs,
-                              window_size_x=window_size_x,
-                              window_size_y=window_size_y,
-                              edge_feature=edge_feature,
-                              distance_transform=distance_transform,
-                              distance_bins=distance_bins,
-                              display=display,
-                              verbose=verbose,
                               reshape_size=reshape_size,
-                              padding=padding,
-                              output_mode=output_mode,
                               raw_image_direc=raw_image_direc,
-                              annotation_direc=annotation_direc,
-                              dilation_radius=kwargs.get('dilation_radius', 1),
-                              max_plotted=kwargs.get('max_plotted', 5),
-                              max_training_examples=max_training_examples)
+                              annotation_name=annotation_name,
+                              annotation_direc=annotation_direc)
 
     elif dimensionality == 3:
         make_training_data_3d(direc_name, file_name_save, channel_names,
                               training_direcs=training_direcs,
-                              annotation_name=kwargs.get('annotation_name', 'corrected'),
+                              annotation_name=annotation_name,
                               raw_image_direc=raw_image_direc,
                               annotation_direc=annotation_direc,
-                              window_size_x=window_size_x,
-                              window_size_y=window_size_y,
-                              window_size_z=kwargs.get('window_size_z', 5),
-                              distance_transform=distance_transform,
-                              distance_bins=distance_bins,
-                              erosion_width=kwargs.get('erosion_width'),
-                              padding=padding,
-                              output_mode=output_mode,
                               reshape_size=reshape_size,
-                              verbose=verbose,
-                              display=display,
-                              max_training_examples=max_training_examples,
                               montage_mode=kwargs.get('montage_mode', False),
-                              num_frames=kwargs.get('num_frames', 50),
-                              num_of_frames_to_display=kwargs.get('num_of_frames_to_display', 5))
+                              num_frames=kwargs.get('num_frames', 50))
 
     else:
         raise NotImplementedError('make_training_data is not implemented for '
