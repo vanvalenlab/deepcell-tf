@@ -91,7 +91,7 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_
     crop_y = images.shape[col_axis] // num_crops
 
     # Set up receptive field window for padding
-    win_x, win_y = (receptive_field - 1) / 2, (receptive_field - 1) / 2
+    win_x, win_y = (receptive_field - 1) // 2, (receptive_field - 1) // 2
 
     # instantiate matrix for model output
     model_output_shape = tuple(list(model.layers[-1].output_shape)[1:])
