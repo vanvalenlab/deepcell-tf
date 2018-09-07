@@ -109,7 +109,7 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_
 
     # pad the images only in the x and y axes
     pad_width = []
-    for i in images.shape:
+    for i in range(len(images.shape)):
         if i == row_axis:
             pad_width.append((win_x, win_x))
         elif i == col_axis:
@@ -139,6 +139,7 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_
                     predicted = model.predict(padded_images[:, e:f, g:h, :])
 
             # if the model uses padding, trim the output images to proper shape
+            # if model does not use padding, images should already be correct
             if padding:
                 predicted = trim_padding(predicted, win_x, win_y)
 
