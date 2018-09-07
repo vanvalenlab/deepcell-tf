@@ -21,7 +21,7 @@ from deepcell.utils.data_utils import trim_padding
 from deepcell.utils.io_utils import get_images_from_directory
 
 
-def get_cropped_input_shape(images, num_crops=4):
+def get_cropped_input_shape(images, num_crops=4, receptive_field=61):
     """Helper function to calculate the input_shape for models
     that will process cropped sub-images.
     # Arguments:
@@ -42,8 +42,8 @@ def get_cropped_input_shape(images, num_crops=4):
     channel_dim = images.shape[channel_axis]
 
     # Split the frames into quarters, as the full image size is too large
-    crop_x = images.shape[row_axis] // num_crops
-    crop_y = images.shape[col_axis] // num_crops
+    crop_x = images.shape[row_axis] // num_crops + (receptive_field - 1)
+    crop_y = images.shape[col_axis] // num_crops + (receptive_field - 1)
 
     if images.ndim == 5:
         input_shape = (images.shape[row_axis - 1], crop_x, crop_y, channel_dim)
@@ -100,7 +100,7 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_
     else:
         output = np.zeros((*images.shape[0:-1], model_output_shape[-1]))
 
-    expected_input_shape = get_cropped_input_shape(images, num_crops)
+    expected_input_shape = get_cropped_input_shape(images, num_crops, receptive_field)
     if expected_input_shape != model.input_shape[1:]:
         raise ValueError('Expected model.input_shape to be {}. Got {}.  Use '
                          '`get_new_input_shape()` to recreate your model with '
