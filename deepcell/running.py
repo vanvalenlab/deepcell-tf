@@ -17,6 +17,7 @@ import numpy as np
 from skimage.external import tifffile as tiff
 from tensorflow.python.keras import backend as K
 
+from deepcell.utils.data_utils import trim_padding
 from deepcell.utils.io_utils import get_images_from_directory
 
 
@@ -56,13 +57,15 @@ def get_cropped_input_shape(images, num_crops=4):
     return input_shape
 
 
-def process_whole_image(model, images, num_crops=4):
+def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_mode='reflect'):
     """Slice images into num_crops * num_crops pieces, and use the model to
     process each small image.
     # Arguments:
         model: model that will process each small image
         images: numpy array that is too big for model.predict(images)
         num_crops: number of slices for the x and y axis to create sub-images
+        receptive_field: receptive field used by model, required to pad images
+        padding_mode: mode to pad input images one of {'reflect', 'zero'}
     # Returns:
         model_output: numpy array containing model outputs for each sub-image
     """
@@ -75,9 +78,20 @@ def process_whole_image(model, images, num_crops=4):
         row_axis = len(images.shape) - 3
         col_axis = len(images.shape) - 2
 
+    padding_layers = [l.name for l in model.layers if 'padding' in l.name]
+    padding = bool(padding_layers)
+    if padding:
+        padding_mode = 'reflect' if 'reflect' in padding_layers[0] else 'zero'
+    if padding.lower() not in {'reflect', 'zero'}:
+        raise ValueError('Expected `padding_mode` to be either `zero` or '
+                         '`reflect`.  Got ', padding)
+
     # Split the frames into quarters, as the full image size is too large
     crop_x = images.shape[row_axis] // num_crops
     crop_y = images.shape[col_axis] // num_crops
+
+    # Set up receptive field window for padding
+    win_x, win_y = (receptive_field - 1) / 2, (receptive_field - 1) / 2
 
     # instantiate matrix for model output
     model_output_shape = tuple(list(model.layers[-1].output_shape)[1:])
@@ -93,25 +107,54 @@ def process_whole_image(model, images, num_crops=4):
                          'the proper input_shape'.format(
                              expected_input_shape, model.input_shape[1:]))
 
-    # Slice the images into smaller sub-images
-    y_split = np.split(images, num_crops, axis=col_axis)
-    images_split = [np.split(s, num_crops, axis=row_axis) for s in y_split]
+    # pad the images only in the x and y axes
+    pad_width = []
+    for i in images.shape:
+        if i == row_axis:
+            pad_width.append((win_x, win_x))
+        elif i == col_axis:
+            pad_width.append((win_y, win_y))
+        else:
+            pad_width.append((0, 0))
+
+    if padding_mode == 'reflect':
+        padded_images = np.pad(images, pad_width, mode='reflect')
+    else:
+        padded_images = np.pad(images, pad_width, mode='constant', constant_values=0)
 
     for i in range(num_crops):
         for j in range(num_crops):
-            predicted = model.predict(images_split[j][i])
-            a, b = i * crop_x, (i + 1) * crop_x
-            c, d = j * crop_y, (j + 1) * crop_y
+            e, f = i * crop_x, (i + 1) * crop_x + 2 * win_x
+            g, h = j * crop_y, (j + 1) * crop_y + 2 * win_y
+
             if images.ndim == 5:
                 if channel_axis == 1:
-                    output[:, :, :, a:b, c:d] = predicted
+                    predicted = model.predict(padded_images[:, :, :, e:f, g:h])
                 else:
-                    output[:, :, a:b, c:d, :] = predicted
+                    predicted = model.predict(padded_images[:, :, e:f, g:h, :])
             else:
                 if channel_axis == 1:
-                    output[:, :, a:b, c:d] = predicted
+                    predicted = model.predict(padded_images[:, :, e:f, g:h])
                 else:
-                    output[:, a:b, c:d, :] = predicted
+                    predicted = model.predict(padded_images[:, e:f, g:h, :])
+
+            # if the model uses padding, trim the output images to proper shape
+            if padding:
+                predicted = trim_padding(predicted, win_x, win_y)
+
+            a, b = i * crop_x, (i + 1) * crop_x
+            c, d = j * crop_y, (j + 1) * crop_y
+
+            if images.ndim == 5:
+                if channel_axis == 1:
+                    output[:, :, :, a:b, c:d] = model.predict(predicted)
+                else:
+                    output[:, :, a:b, c:d, :] = model.predict(predicted)
+            else:
+                if channel_axis == 1:
+                    output[:, :, a:b, c:d] = model.predict(predicted)
+                else:
+                    output[:, a:b, c:d, :] = model.predict(predicted)
 
     return output
 
