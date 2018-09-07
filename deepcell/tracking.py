@@ -80,6 +80,7 @@ class cell_tracker():
         self.tracks[new_track]['frames'] = [frame]
         self.tracks[new_track]['daughters'] = []
         self.tracks[new_track]['capped'] = False
+#        self.tracks[track]['death_frame'] = None
         self.tracks[new_track]['parent'] = None
         
         appearance, centroid, occupancy_grid = self._get_appearances(self.x, self.y, [frame], [cell_id])
@@ -124,7 +125,11 @@ class cell_tracker():
         mordor_matrix = np.zeros((number_of_cells, number_of_tracks), dtype=K.floatx()) # Bottom right matrix 
             
         # Compute assignment matrix
-        track_appearances = self._fetch_track_appearances()
+        try:
+            track_appearances = self._fetch_track_appearances()
+        except:
+            print("im breaking here ", frame)
+            
         track_centroids = self._fetch_track_centroids()
         track_occupancy_grids = self._fetch_track_occupancy_grids()
         
@@ -269,6 +274,7 @@ class cell_tracker():
             
             # Dont touch anything if there was a cell that "died"
             if track < number_of_tracks and cell > number_of_cells - 1:
+#               self.tracks[track]['death_frame'] = frame - 1
                 continue
                 
         # Cap the tracks of cells that divided
@@ -281,6 +287,12 @@ class cell_tracker():
         for track in range(number_of_tracks):
             if len(self.tracks[track]['daughters']) > 0:
                 if frame in self.tracks[track]['frames']:
+                    
+                    print("appearances removed from track ", track)
+                    print("frames in the track ", self.tracks[track]['frames'])
+                    print("length of daughter track ", len(self.tracks[track]['daughters']))
+                    print("new track id ", new_track_id)
+                    print("frame being removed ", frame)
                     
                     # Create new track
                     cell_id = self.tracks[track]['label']
@@ -311,7 +323,10 @@ class cell_tracker():
         This function searches the tracks for the parent of a given cell
         It returns the parent cell's id or None if no parent exists.
         """
-        track_appearances = self._fetch_track_appearances()
+        try:
+            track_appearances = self._fetch_track_appearances()
+        except:
+            print("i broke on parents ", frame)
         track_centroids = self._fetch_track_centroids()
         track_occupancy_grids = self._fetch_track_occupancy_grids()
         
@@ -389,6 +404,14 @@ class cell_tracker():
                 missing_frames = self.track_length - track_length
                 frames = np.array(list(range(-1,-track_length-1,-1)) + [-track_length]*missing_frames)
                 track_appearances[track] = app[frames,:,:,:]
+ #               except:
+ #                   print("track ", track)
+ #                   print("frames ", frames)
+ #                   print("app.shape ", app.shape)
+ #                   print("track length ", track_length)
+ #                   print("are we sure about the track length... ", self.track_length)
+ #                   print("missing_frames ", missing_frames)
+ #                   print("self.tracks[track]['appearances']", self.tracks[track]['appearances'])
                 
         return track_appearances
     
@@ -408,7 +431,12 @@ class cell_tracker():
                 track_length = cen.shape[0]
                 missing_frames = self.track_length - track_length
                 frames = np.array(list(range(-1,-track_length-1,-1)) + [-track_length]*missing_frames)
-                track_centroids[track] = cen[frames,:]
+                try:
+                    track_centroids[track] = cen[frames,:]
+                except:
+                    print("track ", track)
+                    print("frames ", frames)
+                    print("cen.shape ", cen.shape)
                     
         return track_centroids
     

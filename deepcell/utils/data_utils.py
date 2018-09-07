@@ -123,9 +123,12 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 
     train_dict = {
         'X': X_train,
-        'y': y_train
+        'y': y_train,
+        'class_weights': class_weights,
+        'win_x': win_x,
+        'win_y': win_y
     }
-
+    
     val_dict = {
         'X': X_test,
         'y': y_test,
