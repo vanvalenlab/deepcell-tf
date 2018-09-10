@@ -14,8 +14,6 @@ from skimage.measure import label
 from tensorflow.python.platform import tf_logging as logging
 from tensorflow.python.keras.callbacks import Callback
 
-from .image_generators import _transform_masks
-
 
 class PixelIoU(Callback):
     """At the end of training, calculate the pixel based
@@ -26,12 +24,10 @@ class PixelIoU(Callback):
                  y,
                  dice_iou_threshold=.5,
                  merge_iou_threshold=1e-5,
-                 transform=None,
-                 transform_kwargs={},
                  crop_size=32,
                  ndigits=4):
         self.X = X
-        self.y = _transform_masks(y, transform=transform, **transform_kwargs)
+        self.y = y
         self.dice_iou_threshold = dice_iou_threshold
         self.merge_iou_threshold = merge_iou_threshold
         self.crop_size = crop_size
@@ -76,12 +72,10 @@ class ObjectIoU(Callback):
                  y,
                  dice_iou_threshold=.5,
                  merge_iou_threshold=1e-5,
-                 transform=None,
-                 transform_kwargs={},
                  crop_size=32,
                  ndigits=4):
         self.X = X
-        self.y = _transform_masks(y, transform=transform, **transform_kwargs)
+        self.y = y
         self.dice_iou_threshold = dice_iou_threshold
         self.merge_iou_threshold = merge_iou_threshold
         self.crop_size = crop_size
