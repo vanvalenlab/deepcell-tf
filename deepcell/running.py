@@ -16,6 +16,7 @@ import warnings
 import numpy as np
 from skimage.external import tifffile as tiff
 from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.models import Model
 
 from deepcell.utils.data_utils import trim_padding
 from deepcell.utils.io_utils import get_images_from_directory
@@ -57,7 +58,23 @@ def get_cropped_input_shape(images, num_crops=4, receptive_field=61):
     return input_shape
 
 
-def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_mode='reflect'):
+def get_padding_layers(model):
+    """Get all names of padding layers in the model
+    # Arguments:
+        model: Keras model
+    # Returns:
+        padding_layers: list of names of padding layers inside model
+    """
+    padding_layers = []
+    for layer in model.layers:
+        if 'padding' in layer.name:
+            padding_layers.append(layer.name)
+        elif isinstance(layer, Model):
+            padding_layers.extend(get_padding_layers(layer))
+    return padding_layers
+
+
+def process_whole_image(model, images, num_crops=4, receptive_field=61, padding=None):
     """Slice images into num_crops * num_crops pieces, and use the model to
     process each small image.
     # Arguments:
@@ -65,7 +82,7 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_
         images: numpy array that is too big for model.predict(images)
         num_crops: number of slices for the x and y axis to create sub-images
         receptive_field: receptive field used by model, required to pad images
-        padding_mode: mode to pad input images one of {'reflect', 'zero'}
+        padding: type of padding for input images, one of {'reflect', 'zero'}
     # Returns:
         model_output: numpy array containing model outputs for each sub-image
     """
@@ -78,11 +95,12 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_
         row_axis = len(images.shape) - 3
         col_axis = len(images.shape) - 2
 
-    padding_layers = [l.name for l in model.layers if 'padding' in l.name]
-    padding = bool(padding_layers)
-    if padding:
-        padding_mode = 'reflect' if 'reflect' in padding_layers[0] else 'zero'
-    if padding_mode.lower() not in {'reflect', 'zero'}:
+    if not padding:
+        padding_layers = get_padding_layers(model)
+        if padding_layers:
+            padding = 'reflect' if 'reflect' in padding_layers[0] else 'zero'
+
+    if str(padding).lower() not in {'reflect', 'zero'}:
         raise ValueError('Expected `padding_mode` to be either `zero` or '
                          '`reflect`.  Got ', padding)
 
@@ -103,8 +121,8 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_
     expected_input_shape = get_cropped_input_shape(images, num_crops, receptive_field)
     if expected_input_shape != model.input_shape[1:]:
         raise ValueError('Expected model.input_shape to be {}. Got {}.  Use '
-                         '`get_new_input_shape()` to recreate your model with '
-                         'the proper input_shape'.format(
+                         '`get_cropped_input_shape()` to recreate your model '
+                         ' with the proper input_shape'.format(
                              expected_input_shape, model.input_shape[1:]))
 
     # pad the images only in the x and y axes
@@ -117,7 +135,7 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_
         else:
             pad_width.append((0, 0))
 
-    if padding_mode == 'reflect':
+    if str(padding).lower() == 'reflect':
         padded_images = np.pad(images, pad_width, mode='reflect')
     else:
         padded_images = np.pad(images, pad_width, mode='constant', constant_values=0)
