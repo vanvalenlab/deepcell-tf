@@ -138,6 +138,10 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding_
                 else:
                     predicted = model.predict(padded_images[:, e:f, g:h, :])
 
+            # if using skip_connections, get the final model output
+            if isinstance(predicted, list):
+                predicted = predicted[-1]
+
             # if the model uses padding, trim the output images to proper shape
             # if model does not use padding, images should already be correct
             if padding:
