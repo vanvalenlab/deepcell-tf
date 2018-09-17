@@ -1742,9 +1742,10 @@ class SiameseIterator(Iterator):
 
             # Choose comparison cell
             # Determine what class the track will be - different (0), same (1), division (2)
-            # is_same_cell = np.random.random_integers(0, 1)
             division = False
-            type_cell = np.random.choice([0,1,2], p = [1./3., 1./3., 1./3.])
+            #type_cell = np.random.choice([0,1,2], p = [1./3., 1./3., 1./3.])
+            #type_cell = np.random.choice([0,1,2], p = [1./2., 1./2., 0./3.])
+            type_cell = np.random.choice([0,1,2], p = [1./2., 0./3., 1./2.])
 
             # Dealing with edge cases
 
