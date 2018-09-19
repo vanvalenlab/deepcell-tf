@@ -132,7 +132,7 @@ def bn_feature_net_2D(receptive_field=61,
             if VGG_mode:
                 n_conv_filters *= 2
 
-            rf_counter /= 2
+            rf_counter = rf_counter // 2
 
             if multires:
                 layers_to_concat.append(len(x) - 1)
@@ -337,7 +337,7 @@ def bn_feature_net_3D(receptive_field=61,
             if VGG_mode:
                 n_conv_filters *= 2
 
-            rf_counter /= 2
+            rf_counter = rf_counter // 2
 
             if multires:
                 layers_to_concat.append(len(x) - 1)
