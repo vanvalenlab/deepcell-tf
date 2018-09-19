@@ -1,6 +1,4 @@
 import logging
-import pkg_resources
-import pip
 
 try:
     from setuptools import setup, find_packages
@@ -35,7 +33,7 @@ setup(
         'tests': ['pytest',
                   'pytest-cov'],
     },
-    license='LICENSE.txt',
+    license='LICENSE',
     author='David Van Valen',
     author_email='vanvalen@caltech.edu',
     description='Deep learning for single cell image segmentation',

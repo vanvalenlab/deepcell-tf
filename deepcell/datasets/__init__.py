@@ -23,17 +23,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Miscellaneous utility functions
-@author: David Van Valen
-"""
+"""Builtin Datasets"""
 from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
-import re
-
-
-def sorted_nicely(l):
-    convert = lambda text: int(text) if text.isdigit() else text
-    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-    return sorted(l, key=alphanum_key)
+from . import hek293
+from . import hela_s3
+from . import mousebrain
+from . import nih_3t3
