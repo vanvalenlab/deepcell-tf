@@ -41,11 +41,11 @@ from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.layers import ZeroPadding2D, ZeroPadding3D
 from tensorflow.python.keras.regularizers import l2
 
-from .layers import DilatedMaxPool2D, DilatedMaxPool3D
-from .layers import ImageNormalization2D, ImageNormalization3D
-from .layers import Location, Location3D
-from .layers import ReflectionPadding2D, ReflectionPadding3D
-from .layers import TensorProd2D, TensorProd3D
+from deepcell.layers import DilatedMaxPool2D, DilatedMaxPool3D
+from deepcell.layers import ImageNormalization2D, ImageNormalization3D
+from deepcell.layers import Location, Location3D
+from deepcell.layers import ReflectionPadding2D, ReflectionPadding3D
+from deepcell.layers import TensorProd2D, TensorProd3D
 
 
 """
