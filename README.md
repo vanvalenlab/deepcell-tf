@@ -50,7 +50,7 @@ NV_GPU='0' nvidia-docker run -it \
   -v $PWD/deepcell:/usr/local/lib/python3.5/dist-packages/deepcell/ \
   -v $PWD/scripts:/deepcell-tf/scripts \
   -v /data:/data \
-  $USER/deepcell-tf .
+  $USER/deepcell-tf:latest
 ```
 
 ##### Run the docker image as a Jupyter notebook
