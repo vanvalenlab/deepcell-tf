@@ -1,5 +1,5 @@
-# Use the nvidia tensorflow:18.04-py3 image as the parent image
-FROM nvcr.io/nvidia/tensorflow:18.04-py3
+# Use the nvidia tensorflow:18.08-py3 image as the parent image
+FROM nvcr.io/nvidia/tensorflow:18.08-py3
 
 # System maintenance
 RUN apt-get update && apt-get install -y \

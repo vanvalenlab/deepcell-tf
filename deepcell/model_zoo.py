@@ -42,12 +42,11 @@ from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.layers import ZeroPadding2D, ZeroPadding3D
 from tensorflow.python.keras.regularizers import l2
 
-from .layers import DilatedMaxPool2D, DilatedMaxPool3D
-from .layers import ImageNormalization2D, ImageNormalization3D
-from .layers import Location, Location3D
-from .layers import ReflectionPadding2D, ReflectionPadding3D
-from .layers import TensorProd2D, TensorProd3D
-from .layers import Resize
+from deepcell.layers import DilatedMaxPool2D, DilatedMaxPool3D
+from deepcell.layers import ImageNormalization2D, ImageNormalization3D
+from deepcell.layers import Location, Location3D
+from deepcell.layers import ReflectionPadding2D, ReflectionPadding3D
+from deepcell.layers import TensorProd2D, TensorProd3D
 
 
 """
@@ -134,7 +133,7 @@ def bn_feature_net_2D(receptive_field=61,
             if VGG_mode:
                 n_conv_filters *= 2
 
-            rf_counter /= 2
+            rf_counter = rf_counter // 2
 
             if multires:
                 layers_to_concat.append(len(x) - 1)
@@ -339,7 +338,7 @@ def bn_feature_net_3D(receptive_field=61,
             if VGG_mode:
                 n_conv_filters *= 2
 
-            rf_counter /= 2
+            rf_counter = rf_counter // 2
 
             if multires:
                 layers_to_concat.append(len(x) - 1)

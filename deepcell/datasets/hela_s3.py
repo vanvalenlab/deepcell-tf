@@ -30,7 +30,7 @@ from __future__ import print_function
 
 try:
     from tensorflow.python.keras.utils.data_utils import get_file
-except:
+except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
     from tensorflow.python.keras._impl.keras.utils.data_utils import get_file
 
 from deepcell.utils.data_utils import get_data
