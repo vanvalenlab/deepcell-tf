@@ -26,7 +26,7 @@
 """Builtin Datasets"""
 from __future__ import absolute_import
 
-from . import hek293
-from . import hela_s3
-from . import mousebrain
-from . import nih_3t3
+from deepcell.datasets import hek293
+from deepcell.datasets import hela_s3
+from deepcell.datasets import mousebrain
+from deepcell.datasets import nih_3t3
