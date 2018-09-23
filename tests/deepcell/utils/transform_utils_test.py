@@ -149,52 +149,52 @@ class TransformUtilsTest(test.TestCase):
 
         bin_size = 3
         distance = distance_transform_3d(unique_mask_stack, bins=bin_size)
-        assert np.array_equal(np.unique(distance), np.array([0, 1, 2]))
-        assert np.expand_dims(distance, axis=-1).shape == unique_mask_stack.shape
+        self.assertAllEqual(np.unique(distance), np.array([0, 1, 2]))
+        self.assertEqual(np.expand_dims(distance, axis=-1).shape, unique_mask_stack.shape)
 
         bin_size = 4
         distance = distance_transform_3d(unique_mask_stack, bins=bin_size)
-        assert np.array_equal(np.unique(distance), np.array([0, 1, 2, 3]))
-        assert np.expand_dims(distance, axis=-1).shape == unique_mask_stack.shape
+        self.assertAllEqual(np.unique(distance), np.array([0, 1, 2, 3]))
+        self.assertEqual(np.expand_dims(distance, axis=-1).shape, unique_mask_stack.shape)
 
         K.set_image_data_format('channels_first')
         unique_mask_stack = np.rollaxis(unique_mask_stack, -1, 1)
 
         bin_size = 3
         distance = distance_transform_3d(unique_mask_stack, bins=bin_size)
-        assert np.array_equal(np.unique(distance), np.array([0, 1, 2]))
-        assert np.expand_dims(distance, axis=1).shape == unique_mask_stack.shape
+        self.assertAllEqual(np.unique(distance), np.array([0, 1, 2]))
+        self.assertEqual(np.expand_dims(distance, axis=1).shape, unique_mask_stack.shape)
 
         bin_size = 4
         distance = distance_transform_3d(unique_mask_stack, bins=bin_size)
-        assert np.array_equal(np.unique(distance), np.array([0, 1, 2, 3]))
-        assert np.expand_dims(distance, axis=1).shape == unique_mask_stack.shape
+        self.assertAllEqual(np.unique(distance), np.array([0, 1, 2, 3]))
+        self.assertEqual(np.expand_dims(distance, axis=1).shape, unique_mask_stack.shape)
 
     def test_distance_transform_2d(self):
         for img in _generate_test_masks():
             K.set_image_data_format('channels_last')
             bin_size = 3
             distance = distance_transform_2d(img, bins=bin_size)
-            assert np.array_equal(np.unique(distance), np.array([0, 1, 2]))
-            assert np.expand_dims(distance, axis=-1).shape == img.shape
+            self.assertAllEqual(np.unique(distance), np.array([0, 1, 2]))
+            self.assertEqual(np.expand_dims(distance, axis=-1).shape, img.shape)
 
             bin_size = 4
             distance = distance_transform_2d(img, bins=bin_size)
-            assert np.array_equal(np.unique(distance), np.array([0, 1, 2, 3]))
-            assert np.expand_dims(distance, axis=-1).shape == img.shape
+            self.assertAllEqual(np.unique(distance), np.array([0, 1, 2, 3]))
+            self.assertEqual(np.expand_dims(distance, axis=-1).shape, img.shape)
 
             K.set_image_data_format('channels_first')
             img = np.rollaxis(img, -1, 1)
 
             bin_size = 3
             distance = distance_transform_2d(img, bins=bin_size)
-            assert np.array_equal(np.unique(distance), np.array([0, 1, 2]))
-            assert np.expand_dims(distance, axis=1).shape == img.shape
+            self.assertAllEqual(np.unique(distance), np.array([0, 1, 2]))
+            self.assertEqual(np.expand_dims(distance, axis=1).shape, img.shape)
 
             bin_size = 4
             distance = distance_transform_2d(img, bins=bin_size)
-            assert np.array_equal(np.unique(distance), np.array([0, 1, 2, 3]))
-            assert np.expand_dims(distance, axis=1).shape == img.shape
+            self.assertAllEqual(np.unique(distance), np.array([0, 1, 2, 3]))
+            self.assertEqual(np.expand_dims(distance, axis=1).shape, img.shape)
 
     def test_to_categorical(self):
         num_classes = 5
@@ -209,43 +209,43 @@ class TransformUtilsTest(test.TestCase):
         one_hots = [to_categorical(label, num_classes) for label in labels]
         for label, one_hot, expected_shape in zip(labels, one_hots, expected_shapes):
             # Check shape
-            assert one_hot.shape == expected_shape
+            self.assertEqual(one_hot.shape, expected_shape)
             # Make sure there are only 0s and 1s
-            assert np.array_equal(one_hot, one_hot.astype(bool))
+            self.assertAllEqual(one_hot, one_hot.astype(bool))
             # Make sure there is exactly one 1 in a row
             assert np.all(one_hot.sum(axis=-1) == 1)
             # Get original labels back from one hots
-            assert np.all(np.argmax(one_hot, -1).reshape(label.shape) == label)
+            self.assertAllEqual(np.argmax(one_hot, -1).reshape(label.shape), label)
 
     def test_rotate_array_0(self):
         img = _get_image()
         unrotated_image = rotate_array_0(img)
-        np_test.assert_array_equal(unrotated_image, img)
+        self.assertAllEqual(unrotated_image, img)
 
     def test_rotate_array_90(self):
         img = _get_image()
         rotated_image = rotate_array_90(img)
         expected_image = np.rot90(img)
-        np_test.assert_array_equal(rotated_image, expected_image)
+        self.assertAllEqual(rotated_image, expected_image)
 
     def test_rotate_array_180(self):
         img = _get_image()
         rotated_image = rotate_array_180(img)
         expected_image = np.rot90(np.rot90(img))
-        np_test.assert_array_equal(rotated_image, expected_image)
+        self.assertAllEqual(rotated_image, expected_image)
 
     def test_rotate_array_270(self):
         img = _get_image()
         rotated_image = rotate_array_270(img)
         expected_image = np.rot90(np.rot90(np.rot90(img)))
-        np_test.assert_array_equal(rotated_image, expected_image)
+        self.assertAllEqual(rotated_image, expected_image)
 
     def test_rotate_array_90_and_180(self):
         img = _get_image()
         rotated_image1 = rotate_array_90(img)
         rotated_image1 = rotate_array_90(rotated_image1)
         rotated_image2 = rotate_array_180(img)
-        np_test.assert_array_equal(rotated_image1, rotated_image2)
+        self.assertAllEqual(rotated_image1, rotated_image2)
 
 if __name__ == '__main__':
     test.main()

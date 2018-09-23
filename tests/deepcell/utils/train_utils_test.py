@@ -39,13 +39,13 @@ class TrainUtilsTest(test.TestCase):
     def test_rate_scheduler(self):
         # if decay is small, learning rate should decrease as epochs increase
         rs = rate_scheduler(lr=.001, decay=.95)
-        assert rs(1) > rs(2)
+        self.assertGreater(rs(1), rs(2))
         # if decay is large, learning rate should increase as epochs increase
         rs = rate_scheduler(lr=.001, decay=1.05)
-        assert rs(1) < rs(2)
+        self.assertLess(rs(1), rs(2))
         # if decay is 1, learning rate should not change
         rs = rate_scheduler(lr=.001, decay=1)
-        assert rs(1) == rs(2)
+        self.assertEqual(rs(1), rs(2))
 
 if __name__ == '__main__':
     test.main()

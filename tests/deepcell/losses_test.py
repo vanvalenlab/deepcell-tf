@@ -53,8 +53,7 @@ ALL_LOSSES = [
     losses.sample_categorical_crossentropy,
     losses.weighted_focal_loss,
     # losses.dice_coef_loss,
-    # losses.discriminative_instance_loss,
-    # losses.discriminative_instance_loss_3D
+    # losses.discriminative_instance_loss
 ]
 
 
@@ -97,12 +96,12 @@ class KerasLossesTest(test.TestCase):
             y_a = keras.backend.variable(np.random.randint(0, 7, (5, 6)))
             y_b = keras.backend.variable(np.random.random((5, 6, 7)))
             objective_output = keras.losses.sparse_categorical_crossentropy(y_a, y_b)
-            assert keras.backend.eval(objective_output).shape == (5, 6)
+            self.assertEqual(keras.backend.eval(objective_output).shape, (5, 6))
 
             y_a = keras.backend.variable(np.random.randint(0, 7, (6,)))
             y_b = keras.backend.variable(np.random.random((6, 7)))
             objective_output = keras.losses.sparse_categorical_crossentropy(y_a, y_b)
-            assert keras.backend.eval(objective_output).shape == (6,)
+            self.assertEqual(keras.backend.eval(objective_output).shape, (6,))
 
     def test_serialization(self):
         fn = keras.losses.get('mse')
@@ -124,8 +123,8 @@ class KerasLossesTest(test.TestCase):
 
         with keras.utils.custom_object_scope({'_MSEMAELoss': _MSEMAELoss}):
             deserialized = keras.losses.deserialize(serialized)
-        assert isinstance(deserialized, _MSEMAELoss)
-        assert deserialized.mse_fraction == 0.3
+        self.assertIsInstance(deserialized, _MSEMAELoss)
+        self.assertEqual(deserialized.mse_fraction, 0.3)
 
     def test_serializing_model_with_loss_class(self):
         tmpdir = self.get_temp_dir()
