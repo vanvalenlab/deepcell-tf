@@ -53,8 +53,7 @@ ALL_LOSSES = [
     losses.sample_categorical_crossentropy,
     losses.weighted_focal_loss,
     # losses.dice_coef_loss,
-    # losses.discriminative_instance_loss,
-    # losses.discriminative_instance_loss_3D
+    # losses.discriminative_instance_loss
 ]
 
 
