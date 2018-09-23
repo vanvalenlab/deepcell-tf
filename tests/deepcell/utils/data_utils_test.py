@@ -28,10 +28,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+
 import numpy as np
 from tensorflow.python.keras import backend as K
 from tensorflow.python.platform import test
 
+from deepcell.utils.data_utils import get_data
 from deepcell.utils.data_utils import sample_label_matrix
 from deepcell.utils.data_utils import sample_label_movie
 from deepcell.utils.data_utils import get_max_sample_num_list
@@ -42,6 +45,29 @@ from deepcell.utils.data_utils import reshape_matrix
 
 
 class TestDataUtils(test.TestCase):
+
+    def test_get_data(self):
+        test_size = .1
+        img_w, img_h = 30, 30
+        X = np.random.random((10, img_w, img_h, 1))
+        y = np.random.randint(3, size=(10, img_w, img_h, 1))
+
+        temp_dir = self.get_temp_dir()
+        good_file = os.path.join(temp_dir, 'good.npz')
+        np.savez(good_file, X=X, y=y)
+
+        train_dict, test_dict = get_data(good_file, test_size=test_size)
+        X_test, X_train = test_dict['X'], train_dict['X']
+
+        self.assertTrue(isinstance(train_dict, dict))
+        self.assertTrue(isinstance(test_dict, dict))
+
+        self.assertEqual(X_test.size / (X_test.size + X_train.size), test_size)
+
+        bad_file = os.path.join(temp_dir, 'bad.npz')
+        np.savez(bad_file, X_bad=X, y_bad=y)
+        with self.assertRaises(KeyError):
+            _, _ = get_data(bad_file)
 
     def test_get_max_sample_num_list(self):
         K.set_image_data_format('channels_last')
@@ -113,6 +139,7 @@ class TestDataUtils(test.TestCase):
 
         r, c, b, l = sample_label_matrix(
             y, window_size=(win_x, win_y),
+            max_training_examples=None,
             padding='same', data_format='channels_last')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(r).size == np.unique(c).size == 2
@@ -133,6 +160,7 @@ class TestDataUtils(test.TestCase):
 
         r, c, b, l = sample_label_matrix(
             y, window_size=(win_x, win_y),
+            max_training_examples=None,
             padding='same', data_format='channels_first')
         assert len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
@@ -154,6 +182,7 @@ class TestDataUtils(test.TestCase):
 
         f, r, c, b, l = sample_label_movie(
             y, window_size=(win_x, win_y, win_z),
+            max_training_examples=None,
             padding='same', data_format='channels_last')
         assert len(f) == len(r) == len(c) == len(b) == len(l)
         assert np.unique(f).size == np.unique(r).size == np.unique(c).size == 2
@@ -174,6 +203,7 @@ class TestDataUtils(test.TestCase):
 
         f, r, c, b, l = sample_label_movie(
             y, window_size=(win_x, win_y, win_z),
+            max_training_examples=None,
             padding='same', data_format='channels_first')
         assert len(f) == len(r) == len(c) == len(b) == len(l)
         assert np.unique(b).size == 2
@@ -190,27 +220,38 @@ class TestDataUtils(test.TestCase):
         K.set_image_data_format('channels_last')
         arr = np.zeros((1, img_size, img_size, 1))
         trimmed_arr = trim_padding(arr, win_x, win_y)
-        assert trimmed_arr.shape == (1, trimmed_x, trimmed_y, 1)
+        self.assertEqual(trimmed_arr.shape, (1, trimmed_x, trimmed_y, 1))
         # test channels_first
         K.set_image_data_format('channels_first')
         arr = np.zeros((1, 1, img_size, img_size))
         trimmed_arr = trim_padding(arr, win_x, win_y)
-        assert trimmed_arr.shape == (1, 1, trimmed_x, trimmed_y)
+        self.assertEqual(trimmed_arr.shape, (1, 1, trimmed_x, trimmed_y))
 
         # test 3d image stack
         img_size = 256
+        frames = 30
         win_x, win_y = 20, 30
+        win_z = 2
         trimmed_x = img_size - 2 * win_x
         trimmed_y = img_size - 2 * win_y
+        trimmed_z = frames - 2 * win_z
         K.set_image_data_format('channels_last')
-        arr = np.zeros((1, 30, img_size, img_size, 1))
+        arr = np.zeros((1, frames, img_size, img_size, 1))
+        # trim win_z
+        trimmed_arr = trim_padding(arr, win_x, win_y, win_z)
+        self.assertEqual(trimmed_arr.shape, (1, trimmed_z, trimmed_x, trimmed_y, 1))
+        # don't trim win_z
         trimmed_arr = trim_padding(arr, win_x, win_y)
-        assert trimmed_arr.shape == (1, 30, trimmed_x, trimmed_y, 1)
+        self.assertEqual(trimmed_arr.shape, (1, frames, trimmed_x, trimmed_y, 1))
         # test channels_first
         K.set_image_data_format('channels_first')
         arr = np.zeros((1, 1, 30, img_size, img_size))
+        # trim win_z
+        trimmed_arr = trim_padding(arr, win_x, win_y, win_z)
+        self.assertEqual(trimmed_arr.shape, (1, 1, trimmed_z, trimmed_x, trimmed_y))
+        # don't trim win_z
         trimmed_arr = trim_padding(arr, win_x, win_y)
-        assert trimmed_arr.shape == (1, 1, 30, trimmed_x, trimmed_y)
+        self.assertEqual(trimmed_arr.shape, (1, 1, frames, trimmed_x, trimmed_y))
 
         # test bad input
         with self.assertRaises(ValueError):
