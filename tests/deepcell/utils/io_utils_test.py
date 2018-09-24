@@ -42,6 +42,7 @@ from deepcell.utils.io_utils import get_image
 from deepcell.utils.io_utils import nikon_getfiles
 from deepcell.utils.io_utils import get_image_sizes
 from deepcell.utils.io_utils import get_images_from_directory
+from deepcell.utils.io_utils import save_model_output
 
 
 def _write_image(filepath, img_w=30, img_h=30):
@@ -124,6 +125,48 @@ class TestIOUtils(test.TestCase):
         self.assertIsInstance(img, list)
         self.assertEqual(len(img), 1)
         self.assertEqual(img[0].shape, (1, 1, 300, 300))
+
+    def test_save_model_output(self):
+        temp_dir = self.get_temp_dir()
+        batches = 1
+        features = 3
+        img_w, img_h, frames = 30, 30, 5
+
+        # test channels_last
+        K.set_image_data_format('channels_last')
+
+        # test 2D output
+        test_output = np.random.random((batches, img_w, img_h, features))
+        save_model_output(test_output, temp_dir, 'test', channel=None)
+        # test saving only one channel
+        save_model_output(test_output, temp_dir, 'test', channel=1)
+
+        # test 3D output
+        test_output = np.random.random((batches, frames, img_w, img_h, features))
+        save_model_output(test_output, temp_dir, 'test', channel=None)
+        # test saving only one channel
+        save_model_output(test_output, temp_dir, 'test', channel=1)
+
+        # test channels_first 2D
+        test_output = np.random.random((batches, features, img_w, img_h))
+        save_model_output(test_output, temp_dir, 'test', channel=None,
+                          data_format='channels_first')
+
+        # test channels_first 3D
+        test_output = np.random.random((batches, features, frames, img_w, img_h))
+        save_model_output(test_output, temp_dir, 'test', channel=None,
+                          data_format='channels_first')
+
+        # test bad channel
+        with self.assertRaises(ValueError):
+            test_output = np.random.random((batches, features, img_w, img_h))
+            save_model_output(test_output, temp_dir, 'test', channel=-1)
+            save_model_output(test_output, temp_dir, 'test', channel=features + 1)
+
+        # test no output directory
+        with self.assertRaises(FileNotFoundError):
+            bad_dir = os.path.join(temp_dir, 'test')
+            save_model_output(test_output, bad_dir, 'test', channel=None)
 
 if __name__ == '__main__':
     test.main()

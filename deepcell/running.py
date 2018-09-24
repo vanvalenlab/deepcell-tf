@@ -31,7 +31,6 @@ from __future__ import print_function
 from __future__ import division
 
 import os
-import errno
 import warnings
 
 import numpy as np
@@ -43,7 +42,7 @@ from deepcell.utils.data_utils import trim_padding
 from deepcell.utils.io_utils import get_images_from_directory
 
 
-def get_cropped_input_shape(images, num_crops=4, receptive_field=61):
+def get_cropped_input_shape(images, num_crops=4, receptive_field=61, data_format=None):
     """Helper function to calculate the input_shape for models
     that will process cropped sub-images.
     # Arguments:
@@ -52,7 +51,9 @@ def get_cropped_input_shape(images, num_crops=4, receptive_field=61):
     # Returns:
         input_shape: new input_shape for model to process sub-images.
     """
-    if K.image_data_format() == 'channels_first':
+    if data_format is None:
+        data_format = K.image_data_format()
+    if data_format == 'channels_first':
         channel_axis = 1
         row_axis = len(images.shape) - 2
         col_axis = len(images.shape) - 1
@@ -201,57 +202,6 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding=
                     output[:, a:b, c:d, :] = predicted
 
     return output
-
-
-def save_model_output(output, output_dir, feature_name='', channel=None):
-    """Save model output as tiff images in the provided directory
-    # Arguments:
-        output: output of model. Expects channel to have its own axis
-        output_dir: directory to save the model output images
-        feature_name: optional description to start each output image filename
-        channel: if given,only saves this channel
-    """
-    is_channels_first = K.image_data_format() == 'channels_first'
-    channel_axis = 1 if is_channels_first else -1
-    z_axis = 2 if is_channels_first else 1
-
-    if 0 > channel > output.shape[channel_axis]:
-        raise ValueError('`channel` must be in the range of the output '
-                         'channels. Got ', channel)
-
-    for b in range(output.shape[0]):
-        # If multiple batches of results, create a numbered subdirectory
-        batch_dir = str(b) if output.shape[0] > 1 else ''
-
-        try:
-            os.makedirs(os.path.join(output_dir, batch_dir))
-        except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
-                raise
-
-        # If 2D, convert to 3D with only one z-axis
-        if len(output.shape) == 4:
-            output = np.expand_dims(output, axis=z_axis)
-
-        for f in range(output.shape[z_axis]):
-            for c in range(output.shape[channel_axis]):
-                # if only saving one channel, skip the non-equal channels
-                if channel is not None and channel != c:
-                    continue
-
-                if is_channels_first:
-                    feature = output[b, c, f, :, :]
-                else:
-                    feature = output[b, f, :, :, c]
-
-                zpad = max(3, len(str(output.shape[z_axis])))
-                cnnout_name = 'feature_{}_frame_{}.tif'.format(c, str(f).zfill(zpad))
-                if feature_name:
-                    cnnout_name = '{}_{}'.format(feature_name, cnnout_name)
-
-                out_file_path = os.path.join(output_dir, batch_dir, cnnout_name)
-                tiff.imsave(out_file_path, feature.astype('int32'))
-        print('Saved {} frames to {}'.format(output.shape[1], output_dir))
 
 
 def run_model(image, model, win_x=30, win_y=30, split=True):

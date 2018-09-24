@@ -34,6 +34,7 @@ import os
 
 import numpy as np
 from skimage.io import imread
+from skimage.external import tifffile as tiff
 from skimage.external.tifffile import TiffFile
 from tensorflow.python.keras import backend as K
 
@@ -115,3 +116,57 @@ def get_images_from_directory(data_location, channel_names):
         all_images.append(all_channels)
 
     return all_images
+
+
+def save_model_output(output,
+                      output_dir,
+                      feature_name='',
+                      channel=None,
+                      data_format=None):
+    """Save model output as tiff images in the provided directory
+    # Arguments:
+        output: output of model. Expects channel to have its own axis
+        output_dir: directory to save the model output images
+        feature_name: optional description to start each output image filename
+        channel: if given, only saves this channel
+    """
+    if data_format is None:
+        data_format = K.image_data_format()
+    channel_axis = 1 if data_format == 'channels_first' else -1
+    z_axis = 2 if data_format == 'channels_first' else 1
+
+    if channel is not None and not 0 < channel < output.shape[channel_axis]:
+        raise ValueError('`channel` must be in the range of the output '
+                         'channels. Got ', channel)
+
+    if not os.path.isdir(output_dir):
+        raise FileNotFoundError('{} is not a valid output_dir'.format(
+            output_dir))
+
+    for b in range(output.shape[0]):
+        # If multiple batches of results, create a numbered subdirectory
+        batch_dir = str(b) if output.shape[0] > 1 else ''
+
+        # If 2D, convert to 3D with only one z-axis
+        if len(output.shape) == 4:
+            output = np.expand_dims(output, axis=z_axis)
+
+        for f in range(output.shape[z_axis]):
+            for c in range(output.shape[channel_axis]):
+                # if only saving one channel, skip the non-equal channels
+                if channel is not None and channel != c:
+                    continue
+
+                if data_format == 'channels_first':
+                    feature = output[b, c, f, :, :]
+                else:
+                    feature = output[b, f, :, :, c]
+
+                zpad = max(3, len(str(output.shape[z_axis])))
+                cnnout_name = 'feature_{}_frame_{}.tif'.format(c, str(f).zfill(zpad))
+                if feature_name:
+                    cnnout_name = '{}_{}'.format(feature_name, cnnout_name)
+
+                out_file_path = os.path.join(output_dir, batch_dir, cnnout_name)
+                tiff.imsave(out_file_path, feature.astype('int32'))
+        print('Saved {} frames to {}'.format(output.shape[1], output_dir))
