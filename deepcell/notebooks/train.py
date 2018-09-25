@@ -33,8 +33,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import hashlib
 import os
+import errno
+import hashlib
 import shutil
 import time
 
@@ -46,16 +47,17 @@ def make_notebook(data,
                   field_size=61,
                   dim=2,
                   transform='deepcell',
+                  output_dir=os.path.join('scripts', 'generated_notebooks'),
                   **kwargs):
-    """Create a training notebook that will step through the entire
-    training process from making an npz file to creating and training
-    a deep learning model.
+    """Create a training notebook that will step through the training
+    process from making an npz file to creating and training a model.
     # Arguments:
         data: zipfile of data to load into npz and train on
         train_type: training method to use, either "sample" or "conv"
         field_size: receptive field of the model, a positive integer
         dim: dimensionality of the data, either 2 or 3
         transform: transformation to apply to the data
+        output_dir: directory to save the notebook
     """
     if train_type.lower() not in {'sample', 'conv'}:
         raise ValueError('`train_type` must be one of "sample" or "conv"')
@@ -67,8 +69,16 @@ def make_notebook(data,
     if dim not in {2, 3}:
         raise ValueError('`dim` must be either 2 or 3 for 2D or 3D images')
 
-    if transform not in {None, 'deepcell', 'watershed'}:
+    if transform and transform.lower() not in {'deepcell', 'watershed'}:
         raise ValueError('`transform` got unexpected value', transform)
+    if transform:
+        transform = transform.lower()
+
+    try:
+        os.makedirs(output_dir)
+    except OSError as exc:
+        if exc.errno != errno.EEXIST:
+            raise
 
     # list of cells that will be in the notebook
     cells = []
@@ -116,9 +126,10 @@ def make_notebook(data,
         'COL_AXIS = {} if IS_CHANNELS_FIRST else {}'.format(dim + 1, dim),
         'CHANNEL_AXIS = 1 if IS_CHANNELS_FIRST else {}'.format(dim + 1),
         '',
-        'data_zip = zipfile.ZipFile(DATA_FILE)',
-        'data_zip.extractall(DATA_DIR)',
-        'data_zip.close()',
+        'if os.path.splitext({})[-1].lower() == ".zip":.format(data)',
+        '    data_zip = zipfile.ZipFile(DATA_FILE)',
+        '    data_zip.extractall(DATA_DIR)',
+        '    data_zip.close()',
         '',
         'for d in (NPZ_DIR, MODEL_DIR, RESULTS_DIR):',
         '    os.makedirs(d)'
@@ -131,9 +142,9 @@ def make_notebook(data,
         '    dimensionality={dim},  # 2D or 3D data'.format(dim=dim),
         '    direc_name=DATA_DIR,',
         '    file_name_save=os.path.join(NPZ_DIR, DATA_FILE),',
-        '    training_direcs=None',
+        '    training_direcs=None,',
         '    channel_names=[""],  # matches image files as wildcard',
-        '    raw_image_direc="raw"',
+        '    raw_image_direc="raw",',
         '    annotation_direc="annotated",  # directory name of label data',
         '    reshape_size=RESHAPE_SIZE if RESIZE else None)',
         '',
@@ -168,8 +179,11 @@ def make_notebook(data,
     cells.append(nbf.v4.new_code_cell('\n'.join(load_data)))
 
     # Instantiate the model
-    model_class = 'bn_feature_net{}_{}D'.format(
-        '_skip' if train_type == 'conv' else '', dim)
+    create_model = [
+        '# Instantiate the model',
+        'model = bn_feature_net{}_{}D('.format(
+            '_skip' if train_type == 'conv' else '', dim),
+    ]
 
     if transform == 'deepcell':
         n_features = 4
@@ -182,7 +196,7 @@ def make_notebook(data,
         'receptive_field': field_size,
         'n_channels': 'X.shape[CHANNEL_AXIS]',
         'input_shape': 'input_shape',
-        'norm_method': 'median' if dim == 2 else 'whole_image',
+        'norm_method': '"{}"'.format('median' if dim == 2 else 'whole_image'),
         'reg': 1e-5,
         'n_conv_filters': 32,
         'n_dense_filters': 128,
@@ -195,11 +209,6 @@ def make_notebook(data,
             'last_only': False,
             'multires': False
         })
-
-    create_model = [
-        '# Instantiate the model',
-        'model = {}('.format(model_class),
-    ]
 
     create_model.extend(['    {}={},'.format(k, v) for k, v in model_kwargs.items()])
     create_model.append(')')
@@ -247,7 +256,7 @@ def make_notebook(data,
     ])
 
     # Create and write to new ipynb
-    nbf.write(nb, 'train.ipynb')
+    nbf.write(nb, os.path.join(output_dir, 'train.ipynb'))
 
     # Move data file to "notebook" directory
     # shutil.move(data, os.path.join('notebooks', os.path.basename(data)))

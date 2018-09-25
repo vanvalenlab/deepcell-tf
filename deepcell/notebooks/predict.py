@@ -31,8 +31,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import hashlib
 import os
+import errno
+import hashlib
 import shutil
 import time
 
@@ -40,12 +41,26 @@ import nbformat as nbf
 
 
 # Create Visual Notebook
-def make_notebook(model_output):
+def make_notebook(model_output,
+                  output_dir=os.path.join('scripts', 'generated_notebooks')):
     """Create a visualization notebook that will help visualize
     the output of a deep learning model
     # Arguments:
         model_output: output of a deep learning model to visualize
+        output_dir: directory to save the notebook
     """
+    # validate inputs
+    if not os.path.isfile(model_output):
+        raise FileNotFoundError('{} does not exist.  '
+                                '`model_output` must be a file.'.format(
+                                    model_output))
+    # create output_dir if it does not already exist
+    try:
+        os.makedirs(output_dir)
+    except OSError as exc:
+        if exc.errno != errno.EEXIST:
+            raise
+
     # list of cells that will be in the notebook
     cells = []
 
@@ -73,7 +88,7 @@ def make_notebook(model_output):
 
     # Create and write to new ipynb
     nb = nbf.v4.new_notebook(cells=cells)
-    nbf.write(nb, 'visualize.ipynb')
+    nbf.write(nb, os.path.join(output_dir, 'visualize.ipynb'))
 
     # Move output image file to "notebook" directory
     # path = os.path.join('notebooks', os.path.basename(model_output))
