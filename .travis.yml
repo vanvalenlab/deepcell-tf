@@ -1,0 +1,27 @@
+sudo: required
+services:
+  - docker
+env:
+  global:
+    - IMAGE_NAME=vanvalenlab/deepcell-tf
+    - DOCKER_USER=myrobot
+    # DOCKER_PASS=...
+    - secret: "<something long>"
+
+before_script:
+  - version="$(awk '$2 == "CAKE_SERVICE_VERSION" { print $3; exit }' Dockerfile)"
+  - docker pull "$IMAGE_NAME" || true
+script:
+  - docker build --pull --cache-from "$IMAGE_NAME" --tag "$IMAGE_NAME" .
+after_script:
+  - docker images
+
+before_deploy:
+  - docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
+  - docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${version}"
+deploy:
+  provider: script
+  script: docker push "${IMAGE_NAME}:latest" && docker push "${IMAGE_NAME}:${version}"
+  on:
+    branch: master

@@ -61,12 +61,12 @@ def make_notebook(data,
         raise ValueError('`train_type` must be one of "sample" or "conv"')
     train_type = train_type.lower()
 
-    if not isinstance(field_size, int) or field_size <=0:
+    if not isinstance(field_size, int) or field_size <= 0:
         raise ValueError('`field_size` must be a positive integer')
-    
+
     if dim not in {2, 3}:
         raise ValueError('`dim` must be either 2 or 3 for 2D or 3D images')
-    
+
     if transform not in {None, 'deepcell', 'watershed'}:
         raise ValueError('`transform` got unexpected value', transform)
 
@@ -170,14 +170,14 @@ def make_notebook(data,
     # Instantiate the model
     model_class = 'bn_feature_net{}_{}D'.format(
         '_skip' if train_type == 'conv' else '', dim)
-    
+
     if transform == 'deepcell':
         n_features = 4
     elif transform == 'watershed':
         n_features = kwargs.get('distance_bins', 4)
     else:  # transform is None
         n_features = 2
-    
+
     model_kwargs = {
         'receptive_field': field_size,
         'n_channels': 'X.shape[CHANNEL_AXIS]',
@@ -271,5 +271,5 @@ def make_notebook(data,
 
     # # Move data file to data directory
     # shutil.move(data, os.path.join('data', os.path.basename(data)))
-    
+
     os.system('jupyter notebook')
