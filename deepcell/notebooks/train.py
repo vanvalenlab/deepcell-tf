@@ -35,9 +35,6 @@ from __future__ import print_function
 
 import os
 import errno
-import hashlib
-import shutil
-import time
 
 import nbformat as nbf
 
