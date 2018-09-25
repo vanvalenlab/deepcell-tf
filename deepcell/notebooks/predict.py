@@ -89,4 +89,4 @@ def make_notebook(model_output,
     nb = nbf.v4.new_notebook(cells=cells)
     ts = time.time()
     st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-    nbf.write(nb, os.path.join(output_dir, 'visualize_{}.ipynb'.format(ts)))
+    nbf.write(nb, os.path.join(output_dir, 'visualize_{}.ipynb'.format(st)))
