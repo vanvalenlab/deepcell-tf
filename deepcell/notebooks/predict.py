@@ -33,9 +33,8 @@ from __future__ import print_function
 
 import os
 import errno
-import hashlib
-import shutil
 import time
+import datetime
 
 import nbformat as nbf
 
@@ -88,30 +87,6 @@ def make_notebook(model_output,
 
     # Create and write to new ipynb
     nb = nbf.v4.new_notebook(cells=cells)
-    nbf.write(nb, os.path.join(output_dir, 'visualize.ipynb'))
-
-    # Move output image file to "notebook" directory
-    # path = os.path.join('notebooks', os.path.basename(model_output))
-    # shutil.move(model_output, path)
-
-    # # Change CWD to "notebook" directory
-    # os.chdir('notebooks')
-
-    # # Create directory for notebook and data
-    # ts = '{}'.format(time.time()).encode('utf-8')
-    # hashed_directory = 'visual_{}'.format(hashlib.md5(ts).hexdigest())
-    # os.mkdir(hashed_directory)
-
-    # # Move output image file to new directory
-    # path = os.path.join(hashed_directory, os.path.basename(model_output))
-    # shutil.move(model_output, path)
-
-    # # Change CWD to specific directory
-    # os.chdir(os.path.join('.', hashed_directory))
-
-    # # Create data directory
-    # os.mkdir('data')
-
-    # # Move output image file to data directory
-    # path = os.path.join('data', os.path.basename(model_output))
-    # shutil.move(model_output, path)
+    ts = time.time()
+    st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+    nbf.write(nb, os.path.join(output_dir, 'visualize_{}.ipynb'.format(ts)))
