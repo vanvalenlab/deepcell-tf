@@ -111,8 +111,8 @@ def make_notebook(data,
 
     # Training variables setup
     training_vars = [
-        'RESIZE = True',
-        'RESHAPE_SIZE = 512',
+        'RESIZE = False',
+        'RESHAPE_SIZE = 256',
         '',
         '# filepath constants',
         'ROOT_DIR = "{}"'.format(os.path.join('.', 'output')),
@@ -120,7 +120,7 @@ def make_notebook(data,
         'MODEL_DIR = os.path.join(ROOT_DIR, "models")',
         'NPZ_DIR = os.path.join(ROOT_DIR, "npz_data")',
         'EXPORT_DIR = os.path.join(ROOT_DIR, "exports")',
-        'DATA_FILE = "{}_data"'.format(os.path.basename(data)),
+        'DATA_FILE = "{}_data"'.format(os.path.splitext(os.path.basename(data))[0]),
         '',
         '# Check for channels_first or channels_last',
         'IS_CHANNELS_FIRST = keras.backend.image_data_format() == "channels_first"',
@@ -228,8 +228,8 @@ def make_notebook(data,
         'optimizer': 'optimizer',
         'batch_size': 'batch_size',
         'n_epoch': 'n_epoch',
-        'direc_save': 'os.path.join(MODEL_DIR, PREFIX)',
-        'direc_data': 'os.path.join(NPZ_DIR, PREFIX)',
+        'direc_save': 'MODEL_DIR',
+        'direc_data': 'NPZ_DIR',
         'lr_sched': 'lr_sched',
         'rotation_range': 180,
         'flip': True,
@@ -263,28 +263,3 @@ def make_notebook(data,
 
     # Create and write to new ipynb
     nbf.write(nb, os.path.join(output_dir, 'train.ipynb'))
-
-    # Move data file to "notebook" directory
-    # shutil.move(data, os.path.join('notebooks', os.path.basename(data)))
-
-    # # Change CWD to "notebook" directory
-    # os.chdir(os.path.join('.', 'notebooks'))
-
-    # # Create directory for notebook and data
-    # ts = '{}'.format(time.time()).encode('utf-8')
-    # hashed_directory = 'train_{}'.format(hashlib.md5(ts).hexdigest())
-    # os.mkdir(hashed_directory)
-
-    # # Move data file to new directory
-    # shutil.move(data, os.path.join(hashed_directory, os.path.basename(data)))
-
-    # # Change CWD to new directory
-    # os.chdir(hashed_directory)
-
-    # # Create data directory
-    # os.mkdir('data')
-
-    # # Move data file to data directory
-    # shutil.move(data, os.path.join('data', os.path.basename(data)))
-
-    os.system('jupyter notebook')
