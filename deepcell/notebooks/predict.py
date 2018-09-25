@@ -65,7 +65,7 @@ def make_notebook(model_output,
 
     # Markdown Header
     text = [
-        '## Visualize Predictions'
+        '## Visualize Predictions',
         'A template Jupyter notebook to explore returned predictions'
     ]
     cells.append(nbf.v4.new_markdown_cell('\n'.join(text)))
