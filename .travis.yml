@@ -31,7 +31,7 @@ install:
   - pip install tensorflow==$TF_VERSION
   # install fizyr packages for retinanet and maskrcnn
   - pip install keras-retinanet opencv-python
-  - pip install git+git://github.com/fizyr/keras-maskrcnn.git
+  - pip install git+git://github.com/fizyr/keras-maskrcnn.git@fa3d7f8e81d0ffb036fde5e134dcdbf35c206fc1
   - python setup.py install
 
   # set library path
