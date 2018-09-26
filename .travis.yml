@@ -30,7 +30,7 @@ install:
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
   # install fizyr packages for retinanet and maskrcnn
-  - pip install keras-retinanet
+  - pip install keras-retinanet opencv-python
   - pip install git+git://github.com/fizyr/keras-maskrcnn.git
   - python setup.py install
 
@@ -39,4 +39,4 @@ install:
 
 # command to run tests
 script:
-  - python -m pytest --cov=deepcell --pep8 deepcell tests
+  - PYTHONPATH=$PWD:$PYTHONPATH python -m pytest --cov=deepcell --pep8 deepcell tests
