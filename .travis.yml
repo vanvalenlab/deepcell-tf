@@ -41,4 +41,4 @@ install:
 
 # command to run tests
 script:
-  - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8 deepcell tests
+  - python -m pytest --cov=deepcell --pep8 deepcell tests
