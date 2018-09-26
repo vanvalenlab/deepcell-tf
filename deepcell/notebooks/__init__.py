@@ -26,5 +26,5 @@
 """Automatically generate jupyter notebooks"""
 from __future__ import absolute_import
 
-from deepcell.notebooks import predict
+from deepcell.notebooks import visualize
 from deepcell.notebooks import train
