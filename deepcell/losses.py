@@ -110,9 +110,13 @@ def weighted_categorical_crossentropy(y_true, y_pred, n_classes=3, axis=None, fr
     return - tf.reduce_sum(tf.multiply(y_true * tf.log(y_pred), class_weights), axis=axis)
 
 
-def sample_categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from_logits=False):
-    """Categorical crossentropy between an output tensor and a target tensor. Only the sampled
-    pixels defined by y_true = 1 are used to compute the cross entropy
+def sample_categorical_crossentropy(y_true,
+                                    y_pred,
+                                    class_weights=None,
+                                    axis=None,
+                                    from_logits=False):
+    """Categorical crossentropy between an output tensor and a target tensor.
+    Only the sampled pixels defined by y_true = 1 are used to compute the cross entropy
     # Arguments
         y_true: A tensor of the same shape as `y_pred`.
         y_pred: A tensor resulting from a softmax
@@ -174,9 +178,10 @@ def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order
     n_pixels_expand = tf.expand_dims(n_pixels, axis=1) + K.epsilon()
     mu = tf.divide(cells_summed, n_pixels_expand)
 
+    delta_v = tf.constant(delta_v, dtype=K.floatx())
     mu_tensor = tf.tensordot(y_true, mu, axes=[[channel_axis], [0]])
     L_var_1 = y_pred - mu_tensor
-    L_var_2 = tf.square(tf.nn.relu(temp_norm(L_var_1, axis=channel_axis) - tf.constant(delta_v, dtype=K.floatx())))
+    L_var_2 = tf.square(tf.nn.relu(temp_norm(L_var_1, axis=channel_axis) - delta_v))
     L_var_3 = tf.tensordot(L_var_2, y_true, axes=[other_axes, other_axes])
     L_var_4 = tf.divide(L_var_3, n_pixels)
     L_var = tf.reduce_mean(L_var_4)

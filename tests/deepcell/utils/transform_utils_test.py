@@ -29,7 +29,6 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import numpy.testing as np_test
 from skimage.measure import label
 from tensorflow.python.platform import test
 from tensorflow.python.keras import backend as K
@@ -70,8 +69,9 @@ class TransformUtilsTest(test.TestCase):
 
         self.assertEqual(dc_maskstack.shape[-1], 4)
         self.assertEqual(dc_maskstack_dilated.shape[-1], 4)
-        self.assertGreater(dc_maskstack_dilated[:, :, :, 0].sum() + dc_maskstack_dilated[:, :, :, 1].sum(),
-                           dc_maskstack[:, :, :, 0].sum() + dc_maskstack[:, :, :, 1].sum())
+        self.assertGreater(
+            dc_maskstack_dilated[:, :, :, 0].sum() + dc_maskstack_dilated[:, :, :, 1].sum(),
+            dc_maskstack[:, :, :, 0].sum() + dc_maskstack[:, :, :, 1].sum())
 
     def test_deepcell_transform_3d(self):
         frames = 10
@@ -91,8 +91,9 @@ class TransformUtilsTest(test.TestCase):
             maskstack, dilation_radius=2, data_format='channels_last')
         self.assertEqual(dc_maskstack.shape[-1], 4)
         self.assertEqual(dc_maskstack_dilated.shape[-1], 4)
-        self.assertGreater(dc_maskstack_dilated[:, :, :, :, 0].sum() + dc_maskstack_dilated[:, :, :, :, 1].sum(),
-                           dc_maskstack[:, :, :, :, 0].sum() + dc_maskstack[:, :, :, :, 1].sum())
+        self.assertGreater(
+            dc_maskstack_dilated[:, :, :, :, 0].sum() + dc_maskstack_dilated[:, :, :, :, 1].sum(),
+            dc_maskstack[:, :, :, :, 0].sum() + dc_maskstack[:, :, :, :, 1].sum())
 
     def test_erode_edges_2d(self):
         for img in _generate_test_masks():
