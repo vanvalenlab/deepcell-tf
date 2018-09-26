@@ -43,11 +43,11 @@ try:
 except ImportError:
     from tensorflow.python.keras._impl.keras.utils import conv_utils
 
-from .io_utils import get_image
-from .io_utils import get_image_sizes
-from .io_utils import nikon_getfiles
-from .io_utils import get_immediate_subdirs
-from .misc_utils import sorted_nicely
+from deepcell.utils.io_utils import get_image
+from deepcell.utils.io_utils import get_image_sizes
+from deepcell.utils.io_utils import nikon_getfiles
+from deepcell.utils.io_utils import get_immediate_subdirs
+from deepcell.utils.misc_utils import sorted_nicely
 
 
 def get_data(file_name, mode='sample', test_size=.1, seed=None):

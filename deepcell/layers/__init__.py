@@ -22,11 +22,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ==============================================================================from __future__ import absolute_import
+# ==============================================================================
 """Custom Layers"""
-from .location import *
-from .normalization import *
-from .pooling import *
-from .resize import *
-from .tensor_product import *
-from .padding import *
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from deepcell.layers.location import *
+from deepcell.layers.normalization import *
+from deepcell.layers.pooling import *
+from deepcell.layers.resize import *
+from deepcell.layers.tensor_product import *
+from deepcell.layers.padding import *
+
+del absolute_import
+del division
+del print_function

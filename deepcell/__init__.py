@@ -27,21 +27,27 @@
 @author: David Van Valen
 """
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-from . import datasets
-from . import layers
-from . import losses
-from . import image_generators
-from . import model_zoo
-from . import notebooks
-from . import running
-from . import training
-from . import utils
+from deepcell import datasets
+from deepcell import layers
+from deepcell import losses
+from deepcell import image_generators
+from deepcell import model_zoo
+from deepcell import notebooks
+from deepcell import running
+from deepcell import training
+from deepcell import utils
 
-from .layers import *
-from .losses import *
-from .image_generators import *
-from .model_zoo import *
-from .running import *
-from .training import *
-from .utils import *
+from deepcell.layers import *
+from deepcell.losses import *
+from deepcell.image_generators import *
+from deepcell.model_zoo import *
+from deepcell.running import *
+from deepcell.training import *
+from deepcell.utils import *
+
+del absolute_import
+del division
+del print_function
