@@ -97,7 +97,8 @@ def deepcell_transform(maskstack, dilation_radius=None, data_format=None):
         interior_edge_masks = (interior_edge_masks - interior_masks > 0).astype('int')
         background_edge_masks = (background_edge_masks - interior_masks > 0).astype('int')
 
-    background_masks = (1 - background_edge_masks - interior_edge_masks - interior_masks > 0).astype('int')
+    background_masks = (1 - background_edge_masks - interior_edge_masks - interior_masks > 0)
+    background_masks = background_masks.astype('int')
 
     all_stacks = [
         background_edge_masks,
@@ -204,18 +205,21 @@ def rotate_array_0(arr):
 
 def rotate_array_90(arr):
     axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
-    slices = [slice(None) for _ in range(arr.ndim - 2)] + [slice(None), slice(None, None, -1)]
+    slices = [slice(None) for _ in range(arr.ndim - 2)] + \
+             [slice(None), slice(None, None, -1)]
     return arr[tuple(slices)].transpose(axes_order)
 
 
 def rotate_array_180(arr):
-    slices = [slice(None) for _ in range(arr.ndim - 2)] + [slice(None, None, -1), slice(None, None, -1)]
+    slices = [slice(None) for _ in range(arr.ndim - 2)] + \
+             [slice(None, None, -1), slice(None, None, -1)]
     return arr[tuple(slices)]
 
 
 def rotate_array_270(arr):
     axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
-    slices = [slice(None) for _ in range(arr.ndim - 2)] + [slice(None, None, -1), slice(None)]
+    slices = [slice(None) for _ in range(arr.ndim - 2)] + \
+             [slice(None, None, -1), slice(None)]
     return arr[tuple(slices)].transpose(axes_order)
 
 

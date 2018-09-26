@@ -38,7 +38,7 @@ from skimage.external import tifffile as tiff
 from skimage.external.tifffile import TiffFile
 from tensorflow.python.keras import backend as K
 
-from .misc_utils import sorted_nicely
+from deepcell.utils.misc_utils import sorted_nicely
 
 
 def get_immediate_subdirs(directory):

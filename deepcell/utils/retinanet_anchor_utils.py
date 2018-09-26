@@ -66,7 +66,8 @@ def anchor_targets_bbox(anchors,
 
     if annotations.shape[0]:
         # obtain indices of gt annotations with the greatest overlap
-        overlaps = compute_overlap(anchors.astype(np.float64), annotations.astype(np.float64))
+        overlaps = compute_overlap(anchors.astype(np.float64),
+                                   annotations.astype(np.float64))
         argmax_overlaps_inds = np.argmax(overlaps, axis=1)
         max_overlaps = overlaps[np.arange(overlaps.shape[0]), argmax_overlaps_inds]
 
@@ -87,8 +88,10 @@ def anchor_targets_bbox(anchors,
 
     # ignore annotations outside of image
     if mask_shape:
-        anchors_centers = np.vstack([(anchors[:, 0] + anchors[:, 2]) / 2, (anchors[:, 1] + anchors[:, 3]) / 2]).T
-        indices = np.logical_or(anchors_centers[:, 0] >= mask_shape[1], anchors_centers[:, 1] >= mask_shape[0])
+        anchors_centers = np.vstack([(anchors[:, 0] + anchors[:, 2]) / 2,
+                                     (anchors[:, 1] + anchors[:, 3]) / 2]).T
+        indices = np.logical_or(anchors_centers[:, 0] >= mask_shape[1],
+                                anchors_centers[:, 1] >= mask_shape[0])
         anchor_states[indices] = -1
 
     return labels, annotations, anchor_states
