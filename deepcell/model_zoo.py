@@ -477,17 +477,17 @@ def siamese_model(input_shape=None, track_length=1, occupancy_grid_size=10, reg=
     else:
         channel_axis = -1
         new_input_shape = tuple([None] + list(input_shape))
-        
+
     input_shape = new_input_shape
-        
+
     # Define the input shape for the images
     input_1 = Input(shape=input_shape)
     input_2 = Input(shape=input_shape)
-    
+
     # Define the input shape for the other data (centroids, etc)
     input_3 = Input(shape=(None, 2))
     input_4 = Input(shape=(None, 2))
-    
+
     input_5 = Input(shape=(None, 2*occupancy_grid_size+1, 2*occupancy_grid_size+1, 1))
     input_6 = Input(shape=(None, 2*occupancy_grid_size+1, 2*occupancy_grid_size+1, 1))
 
@@ -496,34 +496,34 @@ def siamese_model(input_shape=None, track_length=1, occupancy_grid_size=10, reg=
     feature_extractor = Sequential()
     feature_extractor.add(InputLayer(input_shape=input_shape))
     for layer in range(N_layers):
-        feature_extractor.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='same', 
+        feature_extractor.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='same',
                                      kernel_regularizer=l2(reg)))
         feature_extractor.add(BatchNormalization(axis=channel_axis))
         feature_extractor.add(Activation('relu'))
         feature_extractor.add(MaxPool3D(pool_size=(1, 2, 2)))
 
     feature_extractor.add(Reshape(tuple([-1, 64])))
-    
+
     # Feature extractor for occupancy grids
     N_layers_og = np.int(np.floor(np.log2(2*occupancy_grid_size+1)))
     feature_extractor_occupancy_grid = Sequential()
-    feature_extractor_occupancy_grid.add(InputLayer(input_shape=(None, 2*occupancy_grid_size+1, 2*occupancy_grid_size+1, 1)))   
+    feature_extractor_occupancy_grid.add(InputLayer(input_shape=(None, 2*occupancy_grid_size+1, 2*occupancy_grid_size+1, 1)))
     for layer in range(N_layers_og):
-        feature_extractor_occupancy_grid.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='same', 
+        feature_extractor_occupancy_grid.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='same',
                                                     kernel_regularizer=l2(reg)))
         feature_extractor_occupancy_grid.add(BatchNormalization(axis=channel_axis))
         feature_extractor_occupancy_grid.add(Activation('relu'))
         feature_extractor_occupancy_grid.add(MaxPool3D(pool_size=(1, 2, 2)))
-    
+
     feature_extractor_occupancy_grid.add(Reshape(tuple([-1, 64])))
 
     # Apply feature extractor to appearances
     output_1 = feature_extractor(input_1)
     output_2 = feature_extractor(input_2)
-    
+
     lstm_1 = LSTM(64)(output_1)
     output_2_reshape = Reshape((64,))(output_2)
-    
+
     # Centroids
     lstm_3 = LSTM(64)(input_3)
     input_4_reshape = Reshape((2,))(input_4)
@@ -531,27 +531,27 @@ def siamese_model(input_shape=None, track_length=1, occupancy_grid_size=10, reg=
     # Apply feature extractor to occupancy grids
     output_5 = feature_extractor_occupancy_grid(input_5)
     output_6 = feature_extractor_occupancy_grid(input_6)
-    
+
     lstm_5 = LSTM(64)(output_5)
     output_6_reshape = Reshape((64,))(output_6)
-    
+
     # Combine the extracted features with other known features (centroids)
     merge_1 = Concatenate(axis=channel_axis)([lstm_1, output_2_reshape])
     merge_2 = Concatenate(axis=channel_axis)([lstm_3, input_4_reshape])
     merge_3 = Concatenate(axis=channel_axis)([lstm_5, output_6_reshape])
-    
+
     dense_merge_1 = Dense(128)(merge_1)
     bn_merge_1 = BatchNormalization(axis=channel_axis)(dense_merge_1)
     dense_relu_1 = Activation('relu')(bn_merge_1)
-    
+
     dense_merge_2 = Dense(128)(merge_2)
     bn_merge_2 = BatchNormalization(axis=channel_axis)(dense_merge_2)
     dense_relu_2 = Activation('relu')(bn_merge_2)
-    
+
     dense_merge_3 = Dense(128)(merge_3)
     bn_merge_3 = BatchNormalization(axis=channel_axis)(dense_merge_3)
     dense_relu_3 = Activation('relu')(bn_merge_3)
-    
+
     # Concatenate outputs from both instances
     merged_outputs = Concatenate(axis=channel_axis)([dense_relu_1, dense_relu_2, dense_relu_3])
 
