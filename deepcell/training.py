@@ -94,7 +94,7 @@ def train_model_sample(model,
                 y_true, y_pred, gamma=gamma, n_classes=n_classes)
         return losses.weighted_categorical_crossentropy(
             y_true, y_pred, n_classes=n_classes)
-    
+
     if num_gpus >= 2:
         model = multi_gpu_model(model, num_gpus)
 
@@ -207,7 +207,7 @@ def train_model_conv(model,
                 y_true, y_pred, gamma=gamma, n_classes=n_classes)
         return losses.weighted_categorical_crossentropy(
             y_true, y_pred, n_classes=n_classes)
-        
+
     if num_gpus >= 2:
         model = multi_gpu_model(model, num_gpus)
 
