@@ -8,12 +8,6 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/* && \
     /usr/local/bin/pip install --upgrade pip
 
-# Install Mask R-CNN
-RUN git clone https://www.github.com/vanvalenlab/Mask_RCNN /opt/Mask_RCNN && \
-    cd /opt/Mask_RCNN && \
-    pip install -r requirements.txt && \
-    python setup.py install
-
 # Set working directory
 WORKDIR /deepcell-tf
 
