@@ -34,6 +34,7 @@ import datetime
 import os
 
 import numpy as np
+from tensorflow.python.client import device_lib
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateScheduler
 from tensorflow.python.keras.optimizers import SGD
@@ -50,7 +51,7 @@ def train_model_sample(model,
                        expt='',
                        n_epoch=10,
                        batch_size=32,
-                       num_gpus=1,
+                       num_gpus=None,
                        transform=None,
                        window_size=None,
                        balance_classes=True,
@@ -94,6 +95,11 @@ def train_model_sample(model,
                 y_true, y_pred, gamma=gamma, n_classes=n_classes)
         return losses.weighted_categorical_crossentropy(
             y_true, y_pred, n_classes=n_classes)
+
+    if num_gpus is None:
+        devices = device_lib.list_local_devices()
+        gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
+        num_gpus = len(gpus)
 
     if num_gpus >= 2:
         model = multi_gpu_model(model, num_gpus)
@@ -166,7 +172,7 @@ def train_model_conv(model,
                      expt='',
                      n_epoch=10,
                      batch_size=1,
-                     num_gpus=1,
+                     num_gpus=None,
                      frames_per_batch=5,
                      transform=None,
                      optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
@@ -207,6 +213,11 @@ def train_model_conv(model,
                 y_true, y_pred, gamma=gamma, n_classes=n_classes)
         return losses.weighted_categorical_crossentropy(
             y_true, y_pred, n_classes=n_classes)
+
+    if num_gpus is None:
+        devices = device_lib.list_local_devices()
+        gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
+        num_gpus = len(gpus)
 
     if num_gpus >= 2:
         model = multi_gpu_model(model, num_gpus)
