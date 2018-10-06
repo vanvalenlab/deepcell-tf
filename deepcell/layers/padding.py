@@ -65,7 +65,7 @@ class ReflectionPadding2D(Layer):
                              'or a tuple of 2 tuples of 2 ints '
                              '((top_pad, bottom_pad), (left_pad, right_pad)). '
                              'Found: ' + str(padding))
-        self.input_spec = [InputSpec(ndim=4)]
+        self.input_spec = InputSpec(ndim=4)
 
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
@@ -137,7 +137,7 @@ class ReflectionPadding3D(Layer):
                 ' (left_dim3_pad, right_dim2_pad)). '
                 'Found: ' + str(padding))
 
-        self.input_spec = [InputSpec(ndim=5)]
+        self.input_spec = InputSpec(ndim=5)
 
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
