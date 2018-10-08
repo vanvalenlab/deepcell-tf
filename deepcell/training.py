@@ -102,6 +102,7 @@ def train_model_sample(model,
         num_gpus = len(gpus)
 
     if num_gpus >= 2:
+        batch_size = batch_size * num_gpus
         model = multi_gpu_model(model, num_gpus)
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
@@ -220,6 +221,7 @@ def train_model_conv(model,
         num_gpus = len(gpus)
 
     if num_gpus >= 2:
+        batch_size = batch_size * num_gpus
         model = multi_gpu_model(model, num_gpus)
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
