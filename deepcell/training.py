@@ -264,7 +264,7 @@ def train_model_conv(model,
             frames_per_batch=frames_per_batch)
 
         val_data = datagen_val.flow(
-            train_dict,
+            test_dict,
             skip=skip,
             batch_size=batch_size,
             transform=transform,
@@ -279,7 +279,7 @@ def train_model_conv(model,
             transform_kwargs=kwargs)
 
         val_data = datagen_val.flow(
-            train_dict,
+            test_dict,
             skip=skip,
             batch_size=batch_size,
             transform=transform,
