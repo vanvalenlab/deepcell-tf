@@ -34,16 +34,15 @@ import datetime
 import os
 
 import numpy as np
+from tensorflow.keras import backend as K
+from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
+from tensorflow.keras.optimizers import SGD
 from tensorflow.python.client import device_lib
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateScheduler
-from tensorflow.python.keras.optimizers import SGD
-from tensorflow.python.keras.utils import multi_gpu_model
 
 from deepcell import losses
 from deepcell import image_generators as generators
 from deepcell.utils.data_utils import get_data
-from deepcell.utils.train_utils import rate_scheduler
+from deepcell.utils.train_utils import rate_scheduler, ModelMGPU
 
 
 def train_model_sample(model,
@@ -103,7 +102,7 @@ def train_model_sample(model,
 
     if num_gpus >= 2:
         batch_size = batch_size * num_gpus
-        model = multi_gpu_model(model, num_gpus)
+        model = ModelMGPU(model, num_gpus)
 
     print('Training on {} GPUs'.format(num_gpus))
 
@@ -224,7 +223,7 @@ def train_model_conv(model,
 
     if num_gpus >= 2:
         batch_size = batch_size * num_gpus
-        model = multi_gpu_model(model, num_gpus)
+        model = ModelMGPU(model, num_gpus)
 
     print('Training on {} GPUs'.format(num_gpus))
 
