@@ -105,6 +105,8 @@ def train_model_sample(model,
         batch_size = batch_size * num_gpus
         model = multi_gpu_model(model, num_gpus)
 
+    print('Training on {} GPUs'.format(num_gpus))
+
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     if train_dict['X'].ndim == 4:
@@ -223,6 +225,8 @@ def train_model_conv(model,
     if num_gpus >= 2:
         batch_size = batch_size * num_gpus
         model = multi_gpu_model(model, num_gpus)
+
+    print('Training on {} GPUs'.format(num_gpus))
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
