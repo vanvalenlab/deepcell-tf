@@ -244,6 +244,21 @@ def train_model_conv(model,
         raise ValueError('Expected `X` to have ndim 4 or 5. Got',
                          train_dict['X'].ndim)
 
+    if num_gpus >= 2:
+        # Each GPU must have at least one validation example
+        if test_dict['y'].shape[0] < num_gpus:
+            raise ValueError('Not enough validation data for {} GPUs. '
+                             'Received {} validation sample.'.format(
+                                 test_dict['y'].shape[0], num_gpus))
+
+        # When using multiple GPUs and skip_connections,
+        # the training data must be evenly distributed across all GPUs
+        num_train = train_dict['y'].shape[0]
+        nb_samples = num_train - num_train % batch_size
+        if nb_samples:
+            train_dict['y'] = train_dict['y'][:nb_samples]
+            train_dict['X'] = train_dict['X'][:nb_samples]
+
     # this will do preprocessing and realtime data augmentation
     datagen = DataGenerator(
         rotation_range=rotation_range,
