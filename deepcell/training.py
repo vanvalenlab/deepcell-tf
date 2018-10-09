@@ -160,7 +160,7 @@ def train_model_sample(model,
         validation_data=val_data,
         validation_steps=val_data.y.shape[0] // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True),
+            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=num_gpus >= 2),
             LearningRateScheduler(lr_sched)
         ])
 
@@ -296,7 +296,7 @@ def train_model_conv(model,
         validation_data=val_data,
         validation_steps=val_data.y.shape[0] // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True),
+            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=num_gpus >= 2),
             LearningRateScheduler(lr_sched)
         ])
 
