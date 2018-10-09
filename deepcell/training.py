@@ -48,6 +48,7 @@ from deepcell.utils.train_utils import rate_scheduler, MultiGpuModel
 def train_model_sample(model,
                        dataset,
                        expt='',
+                       test_size=.1,
                        n_epoch=10,
                        batch_size=32,
                        num_gpus=None,
@@ -74,7 +75,7 @@ def train_model_sample(model,
     file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(basename))
 
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    train_dict, test_dict = get_data(training_data_file_name, mode='sample')
+    train_dict, test_dict = get_data(training_data_file_name, mode='sample', test_size=test_size)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
 
@@ -172,6 +173,7 @@ def train_model_sample(model,
 def train_model_conv(model,
                      dataset,
                      expt='',
+                     test_size=.1,
                      n_epoch=10,
                      batch_size=1,
                      num_gpus=None,
@@ -196,7 +198,7 @@ def train_model_conv(model,
     file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(basename))
 
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    train_dict, test_dict = get_data(training_data_file_name, mode='conv')
+    train_dict, test_dict = get_data(training_data_file_name, mode='conv', test_size=test_size)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
     # the data, shuffled and split between train and test sets
