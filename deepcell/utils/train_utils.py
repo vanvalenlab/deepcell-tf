@@ -43,7 +43,9 @@ def rate_scheduler(lr=.001, decay=0.95):
     return output_fn
 
 
-class ModelMGPU(Model):
+class MultiGpuModel(Model):
+    """Wrapper Model class to enable multi-gpu saving/loading
+    """
     def __init__(self, ser_model, gpus):
         pmodel = multi_gpu_model(ser_model, gpus)
         self.__dict__.update(pmodel.__dict__)
@@ -57,4 +59,4 @@ class ModelMGPU(Model):
         if 'load' in attrname or 'save' in attrname:
             return getattr(self._smodel, attrname)
 
-        return super(ModelMGPU, self).__getattribute__(attrname)
+        return super(MultiGpuModel, self).__getattribute__(attrname)
