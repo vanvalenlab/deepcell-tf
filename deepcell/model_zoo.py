@@ -469,91 +469,135 @@ Tracking Model
 """
 import numpy as np
 
-def siamese_model(input_shape=None, track_length=1, occupancy_grid_size=10, reg=1e-5, init='he_normal', softmax=True, norm_method='std', filter_size=61):
+def siamese_model(
+    input_shape=None,
+    track_length=1,
+    features=None,
+    occupancy_grid_size=10,
+    reg=1e-5, init='he_normal',
+    softmax=True,
+    norm_method='std',
+    filter_size=61):
+
+    def compute_input_shape(feature):
+        if feature == "appearance":
+            return input_shape
+        elif feature == "distance":
+            return (None, 2)
+        elif feature == "neighborhood":
+            return (None, 2 * occupancy_grid_size + 1, 2 * occupancy_grid_size + 1, 1)
+        elif feature == "perimeter":
+            return (None, 1)
+        else:
+            raise ValueError(
+                "samese_model.compute_input_shape: Unknown feature '{}'".format(feature))
+
+    def compute_reshape(feature):
+        if feature == "appearance":
+            return (64,)
+        elif feature == "distance":
+            return (2,)
+        elif feature == "neighborhood":
+            return (64,)
+        elif feature == "perimeter":
+            return (1,)
+        else:
+            raise ValueError(
+                "samese_model.compute_output_shape: Unknown feature '{}'".format(feature))
+
+    def compute_feature_extractor(feature, shape):
+        if feature == "appearance":
+            # This should not stay: channels_first/last should be used to
+            # dictate size (1 works for either right now)
+            N_layers = np.int(np.floor(np.log2(input_shape[1])))
+            feature_extractor = Sequential()
+            feature_extractor.add(InputLayer(input_shape=shape))
+            for layer in range(N_layers):
+                feature_extractor.add(Conv3D(64, (1, 3, 3),
+                                             kernel_initializer=init,
+                                             padding='same',
+                                             kernel_regularizer=l2(reg)))
+                feature_extractor.add(BatchNormalization(axis=channel_axis))
+                feature_extractor.add(Activation('relu'))
+                feature_extractor.add(MaxPool3D(pool_size=(1, 2, 2)))
+
+            feature_extractor.add(Reshape((-1, 64)))
+            return feature_extractor
+
+        elif feature == "distance":
+            return None
+        elif feature == "neighborhood":
+            N_layers_og = np.int(np.floor(np.log2(2 * occupancy_grid_size + 1)))
+            feature_extractor_occupancy_grid = Sequential()
+            feature_extractor_occupancy_grid.add(
+                InputLayer(input_shape=(None,
+                                        2 * occupancy_grid_size + 1,
+                                        2 * occupancy_grid_size + 1,
+                                        1))
+            )
+            for layer in range(N_layers_og):
+                feature_extractor_occupancy_grid.add(Conv3D(64, (1, 3, 3),
+                                                            kernel_initializer=init,
+                                                            padding='same',
+                                                            kernel_regularizer=l2(reg)))
+                feature_extractor_occupancy_grid.add(BatchNormalization(axis=channel_axis))
+                feature_extractor_occupancy_grid.add(Activation('relu'))
+                feature_extractor_occupancy_grid.add(MaxPool3D(pool_size=(1, 2, 2)))
+
+            feature_extractor_occupancy_grid.add(Reshape((-1, 64)))
+
+            return feature_extractor_occupancy_grid
+        elif feature == "perimeter":
+            return None
+        else:
+            raise ValueError(
+                "samese_model.compute_feature_extractor: Unknown feature '{}'".format(feature))
+
+    if features is None:
+        raise ValueError("siamese_model: No features specified.")
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
-        new_input_shape = tuple([input_shape[0]] + [None] + list(input_shape[1:]))
+        input_shape = (input_shape[0], None, *input_shape[1:])
     else:
         channel_axis = -1
-        new_input_shape = tuple([None] + list(input_shape))
+        input_shape = (None, *input_shape)
 
-    input_shape = new_input_shape
+    features = sorted(features)
 
-    # Define the input shape for the images
-    input_1 = Input(shape=input_shape)
-    input_2 = Input(shape=input_shape)
+    inputs = []
+    outputs = []
+    for feature in features:
+        in_shape = compute_input_shape(feature)
+        re_shape = compute_reshape(feature)
+        feature_extractor = compute_feature_extractor(feature, in_shape)
 
-    # Define the input shape for the other data (centroids, etc)
-    input_3 = Input(shape=(None, 2))
-    input_4 = Input(shape=(None, 2))
+        layer_1 = Input(shape=in_shape)
+        layer_2 = Input(shape=in_shape)
 
-    input_5 = Input(shape=(None, 2*occupancy_grid_size+1, 2*occupancy_grid_size+1, 1))
-    input_6 = Input(shape=(None, 2*occupancy_grid_size+1, 2*occupancy_grid_size+1, 1))
+        inputs.extend([layer_1, layer_2])
 
-    # Feature extractor for images
-    N_layers = np.int(np.floor(np.log2(input_shape[1])))  # This should not stay: channels_first/last should be used to dictate size (1 works for either right now)
-    feature_extractor = Sequential()
-    feature_extractor.add(InputLayer(input_shape=input_shape))
-    for layer in range(N_layers):
-        feature_extractor.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='same',
-                                     kernel_regularizer=l2(reg)))
-        feature_extractor.add(BatchNormalization(axis=channel_axis))
-        feature_extractor.add(Activation('relu'))
-        feature_extractor.add(MaxPool3D(pool_size=(1, 2, 2)))
+        # apply feature_extractor if it exists
+        if feature_extractor is not None:
+            layer_1 = feature_extractor(layer_1)
+            layer_2 = feature_extractor(layer_2)
 
-    feature_extractor.add(Reshape(tuple([-1, 64])))
+        # LSTM on 'left' side of network since that side takes in stacks of features
+        layer_1 = LSTM(64)(layer_1)
+        layer_2 = Reshape(re_shape)(layer_2)
 
-    # Feature extractor for occupancy grids
-    N_layers_og = np.int(np.floor(np.log2(2*occupancy_grid_size+1)))
-    feature_extractor_occupancy_grid = Sequential()
-    feature_extractor_occupancy_grid.add(InputLayer(input_shape=(None, 2*occupancy_grid_size+1, 2*occupancy_grid_size+1, 1)))
-    for layer in range(N_layers_og):
-        feature_extractor_occupancy_grid.add(Conv3D(64, (1, 3, 3), kernel_initializer=init, padding='same',
-                                                    kernel_regularizer=l2(reg)))
-        feature_extractor_occupancy_grid.add(BatchNormalization(axis=channel_axis))
-        feature_extractor_occupancy_grid.add(Activation('relu'))
-        feature_extractor_occupancy_grid.add(MaxPool3D(pool_size=(1, 2, 2)))
+        outputs.append([layer_1, layer_2])
 
-    feature_extractor_occupancy_grid.add(Reshape(tuple([-1, 64])))
-
-    # Apply feature extractor to appearances
-    output_1 = feature_extractor(input_1)
-    output_2 = feature_extractor(input_2)
-
-    lstm_1 = LSTM(64)(output_1)
-    output_2_reshape = Reshape((64,))(output_2)
-
-    # Centroids
-    lstm_3 = LSTM(64)(input_3)
-    input_4_reshape = Reshape((2,))(input_4)
-
-    # Apply feature extractor to occupancy grids
-    output_5 = feature_extractor_occupancy_grid(input_5)
-    output_6 = feature_extractor_occupancy_grid(input_6)
-
-    lstm_5 = LSTM(64)(output_5)
-    output_6_reshape = Reshape((64,))(output_6)
-
-    # Combine the extracted features with other known features (centroids)
-    merge_1 = Concatenate(axis=channel_axis)([lstm_1, output_2_reshape])
-    merge_2 = Concatenate(axis=channel_axis)([lstm_3, input_4_reshape])
-    merge_3 = Concatenate(axis=channel_axis)([lstm_5, output_6_reshape])
-
-    dense_merge_1 = Dense(128)(merge_1)
-    bn_merge_1 = BatchNormalization(axis=channel_axis)(dense_merge_1)
-    dense_relu_1 = Activation('relu')(bn_merge_1)
-
-    dense_merge_2 = Dense(128)(merge_2)
-    bn_merge_2 = BatchNormalization(axis=channel_axis)(dense_merge_2)
-    dense_relu_2 = Activation('relu')(bn_merge_2)
-
-    dense_merge_3 = Dense(128)(merge_3)
-    bn_merge_3 = BatchNormalization(axis=channel_axis)(dense_merge_3)
-    dense_relu_3 = Activation('relu')(bn_merge_3)
+    dense_merged = []
+    for layer_1, layer_2 in outputs:
+        merge = Concatenate(axis=channel_axis)([layer_1, layer_2])
+        dense_merge = Dense(128)(merge)
+        bn_merge = BatchNormalization(axis=channel_axis)(dense_merge)
+        dense_relu = Activation('relu')(bn_merge)
+        dense_merged.append(dense_relu)
 
     # Concatenate outputs from both instances
-    merged_outputs = Concatenate(axis=channel_axis)([dense_relu_1, dense_relu_2, dense_relu_3])
+    merged_outputs = Concatenate(axis=channel_axis)(dense_merged)
 
     # Add dense layers
     dense1 = Dense(128)(merged_outputs)
@@ -566,6 +610,6 @@ def siamese_model(input_shape=None, track_length=1, occupancy_grid_size=10, reg=
 
     # Instantiate model
     final_layer = dense3
-    model = Model(inputs=[input_1, input_2, input_3, input_4, input_5, input_6], outputs=final_layer)
+    model = Model(inputs=inputs, outputs=final_layer)
 
     return model
