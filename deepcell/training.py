@@ -35,7 +35,7 @@ import os
 
 import numpy as np
 from tensorflow.keras import backend as K
-from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler
+from tensorflow.keras import callbacks
 from tensorflow.keras.optimizers import SGD
 from tensorflow.python.client import device_lib
 
@@ -56,6 +56,7 @@ def train_model_sample(model,
                        window_size=None,
                        balance_classes=True,
                        max_class_samples=None,
+                       log_dir='/data/tensorboard_logs',
                        direc_save='/data/models',
                        direc_data='/data/npz_data',
                        focal=False,
@@ -161,8 +162,11 @@ def train_model_sample(model,
         validation_data=val_data,
         validation_steps=val_data.y.shape[0] // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=num_gpus >= 2),
-            LearningRateScheduler(lr_sched)
+            callbacks.LearningRateScheduler(lr_sched),
+            callbacks.ModelCheckpoint(
+                file_name_save, monitor='val_loss', verbose=1,
+                save_best_only=True, save_weights_only=num_gpus >= 2),
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, basename))
         ])
 
     np.savez(file_name_save_loss, loss_history=loss_history.history)
@@ -180,6 +184,7 @@ def train_model_conv(model,
                      frames_per_batch=5,
                      transform=None,
                      optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
+                     log_dir='/data/tensorboard_logs',
                      direc_save='/data/models',
                      direc_data='/data/npz_data',
                      focal=False,
@@ -313,8 +318,11 @@ def train_model_conv(model,
         validation_data=val_data,
         validation_steps=val_data.y.shape[0] // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=num_gpus >= 2),
-            LearningRateScheduler(lr_sched)
+            callbacks.LearningRateScheduler(lr_sched),
+            callbacks.ModelCheckpoint(
+                file_name_save, monitor='val_loss', verbose=1,
+                save_best_only=True, save_weights_only=num_gpus >= 2),
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, basename))
         ])
 
     model.save_weights(file_name_save)
@@ -426,8 +434,10 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
         validation_data=datagen_val.flow(test_dict, batch_size=batch_size),
         validation_steps=total_test_pairs // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
-            LearningRateScheduler(lr_sched)
+            callbacks.LearningRateScheduler(lr_sched),
+            callbacks.ModelCheckpoint(
+                file_name_save, monitor='val_loss', verbose=1,
+                save_best_only=True, save_weights_only=num_gpus >= 2),
         ])
 
     model.save_weights(file_name_save)

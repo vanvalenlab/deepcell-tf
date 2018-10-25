@@ -47,6 +47,7 @@ def make_notebook(data,
                   dim=2,
                   transform='deepcell',
                   output_dir=os.path.join('scripts', 'generated_notebooks'),
+                  log_dir='/data/tensorboard_logs',
                   **kwargs):
     """Create a training notebook that will step through the training
     process from making an npz file to creating and training a model.
@@ -57,6 +58,7 @@ def make_notebook(data,
         dim: dimensionality of the data, either 2 or 3
         transform: transformation to apply to the data
         output_dir: directory to save the notebook
+        log_dir: directory to write tensorboard logs
     """
     if train_type.lower() not in {'sample', 'conv'}:
         raise ValueError('`train_type` must be one of "sample" or "conv"')
@@ -229,6 +231,7 @@ def make_notebook(data,
         'n_epoch': 'n_epoch',
         'direc_save': 'MODEL_DIR',
         'direc_data': 'NPZ_DIR',
+        'log_dir': '"{}"'.format(log_dir),
         'lr_sched': 'lr_sched',
         'rotation_range': 180,
         'flip': True,
