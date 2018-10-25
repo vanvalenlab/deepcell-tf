@@ -166,7 +166,7 @@ def train_model_sample(model,
             callbacks.ModelCheckpoint(
                 file_name_save, monitor='val_loss', verbose=1,
                 save_best_only=True, save_weights_only=num_gpus >= 2),
-            callbacks.TensorBoard(log_dir=log_dir)
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, basename))
         ])
 
     np.savez(file_name_save_loss, loss_history=loss_history.history)
@@ -322,7 +322,7 @@ def train_model_conv(model,
             callbacks.ModelCheckpoint(
                 file_name_save, monitor='val_loss', verbose=1,
                 save_best_only=True, save_weights_only=num_gpus >= 2),
-            callbacks.TensorBoard(log_dir=log_dir)
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, basename))
         ])
 
     model.save_weights(file_name_save)
