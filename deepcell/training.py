@@ -434,8 +434,10 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
         validation_data=datagen_val.flow(test_dict, batch_size=batch_size),
         validation_steps=total_test_pairs // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
-            LearningRateScheduler(lr_sched)
+            callbacks.LearningRateScheduler(lr_sched),
+            callbacks.ModelCheckpoint(
+                file_name_save, monitor='val_loss', verbose=1,
+                save_best_only=True, save_weights_only=num_gpus >= 2),
         ])
 
     model.save_weights(file_name_save)
