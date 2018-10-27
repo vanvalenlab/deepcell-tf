@@ -292,7 +292,8 @@ def train_model_siamese_daughter(model=None,
                                  focal=False,
                                  gamma=0.5,
                                  lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-                                 rotation_range=0, flip=True, shear=0, class_weight=None):
+                                 rotation_range=0, flip=True, shear=0, class_weight=None,
+                                 seed=None):
 
     is_channels_first = K.image_data_format() == 'channels_first'
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
@@ -300,6 +301,7 @@ def train_model_siamese_daughter(model=None,
 
     features_fmt = '[' + ','.join(f[0] for f in sorted(features)) + ']'
     features_fmt += '_n_epoch={}'.format(n_epoch)
+    features_fmt += '_seed={}'.format(seed)
 
     file_name_save = os.path.join(direc_save, '{}_{}_{}_{}_{}.h5'.format(todays_date, dataset, features_fmt, expt, it))
     file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}_{}.npz'.format(todays_date, dataset, features_fmt, expt, it))
@@ -307,8 +309,8 @@ def train_model_siamese_daughter(model=None,
     print("saving model at:", file_name_save)
     print("saving loss at:", file_name_save_loss)
 
-    #train_dict, val_dict = get_data(training_data_file_name, mode='siamese_daughters')
-    train_dict, val_dict = get_data(training_data_file_name, mode='siamese_daughters', test_size=.2)
+    train_dict, val_dict = get_data(training_data_file_name, mode='siamese_daughters', seed=seed)
+    #train_dict, val_dict = get_data(training_data_file_name, mode='siamese_daughters', test_size=.2)
 
     class_weights = train_dict['class_weights']
     # the data, shuffled and split between train and test sets

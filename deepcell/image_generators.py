@@ -1958,9 +1958,10 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             # compute desired features & save them to the batch arrays
             if self.sync_transform:
                 # random angle & flips
-                transform = {"theta": 360 * np.random.random(),
-                             "flip_horizontal": np.random.random() < 0.5,
-                             "flip_vertical": np.random.random() < 0.5}
+                transform = {"theta": self.image_data_generator.rotation_range * np.random.uniform(-1, 1),
+                             "flip_horizontal": (np.random.random() < 0.5) if self.image_data_generator.horizontal_flip else False,
+                             "flip_vertical": (np.random.random() < 0.5) if self.image_data_generator.vertical_flip else False}
+
             else:
                 transform = None
 
