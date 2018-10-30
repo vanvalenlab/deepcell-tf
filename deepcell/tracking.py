@@ -182,8 +182,9 @@ class cell_tracker():
         # Fill frame_features with the proper values
         for cell in range(number_of_cells):
             cell_features = self._get_features(self.x, self.y, [frame], [cell + 1])
-            for feature_name, feature_value in cell_features.items():
-                frame_features[feature_name][cell] = feature_value
+            for feature_name in self.features:
+                cell_feature_name = "~future area" if feature_name == "neighborhood" else feature_name
+                frame_features[feature_name][cell] = cell_features[cell_feature_name]
 
         # Prepare zeros input matrices
         inputs = {}
@@ -358,9 +359,10 @@ class cell_tracker():
 
         # TODO(enricozb): Why are we stacking these arrays?
         frame_features = {}
-        for feature_name in self.features:
-            frame_features[feature_name] = np.stack(
-                    [cell_features[feature_name]] * track_features[feature_name].shape[0],
+        for feature in self.features:
+            cell_feature_name = "~future area" if feature == "neighborhood" else feature
+            frame_features[feature] = np.stack(
+                    [cell_features[cell_feature_name]] * track_features[feature].shape[0],
                     axis=0)
 
         def get_track_and_frame_feature(feature_name):
@@ -523,7 +525,7 @@ class cell_tracker():
         """
         This function gets the occupancy grids for all of the existing tracks.
         If tracks are shorter than the track length they are filled in with the
-        centroids from the first frame.
+        occupancy grids from the first frame.
         """
         track_occupancy_grids = np.zeros((len(self.tracks.keys()), self.track_length,
                                           2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1),
@@ -539,6 +541,33 @@ class cell_tracker():
                 track_occupancy_grids[track] = og[frames,:,:,:]
 
         return track_occupancy_grids
+
+
+    def _sub_area(self, X_frame, y_frame, cell_label, num_channels):
+        occupancy_grid = np.zeros((2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1),
+                                  dtype=K.floatx())
+        X_padded = np.pad(X_frame, ((self.occupancy_window, self.occupancy_window),
+                                    (self.occupancy_window, self.occupancy_window),
+                                    (0,0)), mode='constant', constant_values=0)
+        y_padded = np.pad(y_frame, ((self.occupancy_window, self.occupancy_window),
+                                    (self.occupancy_window, self.occupancy_window),
+                                    (0,0)), mode='constant', constant_values=0)
+        props = regionprops(np.int32(y_padded == cell_label))
+        center_x, center_y = props[0].centroid
+        center_x, center_y = np.int(center_x), np.int(center_y)
+        X_reduced = X_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
+                             center_y-self.occupancy_window:center_y+self.occupancy_window,:]
+
+        # Resize X_reduced in case it is used instead of the occupancy grid method
+        resize_shape = (2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, num_channels)
+
+        # Resize images from bounding box
+        max_value = np.amax([np.amax(X_reduced), np.absolute(np.amin(X_reduced))])
+        X_reduced /= max_value
+        X_reduced = resize(X_reduced, resize_shape, mode='constant')
+        X_reduced *= max_value
+
+        return X_reduced
 
     def _get_features(self, X, y, frames, labels):
         """
@@ -566,11 +595,18 @@ class cell_tracker():
                                 2 * self.occupancy_grid_size + 1,
                                 2 * self.occupancy_grid_size + 1, 1)
 
+        # look-ahead neighborhoods
+        future_area_shape = (len(frames),
+                             2 * self.occupancy_grid_size + 1,
+                             2 * self.occupancy_grid_size + 1, 1)
+
+
         # Initialize storage for appearances and centroids
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
         centroids = np.zeros(centroid_shape, dtype=K.floatx())
         perimeters = np.zeros(perimeter_shape, dtype=K.floatx())
         occupancy_grids = np.zeros(occupancy_grid_shape, dtype=K.floatx())
+        future_areas = np.zeros(future_area_shape, dtype=K.floatx())
 
         for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
             # Get the bounding box
@@ -600,53 +636,20 @@ class cell_tracker():
                 appearances[counter] = appearance
 
             # Get the occupancy grid
-            occupancy_grid = np.zeros((2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1),
-                                      dtype=K.floatx())
-            X_padded = np.pad(X_frame, ((self.occupancy_window, self.occupancy_window),
-                                        (self.occupancy_window, self.occupancy_window),
-                                        (0,0)), mode='constant', constant_values=0)
-            y_padded = np.pad(y_frame, ((self.occupancy_window, self.occupancy_window),
-                                        (self.occupancy_window, self.occupancy_window),
-                                        (0,0)), mode='constant', constant_values=0)
-            props = regionprops(np.int32(y_padded == cell_label))
-            center_x, center_y = props[0].centroid
-            center_x, center_y = np.int(center_x), np.int(center_y)
-            X_reduced = X_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
-                                 center_y-self.occupancy_window:center_y+self.occupancy_window,:]
-            y_reduced = y_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
-                                 center_y-self.occupancy_window:center_y+self.occupancy_window,:]
+            occupancy_grids[counter] = self._sub_area(X_frame, y_frame, cell_label,
+                                                      X.shape[channel_axis])
 
-            # Resize X_reduced in case it is used instead of the occupancy grid method
-            resize_shape = (2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, X.shape[channel_axis])
+            try:
+                X_future_frame = X[frame + 1] if self.data_format == 'channels_last' else X[:, frame + 1]
+                future_areas[counter] = self._sub_area(X_future_frame, y_frame, cell_label,
+                                                       X.shape[channel_axis])
+            except IndexError:
+                future_areas[counter] = occupancy_grids[counter]
 
-            # Resize images from bounding box
-            max_value = np.amax([np.amax(X_reduced), np.absolute(np.amin(X_reduced))])
-            X_reduced /= max_value
-            X_reduced = resize(X_reduced, resize_shape)
-            X_reduced *= max_value
-
-            # Fill up the occupancy grid
-            center_x, center_y = self.occupancy_window, self.occupancy_window
-            props = regionprops(np.int32(y_reduced))
-            for prop in props:
-                centroid_x, centroid_y = prop.centroid
-                dist_x, dist_y = np.float(centroid_x - center_x), np.float(centroid_y - center_y)
-                dist_x *= self.occupancy_grid_size/self.occupancy_window
-                dist_y *= self.occupancy_grid_size/self.occupancy_window
-
-                loc_x = np.int(np.floor(self.occupancy_grid_size + dist_x))
-                loc_y = np.int(np.floor(self.occupancy_grid_size + dist_y))
-
-                mark_grid = (loc_x >= 0) and (loc_x < occupancy_grid.shape[0]) and (loc_y >=0) and (loc_y < occupancy_grid.shape[1])
-
-                if mark_grid:
-                    occupancy_grid[loc_x, loc_y,0] = 1
-
-            occupancy_grids[counter,:,:,:] = X_reduced #occupancy_grid
-
-
+        # future areas are not a feature instead a part of the neighborhood feature
         return {"appearance": appearances, "distance": centroids,
-                "neighborhood": occupancy_grids, "perimeter": perimeters}
+                "neighborhood": occupancy_grids, "perimeter": perimeters,
+                "~future area": future_areas}
 
     def _track_cells(self):
         """
