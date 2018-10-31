@@ -266,4 +266,6 @@ def make_notebook(data,
     # Create and write to new ipynb
     ts = time.time()
     st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-    nbf.write(nb, os.path.join(output_dir, 'train_{}.ipynb'.format(st)))
+    notebook_path = os.path.join(output_dir, 'train_{}.ipynb'.format(st))
+    nbf.write(nb, notebook_path)
+    return notebook_path
