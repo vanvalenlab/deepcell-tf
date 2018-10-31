@@ -1516,6 +1516,32 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             if len(self.track_ids[track]['daughters']) > 0:
                 self.tracks_with_divisions.append(track)
 
+    def _sub_area(self, X_frame, y_frame, cell_label, num_channels):
+        occupancy_grid = np.zeros((2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1),
+                                  dtype=K.floatx())
+        X_padded = np.pad(X_frame, ((self.occupancy_window, self.occupancy_window),
+                                    (self.occupancy_window, self.occupancy_window),
+                                    (0,0)), mode='constant', constant_values=0)
+        y_padded = np.pad(y_frame, ((self.occupancy_window, self.occupancy_window),
+                                    (self.occupancy_window, self.occupancy_window),
+                                    (0,0)), mode='constant', constant_values=0)
+        props = regionprops(np.int32(y_padded == cell_label))
+        center_x, center_y = props[0].centroid
+        center_x, center_y = np.int(center_x), np.int(center_y)
+        X_reduced = X_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
+                             center_y-self.occupancy_window:center_y+self.occupancy_window,:]
+
+        # Resize X_reduced in case it is used instead of the occupancy grid method
+        resize_shape = (2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, num_channels)
+
+        # Resize images from bounding box
+        max_value = np.amax([np.amax(X_reduced), np.absolute(np.amin(X_reduced))])
+        X_reduced /= max_value
+        X_reduced = resize(X_reduced, resize_shape, mode='constant')
+        X_reduced *= max_value
+
+        return X_reduced
+
     def _get_features(self, X, y, frames, labels):
         """
         This function gets the features of a list of cells.
@@ -1535,12 +1561,14 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                                 X.shape[channel_axis])
 
         occupancy_grid_shape = (len(frames), 2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1)
+        future_area_shape = (len(frames) - 1, 2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1)
 
         # Initialize storage for appearances and centroids
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
         centroids = []
         perimeters = []
         occupancy_grids = np.zeros(occupancy_grid_shape, dtype = K.floatx())
+        future_areas = np.zeros(future_area_shape, dtype=K.floatx())
 
         for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
             # Get the bounding box
@@ -1569,52 +1597,14 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             else:
                 appearances[counter] = appearance
 
-            # Get occupancy grid
-            occupancy_grid = np.zeros((2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1),
-                                      dtype=K.floatx())
-            X_padded = np.pad(X_frame, ((self.occupancy_window, self.occupancy_window),
-                                        (self.occupancy_window, self.occupancy_window),
-                                        (0,0)), mode='constant', constant_values=0)
-            y_padded = np.pad(y_frame, ((self.occupancy_window, self.occupancy_window),
-                                        (self.occupancy_window, self.occupancy_window),
-                                        (0,0)), mode='constant', constant_values=0)
-            props = regionprops(np.int32(y_padded == cell_label))
-            center_x, center_y = props[0].centroid
-            center_x, center_y = np.int(center_x), np.int(center_y)
-            X_reduced = X_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
-                                 center_y-self.occupancy_window:center_y+self.occupancy_window,:]
-            y_reduced = y_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
-                                 center_y-self.occupancy_window:center_y+self.occupancy_window,:]
 
-            # Resize X_reduced in case it is used instead of the occupancy grid method
-            resize_shape = (2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, X.shape[channel_axis])
+            occupancy_grids[counter] = self._sub_area(X_frame, y_frame, cell_label, X.shape[channel_axis])
 
-            # Resize images from bounding box
-            max_value = np.amax([np.amax(X_reduced), np.absolute(np.amin(X_reduced))])
-            X_reduced /= max_value
-            X_reduced = resize(X_reduced, resize_shape, mode='constant')
-            X_reduced *= max_value
+            if frame != frames[-1]:
+                X_future_frame = X[frame + 1] if self.data_format == 'channels_last' else X[:, frame + 1]
+                future_areas[counter] = self._sub_area(X_future_frame, y_frame, cell_label, X.shape[channel_axis])
 
-            # Fill up the occupancy grid
-            center_x, center_y = self.occupancy_window, self.occupancy_window
-            props = regionprops(np.int32(y_reduced))
-            for prop in props:
-                centroid_x, centroid_y = prop.centroid
-                dist_x, dist_y = np.float(centroid_x - center_x), np.float(centroid_y - center_y)
-                dist_x *= self.occupancy_grid_size/self.occupancy_window
-                dist_y *= self.occupancy_grid_size/self.occupancy_window
-
-                loc_x = np.int(np.floor(self.occupancy_grid_size + dist_x))
-                loc_y = np.int(np.floor(self.occupancy_grid_size + dist_y))
-
-                mark_grid = (loc_x >= 0) and (loc_x < occupancy_grid.shape[0]) and (loc_y >=0) and (loc_y < occupancy_grid.shape[1])
-
-                if mark_grid:
-                    occupancy_grid[loc_x, loc_y,0] = 1
-
-            occupancy_grids[counter,:,:,:] = X_reduced #occupancy_grid
-
-        return [appearances, centroids, occupancy_grids, perimeters]
+        return [appearances, centroids, occupancy_grids, perimeters, future_areas]
 
     def _create_features(self):
         """
@@ -1634,12 +1624,16 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         all_centroids_shape = (number_of_tracks, self.x.shape[self.time_axis], 2)
         all_centroids = np.zeros(all_centroids_shape, dtype=K.floatx())
 
+        all_perimeters_shape = (number_of_tracks, self.x.shape[self.time_axis], 1)
+        all_perimeters = np.zeros(all_perimeters_shape, dtype=K.floatx())
+
         all_occupancy_grids_shape = (number_of_tracks, self.x.shape[self.time_axis],
                                      2 * self.occupancy_grid_size + 1, 2 * self.occupancy_grid_size + 1, 1)
         all_occupancy_grids = np.zeros(all_occupancy_grids_shape, dtype=K.floatx())
 
-        all_perimeters_shape = (number_of_tracks, self.x.shape[self.time_axis], 1)
-        all_perimeters = np.zeros(all_perimeters_shape, dtype=K.floatx())
+        all_future_area_shape = (number_of_tracks, self.x.shape[self.time_axis],
+                                 2 * self.occupancy_grid_size + 1, 2 * self.occupancy_grid_size + 1, 1)
+        all_future_areas = np.zeros(all_future_area_shape, dtype=K.floatx())
 
         for track in self.track_ids.keys():
             batch = self.track_ids[track]['batch']
@@ -1652,7 +1646,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             X = self.x[batch]
             y = self.y[batch]
 
-            appearance, centroid, occupancy_grid, perimeter = self._get_features(X, y, frames, labels)
+            appearance, centroid, occupancy_grid, perimeter, future_area = self._get_features(X, y, frames, labels)
 
             if self.data_format == 'channels_first':
                 all_appearances[track,:,np.array(frames),:,:] = appearance
@@ -1661,12 +1655,14 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
 
             all_centroids[track, np.array(frames),:] = centroid
             all_occupancy_grids[track, np.array(frames),:,:] = occupancy_grid
+            all_future_areas[track, np.array(frames[:-1]),:,:] = future_area
             all_perimeters[track, np.array(frames),:] = perimeter
 
         self.all_appearances = all_appearances
         self.all_centroids = all_centroids
-        self.all_occupancy_grids = all_occupancy_grids
         self.all_perimeters = all_perimeters
+        self.all_occupancy_grids = all_occupancy_grids
+        self.all_future_areas = all_future_areas
 
     def _fetch_appearances(self, track, frames):
         """
@@ -1696,6 +1692,14 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         """
         # TO DO: Check to make sure the frames are acceptable
         return self.all_occupancy_grids[track,np.array(frames),:,:,:]
+
+    def _fetch_future_areas(self, track, frames):
+        """
+        This function gets the future areas after they have been
+        extracted and stored
+        """
+        # TO DO: Check to make sure the frames are acceptable
+        return self.all_future_areas[track,np.array(frames),:,:,:]
 
     def _fetch_perimeters(self, track, frames):
         """
@@ -1812,8 +1816,9 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         return perimeter_1, perimeter_2
 
     def _compute_occupancy_grids(self, track_1, frames_1, track_2, frames_2, transform):
+        track_2, frames_2 = None, None # To guarantee we don't use these.
         occupancy_grid_1 = self._fetch_occupancy_grids(track_1, frames_1)
-        occupancy_grid_2 = self._fetch_occupancy_grids(track_2, frames_2)
+        occupancy_grid_2 = self._fetch_future_areas(track_1, [frames_1[-1]])
 
         # Randomly transform the occupancy maps
         occupancy_generator = ImageDataGenerator(rotation_range=180,
