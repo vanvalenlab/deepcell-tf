@@ -44,10 +44,14 @@ import nbformat as nbf
 def make_notebook(data,
                   train_type='conv',
                   field_size=61,
-                  dim=2,
+                  ndim=2,
                   transform='deepcell',
-                  output_dir=os.path.join('scripts', 'generated_notebooks'),
+                  epochs=10,
+                  optimizer='sgd',
+                  skips=0,
+                  normalization='std',
                   log_dir='/data/tensorboard_logs',
+                  output_dir=os.path.join('scripts', 'generated_notebooks'),
                   **kwargs):
     """Create a training notebook that will step through the training
     process from making an npz file to creating and training a model.
@@ -55,10 +59,16 @@ def make_notebook(data,
         data: zipfile of data to load into npz and train on
         train_type: training method to use, either "sample" or "conv"
         field_size: receptive field of the model, a positive integer
-        dim: dimensionality of the data, either 2 or 3
+        ndim: dimensionality of the data, either 2 or 3
         transform: transformation to apply to the data
-        output_dir: directory to save the notebook
+        epochs: number of training epochs
+        optimizer: training optimizer (`sgd` or `adam`)
+        skips: number of skip connections to use
+        normalization: normalization method for ImageNormalization layer
         log_dir: directory to write tensorboard logs
+        output_dir: directory to save the notebook
+    # Returns:
+        notebook_path: path to generated notebook
     """
     if train_type.lower() not in {'sample', 'conv'}:
         raise ValueError('`train_type` must be one of "sample" or "conv"')
@@ -67,13 +77,18 @@ def make_notebook(data,
     if not isinstance(field_size, int) or field_size <= 0:
         raise ValueError('`field_size` must be a positive integer')
 
-    if dim not in {2, 3}:
-        raise ValueError('`dim` must be either 2 or 3 for 2D or 3D images')
+    if ndim not in {2, 3}:
+        raise ValueError('`ndim` must be either 2 or 3 for 2D or 3D images')
 
-    if transform and transform.lower() not in {'deepcell', 'watershed'}:
-        raise ValueError('`transform` got unexpected value', transform)
     if transform:
         transform = transform.lower()
+        if transform not in {'deepcell', 'watershed'}:
+            raise ValueError('`transform` got unexpected value', transform)
+
+    if normalization:
+        normalization = normalization.lower()
+        if normalization not in {'std', 'max', 'whole_image', 'median'}:
+            raise ValueError('`normalization` got unexpected value', transform)
 
     try:
         os.makedirs(output_dir)
@@ -125,9 +140,9 @@ def make_notebook(data,
         '',
         '# Check for channels_first or channels_last',
         'IS_CHANNELS_FIRST = keras.backend.image_data_format() == "channels_first"',
-        'ROW_AXIS = {} if IS_CHANNELS_FIRST else {}'.format(dim, dim - 1),
-        'COL_AXIS = {} if IS_CHANNELS_FIRST else {}'.format(dim + 1, dim),
-        'CHANNEL_AXIS = 1 if IS_CHANNELS_FIRST else {}'.format(dim + 1),
+        'ROW_AXIS = {} if IS_CHANNELS_FIRST else {}'.format(ndim, ndim - 1),
+        'COL_AXIS = {} if IS_CHANNELS_FIRST else {}'.format(ndim + 1, ndim),
+        'CHANNEL_AXIS = 1 if IS_CHANNELS_FIRST else {}'.format(ndim + 1),
         '',
         'for d in (NPZ_DIR, MODEL_DIR, EXPORT_DIR):',
         '    try:',
@@ -146,7 +161,7 @@ def make_notebook(data,
     # Make NPZ file from data
     make_data = [
         'make_training_data(',
-        '    dimensionality={dim},  # 2D or 3D data'.format(dim=dim),
+        '    dimensionality={ndim},  # 2D or 3D data'.format(ndim=ndim),
         '    direc_name=DATA_DIR,',
         '    file_name_save=os.path.join(NPZ_DIR, DATA_FILE),',
         '    training_direcs=None,',
@@ -161,6 +176,13 @@ def make_notebook(data,
         '    raise Exception("Uh Oh!  Your data file did not save properly :(")'
     ]
     cells.append(nbf.v4.new_code_cell('\n'.join(make_data)))
+
+    if optimizer.lower() == 'sgd':
+        opt = 'keras.optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)'
+    elif optimizer.lower == 'adam':
+        opt = 'keras.optimizers.Adam(lr=0.01, epsilon=None, decay=1e-6)'
+    else:
+        raise ValueError('Invalid optimizer value: `{}`'.format(optimizer))
 
     # Load data from NPZ
     load_data = [
@@ -178,9 +200,9 @@ def make_notebook(data,
         '    input_shape = (size[0], size[1], X.shape[CHANNEL_AXIS])',
         '',
         '# Set up other training parameters',
-        'n_epoch = 10',
+        'n_epoch = {}'.format(epochs),
         'batch_size = {}'.format(1 if train_type == 'conv' else 32),
-        'optimizer = keras.optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)',
+        'optimizer = {}'.format(opt),
         'lr_sched = rate_scheduler(lr=0.01, decay=0.99)'
     ]
     cells.append(nbf.v4.new_code_cell('\n'.join(load_data)))
@@ -189,7 +211,7 @@ def make_notebook(data,
     create_model = [
         '# Instantiate the model',
         'model = bn_feature_net{}_{}D('.format(
-            '_skip' if train_type == 'conv' else '', dim),
+            '_skip' if train_type == 'conv' else '', ndim),
     ]
 
     if transform == 'deepcell':
@@ -203,7 +225,7 @@ def make_notebook(data,
         'receptive_field': field_size,
         'n_channels': 'X.shape[CHANNEL_AXIS]',
         'input_shape': 'input_shape',
-        'norm_method': '"{}"'.format('median' if dim == 2 else 'whole_image'),
+        'norm_method': '"{}"'.format(normalization),
         'reg': 1e-5,
         'n_conv_filters': 32,
         'n_dense_filters': 128,
@@ -212,7 +234,7 @@ def make_notebook(data,
 
     if train_type == 'conv':
         model_kwargs.update({
-            'n_skips': 3,
+            'n_skips': skips,
             'last_only': False,
             'multires': False
         })
