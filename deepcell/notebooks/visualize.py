@@ -90,5 +90,7 @@ def make_notebook(model_output,
     ts = time.time()
     st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
     notebook_path = os.path.join(output_dir, 'visualize_{}.ipynb'.format(st))
+    # spaces in filenames can be complicated
+    notebook_path = notebook_path.replace(' ', '_')
     nbf.write(nb, notebook_path)
     return notebook_path
