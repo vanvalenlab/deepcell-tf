@@ -70,9 +70,9 @@ def make_notebook(data,
     # Returns:
         notebook_path: path to generated notebook
     """
-    if train_type.lower() not in {'sample', 'conv'}:
+    train_type = str(train_type).lower()
+    if train_type not in {'sample', 'conv'}:
         raise ValueError('`train_type` must be one of "sample" or "conv"')
-    train_type = train_type.lower()
 
     if not isinstance(field_size, int) or field_size <= 0:
         raise ValueError('`field_size` must be a positive integer')
@@ -80,13 +80,13 @@ def make_notebook(data,
     if ndim not in {2, 3}:
         raise ValueError('`ndim` must be either 2 or 3 for 2D or 3D images')
 
-    if transform:
-        transform = transform.lower()
+    if transform is not None:
+        transform = str(transform).lower()
         if transform not in {'deepcell', 'watershed'}:
             raise ValueError('`transform` got unexpected value', transform)
 
-    if normalization:
-        normalization = normalization.lower()
+    if normalization is not None:
+        normalization = str(normalization).lower()
         if normalization not in {'std', 'max', 'whole_image', 'median'}:
             raise ValueError('`normalization` got unexpected value', transform)
 
