@@ -79,20 +79,19 @@ class cell_tracker():
             y[frame] = y_frame_new
         self.y = y
 
-    def _create_new_track(self, frame, cell_id=None):
+    def _create_new_track(self, frame, old_label):
         """
         This function creates new tracks
         """
-        if len(list(self.tracks.keys())) > 0:
-            new_track = np.amax(list(self.tracks.keys())) + 1
-        else:
-            new_track = 0
-        self.tracks[new_track] = {}
+        import traceback
 
-        if cell_id is None:
-            self.tracks[new_track]['label'] = new_track + 1
-        else:
-            self.tracks[new_track]['label'] = cell_id
+        new_track = len(self.tracks.keys())
+        new_label = new_track + 1
+
+        print("create track frame:{}, new_track:{}, new_label:{}, old_label:{}".format(frame, new_track, new_label, old_label))
+
+        self.tracks[new_track] = {}
+        self.tracks[new_track]['label'] = new_label
 
         self.tracks[new_track]['frames'] = [frame]
         self.tracks[new_track]['daughters'] = []
@@ -100,7 +99,9 @@ class cell_tracker():
         # self.tracks[track]['death_frame'] = None
         self.tracks[new_track]['parent'] = None
 
-        self.tracks[new_track].update(self._get_features(self.x, self.y, [frame], [cell_id]))
+        self.tracks[new_track].update(self._get_features(self.x, self.y, [frame], [old_label]))
+
+        self.y[frame][self.y[frame] == old_label] = new_label
 
     def _initialize_tracks(self):
         """
@@ -122,11 +123,14 @@ class cell_tracker():
     def _compute_feature(self, feature_name, track_feature, frame_feature):
         """
         Given a track and frame feature, compute the resulting track and frame features.
+        This also returns True or False as the third element of the tuple indicating if these
+        features should be used at all. False indicates that this pair of track & cell features
+        should result in a maximum cost assignment.
         This is usually for some preprocessing in case it is desired. For example, the
         distance feature normalizes distances.
         """
         if feature_name == "appearance":
-            return track_feature, frame_feature
+            return track_feature, frame_feature, True
 
         if feature_name == "distance":
             centroids = np.concatenate([track_feature, np.array([frame_feature])], axis=0)
@@ -134,19 +138,21 @@ class cell_tracker():
             zero_pad = np.zeros((1, 2), dtype=K.floatx())
             distances = np.concatenate([zero_pad, distances], axis=0)
 
+            ok = True
             # Make sure the distances are all less than max distance
             for j in range(distances.shape[0]):
                 dist = distances[j,:]
                 # TODO(enricozb): why do we normalize distances???
                 if np.linalg.norm(dist) > self.max_distance:
-                    distances[j,:] = dist/np.linalg.norm(dist)*self.max_distance
-            return distances[0:-1,:], distances[-1,:]
+                    ok = False
+                    # distances[j,:] = dist/np.linalg.norm(dist)*self.max_distance
+            return distances[0:-1,:], distances[-1,:], ok
 
         if feature_name == "neighborhood":
-            return track_feature, frame_feature
+            return track_feature, frame_feature, True
 
         if feature_name == "perimeter":
-            return track_feature, frame_feature
+            return track_feature, frame_feature, True
 
         raise ValueError("_fetch_track_feature: Unknown feature '{}'".format(feature))
 
@@ -202,10 +208,13 @@ class cell_tracker():
         for track in range(number_of_tracks):
             for cell in range(number_of_cells):
                 for feature_name in self.features:
-                    track_feature, frame_feature = self._compute_feature(
+                    track_feature, frame_feature, ok = self._compute_feature(
                             feature_name,
                             track_features[feature_name][track],
                             frame_features[feature_name][cell])
+
+                    if not ok:
+                        assignment_matrix[track, cell] = 1
 
                     inputs[feature_name][0][track, cell] = track_feature
                     inputs[feature_name][1][track, cell] = frame_feature
@@ -289,12 +298,13 @@ class cell_tracker():
 
 
             # Create a new track if there was a birth
-            if track > number_of_tracks - 1 and cell < number_of_cells:
-                self._create_new_track(frame, cell+1)
-                new_track_id = np.amax(list(self.tracks.keys()))
+            elif track > number_of_tracks - 1 and cell < number_of_cells:
+                new_track_id = len(self.tracks.keys())
+                self._create_new_track(frame, cell_id)
+                new_label = new_track_id + 1
 
                 # See if the new track has a parent
-                parent = self._get_parent(frame, cell_id)
+                parent = self._get_parent(frame, new_label)
                 if parent is not None:
                     print('Division detected')
                     self.tracks[new_track_id]['parent'] = parent
@@ -302,10 +312,11 @@ class cell_tracker():
                 else:
                     self.tracks[new_track_id]['parent'] = None
 
-                y_tracked_update[self.y[[frame]] == cell+1] = new_track_id+1
+                print("something something", np.unique(self.y[frame]))
+                y_tracked_update[self.y[[frame]] == new_label] = new_track_id + 1
 
             # Dont touch anything if there was a cell that "died"
-            if track < number_of_tracks and cell > number_of_cells - 1:
+            elif track < number_of_tracks and cell > number_of_cells - 1:
                 # self.tracks[track]['death_frame'] = frame - 1
                 continue
 
@@ -319,17 +330,23 @@ class cell_tracker():
         for track in range(number_of_tracks):
             if len(self.tracks[track]['daughters']) > 0:
                 if frame in self.tracks[track]['frames']:
-
                     print("appearances removed from track ", track)
                     print("frames in the track ", self.tracks[track]['frames'])
                     print("length of daughter track ", len(self.tracks[track]['daughters']))
-                    print("new track id ", new_track_id)
+                    print("daughters ", self.tracks[track]['daughters'])
+                    print("new track id ", len(self.tracks.keys()))
+                    print("label ", self.tracks[track]['label'])
                     print("frame being removed ", frame)
 
+                    print("dank unique ", np.unique(self.y[frame]))
+                    new_track_id = len(self.tracks.keys())
+                    print('what are we doing lol ', cell_id, new_track_id)
+                    print("dank unique 2 ", np.unique(self.y[frame]))
+
                     # Create new track
-                    cell_id = self.tracks[track]['label']
-                    self._create_new_track(frame, cell_id)
-                    new_track_id = np.amax(list(self.tracks.keys()))
+                    old_label = self.tracks[track]['label']
+                    self._create_new_track(frame, old_label)
+
                     for feature_name in self.features:
                         self.tracks[new_track_id][feature_name] = self.tracks[track][feature_name][[-1]]
 
@@ -342,7 +359,7 @@ class cell_tracker():
                     self.tracks[track]['daughters'].append(new_track_id)
 
                     # Change y_tracked_update
-                    y_tracked_update[y_tracked_update == track+1] = new_track_id + 1
+                    y_tracked_update[y_tracked_update == track + 1] = new_track_id + 1
 
         # Update the tracked label array
         self.y_tracked = np.concatenate([self.y_tracked, y_tracked_update], axis=0)
@@ -415,7 +432,7 @@ class cell_tracker():
         predictions = self.model.predict(model_input)
         probs = predictions[:,2]
 
-        print(np.round(probs, decimals=2))
+        # print(np.round(probs, decimals=2))
         number_of_tracks = len(self.tracks.keys())
 
         # Make sure capped tracks can't be assigned parents
@@ -464,7 +481,12 @@ class cell_tracker():
                 track_length = app.shape[0]
                 missing_frames = self.track_length - track_length
                 frames = np.array(list(range(-1,-track_length-1,-1)) + [-track_length]*missing_frames)
-                track_appearances[track] = app[frames]
+                try:
+                    track_appearances[track] = app[frames]
+                except IndexError as e:
+                    print("suppressed IndexError for track", track)
+                    print(e)
+                    print("tracks:", list(self.tracks.keys()))
 
         return track_appearances
 
@@ -613,7 +635,14 @@ class cell_tracker():
             X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
             props = regionprops(np.int32(y_frame == cell_label))
-            minr, minc, maxr, maxc = props[0].bbox
+
+            try:
+                minr, minc, maxr, maxc = props[0].bbox
+            except:
+                print("frame ", frame)
+                print("cell_label:", cell_label)
+                print("unique:", np.unique(y_frame))
+
             centroids[counter] = props[0].centroid
             perimeters[counter] = np.array([props[0].perimeter])
 
