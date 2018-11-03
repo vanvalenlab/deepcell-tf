@@ -71,11 +71,16 @@ class cell_tracker():
         y = self.y
         number_of_frames = self.y.shape[0]
 
+        uid = 1
         for frame in range(number_of_frames):
             unique_cells = np.unique(y[frame])
             y_frame_new = np.zeros(y[frame].shape)
             for new_label, old_label in enumerate(list(unique_cells)):
-                y_frame_new[y[frame] == old_label] = new_label
+                if old_label == 0:
+                    y_frame_new[y[frame] == old_label] = 0
+                else:
+                    y_frame_new[y[frame] == old_label] = uid
+                    uid += 1
             y[frame] = y_frame_new
         self.y = y
 
@@ -88,8 +93,6 @@ class cell_tracker():
         new_track = len(self.tracks.keys())
         new_label = new_track + 1
 
-        print("create track frame:{}, new_track:{}, new_label:{}, old_label:{}".format(frame, new_track, new_label, old_label))
-
         self.tracks[new_track] = {}
         self.tracks[new_track]['label'] = new_label
 
@@ -100,6 +103,9 @@ class cell_tracker():
         self.tracks[new_track]['parent'] = None
 
         self.tracks[new_track].update(self._get_features(self.x, self.y, [frame], [old_label]))
+
+        if frame > 0 and np.any(self.y[frame] == new_label):
+            raise Exception("new_label already in annotated frame and frame > 0")
 
         self.y[frame][self.y[frame] == old_label] = new_label
 
@@ -164,7 +170,10 @@ class cell_tracker():
 
         # Initialize matrices
         number_of_tracks = np.int(len(self.tracks.keys()))
-        number_of_cells = np.int(np.amax(self.y[frame]))
+
+        cells_in_frame = np.unique(self.y[frame])
+        cells_in_frame = list(np.delete(cells_in_frame, np.where(cells_in_frame == 0)))
+        number_of_cells = len(cells_in_frame)
 
         cost_matrix = np.zeros((number_of_tracks + number_of_cells, number_of_tracks + number_of_cells), dtype=K.floatx())
         assignment_matrix = np.zeros((number_of_tracks, number_of_cells), dtype=K.floatx())
@@ -186,11 +195,11 @@ class cell_tracker():
             frame_features[feature_name] = np.zeros((number_of_cells, *additional, *feature_shape),
                                                     dtype=K.floatx())
         # Fill frame_features with the proper values
-        for cell in range(number_of_cells):
-            cell_features = self._get_features(self.x, self.y, [frame], [cell + 1])
+        for cell_idx, cell_id in enumerate(cells_in_frame):
+            cell_features = self._get_features(self.x, self.y, [frame], [cell_id])
             for feature_name in self.features:
                 cell_feature_name = "~future area" if feature_name == "neighborhood" else feature_name
-                frame_features[feature_name][cell] = cell_features[cell_feature_name]
+                frame_features[feature_name][cell_idx] = cell_features[cell_feature_name]
 
         # Prepare zeros input matrices
         inputs = {}
@@ -277,14 +286,19 @@ class cell_tracker():
         and the frame that was tracked.
         """
         number_of_tracks = len(self.tracks.keys())
-        number_of_cells = np.amax(self.y[frame])
+
+        cells_in_frame = np.unique(self.y[frame])
+        cells_in_frame = list(np.delete(cells_in_frame, np.where(cells_in_frame == 0)))
+        number_of_cells = len(cells_in_frame)
 
         y_tracked_update = np.zeros((1, self.y.shape[1], self.y.shape[2], 1), dtype=K.floatx())
 
         for a in range(assignments.shape[0]):
             track, cell = assignments[a]
             track_id = track + 1 # Labels and indices differ by 1
-            cell_id = cell + 1
+
+            if cell < number_of_cells:
+                cell_id = cells_in_frame[cell]
 
             # Take care of everything if cells are tracked
             if track < number_of_tracks and cell < number_of_cells:
@@ -295,6 +309,7 @@ class cell_tracker():
                         self.tracks[track][feature_name], cell_feature], axis=0)
 
                 y_tracked_update[self.y[[frame]] == cell_id] = track_id
+                self.y[frame][self.y[frame] == cell_id] = track_id
 
 
             # Create a new track if there was a birth
@@ -312,8 +327,8 @@ class cell_tracker():
                 else:
                     self.tracks[new_track_id]['parent'] = None
 
-                print("something something", np.unique(self.y[frame]))
                 y_tracked_update[self.y[[frame]] == new_label] = new_track_id + 1
+                self.y[frame][self.y[frame] == new_label] = new_track_id + 1
 
             # Dont touch anything if there was a cell that "died"
             elif track < number_of_tracks and cell > number_of_cells - 1:
@@ -338,13 +353,10 @@ class cell_tracker():
                     print("label ", self.tracks[track]['label'])
                     print("frame being removed ", frame)
 
-                    print("dank unique ", np.unique(self.y[frame]))
-                    new_track_id = len(self.tracks.keys())
-                    print('what are we doing lol ', cell_id, new_track_id)
-                    print("dank unique 2 ", np.unique(self.y[frame]))
-
                     # Create new track
                     old_label = self.tracks[track]['label']
+                    new_track_id = len(self.tracks.keys())
+                    new_label = new_track_id + 1
                     self._create_new_track(frame, old_label)
 
                     for feature_name in self.features:
@@ -358,8 +370,10 @@ class cell_tracker():
                         self.tracks[track][feature_name] = self.tracks[track][feature_name][0:-1]
                     self.tracks[track]['daughters'].append(new_track_id)
 
+
                     # Change y_tracked_update
-                    y_tracked_update[y_tracked_update == track + 1] = new_track_id + 1
+                    y_tracked_update[self.y[[frame]] == new_label] = new_track_id + 1
+                    self.y[frame][self.y[frame] == new_label] = new_track_id + 1
 
         # Update the tracked label array
         self.y_tracked = np.concatenate([self.y_tracked, y_tracked_update], axis=0)
