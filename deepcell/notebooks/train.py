@@ -184,7 +184,7 @@ def make_notebook(data,
 
     # Make NPZ file from data
     make_data = [
-        'try:'
+        'try:',
         '    make_training_data(',
         '        dimensionality={ndim},  # 2D or 3D data'.format(ndim=ndim),
         '        direc_name=DATA_DIR,',
