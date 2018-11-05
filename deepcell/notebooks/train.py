@@ -70,6 +70,10 @@ def make_notebook(data,
     # Returns:
         notebook_path: path to generated notebook
     """
+    if not data:
+        raise ValueError('`data` should be a path to the training data.')
+    data = str(data).strip()
+
     train_type = str(train_type).lower()
     if train_type not in {'sample', 'conv'}:
         raise ValueError('`train_type` must be one of "sample" or "conv"')
@@ -111,6 +115,7 @@ def make_notebook(data,
     imports = [
         'import os',
         'import errno',
+        'import shutil',
         'import zipfile',
         '',
         'import numpy as np',
@@ -137,6 +142,7 @@ def make_notebook(data,
         'NPZ_DIR = os.path.join(ROOT_DIR, "npz_data")',
         'EXPORT_DIR = os.path.join(ROOT_DIR, "exports")',
         'DATA_FILE = "{}_data"'.format(os.path.splitext(os.path.basename(data))[0]),
+        'RAW_PATH = "{}"'.format(data),
         '',
         '# Check for channels_first or channels_last',
         'IS_CHANNELS_FIRST = keras.backend.image_data_format() == "channels_first"',
@@ -151,24 +157,45 @@ def make_notebook(data,
         '        if exc.errno != errno.EEXIST:',
         '            raise',
         '',
-        'if os.path.splitext("{}")[-1].lower() == ".zip":'.format(data),
-        '    data_zip = zipfile.ZipFile("{}")'.format(data),
-        '    data_zip.extractall(DATA_DIR)',
-        '    data_zip.close()',
+        'if zipfile.is_zipfile(RAW_PATH):',
+        '    archive = zipfile.ZipFile(RAW_PATH)',
+        '    for info in archive.infolist():',
+        '        # skip OSX archiving artifacts',
+        '        if "__MACOSX" in info.filename or ".DStore" in info.filename:',
+        '            continue',
+        '',
+        '        archive.extract(info, path=DATA_DIR)',
+        '',
+        '    archive.close()',
+        '',
+        '    # If the zip file did not have a top level directory, create one.',
+        '    children = os.listdir(DATA_DIR)',
+        '    if len(children) > 1:',
+        '        top_level = os.path.join(DATA_DIR, os.path.basename(RAW_PATH))',
+        '        os.path.makedir(top_level)',
+        '        for child in children:',
+        '            shutil.move(os.path.join(DATA_DIR, child), top_level)',
+        '',
+        '        DATA_DIR = top_level',
+        '    else:',
+        '        DATA_DIR = os.path.join(DATA_DIR, children[0])'
     ]
     cells.append(nbf.v4.new_code_cell('\n'.join(training_vars)))
 
     # Make NPZ file from data
     make_data = [
-        'make_training_data(',
-        '    dimensionality={ndim},  # 2D or 3D data'.format(ndim=ndim),
-        '    direc_name=DATA_DIR,',
-        '    file_name_save=os.path.join(NPZ_DIR, DATA_FILE),',
-        '    training_direcs=None,',
-        '    channel_names=[""],  # matches image files as wildcard',
-        '    raw_image_direc="raw",',
-        '    annotation_direc="annotated",  # directory name of label data',
-        '    reshape_size=RESHAPE_SIZE if RESIZE else None)',
+        'try:'
+        '    make_training_data(',
+        '        dimensionality={ndim},  # 2D or 3D data'.format(ndim=ndim),
+        '        direc_name=DATA_DIR,',
+        '        file_name_save=os.path.join(NPZ_DIR, DATA_FILE),',
+        '        training_direcs=None,',
+        '        channel_names=[""],  # matches image files as wildcard',
+        '        raw_image_direc="raw",',
+        '        annotation_direc="annotated",  # directory name of label data',
+        '        reshape_size=RESHAPE_SIZE if RESIZE else None)',
+        'except Exception as err:',
+        '    raise Exception("Could not create training data due to error: {}".format(err))',
         '',
         'if os.path.isfile(os.path.join(NPZ_DIR, DATA_FILE) + ".npz"):',
         '    print("Data Saved to", os.path.join(NPZ_DIR, DATA_FILE) + ".npz")',
