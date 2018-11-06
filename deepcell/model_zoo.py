@@ -486,8 +486,8 @@ def siamese_model(
             return (None, 2)
         elif feature == "neighborhood":
             return (None, 2 * occupancy_grid_size + 1, 2 * occupancy_grid_size + 1, 1)
-        elif feature == "perimeter":
-            return (None, 1)
+        elif feature == "regionprop":
+            return (None, 3)
         else:
             raise ValueError(
                 "samese_model.compute_input_shape: Unknown feature '{}'".format(feature))
@@ -499,8 +499,8 @@ def siamese_model(
             return (2,)
         elif feature == "neighborhood":
             return (64,)
-        elif feature == "perimeter":
-            return (1,)
+        elif feature == "regionprop":
+            return (3,)
         else:
             raise ValueError(
                 "samese_model.compute_output_shape: Unknown feature '{}'".format(feature))
@@ -547,7 +547,7 @@ def siamese_model(
             feature_extractor_occupancy_grid.add(Reshape((-1, 64)))
 
             return feature_extractor_occupancy_grid
-        elif feature == "perimeter":
+        elif feature == "regionprop":
             return None
         else:
             raise ValueError(

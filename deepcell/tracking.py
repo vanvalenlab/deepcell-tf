@@ -1,6 +1,7 @@
 import numpy as np
 import copy
-from skimage.measure import regionprops
+import skimage.measure
+
 from skimage.transform import resize
 from scipy.optimize import linear_sum_assignment
 
@@ -53,7 +54,7 @@ class cell_tracker():
         self.feature_shape = {
                 "appearance": (crop_dim, crop_dim, self.x.shape[self.channel_axis]),
                 "neighborhood": (2 * occupancy_grid_size + 1, 2 * occupancy_grid_size + 1, 1),
-                "perimeter": (1,),
+                "regionprop": (3,),
                 "distance": (2,),
             }
 
@@ -71,7 +72,7 @@ class cell_tracker():
         y = self.y
         number_of_frames = self.y.shape[0]
 
-        uid = 1
+        uid = 1000
         for frame in range(number_of_frames):
             unique_cells = np.unique(y[frame])
             y_frame_new = np.zeros(y[frame].shape)
@@ -105,6 +106,8 @@ class cell_tracker():
         self.tracks[new_track].update(self._get_features(self.x, self.y, [frame], [old_label]))
 
         if frame > 0 and np.any(self.y[frame] == new_label):
+            print(new_label)
+            print(np.unique(self.y[frame]))
             raise Exception("new_label already in annotated frame and frame > 0")
 
         self.y[frame][self.y[frame] == old_label] = new_label
@@ -157,7 +160,7 @@ class cell_tracker():
         if feature_name == "neighborhood":
             return track_feature, frame_feature, True
 
-        if feature_name == "perimeter":
+        if feature_name == "regionprop":
             return track_feature, frame_feature, True
 
         raise ValueError("_fetch_track_feature: Unknown feature '{}'".format(feature))
@@ -251,6 +254,7 @@ class cell_tracker():
         for track in range(number_of_tracks):
             if self.tracks[track]['capped']:
                 assignment_matrix[track,0:number_of_cells] = 1
+
 
         # Compute birth matrix
         predictions_birth = predictions[:,:,2]
@@ -383,7 +387,7 @@ class cell_tracker():
         This function searches the tracks for the parent of a given cell
         It returns the parent cell's id or None if no parent exists.
         """
-        track_features = {feature_name: self._fetch_track_feature(feature_name)
+        track_features = {feature_name: self._fetch_track_feature(feature_name, before_frame=frame)
                           for feature_name in self.features}
 
         cell_features = self._get_features(self.x, self.y, [frame], [cell])
@@ -434,7 +438,7 @@ class cell_tracker():
 
                 return track_occupancy_grids, cell_occupancy_grids
 
-            if feature_name == "perimeter":
+            if feature_name == "regionprop":
                 return track_feature, frame_feature
 
         # Compute the probability the cell is a daughter of a track
@@ -456,28 +460,33 @@ class cell_tracker():
                 continue
 
         # Find out if the cell is a daughter of a track
-        max_prob = np.amax(probs)
-        parent_id = np.where(probs == max_prob)[0][0]
         print("New track")
-        if max_prob > self.division:
-            parent = parent_id
-        else:
-            parent = None
-        return parent
+        max_prob = self.division
+        parent_id = None
+        for track_id, p in enumerate(np.squeeze(probs)):
+            if self.tracks[track_id]['frames'] == [frame]:
+                continue
+            if p > max_prob:
+                parent_id, max_prob = track_id, p
 
-    def _fetch_track_feature(self, feature):
+        return parent_id
+
+    def _fetch_track_feature(self, feature, before_frame=None):
+        if before_frame is None:
+            before_frame = float('inf')
+
         if feature == "appearance":
-            return self._fetch_track_appearances()
+            return self._fetch_track_appearances(before_frame)
         if feature == "distance":
-            return self._fetch_track_centroids()
-        if feature == "perimeter":
-            return self._fetch_track_perimeters()
+            return self._fetch_track_centroids(before_frame)
+        if feature == "regionprop":
+            return self._fetch_track_regionprops(before_frame)
         if feature == "neighborhood":
-            return self._fetch_track_occupancy_grids()
+            return self._fetch_track_occupancy_grids(before_frame)
 
         raise ValueError("_fetch_track_feature: Unknown feature '{}'".format(feature))
 
-    def _fetch_track_appearances(self):
+    def _fetch_track_appearances(self, before_frame):
         """
         This function fetches the appearances for all of the existing tracks.
         If tracks are shorter than the track length, they are filled in with
@@ -487,51 +496,54 @@ class cell_tracker():
                                         self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis]),
                                         dtype=K.floatx())
 
-        for track in self.tracks.keys():
-            app = self.tracks[track]['appearance']
-            if app.shape[0] > self.track_length - 1:
-                track_appearances[track] = app[-self.track_length:]
+        for track_id, track in self.tracks.items():
+            app = track['appearance']
+            allowed_frames = list(filter(lambda f: f < before_frame, track['frames']))
+            frame_dict = {frame: idx for idx, frame in enumerate(allowed_frames)}
+
+            if len(allowed_frames) == 0:
+                continue
+
+            if len(allowed_frames) >= self.track_length:
+                frames = allowed_frames[-self.track_length:]
             else:
-                track_length = app.shape[0]
-                missing_frames = self.track_length - track_length
-                frames = np.array(list(range(-1,-track_length-1,-1)) + [-track_length]*missing_frames)
-                try:
-                    track_appearances[track] = app[frames]
-                except IndexError as e:
-                    print("suppressed IndexError for track", track)
-                    print(e)
-                    print("tracks:", list(self.tracks.keys()))
+                num_missing = self.track_length - len(allowed_frames)
+                last_frame = allowed_frames[-1]
+                frames = [*allowed_frames, *([last_frame] * num_missing)]
+
+            track_appearances[track_id] = app[[frame_dict[f] for f in frames]]
 
         return track_appearances
 
-    def _fetch_track_perimeters(self):
+    def _fetch_track_regionprops(self, before_frame):
         """
-        This function fetches the perimeters for all of the existing tracks.
+        This function fetches the regionprops for all of the existing tracks.
         If tracks are shorter than the track length they are filled in with
         the centroids from the first frame.
         """
-        track_perimeters = np.zeros((len(self.tracks.keys()), self.track_length, 1),
+        track_regionprops = np.zeros((len(self.tracks.keys()), self.track_length, 3),
                                     dtype=K.floatx())
 
-        for track in self.tracks.keys():
-            per = self.tracks[track]['perimeter']
-            if per.shape[0] > self.track_length - 1:
-                track_perimeters[track] = per[-self.track_length:,:]
+        for track_id, track in self.tracks.items():
+            regionprops = track['regionprop']
+            allowed_frames = list(filter(lambda f: f < before_frame, track['frames']))
+            frame_dict = {frame: idx for idx, frame in enumerate(allowed_frames)}
+
+            if len(allowed_frames) == 0:
+                continue
+
+            if len(allowed_frames) >= self.track_length:
+                frames = allowed_frames[-self.track_length:]
             else:
-                track_length = per.shape[0]
-                missing_frames = self.track_length - track_length
-                frames = np.array(list(range(-1,-track_length-1,-1)) +
-                                  [-track_length] * missing_frames)
-                try:
-                    track_perimeters[track] = per[frames,:]
-                except:
-                    print("track ", track)
-                    print("frames ", frames)
-                    print("per.shape ", per.shape)
+                num_missing = self.track_length - len(allowed_frames)
+                last_frame = allowed_frames[-1]
+                frames = [*allowed_frames, *([last_frame] * num_missing)]
 
-        return track_perimeters
+            track_regionprops[track_id] = regionprops[[frame_dict[f] for f in frames]]
 
-    def _fetch_track_centroids(self):
+        return track_regionprops
+
+    def _fetch_track_centroids(self, before_frame):
         """
         This function fetches the centroids for all of the existing tracks.
         If tracks are shorter than the track length they are filled in with
@@ -539,45 +551,53 @@ class cell_tracker():
         """
         track_centroids = np.zeros((len(self.tracks.keys()), self.track_length, 2), dtype=K.floatx())
 
-        for track in self.tracks.keys():
-            cen = self.tracks[track]['distance']
-            if cen.shape[0] > self.track_length - 1:
-                track_centroids[track] = cen[-self.track_length:,:]
+        for track_id, track in self.tracks.items():
+            centroids = track['distance']
+            allowed_frames = list(filter(lambda f: f < before_frame, track['frames']))
+            frame_dict = {frame: idx for idx, frame in enumerate(allowed_frames)}
+
+            if len(allowed_frames) == 0:
+                continue
+
+            if len(allowed_frames) >= self.track_length:
+                frames = allowed_frames[-self.track_length:]
             else:
-                track_length = cen.shape[0]
-                missing_frames = self.track_length - track_length
-                frames = np.array(list(range(-1,-track_length-1,-1)) + [-track_length]*missing_frames)
-                try:
-                    track_centroids[track] = cen[frames,:]
-                except:
-                    print("track ", track)
-                    print("frames ", frames)
-                    print("cen.shape ", cen.shape)
+                num_missing = self.track_length - len(allowed_frames)
+                last_frame = allowed_frames[-1]
+                frames = [*allowed_frames, *([last_frame] * num_missing)]
+
+            track_centroids[track_id] = centroids[[frame_dict[f] for f in frames]]
 
         return track_centroids
 
-
-    def _fetch_track_occupancy_grids(self):
+    def _fetch_track_occupancy_grids(self, before_frame):
         """
         This function gets the occupancy grids for all of the existing tracks.
         If tracks are shorter than the track length they are filled in with the
         occupancy grids from the first frame.
         """
-        track_occupancy_grids = np.zeros((len(self.tracks.keys()), self.track_length,
-                                          2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1),
-                                          dtype=K.floatx())
-        for track in self.tracks.keys():
-            og = self.tracks[track]['neighborhood']
-            if og.shape[0] > self.track_length - 1:
-                track_occupancy_grids[track] = og[-self.track_length:,:,:,:]
+        track_neighborhoods = np.zeros((len(self.tracks.keys()), self.track_length,
+                                        2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1),
+                                       dtype=K.floatx())
+
+        for track_id, track in self.tracks.items():
+            neighborhoods = track['neighborhood']
+            allowed_frames = list(filter(lambda f: f < before_frame, track['frames']))
+            frame_dict = {frame: idx for idx, frame in enumerate(allowed_frames)}
+
+            if len(allowed_frames) == 0:
+                continue
+
+            if len(allowed_frames) >= self.track_length:
+                frames = allowed_frames[-self.track_length:]
             else:
-                track_length = og.shape[0]
-                missing_frames = self.track_length - track_length
-                frames = np.array(list(range(-1,-track_length-1,-1)) + [-track_length]*missing_frames)
-                track_occupancy_grids[track] = og[frames,:,:,:]
+                num_missing = self.track_length - len(allowed_frames)
+                last_frame = allowed_frames[-1]
+                frames = [*allowed_frames, *([last_frame] * num_missing)]
 
-        return track_occupancy_grids
+            track_neighborhoods[track_id] = neighborhoods[[frame_dict[f] for f in frames]]
 
+        return track_neighborhoods
 
     def _sub_area(self, X_frame, y_frame, cell_label, num_channels):
         occupancy_grid = np.zeros((2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1),
@@ -588,7 +608,7 @@ class cell_tracker():
         y_padded = np.pad(y_frame, ((self.occupancy_window, self.occupancy_window),
                                     (self.occupancy_window, self.occupancy_window),
                                     (0,0)), mode='constant', constant_values=0)
-        props = regionprops(np.int32(y_padded == cell_label))
+        props = skimage.measure.regionprops(np.int32(y_padded == cell_label))
         center_x, center_y = props[0].centroid
         center_x, center_y = np.int(center_x), np.int(center_y)
         X_reduced = X_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
@@ -601,7 +621,7 @@ class cell_tracker():
         max_value = np.amax([np.amax(X_reduced), np.absolute(np.amin(X_reduced))])
         X_reduced /= max_value
         X_reduced = resize(X_reduced, resize_shape, mode='constant')
-        X_reduced *= max_value
+        # X_reduced *= max_value
 
         return X_reduced
 
@@ -625,7 +645,7 @@ class cell_tracker():
                                 X.shape[channel_axis])
 
         centroid_shape = (len(frames), 2)
-        perimeter_shape = (len(frames), 1)
+        regionprop_shape = (len(frames), 3)
 
         occupancy_grid_shape = (len(frames),
                                 2 * self.occupancy_grid_size + 1,
@@ -640,7 +660,7 @@ class cell_tracker():
         # Initialize storage for appearances and centroids
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
         centroids = np.zeros(centroid_shape, dtype=K.floatx())
-        perimeters = np.zeros(perimeter_shape, dtype=K.floatx())
+        regionprops = np.zeros(regionprop_shape, dtype=K.floatx())
         occupancy_grids = np.zeros(occupancy_grid_shape, dtype=K.floatx())
         future_areas = np.zeros(future_area_shape, dtype=K.floatx())
 
@@ -648,7 +668,7 @@ class cell_tracker():
             # Get the bounding box
             X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
-            props = regionprops(np.int32(y_frame == cell_label))
+            props = skimage.measure.regionprops(np.int32(y_frame == cell_label))
 
             try:
                 minr, minc, maxr, maxc = props[0].bbox
@@ -658,7 +678,7 @@ class cell_tracker():
                 print("unique:", np.unique(y_frame))
 
             centroids[counter] = props[0].centroid
-            perimeters[counter] = np.array([props[0].perimeter])
+            regionprops[counter] = np.array([props[0].area, props[0].perimeter, props[0].eccentricity])
 
             # Extract images from bounding boxes
             if self.data_format == 'channels_first':
@@ -672,7 +692,7 @@ class cell_tracker():
             max_value = np.amax([np.amax(appearance), np.absolute(np.amin(appearance))])
             appearance /= max_value
             appearance = resize(appearance, resize_shape)
-            appearance *= max_value
+            # appearance *= max_value
             if self.data_format == 'channels_first':
                 appearances[:, counter] = appearance
             else:
@@ -691,7 +711,7 @@ class cell_tracker():
 
         # future areas are not a feature instead a part of the neighborhood feature
         return {"appearance": appearances, "distance": centroids,
-                "neighborhood": occupancy_grids, "perimeter": perimeters,
+                "neighborhood": occupancy_grids, "regionprop": regionprops,
                 "~future area": future_areas}
 
     def _track_cells(self):
