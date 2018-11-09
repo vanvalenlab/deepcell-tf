@@ -300,7 +300,7 @@ def make_notebook(data,
         'rotation_range': 180,
         'flip': True,
         'shear': False,
-        'model_name': model_name
+        'model_name': 'model_name'
     }
 
     if train_type == 'sample':
