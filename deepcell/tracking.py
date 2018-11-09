@@ -72,7 +72,8 @@ class cell_tracker():
         y = self.y
         number_of_frames = self.y.shape[0]
 
-        uid = 1000
+        ### The annotations need to be unique across all frames
+        max_label = 0                                                       ## keep track of the largest label used thus far
         for frame in range(number_of_frames):
             unique_cells = np.unique(y[frame])
             y_frame_new = np.zeros(y[frame].shape)
@@ -80,10 +81,11 @@ class cell_tracker():
                 if old_label == 0:
                     y_frame_new[y[frame] == old_label] = 0
                 else:
-                    y_frame_new[y[frame] == old_label] = uid
-                    uid += 1
+                    y_frame_new[y[frame] == old_label] = np.int_(new_label + max_label)
             y[frame] = y_frame_new
-        self.y = y
+            max_label = np.amax(np.unique(y_frame_new))                                           ## Set the new max label
+            print("max label", max_label)
+        self.y = y.astype('int32')
 
     def _create_new_track(self, frame, old_label):
         """
@@ -127,7 +129,7 @@ class cell_tracker():
             self._create_new_track(0, label)
 
         # Start a tracked label array
-        self.y_tracked = self.y[[0]]
+        self.y_tracked = self.y[[0]].astype('int32')
 
     def _compute_feature(self, feature_name, track_feature, frame_feature):
         """
@@ -219,6 +221,7 @@ class cell_tracker():
         # Fill the input matrices
         for track in range(number_of_tracks):
             for cell in range(number_of_cells):
+#            for cell in cells_in_frame:
                 for feature_name in self.features:
                     track_feature, frame_feature, ok = self._compute_feature(
                             feature_name,
@@ -291,18 +294,25 @@ class cell_tracker():
         """
         number_of_tracks = len(self.tracks.keys())
 
+#       number_of_cells = np.amax(self.y[frame])       ## Switch from iterating over assumed cell range to a list of the cell labels in the frame
         cells_in_frame = np.unique(self.y[frame])
-        cells_in_frame = list(np.delete(cells_in_frame, np.where(cells_in_frame == 0)))
-        number_of_cells = len(cells_in_frame)
+        cells_in_frame = np.delete(cells_in_frame, np.where(cells_in_frame == 0))
+        number_of_cells = len(list(cells_in_frame))            ## Number of lables present in the current frame (needed to build cost matrix)
+        print("cells in frame", cells_in_frame)
 
-        y_tracked_update = np.zeros((1, self.y.shape[1], self.y.shape[2], 1), dtype=K.floatx())
+        y_tracked_update = np.zeros((1, self.y.shape[1], self.y.shape[2], 1), dtype='int32')
 
         for a in range(assignments.shape[0]):
             track, cell = assignments[a]
             track_id = track + 1 # Labels and indices differ by 1
+            #print("assignments shape: ", assignments.shape)
+            #print("assignments: ", assignments)
+            #print("track: ", track)
+            #print("cell: ", cell)
 
+#            cell_id = cell + 1                         ## This is a mapping of the column index provided by the lap assignment to the cell label in the frame
             if cell < number_of_cells:
-                cell_id = cells_in_frame[cell]
+                cell_id = cells_in_frame[cell]              ## This is the new mapping
 
             # Take care of everything if cells are tracked
             if track < number_of_tracks and cell < number_of_cells:
@@ -723,4 +733,3 @@ class cell_tracker():
             cost_matrix = self._get_cost_matrix(frame)
             assignments = self._run_lap(cost_matrix)
             self._update_tracks(assignments, frame)
-

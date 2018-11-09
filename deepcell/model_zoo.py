@@ -490,7 +490,7 @@ def siamese_model(
             return (None, 3)
         else:
             raise ValueError(
-                "samese_model.compute_input_shape: Unknown feature '{}'".format(feature))
+                "siamese_model.compute_input_shape: Unknown feature '{}'".format(feature))
 
     def compute_reshape(feature):
         if feature == "appearance":
@@ -503,7 +503,7 @@ def siamese_model(
             return (3,)
         else:
             raise ValueError(
-                "samese_model.compute_output_shape: Unknown feature '{}'".format(feature))
+                "siamese_model.compute_output_shape: Unknown feature '{}'".format(feature))
 
     def compute_feature_extractor(feature, shape):
         if feature == "appearance":
@@ -512,6 +512,7 @@ def siamese_model(
             N_layers = np.int(np.floor(np.log2(input_shape[1])))
             feature_extractor = Sequential()
             feature_extractor.add(InputLayer(input_shape=shape))
+#            feature_extractor.add(ImageNormalization2D(norm_method='std', filter_size=32))
             for layer in range(N_layers):
                 feature_extractor.add(Conv3D(64, (1, 3, 3),
                                              kernel_initializer=init,
@@ -551,7 +552,7 @@ def siamese_model(
             return None
         else:
             raise ValueError(
-                "samese_model.compute_feature_extractor: Unknown feature '{}'".format(feature))
+                "siamese_model.compute_feature_extractor: Unknown feature '{}'".format(feature))
 
     if features is None:
         raise ValueError("siamese_model: No features specified.")
