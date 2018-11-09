@@ -50,6 +50,7 @@ def make_notebook(data,
                   optimizer='sgd',
                   skips=0,
                   normalization='std',
+                  model_name=None,
                   log_dir='/data/tensorboard_logs',
                   output_dir=os.path.join('scripts', 'generated_notebooks'),
                   **kwargs):
@@ -284,7 +285,8 @@ def make_notebook(data,
         'lr_sched': 'lr_sched',
         'rotation_range': 180,
         'flip': True,
-        'shear': False
+        'shear': False,
+        'model_name': model_name
     }
 
     if train_type == 'sample':
@@ -306,11 +308,10 @@ def make_notebook(data,
     training = ['train_model_{}('.format(train_type)]
     training.extend(['    {}={},'.format(k, v) for k, v in training_kwargs.items()])
     training.append(')')
+    cells.append(nbf.v4.new_code_cell('\n'.join(training)))
+
 
     nb = nbf.v4.new_notebook(cells=cells)
-    nb['cells'].extend([
-        nbf.v4.new_code_cell('\n'.join(training))
-    ])
 
     # Create and write to new ipynb
     ts = time.time()
