@@ -59,6 +59,7 @@ def train_model_sample(model,
                        log_dir='/data/tensorboard_logs',
                        direc_save='/data/models',
                        direc_data='/data/npz_data',
+                       model_name=None,
                        focal=False,
                        gamma=0.5,
                        optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
@@ -70,10 +71,11 @@ def train_model_sample(model,
                        **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
-    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    basename = '{}_{}_{}'.format(todays_date, dataset, expt)
-    file_name_save = os.path.join(direc_save, '{}.h5'.format(basename))
-    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(basename))
+    if model_name is None:
+        todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        model_name = '{}_{}_{}'.format(todays_date, dataset, expt)
+    file_name_save = os.path.join(direc_save, '{}.h5'.format(model_name))
+    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(model_name))
 
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
     train_dict, test_dict = get_data(training_data_file_name, mode='sample', test_size=test_size)
@@ -166,7 +168,7 @@ def train_model_sample(model,
             callbacks.ModelCheckpoint(
                 file_name_save, monitor='val_loss', verbose=1,
                 save_best_only=True, save_weights_only=num_gpus >= 2),
-            callbacks.TensorBoard(log_dir=os.path.join(log_dir, basename))
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, model_name))
         ])
 
     np.savez(file_name_save_loss, loss_history=loss_history.history)
@@ -187,6 +189,7 @@ def train_model_conv(model,
                      log_dir='/data/tensorboard_logs',
                      direc_save='/data/models',
                      direc_data='/data/npz_data',
+                     model_name=None,
                      focal=False,
                      gamma=0.5,
                      lr_sched=rate_scheduler(lr=0.01, decay=0.95),
@@ -197,10 +200,11 @@ def train_model_conv(model,
                      **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
-    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    basename = '{}_{}_{}'.format(todays_date, dataset, expt)
-    file_name_save = os.path.join(direc_save, '{}.h5'.format(basename))
-    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(basename))
+    if model_name is None:
+        todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        model_name = '{}_{}_{}'.format(todays_date, dataset, expt)
+    file_name_save = os.path.join(direc_save, '{}.h5'.format(model_name))
+    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(model_name))
 
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
     train_dict, test_dict = get_data(training_data_file_name, mode='conv', test_size=test_size)
@@ -322,7 +326,7 @@ def train_model_conv(model,
             callbacks.ModelCheckpoint(
                 file_name_save, monitor='val_loss', verbose=1,
                 save_best_only=True, save_weights_only=num_gpus >= 2),
-            callbacks.TensorBoard(log_dir=os.path.join(log_dir, basename))
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, model_name))
         ])
 
     model.save_weights(file_name_save)
