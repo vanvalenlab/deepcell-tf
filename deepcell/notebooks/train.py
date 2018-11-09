@@ -317,7 +317,10 @@ def make_notebook(data,
         training_kwargs['distance_bins'] = kwargs.get('distance_bins', 4)
         training_kwargs['erosion_width'] = kwargs.get('erosion_width', 0)
 
-    training = ['train_model_{}('.format(train_type)]
+    training = [
+        '# Train the model',
+        'model = train_model_{}('.format(train_type)
+    ]
     training.extend(['    {}={},'.format(k, v) for k, v in training_kwargs.items()])
     training.append(')')
     cells.append(nbf.v4.new_code_cell('\n'.join(training)))
