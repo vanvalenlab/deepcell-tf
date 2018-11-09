@@ -296,8 +296,10 @@ def make_notebook(data,
         'rotation_range': 180,
         'flip': True,
         'shear': False,
-        'model_name': "{}".format(model_name)
     }
+
+    if model_name is not None:
+        training_kwargs['model_name'] = '"{}"'.format(model_name)
 
     if train_type == 'sample':
         training_kwargs.update({
