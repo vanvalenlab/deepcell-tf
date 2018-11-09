@@ -153,6 +153,7 @@ def make_notebook(data,
         'LOG_DIR = "{}"'.format(log_dir),
         'DATA_FILE = "{}"'.format(os.path.splitext(os.path.basename(data))[0]),
         'RAW_PATH = "{}"'.format(data),
+        'MODEL_NAME = {}'.format('"{}"'.format(model_name) if model_name else 'None'),
         '',
         '# Check for channels_first or channels_last',
         'IS_CHANNELS_FIRST = keras.backend.image_data_format() == "channels_first"',
@@ -296,11 +297,9 @@ def make_notebook(data,
         'lr_sched': 'lr_sched',
         'rotation_range': 180,
         'flip': True,
+        'model_name': 'MODEL_NAME',
         'shear': False,
     }
-
-    if model_name is not None:
-        training_kwargs['model_name'] = '"{}"'.format(model_name)
 
     if train_type == 'sample':
         training_kwargs.update({
@@ -329,7 +328,7 @@ def make_notebook(data,
     # Export the trained model
     save_weights = [
         '# Export the model',
-        'weights_path = os.path.join(MODEL_DIR, model_name + ".h5")',
+        'weights_path = os.path.join(MODEL_DIR, MODEL_NAME + ".h5")',
         'model.save_weights(weights_path)',
     ]
 
@@ -346,7 +345,7 @@ def make_notebook(data,
         create_model.extend(['    {}={},'.format(k, v) for k, v in dilated_model_kwargs.items()])
 
     exports = [
-        'export_path = "{}/{}".format(EXPORT_DIR, model_name)',
+        'export_path = "{}/{}".format(EXPORT_DIR, MODEL_NAME)',
         'model_version = 0',
         'exported = False',
         'while not exported:',
