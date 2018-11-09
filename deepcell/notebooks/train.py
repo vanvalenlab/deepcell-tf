@@ -131,6 +131,7 @@ def make_notebook(data,
         '',
         'from deepcell.utils.data_utils import make_training_data',
         'from deepcell.utils.data_utils import get_data',
+        'from deepcell.utils.export_utils import export_model'
         'from deepcell.utils.train_utils import rate_scheduler',
         'from deepcell.model_zoo import bn_feature_net_2D',
         'from deepcell.model_zoo import bn_feature_net_skip_2D',
@@ -325,6 +326,43 @@ def make_notebook(data,
     training.append(')')
     cells.append(nbf.v4.new_code_cell('\n'.join(training)))
 
+    # Export the trained model
+    save_weights = [
+        '# Export the model',
+        'weights_path = os.path.join(MODEL_DIR, model_name + ".h5")',
+        'model.save_weights(weights_path)',
+    ]
+
+    if train_type == 'sample':
+        # need to re-initialize the model with new input shape and dilated=False
+        dilated_model_kwargs = {}
+        dilated_model_kwargs.update(model_kwargs)
+        dilated_model_kwargs['dilated'] = 'True'
+        create_model = [
+            '# Instantiate the dilated model',
+            'model = bn_feature_net{}_{}D('.format(
+                '_skip' if train_type == 'conv' else '', ndim),
+        ]
+        create_model.extend(['    {}={},'.format(k, v) for k, v in dilated_model_kwargs.items()])
+
+    exports = [
+        'export_path = "{}/{}".format(EXPORT_DIR, model_name)',
+        'model_version = 0',
+        'exported = False',
+        'while not exported:',
+        '    try:',
+        '        export_model(model,',
+        '            export_path=export_path,',
+        '            weights_path=weights_path,',
+        '            model_version=model_version,',
+        '        )',
+        '        exported = True',
+        '    except AssertionError:',
+        '        model_version += 1',
+    ]
+
+    full_export_block = save_weights + exports
+    cells.append(nbf.v4.new_code_cell('\n'.join(full_export_block)))
 
     nb = nbf.v4.new_notebook(cells=cells)
 
