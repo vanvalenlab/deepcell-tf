@@ -52,7 +52,6 @@ def make_notebook(data,
                   normalization='std',
                   model_name=None,
                   log_dir=None,
-                  model_dir=None,
                   export_dir=None,
                   output_dir=os.path.join('scripts', 'generated_notebooks'),
                   **kwargs):
@@ -69,7 +68,6 @@ def make_notebook(data,
         skips: number of skip connections to use
         normalization: normalization method for ImageNormalization layer
         log_dir: directory to write tensorboard logs
-        model_dir: directory to save weights files from training
         export_dir: directory to export the model after training
         output_dir: local directory to save the notebook
     # Returns:
@@ -103,8 +101,6 @@ def make_notebook(data,
         export_dir = 'os.path.join(ROOT_DIR, "exports")'
     if log_dir is None:
         log_dir = 'os.path.join(ROOT_DIR, "tensorboard_logs")'
-    if model_dir is None:
-        model_dir = 'os.path.join(ROOT_DIR, "models")'
 
     try:
         os.makedirs(output_dir)
@@ -150,7 +146,7 @@ def make_notebook(data,
         '# filepath constants',
         'ROOT_DIR = "{}"'.format(os.path.join('.', 'output')),
         'DATA_DIR = os.path.join(ROOT_DIR, "data")',
-        'MODEL_DIR = "{}"'.format(model_dir),
+        'MODEL_DIR = os.path.join(ROOT_DIR, "models")',
         'NPZ_DIR = os.path.join(ROOT_DIR, "npz_data")',
         'EXPORT_DIR = "{}"'.format(export_dir),
         'LOG_DIR = "{}"'.format(log_dir),
@@ -300,7 +296,7 @@ def make_notebook(data,
         'rotation_range': 180,
         'flip': True,
         'shear': False,
-        'model_name': 'model_name'
+        'model_name': "{}".format(model_name)
     }
 
     if train_type == 'sample':
