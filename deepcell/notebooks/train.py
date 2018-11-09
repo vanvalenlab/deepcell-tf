@@ -131,7 +131,7 @@ def make_notebook(data,
         '',
         'from deepcell.utils.data_utils import make_training_data',
         'from deepcell.utils.data_utils import get_data',
-        'from deepcell.utils.export_utils import export_model'
+        'from deepcell.utils.export_utils import export_model',
         'from deepcell.utils.train_utils import rate_scheduler',
         'from deepcell.model_zoo import bn_feature_net_2D',
         'from deepcell.model_zoo import bn_feature_net_skip_2D',
