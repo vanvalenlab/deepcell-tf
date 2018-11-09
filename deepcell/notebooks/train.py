@@ -51,7 +51,9 @@ def make_notebook(data,
                   skips=0,
                   normalization='std',
                   model_name=None,
-                  log_dir='/data/tensorboard_logs',
+                  log_dir=None,
+                  model_dir=None,
+                  export_dir=None,
                   output_dir=os.path.join('scripts', 'generated_notebooks'),
                   **kwargs):
     """Create a training notebook that will step through the training
@@ -67,7 +69,9 @@ def make_notebook(data,
         skips: number of skip connections to use
         normalization: normalization method for ImageNormalization layer
         log_dir: directory to write tensorboard logs
-        output_dir: directory to save the notebook
+        model_dir: directory to save weights files from training
+        export_dir: directory to export the model after training
+        output_dir: local directory to save the notebook
     # Returns:
         notebook_path: path to generated notebook
     """
@@ -94,6 +98,13 @@ def make_notebook(data,
         normalization = str(normalization).lower()
         if normalization not in {'std', 'max', 'whole_image', 'median'}:
             raise ValueError('`normalization` got unexpected value', transform)
+
+    if export_dir is None:
+        export_dir = 'os.path.join(ROOT_DIR, "exports")'
+    if log_dir is None:
+        log_dir = 'os.path.join(ROOT_DIR, "tensorboard_logs")'
+    if model_dir is None:
+        model_dir = 'os.path.join(ROOT_DIR, "models")'
 
     try:
         os.makedirs(output_dir)
@@ -139,10 +150,11 @@ def make_notebook(data,
         '# filepath constants',
         'ROOT_DIR = "{}"'.format(os.path.join('.', 'output')),
         'DATA_DIR = os.path.join(ROOT_DIR, "data")',
-        'MODEL_DIR = os.path.join(ROOT_DIR, "models")',
+        'MODEL_DIR = {}'.format(model_dir),
         'NPZ_DIR = os.path.join(ROOT_DIR, "npz_data")',
-        'EXPORT_DIR = os.path.join(ROOT_DIR, "exports")',
-        'DATA_FILE = "{}_data"'.format(os.path.splitext(os.path.basename(data))[0]),
+        'EXPORT_DIR = {}'.format(export_dir),
+        'LOG_DIR = {}'.format(log_dir),
+        'DATA_FILE = "{}"'.format(os.path.splitext(os.path.basename(data))[0]),
         'RAW_PATH = "{}"'.format(data),
         '',
         '# Check for channels_first or channels_last',
@@ -152,6 +164,8 @@ def make_notebook(data,
         'CHANNEL_AXIS = 1 if IS_CHANNELS_FIRST else {}'.format(ndim + 1),
         '',
         'for d in (NPZ_DIR, MODEL_DIR, EXPORT_DIR):',
+        '    if not d.startwith("/"):',
+        '        continue  # not a local directory, no need to create it',
         '    try:',
         '        os.makedirs(d)',
         '    except OSError as exc:',
@@ -281,7 +295,7 @@ def make_notebook(data,
         'n_epoch': 'n_epoch',
         'direc_save': 'MODEL_DIR',
         'direc_data': 'NPZ_DIR',
-        'log_dir': '"{}"'.format(log_dir),
+        'log_dir': 'LOG_DIR',
         'lr_sched': 'lr_sched',
         'rotation_range': 180,
         'flip': True,
