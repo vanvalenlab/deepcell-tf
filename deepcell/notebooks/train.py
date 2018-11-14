@@ -81,16 +81,27 @@ def make_notebook(data,
     if train_type not in {'sample', 'conv'}:
         raise ValueError('`train_type` must be one of "sample" or "conv"')
 
-    if not isinstance(field_size, int) or field_size <= 0:
+    try:
+        field_size = int(field_size)
+        if field_size <= 0:
+            raise ValueError
+    except:
         raise ValueError('`field_size` must be a positive integer')
 
-    if ndim not in {2, 3}:
+    try:
+        ndim = int(ndim)
+        if ndim not in {2, 3}:
+            raise ValueError
+    except:
         raise ValueError('`ndim` must be either 2 or 3 for 2D or 3D images')
 
     if transform is not None:
         transform = str(transform).lower()
-        if transform not in {'deepcell', 'watershed'}:
-            raise ValueError('`transform` got unexpected value', transform)
+        if not transform:
+            transform = None
+
+    if transform not in {'deepcell', 'watershed', None}:
+        raise ValueError('`transform` got unexpected value', transform)
 
     if normalization is not None:
         normalization = str(normalization).lower()
@@ -99,6 +110,7 @@ def make_notebook(data,
 
     if export_dir is None:
         export_dir = 'os.path.join(ROOT_DIR, "exports")'
+
     if log_dir is None:
         log_dir = 'os.path.join(ROOT_DIR, "tensorboard_logs")'
 
