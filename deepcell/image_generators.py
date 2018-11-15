@@ -1293,7 +1293,8 @@ class SiameseDataGenerator(keras_preprocessing.image.ImageDataGenerator):
              train_dict,
              crop_dim=32,
              min_track_length=5,
-             occupancy_grid_size=10,
+             occupancy_grid_size=64,
+             occupancy_window=100,
              features=None,
              sync_transform=True,
              batch_size=32,
@@ -1309,6 +1310,7 @@ class SiameseDataGenerator(keras_preprocessing.image.ImageDataGenerator):
             crop_dim=crop_dim,
             min_track_length=min_track_length,
             occupancy_grid_size=occupancy_grid_size,
+            occupancy_window=occupancy_window,
             features=features,
             sync_transform=sync_transform,
             batch_size=batch_size,
@@ -1323,10 +1325,10 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
     def __init__(self,
                  train_dict,
                  image_data_generator,
-                 crop_dim=14,
+                 crop_dim=32,
                  min_track_length=5,
                  batch_size=32,
-                 occupancy_grid_size=10,
+                 occupancy_grid_size=64,
                  occupancy_window=100,
                  features=None,
                  sync_transform=True,
@@ -1537,10 +1539,10 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         resize_shape = (2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, num_channels)
 
         # Resize images from bounding box
-        max_value = np.amax([np.amax(X_reduced), np.absolute(np.amin(X_reduced))])
-        X_reduced /= max_value
-        X_reduced = resize(X_reduced, resize_shape, mode='constant')
-        X_reduced *= max_value
+#        max_value = np.amax([np.amax(X_reduced), np.absolute(np.amin(X_reduced))])
+#        X_reduced /= max_value
+        X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
+#        X_reduced *= max_value
 
         return X_reduced
 
