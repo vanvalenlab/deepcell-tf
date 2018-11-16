@@ -1293,8 +1293,8 @@ class SiameseDataGenerator(keras_preprocessing.image.ImageDataGenerator):
              train_dict,
              crop_dim=32,
              min_track_length=5,
-             occupancy_grid_size=64,
-             occupancy_window=100,
+             neighborhood_scale_size=64,
+             neighborhood_true_size=100,
              features=None,
              sync_transform=True,
              batch_size=32,
@@ -1309,8 +1309,8 @@ class SiameseDataGenerator(keras_preprocessing.image.ImageDataGenerator):
             self,
             crop_dim=crop_dim,
             min_track_length=min_track_length,
-            occupancy_grid_size=occupancy_grid_size,
-            occupancy_window=occupancy_window,
+            neighborhood_scale_size=neighborhood_scale_size,
+            neighborhood_true_size=neighborhood_true_size,
             features=features,
             sync_transform=sync_transform,
             batch_size=batch_size,
@@ -1328,8 +1328,8 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                  crop_dim=32,
                  min_track_length=5,
                  batch_size=32,
-                 occupancy_grid_size=64,
-                 occupancy_window=100,
+                 neighborhood_scale_size=64,
+                 neighborhood_true_size=100,
                  features=None,
                  sync_transform=True,
                  shuffle=False,
@@ -1368,8 +1368,8 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         self.min_track_length = min_track_length
         self.features = sorted(features)
         self.sync_transform = sync_transform
-        self.occupancy_grid_size = np.int(occupancy_grid_size)
-        self.occupancy_window = np.int(occupancy_window)
+        self.neighborhood_scale_size = np.int(neighborhood_scale_size)
+        self.neighborhood_true_size = np.int(neighborhood_true_size)
         self.image_data_generator = image_data_generator
         self.squeeze = squeeze
         self.data_format = data_format
@@ -1521,22 +1521,22 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                 self.tracks_with_divisions.append(track)
 
     def _sub_area(self, X_frame, y_frame, cell_label, num_channels):
-        occupancy_grid = np.zeros((2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1),
-                                  dtype=K.floatx())
-        X_padded = np.pad(X_frame, ((self.occupancy_window, self.occupancy_window),
-                                    (self.occupancy_window, self.occupancy_window),
+        X_padded = np.pad(X_frame, ((self.neighborhood_true_size, self.neighborhood_true_size),
+                                    (self.neighborhood_true_size, self.neighborhood_true_size),
                                     (0,0)), mode='constant', constant_values=0)
-        y_padded = np.pad(y_frame, ((self.occupancy_window, self.occupancy_window),
-                                    (self.occupancy_window, self.occupancy_window),
+        y_padded = np.pad(y_frame, ((self.neighborhood_true_size, self.neighborhood_true_size),
+                                    (self.neighborhood_true_size, self.neighborhood_true_size),
                                     (0,0)), mode='constant', constant_values=0)
         props = regionprops(np.int32(y_padded == cell_label))
         center_x, center_y = props[0].centroid
         center_x, center_y = np.int(center_x), np.int(center_y)
-        X_reduced = X_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
-                             center_y-self.occupancy_window:center_y+self.occupancy_window,:]
+        X_reduced = X_padded[
+                center_x - self.neighborhood_true_size:center_x + self.neighborhood_true_size,
+                center_y - self.neighborhood_true_size:center_y + self.neighborhood_true_size,:]
 
-        # Resize X_reduced in case it is used instead of the occupancy grid method
-        resize_shape = (2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, num_channels)
+        # Resize X_reduced in case it is used instead of the neighborhood method
+        resize_shape = (2 * self.neighborhood_scale_size + 1,
+                        2 * self.neighborhood_scale_size + 1, num_channels)
 
         # Resize images from bounding box
 #        max_value = np.amax([np.amax(X_reduced), np.absolute(np.amin(X_reduced))])
@@ -1564,14 +1564,16 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                                 self.crop_dim,
                                 X.shape[channel_axis])
 
-        occupancy_grid_shape = (len(frames), 2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1)
-        future_area_shape = (len(frames) - 1, 2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1)
+        neighborhood_shape = (len(frames), 2 * self.neighborhood_scale_size + 1,
+                                           2 * self.neighborhood_scale_size + 1, 1)
+        future_area_shape = (len(frames) - 1, 2 * self.neighborhood_scale_size + 1,
+                                              2 * self.neighborhood_scale_size + 1, 1)
 
         # Initialize storage for appearances and centroids
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
         centroids = []
         perimeters = []
-        occupancy_grids = np.zeros(occupancy_grid_shape, dtype = K.floatx())
+        neighborhoods = np.zeros(neighborhood_shape, dtype = K.floatx())
         future_areas = np.zeros(future_area_shape, dtype=K.floatx())
 
         for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
@@ -1602,27 +1604,29 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                 appearances[counter] = appearance
 
 
-            occupancy_grids[counter] = self._sub_area(X_frame, y_frame, cell_label, X.shape[channel_axis])
+            neighborhoods[counter] = self._sub_area(X_frame, y_frame, cell_label, X.shape[channel_axis])
 
             if frame != frames[-1]:
                 X_future_frame = X[frame + 1] if self.data_format == 'channels_last' else X[:, frame + 1]
                 future_areas[counter] = self._sub_area(X_future_frame, y_frame, cell_label, X.shape[channel_axis])
 
-        return [appearances, centroids, occupancy_grids, perimeters, future_areas]
+        return [appearances, centroids, neighborhoods, perimeters, future_areas]
 
     def _create_features(self):
         """
         This function gets the appearances of every cell, crops them out, resizes them,
         and stores them in an matrix. Pre-fetching the appearances should significantly
-        speed up the generator. It also gets the centroids and occupancy grids
+        speed up the generator. It also gets the centroids and neighborhoods
         """
         number_of_tracks = len(self.track_ids.keys())
 
         # Initialize the array for the appearances and centroids
         if self.data_format =='channels_first':
-            all_appearances_shape = (number_of_tracks, self.x.shape[self.channel_axis], self.x.shape[self.time_axis], self.crop_dim, self.crop_dim)
+            all_appearances_shape = (number_of_tracks, self.x.shape[self.channel_axis],
+                                     self.x.shape[self.time_axis], self.crop_dim, self.crop_dim)
         if self.data_format == 'channels_last':
-            all_appearances_shape = (number_of_tracks, self.x.shape[self.time_axis], self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis])
+            all_appearances_shape = (number_of_tracks, self.x.shape[self.time_axis],
+                                     self.crop_dim, self.crop_dim, self.x.shape[self.channel_axis])
         all_appearances = np.zeros(all_appearances_shape, dtype=K.floatx())
 
         all_centroids_shape = (number_of_tracks, self.x.shape[self.time_axis], 2)
@@ -1631,12 +1635,14 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         all_perimeters_shape = (number_of_tracks, self.x.shape[self.time_axis], 1)
         all_perimeters = np.zeros(all_perimeters_shape, dtype=K.floatx())
 
-        all_occupancy_grids_shape = (number_of_tracks, self.x.shape[self.time_axis],
-                                     2 * self.occupancy_grid_size + 1, 2 * self.occupancy_grid_size + 1, 1)
-        all_occupancy_grids = np.zeros(all_occupancy_grids_shape, dtype=K.floatx())
+        all_neighborhoods_shape = (number_of_tracks, self.x.shape[self.time_axis],
+                                     2 * self.neighborhood_scale_size + 1,
+                                     2 * self.neighborhood_scale_size + 1, 1)
+        all_neighborhoods = np.zeros(all_neighborhoods_shape, dtype=K.floatx())
 
         all_future_area_shape = (number_of_tracks, self.x.shape[self.time_axis],
-                                 2 * self.occupancy_grid_size + 1, 2 * self.occupancy_grid_size + 1, 1)
+                                 2 * self.neighborhood_scale_size + 1,
+                                 2 * self.neighborhood_scale_size + 1, 1)
         all_future_areas = np.zeros(all_future_area_shape, dtype=K.floatx())
 
         for track in self.track_ids.keys():
@@ -1650,7 +1656,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             X = self.x[batch]
             y = self.y[batch]
 
-            appearance, centroid, occupancy_grid, perimeter, future_area = self._get_features(X, y, frames, labels)
+            appearance, centroid, neighborhood, perimeter, future_area = self._get_features(X, y, frames, labels)
 
             if self.data_format == 'channels_first':
                 all_appearances[track,:,np.array(frames),:,:] = appearance
@@ -1658,14 +1664,14 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                 all_appearances[track,np.array(frames),:,:,:] = appearance
 
             all_centroids[track, np.array(frames),:] = centroid
-            all_occupancy_grids[track, np.array(frames),:,:] = occupancy_grid
+            all_neighborhoods[track, np.array(frames),:,:] = neighborhood
             all_future_areas[track, np.array(frames[:-1]),:,:] = future_area
             all_perimeters[track, np.array(frames),:] = perimeter
 
         self.all_appearances = all_appearances
         self.all_centroids = all_centroids
         self.all_perimeters = all_perimeters
-        self.all_occupancy_grids = all_occupancy_grids
+        self.all_neighborhoods = all_neighborhoods
         self.all_future_areas = all_future_areas
 
     def _fetch_appearances(self, track, frames):
@@ -1689,13 +1695,13 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         # TO DO: Check to make sure the frames are acceptable
         return self.all_centroids[track,np.array(frames),:]
 
-    def _fetch_occupancy_grids(self, track, frames):
+    def _fetch_neighborhoods(self, track, frames):
         """
-        This function gets the occupancy grids after they have been
+        This function gets the neighborhoods after they have been
         extracted and stored
         """
         # TO DO: Check to make sure the frames are acceptable
-        return self.all_occupancy_grids[track,np.array(frames),:,:,:]
+        return self.all_neighborhoods[track,np.array(frames),:,:,:]
 
     def _fetch_future_areas(self, track, frames):
         """
@@ -1819,30 +1825,25 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
 
         return perimeter_1, perimeter_2
 
-    def _compute_occupancy_grids(self, track_1, frames_1, track_2, frames_2, transform):
+    def _compute_neighborhoods(self, track_1, frames_1, track_2, frames_2, transform):
         track_2, frames_2 = None, None # To guarantee we don't use these.
-        occupancy_grid_1 = self._fetch_occupancy_grids(track_1, frames_1)
-        occupancy_grid_2 = self._fetch_future_areas(track_1, [frames_1[-1]])
+        neighborhood_1 = self._fetch_neighborhoods(track_1, frames_1)
+        neighborhood_2 = self._fetch_future_areas(track_1, [frames_1[-1]])
 
-        # Randomly transform the occupancy maps
-        occupancy_generator = ImageDataGenerator(rotation_range=180,
-                                                 horizontal_flip=True,
-                                                 vertical_flip=True)
+        neighborhoods = np.concatenate([neighborhood_1, neighborhood_2], axis=0)
 
-        occupancy_grids = np.concatenate([occupancy_grid_1, occupancy_grid_2], axis=0)
-
-        for frame in range(occupancy_grids.shape[self.time_axis-1]):
-            og_temp = occupancy_grids[frame]
+        for frame in range(neighborhoods.shape[self.time_axis-1]):
+            neigh_temp = neighborhoods[frame]
             if transform is not None:
-                og_temp = self.image_data_generator.apply_transform(og_temp, transform)
+                neigh_temp = self.image_data_generator.apply_transform(neigh_temp, transform)
             else:
-                og_temp = self.image_data_generator.random_transform(og_temp)
-            occupancy_grids[frame] = og_temp
+                neigh_temp = self.image_data_generator.random_transform(neigh_temp)
+            neighborhoods[frame] = neigh_temp
 
-        occupancy_grid_1 = occupancy_grids[0:-1,:,:,:]
-        occupancy_grid_2 = occupancy_grids[-1,:,:,:]
+        neighborhood_1 = neighborhoods[0:-1,:,:,:]
+        neighborhood_2 = neighborhoods[-1,:,:,:]
 
-        return occupancy_grid_1, occupancy_grid_2
+        return neighborhood_1, neighborhood_2
 
     def _compute_feature_shape(self, feature, index_array):
         if feature == "appearance":
@@ -1863,9 +1864,9 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
 
         elif feature == "neighborhood":
             shape_1 = (len(index_array), self.min_track_length,
-                       2 * self.occupancy_grid_size + 1, 2 * self.occupancy_grid_size + 1, 1)
-            shape_2 = (len(index_array), 1, 2 * self.occupancy_grid_size + 1,
-                       2 * self.occupancy_grid_size + 1, 1)
+                       2 * self.neighborhood_scale_size + 1, 2 * self.neighborhood_scale_size + 1, 1)
+            shape_2 = (len(index_array), 1, 2 * self.neighborhood_scale_size + 1,
+                       2 * self.neighborhood_scale_size + 1, 1)
         elif feature == "perimeter":
             shape_1 = (len(index_array), self.min_track_length, 1)
             shape_2 = (len(index_array), 1, 1)
@@ -1880,7 +1881,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         elif feature == "distance":
             return self._compute_distances(*args, **kwargs)
         elif feature == "neighborhood":
-            return self._compute_occupancy_grids(*args, **kwargs)
+            return self._compute_neighborhoods(*args, **kwargs)
         elif feature == "perimeter":
             return self._compute_perimeters(*args, **kwargs)
         else:
