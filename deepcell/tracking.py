@@ -2,15 +2,14 @@ import numpy as np
 import copy
 import skimage.measure
 
+from deepcell.image_generators import MovieDataGenerator
+from pandas import DataFrame
 from skimage.transform import resize
 from scipy.optimize import linear_sum_assignment
-
 from tensorflow.python.keras import backend as K
-
 from tensorflow.python.keras.preprocessing.image import apply_transform
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
-from deepcell.image_generators import MovieDataGenerator
 
 class cell_tracker():
     def __init__(self,
@@ -73,18 +72,18 @@ class cell_tracker():
         number_of_frames = self.y.shape[0]
 
         ### The annotations need to be unique across all frames
-        max_label = 0                                                       ## keep track of the largest label used thus far
+        uid = 1                                                       ## keep track of the largest label used thus far
         for frame in range(number_of_frames):
             unique_cells = np.unique(y[frame])
             y_frame_new = np.zeros(y[frame].shape)
-            for new_label, old_label in enumerate(list(unique_cells)):
+            for _, old_label in enumerate(list(unique_cells)):
                 if old_label == 0:
                     y_frame_new[y[frame] == old_label] = 0
                 else:
-                    y_frame_new[y[frame] == old_label] = np.int_(new_label + max_label)
+                    y_frame_new[y[frame] == old_label] = uid
+                    uid += 1
             y[frame] = y_frame_new
-            max_label = np.amax(np.unique(y_frame_new))                                           ## Set the new max label
-            print("max label", max_label)
+            # print("max label", uid)
         self.y = y.astype('int32')
 
     def _create_new_track(self, frame, old_label):
@@ -102,6 +101,7 @@ class cell_tracker():
         self.tracks[new_track]['frames'] = [frame]
         self.tracks[new_track]['daughters'] = []
         self.tracks[new_track]['capped'] = False
+        self.tracks[new_track]['frame_div'] = None
         # self.tracks[track]['death_frame'] = None
         self.tracks[new_track]['parent'] = None
 
@@ -352,7 +352,8 @@ class cell_tracker():
         # Cap the tracks of cells that divided
         number_of_tracks = len(self.tracks.keys())
         for track in range(number_of_tracks):
-            if len(self.tracks[track]['daughters']) > 0:
+            if len(self.tracks[track]['daughters']) > 0 and not self.tracks[track]['capped']:
+                self.tracks[track]['frame_div'] = int(frame)
                 self.tracks[track]['capped'] = True
 
         # Check and make sure cells that divided did not get assigned to the same cell
@@ -733,3 +734,35 @@ class cell_tracker():
             cost_matrix = self._get_cost_matrix(frame)
             assignments = self._run_lap(cost_matrix)
             self._update_tracks(assignments, frame)
+
+    def dataframe(self, **kwargs):
+        """
+        Returns a dataframe of the tracked cells with lineage. Uses only the cell
+        labels not the ids. _track_cells must be called first!
+        """
+        # possible kwargs are extra_columns
+        extra_columns = ['cell_type', 'set', 'part', 'montage']
+        track_columns = ['label', 'daughters', 'frame_div']
+
+        incorrect_args = set(kwargs) - set(extra_columns)
+        if incorrect_args:
+            raise ValueError("Invalid argument {}".format(incorrect_args.pop()))
+
+        # filter extra_columns by the ones we passed in
+        extra_columns = [c for c in extra_columns if c in kwargs]
+
+        # extra_columns are the same for every row, cache the values
+        extra_column_vals = [kwargs[c] for c in extra_columns if c in kwargs]
+
+        # fill the dataframe
+        data = []
+        for cell_id, track in self.tracks.items():
+            data.append([*extra_column_vals, *[track[c] for c in track_columns]])
+        dataframe = DataFrame(data, columns=[*extra_columns, *track_columns])
+
+        # daughters contains track_id not labels
+        dataframe['daughters'] = dataframe['daughters'].apply(
+                lambda d: [self.tracks[x]['label'] for x in d])
+
+        return dataframe
+
