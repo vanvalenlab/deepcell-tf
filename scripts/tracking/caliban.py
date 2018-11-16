@@ -41,8 +41,11 @@ class Mode:
             elif self.action == "SWAP":
                 return "\nswap {} & {}?\n {}".format(self.label_2, self.label_1, answer)
             elif self.action == "PARENT":
-                return ("\nmake {} a daughter of ".format(self.label_1)
+                return ("\nmake {} a daughter of ".format(self.label_2)
                         + "{}\n {}".format(self.label_1, answer))
+            elif self.action == "NEW TRACK":
+                return ("\nnew track cell:{}/frame:{}?".format(self.label, self.frame)
+                        + "\n {}".format(answer))
         else:
             return ''
 
@@ -90,7 +93,10 @@ class TrackReview:
             label = int(frame[self.y, self.x])
             if label != 0:
                 self.mode = Mode("MULTIPLE",
-                                 label_1=self.mode.label, label_2=label)
+                                 label_1=self.mode.label,
+                                 frame_1=self.mode.frame,
+                                 label_2=label,
+                                 frame_2=self.current_frame)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.max_intensity == None:
@@ -128,6 +134,10 @@ class TrackReview:
             self.mode_handle(symbol)
 
     def mode_handle(self, symbol):
+        if symbol == key.C:
+            if self.mode.kind == "SELECTED":
+                self.mode = Mode("QUESTION",
+                                 action="NEW TRACK", **self.mode.info)
         if symbol == key.P:
             if self.mode.kind == "MULTIPLE":
                 self.mode = Mode("QUESTION",
@@ -148,12 +158,14 @@ class TrackReview:
             if self.mode.kind == "QUESTION":
                 if self.mode.action == "SAVE":
                     self.save()
+                elif self.mode.action == "NEW TRACK":
+                    self.action_new_track()
                 elif self.mode.action == "PARENT":
-                    self.action_parent(self.mode.label_1, self.mode.label_2)
+                    self.action_parent()
                 elif self.mode.action == "REPLACE":
-                    self.action_replace(self.mode.label_1, self.mode.label_2)
+                    self.action_replace()
                 elif self.mode.action == "SWAP":
-                    self.action_swap(self.mode.label_1, self.mode.label_2)
+                    self.action_swap()
                 self.mode = Mode.none()
 
     def get_current_frame(self):
@@ -231,27 +243,79 @@ class TrackReview:
                                gl.GL_NEAREST)
             sprite.draw()
 
-    def action_self_parent(self):
-        raise NotImplemented
+    def action_new_track(self):
+        """
+        Replacing label
+        """
+        old_label, start_frame = self.mode.label, self.mode.frame
+        new_label = self.num_tracks + 1
+        self.num_tracks += 1
+
+        if start_frame == 0:
+            raise ValueError("new_track cannot be called on the first frame")
+
+        # replace frame labels
+        for frame in self.trial["y"][start_frame:]:
+            frame[frame == old_label] = new_label
+
+        # replace fields
+        track_old = self.trial["tracks"][old_label]
+        track_new = self.trial["tracks"][new_label] = {}
+
+        idx = track_old["frames"].index(start_frame)
+        frames_before, frames_after = track_old["frames"][:idx], track_old["frames"][idx:]
+
+        track_old["frames"] = frames_before
+        track_new["frames"] = frames_after
+
+        track_new["label"] = new_label
+        track_new["daughters"] = track_old["daughters"]
+        track_new["frame_div"] = track_old["frame_div"]
+        track_new["capped"] = track_old["capped"]
+        track_new["parent"] = None
+
+        track_old["daughters"] = []
+        track_old["frame_div"] = None
+        track_old["capped"] = True
 
     def action_swap(self):
-        raise NotImplemented
+        def relabel(old_label, new_label):
+            for frame in self.trial["y"]:
+                frame[frame == old_label] = new_label
 
-    def action_parent(self, label_1, label_2):
+            # replace fields
+            track_new = self.trial["tracks"][new_label] = self.trial["tracks"][old_label]
+            track_new["label"] = new_label
+            del self.trial["tracks"][old_label]
+
+            for d in track_new["daughters"]:
+                self.trial["tracks"][d]["parent"] = new_label
+
+        relabel(self.mode.label_1, -1)
+        relabel(self.mode.label_2, self.mode.label_1)
+        relabel(-1, self.mode.label_2)
+
+    def action_parent(self):
         """
         label_1 gave birth to label_2
         """
+        label_1, label_2, frame_div = self.mode.label_1, self.mode.label_2, self.mode.frame_2
+
         track_1 = self.trial["tracks"][label_1]
         track_2 = self.trial["tracks"][label_2]
 
         track_1["daughters"].append(label_2)
         track_2["parent"] = label_1
+        track_1["frame_div"] = frame_div
 
 
-    def action_replace(self, label_1, label_2):
+    def action_replace(self):
         """
         Replacing label_2 with label_1
         """
+        label_1, label_2 = self.mode.label_1, self.mode.label_2
+
+
         # replace arrays
         for frame in self.trial["y"]:
             frame[frame == label_2] = label_1
