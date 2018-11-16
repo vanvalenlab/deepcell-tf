@@ -763,3 +763,22 @@ class cell_tracker():
 
         return dataframe
 
+    def track_review_dict(self):
+        def process(key, track_item):
+            if track_item is None:
+                return track_item
+            if key  == "daughters":
+                return list(map(lambda x: x + 1, track_item))
+            elif key == "parent":
+                return track_item + 1
+            else:
+                return track_item
+
+        track_keys = ['label', 'frames', 'daughters', 'capped', 'frame_div', 'parent']
+
+        return {"tracks": {track["label"]: {key: process(key, track[key]) for key in track_keys}
+                           for _, track in self.tracks.items()},
+                "X": self.x,
+                "y": self.y,
+                "y_tracked": self.y}
+
