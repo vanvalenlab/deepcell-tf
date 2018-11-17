@@ -473,7 +473,7 @@ def siamese_model(
     input_shape=None,
     track_length=1,
     features=None,
-    occupancy_grid_size=10,
+    neighborhood_scale_size=10,
     reg=1e-5, init='he_normal',
     softmax=True,
     norm_method='std',
@@ -485,7 +485,7 @@ def siamese_model(
         elif feature == "distance":
             return (None, 2)
         elif feature == "neighborhood":
-            return (None, 2 * occupancy_grid_size + 1, 2 * occupancy_grid_size + 1, 1)
+            return (None, 2 * neighborhood_scale_size + 1, 2 * neighborhood_scale_size + 1, 1)
         elif feature == "regionprop":
             return (None, 3)
         else:
@@ -528,26 +528,26 @@ def siamese_model(
         elif feature == "distance":
             return None
         elif feature == "neighborhood":
-            N_layers_og = np.int(np.floor(np.log2(2 * occupancy_grid_size + 1)))
-            feature_extractor_occupancy_grid = Sequential()
-            feature_extractor_occupancy_grid.add(
+            N_layers_og = np.int(np.floor(np.log2(2 * neighborhood_scale_size + 1)))
+            feature_extractor_neighborhood = Sequential()
+            feature_extractor_neighborhood.add(
                 InputLayer(input_shape=(None,
-                                        2 * occupancy_grid_size + 1,
-                                        2 * occupancy_grid_size + 1,
+                                        2 * neighborhood_scale_size + 1,
+                                        2 * neighborhood_scale_size + 1,
                                         1))
             )
             for layer in range(N_layers_og):
-                feature_extractor_occupancy_grid.add(Conv3D(64, (1, 3, 3),
+                feature_extractor_neighborhood.add(Conv3D(64, (1, 3, 3),
                                                             kernel_initializer=init,
                                                             padding='same',
                                                             kernel_regularizer=l2(reg)))
-                feature_extractor_occupancy_grid.add(BatchNormalization(axis=channel_axis))
-                feature_extractor_occupancy_grid.add(Activation('relu'))
-                feature_extractor_occupancy_grid.add(MaxPool3D(pool_size=(1, 2, 2)))
+                feature_extractor_neighborhood.add(BatchNormalization(axis=channel_axis))
+                feature_extractor_neighborhood.add(Activation('relu'))
+                feature_extractor_neighborhood.add(MaxPool3D(pool_size=(1, 2, 2)))
 
-            feature_extractor_occupancy_grid.add(Reshape((-1, 64)))
+            feature_extractor_neighborhood.add(Reshape((-1, 64)))
 
-            return feature_extractor_occupancy_grid
+            return feature_extractor_neighborhood
         elif feature == "regionprop":
             return None
         else:

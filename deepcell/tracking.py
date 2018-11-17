@@ -2,15 +2,14 @@ import numpy as np
 import copy
 import skimage.measure
 
+from deepcell.image_generators import MovieDataGenerator
+from pandas import DataFrame
 from skimage.transform import resize
 from scipy.optimize import linear_sum_assignment
-
 from tensorflow.python.keras import backend as K
-
 from tensorflow.python.keras.preprocessing.image import apply_transform
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
-from deepcell.image_generators import MovieDataGenerator
 
 class cell_tracker():
     def __init__(self,
@@ -24,8 +23,8 @@ class cell_tracker():
                  division=0.2,
                  max_distance=200,
                  track_length=1,
-                 occupancy_grid_size=10,
-                 occupancy_window=100,
+                 neighborhood_scale_size=10,
+                 neighborhood_true_size=100,
                  data_format=None):
 
         # TODO: Use a model that is served by tf-serving, not one on a local machine
@@ -44,8 +43,8 @@ class cell_tracker():
         self.birth = birth
         self.division = division
         self.max_distance = max_distance
-        self.occupancy_grid_size=occupancy_grid_size
-        self.occupancy_window=occupancy_window
+        self.neighborhood_scale_size=neighborhood_scale_size
+        self.neighborhood_true_size=neighborhood_true_size
         self.data_format = data_format
         self.track_length = track_length
         self.channel_axis = 0 if data_format == 'channels_first' else -1
@@ -53,7 +52,8 @@ class cell_tracker():
         self.features = sorted(features)
         self.feature_shape = {
                 "appearance": (crop_dim, crop_dim, self.x.shape[self.channel_axis]),
-                "neighborhood": (2 * occupancy_grid_size + 1, 2 * occupancy_grid_size + 1, 1),
+                "neighborhood": (2 * neighborhood_scale_size + 1,
+                                 2 * neighborhood_scale_size + 1, 1),
                 "regionprop": (3,),
                 "distance": (2,),
             }
@@ -73,18 +73,18 @@ class cell_tracker():
         number_of_frames = self.y.shape[0]
 
         ### The annotations need to be unique across all frames
-        max_label = 0                                                       ## keep track of the largest label used thus far
+        uid = 1000
         for frame in range(number_of_frames):
             unique_cells = np.unique(y[frame])
             y_frame_new = np.zeros(y[frame].shape)
-            for new_label, old_label in enumerate(list(unique_cells)):
+            for _, old_label in enumerate(list(unique_cells)):
                 if old_label == 0:
                     y_frame_new[y[frame] == old_label] = 0
                 else:
-                    y_frame_new[y[frame] == old_label] = np.int_(new_label + max_label)
+                    y_frame_new[y[frame] == old_label] = uid
+                    uid += 1
             y[frame] = y_frame_new
-            max_label = np.amax(np.unique(y_frame_new))                                           ## Set the new max label
-            print("max label", max_label)
+            # print("max label", uid)
         self.y = y.astype('int32')
 
     def _create_new_track(self, frame, old_label):
@@ -102,6 +102,7 @@ class cell_tracker():
         self.tracks[new_track]['frames'] = [frame]
         self.tracks[new_track]['daughters'] = []
         self.tracks[new_track]['capped'] = False
+        self.tracks[new_track]['frame_div'] = None
         # self.tracks[track]['death_frame'] = None
         self.tracks[new_track]['parent'] = None
 
@@ -352,7 +353,8 @@ class cell_tracker():
         # Cap the tracks of cells that divided
         number_of_tracks = len(self.tracks.keys())
         for track in range(number_of_tracks):
-            if len(self.tracks[track]['daughters']) > 0:
+            if len(self.tracks[track]['daughters']) > 0 and not self.tracks[track]['capped']:
+                self.tracks[track]['frame_div'] = int(frame)
                 self.tracks[track]['capped'] = True
 
         # Check and make sure cells that divided did not get assigned to the same cell
@@ -425,28 +427,28 @@ class cell_tracker():
                 cell_distances = distances[:,[-1],:]
 
                 # Make sure the distances are all less than max distance
-                for j in range(cell_distances.shape[0]):
-                    dist = cell_distances[j,:,:]
-                    if np.linalg.norm(dist) > self.max_distance:
-                        cell_distances[j,:,:] = dist/np.linalg.norm(dist)*self.max_distance
+                # for j in range(cell_distances.shape[0]):
+                #     dist = cell_distances[j,:,:]
+                #     if np.linalg.norm(dist) > self.max_distance:
+                #         cell_distances[j,:,:] = dist/np.linalg.norm(dist)*self.max_distance
 
                 return track_distances, cell_distances
 
             if feature_name == "neighborhood":
-                occupancy_grids = np.concatenate([track_feature, frame_feature],
-                                                 axis=1)
-                occupancy_generator = MovieDataGenerator(rotation_range=0,
-                                                         horizontal_flip=False,
-                                                         vertical_flip=False)
+                neighborhoods = np.concatenate([track_feature, frame_feature], axis=1)
 
-                for batch in range(occupancy_grids.shape[0]):
-                    og_batch = occupancy_grids[batch]
-                    og_batch = occupancy_generator.random_transform(og_batch)
-                    occupancy_grids[batch] = og_batch
-                track_occupancy_grids = occupancy_grids[:,0:-1,:,:,:]
-                cell_occupancy_grids = occupancy_grids[:,[-1],:,:,:]
+                generator = MovieDataGenerator(rotation_range=0,
+                                               horizontal_flip=False,
+                                               vertical_flip=False)
+                for batch in range(neighborhoods.shape[0]):
+                    neighborhood_batch = neighborhoods[batch]
+                    neighborhood_batch = generator.random_transform(neighborhood_batch)
+                    neighborhoods[batch] = neighborhood_batch
 
-                return track_occupancy_grids, cell_occupancy_grids
+                track_neighborhoods = neighborhoods[:,0:-1,:,:,:]
+                cell_neighborhoods = neighborhoods[:,[-1],:,:,:]
+
+                return track_neighborhoods, cell_neighborhoods
 
             if feature_name == "regionprop":
                 return track_feature, frame_feature
@@ -492,7 +494,7 @@ class cell_tracker():
         if feature == "regionprop":
             return self._fetch_track_regionprops(before_frame)
         if feature == "neighborhood":
-            return self._fetch_track_occupancy_grids(before_frame)
+            return self._fetch_track_neighborhoods(before_frame)
 
         raise ValueError("_fetch_track_feature: Unknown feature '{}'".format(feature))
 
@@ -580,14 +582,15 @@ class cell_tracker():
 
         return track_centroids
 
-    def _fetch_track_occupancy_grids(self, before_frame):
+    def _fetch_track_neighborhoods(self, before_frame):
         """
-        This function gets the occupancy grids for all of the existing tracks.
+        This function gets the neighborhoods for all of the existing tracks.
         If tracks are shorter than the track length they are filled in with the
-        occupancy grids from the first frame.
+        neighborhoods from the first frame.
         """
         track_neighborhoods = np.zeros((len(self.tracks.keys()), self.track_length,
-                                        2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1),
+                                        2 * self.neighborhood_scale_size + 1,
+                                        2 * self.neighborhood_scale_size + 1, 1),
                                        dtype=K.floatx())
 
         for track_id, track in self.tracks.items():
@@ -610,28 +613,26 @@ class cell_tracker():
         return track_neighborhoods
 
     def _sub_area(self, X_frame, y_frame, cell_label, num_channels):
-        occupancy_grid = np.zeros((2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1,1),
-                                  dtype=K.floatx())
-        X_padded = np.pad(X_frame, ((self.occupancy_window, self.occupancy_window),
-                                    (self.occupancy_window, self.occupancy_window),
+        neighborhood = np.zeros((2 * self.neighborhood_scale_size + 1,
+                                 2 * self.neighborhood_scale_size + 1, 1),
+                                dtype=K.floatx())
+        X_padded = np.pad(X_frame, ((self.neighborhood_true_size, self.neighborhood_true_size),
+                                    (self.neighborhood_true_size, self.neighborhood_true_size),
                                     (0,0)), mode='constant', constant_values=0)
-        y_padded = np.pad(y_frame, ((self.occupancy_window, self.occupancy_window),
-                                    (self.occupancy_window, self.occupancy_window),
+        y_padded = np.pad(y_frame, ((self.neighborhood_true_size, self.neighborhood_true_size),
+                                    (self.neighborhood_true_size, self.neighborhood_true_size),
                                     (0,0)), mode='constant', constant_values=0)
         props = skimage.measure.regionprops(np.int32(y_padded == cell_label))
         center_x, center_y = props[0].centroid
         center_x, center_y = np.int(center_x), np.int(center_y)
-        X_reduced = X_padded[center_x-self.occupancy_window:center_x+self.occupancy_window,
-                             center_y-self.occupancy_window:center_y+self.occupancy_window,:]
+        X_reduced = X_padded[
+                center_x - self.neighborhood_true_size:center_x + self.neighborhood_true_size,
+                center_y - self.neighborhood_true_size:center_y + self.neighborhood_true_size, :]
 
-        # Resize X_reduced in case it is used instead of the occupancy grid method
-        resize_shape = (2*self.occupancy_grid_size+1, 2*self.occupancy_grid_size+1, num_channels)
-
-        # Resize images from bounding box
-        max_value = np.amax([np.amax(X_reduced), np.absolute(np.amin(X_reduced))])
-        X_reduced /= max_value
-        X_reduced = resize(X_reduced, resize_shape, mode='constant')
-        # X_reduced *= max_value
+        # resize to neighborhood_scale_size
+        resize_shape = (2 * self.neighborhood_scale_size + 1,
+                        2 * self.neighborhood_scale_size + 1, num_channels)
+        X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
 
         return X_reduced
 
@@ -657,21 +658,21 @@ class cell_tracker():
         centroid_shape = (len(frames), 2)
         regionprop_shape = (len(frames), 3)
 
-        occupancy_grid_shape = (len(frames),
-                                2 * self.occupancy_grid_size + 1,
-                                2 * self.occupancy_grid_size + 1, 1)
+        neighborhood_shape = (len(frames),
+                              2 * self.neighborhood_scale_size + 1,
+                              2 * self.neighborhood_scale_size + 1, 1)
 
         # look-ahead neighborhoods
         future_area_shape = (len(frames),
-                             2 * self.occupancy_grid_size + 1,
-                             2 * self.occupancy_grid_size + 1, 1)
+                             2 * self.neighborhood_scale_size + 1,
+                             2 * self.neighborhood_scale_size + 1, 1)
 
 
         # Initialize storage for appearances and centroids
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
         centroids = np.zeros(centroid_shape, dtype=K.floatx())
         regionprops = np.zeros(regionprop_shape, dtype=K.floatx())
-        occupancy_grids = np.zeros(occupancy_grid_shape, dtype=K.floatx())
+        neighborhoods = np.zeros(neighborhood_shape, dtype=K.floatx())
         future_areas = np.zeros(future_area_shape, dtype=K.floatx())
 
         for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
@@ -699,29 +700,26 @@ class cell_tracker():
                 resize_shape = (self.crop_dim, self.crop_dim, X.shape[channel_axis])
 
             # Resize images from bounding box
-            max_value = np.amax([np.amax(appearance), np.absolute(np.amin(appearance))])
-            appearance /= max_value
-            appearance = resize(appearance, resize_shape)
-            # appearance *= max_value
+            appearance = resize(appearance, resize_shape, mode="constant", preserve_range=True)
             if self.data_format == 'channels_first':
                 appearances[:, counter] = appearance
             else:
                 appearances[counter] = appearance
 
-            # Get the occupancy grid
-            occupancy_grids[counter] = self._sub_area(X_frame, y_frame, cell_label,
-                                                      X.shape[channel_axis])
+            # Get the neighborhood
+            neighborhoods[counter] = self._sub_area(X_frame, y_frame, cell_label,
+                                                    X.shape[channel_axis])
 
             try:
                 X_future_frame = X[frame + 1] if self.data_format == 'channels_last' else X[:, frame + 1]
                 future_areas[counter] = self._sub_area(X_future_frame, y_frame, cell_label,
                                                        X.shape[channel_axis])
             except IndexError:
-                future_areas[counter] = occupancy_grids[counter]
+                future_areas[counter] = neighborhoods[counter]
 
         # future areas are not a feature instead a part of the neighborhood feature
         return {"appearance": appearances, "distance": centroids,
-                "neighborhood": occupancy_grids, "regionprop": regionprops,
+                "neighborhood": neighborhoods, "regionprop": regionprops,
                 "~future area": future_areas}
 
     def _track_cells(self):
@@ -733,3 +731,54 @@ class cell_tracker():
             cost_matrix = self._get_cost_matrix(frame)
             assignments = self._run_lap(cost_matrix)
             self._update_tracks(assignments, frame)
+
+    def dataframe(self, **kwargs):
+        """
+        Returns a dataframe of the tracked cells with lineage. Uses only the cell
+        labels not the ids. _track_cells must be called first!
+        """
+        # possible kwargs are extra_columns
+        extra_columns = ['cell_type', 'set', 'part', 'montage']
+        track_columns = ['label', 'daughters', 'frame_div']
+
+        incorrect_args = set(kwargs) - set(extra_columns)
+        if incorrect_args:
+            raise ValueError("Invalid argument {}".format(incorrect_args.pop()))
+
+        # filter extra_columns by the ones we passed in
+        extra_columns = [c for c in extra_columns if c in kwargs]
+
+        # extra_columns are the same for every row, cache the values
+        extra_column_vals = [kwargs[c] for c in extra_columns if c in kwargs]
+
+        # fill the dataframe
+        data = []
+        for cell_id, track in self.tracks.items():
+            data.append([*extra_column_vals, *[track[c] for c in track_columns]])
+        dataframe = DataFrame(data, columns=[*extra_columns, *track_columns])
+
+        # daughters contains track_id not labels
+        dataframe['daughters'] = dataframe['daughters'].apply(
+                lambda d: [self.tracks[x]['label'] for x in d])
+
+        return dataframe
+
+    def track_review_dict(self):
+        def process(key, track_item):
+            if track_item is None:
+                return track_item
+            if key  == "daughters":
+                return list(map(lambda x: x + 1, track_item))
+            elif key == "parent":
+                return track_item + 1
+            else:
+                return track_item
+
+        track_keys = ['label', 'frames', 'daughters', 'capped', 'frame_div', 'parent']
+
+        return {"tracks": {track["label"]: {key: process(key, track[key]) for key in track_keys}
+                           for _, track in self.tracks.items()},
+                "X": self.x,
+                "y": self.y,
+                "y_tracked": self.y}
+
