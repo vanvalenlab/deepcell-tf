@@ -231,7 +231,7 @@ def make_notebook(data,
 
     if optimizer.lower() == 'sgd':
         opt = 'keras.optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)'
-    elif optimizer.lower == 'adam':
+    elif optimizer.lower() == 'adam':
         opt = 'keras.optimizers.Adam(lr=0.01, epsilon=None, decay=1e-6)'
     else:
         raise ValueError('Invalid optimizer value: `{}`'.format(optimizer))
