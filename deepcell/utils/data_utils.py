@@ -47,6 +47,7 @@ from deepcell.utils.io_utils import get_image
 from deepcell.utils.io_utils import get_image_sizes
 from deepcell.utils.io_utils import nikon_getfiles
 from deepcell.utils.io_utils import get_immediate_subdirs
+from deepcell.utils.io_utils import count_image_files
 from deepcell.utils.misc_utils import sorted_nicely
 
 
@@ -667,7 +668,7 @@ def make_training_data_3d(direc_name,
                           raw_image_direc='raw',
                           annotation_direc='annotated',
                           reshape_size=None,
-                          num_frames=50,
+                          num_frames=None,
                           montage_mode=True):
     """
     Read all images in training directories and save as npz file
@@ -694,6 +695,16 @@ def make_training_data_3d(direc_name,
         rand_train_dir = os.path.join(rand_train_dir, random.choice(os.listdir(rand_train_dir)))
 
     image_size = get_image_sizes(rand_train_dir, channel_names)
+
+    if num_frames is None:
+        raw = [os.path.join(t, raw_image_direc) for t in training_direcs]
+        ann = [os.path.join(t, annotation_direc) for t in training_direcs]
+        # use all images if not set
+        # will select the first N images where N is the smallest
+        # number of images in each subdir of all training_direcs
+        num_frames_raw = min([count_image_files(f) for f in raw])
+        num_frames_ann = min([count_image_files(f) for f in ann])
+        num_frames = min(num_frames_raw, num_frames_ann)
 
     X = load_training_images_3d(direc_name, training_direcs,
                                 raw_image_direc=raw_image_direc,
