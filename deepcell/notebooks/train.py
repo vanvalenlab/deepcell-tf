@@ -409,8 +409,8 @@ def make_notebook(data,
             create_model.append(
                 '    rand_dir = os.path.join(rand_dir, random.choice(os.listdir(rand_dir)))'
             )
-        
-        create_model.append('image_size = get_image_sizes(rand_dir, channel_names)')
+
+        create_model.append('image_size = get_image_sizes(rand_dir, [""])')
 
         if ndim == 3:
             create_model.append('dilated_input_shape = (num_frames, image_size[0], image_size[1], X.shape[CHANNEL_AXIS])')
@@ -420,6 +420,9 @@ def make_notebook(data,
         create_model.append('model = bn_feature_net_{}D('.format(ndim))
 
         create_model.extend(['    {}={},'.format(k, v) for k, v in dilated_model_kwargs.items()])
+        create_model.append(')')
+
+    cells.append(nbf.v4.new_code_cell('\n'.join(create_model)))
 
     exports = [
         'export_path = "{}/{}".format(EXPORT_DIR, MODEL_NAME)',
