@@ -49,6 +49,7 @@ def make_notebook(data,
                   epochs=10,
                   optimizer='sgd',
                   skips=0,
+                  n_frames=5,
                   normalization='std',
                   model_name=None,
                   log_dir=None,
@@ -66,6 +67,7 @@ def make_notebook(data,
         epochs: number of training epochs
         optimizer: training optimizer (`sgd` or `adam`)
         skips: number of skip connections to use
+        n_frames: number of frames to process for 3D data
         normalization: normalization method for ImageNormalization layer
         log_dir: directory to write tensorboard logs
         export_dir: directory to export the model after training
@@ -75,6 +77,7 @@ def make_notebook(data,
     """
     if not data:
         raise ValueError('`data` should be a path to the training data.')
+
     data = str(data).strip()
 
     train_type = str(train_type).lower()
@@ -135,6 +138,7 @@ def make_notebook(data,
     imports = [
         'import os',
         'import errno',
+        'import random',
         'import shutil',
         'import zipfile',
         '',
@@ -143,6 +147,7 @@ def make_notebook(data,
         '',
         'from deepcell.utils.data_utils import make_training_data',
         'from deepcell.utils.data_utils import get_data',
+        'from deepcell.utils.io_utils import get_image_sizes',
         'from deepcell.utils.export_utils import export_model',
         'from deepcell.utils.train_utils import rate_scheduler',
         'from deepcell.model_zoo import bn_feature_net_{}D'.format(ndim),
@@ -182,6 +187,12 @@ def make_notebook(data,
         '        if exc.errno != errno.EEXIST:',
         '            raise',
         '',
+    ]
+
+    cells.append(nbf.v4.new_code_cell('\n'.join(training_vars)))
+
+    # Prepare the zipped data
+    data_prep = [
         'if zipfile.is_zipfile(RAW_PATH):',
         '    archive = zipfile.ZipFile(RAW_PATH)',
         '    for info in archive.infolist():',
@@ -205,20 +216,34 @@ def make_notebook(data,
         '    else:',
         '        DATA_DIR = os.path.join(DATA_DIR, children[0])'
     ]
-    cells.append(nbf.v4.new_code_cell('\n'.join(training_vars)))
+    cells.append(nbf.v4.new_code_cell('\n'.join(data_prep)))
+
+    make_data_kwargs = {
+        'dimensionality': '{}'.format(ndim),
+        'direc_name': 'DATA_DIR',
+        'file_name_save': 'os.path.join(NPZ_DIR, DATA_FILE)',
+        'training_direcs': 'None',
+        'channel_names': [''],
+        'raw_image_direc': '"raw"',
+        'annotation_direc': '"annotated"',
+        'reshape_size': 'RESHAPE_SIZE if RESIZE else None',
+    }
+
+    if ndim == 3:
+        make_data_kwargs.update({
+            'montage_mode': 'True',
+            'num_frames': 'None'
+        })
 
     # Make NPZ file from data
     make_data = [
         'try:',
         '    make_training_data(',
-        '        dimensionality={ndim},  # 2D or 3D data'.format(ndim=ndim),
-        '        direc_name=DATA_DIR,',
-        '        file_name_save=os.path.join(NPZ_DIR, DATA_FILE),',
-        '        training_direcs=None,',
-        '        channel_names=[""],  # matches image files as wildcard',
-        '        raw_image_direc="raw",',
-        '        annotation_direc="annotated",  # directory name of label data',
-        '        reshape_size=RESHAPE_SIZE if RESIZE else None)',
+    ]
+
+    make_data.extend(['        {}={},'.format(k, v) for k, v in make_data_kwargs.items()])
+    make_data.extend([
+        '    )',
         'except Exception as err:',
         '    raise Exception("Could not create training data due to error: {}".format(err))',
         '',
@@ -226,7 +251,7 @@ def make_notebook(data,
         '    print("Data Saved to", os.path.join(NPZ_DIR, DATA_FILE) + ".npz")',
         'else:',
         '    raise Exception("Uh Oh!  Your data file did not save properly :(")'
-    ]
+    ])
     cells.append(nbf.v4.new_code_cell('\n'.join(make_data)))
 
     if optimizer.lower() == 'sgd':
@@ -247,16 +272,27 @@ def make_notebook(data,
         '# save the size of the input data for input_shape model parameter',
         'size = (RESHAPE_SIZE, RESHAPE_SIZE) if RESIZE else X.shape[ROW_AXIS:COL_AXIS + 1]',
         'if IS_CHANNELS_FIRST:',
-        '    input_shape = (X.shape[CHANNEL_AXIS], size[0], size[1])',
-        'else:',
-        '    input_shape = (size[0], size[1], X.shape[CHANNEL_AXIS])',
+    ]
+    if ndim == 3:
+        load_data.extend([
+            '    input_shape = (X.shape[CHANNEL_AXIS], X.shape[ROW_AXIS - 1], size[0], size[1])',
+            'else:',
+            '    input_shape = (X.shape[ROW_AXIS - 1], size[0], size[1], X.shape[CHANNEL_AXIS])',
+        ])
+    else:
+        load_data.extend([
+            '    input_shape = (X.shape[CHANNEL_AXIS], size[0], size[1])',
+            'else:',
+            '    input_shape = (size[0], size[1], X.shape[CHANNEL_AXIS])',
+        ])
+    load_data.extend([
         '',
         '# Set up other training parameters',
         'n_epoch = {}'.format(epochs),
         'batch_size = {}'.format(1 if train_type == 'conv' else 32),
         'optimizer = {}'.format(opt),
         'lr_sched = rate_scheduler(lr=0.01, decay=0.99)'
-    ]
+    ])
     cells.append(nbf.v4.new_code_cell('\n'.join(load_data)))
 
     # Instantiate the model
@@ -283,6 +319,9 @@ def make_notebook(data,
         'n_dense_filters': 128,
         'n_features': n_features
     }
+
+    if ndim == 3:
+        model_kwargs['n_frames'] = n_frames
 
     if train_type == 'conv':
         model_kwargs.update({
@@ -313,11 +352,19 @@ def make_notebook(data,
         'shear': False,
     }
 
+    if train_type == 'conv' and ndim == 3:
+        training_kwargs['frames_per_batch'] = n_frames
+
     if train_type == 'sample':
+        window_size = ((field_size - 1) // 2, (field_size - 1) // 2)
+        if ndim == 3:
+            window_size = tuple(list(window_size) + [(n_frames - 1) // 2])
+
         training_kwargs.update({
-            'window_size': (field_size - 1 // 2, field_size - 1 // 2),
-            'balance_classes': kwargs.get('balance_classes', True),
+            'window_size': window_size,
+            'balance_classes': kwargs.get('balance_classes', True)
         })
+
         if 'max_class_samples' in kwargs:
             training_kwargs['max_class_samples'] = kwargs.get('max_class_samples')
 
@@ -349,11 +396,27 @@ def make_notebook(data,
         dilated_model_kwargs = {}
         dilated_model_kwargs.update(model_kwargs)
         dilated_model_kwargs['dilated'] = 'True'
+        dilated_model_kwargs['input_shape'] = 'dilated_input_shape'
+
         create_model = [
             '# Instantiate the dilated model',
-            'model = bn_feature_net{}_{}D('.format(
-                '_skip' if train_type == 'conv' else '', ndim),
+            'rand_dir = os.path.join(DATA_DIR, random.choice(os.listdir(DATA_DIR)), "raw")',
         ]
+
+        if ndim == 3:
+            create_model.append(
+                '    rand_dir = os.path.join(rand_dir, random.choice(os.listdir(rand_dir)))'
+            )
+        
+        create_model.append('image_size = get_image_sizes(rand_dir, channel_names)')
+
+        if ndim == 3:
+            create_model.append('dilated_input_shape = (num_frames, image_size[0], image_size[1], X.shape[CHANNEL_AXIS])')
+        else:
+            create_model.append('dilated_input_shape = (image_size[0], image_size[1], X.shape[CHANNEL_AXIS])')
+
+        create_model.append('model = bn_feature_net_{}D('.format(ndim))
+
         create_model.extend(['    {}={},'.format(k, v) for k, v in dilated_model_kwargs.items()])
 
     exports = [
