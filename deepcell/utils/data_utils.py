@@ -697,8 +697,8 @@ def make_training_data_3d(direc_name,
     image_size = get_image_sizes(rand_train_dir, channel_names)
 
     if num_frames is None:
-        raw = [os.path.join(t, raw_image_direc) for t in training_direcs]
-        ann = [os.path.join(t, annotation_direc) for t in training_direcs]
+        raw = [os.path.join(direc_name, t, raw_image_direc) for t in training_direcs]
+        ann = [os.path.join(direc_name, t, annotation_direc) for t in training_direcs]
         # use all images if not set
         # will select the first N images where N is the smallest
         # number of images in each subdir of all training_direcs
