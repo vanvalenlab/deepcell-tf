@@ -187,8 +187,7 @@ def make_notebook(data,
         '        os.makedirs(d)',
         '    except OSError as exc:',
         '        if exc.errno != errno.EEXIST:',
-        '            raise',
-        '',
+        '            raise'
     ]
 
     cells.append(nbf.v4.new_code_cell('\n'.join(training_vars)))
