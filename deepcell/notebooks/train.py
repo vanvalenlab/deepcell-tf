@@ -238,15 +238,12 @@ def make_notebook(data,
 
     # Make NPZ file from data
     make_data = [
-        'try:',
-        '    make_training_data(',
+        'make_training_data(',
     ]
 
-    make_data.extend(['        {}={},'.format(k, v) for k, v in make_data_kwargs.items()])
+    make_data.extend(['    {}={},'.format(k, v) for k, v in make_data_kwargs.items()])
     make_data.extend([
-        '    )',
-        'except Exception as err:',
-        '    raise Exception("Could not create training data due to error: {}".format(err))',
+        ')',
         '',
         'if os.path.isfile(os.path.join(NPZ_DIR, DATA_FILE) + ".npz"):',
         '    print("Data Saved to", os.path.join(NPZ_DIR, DATA_FILE) + ".npz")',
