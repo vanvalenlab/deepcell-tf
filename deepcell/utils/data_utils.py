@@ -699,6 +699,9 @@ def make_training_data_3d(direc_name,
     if num_frames is None:
         raw = [os.path.join(direc_name, t, raw_image_direc) for t in training_direcs]
         ann = [os.path.join(direc_name, t, annotation_direc) for t in training_direcs]
+        if montage_mode:
+            raw = [os.path.join(r, d) for r in raw for d in os.listdir(r)]
+            ann = [os.path.join(a, d) for a in ann for d in os.listdir(a)]
         # use all images if not set
         # will select the first N images where N is the smallest
         # number of images in each subdir of all training_direcs
