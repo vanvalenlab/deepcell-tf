@@ -178,6 +178,8 @@ def make_notebook(data,
         'COL_AXIS = {} if IS_CHANNELS_FIRST else {}'.format(ndim + 1, ndim),
         'CHANNEL_AXIS = 1 if IS_CHANNELS_FIRST else {}'.format(ndim + 1),
         '',
+        'N_FRAMES = {}'.format(n_frames),
+        '',
         'for d in (NPZ_DIR, MODEL_DIR, EXPORT_DIR, LOG_DIR, DATA_DIR):',
         '    if not d.startswith("/"):',
         '        continue  # not a local directory, no need to create it',
@@ -275,9 +277,9 @@ def make_notebook(data,
     ]
     if ndim == 3:
         load_data.extend([
-            '    input_shape = (X.shape[CHANNEL_AXIS], X.shape[ROW_AXIS - 1], size[0], size[1])',
+            '    input_shape = (X.shape[CHANNEL_AXIS], N_FRAMES, size[0], size[1])',
             'else:',
-            '    input_shape = (X.shape[ROW_AXIS - 1], size[0], size[1], X.shape[CHANNEL_AXIS])',
+            '    input_shape = (N_FRAMES, size[0], size[1], X.shape[CHANNEL_AXIS])',
         ])
     else:
         load_data.extend([
@@ -321,7 +323,7 @@ def make_notebook(data,
     }
 
     if ndim == 3:
-        model_kwargs['n_frames'] = n_frames
+        model_kwargs['n_frames'] = 'N_FRAMES'
 
     if train_type == 'conv':
         model_kwargs.update({
@@ -353,7 +355,7 @@ def make_notebook(data,
     }
 
     if train_type == 'conv' and ndim == 3:
-        training_kwargs['frames_per_batch'] = n_frames
+        training_kwargs['frames_per_batch'] = 'N_FRAMES'
 
     if train_type == 'sample':
         window_size = ((field_size - 1) // 2, (field_size - 1) // 2)
