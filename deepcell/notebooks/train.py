@@ -245,7 +245,7 @@ def make_notebook(data,
     make_data.extend([
         ')',
         '',
-        'assert if os.path.isfile(os.path.join(NPZ_DIR, DATA_FILE) + ".npz")'
+        'assert os.path.isfile(os.path.join(NPZ_DIR, DATA_FILE) + ".npz")'
     ])
     cells.append(nbf.v4.new_code_cell('\n'.join(make_data)))
 
