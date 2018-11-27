@@ -364,7 +364,7 @@ def make_notebook(data,
         })
 
         if 'max_class_samples' in kwargs:
-            training_kwargs['max_class_samples'] = kwargs.get('max_class_samples')
+            training_kwargs['max_class_samples'] = kwargs.get('max_class_samples', int(1e6))
 
     if transform is not None:
         training_kwargs['transform'] = '"{}"'.format(transform)
