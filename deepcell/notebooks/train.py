@@ -245,10 +245,7 @@ def make_notebook(data,
     make_data.extend([
         ')',
         '',
-        'if os.path.isfile(os.path.join(NPZ_DIR, DATA_FILE) + ".npz"):',
-        '    print("Data Saved to", os.path.join(NPZ_DIR, DATA_FILE) + ".npz")',
-        'else:',
-        '    raise Exception("Uh Oh!  Your data file did not save properly :(")'
+        'assert if os.path.isfile(os.path.join(NPZ_DIR, DATA_FILE) + ".npz")'
     ])
     cells.append(nbf.v4.new_code_cell('\n'.join(make_data)))
 
@@ -360,11 +357,9 @@ def make_notebook(data,
 
         training_kwargs.update({
             'window_size': window_size,
-            'balance_classes': kwargs.get('balance_classes', True)
+            'balance_classes': kwargs.get('balance_classes', True),
+            'max_class_samples': kwargs.get('max_class_samples', int(1e5))
         })
-
-        if 'max_class_samples' in kwargs:
-            training_kwargs['max_class_samples'] = kwargs.get('max_class_samples', int(1e6))
 
     if transform is not None:
         training_kwargs['transform'] = '"{}"'.format(transform)
@@ -382,19 +377,22 @@ def make_notebook(data,
     training.append(')')
     cells.append(nbf.v4.new_code_cell('\n'.join(training)))
 
-    # Export the trained model
+    # Save the weights in a pre-defined filename
     save_weights = [
-        '# Export the model',
+        '# Save the model weights',
         'weights_path = os.path.join(MODEL_DIR, MODEL_NAME + ".h5")',
         'model.save_weights(weights_path)',
     ]
+    cells.append(nbf.v4.new_code_cell('\n'.join(save_weights)))
 
-    if train_type == 'sample':
+    # Export the trained model
+    if train_type == 'sample' or ndim == 3:
         # need to re-initialize the model with new input shape and dilated=False
         dilated_model_kwargs = {}
         dilated_model_kwargs.update(model_kwargs)
-        dilated_model_kwargs['dilated'] = 'True'
-        dilated_model_kwargs['input_shape'] = 'dilated_input_shape'
+
+        if train_type == 'sample':
+            dilated_model_kwargs['dilated'] = 'True'
 
         create_model = [
             '# Instantiate the dilated model',
@@ -402,19 +400,27 @@ def make_notebook(data,
         ]
 
         if ndim == 3:
-            create_model.append(
-                '    rand_dir = os.path.join(rand_dir, random.choice(os.listdir(rand_dir)))'
-            )
+            create_model.extend([
+                '',
+                '# 3D datasets have subdirectories',
+                'rand_dir = os.path.join(rand_dir, random.choice(os.listdir(rand_dir)))'
+            ])
 
         create_model.append('image_size = get_image_sizes(rand_dir, [""])')
 
         if ndim == 3:
-            shape = '(num_frames, image_size[0], image_size[1], X.shape[CHANNEL_AXIS])'
+            shape = '(X.shape[ROW_AXIS - 1], image_size[0], image_size[1], X.shape[CHANNEL_AXIS])'
         else:
             shape = '(image_size[0], image_size[1], X.shape[CHANNEL_AXIS])'
-        create_model.append('dilated_input_shape = {}'.format(shape))
 
-        create_model.append('model = bn_feature_net_{}D('.format(ndim))
+        create_model.extend([
+            'dilated_input_shape = {}'.format(shape),
+            ''
+        ])
+        dilated_model_kwargs['input_shape'] = 'dilated_input_shape'
+
+        create_model.append('model = bn_feature_net{}_{}D('.format(
+            '' if train_type == 'sample' else '_skip', ndim))
 
         create_model.extend(['    {}={},'.format(k, v) for k, v in dilated_model_kwargs.items()])
         create_model.append(')')
@@ -422,6 +428,7 @@ def make_notebook(data,
         cells.append(nbf.v4.new_code_cell('\n'.join(create_model)))
 
     exports = [
+        '# Export the model',
         'export_path = "{}/{}".format(EXPORT_DIR, MODEL_NAME)',
         'model_version = 0',
         'exported = False',
@@ -437,8 +444,7 @@ def make_notebook(data,
         '        model_version += 1',
     ]
 
-    full_export_block = save_weights + exports
-    cells.append(nbf.v4.new_code_cell('\n'.join(full_export_block)))
+    cells.append(nbf.v4.new_code_cell('\n'.join(exports)))
 
     nb = nbf.v4.new_notebook(cells=cells)
 
