@@ -73,6 +73,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     # Returns:
         y_transform: the output of the given transform function on y
     """
+    valid_transforms = {'deepcell', 'disc', 'watershed', 'centroid', 'fgbg'}
+
     if data_format is None:
         data_format = K.image_data_format()
 
@@ -87,7 +89,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
     if isinstance(transform, str):
         transform = transform.lower()
-        if transform not in {'deepcell', 'disc', 'watershed', 'centroid'}:
+        if transform not in valid_transforms:
             raise ValueError('`{}` is not a valid transform'.format(transform))
 
     if transform == 'deepcell':
