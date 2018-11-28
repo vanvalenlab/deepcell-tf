@@ -171,6 +171,7 @@ def make_notebook(data,
         'DATA_FILE = "{}"'.format(os.path.splitext(os.path.basename(data))[0]),
         'RAW_PATH = "{}"'.format(data),
         'MODEL_NAME = {}'.format('"{}"'.format(model_name) if model_name else 'None'),
+        'FGBG_MODEL_NAME = MODEL_NAME + "_fgbg_"',
         '',
         '# Check for channels_first or channels_last',
         'IS_CHANNELS_FIRST = keras.backend.image_data_format() == "channels_first"',
@@ -290,13 +291,7 @@ def make_notebook(data,
     ])
     cells.append(nbf.v4.new_code_cell('\n'.join(load_data)))
 
-    # Instantiate the model
-    create_model = [
-        '# Instantiate the model',
-        'model = bn_feature_net{}_{}D('.format(
-            '_skip' if train_type == 'conv' else '', ndim),
-    ]
-
+    # Set up model parameters
     if transform == 'deepcell':
         n_features = 4
     elif transform == 'watershed':
@@ -325,11 +320,7 @@ def make_notebook(data,
             'multires': False
         })
 
-    create_model.extend(['    {}={},'.format(k, v) for k, v in model_kwargs.items()])
-    create_model.append(')')
-    cells.append(nbf.v4.new_code_cell('\n'.join(create_model)))
-
-    # Call training function
+    # Set up training parameters
     training_kwargs = {
         'model': 'model',
         'dataset': 'DATA_FILE',
@@ -361,6 +352,56 @@ def make_notebook(data,
             'max_class_samples': kwargs.get('max_class_samples', int(1e5))
         })
 
+    # FGBG Model
+    fgbg_model = [
+        '# Instantiate the FGBG separation model',
+        'fgbg_model = bn_feature_net{}_{}D('.format(
+            '_skip' if train_type == 'conv' else '', ndim),
+    ]
+    fgbg_model_kwargs = {}
+    fgbg_model_kwargs.update(model_kwargs)
+    fgbg_model_kwargs['n_features'] = 2
+    fgbg_model.extend(['    {}={},'.format(k, v) for k, v in fgbg_model_kwargs.items()])
+    fgbg_model.append(')')
+
+    if train_type == 'conv':
+        cells.append(nbf.v4.new_code_cell('\n'.join(fgbg_model)))
+
+    fgbg_training_kwargs = {}
+    fgbg_training_kwargs.update(training_kwargs)
+    fgbg_training_kwargs['expt'] = '"{}_fgbg"'.format(train_type)
+    fgbg_training_kwargs['model'] = 'fgbg_model'
+    fgbg_training_kwargs['transform'] = 'None'  # TODO: change to "fgbg"
+    fgbg_training_kwargs['model_name'] = 'FGBG_MODEL_NAME'
+
+    fgbg_training = [
+        '# Train the model',
+        'fgbg_model = train_model_{}('.format(train_type)
+    ]
+
+    fgbg_training.extend(['    {}={},'.format(k, v) for k, v in fgbg_training_kwargs.items()])
+    fgbg_training.append(')')
+
+    if train_type == 'conv':
+        cells.append(nbf.v4.new_code_cell('\n'.join(fgbg_training)))
+
+    # Instantiate the model
+    create_model = [
+        '# Instantiate the model',
+        'model = bn_feature_net{}_{}D('.format(
+            '_skip' if train_type == 'conv' else '', ndim),
+    ]
+    if train_type == 'conv':
+        model_kwargs['fgbg_model'] = 'fgbg_model'
+    create_model.extend(['    {}={},'.format(k, v) for k, v in model_kwargs.items()])
+    create_model.append(')')
+    cells.append(nbf.v4.new_code_cell('\n'.join(create_model)))
+
+    training = [
+        '# Train the model',
+        'model = train_model_{}('.format(train_type)
+    ]
+
     if transform is not None:
         training_kwargs['transform'] = '"{}"'.format(transform)
     if transform == 'deepcell':
@@ -369,10 +410,6 @@ def make_notebook(data,
         training_kwargs['distance_bins'] = kwargs.get('distance_bins', 4)
         training_kwargs['erosion_width'] = kwargs.get('erosion_width', 0)
 
-    training = [
-        '# Train the model',
-        'model = train_model_{}('.format(train_type)
-    ]
     training.extend(['    {}={},'.format(k, v) for k, v in training_kwargs.items()])
     training.append(')')
     cells.append(nbf.v4.new_code_cell('\n'.join(training)))
@@ -383,6 +420,12 @@ def make_notebook(data,
         'weights_path = os.path.join(MODEL_DIR, MODEL_NAME + ".h5")',
         'model.save_weights(weights_path)',
     ]
+    if train_type == 'conv':
+        save_weights.extend([
+            '',
+            'fgbg_weights_path = os.path.join(MODEL_DIR, FGBG_MODEL_NAME + ".h5")',
+            'fgbg_model.save_weights(fgbg_weights_path)',
+        ])
     cells.append(nbf.v4.new_code_cell('\n'.join(save_weights)))
 
     # Export the trained model
