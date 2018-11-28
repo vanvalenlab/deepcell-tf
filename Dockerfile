@@ -1,5 +1,8 @@
-# Use the nvidia tensorflow:18.08-py3 image as the parent image
-FROM nvcr.io/nvidia/tensorflow:18.08-py3
+# Use tensorflow/tensorflow as the base image
+# Change the build arg to edit the tensorflow version.
+# Only supporting python3.
+ARG TF_VERSION=1.9.0-gpu
+FROM tensorflow/tensorflow:${TF_VERSION}-py3
 
 # System maintenance
 RUN apt-get update && apt-get install -y \
