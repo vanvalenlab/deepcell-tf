@@ -102,7 +102,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.zeros((y.shape[0], *y.shape[2:]))
         else:
             y_transform = np.zeros(y.shape[0:-1])
-        
+
         if y.ndim == 5:
             _distance_transform = distance_transform_3d
         else:
@@ -136,7 +136,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
-    elif transform is None: 
+    elif transform is None:
         y_transform = to_categorical(y.squeeze(channel_axis))
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
