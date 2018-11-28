@@ -120,6 +120,7 @@ class TestTransformMasks(test.TestCase):
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 30, 30, distance_bins))
 
+        distance_bins = 6
         mask = np.random.randint(3, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask,
@@ -130,6 +131,7 @@ class TestTransformMasks(test.TestCase):
         self.assertEqual(mask_transform.shape, (5, distance_bins, 30, 30))
 
         # test 3D masks
+        distance_bins = 5
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask,
@@ -139,6 +141,7 @@ class TestTransformMasks(test.TestCase):
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, distance_bins))
 
+        distance_bins = 4
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask,
