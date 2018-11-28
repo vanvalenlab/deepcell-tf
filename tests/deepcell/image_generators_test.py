@@ -61,50 +61,76 @@ def _generate_test_images():
 class TestTransformMasks(test.TestCase):
 
     def test_no_transform(self):
+        num_classes = np.random.randint(5, size=1)[0]
+        # test 2D masks
+        mask = np.random.randint(num_classes, size=(5, 30, 30, 1))
+        mask_transform = image_generators._transform_masks(
+            mask, transform=None, data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 30, 30, num_classes))
+
+        mask = np.random.randint(num_classes, size=(5, 1, 30, 30))
+        mask_transform = image_generators._transform_masks(
+            mask, transform=None, data_format='channels_first')
+        self.assertEqual(mask_transform.shape, (5, num_classes, 30, 30))
+
+        # test 3D masks
+        mask = np.random.randint(num_classes, size=(5, 10, 30, 30, 1))
+        mask_transform = image_generators._transform_masks(
+            mask, transform=None, data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, num_classes))
+
+        mask = np.random.randint(num_classes, size=(5, 1, 10, 30, 30))
+        mask_transform = image_generators._transform_masks(
+            mask, transform=None, data_format='channels_first')
+        self.assertEqual(mask_transform.shape, (5, num_classes, 10, 30, 30))
+
+    def test_fgbg_transform(self):
+        num_classes = 2  # always 2 for fg and bg
         # test 2D masks
         mask = np.random.randint(3, size=(5, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
-            mask, transform=None, data_format='channels_last')
-        self.assertEqual(mask_transform.shape, (5, 30, 30, 2))
+            mask, transform='fgbg', data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 30, 30, num_classes))
 
         mask = np.random.randint(3, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
-            mask, transform=None, data_format='channels_first')
-        self.assertEqual(mask_transform.shape, (5, 2, 30, 30))
+            mask, transform='fgbg', data_format='channels_first')
+        self.assertEqual(mask_transform.shape, (5, num_classes, 30, 30))
 
         # test 3D masks
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
-            mask, transform=None, data_format='channels_last')
-        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, 2))
+            mask, transform='fgbg', data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, num_classes))
 
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
-            mask, transform=None, data_format='channels_first')
-        self.assertEqual(mask_transform.shape, (5, 2, 10, 30, 30))
+            mask, transform='fgbg', data_format='channels_first')
+        self.assertEqual(mask_transform.shape, (5, num_classes, 10, 30, 30))
 
     def test_deepcell_transform(self):
+        num_classes = 4
         # test 2D masks
         mask = np.random.randint(3, size=(5, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask, transform='deepcell', data_format='channels_last')
-        self.assertEqual(mask_transform.shape, (5, 30, 30, 4))
+        self.assertEqual(mask_transform.shape, (5, 30, 30, num_classes))
 
         mask = np.random.randint(3, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask, transform='deepcell', data_format='channels_first')
-        self.assertEqual(mask_transform.shape, (5, 4, 30, 30))
+        self.assertEqual(mask_transform.shape, (5, num_classes, 30, 30))
 
         # test 3D masks
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask, transform='deepcell', data_format='channels_last')
-        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, 4))
+        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, num_classes))
 
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask, transform='deepcell', data_format='channels_first')
-        self.assertEqual(mask_transform.shape, (5, 4, 10, 30, 30))
+        self.assertEqual(mask_transform.shape, (5, num_classes, 10, 30, 30))
 
     def test_watershed_transform(self):
         distance_bins = 4
@@ -119,6 +145,7 @@ class TestTransformMasks(test.TestCase):
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 30, 30, distance_bins))
 
+        distance_bins = 6
         mask = np.random.randint(3, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask,
@@ -129,6 +156,7 @@ class TestTransformMasks(test.TestCase):
         self.assertEqual(mask_transform.shape, (5, distance_bins, 30, 30))
 
         # test 3D masks
+        distance_bins = 5
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask,
@@ -138,6 +166,7 @@ class TestTransformMasks(test.TestCase):
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, distance_bins))
 
+        distance_bins = 4
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask,
