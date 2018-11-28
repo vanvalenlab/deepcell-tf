@@ -102,26 +102,25 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.zeros((y.shape[0], *y.shape[2:]))
         else:
             y_transform = np.zeros(y.shape[0:-1])
+        
+        if y.ndim == 5:
+            _distance_transform = distance_transform_3d
+        else:
+            _distance_transform = distance_transform_2d
 
         for batch in range(y_transform.shape[0]):
-            if y.ndim == 5:
-                if data_format == 'channels_first':
-                    mask = y[batch, 0, :, :, :]
-                else:
-                    mask = y[batch, :, :, :, 0]
-                y_transform[batch] = distance_transform_3d(
-                    mask, distance_bins, erosion)
+            if data_format == 'channels_first':
+                mask = y[batch, 0, ...]
             else:
-                if data_format == 'channels_first':
-                    mask = y[batch, 0, :, :]
-                else:
-                    mask = y[batch, :, :, 0]
-                y_transform[batch] = distance_transform_2d(
-                    mask, distance_bins, erosion)
+                mask = y[batch, ..., 0]
+
+            y_transform[batch] = _distance_transform(
+                mask, distance_bins, erosion)
+
         # convert to one hot notation
         y_transform = to_categorical(np.expand_dims(y_transform, axis=-1))
         if data_format == 'channels_first':
-            y_transform = np.rollaxis(y_transform, -1, 1)
+            y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
     elif transform == 'disc':
         y_transform = to_categorical(y.squeeze(channel_axis))
