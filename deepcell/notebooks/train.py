@@ -371,7 +371,7 @@ def make_notebook(data,
     fgbg_training_kwargs.update(training_kwargs)
     fgbg_training_kwargs['expt'] = '"{}_fgbg"'.format(train_type)
     fgbg_training_kwargs['model'] = 'fgbg_model'
-    fgbg_training_kwargs['transform'] = 'None'  # TODO: change to "fgbg"
+    fgbg_training_kwargs['transform'] = 'fgbg'
     fgbg_training_kwargs['model_name'] = 'FGBG_MODEL_NAME'
 
     fgbg_training = [
