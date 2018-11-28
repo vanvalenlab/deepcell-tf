@@ -27,7 +27,7 @@ There are several notebooks with various training methods that can be used as ex
 
 ## Using DeepCell with Docker
 
-DeepCell uses `nvcr.io/nvidia/tensorflow` as a base image and `nvidia-docker` to enable GPU processing.
+DeepCell uses `tensorflow/tensorflow` as a base image and `nvidia-docker` to enable GPU processing.
 
 Below are some helpful commands to get started:
 
@@ -70,4 +70,3 @@ NV_GPU='0' nvidia-docker run -it \
   $USER/deepcell-tf:latest \
   notebook --allow-root --ip=0.0.0.0
 ```
-> **_Note_**: You will need to authenticate with NGC to pull the DeepCell base image.
