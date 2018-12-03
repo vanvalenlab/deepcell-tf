@@ -297,16 +297,18 @@ def train_model_siamese_daughter(model=None,
                                  seed=None):
 
     is_channels_first = K.image_data_format() == 'channels_first'
-    training_data_file_name = os.path.join(direc_data, dataset + '.npz')
+    training_data_file_name = os.path.join(direc_data, dataset + '.trks')
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
     features_fmt = '[' + ','.join(f[0] for f in sorted(features)) + ']'
-    features_fmt += '_n_epoch={}'.format(n_epoch)
+    features_fmt += '_neighs={}'.format(neighborhood_scale_size)
+    features_fmt += '_epochs={}'.format(n_epoch)
     features_fmt += '_seed={}'.format(seed)
 
     file_name_save = os.path.join(direc_save, '{}_{}_{}_{}_{}.h5'.format(todays_date, dataset, features_fmt, expt, it))
     file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}_{}.npz'.format(todays_date, dataset, features_fmt, expt, it))
 
+    print("training on dataset: ", training_data_file_name)
     print("saving model at:", file_name_save)
     print("saving loss at:", file_name_save_loss)
 

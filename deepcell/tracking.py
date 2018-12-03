@@ -1,6 +1,10 @@
-import numpy as np
 import copy
+import json
+import numpy as np
+import pathlib
 import skimage.measure
+import tarfile
+import tempfile
 
 from deepcell.image_generators import MovieDataGenerator
 from pandas import DataFrame
@@ -633,6 +637,7 @@ class cell_tracker():
         resize_shape = (2 * self.neighborhood_scale_size + 1,
                         2 * self.neighborhood_scale_size + 1, num_channels)
         X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
+        # X_reduced /= np.amax(X_reduced)
 
         return X_reduced
 
@@ -701,6 +706,8 @@ class cell_tracker():
 
             # Resize images from bounding box
             appearance = resize(appearance, resize_shape, mode="constant", preserve_range=True)
+            # appearance /= np.amax(appearance)
+
             if self.data_format == 'channels_first':
                 appearances[:, counter] = appearance
             else:
@@ -731,6 +738,25 @@ class cell_tracker():
             cost_matrix = self._get_cost_matrix(frame)
             assignments = self._run_lap(cost_matrix)
             self._update_tracks(assignments, frame)
+
+    def _track_review_dict(self):
+        def process(key, track_item):
+            if track_item is None:
+                return track_item
+            if key  == "daughters":
+                return list(map(lambda x: x + 1, track_item))
+            elif key == "parent":
+                return track_item + 1
+            else:
+                return track_item
+
+        track_keys = ['label', 'frames', 'daughters', 'capped', 'frame_div', 'parent']
+
+        return {"tracks": {track["label"]: {key: process(key, track[key]) for key in track_keys}
+                           for _, track in self.tracks.items()},
+                "X": self.x,
+                "y": self.y,
+                "y_tracked": self.y}
 
     def dataframe(self, **kwargs):
         """
@@ -763,22 +789,33 @@ class cell_tracker():
 
         return dataframe
 
-    def track_review_dict(self):
-        def process(key, track_item):
-            if track_item is None:
-                return track_item
-            if key  == "daughters":
-                return list(map(lambda x: x + 1, track_item))
-            elif key == "parent":
-                return track_item + 1
-            else:
-                return track_item
+    def dump(self, filename):
+        """
+        Writes the state of the cell tracker to a .trk ("track") file.
+        Includes raw & tracked images, and a lineage.json for parent/daughter
+        information.
+        """
+        track_review_dict = self._track_review_dict()
+        filename = pathlib.Path(filename)
 
-        track_keys = ['label', 'frames', 'daughters', 'capped', 'frame_div', 'parent']
+        if filename.suffix != ".trk":
+            filename = filename.with_suffix(".trk")
 
-        return {"tracks": {track["label"]: {key: process(key, track[key]) for key in track_keys}
-                           for _, track in self.tracks.items()},
-                "X": self.x,
-                "y": self.y,
-                "y_tracked": self.y}
+        filename = str(filename)
+
+        with tarfile.open(filename, "w") as trks:
+            with tempfile.NamedTemporaryFile("w") as lineage_file:
+                json.dump(track_review_dict["tracks"], lineage_file, indent=1)
+                lineage_file.flush()
+                trks.add(lineage_file.name, "lineage.json")
+
+            with tempfile.NamedTemporaryFile() as raw_file:
+                np.save(raw_file, track_review_dict["X"])
+                raw_file.flush()
+                trks.add(raw_file.name, "raw.npy")
+
+            with tempfile.NamedTemporaryFile() as tracked_file:
+                np.save(tracked_file, track_review_dict["y_tracked"])
+                tracked_file.flush()
+                trks.add(tracked_file.name, "tracked.npy")
 

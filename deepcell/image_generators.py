@@ -34,11 +34,11 @@ import os
 from fnmatch import fnmatch
 
 import cv2
-import numpy as np
 import keras_preprocessing
+import numpy as np
+import skimage.measure
 
 from skimage.measure import label
-from skimage.measure import regionprops
 from skimage.transform import resize
 from skimage.io import imread
 
@@ -1415,6 +1415,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
 
         self.x = X_new
         self.y = y_new
+        self.daughters = [self.daughters[i] for i in good_batches]
 
     def _create_track_ids(self):
         """
@@ -1426,6 +1427,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         track_ids = {}
         for batch in range(self.y.shape[0]):
             y_batch = self.y[batch]
+            daughters_batch = self.daughters[batch]
             num_cells = np.amax(y_batch)
             for cell in range(1, num_cells + 1):
                 # count number of pixels cell occupies in each frame
@@ -1435,15 +1437,16 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                 if y_index.size > 3: #self.min_track_length+1:  # if cell is present at all
                     if self.daughters is not None:
                         # Only include daughters if there are enough frames in their tracks
-                        try:
-                            daughter_ids = self.daughters[batch][cell]
-                        except:
-                            print('batch', batch)
-                            print('cell', cell)
-                            print('daughter shape', self.daughters.shape)
-                            print('batch daughter shape', self.daughters[batch].shape)
-                            print('num_cells', num_cells)
-                            print('max num of cells', np.amax(y_batch))
+                        if cell not in daughters_batch:
+                            print("something weird...")
+                            print("y.shape", self.y.shape)
+                            print("unique values in batch:", np.unique(y_batch))
+                            print("unique values in y.batch:", np.unique(self.y[batch]))
+                            print("loaded lineage cell ids:", daughters_batch.keys())
+                            print("batch:", batch)
+
+                        daughter_ids = daughters_batch.get(cell, [])
+
                         if len(daughter_ids) > 0:
                             daughter_track_lengths = []
                             for did in daughter_ids:
@@ -1465,22 +1468,6 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                         'frames': y_index,
                         'daughters': daughters
                     }
-
-                    # We are trying to avoid short tracks, but we need to
-                    # keep the daughters even if they are short
-#                     daughter_ids = track_ids[track_counter]['daughters']
-#                     if len(daughter_ids) > 0:
-#                         for did in daughter_ids:
-#                             d_true = np.sum(y_batch == did, axis=(self.row_axis - 1, self.col_axis - 1))
-#                             d_track_length = len(np.where(d_true>0)[0])
-#                             if d_track_length <= self.min_track_length+1:
-#                                 track_counter += 1
-#                                 track_ids[track_counter] = {
-#                                     'batch': batch,
-#                                     'label': did,
-#                                     'frames': np.where(d_true>0)[0],
-#                                     'daughters': []
-#                                 }
 
                     track_counter += 1
 
@@ -1527,7 +1514,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         y_padded = np.pad(y_frame, ((self.neighborhood_true_size, self.neighborhood_true_size),
                                     (self.neighborhood_true_size, self.neighborhood_true_size),
                                     (0,0)), mode='constant', constant_values=0)
-        props = regionprops(np.int32(y_padded == cell_label))
+        props = skimage.measure.regionprops(np.int32(y_padded == cell_label))
         center_x, center_y = props[0].centroid
         center_x, center_y = np.int(center_x), np.int(center_y)
         X_reduced = X_padded[
@@ -1572,7 +1559,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         # Initialize storage for appearances and centroids
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
         centroids = []
-        perimeters = []
+        regionprops = []
         neighborhoods = np.zeros(neighborhood_shape, dtype = K.floatx())
         future_areas = np.zeros(future_area_shape, dtype=K.floatx())
 
@@ -1580,10 +1567,11 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             # Get the bounding box
             X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
-            props = regionprops(np.int32(y_frame == cell_label))
+
+            props = skimage.measure.regionprops(np.int32(y_frame == cell_label))
             minr, minc, maxr, maxc = props[0].bbox
             centroids.append(props[0].centroid)
-            perimeters.append(np.array([props[0].perimeter]))
+            regionprops.append(np.array([props[0].area, props[0].perimeter, props[0].eccentricity]))
 
             # Extract images from bounding boxes
             if self.data_format == 'channels_first':
@@ -1610,7 +1598,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                 X_future_frame = X[frame + 1] if self.data_format == 'channels_last' else X[:, frame + 1]
                 future_areas[counter] = self._sub_area(X_future_frame, y_frame, cell_label, X.shape[channel_axis])
 
-        return [appearances, centroids, neighborhoods, perimeters, future_areas]
+        return [appearances, centroids, neighborhoods, regionprops, future_areas]
 
     def _create_features(self):
         """
@@ -1632,8 +1620,8 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         all_centroids_shape = (number_of_tracks, self.x.shape[self.time_axis], 2)
         all_centroids = np.zeros(all_centroids_shape, dtype=K.floatx())
 
-        all_perimeters_shape = (number_of_tracks, self.x.shape[self.time_axis], 1)
-        all_perimeters = np.zeros(all_perimeters_shape, dtype=K.floatx())
+        all_regionprops_shape = (number_of_tracks, self.x.shape[self.time_axis], 3)
+        all_regionprops = np.zeros(all_regionprops_shape, dtype=K.floatx())
 
         all_neighborhoods_shape = (number_of_tracks, self.x.shape[self.time_axis],
                                      2 * self.neighborhood_scale_size + 1,
@@ -1656,7 +1644,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             X = self.x[batch]
             y = self.y[batch]
 
-            appearance, centroid, neighborhood, perimeter, future_area = self._get_features(X, y, frames, labels)
+            appearance, centroid, neighborhood, regionprop, future_area = self._get_features(X, y, frames, labels)
 
             if self.data_format == 'channels_first':
                 all_appearances[track,:,np.array(frames),:,:] = appearance
@@ -1666,11 +1654,11 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             all_centroids[track, np.array(frames),:] = centroid
             all_neighborhoods[track, np.array(frames),:,:] = neighborhood
             all_future_areas[track, np.array(frames[:-1]),:,:] = future_area
-            all_perimeters[track, np.array(frames),:] = perimeter
+            all_regionprops[track, np.array(frames),:] = regionprop
 
         self.all_appearances = all_appearances
         self.all_centroids = all_centroids
-        self.all_perimeters = all_perimeters
+        self.all_regionprops = all_regionprops
         self.all_neighborhoods = all_neighborhoods
         self.all_future_areas = all_future_areas
 
@@ -1711,12 +1699,12 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         # TO DO: Check to make sure the frames are acceptable
         return self.all_future_areas[track,np.array(frames),:,:,:]
 
-    def _fetch_perimeters(self, track, frames):
+    def _fetch_regionprops(self, track, frames):
         """
-        This function gets the perimeters after they have been extracted and stored
+        This function gets the regionprops after they have been extracted and stored
         """
         # TO DO: Check to make sure the frames are acceptable
-        return self.all_perimeters[track,np.array(frames)]
+        return self.all_regionprops[track,np.array(frames)]
 
     def _fetch_frames(self, track, division=False):
         """
@@ -1819,11 +1807,11 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
 
         return distance_1, distance_2
 
-    def _compute_perimeters(self, track_1, frames_1, track_2, frames_2, transform):
-        perimeter_1 = self._fetch_perimeters(track_1, frames_1)
-        perimeter_2 = self._fetch_perimeters(track_2, frames_2)
+    def _compute_regionprops(self, track_1, frames_1, track_2, frames_2, transform):
+        regionprop_1 = self._fetch_regionprops(track_1, frames_1)
+        regionprop_2 = self._fetch_regionprops(track_2, frames_2)
 
-        return perimeter_1, perimeter_2
+        return regionprop_1, regionprop_2
 
     def _compute_neighborhoods(self, track_1, frames_1, track_2, frames_2, transform):
         track_2, frames_2 = None, None # To guarantee we don't use these.
@@ -1867,9 +1855,9 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                        2 * self.neighborhood_scale_size + 1, 2 * self.neighborhood_scale_size + 1, 1)
             shape_2 = (len(index_array), 1, 2 * self.neighborhood_scale_size + 1,
                        2 * self.neighborhood_scale_size + 1, 1)
-        elif feature == "perimeter":
-            shape_1 = (len(index_array), self.min_track_length, 1)
-            shape_2 = (len(index_array), 1, 1)
+        elif feature == "regionprop":
+            shape_1 = (len(index_array), self.min_track_length, 3)
+            shape_2 = (len(index_array), 1, 3)
         else:
             raise ValueError("_compute_feature_shape: Unknown feature '{}'".format(feature))
 
@@ -1882,8 +1870,8 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             return self._compute_distances(*args, **kwargs)
         elif feature == "neighborhood":
             return self._compute_neighborhoods(*args, **kwargs)
-        elif feature == "perimeter":
-            return self._compute_perimeters(*args, **kwargs)
+        elif feature == "regionprop":
+            return self._compute_regionprops(*args, **kwargs)
         else:
             raise ValueError("_compute_feature: Unknown feature '{}'".format(feature))
 
@@ -2055,7 +2043,7 @@ class BoundingBoxIterator(Iterator):
                     mask = self.y[b, :, :, l]
                 else:
                     mask = self.y[b, l, :, :]
-                props = regionprops(label(mask))
+                props = skimage.measure.regionprops(label(mask))
                 bboxes = [np.array(list(prop.bbox) + list(l)) for prop in props]
                 bboxes = np.concatenate(bboxes, axis=0)
             bbox_list.append(bboxes)
@@ -2074,7 +2062,7 @@ class BoundingBoxIterator(Iterator):
                 mask = y[:, :, l]
             else:
                 mask = y[l, :, :]
-            props = regionprops(label(mask))
+            props = skimage.measure.regionprops(label(mask))
             bboxes = [np.array(list(prop.bbox) + list(l)) for prop in props]
             bboxes = np.concatenate(bboxes, axis=0)
         return bboxes
@@ -2249,7 +2237,7 @@ class RetinaNetGenerator(_RetinaNetGenerator):
         result = {}
         for cnt, image in enumerate(masks_list):
             result[cnt] = []
-            p = regionprops(label(image))
+            p = skimage.measure.regionprops(label(image))
 
             cell_count = 0
             for index in range(len(np.unique(label(image))) - 1):
@@ -2453,7 +2441,7 @@ class MaskRCNNGenerator(_MaskRCNNGenerator):
         for cnt, image in enumerate(maskarr):
             result[cnt] = []
             l = label(image)
-            p = regionprops(l)
+            p = skimage.measure.regionprops(l)
             cell_count = 0
             for index in range(len(np.unique(l)) - 1):
                 y1, x1, y2, x2 = p[index].bbox
