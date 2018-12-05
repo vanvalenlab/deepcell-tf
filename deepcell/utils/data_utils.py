@@ -30,11 +30,14 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from fnmatch import fnmatch
+import json
 import os
-import random
-
 import numpy as np
+import random
+import tarfile
+
+from io import BytesIO
+from fnmatch import fnmatch
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import backend as K
 
@@ -62,14 +65,16 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         dict of training data, and a dict of testing data:
         train_dict, test_dict
     """
-    training_data = np.load(file_name)
-    X = training_data['X']
-    y = training_data['y']
-    #win_x = training_data['win_x']
-    #win_y = training_data['win_y']
+
     win_z = None
 
-    class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
+    if mode != "siamese_daughters":
+        training_data = np.load(file_name)
+        X = training_data['X']
+        y = training_data['y']
+        #win_x = training_data['win_x']
+        #win_y = training_data['win_y']
+        class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
 
     if mode == 'sample' and X.ndim == 4:
         batch = training_data['batch']
@@ -139,55 +144,91 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 
         X = X_sample
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=seed)
+    if mode != "siamese_daughters":
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=seed)
 
-    train_dict = {
-        'X': X_train,
-        'y': y_train,
-        'class_weights': class_weights
-#        'win_x': win_x,
-#        'win_y': win_y
-    }
-    
-    val_dict = {
-        'X': X_test,
-        'y': y_test,
-        'class_weights': class_weights
-#        'win_x': win_x,
-#        'win_y': win_y
-    }
+        train_dict = {
+            'X': X_train,
+            'y': y_train,
+            'class_weights': class_weights
+        }
+
+        val_dict = {
+            'X': X_test,
+            'y': y_test,
+            'class_weights': class_weights
+        }
 
     # siamese_daughters mode is used to import lineage data and associate it with the appropriate batch
     if mode == 'siamese_daughters':
-        kid_data = np.load(os.path.splitext(file_name)[0]+'_kids.npz')
-        daughters = kid_data['daughters']
+        training_data = load_trks(file_name)
+        X = training_data["raw"]
+        y = training_data["tracked"]
+
+        # `daughters` is of the form
+        #
+        #                   2 children / cell (potentially empty)
+        #                          ___________|__________
+        #                         /                      \
+        #      daughers = [{id_1: [daughter_1, daughter_2], ...}, ]
+        #                  \___________________________________/
+        #                                    |
+        #                       dict of (cell_id -> children)
+        #
+        # each batch has a separate (cell_id -> children) dict
+        daughters = [{cell: fields["daughters"]
+                      for cell, fields in tracks.items()}
+                     for tracks in training_data["lineages"]]
+
         X_train, X_test, y_train, y_test, lineage_train, lineage_test = train_test_split(X, y, daughters, test_size=test_size, random_state=seed)
         train_dict = {
             'X': X_train,
             'y': y_train,
             'daughters': lineage_train,
-            'class_weights': class_weights
-#            'win_x': win_x,
-#            'win_y': win_y
+            'class_weights': None
         }
 
         val_dict = {
             'X': X_test,
             'y': y_test,
             'daughters': lineage_test,
-            'class_weights': class_weights
-#            'win_x': win_x,
-#            'win_y': win_y
+            'class_weights': None
         }
 
     # End changes for daughter mode
-
     if win_z is not None:
         train_dict['win_z'] = win_z
         val_dict['win_z'] = win_z
 
     return train_dict, val_dict
+
+
+def load_trks(trks_file):
+    with tarfile.open(trks_file, "r") as trks:
+        # trks.extractfile opens a file in bytes mode, json can't use bytes.
+        lineages = json.loads(
+                trks.extractfile(
+                    trks.getmember("lineages.json")).read().decode())
+
+        # numpy can't read these from disk...
+        array_file = BytesIO()
+        array_file.write(trks.extractfile("raw.npy").read())
+        array_file.seek(0)
+        raw = np.load(array_file)
+        array_file.close()
+
+        array_file = BytesIO()
+        array_file.write(trks.extractfile("tracked.npy").read())
+        array_file.seek(0)
+        tracked = np.load(array_file)
+        array_file.close()
+
+    # JSON only allows strings as keys, so we convert them back to ints here
+    for i, tracks in enumerate(lineages):
+        lineages[i] = {int(k): v for k, v in tracks.items()}
+
+    return {"lineages": lineages, "raw": raw, "tracked": tracked}
 
 
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='valid',
