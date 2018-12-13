@@ -50,9 +50,9 @@ def load_data(path='HEK293.npz', test_size=.2, seed=0):
     prefix = path.split(os.path.sep)[:-1]
     data_dir = os.path.join(basepath, *prefix) if prefix else basepath
     if not os.path.exists(data_dir):
-        if not os.path.isdir(data_dir):
-            raise IOError('{} exists but is not a directory'.format(data_dir))
         os.makedirs(data_dir)
+    elif not os.path.isdir(data_dir):
+        raise IOError('{} exists but is not a directory'.format(data_dir))
 
     path = get_file(path,
                     origin='https://deepcell-data.s3.amazonaws.com/nuclei/HEK293.npz',
