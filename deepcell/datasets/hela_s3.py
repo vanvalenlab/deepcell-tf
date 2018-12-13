@@ -36,7 +36,7 @@ except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
 from deepcell.utils.data_utils import get_data
 
 
-def load_data(path='3T3_NIH.npz'):
+def load_data(path='HeLa_S3.npz'):
     """Loads the MNIST dataset.
     # Arguments
         path: path where to cache the dataset locally
