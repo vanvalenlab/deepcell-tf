@@ -42,7 +42,7 @@ from deepcell import losses
 from deepcell import image_generators
 from deepcell.utils import train_utils
 from deepcell.utils.data_utils import get_data
-from deepcell.utils.train_utils import rate_scheduler, MultiGpuModel
+from deepcell.utils.train_utils import rate_scheduler
 
 
 def train_model_sample(model,
@@ -102,7 +102,7 @@ def train_model_sample(model,
 
     if num_gpus >= 2:
         batch_size = batch_size * num_gpus
-        model = MultiGpuModel(model, num_gpus)
+        model = train_utils.MultiGpuModel(model, num_gpus)
 
     print('Training on {} GPUs'.format(num_gpus))
 
@@ -226,7 +226,7 @@ def train_model_conv(model,
 
     if num_gpus >= 2:
         batch_size = batch_size * num_gpus
-        model = MultiGpuModel(model, num_gpus)
+        model = train_utils.MultiGpuModel(model, num_gpus)
 
     print('Training on {} GPUs'.format(num_gpus))
 
