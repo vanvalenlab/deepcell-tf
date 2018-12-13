@@ -47,8 +47,8 @@ def load_data(path='3T3_NIH.npz', test_size=.2, seed=0):
         Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
     """
     basepath = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
-    prefix_path = os.path.join(*path.split(os.path.sep)[:-1])
-    data_dir = os.path.join(basepath, prefix_path)
+    prefix = path.split(os.path.sep)[:-1]
+    data_dir = os.path.join(basepath, *prefix) if prefix else basepath
     if not os.path.exists(data_dir):
         if not os.path.isdir(data_dir):
             raise IOError('{} exists but is not a directory'.format(data_dir))
