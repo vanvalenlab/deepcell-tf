@@ -47,7 +47,7 @@ def deepcell_transform(maskstack, dilation_radius=None, data_format=None):
         dilation_radius:  width to enlarge the edge feature of each instance
     # Returns:
         deepcell_stacks: masks of:
-        [background_edge_feature, interior_edge_feature, interior_feature, background]
+        [cell_background_edge, cell_cell_edge, cell_interior, background]
     """
     if data_format is None:
         data_format = K.image_data_format()
