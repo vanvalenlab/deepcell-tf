@@ -36,7 +36,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import InputSpec
 try:  # tf v1.9 moves conv_utils from _impl to keras.utils
-    from tensorflow.keras.utils import conv_utils
+    from tensorflow.python.keras.utils import conv_utils
 except ImportError:
     from tensorflow.python.keras._impl.keras.utils import conv_utils
 

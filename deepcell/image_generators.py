@@ -51,7 +51,7 @@ from tensorflow.keras.preprocessing.image import Iterator
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 try:
-    from tensorflow.keras.utils import conv_utils
+    from tensorflow.python.keras.utils import conv_utils
 except ImportError:
     from tensorflow.python.keras._impl.keras.utils import conv_utils
 
