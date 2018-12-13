@@ -36,7 +36,7 @@ except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
 from deepcell.utils.data_utils import get_data
 
 
-def load_data(path='mousebrain.npz'):
+def load_data(path='mousebrain.npz', test_size=.2, seed=0):
     """Loads the MNIST dataset.
     # Arguments
         path: path where to cache the dataset locally
@@ -48,7 +48,7 @@ def load_data(path='mousebrain.npz'):
                     origin='https://deepcell-data.s3.amazonaws.com/nuclei/mousebrain.npz',
                     file_hash='9c91304f7da7cc5559f46b2c5fc2eace')
 
-    train_dict, test_dict = get_data(path, seed=0, test_size=.2)
+    train_dict, test_dict = get_data(path, test_size=test_size, seed=seed)
 
     x_train, y_train = train_dict['X'], train_dict['y']
     x_test, y_test = test_dict['X'], test_dict['y']
