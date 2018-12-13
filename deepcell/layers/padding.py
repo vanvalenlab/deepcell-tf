@@ -31,7 +31,7 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
-from tensorflow.framework import tensor_shape
+from tensorflow.python.framework import tensor_shape
 from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import InputSpec
 try:  # tf v1.9 moves conv_utils from _impl to keras.utils
