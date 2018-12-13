@@ -35,8 +35,8 @@ import warnings
 
 import numpy as np
 from skimage.external import tifffile as tiff
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import Model
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
 
 from deepcell.utils.data_utils import trim_padding
 from deepcell.utils.io_utils import get_images_from_directory

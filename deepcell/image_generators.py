@@ -41,19 +41,19 @@ from skimage.transform import resize
 from skimage.io import imread
 
 from tensorflow.python.platform import tf_logging as logging
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.utils import to_categorical
-from tensorflow.python.keras.preprocessing.image import random_channel_shift
-from tensorflow.python.keras.preprocessing.image import apply_transform
-from tensorflow.python.keras.preprocessing.image import flip_axis
-from tensorflow.python.keras.preprocessing.image import array_to_img
-from tensorflow.python.keras.preprocessing.image import Iterator
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import backend as K
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import random_channel_shift
+from tensorflow.keras.preprocessing.image import apply_transform
+from tensorflow.keras.preprocessing.image import flip_axis
+from tensorflow.keras.preprocessing.image import array_to_img
+from tensorflow.keras.preprocessing.image import Iterator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 try:
-    from tensorflow.python.keras.utils import conv_utils
+    from tensorflow.keras.utils import conv_utils
 except ImportError:
-    from tensorflow.python.keras._impl.keras.utils import conv_utils
+    from tensorflow.keras._impl.keras.utils import conv_utils
 
 from keras_retinanet.preprocessing.generator import Generator as _RetinaNetGenerator
 from keras_maskrcnn.preprocessing.generator import Generator as _MaskRCNNGenerator

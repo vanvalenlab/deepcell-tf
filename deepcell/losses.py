@@ -32,7 +32,7 @@ from __future__ import division
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 
 
 def _to_tensor(x, dtype):

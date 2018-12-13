@@ -30,16 +30,16 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D
-from tensorflow.python.keras.layers import Input, Concatenate, Flatten
-from tensorflow.python.keras.layers import MaxPool2D, MaxPool3D
-from tensorflow.python.keras.layers import Cropping2D, Cropping3D
-from tensorflow.python.keras.layers import Activation, Softmax
-from tensorflow.python.keras.layers import BatchNormalization
-from tensorflow.python.keras.layers import ZeroPadding2D, ZeroPadding3D
-from tensorflow.python.keras.regularizers import l2
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Conv2D, Conv3D
+from tensorflow.keras.layers import Input, Concatenate, Flatten
+from tensorflow.keras.layers import MaxPool2D, MaxPool3D
+from tensorflow.keras.layers import Cropping2D, Cropping3D
+from tensorflow.keras.layers import Activation, Softmax
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import ZeroPadding2D, ZeroPadding3D
+from tensorflow.keras.regularizers import l2
 
 from deepcell.layers import DilatedMaxPool2D, DilatedMaxPool3D
 from deepcell.layers import ImageNormalization2D, ImageNormalization3D
