@@ -1,0 +1,2 @@
+# empty requirements file for readthedocs
+
