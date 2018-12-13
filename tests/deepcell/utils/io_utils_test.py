@@ -37,12 +37,7 @@ from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.platform import test
 from skimage.external import tifffile as tiff
 
-from deepcell.utils.io_utils import get_immediate_subdirs
-from deepcell.utils.io_utils import get_image
-from deepcell.utils.io_utils import nikon_getfiles
-from deepcell.utils.io_utils import get_image_sizes
-from deepcell.utils.io_utils import get_images_from_directory
-from deepcell.utils.io_utils import save_model_output
+from deepcell.utils import io_utils
 
 
 def _write_image(filepath, img_w=30, img_h=30):
@@ -70,20 +65,20 @@ class TestIOUtils(test.TestCase):
                 if err.errno != os.errno.EEXIST:
                     raise
             dirs.append(str(x))
-
-        self.assertListEqual(get_immediate_subdirs(temp_dir), list(reversed(dirs)))
+        subdirs = io_utils.get_immediate_subdirs(temp_dir)
+        self.assertListEqual(subdirs, list(reversed(dirs)))
 
     def test_get_image(self):
         temp_dir = self.get_temp_dir()
         # test tiff files
         test_img_path = os.path.join(temp_dir, 'phase.tif')
         _write_image(test_img_path, 300, 300)
-        test_img = get_image(test_img_path)
+        test_img = io_utils.get_image(test_img_path)
         self.assertEqual(np.asarray(test_img).shape, (300, 300))
         # test png files
         test_img_path = os.path.join(temp_dir, 'feature_0.png')
         _write_image(test_img_path, 400, 400)
-        test_img = get_image(test_img_path)
+        test_img = io_utils.get_image(test_img_path)
         self.assertEqual(np.asarray(test_img).shape, (400, 400))
 
     def test_nikon_getfiles(self):
@@ -91,11 +86,11 @@ class TestIOUtils(test.TestCase):
         for filename in ('channel.tif', 'multi1.tif', 'multi2.tif'):
             _write_image(os.path.join(temp_dir, filename), 300, 300)
 
-        images = nikon_getfiles(temp_dir, 'channel')
+        images = io_utils.nikon_getfiles(temp_dir, 'channel')
         self.assertListEqual(images, ['channel.tif'])
-        multi_images = nikon_getfiles(temp_dir, 'multi')
+        multi_images = io_utils.nikon_getfiles(temp_dir, 'multi')
         self.assertListEqual(multi_images, ['multi1.tif', 'multi2.tif'])
-        no_images = nikon_getfiles(temp_dir, 'bad_channel_name')
+        no_images = io_utils.nikon_getfiles(temp_dir, 'bad_channel_name')
         self.assertListEqual(no_images, [])
 
     def test_get_image_sizes(self):
@@ -103,10 +98,10 @@ class TestIOUtils(test.TestCase):
         _write_image(os.path.join(temp_dir, 'image1.png'), 300, 300)
         _write_image(os.path.join(temp_dir, 'image2.png'), 300, 300)
         # test with single channel name
-        size = get_image_sizes(temp_dir, ['image1'])
+        size = io_utils.get_image_sizes(temp_dir, ['image1'])
         self.assertEqual(size, (300, 300))
         # test with multiple channel names
-        sizes = get_image_sizes(temp_dir, ['image1', 'image2'])
+        sizes = io_utils.get_image_sizes(temp_dir, ['image1', 'image2'])
         self.assertEqual(sizes, (300, 300))
 
     def test_get_images_from_directory(self):
@@ -114,14 +109,14 @@ class TestIOUtils(test.TestCase):
         _write_image(os.path.join(temp_dir, 'image.png'), 300, 300)
         # test channels_last
         K.set_image_data_format('channels_last')
-        img = get_images_from_directory(temp_dir, ['image'])
+        img = io_utils.get_images_from_directory(temp_dir, ['image'])
         self.assertIsInstance(img, list)
         self.assertEqual(len(img), 1)
         self.assertEqual(img[0].shape, (1, 300, 300, 1))
 
         # test channels_last
         K.set_image_data_format('channels_first')
-        img = get_images_from_directory(temp_dir, ['image'])
+        img = io_utils.get_images_from_directory(temp_dir, ['image'])
         self.assertIsInstance(img, list)
         self.assertEqual(len(img), 1)
         self.assertEqual(img[0].shape, (1, 1, 300, 300))
@@ -136,37 +131,38 @@ class TestIOUtils(test.TestCase):
         K.set_image_data_format('channels_last')
 
         # test 2D output
-        test_output = np.random.random((batches, img_w, img_h, features))
-        save_model_output(test_output, temp_dir, 'test', channel=None)
+        output = np.random.random((batches, img_w, img_h, features))
+        io_utils.save_model_output(output, temp_dir, 'test', channel=None)
         # test saving only one channel
-        save_model_output(test_output, temp_dir, 'test', channel=1)
+        io_utils.save_model_output(output, temp_dir, 'test', channel=1)
 
         # test 3D output
-        test_output = np.random.random((batches, frames, img_w, img_h, features))
-        save_model_output(test_output, temp_dir, 'test', channel=None)
+        output = np.random.random((batches, frames, img_w, img_h, features))
+        io_utils.save_model_output(output, temp_dir, 'test', channel=None)
         # test saving only one channel
-        save_model_output(test_output, temp_dir, 'test', channel=1)
+        io_utils.save_model_output(output, temp_dir, 'test', channel=1)
 
         # test channels_first 2D
-        test_output = np.random.random((batches, features, img_w, img_h))
-        save_model_output(test_output, temp_dir, 'test', channel=None,
-                          data_format='channels_first')
+        output = np.random.random((batches, features, img_w, img_h))
+        io_utils.save_model_output(output, temp_dir, 'test', channel=None,
+                                   data_format='channels_first')
 
         # test channels_first 3D
-        test_output = np.random.random((batches, features, frames, img_w, img_h))
-        save_model_output(test_output, temp_dir, 'test', channel=None,
-                          data_format='channels_first')
+        output = np.random.random((batches, features, frames, img_w, img_h))
+        io_utils.save_model_output(output, temp_dir, 'test', channel=None,
+                                   data_format='channels_first')
 
         # test bad channel
         with self.assertRaises(ValueError):
             test_output = np.random.random((batches, features, img_w, img_h))
-            save_model_output(test_output, temp_dir, 'test', channel=-1)
-            save_model_output(test_output, temp_dir, 'test', channel=features + 1)
+            io_utils.save_model_output(output, temp_dir, 'test', channel=-1)
+            io_utils.save_model_output(output, temp_dir, 'test',
+                                       channel=features + 1)
 
         # test no output directory
         with self.assertRaises(FileNotFoundError):
             bad_dir = os.path.join(temp_dir, 'test')
-            save_model_output(test_output, bad_dir, 'test', channel=None)
+            io_utils.save_model_output(output, bad_dir, 'test', channel=None)
 
 if __name__ == '__main__':
     test.main()
