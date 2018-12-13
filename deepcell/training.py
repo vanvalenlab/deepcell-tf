@@ -39,7 +39,7 @@ from tensorflow.keras import callbacks
 from tensorflow.keras.optimizers import SGD
 
 from deepcell import losses
-from deepcell import image_generators as generators
+from deepcell import image_generators
 from deepcell.utils import train_utils
 from deepcell.utils.data_utils import get_data
 from deepcell.utils.train_utils import rate_scheduler, MultiGpuModel
@@ -109,10 +109,10 @@ def train_model_sample(model,
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     if train_dict['X'].ndim == 4:
-        DataGenerator = generators.SampleDataGenerator
+        DataGenerator = image_generators.SampleDataGenerator
         window_size = window_size if window_size else (30, 30)
     elif train_dict['X'].ndim == 5:
-        DataGenerator = generators.SampleMovieDataGenerator
+        DataGenerator = image_generators.SampleMovieDataGenerator
         window_size = window_size if window_size else (30, 30, 3)
     else:
         raise ValueError('Expected `X` to have ndim 4 or 5. Got',
@@ -238,9 +238,9 @@ def train_model_conv(model,
         skip = None
 
     if train_dict['X'].ndim == 4:
-        DataGenerator = generators.ImageFullyConvDataGenerator
+        DataGenerator = image_generators.ImageFullyConvDataGenerator
     elif train_dict['X'].ndim == 5:
-        DataGenerator = generators.MovieDataGenerator
+        DataGenerator = image_generators.MovieDataGenerator
     else:
         raise ValueError('Expected `X` to have ndim 4 or 5. Got',
                          train_dict['X'].ndim)
@@ -368,13 +368,13 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
     print('Using real-time data augmentation.')
 
     # this will do preprocessing and realtime data augmentation
-    datagen = generators.SiameseDataGenerator(
+    datagen = image_generators.SiameseDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
-    datagen_val = generators.SiameseDataGenerator(
+    datagen_val = image_generators.SiameseDataGenerator(
         rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=0,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=0,  # randomly flip images
