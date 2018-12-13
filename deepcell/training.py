@@ -57,8 +57,7 @@ def train_model_sample(model,
                        balance_classes=True,
                        max_class_samples=None,
                        log_dir='/data/tensorboard_logs',
-                       direc_save='/data/models',
-                       direc_data='/data/npz_data',
+                       model_dir='/data/models',
                        focal=False,
                        gamma=0.5,
                        optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
@@ -71,12 +70,13 @@ def train_model_sample(model,
     is_channels_first = K.image_data_format() == 'channels_first'
 
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    basename = '{}_{}_{}'.format(todays_date, dataset, expt)
-    file_name_save = os.path.join(direc_save, '{}.h5'.format(basename))
-    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(basename))
+    data_name = os.path.splitext(os.path.basename(dataset))[0]
+    basename = '{}_{}_{}'.format(todays_date, data_name, expt)
 
-    training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    train_dict, test_dict = get_data(training_data_file_name, mode='sample', test_size=test_size)
+    model_path = os.path.join(model_dir, basename, '{}.h5'.format(basename))
+    loss_path = os.path.join(model_dir, basename, '{}.npz'.format(basename))
+
+    train_dict, test_dict = get_data(dataset, mode='sample', test_size=test_size)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
 
@@ -162,12 +162,12 @@ def train_model_sample(model,
         callbacks=[
             callbacks.LearningRateScheduler(lr_sched),
             callbacks.ModelCheckpoint(
-                file_name_save, monitor='val_loss', verbose=1,
+                model_path, monitor='val_loss', verbose=1,
                 save_best_only=True, save_weights_only=num_gpus >= 2),
             callbacks.TensorBoard(log_dir=os.path.join(log_dir, basename))
         ])
 
-    np.savez(file_name_save_loss, loss_history=loss_history.history)
+    np.savez(loss_path, loss_history=loss_history.history)
 
     return model
 
@@ -183,8 +183,7 @@ def train_model_conv(model,
                      transform=None,
                      optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
                      log_dir='/data/tensorboard_logs',
-                     direc_save='/data/models',
-                     direc_data='/data/npz_data',
+                     model_dir='/data/models',
                      focal=False,
                      gamma=0.5,
                      lr_sched=rate_scheduler(lr=0.01, decay=0.95),
@@ -196,12 +195,12 @@ def train_model_conv(model,
     is_channels_first = K.image_data_format() == 'channels_first'
 
     todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    basename = '{}_{}_{}'.format(todays_date, dataset, expt)
-    file_name_save = os.path.join(direc_save, '{}.h5'.format(basename))
-    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(basename))
+    data_name = os.path.splitext(os.path.basename(dataset))[0]
+    basename = '{}_{}_{}'.format(todays_date, data_name, expt)
+    model_path = os.path.join(model_dir, '{}.h5'.format(basename))
+    loss_path = os.path.join(model_dir, '{}.npz'.format(basename))
 
-    training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    train_dict, test_dict = get_data(training_data_file_name, mode='conv', test_size=test_size)
+    train_dict, test_dict = get_data(dataset, mode='conv', test_size=test_size)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
     # the data, shuffled and split between train and test sets
@@ -316,13 +315,13 @@ def train_model_conv(model,
         callbacks=[
             callbacks.LearningRateScheduler(lr_sched),
             callbacks.ModelCheckpoint(
-                file_name_save, monitor='val_loss', verbose=1,
+                model_path, monitor='val_loss', verbose=1,
                 save_best_only=True, save_weights_only=num_gpus >= 2),
             callbacks.TensorBoard(log_dir=os.path.join(log_dir, basename))
         ])
 
-    model.save_weights(file_name_save)
-    np.savez(file_name_save_loss, loss_history=loss_history.history)
+    model.save_weights(model_path)
+    np.savez(loss_path, loss_history=loss_history.history)
 
     return model
 
