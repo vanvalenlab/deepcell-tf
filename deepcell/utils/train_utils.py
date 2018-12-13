@@ -33,6 +33,7 @@ from __future__ import division
 import numpy as np
 from tensorflow.keras.utils import multi_gpu_model
 from tensorflow.keras.models import Model
+from tensorflow.python.client import device_lib
 
 
 def rate_scheduler(lr=.001, decay=0.95):
@@ -41,6 +42,12 @@ def rate_scheduler(lr=.001, decay=0.95):
         new_lr = lr * (decay ** epoch)
         return new_lr
     return output_fn
+
+
+def count_gpus():
+    devices = device_lib.list_local_devices()
+    gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
+    return len(gpus)
 
 
 class MultiGpuModel(Model):

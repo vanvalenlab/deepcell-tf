@@ -37,10 +37,10 @@ import numpy as np
 from tensorflow.keras import backend as K
 from tensorflow.keras import callbacks
 from tensorflow.keras.optimizers import SGD
-from tensorflow.python.client import device_lib
 
 from deepcell import losses
 from deepcell import image_generators as generators
+from deepcell.utils import train_utils
 from deepcell.utils.data_utils import get_data
 from deepcell.utils.train_utils import rate_scheduler, MultiGpuModel
 
@@ -98,9 +98,7 @@ def train_model_sample(model,
             y_true, y_pred, n_classes=n_classes)
 
     if num_gpus is None:
-        devices = device_lib.list_local_devices()
-        gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
-        num_gpus = len(gpus)
+        num_gpus = train_utils.count_gpus()
 
     if num_gpus >= 2:
         batch_size = batch_size * num_gpus
@@ -224,9 +222,7 @@ def train_model_conv(model,
             y_true, y_pred, n_classes=n_classes)
 
     if num_gpus is None:
-        devices = device_lib.list_local_devices()
-        gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
-        num_gpus = len(gpus)
+        num_gpus = train_utils.count_gpus()
 
     if num_gpus >= 2:
         batch_size = batch_size * num_gpus
