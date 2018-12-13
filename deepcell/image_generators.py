@@ -53,7 +53,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 try:
     from tensorflow.keras.utils import conv_utils
 except ImportError:
-    from tensorflow.keras._impl.keras.utils import conv_utils
+    from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 from keras_retinanet.preprocessing.generator import Generator as _RetinaNetGenerator
 from keras_maskrcnn.preprocessing.generator import Generator as _MaskRCNNGenerator

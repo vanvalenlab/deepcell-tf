@@ -41,7 +41,7 @@ from tensorflow.keras import backend as K
 try:
     from tensorflow.keras.utils import conv_utils
 except ImportError:
-    from tensorflow.keras._impl.keras.utils import conv_utils
+    from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 from deepcell.utils.io_utils import get_image
 from deepcell.utils.io_utils import get_image_sizes
