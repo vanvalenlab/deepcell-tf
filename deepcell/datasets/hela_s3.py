@@ -28,6 +28,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+
 try:
     from tensorflow.keras.utils.data_utils import get_file
 except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
@@ -44,6 +46,14 @@ def load_data(path='HeLa_S3.npz', test_size=.2, seed=0):
     # Returns
         Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
     """
+    basepath = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
+    prefix_path = os.path.join(*path.split(os.path.sep)[:-1])
+    data_dir = os.path.join(basepath, prefix_path)
+    if not os.path.exists(data_dir):
+        if not os.path.isdir(data_dir):
+            raise IOError('{} exists but is not a directory'.format(data_dir))
+        os.makedirs(data_dir)
+
     path = get_file(path,
                     origin='https://deepcell-data.s3.amazonaws.com/nuclei/HeLa_S3.npz',
                     file_hash='42c631726713bbb180d4a0a07c2e8107')
