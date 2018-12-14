@@ -12,16 +12,17 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
+import os
+import sys
 # sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../../deepcell-tf/'))
 
 
 # -- Project information -----------------------------------------------------
 
 project = u'DeepCell'
-copyright = u'2018, Dylan Bannon, Erick Moen, Enrico Borba, Andrew Ho, Isabella Camplisson, Brian chang, Erik Osterman, William Graf, David Van Valen'
-author = u'Dylan Bannon, Erick Moen, Enrico Borba, Andrew Ho, Isabella Camplisson, Brian chang, Erik Osterman, William Graf, David Van Valen'
+copyright = u'2016-2018, David Van Valen at California Institute of Technology (Caltech)'
+author = u'Van Valen Lab @ Caltech'
 
 # The short X.Y version
 version = u''
@@ -40,6 +41,9 @@ release = u'1.0.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -130,7 +134,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'DeepCell.tex', u'DeepCell Documentation',
-     u'Dylan Bannon, Erick Moen, Enrico Borba, Andrew Ho, Isabella Camplisson, Brian chang, Erik Osterman, William Graf, David Van Valen', 'manual'),
+     u'Van Valen Lab @ Caltech', 'manual'),
 ]
 
 
@@ -175,4 +179,13 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
-autodoc_mock_imports = ["numpy"]
+
+
+# -- Custom Additions --------------------------------------------------------
+from recommonmark.parser import CommonMarkParser
+
+source_parsers = {
+    '.md': CommonMarkParser,
+}
+
+source_suffix = ['.rst', '.md']
