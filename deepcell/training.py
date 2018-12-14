@@ -73,8 +73,8 @@ def train_model_sample(model,
     data_name = os.path.splitext(os.path.basename(dataset))[0]
     basename = '{}_{}_{}'.format(todays_date, data_name, expt)
 
-    model_path = os.path.join(model_dir, basename, '{}.h5'.format(basename))
-    loss_path = os.path.join(model_dir, basename, '{}.npz'.format(basename))
+    model_path = os.path.join(model_dir, '{}.h5'.format(basename))
+    loss_path = os.path.join(model_dir, '{}.npz'.format(basename))
 
     train_dict, test_dict = get_data(dataset, mode='sample', test_size=test_size)
 
