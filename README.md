@@ -1,4 +1,8 @@
 # deepcell-tf
+
+[![Build Status](https://travis-ci.org/vanvalenlab/deepcell-tf.svg?branch=master)](https://travis-ci.org/vanvalenlab/deepcell-tf)
+[![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master)
+
 DeepCell is neural network library for single cell analysis, built using [TensorFlow](https://github.com/tensorflow/tensorflow) and [Keras](https://github.com/keras-team/keras).
 
 ## Getting Started
