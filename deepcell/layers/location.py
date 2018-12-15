@@ -40,9 +40,9 @@ except ImportError:
     from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 
-class Location(Layer):
+class Location2D(Layer):
     def __init__(self, in_shape, data_format=None, **kwargs):
-        super(Location, self).__init__(**kwargs)
+        super(Location2D, self).__init__(**kwargs)
         self.in_shape = in_shape
         self.data_format = conv_utils.normalize_data_format(data_format)
 
@@ -85,7 +85,7 @@ class Location(Layer):
             'in_shape': self.in_shape,
             'data_format': self.data_format
         }
-        base_config = super(Location, self).get_config()
+        base_config = super(Location2D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
