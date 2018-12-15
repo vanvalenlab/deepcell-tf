@@ -34,16 +34,17 @@ import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
+try:  # tf v1.9 moves conv_utils from _impl to keras.utils
+    from tensorflow.python.keras.utils import conv_utils
+except ImportError:
+    from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 
 class Location(Layer):
     def __init__(self, in_shape, data_format=None, **kwargs):
         super(Location, self).__init__(**kwargs)
         self.in_shape = in_shape
-        if data_format is None:
-            self.data_format = K.image_data_format()
-        else:
-            self.data_format = data_format
+        self.data_format = conv_utils.normalize_data_format(data_format)
 
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
@@ -92,10 +93,7 @@ class Location3D(Layer):
     def __init__(self, in_shape, data_format=None, **kwargs):
         super(Location3D, self).__init__(**kwargs)
         self.in_shape = in_shape
-        if data_format is None:
-            self.data_format = K.image_data_format()
-        else:
-            self.data_format = data_format
+        self.data_format = conv_utils.normalize_data_format(data_format)
 
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()

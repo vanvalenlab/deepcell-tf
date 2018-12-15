@@ -45,7 +45,6 @@ class DilatedMaxPool2D(Layer):
     def __init__(self, pool_size=(2, 2), strides=None, dilation_rate=1,
                  padding='valid', data_format=None, **kwargs):
         super(DilatedMaxPool2D, self).__init__(**kwargs)
-        data_format = conv_utils.normalize_data_format(data_format)
         if dilation_rate != 1:
             strides = (1, 1)
         elif strides is None:

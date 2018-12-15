@@ -35,6 +35,10 @@ import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
+try:  # tf v1.9 moves conv_utils from _impl to keras.utils
+    from tensorflow.python.keras.utils import conv_utils
+except ImportError:
+    from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 
 class ImageNormalization2D(Layer):
@@ -42,7 +46,7 @@ class ImageNormalization2D(Layer):
         super(ImageNormalization2D, self).__init__(**kwargs)
         self.filter_size = filter_size
         self.norm_method = norm_method
-        self.data_format = K.image_data_format() if data_format is None else data_format
+        self.data_format = conv_utils.normalize_data_format(data_format)
 
         if self.data_format == 'channels_first':
             self.channel_axis = 1
@@ -127,7 +131,7 @@ class ImageNormalization3D(Layer):
         super(ImageNormalization3D, self).__init__(**kwargs)
         self.filter_size = filter_size
         self.norm_method = norm_method
-        self.data_format = K.image_data_format() if data_format is None else data_format
+        self.data_format = conv_utils.normalize_data_format(data_format)
 
         if self.data_format == 'channels_first':
             self.channel_axis = 1
