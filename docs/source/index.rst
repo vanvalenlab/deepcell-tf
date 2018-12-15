@@ -1,15 +1,15 @@
 .. DeepCell documentation master file, created by
-   sphinx-quickstart on Thu Dec 13 11:51:42 2018.
+   sphinx-quickstart on Fri Dec 14 16:28:41 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to DeepCell
+Welcome to DeepCell 
 ====================================
 
-Start Here
+Start Here 
 ====================================
 
-Project Documentaiton
+Project Documentation 
 ====================================
 
 .. toctree::
@@ -17,6 +17,8 @@ Project Documentaiton
    :caption: Contents:
 
    modules
+
+
 
 * :ref:`genindex`
 * :ref:`modindex`

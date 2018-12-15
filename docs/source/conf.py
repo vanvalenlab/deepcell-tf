@@ -14,20 +14,20 @@
 #
 import os
 import sys
+sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../../deepcell-tf/'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = u'DeepCell'
-copyright = u'2016-2018, David Van Valen at California Institute of Technology (Caltech)'
-author = u'Van Valen Lab @ Caltech'
+project = 'DeepCell'
+copyright = '2016-2018, David Van Valen at the California Institute of Technology (Caltech)'
+author = 'Van Valen Lab at Caltech'
 
 # The short X.Y version
-version = u''
+version = ''
 # The full version, including alpha/beta/rc tags
-release = u'1.0.0'
+release = '1.0.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,8 +41,10 @@ release = u'1.0.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
+    'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
 ]
 
@@ -133,8 +135,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'DeepCell.tex', u'DeepCell Documentation',
-     u'Van Valen Lab @ Caltech', 'manual'),
+    (master_doc, 'DeepCell.tex', 'DeepCell Documentation',
+     'Van Valen Lab at Caltech', 'manual'),
 ]
 
 
@@ -143,7 +145,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'deepcell', u'DeepCell Documentation',
+    (master_doc, 'deepcell', 'DeepCell Documentation',
      [author], 1)
 ]
 
@@ -154,7 +156,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'DeepCell', u'DeepCell Documentation',
+    (master_doc, 'DeepCell', 'DeepCell Documentation',
      author, 'DeepCell', 'One line description of project.',
      'Miscellaneous'),
 ]
@@ -179,13 +181,9 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+autodoc_mock_imports=["tensorflow", "sklearn", "skimage", "nbformat"]
 
+# -- Options for intersphinx extension ---------------------------------------
 
-# -- Custom Additions --------------------------------------------------------
-from recommonmark.parser import CommonMarkParser
-
-source_parsers = {
-    '.md': CommonMarkParser,
-}
-
-source_suffix = ['.rst', '.md']
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {'https://docs.python.org/': None}
