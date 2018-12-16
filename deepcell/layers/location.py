@@ -66,7 +66,7 @@ class Location2D(Layer):
         x = tf.divide(x, tf.reduce_max(x))
         y = tf.divide(y, tf.reduce_max(y))
 
-        loc_x, loc_y = tf.meshgrid(x, y)
+        loc_x, loc_y = tf.meshgrid(x, y, indexing='ij')
 
         if self.data_format == 'channels_first':
             loc = tf.stack([loc_x, loc_y], axis=0)
@@ -78,6 +78,7 @@ class Location2D(Layer):
             location = tf.transpose(location, perm=[0, 2, 3, 1])
 
         location = tf.tile(location, [tf.shape(inputs)[0], 1, 1, 1])
+
         if self.data_format == 'channels_first':
             location = tf.transpose(location, perm=[0, 3, 1, 2])
 
