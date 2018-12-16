@@ -131,9 +131,9 @@ class TensorProd2D(Layer):
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
-            output_shape = tuple(input_shape[0], self.output_dim, input_shape[2], input_shape[3])
+            output_shape = tuple((input_shape[0], self.output_dim, input_shape[2], input_shape[3]))
         else:
-            output_shape = tuple(input_shape[0], input_shape[1], input_shape[2], self.output_dim)
+            output_shape = tuple((input_shape[0], input_shape[1], input_shape[2], self.output_dim))
 
         return tensor_shape.TensorShape(output_shape)
 
@@ -240,17 +240,17 @@ class TensorProd3D(Layer):
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
-            output_shape = tuple(input_shape[0],
-                                 self.output_dim,
-                                 input_shape[2],
-                                 input_shape[3],
-                                 input_shape[4])
+            output_shape = tuple((input_shape[0],
+                                  self.output_dim,
+                                  input_shape[2],
+                                  input_shape[3],
+                                  input_shape[4]))
         else:
-            output_shape = tuple(input_shape[0],
-                                 input_shape[1],
-                                 input_shape[2],
-                                 input_shape[3],
-                                 self.output_dim)
+            output_shape = tuple((input_shape[0],
+                                  input_shape[1],
+                                  input_shape[2],
+                                  input_shape[3],
+                                  self.output_dim))
 
         return tensor_shape.TensorShape(output_shape)
 

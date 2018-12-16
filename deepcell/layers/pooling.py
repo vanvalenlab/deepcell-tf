@@ -145,7 +145,7 @@ class DilatedMaxPool3D(Layer):
         else:
             output_shape = (input_shape[0], time, rows, cols, input_shape[4])
 
-        return output_shape
+        return tensor_shape.TensorShape(output_shape)
 
     def call(self, inputs):
         df = 'NCDHW' if self.data_format == 'channels_first' else 'NDHWC'
