@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for the location layers"""
+"""Tests for the resize layers"""
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -35,36 +35,19 @@ from deepcell.utils import testing_utils
 from deepcell import layers
 
 
-class LocationTest(test.TestCase):
+class ResizeTest(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
-    def test_location_2d(self):
+    def test_resize_2d(self):
         with self.test_session(use_gpu=True):
             testing_utils.layer_test(
-                layers.Location2D,
-                kwargs={'in_shape': (5, 6, 4),
-                        'data_format': 'channels_last'},
-                custom_objects={'Location2D': layers.Location2D},
+                layers.Resize2D,
+                kwargs={'scale': 2},
+                custom_objects={'Resize2D': layers.Resize2D},
                 input_shape=(3, 5, 6, 4))
             testing_utils.layer_test(
-                layers.Location2D,
-                kwargs={'in_shape': (4, 5, 6),
+                layers.Resize2D,
+                kwargs={'scale': 3,
                         'data_format': 'channels_first'},
-                custom_objects={'Location2D': layers.Location2D},
-                input_shape=(3, 4, 5, 6))
-
-    @tf_test_util.run_in_graph_and_eager_modes()
-    def test_location_3d(self):
-        with self.test_session(use_gpu=True):
-            testing_utils.layer_test(
-                layers.Location3D,
-                kwargs={'in_shape': (11, 12, 10, 4),
-                        'data_format': 'channels_last'},
-                custom_objects={'Location3D': layers.Location3D},
-                input_shape=(3, 11, 12, 10, 4))
-            testing_utils.layer_test(
-                layers.Location3D,
-                kwargs={'in_shape': (4, 11, 12, 10),
-                        'data_format': 'channels_first'},
-                custom_objects={'Location3D': layers.Location3D},
-                input_shape=(3, 4, 11, 12, 10))
+                custom_objects={'Resize2D': layers.Resize2D},
+                input_shape=(3, 5, 6, 4))
