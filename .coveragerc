@@ -14,5 +14,6 @@ show_missing = True
 
 omit =
     deepcell/model_zoo.py
+    deepcell/testing_utils.py
     deepcell/datasets/*
     deepcell/notebooks/*
