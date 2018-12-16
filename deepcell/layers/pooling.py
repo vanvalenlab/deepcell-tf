@@ -79,10 +79,6 @@ class DilatedMaxPool2D(Layer):
         return tensor_shape.TensorShape(output_shape)
 
     def call(self, inputs):
-        # dilated pooling for tensorflow backend
-        if K.backend() == 'theano':
-            Exception('This version of DeepCell only works with the tensorflow backend')
-
         df = 'NCHW' if self.data_format == 'channels_first' else 'NHWC'
 
         padding_input = self.padding.upper()
@@ -152,10 +148,6 @@ class DilatedMaxPool3D(Layer):
         return output_shape
 
     def call(self, inputs):
-        # dilated pooling for tensorflow backend
-        if K.backend() == 'theano':
-            Exception('This version of DeepCell only works with the tensorflow backend')
-
         df = 'NCDHW' if self.data_format == 'channels_first' else 'NDHWC'
 
         padding_input = self.padding.upper()

@@ -112,11 +112,6 @@ class TensorProd2D(Layer):
         self.built = True
 
     def call(self, inputs):
-        backend = K.backend()
-
-        if backend == "theano":
-            Exception('This version of DeepCell only works with the tensorflow backend')
-
         if self.data_format == 'channels_first':
             output = tf.tensordot(inputs, self.kernel, axes=[[1], [0]])
             output = tf.transpose(output, perm=[0, 3, 1, 2])
@@ -227,11 +222,6 @@ class TensorProd3D(Layer):
         self.built = True
 
     def call(self, inputs):
-        backend = K.backend()
-
-        if backend == "theano":
-            Exception('This version of DeepCell only works with the tensorflow backend')
-
         if self.data_format == 'channels_first':
             output = tf.tensordot(inputs, self.kernel, axes=[[1], [0]])
             output = tf.transpose(output, perm=[0, 4, 1, 2, 3])

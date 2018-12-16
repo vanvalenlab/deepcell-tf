@@ -43,10 +43,6 @@ except ImportError:
 class Resize2D(Layer):
     def __init__(self, scale=2, data_format=None, **kwargs):
         super(Resize2D, self).__init__(**kwargs)
-
-        backend = K.backend()
-        if backend == "theano":
-            Exception('This version of DeepCell only works with the tensorflow backend')
         self.data_format = conv_utils.normalize_data_format(data_format)
         self.scale = scale
 
