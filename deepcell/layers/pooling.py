@@ -65,11 +65,15 @@ class DilatedMaxPool2D(Layer):
             rows = input_shape[1]
             cols = input_shape[2]
 
-        rows = conv_utils.conv_output_length(rows, self.pool_size[0], padding=self.padding,
-                                             stride=self.strides[0], dilation=self.dilation_rate)
+        rows = conv_utils.conv_output_length(rows, self.pool_size[0],
+                                             padding=self.padding,
+                                             stride=self.strides[0],
+                                             dilation=self.dilation_rate)
 
-        cols = conv_utils.conv_output_length(cols, self.pool_size[1], padding=self.padding,
-                                             stride=self.strides[1], dilation=self.dilation_rate)
+        cols = conv_utils.conv_output_length(cols, self.pool_size[1],
+                                             padding=self.padding,
+                                             stride=self.strides[1],
+                                             dilation=self.dilation_rate)
 
         if self.data_format == 'channels_first':
             output_shape = (input_shape[0], input_shape[1], rows, cols)
@@ -87,9 +91,13 @@ class DilatedMaxPool2D(Layer):
         else:
             dilation_rate = self.dilation_rate
 
-        output = tf.nn.pool(inputs, window_shape=self.pool_size, pooling_type='MAX',
-                            padding=padding_input, dilation_rate=dilation_rate,
-                            strides=self.strides, data_format=df)
+        output = tf.nn.pool(inputs,
+                            window_shape=self.pool_size,
+                            pooling_type='MAX',
+                            padding=padding_input,
+                            dilation_rate=dilation_rate,
+                            strides=self.strides,
+                            data_format=df)
 
         return output
 
@@ -131,14 +139,20 @@ class DilatedMaxPool3D(Layer):
             rows = input_shape[2]
             cols = input_shape[3]
 
-        time = conv_utils.conv_output_length(time, self.pool_size[0], padding=self.padding,
-                                             stride=self.strides[0], dilation=self.dilation_rate)
+        time = conv_utils.conv_output_length(time, self.pool_size[0],
+                                             padding=self.padding,
+                                             stride=self.strides[0],
+                                             dilation=self.dilation_rate)
 
-        rows = conv_utils.conv_output_length(rows, self.pool_size[1], padding=self.padding,
-                                             stride=self.strides[1], dilation=self.dilation_rate)
+        rows = conv_utils.conv_output_length(rows, self.pool_size[1],
+                                             padding=self.padding,
+                                             stride=self.strides[1],
+                                             dilation=self.dilation_rate)
 
-        cols = conv_utils.conv_output_length(cols, self.pool_size[2], padding=self.padding,
-                                             stride=self.strides[2], dilation=self.dilation_rate)
+        cols = conv_utils.conv_output_length(cols, self.pool_size[2],
+                                             padding=self.padding,
+                                             stride=self.strides[2],
+                                             dilation=self.dilation_rate)
 
         if self.data_format == 'channels_first':
             output_shape = (input_shape[0], input_shape[1], time, rows, cols)
@@ -152,13 +166,19 @@ class DilatedMaxPool3D(Layer):
 
         padding_input = self.padding.upper()
         if not isinstance(self.dilation_rate, tuple):
-            dilation_rate = (self.dilation_rate, self.dilation_rate, self.dilation_rate)
+            dilation_rate = (self.dilation_rate,
+                             self.dilation_rate,
+                             self.dilation_rate)
         else:
             dilation_rate = self.dilation_rate
 
-        output = tf.nn.pool(inputs, window_shape=self.pool_size, pooling_type='MAX',
-                            padding=padding_input, dilation_rate=dilation_rate,
-                            strides=self.strides, data_format=df)
+        output = tf.nn.pool(inputs,
+                            window_shape=self.pool_size,
+                            pooling_type='MAX',
+                            padding=padding_input,
+                            dilation_rate=dilation_rate,
+                            strides=self.strides,
+                            data_format=df)
 
         return output
 
