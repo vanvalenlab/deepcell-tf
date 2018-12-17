@@ -9,7 +9,7 @@ exclude_lines =
     raise NotImplementedError
 
 ignore_errors = True
-fail_under = 80
+fail_under = 50
 show_missing = True
 
 omit =
