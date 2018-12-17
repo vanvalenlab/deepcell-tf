@@ -83,23 +83,25 @@ class DilatedMaxPool2D(Layer):
         return tensor_shape.TensorShape(output_shape)
 
     def call(self, inputs):
-        df = 'NCHW' if self.data_format == 'channels_first' else 'NHWC'
+        if self.data_format == 'channels_first':
+            inputs = tf.transpose(inputs, perm=[0, 2, 3, 1])
 
         padding_input = self.padding.upper()
-        if not isinstance(self.dilation_rate, tuple):
-            dilation_rate = (self.dilation_rate, self.dilation_rate)
-        else:
-            dilation_rate = self.dilation_rate
+        dilation_rate = conv_utils.normalize_tuple(
+            self.dilation_rate, 2, 'dilation_rate')
 
-        output = tf.nn.pool(inputs,
-                            window_shape=self.pool_size,
-                            pooling_type='MAX',
-                            padding=padding_input,
-                            dilation_rate=dilation_rate,
-                            strides=self.strides,
-                            data_format=df)
+        outputs = tf.nn.pool(inputs,
+                             window_shape=self.pool_size,
+                             pooling_type='MAX',
+                             padding=padding_input,
+                             dilation_rate=dilation_rate,
+                             strides=self.strides,
+                             data_format='NHWC')
 
-        return output
+        if self.data_format == 'channels_first':
+            outputs = tf.transpose(outputs, perm=[0, 3, 1, 2])
+
+        return outputs
 
     def get_config(self):
         config = {
@@ -162,25 +164,25 @@ class DilatedMaxPool3D(Layer):
         return tensor_shape.TensorShape(output_shape)
 
     def call(self, inputs):
-        df = 'NCDHW' if self.data_format == 'channels_first' else 'NDHWC'
+        if self.data_format == 'channels_first':
+            inputs = tf.transpose(inputs, perm=[0, 2, 3, 4, 1])
 
         padding_input = self.padding.upper()
-        if not isinstance(self.dilation_rate, tuple):
-            dilation_rate = (self.dilation_rate,
-                             self.dilation_rate,
-                             self.dilation_rate)
-        else:
-            dilation_rate = self.dilation_rate
+        dilation_rate = conv_utils.normalize_tuple(
+            self.dilation_rate, 3, 'dilation_rate')
 
-        output = tf.nn.pool(inputs,
-                            window_shape=self.pool_size,
-                            pooling_type='MAX',
-                            padding=padding_input,
-                            dilation_rate=dilation_rate,
-                            strides=self.strides,
-                            data_format=df)
+        outputs = tf.nn.pool(inputs,
+                             window_shape=self.pool_size,
+                             pooling_type='MAX',
+                             padding=padding_input,
+                             dilation_rate=dilation_rate,
+                             strides=self.strides,
+                             data_format='NDHWC')
 
-        return output
+        if self.data_format == 'channels_first':
+            outputs = tf.transpose(outputs, perm=[0, 4, 1, 2, 3])
+
+        return outputs
 
     def get_config(self):
         config = {
