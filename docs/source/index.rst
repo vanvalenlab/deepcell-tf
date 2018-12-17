@@ -1,20 +1,17 @@
-.. DeepCell documentation master file, created by
-   sphinx-quickstart on Fri Dec 14 16:28:41 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. DeepCell documentation master file
 
 Welcome to DeepCell 
-====================================
-
-Start Here 
-====================================
-
-Project Documentation 
-====================================
+####################################
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Start Here:
+   
+This should be Kiosk information and links to video tutorials
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Project Documentation:
 
    modules
 

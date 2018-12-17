@@ -23,9 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Image generators for training convolutional neural networks
-@author: David Van Valen
-"""
+"""Image generators for training convolutional neural networks."""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -66,12 +65,19 @@ from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
 
 
 def _transform_masks(y, transform, data_format=None, **kwargs):
-    """Based on the transform key, apply a transform function to the masks
-    # Arguments:
+    """Based on the transform key, apply a transform function to the masks.
+
+    More detailed description. Caution for unknown transorm keys.
+
+    Args:
         y: `labels` of ndim 4 or 5
         transform: one of {`deepcell`, `disc`, `watershed`, `centroid`, `None`}
-    # Returns:
+    
+    Returns:
         y_transform: the output of the given transform function on y
+
+    Raises:
+        IOError: An error occurred
     """
     valid_transforms = {'deepcell', 'disc', 'watershed', 'centroid', 'fgbg'}
 
@@ -227,11 +233,12 @@ class ImageSampleArrayIterator(Iterator):
 
     def class_balance(self, max_class_samples=None, downsample=False, seed=None):
         """Balance classes based on the number of samples of each class
-        # Arguments
+
+        Args:
             max_class_samples: if not None, a maximum count for each class
             downsample: if True, all sample sizes will be the rarest count
             seed: random state initalization
-        # Returns
+        Returns:
             Does not return anything but shuffles and resizes the sample size
         """
         balanced_indices = []
@@ -308,7 +315,7 @@ class ImageSampleArrayIterator(Iterator):
 
     def next(self):
         """For python 2.x.
-        # Returns the next batch.
+        Returns the next batch.
         """
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
@@ -439,7 +446,7 @@ class ImageFullyConvIterator(Iterator):
 
     def next(self):
         """For python 2.x.
-        # Returns the next batch.
+        Returns the next batch.
         """
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
@@ -483,10 +490,11 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
 
     def standardize(self, x):
         """Apply the normalization configuration to a batch of inputs.
-        # Arguments
+
+        Args:
             x: batch of inputs to be normalized.
-        # Returns
-            The inputs, normalized.
+        Returns:
+            The normalized inputs.
         """
         if self.preprocessing_function:
             x = self.preprocessing_function(x)
@@ -520,11 +528,12 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
 
     def random_transform(self, x, labels=None, seed=None):
         """Randomly augment a single image tensor.
-        # Arguments
+
+        Args:
             x: 4D tensor, single image.
             labels: 4D tensor, single image mask.
             seed: random seed.
-        # Returns
+        Returns:
             A randomly transformed version of the input (same shape).
         """
         # x is a single image, so it doesn't have image number at index 0
@@ -644,7 +653,9 @@ Custom movie generators
 
 
 class MovieDataGenerator(ImageDataGenerator):
-    """Generate minibatches of movie data with real-time data augmentation."""
+    """Generate minibatches of movie data with real-time data augmentation.
+
+    """
 
     def __init__(self, **kwargs):
         super(MovieDataGenerator, self).__init__(**kwargs)
@@ -689,10 +700,11 @@ class MovieDataGenerator(ImageDataGenerator):
 
     def standardize(self, x):
         """Apply the normalization configuration to a batch of inputs.
-        # Arguments
+
+        Args:
             x: batch of inputs to be normalized.
-        # Returns
-            The inputs, normalized.
+        Returns:
+            The normalized inputs.
         """
         # TODO: standardize each image, not all frames at once
         if self.preprocessing_function:
@@ -727,11 +739,12 @@ class MovieDataGenerator(ImageDataGenerator):
 
     def random_transform(self, x, labels=None, seed=None):
         """Randomly augment a single image tensor.
-        # Arguments
+
+        Args:
             x: 5D tensor, image stack.
             labels: 5D tensor, image mask stack.
             seed: random seed.
-        # Returns
+        Returns:
             A randomly transformed version of the input (same shape).
         """
         # x is a single image, so it doesn't have image number at index 0
@@ -868,9 +881,11 @@ class MovieDataGenerator(ImageDataGenerator):
 
     def fit(self, x, augment=False, rounds=1, seed=None):
         """Fits internal statistics to some sample data.
+
         Required for featurewise_center, featurewise_std_normalization
         and zca_whitening.
-        # Arguments
+        
+        Args:
             x: Numpy array, the data to fit on. Should have rank 5.
                 In case of grayscale data,
                 the channels axis should have value 1, and in case
@@ -879,8 +894,11 @@ class MovieDataGenerator(ImageDataGenerator):
             rounds: If `augment`,
                 how many augmentation passes to do over the data
             seed: random seed.
-        # Raises
+        Raises:
             ValueError: in case of invalid input `x`.
+        Returns:
+            nothing
+
         """
         x = np.asarray(x, dtype=K.floatx())
         if x.ndim != 5:
@@ -919,6 +937,7 @@ class MovieArrayIterator(Iterator):
     Each data set contains a data movie (X) and a label movie (y)
     The label movie is the same dimension as the channel movie with each pixel
     having its corresponding prediction
+
     """
 
     def __init__(self,
@@ -1063,7 +1082,7 @@ class MovieArrayIterator(Iterator):
 
     def next(self):
         """For python 2.x.
-        # Returns the next batch.
+        Returns the next batch.
         """
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
@@ -1153,11 +1172,12 @@ class SampleMovieArrayIterator(Iterator):
 
     def class_balance(self, max_class_samples=None, downsample=False, seed=None):
         """Balance classes based on the number of samples of each class
-        # Arguments
+
+        Args:
             max_class_samples: if not None, a maximum count for each class
             downsample: if True, all sample sizes will be the rarest count
             seed: random state initalization
-        # Returns
+        Returns:
             Does not return anything but shuffles and resizes the sample size
         """
         balanced_indices = []
@@ -1244,7 +1264,7 @@ class SampleMovieArrayIterator(Iterator):
 
     def next(self):
         """For python 2.x.
-        # Returns the next batch.
+        Returns the next batch.
         """
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
@@ -1363,6 +1383,7 @@ class SiameseIterator(Iterator):
         This function builds the track id's. It returns a dictionary that
         contains the batch number and label number of each each track.
         Creates unique cell IDs, as cell labels are NOT unique across batches.
+
         """
         track_counter = 0
         track_ids = {}
@@ -1507,7 +1528,7 @@ class SiameseIterator(Iterator):
 
     def next(self):
         """For python 2.x.
-        # Returns the next batch.
+        Returns the next batch.
         """
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
@@ -1672,7 +1693,7 @@ class BoundingBoxIterator(Iterator):
 
     def next(self):
         """For python 2.x.
-        # Returns the next batch.
+        Returns the next batch.
         """
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
@@ -1904,6 +1925,7 @@ class MaskRCNNGenerator(_MaskRCNNGenerator):
         """
         List all image files inside each `dir_name/training_dir/image_dir`
         with "channel_name" in the filename.
+
         """
         filelist = []
         for direc in training_dirs:
