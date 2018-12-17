@@ -67,9 +67,15 @@ class ImageNormalization2D(Layer):
         W /= W.size
         kernel = tf.Variable(W.astype(K.floatx()))
 
-        data_format = 'NCHW' if self.data_format == 'channels_first' else 'NHWC'
+        if self.data_format == 'channels_first':
+            inputs = tf.transpose(inputs, perm=[0, 2, 3, 1])
+
         outputs = tf.nn.depthwise_conv2d(inputs, kernel, [1, 1, 1, 1],
-                                         padding='SAME', data_format=data_format)
+                                         padding='SAME', data_format='NHWC')
+
+        if self.data_format == 'channels_first':
+            outputs = tf.transpose(outputs, perm=[0, 3, 1, 2])
+
         return outputs
 
     def _window_std_filter(self, inputs, epsilon=K.epsilon()):
@@ -79,9 +85,9 @@ class ImageNormalization2D(Layer):
         return output
 
     def _reduce_median(self, inputs, axes=None):
-        # TODO: top_k cannot take None as batch dimension, and tf.rank cannot be iterated
         input_shape = tf.shape(inputs)
         rank = tf.rank(inputs)
+        axes = [] if axes is None else axes
 
         new_shape = [input_shape[axis] for axis in range(rank) if axis not in axes]
         new_shape.append(-1)
@@ -153,10 +159,16 @@ class ImageNormalization3D(Layer):
         W /= W.size
         kernel = tf.Variable(W.astype(K.floatx()))
 
-        data_format = 'NCDHW' if self.data_format == 'channels_first' else 'NDHWC'
+        # data_format = 'NCDHW' if self.data_format == 'channels_first' else 'NDHWC'
+        if self.data_format == 'channels_first':
+            inputs = tf.transpose(inputs, perm=[0, 2, 3, 4, 1])
         # TODO: conv3d vs depthwise_conv2d?
         outputs = tf.nn.conv3d(inputs, kernel, [1, 1, 1, 1, 1],
-                               padding='SAME', data_format=data_format)
+                               padding='SAME', data_format='NDHWC')
+
+        if self.data_format == 'channels_first':
+            outputs = tf.transpose(outputs, perm=[0, 4, 1, 2, 3])
+
         return outputs
 
     def _window_std_filter(self, inputs, epsilon=K.epsilon()):
@@ -169,6 +181,7 @@ class ImageNormalization3D(Layer):
         # TODO: top_k cannot take None as batch dimension, and tf.rank cannot be iterated
         input_shape = tf.shape(inputs)
         rank = tf.rank(inputs)
+        axes = [] if axes is None else axes
 
         new_shape = [input_shape[axis] for axis in range(rank) if axis not in axes]
         new_shape.append(-1)
