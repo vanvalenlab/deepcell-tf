@@ -58,7 +58,7 @@ class ReflectionPaddingTest(test.TestCase):
         ins1 = np.ones((num_samples, input_num_row, input_num_col, stack_size))
         ins2 = np.ones((num_samples, stack_size, input_num_row, input_num_col))
         data_formats = ['channels_first', 'channels_last']
-        for data_format, inputs in zip(data_formats, [ins1, ins2]):
+        for data_format, inputs in zip(data_formats, [ins2, ins1]):
             # basic test
             with self.test_session(use_gpu=True):
                 testing_utils.layer_test(

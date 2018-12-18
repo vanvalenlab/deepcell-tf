@@ -177,7 +177,7 @@ class TestDataUtils(test.TestCase):
         self.assertEqual([np.unique(r).size,
                           np.unique(c).size,
                           np.unique(f).size],
-                          [1, 1, 1])
+                         [1, 1, 1])
         self.assertEqual(np.unique(l).size, 1)
 
         f, r, c, b, l = data_utils.sample_label_movie(
@@ -188,7 +188,7 @@ class TestDataUtils(test.TestCase):
         self.assertEqual([np.unique(r).size,
                           np.unique(c).size,
                           np.unique(f).size],
-                          [2, 2, 2])
+                         [2, 2, 2])
         self.assertEqual(np.unique(l).size, 1)
 
         # test channels_first
