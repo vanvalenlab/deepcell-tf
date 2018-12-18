@@ -264,7 +264,7 @@ class TestSampleDataGenerator(test.TestCase):
 
             img_w, img_h = 21, 21
             win_x, win_y = 2, 2
-            test_batches = 8
+            test_batches = 3
 
             # Basic test before fit
             train_dict = {
@@ -319,7 +319,7 @@ class TestSampleDataGenerator(test.TestCase):
 
             img_w, img_h = 21, 21
             win_x, win_y = 2, 2
-            test_batches = 8
+            test_batches = 3
 
             # Basic test before fit
             train_dict = {
@@ -429,7 +429,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
 
             img_w, img_h = 21, 21
             win_x, win_y, win_z = 2, 2, 2
-            test_batches = 8
+            test_batches = 3
 
             # Basic test before fit
             train_dict = {
@@ -494,7 +494,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
 
             img_w, img_h = 21, 21
             win_x, win_y, win_z = 2, 2, 2
-            test_batches = 8
+            test_batches = 3
 
             # Basic test before fit
             train_dict = {
