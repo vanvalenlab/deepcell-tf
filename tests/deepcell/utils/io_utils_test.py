@@ -83,7 +83,8 @@ class TestIOUtils(test.TestCase):
             img_name = 'phase_{}{}'.format(i, e)
             _write_image(os.path.join(temp_dir, img_name), 30, 30)
 
-        self.assertEqual(count_image_files(temp_dir, montage_mode=False), 6)
+        self.assertEqual(io_utils.count_image_files(
+            temp_dir, montage_mode=False), 6)
 
         # with montage mode
         temp_dir = self.get_temp_dir()
@@ -101,7 +102,8 @@ class TestIOUtils(test.TestCase):
             img_name = 'phase2_{}{}'.format(i, e)
             _write_image(os.path.join(temp_dir, 'a', img_name), 30, 30)
 
-        self.assertEqual(count_image_files(temp_dir, montage_mode=True), 6)
+        self.assertEqual(io_utils.count_image_files(
+            temp_dir, montage_mode=True), 6)
 
     def test_get_image(self):
         temp_dir = self.get_temp_dir()
