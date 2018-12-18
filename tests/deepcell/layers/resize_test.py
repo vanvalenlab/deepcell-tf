@@ -23,37 +23,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Deepcell Utilities"""
+"""Tests for the resize layers"""
 from __future__ import absolute_import
-from __future__ import division
 from __future__ import print_function
+from __future__ import division
 
-from deepcell.utils import data_utils
-from deepcell.utils import export_utils
-from deepcell.utils import io_utils
-from deepcell.utils import misc_utils
-from deepcell.utils import plot_utils
+from tensorflow.python.framework import test_util as tf_test_util
+from tensorflow.python.platform import test
+
 from deepcell.utils import testing_utils
-from deepcell.utils import train_utils
-from deepcell.utils import transform_utils
-from deepcell.utils import retinanet_anchor_utils
+from deepcell import layers
 
-# Globally-importable utils.
-from deepcell.utils.data_utils import get_data
-from deepcell.utils.data_utils import make_training_data
-from deepcell.utils.export_utils import export_model
-from deepcell.utils.io_utils import get_immediate_subdirs
-from deepcell.utils.io_utils import get_image
-from deepcell.utils.io_utils import nikon_getfiles
-from deepcell.utils.io_utils import get_image_sizes
-from deepcell.utils.io_utils import get_images_from_directory
-from deepcell.utils.misc_utils import sorted_nicely
-from deepcell.utils.train_utils import rate_scheduler
-from deepcell.utils.transform_utils import distance_transform_2d
-from deepcell.utils.transform_utils import distance_transform_3d
-from deepcell.utils.transform_utils import deepcell_transform
-from deepcell.utils.transform_utils import transform_matrix_offset_center
 
-del absolute_import
-del division
-del print_function
+class ResizeTest(test.TestCase):
+
+    @tf_test_util.run_in_graph_and_eager_modes()
+    def test_resize_2d(self):
+        with self.test_session(use_gpu=True):
+            testing_utils.layer_test(
+                layers.Resize2D,
+                kwargs={'scale': 2},
+                custom_objects={'Resize2D': layers.Resize2D},
+                input_shape=(3, 5, 6, 4))
+            testing_utils.layer_test(
+                layers.Resize2D,
+                kwargs={'scale': 3,
+                        'data_format': 'channels_first'},
+                custom_objects={'Resize2D': layers.Resize2D},
+                input_shape=(3, 5, 6, 4))

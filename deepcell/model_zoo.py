@@ -43,7 +43,7 @@ from tensorflow.keras.regularizers import l2
 
 from deepcell.layers import DilatedMaxPool2D, DilatedMaxPool3D
 from deepcell.layers import ImageNormalization2D, ImageNormalization3D
-from deepcell.layers import Location, Location3D
+from deepcell.layers import Location2D, Location3D
 from deepcell.layers import ReflectionPadding2D, ReflectionPadding3D
 from deepcell.layers import TensorProd2D, TensorProd3D
 
@@ -103,7 +103,7 @@ def bn_feature_net_2D(receptive_field=61,
             x.append(ZeroPadding2D(padding=(win, win))(x[-1]))
 
     if location:
-        x.append(Location(in_shape=tuple(x[-1].shape.as_list()[1:]))(x[-1]))
+        x.append(Location2D(in_shape=tuple(x[-1].shape.as_list()[1:]))(x[-1]))
         x.append(Concatenate(axis=channel_axis)([x[-2], x[-1]]))
 
     if multires:
