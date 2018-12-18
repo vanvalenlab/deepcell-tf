@@ -23,9 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Utilities for data transformations
-@author: David Van Valen
-"""
+"""Utilities for data transformations"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -42,10 +41,11 @@ from tensorflow.python.keras import backend as K
 def deepcell_transform(maskstack, dilation_radius=None, data_format=None):
     """
     Transforms a label mask for a z stack edge, interior, and background
-    # Arguments:
+
+    Args:
         maskstack: label masks of uniquely labeled instances
         dilation_radius:  width to enlarge the edge feature of each instance
-    # Returns:
+    Returns:
         deepcell_stacks: masks of:
         [background_edge_feature, interior_edge_feature, interior_feature, background]
     """
@@ -113,10 +113,12 @@ def deepcell_transform(maskstack, dilation_radius=None, data_format=None):
 
 def erode_edges(mask, erosion_width):
     """Erode edge of objects to prevent them from touching
-    # Arguments:
+
+    Args:
         mask: uniquely labeled instance mask
         erosion_width: integer value for pixel width to erode edges
-    # Returns:
+    
+    Returns:
         mask where each instance has had the edges eroded
     """
     if erosion_width:
@@ -139,11 +141,13 @@ def erode_edges(mask, erosion_width):
 
 def distance_transform_2d(mask, bins=16, erosion_width=None):
     """Transform a label mask into distance classes.
-    # Arguments
+    
+    Args:
         mask: a label mask (y data)
         bins: the number of transformed distance classes
         erosion_width: number of pixels to erode edges of each labels
-    # Returns
+    
+    Returns:
         distance: a mask of same shape as input mask,
                   with each label being a distance class from 1 to bins
     """
@@ -173,11 +177,13 @@ def distance_transform_3d(maskstack, bins=4, erosion_width=None):
     """
     Transforms a label mask for a z stack into distance classes
     Uses scipy's distance_transform_edt
-    # Arguments
+
+    Args:
         maskstack: a z-stack of label masks (y data)
         bins: the number of transformed distance classes
         erosion_width: number of pixels to erode edges of each labels
-    # Returns
+    
+    Returns:
         distance: 3D Euclidiean Distance Transform
     """
     maskstack = np.squeeze(maskstack)  # squeeze the channels
@@ -226,11 +232,13 @@ def rotate_array_270(arr):
 def to_categorical(y, num_classes=None):
     """Converts a class vector (integers) to binary class matrix.
     E.g. for use with categorical_crossentropy.
-    # Arguments
+
+    Args:
         y: class vector to be converted into a matrix
         (integers from 0 to num_classes).
         num_classes: total number of classes.
-    # Returns
+    
+    Returns:
         A binary matrix representation of the input.
     """
     y = np.array(y, dtype='int').ravel()

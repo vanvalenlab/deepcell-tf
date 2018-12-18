@@ -181,7 +181,7 @@ epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
-autodoc_mock_imports=["tensorflow", "sklearn", "skimage", "nbformat"]
+autodoc_mock_imports=["tensorflow", "sklearn", "skimage", "nbformat", "cv2", "keras_reinanet"]
 
 # -- Options for intersphinx extension ---------------------------------------
 

@@ -23,9 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Utilities for reading/writing files
-@author: David Van Valen
-"""
+"""Utilities for reading/writing files"""
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -44,9 +42,11 @@ from deepcell.utils.misc_utils import sorted_nicely
 def get_immediate_subdirs(directory):
     """
     Get all DIRECTORIES that are immediate children of a given directory
-    # Arguments
+
+    Args:
         dir: a filepath to a directory
-    # Returns:
+
+    Returns:
         a sorted list of child directories of given dir.  Will not return files.
     """
     return sorted([d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))])
@@ -124,7 +124,8 @@ def save_model_output(output,
                       channel=None,
                       data_format=None):
     """Save model output as tiff images in the provided directory
-    # Arguments:
+
+    Args:
         output: output of model. Expects channel to have its own axis
         output_dir: directory to save the model output images
         feature_name: optional description to start each output image filename
