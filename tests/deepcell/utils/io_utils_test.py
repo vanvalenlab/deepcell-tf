@@ -105,6 +105,43 @@ class TestIOUtils(test.TestCase):
         self.assertEqual(io_utils.count_image_files(
             temp_dir, montage_mode=True), 6)
 
+    def test_count_image_files(self):
+        # no montage_mode
+        test_extensions = [
+            '.tif',
+            '.tiff',
+            '.TIF',
+            '.TIFF',
+            '.png',
+            '.PNG',
+        ]
+        temp_dir = self.get_temp_dir()
+        for i, e in enumerate(test_extensions):
+            img_name = 'phase_{}{}'.format(i, e)
+            _write_image(os.path.join(temp_dir, img_name), 30, 30)
+
+        self.assertEqual(io_utils.count_image_files(
+            temp_dir, montage_mode=False), 6)
+
+        # with montage mode
+        temp_dir = self.get_temp_dir()
+        # create subdirs
+        os.makedirs(os.path.join(temp_dir, 'a'))
+        os.makedirs(os.path.join(temp_dir, 'b'))
+        # write each image in both directories
+        for i, e in enumerate(test_extensions):
+            img_name = 'phase_{}{}'.format(i, e)
+            _write_image(os.path.join(temp_dir, 'a', img_name), 30, 30)
+            _write_image(os.path.join(temp_dir, 'b', img_name), 30, 30)
+
+        # write extra images in A that will be ignored
+        for i, e in enumerate(test_extensions):
+            img_name = 'phase2_{}{}'.format(i, e)
+            _write_image(os.path.join(temp_dir, 'a', img_name), 30, 30)
+
+        self.assertEqual(io_utils.count_image_files(
+            temp_dir, montage_mode=True), 6)
+
     def test_get_image(self):
         temp_dir = self.get_temp_dir()
         # test tiff files
@@ -191,7 +228,7 @@ class TestIOUtils(test.TestCase):
 
         # test bad channel
         with self.assertRaises(ValueError):
-            test_output = np.random.random((batches, features, img_w, img_h))
+            output = np.random.random((batches, features, img_w, img_h))
             io_utils.save_model_output(output, temp_dir, 'test', channel=-1)
             io_utils.save_model_output(output, temp_dir, 'test',
                                        channel=features + 1)
