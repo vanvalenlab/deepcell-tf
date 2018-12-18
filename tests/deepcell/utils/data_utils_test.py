@@ -95,7 +95,7 @@ class TestDataUtils(test.TestCase):
                                                       window_size_y=win_y)
         self.assertEqual(max_nums, [1, 1])
 
-    def test_get_max_sample_num_list_channels_first(self):
+        # channels_first
         K.set_image_data_format('channels_first')
         edge_feature = [1, 0, 0]  # first channel index is cell edge
         win_x, win_y = 10, 10
@@ -165,14 +165,19 @@ class TestDataUtils(test.TestCase):
     def test_sample_label_movie(self):
         win_x, win_y, win_z = 10, 10, 1
         y = np.zeros((2, 5, 30, 30, 3))
-        y[:, 0, 0, 0, 0] = 1  # set value outside valid window range
-        y[:, win_z + 1, win_x + 1, win_y + 1, 0] = 1  # set value inside valid window range
+        # set value outside valid window range
+        y[:, 0, 0, 0, 0] = 1
+        # set value inside valid window range
+        y[:, win_z + 1, win_x + 1, win_y + 1, 0] = 1
         f, r, c, b, l = data_utils.sample_label_movie(
             y, window_size=(win_x, win_y, win_z),
             padding='valid', data_format='channels_last')
         self.assertListEqual(list(map(len, [r, c, b, l, f])), [len(r)] * 5)
         self.assertEqual(np.unique(b).size, 2)
-        self.assertEqual([np.unique(r).size, np.unique(c).size, np.unique(f).size], [1, 1, 1])
+        self.assertEqual([np.unique(r).size,
+                          np.unique(c).size,
+                          np.unique(f).size],
+                         [1, 1, 1])
         self.assertEqual(np.unique(l).size, 1)
 
         f, r, c, b, l = data_utils.sample_label_movie(
@@ -180,14 +185,19 @@ class TestDataUtils(test.TestCase):
             max_training_examples=None,
             padding='same', data_format='channels_last')
         self.assertListEqual(list(map(len, [r, c, b, l, f])), [len(r)] * 5)
-        self.assertEqual([np.unique(r).size, np.unique(c).size, np.unique(f).size], [2, 2, 2])
+        self.assertEqual([np.unique(r).size,
+                          np.unique(c).size,
+                          np.unique(f).size],
+                         [2, 2, 2])
         self.assertEqual(np.unique(l).size, 1)
 
         # test channels_first
         win_x, win_y, win_z = 10, 10, 1
         y = np.zeros((2, 3, 5, 30, 30))
-        y[:, 0, 0, 0, 0] = 1  # set value outside valid window range
-        y[:, 0, win_z + 1, win_x + 1, win_y + 1] = 1  # set value inside valid window range
+        # set value outside valid window range
+        y[:, 0, 0, 0, 0] = 1
+        # set value inside valid window range
+        y[:, 0, win_z + 1, win_x + 1, win_y + 1] = 1
         f, r, c, b, l = data_utils.sample_label_movie(
             y, window_size=(win_x, win_y, win_z),
             padding='valid', data_format='channels_first')
@@ -210,43 +220,43 @@ class TestDataUtils(test.TestCase):
         K.set_image_data_format('channels_last')
         img_size = 512
         win_x, win_y = 30, 30
-        trimmed_x = img_size - 2 * win_x
-        trimmed_y = img_size - 2 * win_y
+        x_trim = img_size - 2 * win_x
+        y_trim = img_size - 2 * win_y
         K.set_image_data_format('channels_last')
         arr = np.zeros((1, img_size, img_size, 1))
-        trimmed_arr = data_utils.trim_padding(arr, win_x, win_y)
-        self.assertEqual(trimmed_arr.shape, (1, trimmed_x, trimmed_y, 1))
+        arr_trim = data_utils.trim_padding(arr, win_x, win_y)
+        self.assertEqual(arr_trim.shape, (1, x_trim, y_trim, 1))
         # test channels_first
         K.set_image_data_format('channels_first')
         arr = np.zeros((1, 1, img_size, img_size))
-        trimmed_arr = data_utils.trim_padding(arr, win_x, win_y)
-        self.assertEqual(trimmed_arr.shape, (1, 1, trimmed_x, trimmed_y))
+        arr_trim = data_utils.trim_padding(arr, win_x, win_y)
+        self.assertEqual(arr_trim.shape, (1, 1, x_trim, y_trim))
 
         # test 3d image stack
         img_size = 256
         frames = 30
         win_x, win_y = 20, 30
         win_z = 2
-        trimmed_x = img_size - 2 * win_x
-        trimmed_y = img_size - 2 * win_y
-        trimmed_z = frames - 2 * win_z
+        x_trim = img_size - 2 * win_x
+        y_trim = img_size - 2 * win_y
+        z_trim = frames - 2 * win_z
         K.set_image_data_format('channels_last')
         arr = np.zeros((1, frames, img_size, img_size, 1))
         # trim win_z
-        trimmed_arr = data_utils.trim_padding(arr, win_x, win_y, win_z)
-        self.assertEqual(trimmed_arr.shape, (1, trimmed_z, trimmed_x, trimmed_y, 1))
+        arr_trim = data_utils.trim_padding(arr, win_x, win_y, win_z)
+        self.assertEqual(arr_trim.shape, (1, z_trim, x_trim, y_trim, 1))
         # don't trim win_z
-        trimmed_arr = data_utils.trim_padding(arr, win_x, win_y)
-        self.assertEqual(trimmed_arr.shape, (1, frames, trimmed_x, trimmed_y, 1))
+        arr_trim = data_utils.trim_padding(arr, win_x, win_y)
+        self.assertEqual(arr_trim.shape, (1, frames, x_trim, y_trim, 1))
         # test channels_first
         K.set_image_data_format('channels_first')
         arr = np.zeros((1, 1, 30, img_size, img_size))
         # trim win_z
-        trimmed_arr = data_utils.trim_padding(arr, win_x, win_y, win_z)
-        self.assertEqual(trimmed_arr.shape, (1, 1, trimmed_z, trimmed_x, trimmed_y))
+        arr_trim = data_utils.trim_padding(arr, win_x, win_y, win_z)
+        self.assertEqual(arr_trim.shape, (1, 1, z_trim, x_trim, y_trim))
         # don't trim win_z
-        trimmed_arr = data_utils.trim_padding(arr, win_x, win_y)
-        self.assertEqual(trimmed_arr.shape, (1, 1, frames, trimmed_x, trimmed_y))
+        arr_trim = data_utils.trim_padding(arr, win_x, win_y)
+        self.assertEqual(arr_trim.shape, (1, 1, frames, x_trim, y_trim))
 
         # test bad input
         with self.assertRaises(ValueError):
@@ -263,30 +273,30 @@ class TestDataUtils(test.TestCase):
 
     def test_reshape_movie(self):
         K.set_image_data_format('channels_last')
-        X = np.zeros((1, 30, 1024, 1024, 3))
-        y = np.zeros((1, 30, 1024, 1024, 1))
-        new_size = 256
+        X = np.zeros((1, 3, 16, 16, 3))
+        y = np.zeros((1, 3, 16, 16, 1))
+        new_size = 4
 
         # test resize to smaller image, divisible
         new_X, new_y = data_utils.reshape_movie(X, y, new_size)
-        new_batch = np.ceil(1024 / new_size) ** 2
-        self.assertEqual(new_X.shape, (new_batch, 30, new_size, new_size, 3))
-        self.assertEqual(new_y.shape, (new_batch, 30, new_size, new_size, 1))
+        new_batch = np.ceil(16 / new_size) ** 2
+        self.assertEqual(new_X.shape, (new_batch, 3, new_size, new_size, 3))
+        self.assertEqual(new_y.shape, (new_batch, 3, new_size, new_size, 1))
 
         # test reshape with non-divisible values.
-        new_size = 200
-        new_batch = np.ceil(1024 / new_size) ** 2
+        new_size = 5
+        new_batch = np.ceil(16 / new_size) ** 2
         new_X, new_y = data_utils.reshape_movie(X, y, new_size)
-        self.assertEqual(new_X.shape, (new_batch, 30, new_size, new_size, 3))
-        self.assertEqual(new_y.shape, (new_batch, 30, new_size, new_size, 1))
+        self.assertEqual(new_X.shape, (new_batch, 3, new_size, new_size, 3))
+        self.assertEqual(new_y.shape, (new_batch, 3, new_size, new_size, 1))
 
         # test reshape to bigger size
         with self.assertRaises(ValueError):
-            new_X, new_y = data_utils.reshape_movie(X, y, 2048)
+            new_X, new_y = data_utils.reshape_movie(X, y, 32)
 
         # test wrong dimensions
-        bigger = np.zeros((1, 30, 1024, 1024, 3, 1))
-        smaller = np.zeros((1, 1024, 1024, 3))
+        bigger = np.zeros((1, 3, 16, 16, 3, 1))
+        smaller = np.zeros((1, 16, 16, 3))
         with self.assertRaises(ValueError):
             new_X, new_y = data_utils.reshape_movie(smaller, y, new_size)
         with self.assertRaises(ValueError):
@@ -296,51 +306,51 @@ class TestDataUtils(test.TestCase):
         with self.assertRaises(ValueError):
             new_X, new_y = data_utils.reshape_movie(X, bigger, new_size)
 
-    def test_reshape_movie_channels_first(self):
+        # channels_first
         K.set_image_data_format('channels_first')
-        X = np.zeros((1, 3, 30, 1024, 1024))
-        y = np.zeros((1, 1, 30, 1024, 1024))
-        new_size = 256
+        X = np.zeros((1, 3, 3, 16, 16))
+        y = np.zeros((1, 1, 3, 16, 16))
+        new_size = 4
 
         # test resize to smaller image, divisible
         new_X, new_y = data_utils.reshape_movie(X, y, new_size)
-        new_batch = np.ceil(1024 / new_size) ** 2
-        self.assertEqual(new_X.shape, (new_batch, 3, 30, new_size, new_size))
-        self.assertEqual(new_y.shape, (new_batch, 1, 30, new_size, new_size))
+        new_batch = np.ceil(16 / new_size) ** 2
+        self.assertEqual(new_X.shape, (new_batch, 3, 3, new_size, new_size))
+        self.assertEqual(new_y.shape, (new_batch, 1, 3, new_size, new_size))
 
         # test reshape with non-divisible values.
-        new_size = 200
-        new_batch = np.ceil(1024 / new_size) ** 2
+        new_size = 5
+        new_batch = np.ceil(16 / new_size) ** 2
         new_X, new_y = data_utils.reshape_movie(X, y, new_size)
-        self.assertEqual(new_X.shape, (new_batch, 3, 30, new_size, new_size))
-        self.assertEqual(new_y.shape, (new_batch, 1, 30, new_size, new_size))
+        self.assertEqual(new_X.shape, (new_batch, 3, 3, new_size, new_size))
+        self.assertEqual(new_y.shape, (new_batch, 1, 3, new_size, new_size))
 
     def test_reshape_matrix(self):
         K.set_image_data_format('channels_last')
-        X = np.zeros((1, 1024, 1024, 3))
-        y = np.zeros((1, 1024, 1024, 1))
-        new_size = 256
+        X = np.zeros((1, 16, 16, 3))
+        y = np.zeros((1, 16, 16, 1))
+        new_size = 4
 
         # test resize to smaller image, divisible
         new_X, new_y = data_utils.reshape_matrix(X, y, new_size)
-        new_batch = np.ceil(1024 / new_size) ** 2
+        new_batch = np.ceil(16 / new_size) ** 2
         self.assertEqual(new_X.shape, (new_batch, new_size, new_size, 3))
         self.assertEqual(new_y.shape, (new_batch, new_size, new_size, 1))
 
         # test reshape with non-divisible values.
-        new_size = 200
-        new_batch = np.ceil(1024 / new_size) ** 2
+        new_size = 5
+        new_batch = np.ceil(16 / new_size) ** 2
         new_X, new_y = data_utils.reshape_matrix(X, y, new_size)
         self.assertEqual(new_X.shape, (new_batch, new_size, new_size, 3))
         self.assertEqual(new_y.shape, (new_batch, new_size, new_size, 1))
 
         # test reshape to bigger size
         with self.assertRaises(ValueError):
-            new_X, new_y = data_utils.reshape_matrix(X, y, 2048)
+            new_X, new_y = data_utils.reshape_matrix(X, y, 32)
 
         # test wrong dimensions
-        bigger = np.zeros((1, 1024, 1024, 3, 1))
-        smaller = np.zeros((1, 1024, 1024))
+        bigger = np.zeros((1, 16, 16, 3, 1))
+        smaller = np.zeros((1, 16, 16))
         with self.assertRaises(ValueError):
             new_X, new_y = data_utils.reshape_matrix(smaller, y, new_size)
         with self.assertRaises(ValueError):
@@ -350,21 +360,21 @@ class TestDataUtils(test.TestCase):
         with self.assertRaises(ValueError):
             new_X, new_y = data_utils.reshape_matrix(X, bigger, new_size)
 
-    def test_reshape_matrix_channels_first(self):
+        # channels_first
         K.set_image_data_format('channels_first')
-        X = np.zeros((1, 3, 1024, 1024))
-        y = np.zeros((1, 1, 1024, 1024))
-        new_size = 256
+        X = np.zeros((1, 3, 16, 16))
+        y = np.zeros((1, 1, 16, 16))
+        new_size = 4
 
         # test resize to smaller image, divisible
         new_X, new_y = data_utils.reshape_matrix(X, y, new_size)
-        new_batch = np.ceil(1024 / new_size) ** 2
+        new_batch = np.ceil(16 / new_size) ** 2
         self.assertEqual(new_X.shape, (new_batch, 3, new_size, new_size))
         self.assertEqual(new_y.shape, (new_batch, 1, new_size, new_size))
 
         # test reshape with non-divisible values.
-        new_size = 200
-        new_batch = np.ceil(1024 / new_size) ** 2
+        new_size = 5
+        new_batch = np.ceil(16 / new_size) ** 2
         new_X, new_y = data_utils.reshape_matrix(X, y, new_size)
         self.assertEqual(new_X.shape, (new_batch, 3, new_size, new_size))
         self.assertEqual(new_y.shape, (new_batch, 1, new_size, new_size))

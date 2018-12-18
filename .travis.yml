@@ -39,6 +39,6 @@ install:
 
 # command to run tests
 script:
-  - PYTHONPATH=$PWD:$PYTHONPATH python -m pytest --pep8 deepcell tests
+  - PYTHONPATH=$PWD:$PYTHONPATH python -m pytest --cov=deepcell --pep8 deepcell tests
 after_success:
   - coveralls

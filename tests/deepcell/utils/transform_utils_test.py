@@ -56,7 +56,7 @@ class TransformUtilsTest(test.TestCase):
     def test_deepcell_transform_2d(self):
         maskstack = np.array([label(i) for i in _generate_test_masks()])
         dc_maskstack = transform_utils.deepcell_transform(
-            maskstack, data_format='channels_last')
+            maskstack, data_format=None)
         dc_maskstack_dil = transform_utils.deepcell_transform(
             maskstack, dilation_radius=1, data_format='channels_last')
 
@@ -77,11 +77,11 @@ class TransformUtilsTest(test.TestCase):
             img_list.append(img_stack)
 
         maskstack = np.vstack(img_list)
-        batches = maskstack.shape[0] // frames
-        new_shape = tuple([batches, frames] + list(maskstack.shape[1:]))
+        batch_count = maskstack.shape[0] // frames
+        new_shape = (batch_count, frames, *maskstack.shape[1:])
         maskstack = np.reshape(maskstack, new_shape)
         dc_maskstack = transform_utils.deepcell_transform(
-            maskstack, data_format='channels_last')
+            maskstack, data_format=None)
         dc_maskstack_dil = transform_utils.deepcell_transform(
             maskstack, dilation_radius=2, data_format='channels_last')
         self.assertEqual(dc_maskstack.shape[-1], 4)
@@ -112,64 +112,64 @@ class TransformUtilsTest(test.TestCase):
 
     def test_erode_edges_3d(self):
         mask_stack = np.array(_generate_test_masks())
-        unique_stack = np.zeros(mask_stack.shape)
+        unique = np.zeros(mask_stack.shape)
 
         for i, mask in enumerate(_generate_test_masks()):
-            unique_stack[i] = label(mask)
+            unique[i] = label(mask)
 
-        unique_stack = np.squeeze(unique_stack)
+        unique = np.squeeze(unique)
 
-        erode_0 = transform_utils.erode_edges(unique_stack, erosion_width=0)
-        erode_1 = transform_utils.erode_edges(unique_stack, erosion_width=1)
-        erode_2 = transform_utils.erode_edges(unique_stack, erosion_width=2)
+        erode_0 = transform_utils.erode_edges(unique, erosion_width=0)
+        erode_1 = transform_utils.erode_edges(unique, erosion_width=1)
+        erode_2 = transform_utils.erode_edges(unique, erosion_width=2)
 
-        self.assertEqual(unique_stack.shape, erode_0.shape)
+        self.assertEqual(unique.shape, erode_0.shape)
         self.assertEqual(erode_0.shape, erode_1.shape)
         self.assertEqual(erode_1.shape, erode_2.shape)
-        self.assertAllEqual(erode_0, unique_stack)
+        self.assertAllEqual(erode_0, unique)
         self.assertGreater(np.sum(erode_0), np.sum(erode_1))
         self.assertGreater(np.sum(erode_1), np.sum(erode_2))
 
         # test too many dims
         with self.assertRaises(ValueError):
-            unique_stack = np.expand_dims(unique_stack, axis=-1)
-            erode_1 = transform_utils.erode_edges(unique_stack, erosion_width=1)
+            unique = np.expand_dims(unique, axis=-1)
+            erode_1 = transform_utils.erode_edges(unique, erosion_width=1)
 
     def test_distance_transform_3d(self):
         mask_stack = np.array(_generate_test_masks())
-        unique_stack = np.zeros(mask_stack.shape)
+        unique = np.zeros(mask_stack.shape)
 
         for i, mask in enumerate(_generate_test_masks()):
-            unique_stack[i] = label(mask)
+            unique[i] = label(mask)
 
         K.set_image_data_format('channels_last')
 
         bins = 3
-        distance = transform_utils.distance_transform_3d(unique_stack, bins=bins)
+        distance = transform_utils.distance_transform_3d(unique, bins=bins)
         distance = np.expand_dims(distance, axis=-1)
         self.assertAllEqual(np.unique(distance), np.array([0, 1, 2]))
-        self.assertEqual(distance.shape, unique_stack.shape)
+        self.assertEqual(distance.shape, unique.shape)
 
         bins = 4
-        distance = transform_utils.distance_transform_3d(unique_stack, bins=bins)
+        distance = transform_utils.distance_transform_3d(unique, bins=bins)
         distance = np.expand_dims(distance, axis=-1)
         self.assertAllEqual(np.unique(distance), np.array([0, 1, 2, 3]))
-        self.assertEqual(distance.shape, unique_stack.shape)
+        self.assertEqual(distance.shape, unique.shape)
 
         K.set_image_data_format('channels_first')
-        unique_stack = np.rollaxis(unique_stack, -1, 1)
+        unique = np.rollaxis(unique, -1, 1)
 
         bins = 3
-        distance = transform_utils.distance_transform_3d(unique_stack, bins=bins)
+        distance = transform_utils.distance_transform_3d(unique, bins=bins)
         distance = np.expand_dims(distance, axis=1)
         self.assertAllEqual(np.unique(distance), np.array([0, 1, 2]))
-        self.assertEqual(distance.shape, unique_stack.shape)
+        self.assertEqual(distance.shape, unique.shape)
 
         bins = 4
-        distance = transform_utils.distance_transform_3d(unique_stack, bins=bins)
+        distance = transform_utils.distance_transform_3d(unique, bins=bins)
         distance = np.expand_dims(distance, axis=1)
         self.assertAllEqual(np.unique(distance), np.array([0, 1, 2, 3]))
-        self.assertEqual(distance.shape, unique_stack.shape)
+        self.assertEqual(distance.shape, unique.shape)
 
     def test_distance_transform_2d(self):
         for img in _generate_test_masks():
@@ -207,8 +207,8 @@ class TransformUtilsTest(test.TestCase):
                            (3, num_classes),
                            (6, num_classes)]
         labels = [np.random.randint(0, num_classes, shape) for shape in shapes]
-        one_hots = [transform_utils.to_categorical(l, num_classes) for l in labels]
-        for lbl, one_hot, expected_shape in zip(labels, one_hots, expected_shapes):
+        ohes = [transform_utils.to_categorical(l, num_classes) for l in labels]
+        for lbl, one_hot, expected_shape in zip(labels, ohes, expected_shapes):
             # Check shape
             self.assertEqual(one_hot.shape, expected_shape)
             # Make sure there are only 0s and 1s
