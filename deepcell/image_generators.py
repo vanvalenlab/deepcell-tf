@@ -120,7 +120,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask, distance_bins, erosion)
 
         # convert to one hot notation
-        y_transform = to_categorical(np.expand_dims(y_transform, axis=-1))
+        y_transform = np.expand_dims(y_transform, axis=-1)
+        y_transform = to_categorical(y_transform, num_classes=distance_bins)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
