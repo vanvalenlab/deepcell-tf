@@ -45,7 +45,6 @@ class DilatedMaxPool2D(Layer):
     def __init__(self, pool_size=(2, 2), strides=None, dilation_rate=1,
                  padding='valid', data_format=None, **kwargs):
         super(DilatedMaxPool2D, self).__init__(**kwargs)
-        data_format = conv_utils.normalize_data_format(data_format)
         if dilation_rate != 1:
             strides = (1, 1)
         elif strides is None:
@@ -66,11 +65,15 @@ class DilatedMaxPool2D(Layer):
             rows = input_shape[1]
             cols = input_shape[2]
 
-        rows = conv_utils.conv_output_length(rows, self.pool_size[0], padding=self.padding,
-                                             stride=self.strides[0], dilation=self.dilation_rate)
+        rows = conv_utils.conv_output_length(rows, self.pool_size[0],
+                                             padding=self.padding,
+                                             stride=self.strides[0],
+                                             dilation=self.dilation_rate)
 
-        cols = conv_utils.conv_output_length(cols, self.pool_size[1], padding=self.padding,
-                                             stride=self.strides[1], dilation=self.dilation_rate)
+        cols = conv_utils.conv_output_length(cols, self.pool_size[1],
+                                             padding=self.padding,
+                                             stride=self.strides[1],
+                                             dilation=self.dilation_rate)
 
         if self.data_format == 'channels_first':
             output_shape = (input_shape[0], input_shape[1], rows, cols)
@@ -80,23 +83,25 @@ class DilatedMaxPool2D(Layer):
         return tensor_shape.TensorShape(output_shape)
 
     def call(self, inputs):
-        # dilated pooling for tensorflow backend
-        if K.backend() == 'theano':
-            Exception('This version of DeepCell only works with the tensorflow backend')
-
-        df = 'NCHW' if self.data_format == 'channels_first' else 'NHWC'
+        if self.data_format == 'channels_first':
+            inputs = tf.transpose(inputs, perm=[0, 2, 3, 1])
 
         padding_input = self.padding.upper()
-        if not isinstance(self.dilation_rate, tuple):
-            dilation_rate = (self.dilation_rate, self.dilation_rate)
-        else:
-            dilation_rate = self.dilation_rate
+        dilation_rate = conv_utils.normalize_tuple(
+            self.dilation_rate, 2, 'dilation_rate')
 
-        output = tf.nn.pool(inputs, window_shape=self.pool_size, pooling_type='MAX',
-                            padding=padding_input, dilation_rate=dilation_rate,
-                            strides=self.strides, data_format=df)
+        outputs = tf.nn.pool(inputs,
+                             window_shape=self.pool_size,
+                             pooling_type='MAX',
+                             padding=padding_input,
+                             dilation_rate=dilation_rate,
+                             strides=self.strides,
+                             data_format='NHWC')
 
-        return output
+        if self.data_format == 'channels_first':
+            outputs = tf.transpose(outputs, perm=[0, 3, 1, 2])
+
+        return outputs
 
     def get_config(self):
         config = {
@@ -136,40 +141,48 @@ class DilatedMaxPool3D(Layer):
             rows = input_shape[2]
             cols = input_shape[3]
 
-        time = conv_utils.conv_output_length(time, self.pool_size[0], padding=self.padding,
-                                             stride=self.strides[0], dilation=self.dilation_rate)
+        time = conv_utils.conv_output_length(time, self.pool_size[0],
+                                             padding=self.padding,
+                                             stride=self.strides[0],
+                                             dilation=self.dilation_rate)
 
-        rows = conv_utils.conv_output_length(rows, self.pool_size[1], padding=self.padding,
-                                             stride=self.strides[1], dilation=self.dilation_rate)
+        rows = conv_utils.conv_output_length(rows, self.pool_size[1],
+                                             padding=self.padding,
+                                             stride=self.strides[1],
+                                             dilation=self.dilation_rate)
 
-        cols = conv_utils.conv_output_length(cols, self.pool_size[2], padding=self.padding,
-                                             stride=self.strides[2], dilation=self.dilation_rate)
+        cols = conv_utils.conv_output_length(cols, self.pool_size[2],
+                                             padding=self.padding,
+                                             stride=self.strides[2],
+                                             dilation=self.dilation_rate)
 
         if self.data_format == 'channels_first':
             output_shape = (input_shape[0], input_shape[1], time, rows, cols)
         else:
             output_shape = (input_shape[0], time, rows, cols, input_shape[4])
 
-        return output_shape
+        return tensor_shape.TensorShape(output_shape)
 
     def call(self, inputs):
-        # dilated pooling for tensorflow backend
-        if K.backend() == 'theano':
-            Exception('This version of DeepCell only works with the tensorflow backend')
-
-        df = 'NCDHW' if self.data_format == 'channels_first' else 'NDHWC'
+        if self.data_format == 'channels_first':
+            inputs = tf.transpose(inputs, perm=[0, 2, 3, 4, 1])
 
         padding_input = self.padding.upper()
-        if not isinstance(self.dilation_rate, tuple):
-            dilation_rate = (self.dilation_rate, self.dilation_rate, self.dilation_rate)
-        else:
-            dilation_rate = self.dilation_rate
+        dilation_rate = conv_utils.normalize_tuple(
+            self.dilation_rate, 3, 'dilation_rate')
 
-        output = tf.nn.pool(inputs, window_shape=self.pool_size, pooling_type='MAX',
-                            padding=padding_input, dilation_rate=dilation_rate,
-                            strides=self.strides, data_format=df)
+        outputs = tf.nn.pool(inputs,
+                             window_shape=self.pool_size,
+                             pooling_type='MAX',
+                             padding=padding_input,
+                             dilation_rate=dilation_rate,
+                             strides=self.strides,
+                             data_format='NDHWC')
 
-        return output
+        if self.data_format == 'channels_first':
+            outputs = tf.transpose(outputs, perm=[0, 4, 1, 2, 3])
+
+        return outputs
 
     def get_config(self):
         config = {
