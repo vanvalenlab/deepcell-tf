@@ -40,6 +40,11 @@ from skimage.measure import regionprops
 from skimage.transform import resize
 from skimage.io import imread
 
+# from keras_preprocessing.image import apply_transform
+from keras_preprocessing.image import flip_axis
+from keras_preprocessing.image import random_channel_shift
+from keras_preprocessing.image import transform_matrix_offset_center
+
 from tensorflow.python.platform import tf_logging as logging
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.utils import to_categorical
