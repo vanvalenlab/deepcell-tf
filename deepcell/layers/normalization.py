@@ -22,7 +22,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ============================================================================
+# ==============================================================================
 """Layers to noramlize input images for 2D and 3D images
 @author: David Van Valen
 """

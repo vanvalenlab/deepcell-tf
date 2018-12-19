@@ -22,7 +22,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ============================================================================
+# ==============================================================================
 """Automated Jupyter Notebook Creation and Server Instantiation
 Users can select specific default Jupyter Notebook templates and
 enter values for customization. Jupyter Notebook Servers will be

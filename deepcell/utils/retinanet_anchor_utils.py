@@ -22,7 +22,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ============================================================================
+# ==============================================================================
 """Anchor Box generator script based on keras_retinanet.utils.anchors
 but for inclusion of masks in the training.
 @author: shivamshaiv
