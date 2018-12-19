@@ -34,16 +34,17 @@ import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
+try:  # tf v1.9 moves conv_utils from _impl to keras.utils
+    from tensorflow.python.keras.utils import conv_utils
+except ImportError:
+    from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 
-class Location(Layer):
+class Location2D(Layer):
     def __init__(self, in_shape, data_format=None, **kwargs):
-        super(Location, self).__init__(**kwargs)
+        super(Location2D, self).__init__(**kwargs)
         self.in_shape = in_shape
-        if data_format is None:
-            self.data_format = K.image_data_format()
-        else:
-            self.data_format = data_format
+        self.data_format = conv_utils.normalize_data_format(data_format)
 
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
@@ -55,27 +56,31 @@ class Location(Layer):
 
     def call(self, inputs):
         input_shape = self.in_shape
-
-        if self.data_format == 'channels_last':
-            x = tf.range(0, input_shape[0], dtype=K.floatx())
-            y = tf.range(0, input_shape[1], dtype=K.floatx())
-
-        else:
+        if self.data_format == 'channels_first':
             x = tf.range(0, input_shape[1], dtype=K.floatx())
             y = tf.range(0, input_shape[2], dtype=K.floatx())
+        else:
+            x = tf.range(0, input_shape[0], dtype=K.floatx())
+            y = tf.range(0, input_shape[1], dtype=K.floatx())
 
         x = tf.divide(x, tf.reduce_max(x))
         y = tf.divide(y, tf.reduce_max(y))
 
-        loc_x, loc_y = tf.meshgrid(y, x)
+        loc_x, loc_y = tf.meshgrid(x, y, indexing='ij')
 
-        if self.data_format == 'channels_last':
-            loc = tf.stack([loc_x, loc_y], axis=-1)
-        else:
+        if self.data_format == 'channels_first':
             loc = tf.stack([loc_x, loc_y], axis=0)
+        else:
+            loc = tf.stack([loc_x, loc_y], axis=-1)
 
         location = tf.expand_dims(loc, 0)
+        if self.data_format == 'channels_first':
+            location = tf.transpose(location, perm=[0, 2, 3, 1])
+
         location = tf.tile(location, [tf.shape(inputs)[0], 1, 1, 1])
+
+        if self.data_format == 'channels_first':
+            location = tf.transpose(location, perm=[0, 3, 1, 2])
 
         return location
 
@@ -84,7 +89,7 @@ class Location(Layer):
             'in_shape': self.in_shape,
             'data_format': self.data_format
         }
-        base_config = super(Location, self).get_config()
+        base_config = super(Location2D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
@@ -92,10 +97,7 @@ class Location3D(Layer):
     def __init__(self, in_shape, data_format=None, **kwargs):
         super(Location3D, self).__init__(**kwargs)
         self.in_shape = in_shape
-        if data_format is None:
-            self.data_format = K.image_data_format()
-        else:
-            self.data_format = data_format
+        self.data_format = conv_utils.normalize_data_format(data_format)
 
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
@@ -108,14 +110,14 @@ class Location3D(Layer):
     def call(self, inputs):
         input_shape = self.in_shape
 
-        if self.data_format == 'channels_last':
-            z = tf.range(0, input_shape[0], dtype=K.floatx())
-            x = tf.range(0, input_shape[1], dtype=K.floatx())
-            y = tf.range(0, input_shape[2], dtype=K.floatx())
-        else:
+        if self.data_format == 'channels_first':
             z = tf.range(0, input_shape[1], dtype=K.floatx())
             x = tf.range(0, input_shape[2], dtype=K.floatx())
             y = tf.range(0, input_shape[3], dtype=K.floatx())
+        else:
+            z = tf.range(0, input_shape[0], dtype=K.floatx())
+            x = tf.range(0, input_shape[1], dtype=K.floatx())
+            y = tf.range(0, input_shape[2], dtype=K.floatx())
 
         x = tf.divide(x, tf.reduce_max(x))
         y = tf.divide(y, tf.reduce_max(y))
@@ -123,13 +125,20 @@ class Location3D(Layer):
 
         loc_z, loc_x, loc_y = tf.meshgrid(z, x, y, indexing='ij')
 
-        if self.data_format == 'channels_last':
-            loc = tf.stack([loc_z, loc_x, loc_y], axis=-1)
-        else:
+        if self.data_format == 'channels_first':
             loc = tf.stack([loc_z, loc_x, loc_y], axis=0)
+        else:
+            loc = tf.stack([loc_z, loc_x, loc_y], axis=-1)
 
         location = tf.expand_dims(loc, 0)
+
+        if self.data_format == 'channels_first':
+            location = tf.transpose(location, perm=[0, 2, 3, 4, 1])
+
         location = tf.tile(location, [tf.shape(inputs)[0], 1, 1, 1, 1])
+
+        if self.data_format == 'channels_first':
+            location = tf.transpose(location, perm=[0, 4, 1, 2, 3])
 
         return location
 

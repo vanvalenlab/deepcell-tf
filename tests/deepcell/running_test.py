@@ -123,12 +123,6 @@ class RunningTests(test.TestCase):
         padded = running.get_padding_layers(model)
         self.assertEqual(len(padded), 0)
 
-        # test skip connection
-        n_skips = 2
-        model = model_zoo.bn_feature_net_skip_2D(
-            padding_mode='reflect', n_skips=n_skips)
-        padded = running.get_padding_layers(model)
-        self.assertEqual(len(padded), n_skips + 1)
 
 if __name__ == '__main__':
     test.main()

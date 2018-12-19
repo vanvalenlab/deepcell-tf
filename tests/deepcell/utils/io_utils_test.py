@@ -38,6 +38,7 @@ from tensorflow.python.platform import test
 from skimage.external import tifffile as tiff
 
 from deepcell.utils.io_utils import get_immediate_subdirs
+from deepcell.utils.io_utils import count_image_files
 from deepcell.utils.io_utils import get_image
 from deepcell.utils.io_utils import nikon_getfiles
 from deepcell.utils.io_utils import get_image_sizes
@@ -72,6 +73,41 @@ class TestIOUtils(test.TestCase):
             dirs.append(str(x))
 
         self.assertListEqual(get_immediate_subdirs(temp_dir), list(reversed(dirs)))
+
+    def test_count_image_files(self):
+        # no montage_mode
+        test_extensions = [
+            '.tif',
+            '.tiff',
+            '.TIF',
+            '.TIFF',
+            '.png',
+            '.PNG',
+        ]
+        temp_dir = self.get_temp_dir()
+        for i, e in enumerate(test_extensions):
+            img_name = 'phase_{}{}'.format(i, e)
+            _write_image(os.path.join(temp_dir, img_name), 30, 30)
+
+        self.assertEqual(count_image_files(temp_dir, montage_mode=False), 6)
+
+        # with montage mode
+        temp_dir = self.get_temp_dir()
+        # create subdirs
+        os.makedirs(os.path.join(temp_dir, 'a'))
+        os.makedirs(os.path.join(temp_dir, 'b'))
+        # write each image in both directories
+        for i, e in enumerate(test_extensions):
+            img_name = 'phase_{}{}'.format(i, e)
+            _write_image(os.path.join(temp_dir, 'a', img_name), 30, 30)
+            _write_image(os.path.join(temp_dir, 'b', img_name), 30, 30)
+
+        # write extra images in A that will be ignored
+        for i, e in enumerate(test_extensions):
+            img_name = 'phase2_{}{}'.format(i, e)
+            _write_image(os.path.join(temp_dir, 'a', img_name), 30, 30)
+
+        self.assertEqual(count_image_files(temp_dir, montage_mode=True), 6)
 
     def test_get_image(self):
         temp_dir = self.get_temp_dir()

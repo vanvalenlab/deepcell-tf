@@ -73,6 +73,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     # Returns:
         y_transform: the output of the given transform function on y
     """
+    valid_transforms = {'deepcell', 'disc', 'watershed', 'centroid', 'fgbg'}
+
     if data_format is None:
         data_format = K.image_data_format()
 
@@ -87,7 +89,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
     if isinstance(transform, str):
         transform = transform.lower()
-        if transform not in {'deepcell', 'disc', 'watershed', 'centroid'}:
+        if transform not in valid_transforms:
             raise ValueError('`{}` is not a valid transform'.format(transform))
 
     if transform == 'deepcell':
@@ -103,37 +105,42 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         else:
             y_transform = np.zeros(y.shape[0:-1])
 
+        if y.ndim == 5:
+            _distance_transform = distance_transform_3d
+        else:
+            _distance_transform = distance_transform_2d
+
         for batch in range(y_transform.shape[0]):
-            if y.ndim == 5:
-                if data_format == 'channels_first':
-                    mask = y[batch, 0, :, :, :]
-                else:
-                    mask = y[batch, :, :, :, 0]
-                y_transform[batch] = distance_transform_3d(
-                    mask, distance_bins, erosion)
+            if data_format == 'channels_first':
+                mask = y[batch, 0, ...]
             else:
-                if data_format == 'channels_first':
-                    mask = y[batch, 0, :, :]
-                else:
-                    mask = y[batch, :, :, 0]
-                y_transform[batch] = distance_transform_2d(
-                    mask, distance_bins, erosion)
+                mask = y[batch, ..., 0]
+
+            y_transform[batch] = _distance_transform(
+                mask, distance_bins, erosion)
+
         # convert to one hot notation
-        y_transform = to_categorical(np.expand_dims(y_transform, axis=-1))
+        y_transform = np.expand_dims(y_transform, axis=-1)
+        y_transform = to_categorical(y_transform, num_classes=distance_bins)
         if data_format == 'channels_first':
-            y_transform = np.rollaxis(y_transform, -1, 1)
+            y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
     elif transform == 'disc':
         y_transform = to_categorical(y.squeeze(channel_axis))
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
-    elif transform is None:
+    elif transform == 'fgbg':
         y_transform = np.where(y > 1, 1, y)
         # convert to one hot notation
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, 1, y.ndim)
         y_transform = to_categorical(y_transform)
+        if data_format == 'channels_first':
+            y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
+
+    elif transform is None:
+        y_transform = to_categorical(y.squeeze(channel_axis))
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 

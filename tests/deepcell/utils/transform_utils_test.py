@@ -63,7 +63,7 @@ def _generate_test_masks():
 class TransformUtilsTest(test.TestCase):
     def test_deepcell_transform_2d(self):
         maskstack = np.array([label(i) for i in _generate_test_masks()])
-        dc_maskstack = deepcell_transform(maskstack, data_format='channels_last')
+        dc_maskstack = deepcell_transform(maskstack, data_format=None)
         dc_maskstack_dilated = deepcell_transform(
             maskstack, dilation_radius=1, data_format='channels_last')
 
@@ -86,7 +86,7 @@ class TransformUtilsTest(test.TestCase):
         maskstack = np.vstack(img_list)
         batch_count = maskstack.shape[0] // frames
         maskstack = np.reshape(maskstack, (batch_count, frames, *maskstack.shape[1:]))
-        dc_maskstack = deepcell_transform(maskstack, data_format='channels_last')
+        dc_maskstack = deepcell_transform(maskstack, data_format=None)
         dc_maskstack_dilated = deepcell_transform(
             maskstack, dilation_radius=2, data_format='channels_last')
         self.assertEqual(dc_maskstack.shape[-1], 4)

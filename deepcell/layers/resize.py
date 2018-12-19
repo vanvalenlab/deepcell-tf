@@ -40,13 +40,9 @@ except ImportError:
     from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 
-class Resize(Layer):
+class Resize2D(Layer):
     def __init__(self, scale=2, data_format=None, **kwargs):
-        super(Resize, self).__init__(**kwargs)
-
-        backend = K.backend()
-        if backend == "theano":
-            Exception('This version of DeepCell only works with the tensorflow backend')
+        super(Resize2D, self).__init__(**kwargs)
         self.data_format = conv_utils.normalize_data_format(data_format)
         self.scale = scale
 
@@ -94,5 +90,5 @@ class Resize(Layer):
             'scale': self.scale,
             'data_format': self.data_format
         }
-        base_config = super(Resize, self).get_config()
+        base_config = super(Resize2D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

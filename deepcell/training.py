@@ -34,27 +34,32 @@ import datetime
 import os
 
 import numpy as np
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.callbacks import ModelCheckpoint, LearningRateScheduler
-from tensorflow.python.keras.optimizers import SGD
+from tensorflow.keras import backend as K
+from tensorflow.keras import callbacks
+from tensorflow.keras.optimizers import SGD
+from tensorflow.python.client import device_lib
 
 from deepcell import losses
 from deepcell import image_generators as generators
 from deepcell.utils.data_utils import get_data
-from deepcell.utils.train_utils import rate_scheduler
+from deepcell.utils.train_utils import rate_scheduler, MultiGpuModel
 
 
 def train_model_sample(model,
                        dataset,
                        expt='',
+                       test_size=.1,
                        n_epoch=10,
                        batch_size=32,
+                       num_gpus=None,
                        transform=None,
                        window_size=None,
                        balance_classes=True,
                        max_class_samples=None,
+                       log_dir='/data/tensorboard_logs',
                        direc_save='/data/models',
                        direc_data='/data/npz_data',
+                       model_name=None,
                        focal=False,
                        gamma=0.5,
                        optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
@@ -66,13 +71,14 @@ def train_model_sample(model,
                        **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
-    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    basename = '{}_{}_{}'.format(todays_date, dataset, expt)
-    file_name_save = os.path.join(direc_save, '{}.h5'.format(basename))
-    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(basename))
+    if model_name is None:
+        todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        model_name = '{}_{}_{}'.format(todays_date, dataset, expt)
+    file_name_save = os.path.join(direc_save, '{}.h5'.format(model_name))
+    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(model_name))
 
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    train_dict, test_dict = get_data(training_data_file_name, mode='sample')
+    train_dict, test_dict = get_data(training_data_file_name, mode='sample', test_size=test_size)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
 
@@ -92,6 +98,17 @@ def train_model_sample(model,
                 y_true, y_pred, gamma=gamma, n_classes=n_classes)
         return losses.weighted_categorical_crossentropy(
             y_true, y_pred, n_classes=n_classes)
+
+    if num_gpus is None:
+        devices = device_lib.list_local_devices()
+        gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
+        num_gpus = len(gpus)
+
+    if num_gpus >= 2:
+        batch_size = batch_size * num_gpus
+        model = MultiGpuModel(model, num_gpus)
+
+    print('Training on {} GPUs'.format(num_gpus))
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
@@ -147,8 +164,11 @@ def train_model_sample(model,
         validation_data=val_data,
         validation_steps=val_data.y.shape[0] // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True),
-            LearningRateScheduler(lr_sched)
+            callbacks.LearningRateScheduler(lr_sched),
+            callbacks.ModelCheckpoint(
+                file_name_save, monitor='val_loss', verbose=1,
+                save_best_only=True, save_weights_only=num_gpus >= 2),
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, model_name))
         ])
 
     np.savez(file_name_save_loss, loss_history=loss_history.history)
@@ -159,13 +179,17 @@ def train_model_sample(model,
 def train_model_conv(model,
                      dataset,
                      expt='',
+                     test_size=.1,
                      n_epoch=10,
                      batch_size=1,
+                     num_gpus=None,
                      frames_per_batch=5,
                      transform=None,
                      optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
+                     log_dir='/data/tensorboard_logs',
                      direc_save='/data/models',
                      direc_data='/data/npz_data',
+                     model_name=None,
                      focal=False,
                      gamma=0.5,
                      lr_sched=rate_scheduler(lr=0.01, decay=0.95),
@@ -176,13 +200,14 @@ def train_model_conv(model,
                      **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
-    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    basename = '{}_{}_{}'.format(todays_date, dataset, expt)
-    file_name_save = os.path.join(direc_save, '{}.h5'.format(basename))
-    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(basename))
+    if model_name is None:
+        todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        model_name = '{}_{}_{}'.format(todays_date, dataset, expt)
+    file_name_save = os.path.join(direc_save, '{}.h5'.format(model_name))
+    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(model_name))
 
     training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    train_dict, test_dict = get_data(training_data_file_name, mode='conv')
+    train_dict, test_dict = get_data(training_data_file_name, mode='conv', test_size=test_size)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
     # the data, shuffled and split between train and test sets
@@ -202,6 +227,17 @@ def train_model_conv(model,
         return losses.weighted_categorical_crossentropy(
             y_true, y_pred, n_classes=n_classes)
 
+    if num_gpus is None:
+        devices = device_lib.list_local_devices()
+        gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
+        num_gpus = len(gpus)
+
+    if num_gpus >= 2:
+        batch_size = batch_size * num_gpus
+        model = MultiGpuModel(model, num_gpus)
+
+    print('Training on {} GPUs'.format(num_gpus))
+
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     if isinstance(model.output_shape, list):
@@ -216,6 +252,21 @@ def train_model_conv(model,
     else:
         raise ValueError('Expected `X` to have ndim 4 or 5. Got',
                          train_dict['X'].ndim)
+
+    if num_gpus >= 2:
+        # Each GPU must have at least one validation example
+        if test_dict['y'].shape[0] < num_gpus:
+            raise ValueError('Not enough validation data for {} GPUs. '
+                             'Received {} validation sample.'.format(
+                                 test_dict['y'].shape[0], num_gpus))
+
+        # When using multiple GPUs and skip_connections,
+        # the training data must be evenly distributed across all GPUs
+        num_train = train_dict['y'].shape[0]
+        nb_samples = num_train - num_train % batch_size
+        if nb_samples:
+            train_dict['y'] = train_dict['y'][:nb_samples]
+            train_dict['X'] = train_dict['X'][:nb_samples]
 
     # this will do preprocessing and realtime data augmentation
     datagen = DataGenerator(
@@ -242,7 +293,7 @@ def train_model_conv(model,
             frames_per_batch=frames_per_batch)
 
         val_data = datagen_val.flow(
-            train_dict,
+            test_dict,
             skip=skip,
             batch_size=batch_size,
             transform=transform,
@@ -257,7 +308,7 @@ def train_model_conv(model,
             transform_kwargs=kwargs)
 
         val_data = datagen_val.flow(
-            train_dict,
+            test_dict,
             skip=skip,
             batch_size=batch_size,
             transform=transform,
@@ -271,8 +322,11 @@ def train_model_conv(model,
         validation_data=val_data,
         validation_steps=val_data.y.shape[0] // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True),
-            LearningRateScheduler(lr_sched)
+            callbacks.LearningRateScheduler(lr_sched),
+            callbacks.ModelCheckpoint(
+                file_name_save, monitor='val_loss', verbose=1,
+                save_best_only=True, save_weights_only=num_gpus >= 2),
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, model_name))
         ])
 
     model.save_weights(file_name_save)
@@ -384,8 +438,10 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
         validation_data=datagen_val.flow(test_dict, batch_size=batch_size),
         validation_steps=total_test_pairs // batch_size,
         callbacks=[
-            ModelCheckpoint(file_name_save, monitor='val_loss', verbose=1, save_best_only=True, mode='auto'),
-            LearningRateScheduler(lr_sched)
+            callbacks.LearningRateScheduler(lr_sched),
+            callbacks.ModelCheckpoint(
+                file_name_save, monitor='val_loss', verbose=1,
+                save_best_only=True, save_weights_only=num_gpus >= 2),
         ])
 
     model.save_weights(file_name_save)

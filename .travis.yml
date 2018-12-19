@@ -25,7 +25,7 @@ install:
 
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pytest
   - source activate test-environment
-  - pip install pytest pytest-pep8 pytest-cov
+  - pip install pytest pytest-pep8 pytest-cov coveralls
   - pip install matplotlib nbformat scipy numpy pandas scikit-learn scikit-image
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
@@ -39,4 +39,6 @@ install:
 
 # command to run tests
 script:
-  - PYTHONPATH=$PWD:$PYTHONPATH python -m pytest --pep8 deepcell tests
+  - PYTHONPATH=$PWD:$PYTHONPATH python -m pytest --cov=deepcell --pep8 deepcell tests
+after_success:
+  - coveralls
