@@ -30,7 +30,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
 
@@ -43,10 +42,7 @@ def _to_tensor(x, dtype):
     # Returns
         A tensor.
     """
-    x = tf.convert_to_tensor(x)
-    if x.dtype != dtype:
-        x = tf.cast(x, dtype)
-    return x
+    return tf.convert_to_tensor(x, dtype=dtype)
 
 
 def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from_logits=False):
@@ -64,16 +60,16 @@ def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
     if axis is None:
-        axis = 1 if K.image_data_format() == 'channels_first' else len(y_pred.get_shape()) - 1
+        axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
     if not from_logits:
         # scale preds so that the class probas of each sample sum to 1
-        y_pred = y_pred / tf.reduce_sum(y_pred, axis=axis, keepdims=True)
+        y_pred = y_pred / K.sum(y_pred, axis=axis, keepdims=True)
         # manual computation of crossentropy
         _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
         y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
         if class_weights is None:
-            return - tf.reduce_sum(y_true * tf.log(y_pred), axis=axis)
-        return - tf.reduce_sum(tf.multiply(y_true * tf.log(y_pred), class_weights), axis=axis)
+            return - K.sum(y_true * K.log(y_pred), axis=axis)
+        return - K.sum((y_true * K.log(y_pred) * class_weights), axis=axis)
     return tf.nn.softmax_cross_entropy_with_logits(labels=y_true, logits=y_pred)
 
 
@@ -91,23 +87,21 @@ def weighted_categorical_crossentropy(y_true, y_pred, n_classes=3, axis=None, fr
     # Returns
         Output tensor.
     """
-    # Note: tf.nn.softmax_cross_entropy_with_logits
-    # expects logits, Keras expects probabilities.
     if from_logits:
         raise Exception('weighted_categorical_crossentropy cannot take logits')
     if axis is None:
-        axis = 1 if K.image_data_format() == 'channels_first' else len(y_pred.get_shape()) - 1
-    reduce_axis = [x for x in list(range(len(y_pred.get_shape()))) if x != axis]
+        axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
+    reduce_axis = [x for x in list(range(K.ndim(y_pred))) if x != axis]
     # scale preds so that the class probas of each sample sum to 1
-    y_pred = y_pred / tf.reduce_sum(y_pred, axis=axis, keepdims=True)
+    y_pred = y_pred / K.sum(y_pred, axis=axis, keepdims=True)
     # manual computation of crossentropy
     _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
     y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
-    y_true_cast = tf.cast(y_true, K.floatx())
-    total_sum = tf.reduce_sum(y_true_cast)
-    class_sum = tf.reduce_sum(y_true_cast, axis=reduce_axis, keepdims=True)
-    class_weights = 1.0 / np.float(n_classes) * tf.divide(total_sum, class_sum + 1.)
-    return - tf.reduce_sum(tf.multiply(y_true * tf.log(y_pred), class_weights), axis=axis)
+    y_true_cast = K.cast(y_true, K.floatx())
+    total_sum = K.sum(y_true_cast)
+    class_sum = K.sum(y_true_cast, axis=reduce_axis, keepdims=True)
+    class_weights = 1.0 / K.cast_to_floatx(n_classes) * tf.divide(total_sum, class_sum + 1.)
+    return - K.sum((y_true * K.log(y_pred) * class_weights), axis=axis)
 
 
 def sample_categorical_crossentropy(y_true,
@@ -130,20 +124,20 @@ def sample_categorical_crossentropy(y_true,
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
     if axis is None:
-        axis = 1 if K.image_data_format() == 'channels_first' else len(y_pred.get_shape()) - 1
+        axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
     if not from_logits:
         # scale preds so that the class probabilities of each sample sum to 1
-        y_pred = y_pred / tf.reduce_sum(y_pred, axis=axis, keepdims=True)
+        y_pred = y_pred / K.sum(y_pred, axis=axis, keepdims=True)
 
         # Multiply with mask so that only the sampled pixels are used
-        y_pred = tf.multiply(y_pred, y_true)
+        y_pred = y_pred * y_true
 
         # manual computation of crossentropy
         _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
         y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
         if class_weights is None:
-            return - tf.reduce_sum(y_true * tf.log(y_pred), axis=axis)
-        return - tf.reduce_sum(tf.multiply(y_true * tf.log(y_pred), class_weights), axis=axis)
+            return - K.sum(y_true * K.log(y_pred), axis=axis)
+        return - K.sum((y_true * K.log(y_pred) * class_weights), axis=axis)
     return tf.nn.softmax_cross_entropy_with_logits(labels=y_true, logits=y_pred)
 
 
@@ -223,10 +217,10 @@ def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_l
     # manual computation of crossentropy
     _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
     y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
-    y_true_cast = tf.cast(y_true, K.floatx())
-    total_sum = tf.reduce_sum(y_true_cast)
-    class_sum = tf.reduce_sum(y_true_cast, axis=reduce_axis, keepdims=True)
-    class_weights = 1.0 / np.float(n_classes) * tf.divide(total_sum, class_sum + 1.)
-    temp_loss = tf.multiply(tf.pow(1. - y_pred, gamma) * tf.log(y_pred), class_weights)
-    focal_loss = - tf.reduce_sum(y_true * temp_loss, axis=axis)
+    y_true_cast = K.cast(y_true, K.floatx())
+    total_sum = K.sum(y_true_cast)
+    class_sum = K.sum(y_true_cast, axis=reduce_axis, keepdims=True)
+    class_weights = 1.0 / K.cast_to_floatx(n_classes) * tf.divide(total_sum, class_sum + 1.)
+    temp_loss = (K.pow(1. - y_pred, gamma) * K.log(y_pred) * class_weights)
+    focal_loss = - K.sum(y_true * temp_loss, axis=axis)
     return focal_loss
