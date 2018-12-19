@@ -153,7 +153,7 @@ def dice_loss(y_true, y_pred, smooth=1):
     return - ((2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth))
 
 
-def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order=2, gamma=1e-3):
+def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, gamma=1e-3):
     """Computes the discriminative instance loss
     # Arguments:
         y_true: A tensor of the same shape as `y_pred`.
