@@ -487,43 +487,6 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             save_prefix=save_prefix,
             save_format=save_format)
 
-    def standardize(self, x):
-        """Apply the normalization configuration to a batch of inputs.
-        # Arguments
-            x: batch of inputs to be normalized.
-        # Returns
-            The inputs, normalized.
-        """
-        if self.preprocessing_function:
-            x = self.preprocessing_function(x)
-        if self.rescale:
-            x *= self.rescale
-        # x is a single image, so it doesn't have image number at index 0
-        img_channel_axis = self.channel_axis - 1
-        if self.samplewise_center:
-            x -= np.mean(x, axis=img_channel_axis, keepdims=True)
-        if self.samplewise_std_normalization:
-            x /= (np.std(x, axis=img_channel_axis, keepdims=True) + K.epsilon())
-
-        if self.featurewise_center:
-            if self.mean is not None:
-                x -= self.mean
-            else:
-                logging.warning('This ImageDataGenerator specifies '
-                                '`featurewise_std_normalization`, but it hasn\'t '
-                                'been fit on any training data. Fit it '
-                                'first by calling `.fit(numpy_data)`.')
-        if self.featurewise_std_normalization:
-            if self.std is not None:
-                x /= (self.std + K.epsilon())
-            else:
-                logging.warning('This ImageDataGenerator specifies '
-                                '`featurewise_std_normalization`, but it hasn\'t '
-                                'been fit on any training data. Fit it '
-                                'first by calling `.fit(numpy_data)`.')
-
-        return x
-
     def random_transform(self, x, labels=None, seed=None):
         """Randomly augment a single image tensor.
         # Arguments
