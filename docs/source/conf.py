@@ -46,6 +46,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
+    'm2r',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -54,8 +55,8 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.md']
+# source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
@@ -179,7 +180,6 @@ epub_title = project
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
 
-
 # -- Extension configuration -------------------------------------------------
 autodoc_mock_imports=["tensorflow", "sklearn", "skimage", "nbformat", "cv2", "keras_retinanet", "keras_maskrcnn"]
 
@@ -187,3 +187,6 @@ autodoc_mock_imports=["tensorflow", "sklearn", "skimage", "nbformat", "cv2", "ke
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
+
+# -- Custom Additions --------------------------------------------------------
+

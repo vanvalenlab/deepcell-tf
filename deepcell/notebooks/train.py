@@ -51,7 +51,8 @@ def make_notebook(data,
                   **kwargs):
     """Create a training notebook that will step through the training
     process from making an npz file to creating and training a model.
-    # Arguments:
+    
+    Args:
         data: zipfile of data to load into npz and train on
         train_type: training method to use, either "sample" or "conv"
         field_size: receptive field of the model, a positive integer

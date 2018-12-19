@@ -24,6 +24,7 @@
 # limitations under the License.
 # ==============================================================================
 """HEK293 Nuclear Dataset"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -37,11 +38,13 @@ from deepcell.utils.data_utils import get_data
 
 
 def load_data(path='HEK293.npz'):
-    """Loads the MNIST dataset.
-    # Arguments
+    """Loads the HEK293 dataset.
+
+    Args:
         path: path where to cache the dataset locally
             (relative to ~/.keras/datasets).
-    # Returns
+    
+    Returns:
         Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
     """
     path = get_file(path,

@@ -7,6 +7,8 @@ Welcome to DeepCell
    :maxdepth: 2
    :caption: Start Here:
    
+   readme_link
+
 This should be Kiosk information and links to video tutorials
 
 .. toctree::
