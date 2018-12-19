@@ -1,2 +1,3 @@
-# empty requirements file for readthedocs
+m2r
+
 
