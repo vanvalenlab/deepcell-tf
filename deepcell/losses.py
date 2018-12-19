@@ -166,40 +166,43 @@ def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, order
         y_pred: A tensor of the vector embedding
     """
 
-    def temp_norm(ten, axis=-1):
-        return tf.sqrt(K.epsilon() + tf.reduce_sum(tf.square(ten), axis=axis))
+    def temp_norm(ten, axis=None):
+        if axis is None:
+            axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(ten) - 1
+        return K.sqrt(K.epsilon() + K.sum(K.square(ten), axis=axis))
 
-    channel_axis = 1 if K.image_data_format() == 'channels_first' else len(y_pred.get_shape()) - 1
-    other_axes = [x for x in list(range(len(y_pred.get_shape()))) if x != channel_axis]
+    rank = K.ndim(y_pred)
+    channel_axis = 1 if K.image_data_format() == 'channels_first' else rank - 1
+    axes = [x for x in list(range(rank)) if x != channel_axis]
 
     # Compute variance loss
-    cells_summed = tf.tensordot(y_true, y_pred, axes=[other_axes, other_axes])
-    n_pixels = tf.cast(tf.count_nonzero(y_true, axis=other_axes), dtype=K.floatx()) + K.epsilon()
-    n_pixels_expand = tf.expand_dims(n_pixels, axis=1) + K.epsilon()
+    cells_summed = tf.tensordot(y_true, y_pred, axes=[axes, axes])
+    n_pixels = K.cast(tf.count_nonzero(y_true, axis=axes), dtype=K.floatx()) + K.epsilon()
+    n_pixels_expand = K.expand_dims(n_pixels, axis=1) + K.epsilon()
     mu = tf.divide(cells_summed, n_pixels_expand)
 
-    delta_v = tf.constant(delta_v, dtype=K.floatx())
+    delta_v = K.constant(delta_v, dtype=K.floatx())
     mu_tensor = tf.tensordot(y_true, mu, axes=[[channel_axis], [0]])
     L_var_1 = y_pred - mu_tensor
-    L_var_2 = tf.square(tf.nn.relu(temp_norm(L_var_1, axis=channel_axis) - delta_v))
-    L_var_3 = tf.tensordot(L_var_2, y_true, axes=[other_axes, other_axes])
+    L_var_2 = K.square(K.relu(temp_norm(L_var_1) - delta_v))
+    L_var_3 = tf.tensordot(L_var_2, y_true, axes=[axes, axes])
     L_var_4 = tf.divide(L_var_3, n_pixels)
-    L_var = tf.reduce_mean(L_var_4)
+    L_var = K.mean(L_var_4)
 
     # Compute distance loss
-    mu_a = tf.expand_dims(mu, axis=0)
-    mu_b = tf.expand_dims(mu, axis=1)
+    mu_a = K.expand_dims(mu, axis=0)
+    mu_b = K.expand_dims(mu, axis=1)
 
     diff_matrix = tf.subtract(mu_b, mu_a)
-    L_dist_1 = temp_norm(diff_matrix, axis=channel_axis)
-    L_dist_2 = tf.square(tf.nn.relu(tf.constant(2 * delta_d, dtype=K.floatx()) - L_dist_1))
-    diag = tf.constant(0, dtype=K.floatx()) * tf.diag_part(L_dist_2)
+    L_dist_1 = temp_norm(diff_matrix)
+    L_dist_2 = K.square(K.relu(K.constant(2 * delta_d, dtype=K.floatx()) - L_dist_1))
+    diag = K.constant(0, dtype=K.floatx()) * tf.diag_part(L_dist_2)
     L_dist_3 = tf.matrix_set_diag(L_dist_2, diag)
-    L_dist = tf.reduce_mean(L_dist_3)
+    L_dist = K.mean(L_dist_3)
 
     # Compute regularization loss
-    L_reg = gamma * temp_norm(mu, axis=-1)
-    L = L_var + L_dist + tf.reduce_mean(L_reg)
+    L_reg = gamma * temp_norm(mu)
+    L = L_var + L_dist + K.mean(L_reg)
 
     return L
 
@@ -213,10 +216,10 @@ def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_l
     if from_logits:
         raise Exception('weighted_focal_loss cannot take logits')
     if axis is None:
-        axis = 1 if K.image_data_format() == 'channels_first' else len(y_pred.get_shape()) - 1
-    reduce_axis = [x for x in list(range(len(y_pred.get_shape()))) if x != axis]
+        axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
+    reduce_axis = [x for x in list(range(K.ndim(y_pred))) if x != axis]
     # scale preds so that the class probas of each sample sum to 1
-    y_pred = y_pred / tf.reduce_sum(y_pred, axis=axis, keepdims=True)
+    y_pred = y_pred / K.sum(y_pred, axis=axis, keepdims=True)
     # manual computation of crossentropy
     _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
     y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
