@@ -31,8 +31,8 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
-from tensorflow.keras.utils import multi_gpu_model
-from tensorflow.keras.models import Model
+from tensorflow.python.keras.utils import multi_gpu_model
+from tensorflow.python.keras.models import Model
 
 
 def rate_scheduler(lr=.001, decay=0.95):
