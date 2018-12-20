@@ -32,9 +32,9 @@ from __future__ import division
 
 import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
-from tensorflow.keras import backend as K
-from tensorflow.keras.layers import Layer
-from tensorflow.keras.layers import InputSpec
+from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.layers import Layer
+from tensorflow.python.keras.layers import InputSpec
 try:  # tf v1.9 moves conv_utils from _impl to keras.utils
     from tensorflow.python.keras.utils import conv_utils
 except ImportError:

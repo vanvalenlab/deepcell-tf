@@ -31,8 +31,8 @@ from __future__ import print_function
 from __future__ import division
 
 from tensorflow.python.ops import array_ops
-from tensorflow.keras.layers import ZeroPadding2D
-from tensorflow.keras.layers import ZeroPadding3D
+from tensorflow.python.keras.layers import ZeroPadding2D
+from tensorflow.python.keras.layers import ZeroPadding3D
 
 
 class ReflectionPadding2D(ZeroPadding2D):

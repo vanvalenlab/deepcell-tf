@@ -31,7 +31,7 @@ from __future__ import print_function
 import os
 
 import numpy as np
-from tensorflow.keras import backend as K
+from tensorflow.python.keras import backend as K
 from tensorflow.python.platform import test
 
 from deepcell.utils import data_utils
