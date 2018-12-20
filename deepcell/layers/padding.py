@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -31,8 +31,8 @@ from __future__ import print_function
 from __future__ import division
 
 from tensorflow.python.ops import array_ops
-from tensorflow.keras.layers import ZeroPadding2D
-from tensorflow.keras.layers import ZeroPadding3D
+from tensorflow.python.keras.layers import ZeroPadding2D
+from tensorflow.python.keras.layers import ZeroPadding3D
 
 
 class ReflectionPadding2D(ZeroPadding2D):

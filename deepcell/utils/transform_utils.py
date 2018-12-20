@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -47,7 +47,7 @@ def deepcell_transform(maskstack, dilation_radius=None, data_format=None):
         dilation_radius:  width to enlarge the edge feature of each instance
     # Returns:
         deepcell_stacks: masks of:
-        [background_edge_feature, interior_edge_feature, interior_feature, background]
+        [cell_background_edge, cell_cell_edge, cell_interior, background]
     """
     if data_format is None:
         data_format = K.image_data_format()

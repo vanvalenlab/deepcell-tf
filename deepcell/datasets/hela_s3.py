@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -28,6 +28,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+
 try:
     from tensorflow.python.keras.utils.data_utils import get_file
 except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
@@ -36,7 +38,7 @@ except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
 from deepcell.utils.data_utils import get_data
 
 
-def load_data(path='3T3_NIH.npz'):
+def load_data(path='HeLa_S3.npz', test_size=.2, seed=0):
     """Loads the MNIST dataset.
     # Arguments
         path: path where to cache the dataset locally
@@ -44,11 +46,19 @@ def load_data(path='3T3_NIH.npz'):
     # Returns
         Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
     """
+    basepath = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
+    prefix = path.split(os.path.sep)[:-1]
+    data_dir = os.path.join(basepath, *prefix) if prefix else basepath
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    elif not os.path.isdir(data_dir):
+        raise IOError('{} exists but is not a directory'.format(data_dir))
+
     path = get_file(path,
                     origin='https://deepcell-data.s3.amazonaws.com/nuclei/HeLa_S3.npz',
                     file_hash='42c631726713bbb180d4a0a07c2e8107')
 
-    train_dict, test_dict = get_data(path, seed=0, test_size=.2)
+    train_dict, test_dict = get_data(path, test_size=test_size, seed=seed)
 
     x_train, y_train = train_dict['X'], train_dict['y']
     x_test, y_test = test_dict['X'], test_dict['y']
