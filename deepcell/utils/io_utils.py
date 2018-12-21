@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -50,6 +50,31 @@ def get_immediate_subdirs(directory):
         a sorted list of child directories of given dir.  Will not return files.
     """
     return sorted([d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))])
+
+
+def count_image_files(directory, montage_mode=False):
+    """
+    Counts all image files inside the directory.
+    If montage_mode, counts 1 level deep and returns the minimum count.
+    Else, counts all child images of directory.
+    # Arguments:
+        directory: directory to look for child image files
+        montage_mode: whether ot not to look in subdirs of directory
+    # Returns:
+        number of image files found
+    """
+    def count_images(d):
+        valid_extensions = {'.tiff', '.tif', '.png', '.jpg', '.jpeg', '.bmp'}
+        count = 0
+        for f in os.listdir(directory):
+            _, ext = os.path.splitext(f.lower())
+            if ext in valid_extensions:
+                count += 1
+        return count
+
+    if not montage_mode:
+        return count_images(directory)
+    return min([count_images(d) for d in get_immediate_subdirs(directory)])
 
 
 def get_image(file_name):

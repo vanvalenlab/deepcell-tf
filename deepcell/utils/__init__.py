@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -33,6 +33,7 @@ from deepcell.utils import export_utils
 from deepcell.utils import io_utils
 from deepcell.utils import misc_utils
 from deepcell.utils import plot_utils
+from deepcell.utils import testing_utils
 from deepcell.utils import train_utils
 from deepcell.utils import transform_utils
 from deepcell.utils import retinanet_anchor_utils

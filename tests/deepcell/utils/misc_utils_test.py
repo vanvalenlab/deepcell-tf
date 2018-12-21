@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -30,19 +30,19 @@ from __future__ import print_function
 
 from tensorflow.python.platform import test
 
-from deepcell.utils.misc_utils import sorted_nicely
+from deepcell.utils import misc_utils
 
 
 class MiscUtilsTest(test.TestCase):
     def test_sorted_nicely(self):
         # test image file sorting
-        expected = ['test_image_001_dapi', 'test_image_002_dapi', 'test_image_003_dapi']
-        unsorted = ['test_image_003_dapi', 'test_image_001_dapi', 'test_image_002_dapi']
-        self.assertListEqual(expected, sorted_nicely(unsorted))
+        expected = ['test_001_dapi', 'test_002_dapi', 'test_003_dapi']
+        unsorted = ['test_003_dapi', 'test_001_dapi', 'test_002_dapi']
+        self.assertListEqual(expected, misc_utils.sorted_nicely(unsorted))
         # test montage folder sorting
-        expected = ['test_image_0_0', 'test_image_1_0', 'test_image_1_1']
-        unsorted = ['test_image_1_1', 'test_image_0_0', 'test_image_1_0']
-        self.assertListEqual(expected, sorted_nicely(unsorted))
+        expected = ['test_0_0', 'test_1_0', 'test_1_1']
+        unsorted = ['test_1_1', 'test_0_0', 'test_1_0']
+        self.assertListEqual(expected, misc_utils.sorted_nicely(unsorted))
 
 if __name__ == '__main__':
     test.main()

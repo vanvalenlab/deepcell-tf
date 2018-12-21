@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -126,7 +126,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask, distance_bins, erosion)
 
         # convert to one hot notation
-        y_transform = to_categorical(np.expand_dims(y_transform, axis=-1))
+        y_transform = np.expand_dims(y_transform, axis=-1)
+        y_transform = to_categorical(y_transform, num_classes=distance_bins)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 

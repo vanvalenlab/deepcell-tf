@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -35,6 +35,10 @@ import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Layer
+try:  # tf v1.9 moves conv_utils from _impl to keras.utils
+    from tensorflow.python.keras.utils import conv_utils
+except ImportError:
+    from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 
 class ImageNormalization2D(Layer):
@@ -42,7 +46,7 @@ class ImageNormalization2D(Layer):
         super(ImageNormalization2D, self).__init__(**kwargs)
         self.filter_size = filter_size
         self.norm_method = norm_method
-        self.data_format = K.image_data_format() if data_format is None else data_format
+        self.data_format = conv_utils.normalize_data_format(data_format)
 
         if self.data_format == 'channels_first':
             self.channel_axis = 1
@@ -63,9 +67,15 @@ class ImageNormalization2D(Layer):
         W /= W.size
         kernel = tf.Variable(W.astype(K.floatx()))
 
-        data_format = 'NCHW' if self.data_format == 'channels_first' else 'NHWC'
+        if self.data_format == 'channels_first':
+            inputs = tf.transpose(inputs, perm=[0, 2, 3, 1])
+
         outputs = tf.nn.depthwise_conv2d(inputs, kernel, [1, 1, 1, 1],
-                                         padding='SAME', data_format=data_format)
+                                         padding='SAME', data_format='NHWC')
+
+        if self.data_format == 'channels_first':
+            outputs = tf.transpose(outputs, perm=[0, 3, 1, 2])
+
         return outputs
 
     def _window_std_filter(self, inputs, epsilon=K.epsilon()):
@@ -75,9 +85,9 @@ class ImageNormalization2D(Layer):
         return output
 
     def _reduce_median(self, inputs, axes=None):
-        # TODO: top_k cannot take None as batch dimension, and tf.rank cannot be iterated
         input_shape = tf.shape(inputs)
         rank = tf.rank(inputs)
+        axes = [] if axes is None else axes
 
         new_shape = [input_shape[axis] for axis in range(rank) if axis not in axes]
         new_shape.append(-1)
@@ -127,7 +137,7 @@ class ImageNormalization3D(Layer):
         super(ImageNormalization3D, self).__init__(**kwargs)
         self.filter_size = filter_size
         self.norm_method = norm_method
-        self.data_format = K.image_data_format() if data_format is None else data_format
+        self.data_format = conv_utils.normalize_data_format(data_format)
 
         if self.data_format == 'channels_first':
             self.channel_axis = 1
@@ -149,10 +159,16 @@ class ImageNormalization3D(Layer):
         W /= W.size
         kernel = tf.Variable(W.astype(K.floatx()))
 
-        data_format = 'NCDHW' if self.data_format == 'channels_first' else 'NDHWC'
+        # data_format = 'NCDHW' if self.data_format == 'channels_first' else 'NDHWC'
+        if self.data_format == 'channels_first':
+            inputs = tf.transpose(inputs, perm=[0, 2, 3, 4, 1])
         # TODO: conv3d vs depthwise_conv2d?
         outputs = tf.nn.conv3d(inputs, kernel, [1, 1, 1, 1, 1],
-                               padding='SAME', data_format=data_format)
+                               padding='SAME', data_format='NDHWC')
+
+        if self.data_format == 'channels_first':
+            outputs = tf.transpose(outputs, perm=[0, 4, 1, 2, 3])
+
         return outputs
 
     def _window_std_filter(self, inputs, epsilon=K.epsilon()):
@@ -165,6 +181,7 @@ class ImageNormalization3D(Layer):
         # TODO: top_k cannot take None as batch dimension, and tf.rank cannot be iterated
         input_shape = tf.shape(inputs)
         rank = tf.rank(inputs)
+        axes = [] if axes is None else axes
 
         new_shape = [input_shape[axis] for axis in range(rank) if axis not in axes]
         new_shape.append(-1)

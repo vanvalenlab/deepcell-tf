@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -30,8 +30,9 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
-from tensorflow.keras.utils import multi_gpu_model
-from tensorflow.keras.models import Model
+from tensorflow.python.keras.utils import multi_gpu_model
+from tensorflow.python.keras.models import Model
+from tensorflow.python.client import device_lib
 
 
 def rate_scheduler(lr=.001, decay=0.95):
@@ -40,6 +41,12 @@ def rate_scheduler(lr=.001, decay=0.95):
         new_lr = lr * (decay ** epoch)
         return new_lr
     return output_fn
+
+
+def count_gpus():
+    devices = device_lib.list_local_devices()
+    gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
+    return len(gpus)
 
 
 class MultiGpuModel(Model):

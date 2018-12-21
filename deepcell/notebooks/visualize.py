@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -87,4 +87,8 @@ def make_notebook(model_output,
     nb = nbf.v4.new_notebook(cells=cells)
     ts = time.time()
     st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-    nbf.write(nb, os.path.join(output_dir, 'visualize_{}.ipynb'.format(st)))
+    notebook_path = os.path.join(output_dir, 'visualize_{}.ipynb'.format(st))
+    # spaces in filenames can be complicated
+    notebook_path = notebook_path.replace(' ', '_')
+    nbf.write(nb, notebook_path)
+    return notebook_path

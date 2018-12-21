@@ -1,10 +1,13 @@
 # DeepCell: Deep Learning for Single Cell Analysis
 
+[![Build Status](https://travis-ci.org/vanvalenlab/deepcell-tf.svg?branch=master)](https://travis-ci.org/vanvalenlab/deepcell-tf)
+[![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master)
+
 DeepCell is neural network library for single cell analysis, written in Python and built using [TensorFlow](https://github.com/tensorflow/tensorflow) and [Keras](https://github.com/keras-team/keras).  
 
 DeepCell aids in biological analysis by automatically segmenting and classifying cells in optical microscopy images. This framework consumes raw images and provides uniquely annotated files as an output.
 
-Read the documentaiton at [deepcell.readthedocs.io](deepcell.readthedocs.io) 
+Read the documentaiton at [deepcell.readthedocs.io](deepcell.readthedocs.io)
 
 ## Getting Started
 
@@ -74,7 +77,7 @@ It can also be helpful to mount the local copy of the repository and the scripts
 NV_GPU='0' nvidia-docker run -it \
   -p 8888:8888 \
   -v $PWD/deepcell:/usr/local/lib/python3.5/dist-packages/deepcell/ \
-  -v $PWD/scripts:/deepcell-tf/scripts \
+  -v $PWD/scripts:/notebooks \
   -v /data:/data \
   $USER/deepcell-tf:latest
 ```

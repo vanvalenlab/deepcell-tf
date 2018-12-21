@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -264,7 +264,7 @@ class TestSampleDataGenerator(test.TestCase):
 
             img_w, img_h = 21, 21
             win_x, win_y = 2, 2
-            test_batches = 8
+            test_batches = 3
 
             # Basic test before fit
             train_dict = {
@@ -319,7 +319,7 @@ class TestSampleDataGenerator(test.TestCase):
 
             img_w, img_h = 21, 21
             win_x, win_y = 2, 2
-            test_batches = 8
+            test_batches = 3
 
             # Basic test before fit
             train_dict = {
@@ -429,7 +429,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
 
             img_w, img_h = 21, 21
             win_x, win_y, win_z = 2, 2, 2
-            test_batches = 8
+            test_batches = 3
 
             # Basic test before fit
             train_dict = {
@@ -494,7 +494,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
 
             img_w, img_h = 21, 21
             win_x, win_y, win_z = 2, 2, 2
-            test_batches = 8
+            test_batches = 3
 
             # Basic test before fit
             train_dict = {

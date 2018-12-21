@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -33,15 +33,15 @@ import datetime
 import os
 
 import numpy as np
-from tensorflow.keras import backend as K
-from tensorflow.keras import callbacks
-from tensorflow.keras.optimizers import SGD
-from tensorflow.python.client import device_lib
+from tensorflow.python.keras import backend as K
+from tensorflow.python.keras import callbacks
+from tensorflow.python.keras.optimizers import SGD
 
 from deepcell import losses
-from deepcell import image_generators as generators
+from deepcell import image_generators
+from deepcell.utils import train_utils
 from deepcell.utils.data_utils import get_data
-from deepcell.utils.train_utils import rate_scheduler, MultiGpuModel
+from deepcell.utils.train_utils import rate_scheduler
 
 
 def train_model_sample(model,
@@ -56,8 +56,8 @@ def train_model_sample(model,
                        balance_classes=True,
                        max_class_samples=None,
                        log_dir='/data/tensorboard_logs',
-                       direc_save='/data/models',
-                       direc_data='/data/npz_data',
+                       model_dir='/data/models',
+                       model_name=None,
                        focal=False,
                        gamma=0.5,
                        optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
@@ -69,13 +69,14 @@ def train_model_sample(model,
                        **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
-    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    basename = '{}_{}_{}'.format(todays_date, dataset, expt)
-    file_name_save = os.path.join(direc_save, '{}.h5'.format(basename))
-    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(basename))
+    if model_name is None:
+        todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        data_name = os.path.splitext(os.path.basename(dataset))[0]
+        model_name = '{}_{}_{}'.format(todays_date, data_name, expt)
+    model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
+    loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
-    training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    train_dict, test_dict = get_data(training_data_file_name, mode='sample', test_size=test_size)
+    train_dict, test_dict = get_data(dataset, mode='sample', test_size=test_size)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
 
@@ -97,23 +98,21 @@ def train_model_sample(model,
             y_true, y_pred, n_classes=n_classes)
 
     if num_gpus is None:
-        devices = device_lib.list_local_devices()
-        gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
-        num_gpus = len(gpus)
+        num_gpus = train_utils.count_gpus()
 
     if num_gpus >= 2:
         batch_size = batch_size * num_gpus
-        model = MultiGpuModel(model, num_gpus)
+        model = train_utils.MultiGpuModel(model, num_gpus)
 
     print('Training on {} GPUs'.format(num_gpus))
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
     if train_dict['X'].ndim == 4:
-        DataGenerator = generators.SampleDataGenerator
+        DataGenerator = image_generators.SampleDataGenerator
         window_size = window_size if window_size else (30, 30)
     elif train_dict['X'].ndim == 5:
-        DataGenerator = generators.SampleMovieDataGenerator
+        DataGenerator = image_generators.SampleMovieDataGenerator
         window_size = window_size if window_size else (30, 30, 3)
     else:
         raise ValueError('Expected `X` to have ndim 4 or 5. Got',
@@ -163,12 +162,12 @@ def train_model_sample(model,
         callbacks=[
             callbacks.LearningRateScheduler(lr_sched),
             callbacks.ModelCheckpoint(
-                file_name_save, monitor='val_loss', verbose=1,
+                model_path, monitor='val_loss', verbose=1,
                 save_best_only=True, save_weights_only=num_gpus >= 2),
-            callbacks.TensorBoard(log_dir=os.path.join(log_dir, basename))
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, model_name))
         ])
 
-    np.savez(file_name_save_loss, loss_history=loss_history.history)
+    np.savez(loss_path, loss_history=loss_history.history)
 
     return model
 
@@ -184,8 +183,8 @@ def train_model_conv(model,
                      transform=None,
                      optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
                      log_dir='/data/tensorboard_logs',
-                     direc_save='/data/models',
-                     direc_data='/data/npz_data',
+                     model_dir='/data/models',
+                     model_name=None,
                      focal=False,
                      gamma=0.5,
                      lr_sched=rate_scheduler(lr=0.01, decay=0.95),
@@ -196,13 +195,14 @@ def train_model_conv(model,
                      **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
-    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    basename = '{}_{}_{}'.format(todays_date, dataset, expt)
-    file_name_save = os.path.join(direc_save, '{}.h5'.format(basename))
-    file_name_save_loss = os.path.join(direc_save, '{}.npz'.format(basename))
+    if model_name is None:
+        todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        data_name = os.path.splitext(os.path.basename(dataset))[0]
+        model_name = '{}_{}_{}'.format(todays_date, data_name, expt)
+    model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
+    loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
-    training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    train_dict, test_dict = get_data(training_data_file_name, mode='conv', test_size=test_size)
+    train_dict, test_dict = get_data(dataset, mode='conv', test_size=test_size)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
     # the data, shuffled and split between train and test sets
@@ -223,13 +223,11 @@ def train_model_conv(model,
             y_true, y_pred, n_classes=n_classes)
 
     if num_gpus is None:
-        devices = device_lib.list_local_devices()
-        gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
-        num_gpus = len(gpus)
+        num_gpus = train_utils.count_gpus()
 
     if num_gpus >= 2:
         batch_size = batch_size * num_gpus
-        model = MultiGpuModel(model, num_gpus)
+        model = train_utils.MultiGpuModel(model, num_gpus)
 
     print('Training on {} GPUs'.format(num_gpus))
 
@@ -241,9 +239,9 @@ def train_model_conv(model,
         skip = None
 
     if train_dict['X'].ndim == 4:
-        DataGenerator = generators.ImageFullyConvDataGenerator
+        DataGenerator = image_generators.ImageFullyConvDataGenerator
     elif train_dict['X'].ndim == 5:
-        DataGenerator = generators.MovieDataGenerator
+        DataGenerator = image_generators.MovieDataGenerator
     else:
         raise ValueError('Expected `X` to have ndim 4 or 5. Got',
                          train_dict['X'].ndim)
@@ -319,13 +317,13 @@ def train_model_conv(model,
         callbacks=[
             callbacks.LearningRateScheduler(lr_sched),
             callbacks.ModelCheckpoint(
-                file_name_save, monitor='val_loss', verbose=1,
+                model_path, monitor='val_loss', verbose=1,
                 save_best_only=True, save_weights_only=num_gpus >= 2),
-            callbacks.TensorBoard(log_dir=os.path.join(log_dir, basename))
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, model_name))
         ])
 
-    model.save_weights(file_name_save)
-    np.savez(file_name_save_loss, loss_history=loss_history.history)
+    model.save_weights(model_path)
+    np.savez(loss_path, loss_history=loss_history.history)
 
     return model
 
@@ -371,13 +369,13 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
     print('Using real-time data augmentation.')
 
     # this will do preprocessing and realtime data augmentation
-    datagen = generators.SiameseDataGenerator(
+    datagen = image_generators.SiameseDataGenerator(
         rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=flip,  # randomly flip images
         vertical_flip=flip)  # randomly flip images
 
-    datagen_val = generators.SiameseDataGenerator(
+    datagen_val = image_generators.SiameseDataGenerator(
         rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
         shear_range=0,  # randomly shear images in the range (radians , -shear_range to shear_range)
         horizontal_flip=0,  # randomly flip images

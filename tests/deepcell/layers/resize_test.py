@@ -23,27 +23,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for train_utils"""
+"""Tests for the resize layers"""
 from __future__ import absolute_import
-from __future__ import division
 from __future__ import print_function
+from __future__ import division
 
+from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.platform import test
 
-from deepcell.utils.train_utils import rate_scheduler
+from deepcell.utils import testing_utils
+from deepcell import layers
 
 
-class TrainUtilsTest(test.TestCase):
-    def test_rate_scheduler(self):
-        # if decay is small, learning rate should decrease as epochs increase
-        rs = rate_scheduler(lr=.001, decay=.95)
-        self.assertGreater(rs(1), rs(2))
-        # if decay is large, learning rate should increase as epochs increase
-        rs = rate_scheduler(lr=.001, decay=1.05)
-        self.assertLess(rs(1), rs(2))
-        # if decay is 1, learning rate should not change
-        rs = rate_scheduler(lr=.001, decay=1)
-        self.assertEqual(rs(1), rs(2))
+class ResizeTest(test.TestCase):
 
-if __name__ == '__main__':
-    test.main()
+    @tf_test_util.run_in_graph_and_eager_modes()
+    def test_resize_2d(self):
+        with self.test_session(use_gpu=True):
+            testing_utils.layer_test(
+                layers.Resize2D,
+                kwargs={'scale': 2},
+                custom_objects={'Resize2D': layers.Resize2D},
+                input_shape=(3, 5, 6, 4))
+            testing_utils.layer_test(
+                layers.Resize2D,
+                kwargs={'scale': 3,
+                        'data_format': 'channels_first'},
+                custom_objects={'Resize2D': layers.Resize2D},
+                input_shape=(3, 5, 6, 4))

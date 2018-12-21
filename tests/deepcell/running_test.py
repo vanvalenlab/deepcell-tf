@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -123,12 +123,6 @@ class RunningTests(test.TestCase):
         padded = running.get_padding_layers(model)
         self.assertEqual(len(padded), 0)
 
-        # test skip connection
-        n_skips = 2
-        model = model_zoo.bn_feature_net_skip_2D(
-            padding_mode='reflect', n_skips=n_skips)
-        padded = running.get_padding_layers(model)
-        self.assertEqual(len(padded), n_skips + 1)
 
 if __name__ == '__main__':
     test.main()

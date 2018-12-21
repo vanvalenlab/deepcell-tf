@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -46,6 +46,7 @@ from deepcell.utils.io_utils import get_image
 from deepcell.utils.io_utils import get_image_sizes
 from deepcell.utils.io_utils import nikon_getfiles
 from deepcell.utils.io_utils import get_immediate_subdirs
+from deepcell.utils.io_utils import count_image_files
 from deepcell.utils.misc_utils import sorted_nicely
 
 
@@ -680,7 +681,7 @@ def make_training_data_3d(direc_name,
                           raw_image_direc='raw',
                           annotation_direc='annotated',
                           reshape_size=None,
-                          num_frames=50,
+                          num_frames=None,
                           montage_mode=True):
     """
     Read all images in training directories and save as npz file
@@ -708,6 +709,19 @@ def make_training_data_3d(direc_name,
         rand_train_dir = os.path.join(rand_train_dir, random.choice(os.listdir(rand_train_dir)))
 
     image_size = get_image_sizes(rand_train_dir, channel_names)
+
+    if num_frames is None:
+        raw = [os.path.join(direc_name, t, raw_image_direc) for t in training_direcs]
+        ann = [os.path.join(direc_name, t, annotation_direc) for t in training_direcs]
+        if montage_mode:
+            raw = [os.path.join(r, d) for r in raw for d in os.listdir(r)]
+            ann = [os.path.join(a, d) for a in ann for d in os.listdir(a)]
+        # use all images if not set
+        # will select the first N images where N is the smallest
+        # number of images in each subdir of all training_direcs
+        num_frames_raw = min([count_image_files(f) for f in raw])
+        num_frames_ann = min([count_image_files(f) for f in ann])
+        num_frames = min(num_frames_raw, num_frames_ann)
 
     X = load_training_images_3d(direc_name, training_direcs,
                                 raw_image_direc=raw_image_direc,
