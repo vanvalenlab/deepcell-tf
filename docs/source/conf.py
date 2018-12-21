@@ -14,6 +14,7 @@
 #
 import os
 import sys
+import shlex
 sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
 
@@ -21,7 +22,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'DeepCell'
-copyright = '2016-2018, David Van Valen at the California Institute of Technology (Caltech)'
+copyright = '2016-2018, Van Valen Lab at the California Institute of Technology (Caltech)'
 author = 'Van Valen Lab at Caltech'
 
 # The short X.Y version
@@ -185,8 +186,11 @@ autodoc_mock_imports=["tensorflow", "sklearn", "skimage", "nbformat", "cv2", "ke
 
 # -- Options for intersphinx extension ---------------------------------------
 
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {
+    'kiosk': ('https://deepcell-kiosk.readthedocs.io/en/latest/', None),
+}
+
+intersphinx_cache_limit = 0
 
 # -- Custom Additions --------------------------------------------------------
 
