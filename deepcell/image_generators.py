@@ -57,10 +57,12 @@ except ImportError:
 from keras_retinanet.preprocessing.generator import Generator as _RetinaNetGenerator
 from keras_maskrcnn.preprocessing.generator import Generator as _MaskRCNNGenerator
 
-from deepcell.utils.data_utils import sample_label_matrix, sample_label_movie
+from deepcell.utils.data_utils import sample_label_matrix
+from deepcell.utils.data_utils import sample_label_movie
 from deepcell.utils.transform_utils import transform_matrix_offset_center
 from deepcell.utils.transform_utils import deepcell_transform
-from deepcell.utils.transform_utils import distance_transform_2d, distance_transform_3d
+from deepcell.utils.transform_utils import distance_transform_2d
+from deepcell.utils.transform_utils import distance_transform_3d
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
 
 
