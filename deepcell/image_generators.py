@@ -945,7 +945,6 @@ class MovieArrayIterator(Iterator):
     Each data set contains a data movie (X) and a label movie (y)
     The label movie is the same dimension as the channel movie with each pixel
     having its corresponding prediction
-
     """
 
     def __init__(self,

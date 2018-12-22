@@ -154,7 +154,7 @@ def sample_categorical_crossentropy(y_true,
 
 
 def dice_loss(y_true, y_pred, smooth=1):
-    """DICE loss between an output tensor and a target tensor.
+    """Dice coefficient loss between an output tensor and a target tensor.
 
     Args:
         y_true: A tensor of the same shape as `y_pred`.

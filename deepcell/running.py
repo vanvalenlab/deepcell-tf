@@ -42,8 +42,7 @@ from deepcell.utils.io_utils import get_images_from_directory
 
 
 def get_cropped_input_shape(images, num_crops=4, receptive_field=61, data_format=None):
-    """Helper function to calculate the input_shape for models
-    that will process cropped sub-images.
+    """Calculate the input_shape for models to process cropped sub-images.
 
     Args:
         images: numpy array of original data
@@ -82,7 +81,7 @@ def get_cropped_input_shape(images, num_crops=4, receptive_field=61, data_format
 
 
 def get_padding_layers(model):
-    """Get all names of padding layers in the model
+    """Get all names of padding layers in a model
 
     Args:
         model: Keras model

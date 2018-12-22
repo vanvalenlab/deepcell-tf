@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Automatically generate a notebook for analyzing predicted images"""
+"""Automatically generate Jupyter notebooks for analyzing segmented images"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -40,7 +40,8 @@ import nbformat as nbf
 # Create Visual Notebook
 def make_notebook(model_output,
                   output_dir=os.path.join('scripts', 'generated_notebooks')):
-    """Create a notebook that will help visualize the output of a deep learning model
+    """Create a notebook that will help visualize the output of a
+    deep learning model.
 
     Args:
         model_output: output of a deep learning model to visualize

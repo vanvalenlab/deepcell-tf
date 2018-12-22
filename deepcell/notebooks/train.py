@@ -23,10 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Automated Jupyter Notebook Creation and Server Instantiation
-Users can select specific default Jupyter Notebook templates and
-enter values for customization. Jupyter Notebook Servers will be
-automatically spun up."""
+"""Generate Jupyter notebooks for training deep learning models."""
 
 from __future__ import absolute_import
 from __future__ import division
