@@ -41,11 +41,10 @@ from deepcell.utils.misc_utils import sorted_nicely
 
 
 def get_immediate_subdirs(directory):
-    """
-    Get all DIRECTORIES that are immediate children of a given directory
+    """Get all DIRECTORIES that are immediate children of a given directory
 
     Args:
-        dir: a filepath to a directory
+        directory: a filepath to a directory
 
     Returns:
         a sorted list of child directories of given dir.  Will not return files.
@@ -54,17 +53,16 @@ def get_immediate_subdirs(directory):
 
 
 def count_image_files(directory, montage_mode=False):
-    """
-    Counts all image files inside the directory.
+    """Counts all image files inside the directory.
     If montage_mode, counts 1 level deep and returns the minimum count.
     Else, counts all child images of directory.
 
-    # Args:
+    Args:
         directory: directory to look for child image files
         montage_mode: whether ot not to look in subdirs of directory
-        
-    # Returns:
-        number of image files found
+
+    Returns:
+        the number of image files in the directory
     """
     def count_images(d):
         valid_extensions = {'.tiff', '.tif', '.png', '.jpg', '.jpeg', '.bmp'}
@@ -81,8 +79,13 @@ def count_image_files(directory, montage_mode=False):
 
 
 def get_image(file_name):
-    """
-    Read image from file and load into numpy array
+    """Read image from file and returns it as a tensor
+
+    Args:
+        file_name: path to image file
+
+    Returns:
+        numpy array of image data
     """
     ext = os.path.splitext(file_name.lower())[-1]
     if ext == '.tif' or ext == '.tiff':
@@ -91,9 +94,15 @@ def get_image(file_name):
 
 
 def nikon_getfiles(direc_name, channel_name):
-    """
-    Return all image filenames in direc_name with
-    channel_name in the filename
+    """Return a sorted list of files inside `direc_name`
+    with `channel_name` in the filename.
+
+    Args:
+        direc_name: directory to find image files
+        channel_name: wildcard filter for filenames
+
+    Returns:
+        sorted list of files inside `direc_name`.
     """
     imglist = os.listdir(direc_name)
     imgfiles = [i for i in imglist if channel_name in i]
@@ -111,9 +120,14 @@ def get_image_sizes(data_location, channel_names):
 
 
 def get_images_from_directory(data_location, channel_names):
-    """
-    Read all images from directory with channel_name in the filename
-    Return them in a numpy array
+    """Read all images from directory with channel_name in the filename
+
+    Args:
+        data_location: folder containing image files
+        channel_names: list of wildcards to select filenames
+
+    Returns:
+        numpy array of each image in the directory
     """
     data_format = K.image_data_format()
     img_list_channels = []

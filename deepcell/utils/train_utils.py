@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Utilities training neural nets"""
+"""Utilities for training neural nets"""
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -36,6 +36,15 @@ from tensorflow.python.client import device_lib
 
 
 def rate_scheduler(lr=.001, decay=0.95):
+    """Schedule the learning rate based on the epoch.
+
+    Args:
+        lr: initial learning rate
+        decay: rate of decay of the learning rate
+
+    Returns:
+        A function that takes in the epoch and returns a learning rate.
+    """
     def output_fn(epoch):
         epoch = np.int(epoch)
         new_lr = lr * (decay ** epoch)
@@ -44,6 +53,11 @@ def rate_scheduler(lr=.001, decay=0.95):
 
 
 def count_gpus():
+    """Get the number of available GPUs.
+
+    Returns:
+        count of GPUs as integer
+    """
     devices = device_lib.list_local_devices()
     gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
     return len(gpus)

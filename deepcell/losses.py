@@ -50,7 +50,7 @@ def categorical_crossentropy(y_true, y_pred,
                              class_weights=None,
                              axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
-    
+
     Args:
         y_true: A tensor of the same shape as `output`.
         y_pred: A tensor resulting from a softmax
@@ -84,7 +84,7 @@ def weighted_categorical_crossentropy(y_true, y_pred,
     """Categorical crossentropy between an output tensor and a target tensor.
     Automatically computes the class weights from the target image and uses
     them to weight the cross entropy
-    
+
     Args:
         y_true: A tensor of the same shape as `y_pred`.
         y_pred: A tensor resulting from a softmax
@@ -119,7 +119,8 @@ def sample_categorical_crossentropy(y_true,
                                     axis=None,
                                     from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
-    Only the sampled pixels defined by y_true = 1 are used to compute the cross entropy
+    Only the sampled pixels defined by y_true = 1 are used to compute the
+    cross entropy.
 
     Args:
         y_true: A tensor of the same shape as `y_pred`.
@@ -153,14 +154,14 @@ def sample_categorical_crossentropy(y_true,
 
 
 def dice_loss(y_true, y_pred, smooth=1):
-    """Computes the dice loss
+    """DICE loss between an output tensor and a target tensor.
 
     Args:
         y_true: A tensor of the same shape as `y_pred`.
         y_pred: A tensor resulting from a softmax
 
     Returns:
-        dice loss
+        Output tensor.
     """
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
@@ -168,18 +169,18 @@ def dice_loss(y_true, y_pred, smooth=1):
     return - ((2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth))
 
 
-    """Computes the discriminative instance loss
 def discriminative_instance_loss(y_true, y_pred,
                                  delta_v=0.5,
                                  delta_d=1.5,
                                  gamma=1e-3):
+    """Discriminative loss between an output tensor and a target tensor.
 
     Args:
         y_true: A tensor of the same shape as `y_pred`.
         y_pred: A tensor of the vector embedding
 
     Returns:
-        loss
+        Output tensor.
     """
 
     def temp_norm(ten, axis=None):
@@ -224,14 +225,20 @@ def discriminative_instance_loss(y_true, y_pred,
 
 
 def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_logits=False):
-    """Computes focal loss with class weights computed on the fly
-    
+    """Focal loss between an output tensor and a target tensor.
+    Automatically computes the class weights from the target image and uses
+    them to weight the cross entropy
+
     Args:
         y_true: A tensor of the same shape as `y_pred`.
         y_pred: A tensor resulting from a softmax
+        (unless `from_logits` is True, in which
+        case `y_pred` is expected to be the logits).
+        from_logits: Boolean, whether `y_pred` is the
+        result of a softmax, or is a tensor of logits.
 
     Returns:
-        focal loss
+        Output tensor.
     """
     if from_logits:
         raise Exception('weighted_focal_loss cannot take logits')
