@@ -1127,7 +1127,9 @@ class SampleMovieArrayIterator(Iterator):
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
         self.x = np.asarray(X, dtype=K.floatx())
-        y = _transform_masks(y, transform, data_format=data_format)
+        y = _transform_masks(y, transform,
+                             data_format=data_format,
+                             **transform_kwargs)
 
         if self.x.ndim != 5:
             raise ValueError('Input data in `SampleMovieArrayIterator` '

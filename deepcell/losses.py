@@ -46,7 +46,9 @@ def _to_tensor(x, dtype):
     return tf.convert_to_tensor(x, dtype=dtype)
 
 
-def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from_logits=False):
+def categorical_crossentropy(y_true, y_pred,
+                             class_weights=None,
+                             axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
     
     Args:
@@ -76,7 +78,9 @@ def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from
     return tf.nn.softmax_cross_entropy_with_logits(labels=y_true, logits=y_pred)
 
 
-def weighted_categorical_crossentropy(y_true, y_pred, n_classes=3, axis=None, from_logits=False):
+def weighted_categorical_crossentropy(y_true, y_pred,
+                                      n_classes=3, axis=None,
+                                      from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
     Automatically computes the class weights from the target image and uses
     them to weight the cross entropy
@@ -164,8 +168,11 @@ def dice_loss(y_true, y_pred, smooth=1):
     return - ((2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth))
 
 
-def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, gamma=1e-3):
     """Computes the discriminative instance loss
+def discriminative_instance_loss(y_true, y_pred,
+                                 delta_v=0.5,
+                                 delta_d=1.5,
+                                 gamma=1e-3):
 
     Args:
         y_true: A tensor of the same shape as `y_pred`.
