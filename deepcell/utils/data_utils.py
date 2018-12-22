@@ -122,9 +122,17 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='vali
 
 def sample_label_matrix(y, window_size=(30, 30), padding='valid',
                         max_training_examples=1e7, data_format=None):
-    """Create a list of the maximum pixels to sample
-    from each feature in each data set.
+    """Sample a 4D Tensor, creating many small images of shape `window_size`.
 
+    Args:
+        y: label masks with the same shape as `X` data
+        window_size: size of window around each pixel to sample
+        padding: padding type `valid` or `same`
+        max_training_examples: max number of samples per class
+        data_format: `channels_first` or `channels_last`
+
+    Returns:
+        4 arrays of coordinates of each sampled pixel
     """
     data_format = conv_utils.normalize_data_format(data_format)
     is_channels_first = data_format == 'channels_first'
@@ -186,10 +194,17 @@ def sample_label_matrix(y, window_size=(30, 30), padding='valid',
 
 def sample_label_movie(y, window_size=(30, 30, 5), padding='valid',
                        max_training_examples=1e7, data_format=None):
-    """Create a list of the maximum pixels to sample from each feature in each
-    data set. If output_mode is 'sample', then this will be set to the number
-    of edge pixels. If not, it will be set to np.Inf, i.e. sampling everything.
+    """Sample a 5D Tensor, creating many small voxels of shape `window_size`.
 
+    Args:
+        y: label masks with the same shape as `X` data
+        window_size: size of window around each pixel to sample
+        padding: padding type `valid` or `same`
+        max_training_examples: max number of samples per class
+        data_format: `channels_first` or `channels_last`
+
+    Returns:
+        5 arrays of coordinates of each sampled pixel
     """
     data_format = conv_utils.normalize_data_format(data_format)
     is_channels_first = data_format == 'channels_first'
@@ -296,6 +311,13 @@ def reshape_matrix(X, y, reshape_size=256):
     Adds overlapping slices to batches.
     E.g. reshape_size of 256 yields (1, 1024, 1024, 1) -> (16, 256, 256, 1)
 
+    Args:
+        X: raw 4D image tensor
+        y: label mask of 4D image data
+        reshape_size: size of the square output tensor
+
+    Returns:
+        reshaped `X` and `y` tensors in shape (`reshape_size`, `reshape_size`)
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     if X.ndim != 4:
@@ -346,7 +368,14 @@ def reshape_matrix(X, y, reshape_size=256):
 
 
 def relabel_movie(y):
-    """Relabels unique instance IDs to be from 1 to N"""
+    """Relabels unique instance IDs to be from 1 to N
+
+    Args:
+        y: tensor of integer labels
+
+    Returns:
+        relabeled tensor with sequential labels
+    """
     new_y = np.zeros(y.shape)
     unique_cells = np.unique(y)  # get all unique values of y
     unique_cells = np.delete(unique_cells, 0)  # remove 0, as it is background
@@ -362,6 +391,14 @@ def reshape_movie(X, y, reshape_size=256):
     Reshape tensor of dimension 5 to have x and y of size reshape_size.
     Adds overlapping slices to batches.
     E.g. reshape_size of 256 yields (1, 5, 1024, 1024, 1) -> (16, 5, 256, 256, 1)
+
+    Args:
+        X: raw 5D image tensor
+        y: label mask of 5D image tensor
+        reshape_size: size of the square output tensor
+
+    Returns:
+        reshaped `X` and `y` tensors in shape (`reshape_size`, `reshape_size`)
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     if X.ndim != 5:
@@ -424,6 +461,9 @@ def load_training_images_2d(direc_name,
         raw_image_direc: directory name inside each training dir with raw images
         channel_names: Loads all raw images with a channel_name in the filename
         image_size: size of each image as tuple (x, y)
+
+    Returns:
+        4D tensor of image data
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     # Unpack size tuples
@@ -472,6 +512,9 @@ def load_annotated_images_2d(direc_name,
         annotation_direc: directory name inside each training dir with masks
         annotation_name: Loads all masks with annotation_name in the filename
         image_size: size of each image as tuple (x, y)
+
+    Returns:
+        4D tensor of label masks
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     # Unpack size tuple
@@ -516,8 +559,7 @@ def make_training_data_2d(direc_name,
                           annotation_name='feature',
                           training_direcs=None,
                           reshape_size=None):
-    """
-    Read all images in training directories and save as npz file.
+    """Read all images in training directories and save as npz file.
 
     Args:
         direc_name: directory containing folders of training data
@@ -568,6 +610,9 @@ def load_training_images_3d(direc_name,
         image_size: size of each image as tuple (x, y)
         num_frames: number of frames to load from each training directory
         montage_mode: load masks from "montaged" subdirs inside annotation_direc
+
+    Returns:
+        5D tensor of raw image data
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     image_size_x, image_size_y = image_size
@@ -630,6 +675,9 @@ def load_annotated_images_3d(direc_name,
         image_size: size of each image as tuple (x, y)
         num_frames: number of frames to load from each training directory
         montage_mode: load masks from "montaged" subdirs inside annotation_direc
+
+    Returns:
+        5D tensor of image label masks
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     image_size_x, image_size_y = image_size
@@ -683,8 +731,7 @@ def make_training_data_3d(direc_name,
                           reshape_size=None,
                           num_frames=None,
                           montage_mode=True):
-    """
-    Read all images in training directories and save as npz file
+    """Read all images in training directories and save as npz file.
     3D image sets are "stacks" of images. For annotation purposes, these images
     have been sliced into "montages", where a section of each stack has been
     sliced for efficient annotated by humans. The raw_image_direc should be a
@@ -756,16 +803,15 @@ def make_training_data(direc_name,
                        annotation_name='feature',
                        reshape_size=None,
                        **kwargs):
-    """
-    Wrapper function for other make_training_data functions (2d, 3d)
-    Calls one of the above functions based on the dimensionality of the data
+    """Wrapper function for other make_training_data functions (2d, 3d)
+    Calls one of the above functions based on the dimensionality of the data.
     """
     # Validate Arguments
-    if not isinstance(dimensionality, int) and not isinstance(dimensionality, float):
+    if not isinstance(dimensionality, (int, float)):
         raise ValueError('Data dimensionality should be an integer value, typically 2 or 3. '
                          'Recieved {}'.format(type(dimensionality).__name__))
 
-    if not isinstance(channel_names, list):
+    if not isinstance(channel_names, (list,)):
         raise ValueError('channel_names should be a list of strings (e.g. [\'DAPI\']). '
                          'Found {}'.format(type(channel_names).__name__))
 

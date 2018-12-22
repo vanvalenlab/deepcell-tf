@@ -41,15 +41,16 @@ from deepcell.utils.misc_utils import sorted_nicely
 
 
 def get_immediate_subdirs(directory):
-    """Get all DIRECTORIES that are immediate children of a given directory
+    """Get all DIRECTORIES that are immediate children of a given directory.
 
     Args:
         directory: a filepath to a directory
 
     Returns:
-        a sorted list of child directories of given dir.  Will not return files.
+        a sorted list of child directories of given dir.  Won't return files.
     """
-    return sorted([d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))])
+    exists = lambda x: os.path.isdir(os.path.join(directory, x))
+    return sorted([d for d in os.listdir(directory) if exists(d)])
 
 
 def count_image_files(directory, montage_mode=False):
@@ -111,7 +112,15 @@ def nikon_getfiles(direc_name, channel_name):
 
 
 def get_image_sizes(data_location, channel_names):
-    """Get the first image inside the data_location and return its shape"""
+    """Get the first image inside the data_location and return its shape
+
+    Args:
+        data_location: path to image data
+        channel_names: list of wildcards to filter filenames
+
+    Returns:
+        size of random image inside the `data_location`
+    """
     img_list_channels = []
     for channel in channel_names:
         img_list_channels.append(nikon_getfiles(data_location, channel))
