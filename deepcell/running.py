@@ -109,7 +109,7 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding=
         num_crops: number of slices for the x and y axis to create sub-images
         receptive_field: receptive field used by model, required to pad images
         padding: type of padding for input images, one of {'reflect', 'zero'}
-    
+
     Returns:
         model_output: numpy array containing model outputs for each sub-image
     """
@@ -215,7 +215,7 @@ def run_model(image, model, win_x=30, win_y=30, split=True):
     Args:
         model: model that will process each small image
         image: numpy array that is too big for model.predict(images)
-            
+
     Returns:
         model_output: numpy array containing model outputs for each sub-image
     """

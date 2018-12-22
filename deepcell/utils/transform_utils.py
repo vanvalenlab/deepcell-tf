@@ -118,7 +118,7 @@ def erode_edges(mask, erosion_width):
     Args:
         mask: uniquely labeled instance mask
         erosion_width: integer value for pixel width to erode edges
-    
+
     Returns:
         mask where each instance has had the edges eroded
     """
@@ -142,12 +142,12 @@ def erode_edges(mask, erosion_width):
 
 def distance_transform_2d(mask, bins=16, erosion_width=None):
     """Transform a label mask into distance classes.
-    
+
     Args:
         mask: a label mask (y data)
         bins: the number of transformed distance classes
         erosion_width: number of pixels to erode edges of each labels
-    
+
     Returns:
         distance: a mask of same shape as input mask,
                   with each label being a distance class from 1 to bins
@@ -175,15 +175,14 @@ def distance_transform_2d(mask, bins=16, erosion_width=None):
 
 
 def distance_transform_3d(maskstack, bins=4, erosion_width=None):
-    """
-    Transforms a label mask for a z stack into distance classes
+    """Transforms a label mask for a z stack into distance classes
     Uses scipy's distance_transform_edt
 
     Args:
         maskstack: a z-stack of label masks (y data)
         bins: the number of transformed distance classes
         erosion_width: number of pixels to erode edges of each labels
-    
+
     Returns:
         distance: 3D Euclidiean Distance Transform
     """
@@ -238,7 +237,7 @@ def to_categorical(y, num_classes=None):
         y: class vector to be converted into a matrix
         (integers from 0 to num_classes).
         num_classes: total number of classes.
-    
+
     Returns:
         A binary matrix representation of the input.
     """

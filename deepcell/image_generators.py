@@ -72,7 +72,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     Args:
         y: `labels` of ndim 4 or 5
         transform: one of {`deepcell`, `disc`, `watershed`, `centroid`, `None`}
-    
+
     Returns:
         y_transform: the output of the given transform function on y
 
@@ -888,7 +888,7 @@ class MovieDataGenerator(ImageDataGenerator):
 
         Required for featurewise_center, featurewise_std_normalization
         and zca_whitening.
-        
+
         Args:
             x: Numpy array, the data to fit on. Should have rank 5.
                 In case of grayscale data,

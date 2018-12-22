@@ -45,6 +45,8 @@ def load_data(path='3T3_NIH.npz', test_size=.2, seed=0):
     # Args:
         path: path where to cache the dataset locally
             (relative to ~/.keras/datasets).
+        test_size: fraction of data to reserve as test data
+        seed: the seed for randomly shuffling the dataset
 
     Returns:
         Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.

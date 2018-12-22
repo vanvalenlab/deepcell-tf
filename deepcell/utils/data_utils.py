@@ -417,7 +417,7 @@ def load_training_images_2d(direc_name,
                             channel_names,
                             image_size):
     """Load each image in the training_direcs into a numpy array.
-    
+
     Args:
         direc_name: directory containing folders of training data
         training_direcs: list of directories of images inside direc_name.

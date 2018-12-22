@@ -51,7 +51,7 @@ class ReflectionPadding2D(ZeroPadding2D):
             - If tuple of 2 tuples of 2 ints:
                 interpreted as
                 `((top_pad, bottom_pad), (left_pad, right_pad))`
-                
+
         data_format: A string,
             one of `channels_last` (default) or `channels_first`.
             The ordering of the dimensions in the inputs.
@@ -102,7 +102,7 @@ class ReflectionPadding3D(ZeroPadding3D):
                 interpreted as
                 `((left_dim1_pad, right_dim1_pad), (left_dim2_pad,
                     right_dim2_pad), (left_dim3_pad, right_dim3_pad))`
-        
+
         data_format: A string,
             one of `channels_last` (default) or `channels_first`.
             The ordering of the dimensions in the inputs.
@@ -113,7 +113,7 @@ class ReflectionPadding3D(ZeroPadding3D):
             It defaults to the `image_data_format` value found in your
             Keras config file at `~/.keras/keras.json`.
             If you never set it, then it will be "channels_last".
-    
+
     Input shape:
         5D tensor with shape:
         - If `data_format` is `"channels_last"`:
@@ -122,7 +122,7 @@ class ReflectionPadding3D(ZeroPadding3D):
         - If `data_format` is `"channels_first"`:
             `(batch, depth, first_axis_to_pad, second_axis_to_pad,
                 third_axis_to_pad)`
-    
+
     Output shape:
         5D tensor with shape:
         - If `data_format` is `"channels_last"`:

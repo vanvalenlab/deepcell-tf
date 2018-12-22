@@ -41,10 +41,13 @@ import nbformat as nbf
 def make_notebook(model_output,
                   output_dir=os.path.join('scripts', 'generated_notebooks')):
     """Create a notebook that will help visualize the output of a deep learning model
-    
+
     Args:
         model_output: output of a deep learning model to visualize
         output_dir: directory to save the notebook
+
+    Returns:
+        path to the generated notebook
     """
     # validate inputs
     if not os.path.isfile(model_output):

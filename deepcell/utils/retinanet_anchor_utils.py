@@ -23,8 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Anchor Box generator script that adapts keras_retinanet.utils.anchors 
-to include masks during training. """
+"""Anchor Box generator script that adapts keras_retinanet.utils.anchors
+to include masks during training."""
 
 import numpy as np
 

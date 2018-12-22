@@ -57,7 +57,7 @@ def make_notebook(data,
                   **kwargs):
     """Create a training notebook that will step through the training
     process from making an npz file to creating and training a model.
-    
+
     Args:
         data: zipfile of data to load into npz and train on
         train_type: training method to use, either "sample" or "conv"
@@ -72,8 +72,8 @@ def make_notebook(data,
         log_dir: directory to write tensorboard logs
         export_dir: directory to export the model after training
         output_dir: local directory to save the notebook
-        
-    # Returns:
+
+    Returns:
         notebook_path: path to generated notebook
     """
     if not data:

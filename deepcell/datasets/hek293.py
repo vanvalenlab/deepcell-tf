@@ -41,10 +41,12 @@ from deepcell.utils.data_utils import get_data
 
 def load_data(path='HEK293.npz', test_size=.2, seed=0):
     """Loads the HEK293 dataset.
-    
+
     # Args:
         path: path where to cache the dataset locally
             (relative to ~/.keras/datasets).
+        test_size: fraction of data to reserve as test data
+        seed: the seed for randomly shuffling the dataset
 
     Returns:
         Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.

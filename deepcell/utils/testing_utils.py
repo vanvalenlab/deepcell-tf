@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Utilities plotting data"""
+"""Utilities testing Keras layers"""
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -52,7 +52,7 @@ def layer_test(layer_cls, kwargs=None, input_shape=None, input_dtype=None,
         expected_output: Shape tuple for the expected shape of the output.
         expected_output_dtype: Data type expected for the output.
         custom_objects: Custom Objects to test custom layers
-    
+
     Returns:
         The output data (Numpy array) returned by the layer, for additional
         checks to be done by the calling code.
