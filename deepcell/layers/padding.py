@@ -51,6 +51,7 @@ class ReflectionPadding2D(ZeroPadding2D):
             - If tuple of 2 tuples of 2 ints:
                 interpreted as
                 `((top_pad, bottom_pad), (left_pad, right_pad))`
+                
         data_format: A string,
             one of `channels_last` (default) or `channels_first`.
             The ordering of the dimensions in the inputs.
@@ -88,6 +89,7 @@ class ReflectionPadding2D(ZeroPadding2D):
 
 class ReflectionPadding3D(ZeroPadding3D):
     """Reflection-padding layer for 3D data (spatial or spatio-temporal).
+
     Args:
         padding: int, or tuple of 3 ints, or tuple of 3 tuples of 2 ints.
             - If int: the same symmetric padding
@@ -100,6 +102,7 @@ class ReflectionPadding3D(ZeroPadding3D):
                 interpreted as
                 `((left_dim1_pad, right_dim1_pad), (left_dim2_pad,
                     right_dim2_pad), (left_dim3_pad, right_dim3_pad))`
+        
         data_format: A string,
             one of `channels_last` (default) or `channels_first`.
             The ordering of the dimensions in the inputs.

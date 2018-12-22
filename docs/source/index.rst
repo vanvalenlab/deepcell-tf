@@ -9,9 +9,10 @@ Home
    
    readme_link
 
-This should be Kiosk information and links to video tutorials
+For more information on deploying DeepCell in the cloud:
+---------------------------------------------------------
 
-:doc:`Kiosk documentation <kiosk:readme_link>`
+:doc:`Refer to the DeepCell Kiosk documentation <kiosk:readme_link>`
 
 .. toctree::
    :maxdepth: 2
