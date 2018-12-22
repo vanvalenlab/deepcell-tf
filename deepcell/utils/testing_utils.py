@@ -23,9 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Utilities plotting data
-@author: David Van Valen
-"""
+"""Utilities plotting data"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -42,7 +41,8 @@ def layer_test(layer_cls, kwargs=None, input_shape=None, input_dtype=None,
                input_data=None, expected_output=None,
                expected_output_dtype=None, custom_objects=None):
     """Test routine for a layer with a single input and single output.
-    Arguments:
+
+    Args:
         layer_cls: Layer class object.
         kwargs: Optional dictionary of keyword arguments for instantiating the
         layer.
@@ -52,6 +52,7 @@ def layer_test(layer_cls, kwargs=None, input_shape=None, input_dtype=None,
         expected_output: Shape tuple for the expected shape of the output.
         expected_output_dtype: Data type expected for the output.
         custom_objects: Custom Objects to test custom layers
+    
     Returns:
         The output data (Numpy array) returned by the layer, for additional
         checks to be done by the calling code.

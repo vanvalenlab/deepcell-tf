@@ -41,7 +41,8 @@ from deepcell.utils.data_utils import get_data
 
 def load_data(path='HeLa_S3.npz', test_size=.2, seed=0):
     """Loads the HeLa-S3 dataset.
-    # Arguments
+    
+    # Args:
         path: path where to cache the dataset locally
             (relative to ~/.keras/datasets).
 

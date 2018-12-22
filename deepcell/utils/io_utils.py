@@ -24,6 +24,7 @@
 # limitations under the License.
 # ==============================================================================
 """Utilities for reading/writing files"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -57,9 +58,11 @@ def count_image_files(directory, montage_mode=False):
     Counts all image files inside the directory.
     If montage_mode, counts 1 level deep and returns the minimum count.
     Else, counts all child images of directory.
-    # Arguments:
+
+    # Args:
         directory: directory to look for child image files
         montage_mode: whether ot not to look in subdirs of directory
+        
     # Returns:
         number of image files found
     """

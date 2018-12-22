@@ -41,7 +41,8 @@ from deepcell.utils.data_utils import get_data
 
 def load_data(path='3T3_NIH.npz', test_size=.2, seed=0):
     """Loads the 3T3-NIH dataset.
-    # Arguments
+
+    # Args:
         path: path where to cache the dataset locally
             (relative to ~/.keras/datasets).
 

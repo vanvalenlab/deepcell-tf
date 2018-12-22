@@ -26,9 +26,8 @@
 """Automated Jupyter Notebook Creation and Server Instantiation
 Users can select specific default Jupyter Notebook templates and
 enter values for customization. Jupyter Notebook Servers will be
-automatically spun up.
-@author: andrewqho, willgraf
-"""
+automatically spun up."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -73,6 +72,7 @@ def make_notebook(data,
         log_dir: directory to write tensorboard logs
         export_dir: directory to export the model after training
         output_dir: local directory to save the notebook
+        
     # Returns:
         notebook_path: path to generated notebook
     """

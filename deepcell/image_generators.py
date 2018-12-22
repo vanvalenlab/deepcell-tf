@@ -239,6 +239,7 @@ class ImageSampleArrayIterator(Iterator):
             max_class_samples: if not None, a maximum count for each class
             downsample: if True, all sample sizes will be the rarest count
             seed: random state initalization
+
         Returns:
             Does not return anything but shuffles and resizes the sample size
         """
@@ -315,8 +316,7 @@ class ImageSampleArrayIterator(Iterator):
         return batch_x, batch_y
 
     def next(self):
-        """For python 2.x.
-        Returns the next batch.
+        """For python 2.x. Returns the next batch.
         """
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
@@ -446,8 +446,7 @@ class ImageFullyConvIterator(Iterator):
         return batch_x, batch_y
 
     def next(self):
-        """For python 2.x.
-        Returns the next batch.
+        """For python 2.x. Returns the next batch.
         """
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
@@ -494,6 +493,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
 
         Args:
             x: batch of inputs to be normalized.
+
         Returns:
             The normalized inputs.
         """
@@ -534,6 +534,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             x: 4D tensor, single image.
             labels: 4D tensor, single image mask.
             seed: random seed.
+
         Returns:
             A randomly transformed version of the input (same shape).
         """
@@ -704,6 +705,7 @@ class MovieDataGenerator(ImageDataGenerator):
 
         Args:
             x: batch of inputs to be normalized.
+
         Returns:
             The normalized inputs.
         """
@@ -745,6 +747,7 @@ class MovieDataGenerator(ImageDataGenerator):
             x: 5D tensor, image stack.
             labels: 5D tensor, image mask stack.
             seed: random seed.
+
         Returns:
             A randomly transformed version of the input (same shape).
         """
@@ -895,8 +898,10 @@ class MovieDataGenerator(ImageDataGenerator):
             rounds: If `augment`,
                 how many augmentation passes to do over the data
             seed: random seed.
+
         Raises:
             ValueError: in case of invalid input `x`.
+
         Returns:
             nothing
 
@@ -1082,8 +1087,7 @@ class MovieArrayIterator(Iterator):
         return batch_x, batch_y
 
     def next(self):
-        """For python 2.x.
-        Returns the next batch.
+        """For python 2.x. Returns the next batch.
         """
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
@@ -1178,6 +1182,7 @@ class SampleMovieArrayIterator(Iterator):
             max_class_samples: if not None, a maximum count for each class
             downsample: if True, all sample sizes will be the rarest count
             seed: random state initalization
+
         Returns:
             Does not return anything but shuffles and resizes the sample size
         """
@@ -1264,8 +1269,7 @@ class SampleMovieArrayIterator(Iterator):
         return batch_x, batch_y
 
     def next(self):
-        """For python 2.x.
-        Returns the next batch.
+        """For python 2.x. Returns the next batch.
         """
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
@@ -1528,8 +1532,7 @@ class SiameseIterator(Iterator):
         return appearances
 
     def next(self):
-        """For python 2.x.
-        Returns the next batch.
+        """For python 2.x. Returns the next batch.
         """
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.
@@ -1693,8 +1696,7 @@ class BoundingBoxIterator(Iterator):
         return batch_x, [regressions_list, labels_list]
 
     def next(self):
-        """For python 2.x.
-        Returns the next batch.
+        """For python 2.x. Returns the next batch.
         """
         # Keeps under lock only the mechanism which advances
         # the indexing of each batch.

@@ -24,8 +24,7 @@
 # limitations under the License.
 # ==============================================================================
 """Anchor Box generator script that adapts keras_retinanet.utils.anchors 
-to include masks during training.
-"""
+to include masks during training. """
 
 import numpy as np
 
@@ -52,7 +51,7 @@ def anchor_targets_bbox(anchors,
         positive_overlap: IoU overlap or positive anchors
             (all anchors with overlap > positive_overlap are positive).
 
-    Returns
+    Returns:
         labels: np.array of shape (A, num_classes) where a row consists of 0
             for negative and 1 for positive for a certain class.
         annotations: np.array of shape (A, 5) for (x1, y1, x2, y2, label)

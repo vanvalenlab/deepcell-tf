@@ -41,7 +41,8 @@ from deepcell.utils.data_utils import get_data
 
 def load_data(path='mousebrain.npz', test_size=.2, seed=0):
     """Loads the mousebrain dataset.
-    # Arguments
+    
+    # Args:
         path: path where to cache the dataset locally
             (relative to ~/.keras/datasets).
 
