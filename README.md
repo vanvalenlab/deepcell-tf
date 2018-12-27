@@ -17,13 +17,13 @@ This will start a jupyter session, with several example notebooks detailing vari
 
 ### Cell Edge and Cell Interior Segmentation
 
-* [2D DeepCell Transform - Fully Convolutional.ipynb](scripts/deepcell/DeepCell%20Transform%202D%20Fully%20Convolutional.ipynb)
+* [2D DeepCell Transform - Fully Convolutional.ipynb](scripts/deepcell/Interior-Edge%20Segmentation%202D%20Fully%20Convolutional.ipynb)
 
-* [2D DeepCell Transform - Sample Based.ipynb](scripts/deepcell/DeepCell%20Transform%202D%20Sample%20Based.ipynb)
+* [2D DeepCell Transform - Sample Based.ipynb](scripts/deepcell/Interior-Edge%20Segmentation%202D%20Sample%20Based.ipynb)
 
-* [3D DeepCell Transform - Fully Convolutional.ipynb](scripts/deepcell/DeepCell%20Transfrom%203D.ipynb)
+* [3D DeepCell Transform - Fully Convolutional.ipynb](scripts/deepcell/Interior-Edge%20Segmentation%203D%20Fully%20Convolutional.ipynb)
 
-* [3D DeepCell Transform - Sample Based.ipynb](scripts/deepcell/DeepCell%20Transfrom%203D%20Sample%20Based.ipynb)
+* [3D DeepCell Transform - Sample Based.ipynb](scripts/deepcell/Interior-Edge%20Segmentation%203D%20Sample%20Based.ipynb)
 
 ### Deep Watershed Instance Segmentation
 
