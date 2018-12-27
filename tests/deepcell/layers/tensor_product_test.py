@@ -75,14 +75,6 @@ class TensorProdTest(test.TestCase):
             custom_objects=custom_objects,
             input_shape=(3, 2, 4, 5))
 
-        # test activation
-        # testing_utils.layer_test(
-        #     layers.TensorProduct,
-        #     kwargs={'activation': 'relu',
-        #             'output_dim': 2},
-        #     custom_objects=custom_objects,
-        #     input_shape=(3, 5, 6, 4))
-
         # test no bias
         testing_utils.layer_test(
             layers.TensorProduct,
@@ -121,89 +113,3 @@ class TensorProdTest(test.TestCase):
             layer(keras.backend.variable(np.ones((2, 4))))
             self.assertEqual(layer.kernel.constraint, k_constraint)
             self.assertEqual(layer.bias.constraint, b_constraint)
-
-    # @tf_test_util.run_in_graph_and_eager_modes()
-    # def test_tensorprod_2d(self):
-    #     custom_objects = {'TensorProduct': layers.TensorProduct}
-    #     with self.test_session(use_gpu=True):
-    #         testing_utils.layer_test(
-    #             layers.TensorProduct,
-    #             kwargs={'output_dim': 2},
-    #             custom_objects=custom_objects,
-    #             input_shape=(3, 5, 6, 4))
-    #         testing_utils.layer_test(
-    #             layers.TensorProduct,
-    #             kwargs={'output_dim': 2,
-    #                     'data_format': 'channels_first'},
-    #             custom_objects=custom_objects,
-    #             input_shape=(3, 4, 5, 6))
-
-    #     # test no bias
-    #     with self.test_session(use_gpu=True):
-    #         testing_utils.layer_test(
-    #             layers.TensorProduct,
-    #             kwargs={'output_dim': 2,
-    #                     'use_bias': False},
-    #             custom_objects=custom_objects,
-    #             input_shape=(3, 5, 6, 4))
-
-    #     # test activation
-    #     with self.test_session(use_gpu=True):
-    #         testing_utils.layer_test(
-    #             layers.TensorProduct,
-    #             kwargs={'activation': 'relu',
-    #                     'output_dim': 2},
-    #             custom_objects=custom_objects,
-    #             input_shape=(3, 5, 6, 4))
-
-    #     # test bad input
-    #     with self.test_session(use_gpu=True):
-    #         with self.assertRaises(ValueError):
-    #             testing_utils.layer_test(
-    #                 layers.TensorProduct,
-    #                 kwargs={'output_dim': 2},
-    #                 custom_objects=custom_objects,
-    #                 input_shape=(3, 5, 6, None))
-
-    # @tf_test_util.run_in_graph_and_eager_modes()
-    # def test_tensorprod_3d(self):
-    #     custom_objects = {'TensorProduct': layers.TensorProduct}
-    #     with self.test_session(use_gpu=True):
-    #         testing_utils.layer_test(
-    #             layers.TensorProduct,
-    #             kwargs={'output_dim': 2},
-    #             custom_objects=custom_objects,
-    #             input_shape=(3, 11, 12, 10, 4))
-    #         testing_utils.layer_test(
-    #             layers.TensorProduct,
-    #             kwargs={'output_dim': 2,
-    #                     'data_format': 'channels_first'},
-    #             custom_objects=custom_objects,
-    #             input_shape=(3, 4, 11, 12, 10))
-
-    #     # test no bias
-    #     with self.test_session(use_gpu=True):
-    #         testing_utils.layer_test(
-    #             layers.TensorProduct,
-    #             kwargs={'output_dim': 2,
-    #                     'use_bias': False},
-    #             custom_objects=custom_objects,
-    #             input_shape=(3, 11, 12, 10, 4))
-
-    #     # test activation
-    #     with self.test_session(use_gpu=True):
-    #         testing_utils.layer_test(
-    #             layers.TensorProduct,
-    #             kwargs={'activation': 'relu',
-    #                     'output_dim': 2},
-    #             custom_objects=custom_objects,
-    #             input_shape=(3, 11, 12, 10, 4))
-
-    #     # test bad channel input
-    #     with self.test_session(use_gpu=True):
-    #         with self.assertRaises(ValueError):
-    #             testing_utils.layer_test(
-    #                 layers.TensorProduct,
-    #                 kwargs={'output_dim': 2},
-    #                 custom_objects=custom_objects,
-    #                 input_shape=(3, 11, 12, 10, None))
