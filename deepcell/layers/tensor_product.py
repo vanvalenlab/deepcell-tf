@@ -45,9 +45,57 @@ except ImportError:
     from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 
-class TensorProd2D(Layer):
+class TensorProduct(Layer):
+    """Just your regular densely-connected NN layer.
+
+    `Dense` implements the operation:
+    `output = activation(dot(input, kernel) + bias)`
+    where `activation` is the element-wise activation function
+    passed as the `activation` argument, `kernel` is a weights matrix
+    created by the layer, and `bias` is a bias vector created by the layer
+    (only applicable if `use_bias` is `True`).
+    Note: if the input to the layer has a rank greater than 2, then
+    it is flattened prior to the initial dot product with `kernel`.
+
+    Args:
+        output_dim: Positive integer, dimensionality of the output space.
+        data_format: A string,
+            one of `channels_last` (default) or `channels_first`.
+            The ordering of the dimensions in the inputs.
+            `channels_last` corresponds to inputs with shape
+            `(batch, height, width, channels)` while `channels_first`
+            corresponds to inputs with shape
+            `(batch, channels, height, width)`.
+            It defaults to the `image_data_format` value found in your
+            Keras config file at `~/.keras/keras.json`.
+            If you never set it, then it will be "channels_last".
+        activation: Activation function to use.
+            If you don't specify anything, no activation is applied
+            (ie. "linear" activation: `a(x) = x`).
+        use_bias: Boolean, whether the layer uses a bias vector.
+        kernel_initializer: Initializer for the `kernel` weights matrix.
+        bias_initializer: Initializer for the bias vector.
+        kernel_regularizer: Regularizer function applied to
+            the `kernel` weights matrix.
+        bias_regularizer: Regularizer function applied to the bias vector.
+        activity_regularizer: Regularizer function applied to
+            the output of the layer (its "activation")..
+        kernel_constraint: Constraint function applied to
+            the `kernel` weights matrix.
+        bias_constraint: Constraint function applied to the bias vector.
+
+    Input shape:
+        nD tensor with shape: `(batch_size, ..., input_dim)`.
+        The most common situation would be
+        a 2D input with shape `(batch_size, input_dim)`.
+
+    Output shape:
+        nD tensor with shape: `(batch_size, ..., output_dim)`.
+        For instance, for a 2D input with shape `(batch_size, input_dim)`,
+        the output would have shape `(batch_size, output_dim)`.
+    """
+
     def __init__(self,
-                 input_dim,
                  output_dim,
                  data_format=None,
                  activation=None,
@@ -60,9 +108,12 @@ class TensorProd2D(Layer):
                  kernel_constraint=None,
                  bias_constraint=None,
                  **kwargs):
-        super(TensorProd2D, self).__init__(**kwargs)
-        self.input_dim = input_dim
-        self.output_dim = output_dim
+        if 'input_shape' not in kwargs and 'input_dim' in kwargs:
+            kwargs['input_shape'] = (kwargs.pop('input_dim'),)
+
+        super(TensorProduct, self).__init__(
+            activity_regularizer=regularizers.get(activity_regularizer), **kwargs)
+        self.output_dim = int(output_dim)
         self.data_format = conv_utils.normalize_data_format(data_format)
         self.activation = activations.get(activation)
         self.use_bias = use_bias
@@ -73,36 +124,40 @@ class TensorProd2D(Layer):
         self.activity_regularizer = regularizers.get(activity_regularizer)
         self.kernel_constraint = constraints.get(kernel_constraint)
         self.bias_constraint = constraints.get(bias_constraint)
+
+        self.supports_masking = True
         self.input_spec = InputSpec(min_ndim=2)
 
     def build(self, input_shape):
-        input_shape = tensor_shape.TensorShape(input_shape)
-        if len(input_shape) != 4:
-            raise ValueError('Inputs should have rank 4. Received input shape: ' +
-                             str(input_shape))
         if self.data_format == 'channels_first':
             channel_axis = 1
         else:
             channel_axis = -1
+        input_shape = tensor_shape.TensorShape(input_shape)
         if input_shape[channel_axis].value is None:
-            raise ValueError('The channel dimension of the inputs '
-                             'should be defined. Found `None`.')
+            raise ValueError('The channel dimension of the inputs to '
+                             '`TensorProduct` should be defined. '
+                             'Found `None`.')
         input_dim = int(input_shape[channel_axis])
         kernel_shape = (input_dim, self.output_dim)
 
         self.kernel = self.add_weight(
-            name='kernel',
+            'kernel',
             shape=kernel_shape,
             initializer=self.kernel_initializer,
             regularizer=self.kernel_regularizer,
-            constraint=self.kernel_constraint)
+            constraint=self.kernel_constraint,
+            dtype=self.dtype,
+            trainable=True)
         if self.use_bias:
             self.bias = self.add_weight(
-                name='bias',
+                'bias',
                 shape=(self.output_dim,),
                 initializer=self.bias_initializer,
                 regularizer=self.bias_regularizer,
-                constraint=self.bias_constraint)
+                constraint=self.bias_constraint,
+                dtype=self.dtype,
+                trainable=True)
         else:
             self.bias = None
 
@@ -112,16 +167,18 @@ class TensorProd2D(Layer):
         self.built = True
 
     def call(self, inputs):
+        rank = len(inputs.get_shape().as_list())
         if self.data_format == 'channels_first':
+            pattern = [0, rank - 1] + list(range(1, rank - 1))
             output = tf.tensordot(inputs, self.kernel, axes=[[1], [0]])
-            output = tf.transpose(output, perm=[0, 3, 1, 2])
+            output = K.permute_dimensions(output, pattern=pattern)
             # output = K.dot(inputs, self.kernel)
 
         elif self.data_format == 'channels_last':
-            output = tf.tensordot(inputs, self.kernel, axes=[[3], [0]])
+            output = tf.tensordot(inputs, self.kernel, axes=[[rank - 1], [0]])
 
         if self.use_bias:
-            output = K.bias_add(output, self.bias, data_format=self.data_format)
+            output = K.bias_add(output, self.bias, self.data_format)
 
         if self.activation is not None:
             return self.activation(output)
@@ -131,15 +188,15 @@ class TensorProd2D(Layer):
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
-            output_shape = tuple((input_shape[0], self.output_dim, input_shape[2], input_shape[3]))
+            output_shape = tuple([input_shape[0], self.output_dim] +
+                                 list(input_shape[2:]))
         else:
-            output_shape = tuple((input_shape[0], input_shape[1], input_shape[2], self.output_dim))
+            output_shape = tuple(list(input_shape[:-1]) + [self.output_dim])
 
         return tensor_shape.TensorShape(output_shape)
 
     def get_config(self):
         config = {
-            'input_dim': self.input_dim,
             'output_dim': self.output_dim,
             'data_format': self.data_format,
             'activation': self.activation,
@@ -152,122 +209,5 @@ class TensorProd2D(Layer):
             'kernel_constraint': constraints.serialize(self.kernel_constraint),
             'bias_constraint': constraints.serialize(self.bias_constraint)
         }
-        base_config = super(TensorProd2D, self).get_config()
-        return dict(list(base_config.items()) + list(config.items()))
-
-
-class TensorProd3D(Layer):
-    def __init__(self,
-                 input_dim,
-                 output_dim,
-                 data_format=None,
-                 activation=None,
-                 use_bias=True,
-                 kernel_initializer='glorot_uniform',
-                 bias_initializer='zeros',
-                 kernel_regularizer=None,
-                 bias_regularizer=None,
-                 activity_regularizer=None,
-                 kernel_constraint=None,
-                 bias_constraint=None,
-                 **kwargs):
-        super(TensorProd3D, self).__init__(**kwargs)
-        self.input_dim = input_dim
-        self.output_dim = output_dim
-        self.data_format = conv_utils.normalize_data_format(data_format)
-        self.activation = activations.get(activation)
-        self.use_bias = use_bias
-        self.kernel_initializer = initializers.get(kernel_initializer)
-        self.bias_initializer = initializers.get(bias_initializer)
-        self.kernel_regularizer = regularizers.get(kernel_regularizer)
-        self.bias_regularizer = regularizers.get(bias_regularizer)
-        self.activity_regularizer = regularizers.get(activity_regularizer)
-        self.kernel_constraint = constraints.get(kernel_constraint)
-        self.bias_constraint = constraints.get(bias_constraint)
-        self.input_spec = InputSpec(min_ndim=2)
-
-    def build(self, input_shape):
-        input_shape = tensor_shape.TensorShape(input_shape)
-        if len(input_shape) != 5:
-            raise ValueError('Inputs should have rank 5. Received input shape: ' +
-                             str(input_shape))
-        if self.data_format == 'channels_first':
-            channel_axis = 1
-        else:
-            channel_axis = -1
-        if input_shape[channel_axis].value is None:
-            raise ValueError('The channel dimension of the inputs '
-                             'should be defined. Found `None`.')
-        input_dim = int(input_shape[channel_axis])
-        kernel_shape = (input_dim, self.output_dim)
-
-        self.kernel = self.add_weight(
-            name='kernel',
-            shape=kernel_shape,
-            initializer=self.kernel_initializer,
-            regularizer=self.kernel_regularizer,
-            constraint=self.kernel_constraint)
-        if self.use_bias:
-            self.bias = self.add_weight(
-                name='bias',
-                shape=(self.output_dim,),
-                initializer=self.bias_initializer,
-                regularizer=self.bias_regularizer,
-                constraint=self.bias_constraint)
-        else:
-            self.bias = None
-
-        # Set input spec.
-        self.input_spec = InputSpec(min_ndim=2, axes={channel_axis: input_dim})
-        self.built = True
-
-    def call(self, inputs):
-        if self.data_format == 'channels_first':
-            output = tf.tensordot(inputs, self.kernel, axes=[[1], [0]])
-            output = tf.transpose(output, perm=[0, 4, 1, 2, 3])
-
-        elif self.data_format == 'channels_last':
-            output = tf.tensordot(inputs, self.kernel, axes=[[4], [0]])
-
-        if self.use_bias:
-            output = K.bias_add(output, self.bias, data_format=self.data_format)
-
-        if self.activation is not None:
-            return self.activation(output)
-
-        return output
-
-    def compute_output_shape(self, input_shape):
-        input_shape = tensor_shape.TensorShape(input_shape).as_list()
-        if self.data_format == 'channels_first':
-            output_shape = tuple((input_shape[0],
-                                  self.output_dim,
-                                  input_shape[2],
-                                  input_shape[3],
-                                  input_shape[4]))
-        else:
-            output_shape = tuple((input_shape[0],
-                                  input_shape[1],
-                                  input_shape[2],
-                                  input_shape[3],
-                                  self.output_dim))
-
-        return tensor_shape.TensorShape(output_shape)
-
-    def get_config(self):
-        config = {
-            'input_dim': self.input_dim,
-            'output_dim': self.output_dim,
-            'data_format': self.data_format,
-            'activation': self.activation,
-            'use_bias': self.use_bias,
-            'kernel_initializer': initializers.serialize(self.kernel_initializer),
-            'bias_initializer': initializers.serialize(self.bias_initializer),
-            'kernel_regularizer': regularizers.serialize(self.kernel_regularizer),
-            'bias_regularizer': regularizers.serialize(self.bias_regularizer),
-            'activity_regularizer': regularizers.serialize(self.activity_regularizer),
-            'kernel_constraint': constraints.serialize(self.kernel_constraint),
-            'bias_constraint': constraints.serialize(self.bias_constraint)
-        }
-        base_config = super(TensorProd3D, self).get_config()
+        base_config = super(TensorProduct, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
