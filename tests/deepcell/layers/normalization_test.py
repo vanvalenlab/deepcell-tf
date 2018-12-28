@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -62,7 +62,7 @@ class ImageNormalizationTest(test.TestCase):
     # @tf_test_util.run_in_graph_and_eager_modes()
     def test_normalize_3d(self):
         custom_objects = {'ImageNormalization3D': layers.ImageNormalization3D}
-        norm_methods = [None, 'std', 'max', 'whole_image']  # TODO: median is very slow
+        norm_methods = [None, 'std', 'max', 'whole_image']
         # norm_methods = [None, 'std', 'max', 'whole_image', 'median']
         for norm_method in norm_methods:
             with self.test_session(use_gpu=True):

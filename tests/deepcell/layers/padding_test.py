@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -31,8 +31,8 @@ from __future__ import print_function
 
 import numpy as np
 
-from tensorflow.python import keras
-from tensorflow.python.eager import context
+# from tensorflow.python import keras
+# from tensorflow.python.eager import context
 from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.platform import test
 
@@ -54,23 +54,24 @@ class ReflectionPaddingTest(test.TestCase):
         input_num_row = 4
         input_num_col = 5
 
-        inputs1 = np.ones((num_samples, input_num_row, input_num_col, stack_size))
-        inputs2 = np.ones((num_samples, stack_size, input_num_row, input_num_col))
+        custom_objects = {'ReflectionPadding2D': layers.ReflectionPadding2D}
+        ins1 = np.ones((num_samples, input_num_row, input_num_col, stack_size))
+        ins2 = np.ones((num_samples, stack_size, input_num_row, input_num_col))
         data_formats = ['channels_first', 'channels_last']
-        for data_format, inputs in zip(data_formats, [inputs2, inputs1]):
+        for data_format, inputs in zip(data_formats, [ins2, ins1]):
             # basic test
             with self.test_session(use_gpu=True):
                 testing_utils.layer_test(
                     layers.ReflectionPadding2D,
                     kwargs={'padding': (2, 2),
                             'data_format': data_format},
-                    custom_objects={'ReflectionPadding2D': layers.ReflectionPadding2D},
+                    custom_objects=custom_objects,
                     input_shape=inputs.shape)
                 testing_utils.layer_test(
                     layers.ReflectionPadding2D,
                     kwargs={'padding': ((1, 2), (3, 4)),
                             'data_format': data_format},
-                    custom_objects={'ReflectionPadding2D': layers.ReflectionPadding2D},
+                    custom_objects=custom_objects,
                     input_shape=inputs.shape)
 
             # correctness test
@@ -137,6 +138,7 @@ class ReflectionPaddingTest(test.TestCase):
         input_len_dim2 = 5
         input_len_dim3 = 3
 
+        custom_objects = {'ReflectionPadding3D': layers.ReflectionPadding3D}
         inputs1 = np.ones((num_samples, input_len_dim1, input_len_dim2,
                            input_len_dim3, stack_size))
         inputs2 = np.ones((num_samples, stack_size, input_len_dim1,
@@ -149,7 +151,7 @@ class ReflectionPaddingTest(test.TestCase):
                     layers.ReflectionPadding3D,
                     kwargs={'padding': (2, 2, 2),
                             'data_format': data_format},
-                    custom_objects={'ReflectionPadding3D': layers.ReflectionPadding3D},
+                    custom_objects=custom_objects,
                     input_shape=inputs.shape)
 
         # correctness test
