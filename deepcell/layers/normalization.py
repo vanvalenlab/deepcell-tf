@@ -65,34 +65,34 @@ class ImageNormalization2D(Layer):
         W = np.ones((self.filter_size, self.filter_size, in_channels, 1))
 
         W /= W.size
-        kernel = tf.Variable(W.astype(K.floatx()))
+        kernel = K.variable(W.astype(K.floatx()))
 
         if self.data_format == 'channels_first':
-            inputs = tf.transpose(inputs, perm=[0, 2, 3, 1])
+            inputs = K.permute_dimensions(inputs, pattern=[0, 2, 3, 1])
 
         outputs = tf.nn.depthwise_conv2d(inputs, kernel, [1, 1, 1, 1],
                                          padding='SAME', data_format='NHWC')
 
         if self.data_format == 'channels_first':
-            outputs = tf.transpose(outputs, perm=[0, 3, 1, 2])
+            outputs = K.permute_dimensions(outputs, pattern=[0, 3, 1, 2])
 
         return outputs
 
     def _window_std_filter(self, inputs, epsilon=K.epsilon()):
         c1 = self._average_filter(inputs)
-        c2 = self._average_filter(tf.square(inputs))
-        output = tf.sqrt(c2 - c1 * c1) + epsilon
+        c2 = self._average_filter(K.square(inputs))
+        output = K.sqrt(c2 - c1 * c1) + epsilon
         return output
 
     def _reduce_median(self, inputs, axes=None):
-        input_shape = tf.shape(inputs)
+        input_shape = K.shape(inputs)
         rank = tf.rank(inputs)
         axes = [] if axes is None else axes
 
         new_shape = [input_shape[axis] for axis in range(rank) if axis not in axes]
         new_shape.append(-1)
 
-        reshaped_inputs = tf.reshape(inputs, new_shape)
+        reshaped_inputs = K.reshape(inputs, new_shape)
         median_index = reshaped_inputs.get_shape()[-1] // 2
 
         median = tf.nn.top_k(reshaped_inputs, k=median_index)
@@ -107,7 +107,7 @@ class ImageNormalization2D(Layer):
             outputs /= self._window_std_filter(outputs)
 
         elif self.norm_method == 'max':
-            outputs = inputs / tf.reduce_max(inputs)
+            outputs = inputs / K.max(inputs)
             outputs -= self._average_filter(outputs)
 
         elif self.norm_method == 'median':
@@ -157,36 +157,35 @@ class ImageNormalization3D(Layer):
         W = np.ones((depth, self.filter_size, self.filter_size, in_channels, 1))
 
         W /= W.size
-        kernel = tf.Variable(W.astype(K.floatx()))
+        kernel = K.variable(W.astype(K.floatx()))
 
-        # data_format = 'NCDHW' if self.data_format == 'channels_first' else 'NDHWC'
         if self.data_format == 'channels_first':
-            inputs = tf.transpose(inputs, perm=[0, 2, 3, 4, 1])
+            inputs = K.permute_dimensions(inputs, pattern=[0, 2, 3, 4, 1])
         # TODO: conv3d vs depthwise_conv2d?
         outputs = tf.nn.conv3d(inputs, kernel, [1, 1, 1, 1, 1],
                                padding='SAME', data_format='NDHWC')
 
         if self.data_format == 'channels_first':
-            outputs = tf.transpose(outputs, perm=[0, 4, 1, 2, 3])
+            outputs = K.permute_dimensions(outputs, pattern=[0, 4, 1, 2, 3])
 
         return outputs
 
     def _window_std_filter(self, inputs, epsilon=K.epsilon()):
         c1 = self._average_filter(inputs)
-        c2 = self._average_filter(tf.square(inputs))
-        output = tf.sqrt(c2 - c1 * c1) + epsilon
+        c2 = self._average_filter(K.square(inputs))
+        output = K.sqrt(c2 - c1 * c1) + epsilon
         return output
 
     def _reduce_median(self, inputs, axes=None):
         # TODO: top_k cannot take None as batch dimension, and tf.rank cannot be iterated
-        input_shape = tf.shape(inputs)
+        input_shape = K.shape(inputs)
         rank = tf.rank(inputs)
         axes = [] if axes is None else axes
 
         new_shape = [input_shape[axis] for axis in range(rank) if axis not in axes]
         new_shape.append(-1)
 
-        reshaped_inputs = tf.reshape(inputs, new_shape)
+        reshaped_inputs = K.reshape(inputs, new_shape)
         median_index = reshaped_inputs.get_shape()[-1] // 2
 
         median = tf.nn.top_k(reshaped_inputs, k=median_index)
@@ -198,7 +197,7 @@ class ImageNormalization3D(Layer):
 
         elif self.norm_method == 'whole_image':
             reduce_axes = [3, 4] if self.data_format == 'channels_first' else [2, 3]
-            outputs = inputs - tf.reduce_mean(inputs, axis=reduce_axes, keepdims=True)
+            outputs = inputs - K.mean(inputs, axis=reduce_axes, keepdims=True)
             outputs /= K.std(inputs, axis=reduce_axes, keepdims=True)
 
         elif self.norm_method == 'std':
@@ -206,7 +205,7 @@ class ImageNormalization3D(Layer):
             outputs /= self._window_std_filter(outputs)
 
         elif self.norm_method == 'max':
-            outputs = inputs / tf.reduce_max(inputs)
+            outputs = inputs / K.max(inputs)
             outputs -= self._average_filter(outputs)
 
         elif self.norm_method == 'median':

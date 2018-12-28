@@ -84,7 +84,7 @@ class DilatedMaxPool2D(Layer):
 
     def call(self, inputs):
         if self.data_format == 'channels_first':
-            inputs = tf.transpose(inputs, perm=[0, 2, 3, 1])
+            inputs = K.permute_dimensions(inputs, pattern=[0, 2, 3, 1])
 
         padding_input = self.padding.upper()
         dilation_rate = conv_utils.normalize_tuple(
@@ -99,7 +99,7 @@ class DilatedMaxPool2D(Layer):
                              data_format='NHWC')
 
         if self.data_format == 'channels_first':
-            outputs = tf.transpose(outputs, perm=[0, 3, 1, 2])
+            outputs = K.permute_dimensions(outputs, pattern=[0, 3, 1, 2])
 
         return outputs
 
@@ -165,7 +165,7 @@ class DilatedMaxPool3D(Layer):
 
     def call(self, inputs):
         if self.data_format == 'channels_first':
-            inputs = tf.transpose(inputs, perm=[0, 2, 3, 4, 1])
+            inputs = K.permute_dimensions(inputs, pattern=[0, 2, 3, 4, 1])
 
         padding_input = self.padding.upper()
         dilation_rate = conv_utils.normalize_tuple(
@@ -180,7 +180,7 @@ class DilatedMaxPool3D(Layer):
                              data_format='NDHWC')
 
         if self.data_format == 'channels_first':
-            outputs = tf.transpose(outputs, perm=[0, 4, 1, 2, 3])
+            outputs = K.permute_dimensions(outputs, pattern=[0, 4, 1, 2, 3])
 
         return outputs
 
