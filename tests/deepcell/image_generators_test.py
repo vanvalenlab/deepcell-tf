@@ -800,8 +800,8 @@ class TestMovieDataGenerator(test.TestCase):
                 img_list.append(img_stack)
 
             images = np.vstack(img_list)
-            batch_count = images.shape[0] // frames
-            images = np.reshape(images, (batch_count, frames, *images.shape[1:]))
+            batches = images.shape[0] // frames
+            images = np.reshape(images, (batches, frames, *images.shape[1:]))
             generator = image_generators.MovieDataGenerator(
                 featurewise_center=True,
                 samplewise_center=True,
@@ -1007,8 +1007,8 @@ class TestMovieDataGenerator(test.TestCase):
                 img_list.append(img_stack)
 
             images = np.vstack(img_list)
-            batch_count = images.shape[0] // frames
-            images = np.reshape(images, (batch_count, frames, *images.shape[1:]))
+            batches = images.shape[0] // frames
+            images = np.reshape(images, (batches, frames, *images.shape[1:]))
             generator = image_generators.MovieDataGenerator(
                 featurewise_center=True,
                 samplewise_center=True,
