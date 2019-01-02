@@ -311,7 +311,7 @@ class TestSampleDataGenerator(test.TestCase):
                 shear_range=0.5,
                 zoom_range=0.2,
                 channel_shift_range=1.,
-                # brightness_range=(1, 5),  # TODO: converts to channels_last?
+                # brightness_range=(1, 5),  # TODO: `channels_first` conflict
                 fill_mode='nearest',
                 cval=0.5,
                 horizontal_flip=True,
@@ -488,7 +488,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
                 shear_range=0.5,
                 zoom_range=0.2,
                 channel_shift_range=1.,
-                brightness_range=(1, 5),
+                # brightness_range=(1, 5),  # TODO: `channels_first` conflict
                 fill_mode='nearest',
                 cval=0.5,
                 horizontal_flip=True,
@@ -648,7 +648,7 @@ class TestFullyConvDataGenerator(test.TestCase):
                 shear_range=0.5,
                 zoom_range=0.2,
                 channel_shift_range=1.,
-                brightness_range=(1, 5),
+                # brightness_range=(1, 5),  # TODO: `channels_first` conflict
                 fill_mode='nearest',
                 cval=0.5,
                 horizontal_flip=True,
@@ -877,7 +877,7 @@ class TestMovieDataGenerator(test.TestCase):
                 shear_range=0.5,
                 zoom_range=0.2,
                 channel_shift_range=1.,
-                brightness_range=(1, 5),
+                # brightness_range=(1, 5),  # TODO: `channels_first` conflict
                 fill_mode='nearest',
                 cval=0.5,
                 horizontal_flip=True,
