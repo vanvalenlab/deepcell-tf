@@ -52,7 +52,6 @@ from deepcell.utils.train_utils import rate_scheduler
 from deepcell.utils.transform_utils import distance_transform_2d
 from deepcell.utils.transform_utils import distance_transform_3d
 from deepcell.utils.transform_utils import deepcell_transform
-from deepcell.utils.transform_utils import transform_matrix_offset_center
 
 del absolute_import
 del division
