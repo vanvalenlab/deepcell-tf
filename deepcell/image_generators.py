@@ -40,33 +40,41 @@ from skimage.measure import regionprops
 from skimage.transform import resize
 from skimage.io import imread
 
-# from keras_preprocessing.image import apply_transform
-from keras_preprocessing.image import flip_axis
-from keras_preprocessing.image import random_channel_shift
-from keras_preprocessing.image import transform_matrix_offset_center
+try:
+    import scipy
+    # scipy.linalg cannot be accessed until explicitly imported
+    from scipy import linalg
+    # scipy.ndimage cannot be accessed until explicitly imported
+    from scipy import ndimage
+except ImportError:
+    scipy = None
 
 from tensorflow.python.platform import tf_logging as logging
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.utils import to_categorical
-from tensorflow.python.keras.preprocessing.image import random_channel_shift
-from tensorflow.python.keras.preprocessing.image import apply_transform
-from tensorflow.python.keras.preprocessing.image import flip_axis
 from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
 try:
     from tensorflow.python.keras.utils import conv_utils
-except ImportError:
+except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
     from tensorflow.python.keras._impl.keras.utils import conv_utils
+
+# Check if ImageDataGenerator is 1.11.0 or later
+if not hasattr(ImageDataGenerator, 'apply_transform'):
+    # tf.version is 1.10.0 or earlier, use keras_preprocessing classes
+    from keras_preprocessing.image import Iterator
+    from keras_preprocessing.image import ImageDataGenerator
 
 from keras_retinanet.preprocessing.generator import Generator as _RetinaNetGenerator
 from keras_maskrcnn.preprocessing.generator import Generator as _MaskRCNNGenerator
 
-from deepcell.utils.data_utils import sample_label_matrix, sample_label_movie
-from deepcell.utils.transform_utils import transform_matrix_offset_center
+from deepcell.utils.data_utils import sample_label_movie
+from deepcell.utils.data_utils import sample_label_matrix
 from deepcell.utils.transform_utils import deepcell_transform
-from deepcell.utils.transform_utils import distance_transform_2d, distance_transform_3d
+from deepcell.utils.transform_utils import distance_transform_2d
+from deepcell.utils.transform_utils import distance_transform_3d
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
 
 
