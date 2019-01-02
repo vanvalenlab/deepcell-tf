@@ -343,7 +343,7 @@ class TestSampleDataGenerator(test.TestCase):
                     save_to_dir=temp_dir,
                     window_size=(win_x, win_y),
                     balance_classes=True,
-                    max_class_samples=100,
+                    max_class_samples=10,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], (x.shape[1], 2 * win_x + 1, 2 * win_y + 1))
                 break
@@ -367,21 +367,21 @@ class TestSampleDataGenerator(test.TestCase):
         # Test flow with invalid dimensions
         with self.assertRaises(ValueError):
             train_dict = {
-                'X': np.random.random((32, 10, 10)),
-                'y': np.random.random((32, 10, 10))
+                'X': np.random.random((8, 10, 10)),
+                'y': np.random.random((8, 10, 10))
             }
             generator.flow(train_dict, window_size=(win_x, win_y))
 
         # Test flow with non-matching batches
         with self.assertRaises(Exception):
             train_dict = {
-                'X': np.random.random((32, 10, 10, 1)),
-                'y': np.random.random((25, 10, 10, 1))
+                'X': np.random.random((8, 10, 10, 1)),
+                'y': np.random.random((7, 10, 10, 1))
             }
             generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
-        x = np.random.random((32, 10, 10, 5))
-        y = np.random.randint(2, size=(32, 10, 10, 1))
+        x = np.random.random((8, 10, 10, 5))
+        y = np.random.randint(2, size=(8, 10, 10, 1))
         generator.flow({'X': x, 'y': y}, window_size=(win_x, win_y))
 
         with self.assertRaises(ValueError):
@@ -398,7 +398,7 @@ class TestSampleDataGenerator(test.TestCase):
 class TestSampleMovieDataGenerator(test.TestCase):
 
     def test_sample_movie_data_generator(self):
-        frames = 24
+        frames = 7
         for test_images in _generate_test_images():
             img_list = []
             for im in test_images:
@@ -462,7 +462,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
                 break
 
     def test_sample_movie_data_generator_channels_first(self):
-        frames = 24
+        frames = 7
         for test_images in _generate_test_images():
             img_list = []
             for im in test_images:
@@ -546,22 +546,22 @@ class TestSampleMovieDataGenerator(test.TestCase):
         # Test flow with invalid dimensions
         with self.assertRaises(ValueError):
             train_dict = {
-                'X': np.random.random((32, 10, 10, 1)),
-                'y': np.random.random((32, 10, 10, 1))
+                'X': np.random.random((8, 10, 10, 1)),
+                'y': np.random.random((8, 10, 10, 1))
             }
             generator.flow(train_dict, window_size=window_size)
 
         # Test flow with non-matching batches
         with self.assertRaises(Exception):
             train_dict = {
-                'X': np.random.random((32, 30, 10, 10, 1)),
-                'y': np.random.random((25, 30, 10, 10, 1))
+                'X': np.random.random((8, 11, 10, 10, 1)),
+                'y': np.random.random((7, 11, 10, 10, 1))
             }
             generator.flow(train_dict, window_size=window_size)
 
         # Invalid number of channels: will work but raise a warning
-        x = np.random.random((32, 30, 10, 10, 5))
-        y = np.random.randint(2, size=(32, 30, 10, 10, 1))
+        x = np.random.random((8, 11, 10, 10, 5))
+        y = np.random.randint(2, size=(8, 11, 10, 10, 1))
         generator.flow({'X': x, 'y': y}, window_size=window_size)
 
         with self.assertRaises(ValueError):
@@ -604,8 +604,8 @@ class TestFullyConvDataGenerator(test.TestCase):
 
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((32, 10, 10, 3)),
-                'y': np.random.random((32, 10, 10, 1)),
+                'X': np.random.random((8, 10, 10, 3)),
+                'y': np.random.random((8, 10, 10, 1)),
             }
             generator.flow(train_dict)
 
@@ -654,8 +654,8 @@ class TestFullyConvDataGenerator(test.TestCase):
 
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((32, 3, 10, 10)),
-                'y': np.random.random((32, 1, 10, 10)),
+                'X': np.random.random((8, 3, 10, 10)),
+                'y': np.random.random((8, 1, 10, 10)),
             }
             generator.flow(train_dict)
 
@@ -693,16 +693,16 @@ class TestFullyConvDataGenerator(test.TestCase):
         # Test flow with invalid dimensions
         with self.assertRaises(ValueError):
             train_dict = {
-                'X': np.random.random((32, 10, 10)),
-                'y': np.random.random((32, 10, 10))
+                'X': np.random.random((8, 10, 10)),
+                'y': np.random.random((8, 10, 10))
             }
             generator.flow(train_dict)
 
         # Test flow with non-matching batches
         with self.assertRaises(Exception):
             train_dict = {
-                'X': np.random.random((32, 10, 10, 1)),
-                'y': np.random.random((25, 10, 10, 1))
+                'X': np.random.random((8, 10, 10, 1)),
+                'y': np.random.random((7, 10, 10, 1))
             }
             generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
@@ -729,10 +729,10 @@ class TestFullyConvDataGenerator(test.TestCase):
             zca_whitening=True,
             data_format='channels_last')
         # Test grayscale
-        x = np.random.random((32, 10, 10, 1))
+        x = np.random.random((8, 10, 10, 1))
         generator.fit(x)
         # Test RBG
-        x = np.random.random((32, 10, 10, 3))
+        x = np.random.random((8, 10, 10, 3))
         generator.fit(x)
         generator = image_generators.ImageFullyConvDataGenerator(
             featurewise_center=True,
@@ -742,10 +742,10 @@ class TestFullyConvDataGenerator(test.TestCase):
             zca_whitening=True,
             data_format='channels_first')
         # Test grayscale
-        x = np.random.random((32, 1, 10, 10))
+        x = np.random.random((8, 1, 10, 10))
         generator.fit(x)
         # Test RBG
-        x = np.random.random((32, 3, 10, 10))
+        x = np.random.random((8, 3, 10, 10))
         generator.fit(x)
 
     def test_batch_standardize(self):
@@ -785,7 +785,7 @@ class TestFullyConvDataGenerator(test.TestCase):
 class TestMovieDataGenerator(test.TestCase):
 
     def test_movie_data_generator(self):
-        frames = 30
+        frames = 7
         for test_images in _generate_test_images():
             img_list = []
             for im in test_images:
@@ -818,8 +818,8 @@ class TestMovieDataGenerator(test.TestCase):
 
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((32, 30, 10, 10, 3)),
-                'y': np.random.random((32, 30, 10, 10, 1)),
+                'X': np.random.random((8, 11, 10, 10, 3)),
+                'y': np.random.random((8, 11, 10, 10, 1)),
             }
             generator.flow(train_dict, frames_per_batch=1)
 
@@ -831,7 +831,7 @@ class TestMovieDataGenerator(test.TestCase):
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.random(y_shape)
-            frames_per_batch = 10
+            frames_per_batch = 5
             for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
@@ -844,7 +844,7 @@ class TestMovieDataGenerator(test.TestCase):
                 break
 
     def test_movie_data_generator_channels_first(self):
-        frames = 30
+        frames = 7
         for test_images in _generate_test_images():
             img_list = []
             for im in test_images:
@@ -879,8 +879,8 @@ class TestMovieDataGenerator(test.TestCase):
 
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((32, 3, 30, 10, 10)),
-                'y': np.random.random((32, 1, 30, 10, 10)),
+                'X': np.random.random((8, 3, 11, 10, 10)),
+                'y': np.random.random((8, 1, 11, 10, 10)),
             }
             generator.flow(train_dict)
 
@@ -893,7 +893,7 @@ class TestMovieDataGenerator(test.TestCase):
             train_dict['X'] = images
             train_dict['y'] = np.random.random(y_shape)
 
-            frames_per_batch = 10
+            frames_per_batch = 5
             for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
@@ -922,24 +922,24 @@ class TestMovieDataGenerator(test.TestCase):
         # Test flow with invalid dimensions
         with self.assertRaises(ValueError):
             train_dict = {
-                'X': np.random.random((32, 10, 10, 1)),
-                'y': np.random.random((32, 10, 10, 1))
+                'X': np.random.random((8, 10, 10, 1)),
+                'y': np.random.random((8, 10, 10, 1))
             }
             generator.flow(train_dict)
 
         # Test flow with non-matching batches
         with self.assertRaises(Exception):
             train_dict = {
-                'X': np.random.random((32, 30, 10, 10, 1)),
-                'y': np.random.random((25, 30, 10, 10, 1))
+                'X': np.random.random((8, 11, 10, 10, 1)),
+                'y': np.random.random((7, 11, 10, 10, 1))
             }
             generator.flow(train_dict)
 
         # Test flow with bigger frames_per_batch than frames
         with self.assertRaises(Exception):
             train_dict = {
-                'X': np.random.random((32, 30, 10, 10, 1)),
-                'y': np.random.random((32, 30, 10, 10, 1))
+                'X': np.random.random((8, 11, 10, 10, 1)),
+                'y': np.random.random((8, 11, 10, 10, 1))
             }
             generator.flow(train_dict, frames_per_batch=31)
 
@@ -967,10 +967,10 @@ class TestMovieDataGenerator(test.TestCase):
             zca_whitening=True,
             data_format='channels_last')
         # Test grayscale
-        x = np.random.random((32, 30, 10, 10, 1))
+        x = np.random.random((8, 5, 10, 10, 1))
         generator.fit(x)
         # Test RBG
-        x = np.random.random((32, 30, 10, 10, 3))
+        x = np.random.random((8, 5, 10, 10, 3))
         generator.fit(x)
         generator = image_generators.MovieDataGenerator(
             featurewise_center=True,
@@ -980,15 +980,15 @@ class TestMovieDataGenerator(test.TestCase):
             zca_whitening=True,
             data_format='channels_first')
         # Test grayscale
-        x = np.random.random((32, 1, 30, 10, 10))
+        x = np.random.random((8, 1, 5, 4, 6))
         generator.fit(x)
         # Test RBG
-        x = np.random.random((32, 3, 30, 10, 10))
+        x = np.random.random((8, 3, 5, 4, 6))
         generator.fit(x)
 
     def test_batch_standardize(self):
         # MovieDataGenerator.standardize should work on batches
-        frames = 30
+        frames = 3
         for test_images in _generate_test_images():
             img_list = []
             for im in test_images:
