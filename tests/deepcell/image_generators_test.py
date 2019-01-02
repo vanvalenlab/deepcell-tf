@@ -271,7 +271,8 @@ class TestSampleDataGenerator(test.TestCase):
                 'X': np.random.random((test_batches, img_w, img_h, 3)),
                 'y': np.random.randint(2, size=(test_batches, img_w, img_h, 1))
             }
-            generator.flow(train_dict, window_size=(win_x, win_y))
+            generator.flow(train_dict, window_size=(win_x, win_y),
+                           max_class_samples=10)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -326,7 +327,8 @@ class TestSampleDataGenerator(test.TestCase):
                 'X': np.random.random((test_batches, 3, img_w, img_h)),
                 'y': np.random.randint(2, size=(test_batches, 1, img_w, img_h))
             }
-            generator.flow(train_dict, window_size=(win_x, win_y))
+            generator.flow(train_dict, window_size=(win_x, win_y),
+                           max_class_samples=10)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -436,7 +438,8 @@ class TestSampleMovieDataGenerator(test.TestCase):
                 'X': np.random.random((test_batches, frames, img_w, img_h, 3)),
                 'y': np.random.randint(2, size=(test_batches, frames, img_w, img_h, 1))
             }
-            generator.flow(train_dict, window_size=(win_x, win_y, win_z))
+            generator.flow(train_dict, window_size=(win_x, win_y, win_z),
+                           max_class_samples=10)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -501,7 +504,8 @@ class TestSampleMovieDataGenerator(test.TestCase):
                 'X': np.random.random((test_batches, 3, frames, img_w, img_h)),
                 'y': np.random.randint(2, size=(test_batches, 1, frames, img_w, img_h))
             }
-            generator.flow(train_dict, window_size=(win_x, win_y, win_z))
+            generator.flow(train_dict, window_size=(win_x, win_y, win_z),
+                           max_class_samples=10)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
