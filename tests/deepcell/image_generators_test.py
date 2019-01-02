@@ -620,9 +620,12 @@ class TestFullyConvDataGenerator(test.TestCase):
             for x, y in generator.flow(
                     train_dict,
                     save_to_dir=temp_dir,
+                    skip=1,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], images.shape[1:])
-                self.assertEqual(y.shape[1:], y_shape[1:])
+                self.assertEqual(len(y), 2)
+                self.assertEqual(y[0].shape[1:], y_shape[1:])
+                self.assertEqual(y[-1].shape[1:], y_shape[1:])
                 break
 
     def test_fully_conv_data_generator_channels_first(self):
@@ -671,9 +674,12 @@ class TestFullyConvDataGenerator(test.TestCase):
             for x, y in generator.flow(
                     train_dict,
                     save_to_dir=temp_dir,
+                    skip=1,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], images.shape[1:])
-                self.assertEqual(y.shape[1:], y_shape[1:])
+                self.assertEqual(len(y), 2)
+                self.assertEqual(y[0].shape[1:], y_shape[1:])
+                self.assertEqual(y[-1].shape[1:], y_shape[1:])
                 break
 
     def test_fully_conv_data_generator_invalid_data(self):
@@ -836,11 +842,14 @@ class TestMovieDataGenerator(test.TestCase):
                     train_dict,
                     shuffle=True,
                     save_to_dir=temp_dir,
+                    skip=1,
                     frames_per_batch=frames_per_batch):
                 batch_x_shape = (frames_per_batch, *images.shape[2:])
                 batch_y_shape = (frames_per_batch, *y_shape[2:])
                 self.assertEqual(x.shape[1:], batch_x_shape)
-                self.assertEqual(y.shape[1:], batch_y_shape)
+                self.assertEqual(len(y), 2)
+                self.assertEqual(y[0].shape[1:], batch_y_shape)
+                self.assertEqual(y[-1].shape[1:], batch_y_shape)
                 break
 
     def test_movie_data_generator_channels_first(self):
@@ -897,12 +906,15 @@ class TestMovieDataGenerator(test.TestCase):
             for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
+                    skip=1,
                     save_to_dir=temp_dir,
                     frames_per_batch=frames_per_batch):
                 batch_x_shape = (images.shape[1], frames_per_batch, *images.shape[3:])
                 batch_y_shape = (y_shape[1], frames_per_batch, *y_shape[3:])
                 self.assertEqual(x.shape[1:], batch_x_shape)
-                self.assertEqual(y.shape[1:], batch_y_shape)
+                self.assertEqual(len(y), 2)
+                self.assertEqual(y[0].shape[1:], batch_y_shape)
+                self.assertEqual(y[-1].shape[1:], batch_y_shape)
                 break
 
     def test_movie_data_generator_invalid_data(self):
