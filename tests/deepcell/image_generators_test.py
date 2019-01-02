@@ -712,9 +712,7 @@ class TestFullyConvDataGenerator(test.TestCase):
             }
             generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
-        x = np.random.random((32, 10, 10, 5))
-        y = np.random.random((32, 10, 10, 1))
-        generator.flow({'X': x, 'y': y})
+        generator.fit(np.random.random((8, 10, 10, 5)))
 
         with self.assertRaises(ValueError):
             generator = image_generators.ImageFullyConvDataGenerator(
@@ -956,9 +954,7 @@ class TestMovieDataGenerator(test.TestCase):
             generator.flow(train_dict, frames_per_batch=31)
 
         # Invalid number of channels: will work but raise a warning
-        x = np.random.random((32, 30, 10, 10, 5))
-        y = np.random.random((32, 30, 10, 10, 1))
-        generator.flow({'X': x, 'y': y})
+        generator.fit(np.random.random((8, 3, 10, 10, 5)))
 
         with self.assertRaises(ValueError):
             generator = image_generators.MovieDataGenerator(
