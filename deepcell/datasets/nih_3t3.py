@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -24,6 +24,7 @@
 # limitations under the License.
 # ==============================================================================
 """3T3 Nuclear Dataset from the NIH."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -39,11 +40,15 @@ from deepcell.utils.data_utils import get_data
 
 
 def load_data(path='3T3_NIH.npz', test_size=.2, seed=0):
-    """Loads the MNIST dataset.
-    # Arguments
+    """Loads the 3T3-NIH dataset.
+
+    # Args:
         path: path where to cache the dataset locally
             (relative to ~/.keras/datasets).
-    # Returns
+        test_size: fraction of data to reserve as test data
+        seed: the seed for randomly shuffling the dataset
+
+    Returns:
         Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
     """
     basepath = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))

@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -23,9 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Functions for exporting convolutional neural networks for TF serving
-@author: David Van Valen
-"""
+"""Functions for exporting convolutional neural networks for TF serving"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -40,6 +39,14 @@ from tensorflow.python.saved_model.builder import SavedModelBuilder
 
 
 def export_model(keras_model, export_path, model_version=0, weights_path=None):
+    """Export a model for use with tensorflow-serving.
+
+    Args:
+        keras_model: instantiated Keras model to export
+        export_path: destination to save the exported model files
+        model_version: integer version of the model
+        weights_path: path to a .h5 or .tf weights file for the model to load
+    """
     # Start the tensorflow session
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8, allow_growth=False)
     sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))

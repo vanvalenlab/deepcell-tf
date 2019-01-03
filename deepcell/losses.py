@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -23,9 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Custom loss functions
-@author: David Van Valen
-"""
+"""Custom loss functions for DeepCell"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -36,14 +35,16 @@ from tensorflow.python.keras import backend as K
 
 def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
-    # Arguments
+
+    Args:
         y_true: A tensor of the same shape as `output`.
         y_pred: A tensor resulting from a softmax
         (unless `from_logits` is True, in which
         case `y_pred` is expected to be the logits).
         from_logits: Boolean, whether `y_pred` is the
         result of a softmax, or is a tensor of logits.
-    # Returns
+
+    Returns:
         Output tensor.
     """
     # Note: tf.nn.softmax_cross_entropy_with_logits
@@ -61,18 +62,22 @@ def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from
     return tf.nn.softmax_cross_entropy_with_logits(labels=y_true, logits=y_pred)
 
 
-def weighted_categorical_crossentropy(y_true, y_pred, n_classes=3, axis=None, from_logits=False):
+def weighted_categorical_crossentropy(y_true, y_pred,
+                                      n_classes=3, axis=None,
+                                      from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
     Automatically computes the class weights from the target image and uses
     them to weight the cross entropy
-    # Arguments
+
+    Args:
         y_true: A tensor of the same shape as `y_pred`.
         y_pred: A tensor resulting from a softmax
         (unless `from_logits` is True, in which
         case `y_pred` is expected to be the logits).
         from_logits: Boolean, whether `y_pred` is the
         result of a softmax, or is a tensor of logits.
-    # Returns
+
+    Returns:
         Output tensor.
     """
     if from_logits:
@@ -97,15 +102,18 @@ def sample_categorical_crossentropy(y_true,
                                     axis=None,
                                     from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
-    Only the sampled pixels defined by y_true = 1 are used to compute the cross entropy
-    # Arguments
+    Only the sampled pixels defined by y_true = 1 are used to compute the
+    cross entropy.
+
+    Args:
         y_true: A tensor of the same shape as `y_pred`.
         y_pred: A tensor resulting from a softmax
         (unless `from_logits` is True, in which
         case `y_pred` is expected to be the logits).
         from_logits: Boolean, whether `y_pred` is the
         result of a softmax, or is a tensor of logits.
-    # Returns
+
+    Returns:
         Output tensor.
     """
     # Note: tf.nn.softmax_cross_entropy_with_logits
@@ -128,10 +136,14 @@ def sample_categorical_crossentropy(y_true,
 
 
 def dice_loss(y_true, y_pred, smooth=1):
-    """Computes the dice loss
-    # Arguments:
+    """Dice coefficient loss between an output tensor and a target tensor.
+
+    Args:
         y_true: A tensor of the same shape as `y_pred`.
         y_pred: A tensor resulting from a softmax
+
+    Returns:
+        Output tensor.
     """
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
@@ -139,11 +151,18 @@ def dice_loss(y_true, y_pred, smooth=1):
     return - ((2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth))
 
 
-def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, gamma=1e-3):
-    """Computes the discriminative instance loss
-    # Arguments:
+def discriminative_instance_loss(y_true, y_pred,
+                                 delta_v=0.5,
+                                 delta_d=1.5,
+                                 gamma=1e-3):
+    """Discriminative loss between an output tensor and a target tensor.
+
+    Args:
         y_true: A tensor of the same shape as `y_pred`.
         y_pred: A tensor of the vector embedding
+
+    Returns:
+        Output tensor.
     """
 
     def temp_norm(ten, axis=None):
@@ -188,10 +207,20 @@ def discriminative_instance_loss(y_true, y_pred, delta_v=0.5, delta_d=1.5, gamma
 
 
 def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_logits=False):
-    """Computes focal loss with class weights computed on the fly
-    # Arguments:
+    """Focal loss between an output tensor and a target tensor.
+    Automatically computes the class weights from the target image and uses
+    them to weight the cross entropy
+
+    Args:
         y_true: A tensor of the same shape as `y_pred`.
         y_pred: A tensor resulting from a softmax
+        (unless `from_logits` is True, in which
+        case `y_pred` is expected to be the logits).
+        from_logits: Boolean, whether `y_pred` is the
+        result of a softmax, or is a tensor of logits.
+
+    Returns:
+        Output tensor.
     """
     if from_logits:
         raise Exception('weighted_focal_loss cannot take logits')

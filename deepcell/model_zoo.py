@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -23,9 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Assortment of CNN architectures for single cell segmentation
-@author: David Van Valen
-"""
+"""Assortment of CNN architectures for single cell segmentation"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division

@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -23,9 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Automatically generate a notebook for analyzing predicted images
-@author: andrewqho, willgraf
-"""
+"""Automatically generate Jupyter notebooks for analyzing segmented images"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -42,11 +40,15 @@ import nbformat as nbf
 # Create Visual Notebook
 def make_notebook(model_output,
                   output_dir=os.path.join('scripts', 'generated_notebooks')):
-    """Create a visualization notebook that will help visualize
-    the output of a deep learning model
-    # Arguments:
+    """Create a notebook that will help visualize the output of a
+    deep learning model.
+
+    Args:
         model_output: output of a deep learning model to visualize
         output_dir: directory to save the notebook
+
+    Returns:
+        path to the generated notebook
     """
     # validate inputs
     if not os.path.isfile(model_output):

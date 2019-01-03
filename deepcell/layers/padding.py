@@ -1,4 +1,4 @@
-# Copyright 2016-2018 The Van Valen Lab at the California Institute of
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -23,9 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Layers for padding for 2D and 3D images
-@author: David Van Valen
-"""
+"""Layers for padding for 2D and 3D images"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -41,7 +40,7 @@ class ReflectionPadding2D(ZeroPadding2D):
     This layer can add rows and columns of reflected values
     at the top, bottom, left and right side of an image tensor.
 
-    Arguments:
+    Args:
         padding: int, or tuple of 2 ints, or tuple of 2 tuples of 2 ints.
             - If int: the same symmetric padding
                 is applied to height and width.
@@ -52,6 +51,7 @@ class ReflectionPadding2D(ZeroPadding2D):
             - If tuple of 2 tuples of 2 ints:
                 interpreted as
                 `((top_pad, bottom_pad), (left_pad, right_pad))`
+
         data_format: A string,
             one of `channels_last` (default) or `channels_first`.
             The ordering of the dimensions in the inputs.
@@ -62,12 +62,14 @@ class ReflectionPadding2D(ZeroPadding2D):
             It defaults to the `image_data_format` value found in your
             Keras config file at `~/.keras/keras.json`.
             If you never set it, then it will be "channels_last".
+
     Input shape:
         4D tensor with shape:
         - If `data_format` is `"channels_last"`:
             `(batch, rows, cols, channels)`
         - If `data_format` is `"channels_first"`:
             `(batch, channels, rows, cols)`
+
     Output shape:
         4D tensor with shape:
         - If `data_format` is `"channels_last"`:
@@ -87,7 +89,8 @@ class ReflectionPadding2D(ZeroPadding2D):
 
 class ReflectionPadding3D(ZeroPadding3D):
     """Reflection-padding layer for 3D data (spatial or spatio-temporal).
-    Arguments:
+
+    Args:
         padding: int, or tuple of 3 ints, or tuple of 3 tuples of 2 ints.
             - If int: the same symmetric padding
                 is applied to height and width.
@@ -99,6 +102,7 @@ class ReflectionPadding3D(ZeroPadding3D):
                 interpreted as
                 `((left_dim1_pad, right_dim1_pad), (left_dim2_pad,
                     right_dim2_pad), (left_dim3_pad, right_dim3_pad))`
+
         data_format: A string,
             one of `channels_last` (default) or `channels_first`.
             The ordering of the dimensions in the inputs.
@@ -109,6 +113,7 @@ class ReflectionPadding3D(ZeroPadding3D):
             It defaults to the `image_data_format` value found in your
             Keras config file at `~/.keras/keras.json`.
             If you never set it, then it will be "channels_last".
+
     Input shape:
         5D tensor with shape:
         - If `data_format` is `"channels_last"`:
@@ -117,6 +122,7 @@ class ReflectionPadding3D(ZeroPadding3D):
         - If `data_format` is `"channels_first"`:
             `(batch, depth, first_axis_to_pad, second_axis_to_pad,
                 third_axis_to_pad)`
+
     Output shape:
         5D tensor with shape:
         - If `data_format` is `"channels_last"`:
