@@ -9,8 +9,7 @@ DeepCell aids in biological analysis by automatically segmenting and classifying
 
 Read the documentaiton at [deepcell.readthedocs.io](https://deepcell.readthedocs.io)
 
-For more information on deploying DeepCell in the cloud [refer to the DeepCell Kiosk documentation](https://deepcell-kiosk.readthedocs.io)  
-
+For more information on deploying DeepCell in the cloud [refer to the DeepCell Kiosk documentation](https://deepcell-kiosk.readthedocs.io)
 
 ## Getting Started
 
@@ -90,7 +89,7 @@ NV_GPU='0' nvidia-docker run -it \
 Copyright © 2016-2019 [The Van Valen Lab](http://www.vanvalen.caltech.edu/) at the California Institute of Technology (Caltech), with support from the Paul Allen Family Foundation, Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.  
 All rights reserved.
 
-## License 
+## License
 
 This software is licensed under a modified [APACHE2](LICENSE).
 
