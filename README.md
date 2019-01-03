@@ -5,9 +5,12 @@
 
 DeepCell is neural network library for single cell analysis, written in Python and built using [TensorFlow](https://github.com/tensorflow/tensorflow) and [Keras](https://github.com/keras-team/keras).  
 
-DeepCell aids in biological analysis by automatically segmenting and classifying cells in optical microscopy images. This framework consumes raw images and provides uniquely annotated files as an output.
+DeepCell aids in biological analysis by automatically segmenting and classifying cells in optical microscopy images.  The framework processes raw images and uniquely annotates each cell in the image.  These annotations can be used to quantify a variety of cellular properties.
 
 Read the documentaiton at [deepcell.readthedocs.io](https://deepcell.readthedocs.io)
+
+For more information on deploying DeepCell in the cloud [refer to the DeepCell Kiosk documentation](https://deepcell-kiosk.readthedocs.io)
+
 
 ## Getting Started
 
