@@ -23,9 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Layers to generate tensor products for 2D and 3D data
-@author: David Van Valen
-"""
+"""Layers to generate tensor products for 2D and 3D data"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division

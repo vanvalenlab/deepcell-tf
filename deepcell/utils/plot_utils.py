@@ -23,9 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Utilities plotting data
-@author: David Van Valen
-"""
+"""Utilities plotting data"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -116,7 +115,8 @@ def plot_training_data_3d(X, y, num_image_stacks, frames_to_display=5):
 
 def plot_error(loss_hist_file, saved_direc, plot_name):
     """Plot the training and validation error from the npz file
-    # Arguments
+
+    Args:
         loss_hist_file: full path to .npz loss history file
         saved_direc: full path to directory where you want to save the plot
         plot_name: the name of plot

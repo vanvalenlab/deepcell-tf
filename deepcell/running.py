@@ -23,9 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Functions for running convolutional neural networks
-@author: David Van Valen
-"""
+"""Functions for running convolutional neural networks"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -43,12 +42,13 @@ from deepcell.utils.io_utils import get_images_from_directory
 
 
 def get_cropped_input_shape(images, num_crops=4, receptive_field=61, data_format=None):
-    """Helper function to calculate the input_shape for models
-    that will process cropped sub-images.
-    # Arguments:
+    """Calculate the input_shape for models to process cropped sub-images.
+
+    Args:
         images: numpy array of original data
         num_crops: number of slices for the x and y axis to create sub-images
-    # Returns:
+
+    Returns:
         input_shape: new input_shape for model to process sub-images.
     """
     if data_format is None:
@@ -81,10 +81,12 @@ def get_cropped_input_shape(images, num_crops=4, receptive_field=61, data_format
 
 
 def get_padding_layers(model):
-    """Get all names of padding layers in the model
-    # Arguments:
+    """Get all names of padding layers in a model
+
+    Args:
         model: Keras model
-    # Returns:
+
+    Returns:
         padding_layers: list of names of padding layers inside model
     """
     padding_layers = []
@@ -99,13 +101,15 @@ def get_padding_layers(model):
 def process_whole_image(model, images, num_crops=4, receptive_field=61, padding=None):
     """Slice images into num_crops * num_crops pieces, and use the model to
     process each small image.
-    # Arguments:
+
+    Args:
         model: model that will process each small image
         images: numpy array that is too big for model.predict(images)
         num_crops: number of slices for the x and y axis to create sub-images
         receptive_field: receptive field used by model, required to pad images
         padding: type of padding for input images, one of {'reflect', 'zero'}
-    # Returns:
+
+    Returns:
         model_output: numpy array containing model outputs for each sub-image
     """
     if K.image_data_format() == 'channels_first':
@@ -205,6 +209,15 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding=
 
 
 def run_model(image, model, win_x=30, win_y=30, split=True):
+    """Runs the chosen model.
+
+    Args:
+        model: model that will process each small image
+        image: numpy array that is too big for model.predict(images)
+
+    Returns:
+        model_output: numpy array containing model outputs for each sub-image
+    """
     # pad_width = ((0, 0), (0, 0), (win_x, win_x), (win_y, win_y))
     # image = np.pad(image, pad_width=pad_width , mode='constant', constant_values=0)
     is_channels_first = K.image_data_format() == 'channels_first'

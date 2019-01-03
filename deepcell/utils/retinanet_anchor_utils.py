@@ -23,10 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Anchor Box generator script based on keras_retinanet.utils.anchors
-but for inclusion of masks in the training.
-@author: shivamshaiv
-"""
+"""Anchor Box generator script that adapts keras_retinanet.utils.anchors
+to include masks during training."""
 
 import numpy as np
 
@@ -41,7 +39,8 @@ def anchor_targets_bbox(anchors,
                         positive_overlap=0.5,
                         **kwargs):
     """Generate anchor targets for bbox detection.
-    # Args
+
+    Args:
         anchors: np.array of annotations of shape (N, 4) for (x1, y1, x2, y2).
         annotations: np.array of shape (N, 5) for (x1, y1, x2, y2, label).
         num_classes: Number of classes to predict.
@@ -51,7 +50,8 @@ def anchor_targets_bbox(anchors,
             (all anchors with overlap < negative_overlap are negative).
         positive_overlap: IoU overlap or positive anchors
             (all anchors with overlap > positive_overlap are positive).
-    # Returns
+
+    Returns:
         labels: np.array of shape (A, num_classes) where a row consists of 0
             for negative and 1 for positive for a certain class.
         annotations: np.array of shape (A, 5) for (x1, y1, x2, y2, label)

@@ -23,12 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Automated Jupyter Notebook Creation and Server Instantiation
-Users can select specific default Jupyter Notebook templates and
-enter values for customization. Jupyter Notebook Servers will be
-automatically spun up.
-@author: andrewqho, willgraf
-"""
+"""Generate Jupyter notebooks for training deep learning models."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -58,7 +54,8 @@ def make_notebook(data,
                   **kwargs):
     """Create a training notebook that will step through the training
     process from making an npz file to creating and training a model.
-    # Arguments:
+
+    Args:
         data: zipfile of data to load into npz and train on
         train_type: training method to use, either "sample" or "conv"
         field_size: receptive field of the model, a positive integer
@@ -72,7 +69,8 @@ def make_notebook(data,
         log_dir: directory to write tensorboard logs
         export_dir: directory to export the model after training
         output_dir: local directory to save the notebook
-    # Returns:
+
+    Returns:
         notebook_path: path to generated notebook
     """
     if not data:
