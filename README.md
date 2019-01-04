@@ -83,6 +83,10 @@ NV_GPU='0' nvidia-docker run -it \
   $USER/deepcell-tf:latest
 ```
 
+## How to Cite
+- [The original DeepCell paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005177)
+- [DeepCell 2.0: Automated cloud deployment of deep learning models for large-scale cellular image analysis](https://www.biorxiv.org/content/early/2018/12/22/505032.article-metrics)
+
 ## Copyright
 
 Copyright © 2016-2019 [The Van Valen Lab](http://www.vanvalen.caltech.edu/) at the California Institute of Technology (Caltech), with support from the Paul Allen Family Foundation, Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.  All rights reserved.
