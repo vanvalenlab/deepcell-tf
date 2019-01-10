@@ -30,6 +30,7 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
+import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import activations
@@ -138,9 +139,13 @@ class ImageNormalization2D(Layer):
         return tensor_shape.TensorShape(input_shape)
 
     def _average_filter(self, inputs):
-        return K.depthwise_conv2d(inputs, self.kernel, (1, 1),
-                                  padding='same',
-                                  data_format=self.data_format)
+        if self.data_format == 'channels_first':
+            inputs = K.permute_dimensions(inputs, pattern=[0, 2, 3, 1])
+        outputs = tf.nn.depthwise_conv2d(inputs, self.kernel, [1, 1, 1, 1],
+                                         padding='SAME', data_format='NHWC')
+        if self.data_format == 'channels_first':
+            outputs = K.permute_dimensions(outputs, pattern=[0, 3, 1, 2])
+        return outputs
 
     def _window_std_filter(self, inputs, epsilon=K.epsilon()):
         c1 = self._average_filter(inputs)
@@ -289,8 +294,15 @@ class ImageNormalization3D(Layer):
         return tensor_shape.TensorShape(input_shape)
 
     def _average_filter(self, inputs):
-        return K.conv3d(inputs, self.kernel, (1, 1, 1),
-                        padding='same', data_format=self.data_format)
+        if self.data_format == 'channels_first':
+            inputs = K.permute_dimensions(inputs, pattern=[0, 2, 3, 4, 1])
+        # TODO: conv3d vs depthwise_conv2d?
+        outputs = tf.nn.conv3d(inputs, self.kernel, [1, 1, 1, 1, 1],
+                               padding='SAME', data_format='NDHWC')
+
+        if self.data_format == 'channels_first':
+            outputs = K.permute_dimensions(outputs, pattern=[0, 4, 1, 2, 3])
+        return outputs
 
     def _window_std_filter(self, inputs, epsilon=K.epsilon()):
         c1 = self._average_filter(inputs)
