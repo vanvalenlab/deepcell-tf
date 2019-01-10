@@ -30,10 +30,13 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
-import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.layers import Layer
+from tensorflow.python.keras import activations
+from tensorflow.python.keras import constraints
+from tensorflow.python.keras import initializers
+from tensorflow.python.keras import regularizers
+from tensorflow.python.keras.layers import Layer, InputSpec
 try:  # tf v1.9 moves conv_utils from _impl to keras.utils
     from tensorflow.python.keras.utils import conv_utils
 except ImportError:
@@ -41,8 +44,40 @@ except ImportError:
 
 
 class ImageNormalization2D(Layer):
-    def __init__(self, norm_method='std', filter_size=61, data_format=None, **kwargs):
-        super(ImageNormalization2D, self).__init__(**kwargs)
+    def __init__(self,
+                 norm_method='std',
+                 filter_size=61,
+                 data_format=None,
+                 activation=None,
+                 use_bias=False,
+                 kernel_initializer='glorot_uniform',
+                 bias_initializer='zeros',
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
+                 activity_regularizer=None,
+                 kernel_constraint=None,
+                 bias_constraint=None,
+                 **kwargs):
+        self.valid_modes = {'std', 'max', None, 'whole_image'}
+        if norm_method not in self.valid_modes:
+            raise ValueError('Invalid `norm_method`: "{}". '
+                             'Use one of {}.'.format(
+                                 norm_method, self.valid_modes))
+        if 'trainable' not in kwargs:
+            kwargs['trainable'] = False
+        super(ImageNormalization2D, self).__init__(
+            activity_regularizer=regularizers.get(activity_regularizer),
+            **kwargs)
+        self.activation = activations.get(activation)
+        self.use_bias = use_bias
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_constraint = constraints.get(bias_constraint)
+        self.input_spec = InputSpec(ndim=4)  # hardcoded for 2D data
+
         self.filter_size = filter_size
         self.norm_method = norm_method
         self.data_format = conv_utils.normalize_data_format(data_format)
@@ -55,27 +90,57 @@ class ImageNormalization2D(Layer):
         if isinstance(self.norm_method, str):
             self.norm_method = self.norm_method.lower()
 
+    def build(self, input_shape):
+        input_shape = tensor_shape.TensorShape(input_shape)
+        if len(input_shape) != 4:
+            raise ValueError('Inputs should have rank 4, '
+                             'received input shape: %s' % input_shape)
+        if self.data_format == 'channels_first':
+            channel_axis = 1
+        else:
+            channel_axis = -1
+        if input_shape.dims[channel_axis].value is None:
+            raise ValueError('The channel dimension of the inputs '
+                             'should be defined. Found `None`.')
+        input_dim = int(input_shape[channel_axis])
+        self.input_spec = InputSpec(ndim=4, axes={channel_axis: input_dim})
+
+        kernel_shape = (self.filter_size, self.filter_size, input_dim, 1)
+        self.kernel = self.add_weight(
+            name='kernel',
+            shape=kernel_shape,
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
+            trainable=False,
+            dtype=self.dtype)
+
+        W = np.ones(kernel_shape)
+        W = W / W.size
+        self.set_weights([W])
+
+        if self.use_bias:
+            self.bias = self.add_weight(
+                name='bias',
+                shape=(self.filter_size, self.filter_size),
+                initializer=self.bias_initializer,
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint,
+                trainable=False,
+                dtype=self.dtype)
+        else:
+            self.bias = None
+
+        self.built = True
+
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
         return tensor_shape.TensorShape(input_shape)
 
     def _average_filter(self, inputs):
-        in_channels = inputs.shape[self.channel_axis]
-        W = np.ones((self.filter_size, self.filter_size, in_channels, 1))
-
-        W /= W.size
-        kernel = K.variable(W.astype(K.floatx()))
-
-        if self.data_format == 'channels_first':
-            inputs = K.permute_dimensions(inputs, pattern=[0, 2, 3, 1])
-
-        outputs = tf.nn.depthwise_conv2d(inputs, kernel, [1, 1, 1, 1],
-                                         padding='SAME', data_format='NHWC')
-
-        if self.data_format == 'channels_first':
-            outputs = K.permute_dimensions(outputs, pattern=[0, 3, 1, 2])
-
-        return outputs
+        return K.depthwise_conv2d(inputs, self.kernel, (1, 1),
+                                  padding='same',
+                                  data_format=self.data_format)
 
     def _window_std_filter(self, inputs, epsilon=K.epsilon()):
         c1 = self._average_filter(inputs)
@@ -83,41 +148,26 @@ class ImageNormalization2D(Layer):
         output = K.sqrt(c2 - c1 * c1) + epsilon
         return output
 
-    def _reduce_median(self, inputs, axes=None):
-        input_shape = K.shape(inputs)
-        rank = tf.rank(inputs)
-        axes = [] if axes is None else axes
-
-        new_shape = [input_shape[axis] for axis in range(rank) if axis not in axes]
-        new_shape.append(-1)
-
-        reshaped_inputs = K.reshape(inputs, new_shape)
-        median_index = reshaped_inputs.get_shape()[-1] // 2
-
-        median = tf.nn.top_k(reshaped_inputs, k=median_index)
-        return median
-
     def call(self, inputs):
         if not self.norm_method:
             outputs = inputs
 
+        elif self.norm_method == 'whole_image':
+            axes = [2, 3] if self.channel_axis == 1 else [1, 2]
+            outputs = inputs - K.mean(inputs, axis=axes, keepdims=True)
+            outputs = outputs / K.std(inputs, axis=axes, keepdims=True)
+
         elif self.norm_method == 'std':
             outputs = inputs - self._average_filter(inputs)
-            outputs /= self._window_std_filter(outputs)
+            outputs = outputs / self._window_std_filter(outputs)
 
         elif self.norm_method == 'max':
             outputs = inputs / K.max(inputs)
-            outputs -= self._average_filter(outputs)
+            outputs = outputs - self._average_filter(outputs)
 
-        elif self.norm_method == 'median':
-            reduce_axes = list(range(len(inputs.shape)))[1:]
-            reduce_axes.remove(self.channel_axis)
-            # mean = self._reduce_median(inputs, axes=reduce_axes)
-            mean = tf.contrib.distributions.percentile(inputs, 50.)
-            outputs = inputs / mean
-            outputs -= self._average_filter(outputs)
         else:
-            raise NotImplementedError('"{}" is not a valid norm_method'.format(self.norm_method))
+            raise NotImplementedError('"{}" is not a valid norm_method'.format(
+                self.norm_method))
 
         return outputs
 
@@ -125,15 +175,56 @@ class ImageNormalization2D(Layer):
         config = {
             'norm_method': self.norm_method,
             'filter_size': self.filter_size,
-            'data_format': self.data_format
+            'data_format': self.data_format,
+            'activation': activations.serialize(self.activation),
+            'use_bias': self.use_bias,
+            'kernel_initializer': initializers.serialize(self.kernel_initializer),
+            'bias_initializer': initializers.serialize(self.bias_initializer),
+            'kernel_regularizer': regularizers.serialize(self.kernel_regularizer),
+            'bias_regularizer': regularizers.serialize(self.bias_regularizer),
+            'activity_regularizer': regularizers.serialize(self.activity_regularizer),
+            'kernel_constraint': constraints.serialize(self.kernel_constraint),
+            'bias_constraint': constraints.serialize(self.bias_constraint)
         }
         base_config = super(ImageNormalization2D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
 class ImageNormalization3D(Layer):
-    def __init__(self, norm_method='std', filter_size=61, data_format=None, **kwargs):
-        super(ImageNormalization3D, self).__init__(**kwargs)
+    def __init__(self,
+                 norm_method='std',
+                 filter_size=61,
+                 data_format=None,
+                 activation=None,
+                 use_bias=False,
+                 kernel_initializer='glorot_uniform',
+                 bias_initializer='zeros',
+                 kernel_regularizer=None,
+                 bias_regularizer=None,
+                 activity_regularizer=None,
+                 kernel_constraint=None,
+                 bias_constraint=None,
+                 **kwargs):
+        self.valid_modes = {'std', 'max', None, 'whole_image'}
+        if norm_method not in self.valid_modes:
+            raise ValueError('Invalid `norm_method`: "{}". '
+                             'Use one of {}.'.format(
+                                 norm_method, self.valid_modes))
+        if 'trainable' not in kwargs:
+            kwargs['trainable'] = False
+        super(ImageNormalization3D, self).__init__(
+            activity_regularizer=regularizers.get(activity_regularizer),
+            **kwargs)
+        self.activation = activations.get(activation)
+        self.use_bias = use_bias
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.bias_initializer = initializers.get(bias_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.bias_regularizer = regularizers.get(bias_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+        self.bias_constraint = constraints.get(bias_constraint)
+        self.input_spec = InputSpec(ndim=5)  # hardcoded for 3D data
+
         self.filter_size = filter_size
         self.norm_method = norm_method
         self.data_format = conv_utils.normalize_data_format(data_format)
@@ -146,28 +237,60 @@ class ImageNormalization3D(Layer):
         if isinstance(self.norm_method, str):
             self.norm_method = self.norm_method.lower()
 
+    def build(self, input_shape):
+        input_shape = tensor_shape.TensorShape(input_shape)
+        if len(input_shape) != 5:
+            raise ValueError('Inputs should have rank 5, '
+                             'received input shape: %s' % input_shape)
+        if self.data_format == 'channels_first':
+            channel_axis = 1
+        else:
+            channel_axis = -1
+        if input_shape.dims[channel_axis].value is None:
+            raise ValueError('The channel dimension of the inputs '
+                             'should be defined, found None: %s' % input_shape)
+        input_dim = int(input_shape[channel_axis])
+        self.input_spec = InputSpec(ndim=5, axes={channel_axis: input_dim})
+
+        if self.data_format == 'channels_first':
+            depth = int(input_shape[2])
+        else:
+            depth = int(input_shape[1])
+        kernel_shape = (depth, self.filter_size, self.filter_size, input_dim, 1)
+
+        self.kernel = self.add_weight(
+            'kernel',
+            shape=kernel_shape,
+            initializer=self.kernel_initializer,
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
+            trainable=False,
+            dtype=self.dtype)
+
+        W = np.ones(kernel_shape)
+        W = W / W.size
+        self.set_weights([W])
+
+        if self.use_bias:
+            self.bias = self.add_weight(
+                'bias',
+                shape=(depth, self.filter_size, self.filter_size),
+                initializer=self.bias_initializer,
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint,
+                trainable=False,
+                dtype=self.dtype)
+        else:
+            self.bias = None
+        self.built = True
+
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
         return tensor_shape.TensorShape(input_shape)
 
     def _average_filter(self, inputs):
-        in_channels = inputs.shape[self.channel_axis]
-        depth = inputs.shape[2 if self.data_format == 'channels_first' else 1]
-        W = np.ones((depth, self.filter_size, self.filter_size, in_channels, 1))
-
-        W /= W.size
-        kernel = K.variable(W.astype(K.floatx()))
-
-        if self.data_format == 'channels_first':
-            inputs = K.permute_dimensions(inputs, pattern=[0, 2, 3, 4, 1])
-        # TODO: conv3d vs depthwise_conv2d?
-        outputs = tf.nn.conv3d(inputs, kernel, [1, 1, 1, 1, 1],
-                               padding='SAME', data_format='NDHWC')
-
-        if self.data_format == 'channels_first':
-            outputs = K.permute_dimensions(outputs, pattern=[0, 4, 1, 2, 3])
-
-        return outputs
+        return K.conv3d(inputs, self.kernel, (1, 1, 1),
+                        padding='same', data_format=self.data_format)
 
     def _window_std_filter(self, inputs, epsilon=K.epsilon()):
         c1 = self._average_filter(inputs)
@@ -175,45 +298,23 @@ class ImageNormalization3D(Layer):
         output = K.sqrt(c2 - c1 * c1) + epsilon
         return output
 
-    def _reduce_median(self, inputs, axes=None):
-        # TODO: top_k cannot take None as batch dimension, and tf.rank cannot be iterated
-        input_shape = K.shape(inputs)
-        rank = tf.rank(inputs)
-        axes = [] if axes is None else axes
-
-        new_shape = [input_shape[axis] for axis in range(rank) if axis not in axes]
-        new_shape.append(-1)
-
-        reshaped_inputs = K.reshape(inputs, new_shape)
-        median_index = reshaped_inputs.get_shape()[-1] // 2
-
-        median = tf.nn.top_k(reshaped_inputs, k=median_index)
-        return median
-
     def call(self, inputs):
         if not self.norm_method:
             outputs = inputs
 
         elif self.norm_method == 'whole_image':
-            reduce_axes = [3, 4] if self.data_format == 'channels_first' else [2, 3]
-            outputs = inputs - K.mean(inputs, axis=reduce_axes, keepdims=True)
-            outputs /= K.std(inputs, axis=reduce_axes, keepdims=True)
+            axes = [3, 4] if self.channel_axis == 1 else [2, 3]
+            outputs = inputs - K.mean(inputs, axis=axes, keepdims=True)
+            outputs = outputs / K.std(inputs, axis=axes, keepdims=True)
 
         elif self.norm_method == 'std':
             outputs = inputs - self._average_filter(inputs)
-            outputs /= self._window_std_filter(outputs)
+            outputs = outputs / self._window_std_filter(outputs)
 
         elif self.norm_method == 'max':
             outputs = inputs / K.max(inputs)
-            outputs -= self._average_filter(outputs)
+            outputs = outputs - self._average_filter(outputs)
 
-        elif self.norm_method == 'median':
-            reduce_axes = list(range(len(inputs.shape)))[1:]
-            reduce_axes.remove(self.channel_axis)
-            # mean = self._reduce_median(inputs, axes=reduce_axes)
-            mean = tf.contrib.distributions.percentile(inputs, 50.)
-            outputs = inputs / mean
-            outputs -= self._average_filter(outputs)
         else:
             raise NotImplementedError('"{}" is not a valid norm_method'.format(self.norm_method))
 
@@ -223,7 +324,16 @@ class ImageNormalization3D(Layer):
         config = {
             'norm_method': self.norm_method,
             'filter_size': self.filter_size,
-            'data_format': self.data_format
+            'data_format': self.data_format,
+            'activation': activations.serialize(self.activation),
+            'use_bias': self.use_bias,
+            'kernel_initializer': initializers.serialize(self.kernel_initializer),
+            'bias_initializer': initializers.serialize(self.bias_initializer),
+            'kernel_regularizer': regularizers.serialize(self.kernel_regularizer),
+            'bias_regularizer': regularizers.serialize(self.bias_regularizer),
+            'activity_regularizer': regularizers.serialize(self.activity_regularizer),
+            'kernel_constraint': constraints.serialize(self.kernel_constraint),
+            'bias_constraint': constraints.serialize(self.bias_constraint)
         }
         base_config = super(ImageNormalization3D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
