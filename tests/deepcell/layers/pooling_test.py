@@ -62,7 +62,7 @@ class DilatedMaxPoolingTest(test.TestCase):
                         input_shape=(3, 4, 5, 6))
 
     @tf_test_util.run_in_graph_and_eager_modes()
-    def test_maxpooling_3d(self):
+    def test_dilated_max_pool_3d(self):
         custom_objects = {'DilatedMaxPool3D': layers.DilatedMaxPool3D}
         pool_size = (3, 3, 3)
         for strides in [1, 2, None]:

@@ -3,9 +3,10 @@ numpy>=1.14.5,<2
 scipy>=1.1.0,<2
 scikit-image>=0.14.1,<1
 scikit-learn>=0.19.1,<1
-tensorflow-gpu==1.9.0
+tensorflow-gpu==1.11.0
 jupyter>=1.0.0,<2
 nbformat>=4.4.0,<5
+keras-preprocessing==1.0.5
 
 # requirements for fizyr's retinanet and maskrcnn implmentations
 opencv-python>=3.4.2.17,<4

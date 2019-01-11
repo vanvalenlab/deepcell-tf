@@ -29,7 +29,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from tensorflow.python.ops import array_ops
+import tensorflow as tf
 from tensorflow.python.keras.layers import ZeroPadding2D
 from tensorflow.python.keras.layers import ZeroPadding3D
 
@@ -84,7 +84,7 @@ class ReflectionPadding2D(ZeroPadding2D):
             pattern = [[0, 0], [0, 0], list(w_pad), list(h_pad)]
         else:
             pattern = [[0, 0], list(w_pad), list(h_pad), [0, 0]]
-        return array_ops.pad(inputs, pattern, mode='REFLECT')
+        return tf.pad(inputs, pattern, mode='REFLECT')
 
 
 class ReflectionPadding3D(ZeroPadding3D):
@@ -141,4 +141,4 @@ class ReflectionPadding3D(ZeroPadding3D):
         else:
             pattern = [[0, 0], [d_pad[0], d_pad[1]],
                        [w_pad[0], w_pad[1]], [h_pad[0], h_pad[1]], [0, 0]]
-        return array_ops.pad(inputs, pattern, mode='REFLECT')
+        return tf.pad(inputs, pattern, mode='REFLECT')
