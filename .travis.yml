@@ -1,6 +1,12 @@
 sudo: required
 dist: trusty
 language: python
+services:
+  - docker
+env:
+  global:
+    - DOCKER_USERNAME=vanvalenlabrobot
+    - secure: "I1FHCpBQlD1M1ngrgF5iEIrPiICRUBSvBQHAJFSxrpgJtxtrfx3nc/xFMylwzT9CEDmnvDVbM1VWNDixYT+O0fkyUptBPNYlLc19FgRvpj7JdFSzOaRA+2jKCMX6FiqQBsuNieAZfAF0XmDc3HE1Rgl6KdVAHZGzZ14jIIx2hepqjKCTMsRYJyyNm70cd1g1mzzxCPT6YpEAKxQaFqdSLz289Las3XtF1PLlfV+sWQaTl+ZvlVfLGigjPtxWoDcoJcpVj3SLL41IufV9L87NCaEBOD8/wq02YJo+R4lZ+2WL0RuW5dBDL0TBoi+HiaYb0oE6PI/JgfZhviuer3d/2/175LDW43UBfv6JNq1foplS8h2MxfRg2Sl2HyiAey1kbovycHHf/bc9/rvswkxiG7EV+iCzKUT9OgdZPovI9Ci24Q1PQ5JMSY4o47sJBXhahp5a2X8CCDJ9C3ydmzAe9sNb0CWwbg28EgIIZ6DL/a04CBeS2E94dQEwDeBv5gCbmiLjFqyZthImIgCEuUuA8AAFM0ZWblzR0RnvW6P85EPxIJ9Ep3PeoVeiTbC2SmS3fFXDfeHkhuh3R3nH9QYMHOOA+9THSedP55fZgo9ADFcDfjairsD4xZAz+cTiH/FQNoBLcrMQ4xQ0dcUdzY1EogQs5b+5yOPlz5FV6GNjJws="
 matrix:
   include:
     - python: 3.5
@@ -50,3 +56,10 @@ script:
   - PYTHONPATH=$PWD:$PYTHONPATH python -m pytest --cov=deepcell --pep8 deepcell tests
 after_success:
   - coveralls
+  - if [[ "$TRAVIS_BRANCH" == "travis-cd" ]]; then
+      docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD ;
+      docker build --pull --cache-from "$IMAGE_NAME" --tag "$IMAGE_NAME" . ;
+      docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
+      docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${version}"
+      docker push "${IMAGE_NAME}:latest" && docker push "${IMAGE_NAME}:${version}"
+    fi
