@@ -59,7 +59,7 @@ after_success:
   - if [[ "$TRAVIS_BRANCH" == "travis-cd" ]]; then
       docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD ;
       docker build --pull --cache-from "$IMAGE_NAME" --tag "$IMAGE_NAME" . ;
-      docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest"
-      docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${version}"
-      docker push "${IMAGE_NAME}:latest" && docker push "${IMAGE_NAME}:${version}"
+      docker tag "$IMAGE_NAME" "${IMAGE_NAME}:latest" ;
+      docker tag "$IMAGE_NAME" "${IMAGE_NAME}:${version}" ;
+      docker push "${IMAGE_NAME}:latest" && docker push "${IMAGE_NAME}:${version}" ;
     fi
