@@ -56,14 +56,14 @@ class Location2D(Layer):
     def call(self, inputs):
         input_shape = self.in_shape
         if self.data_format == 'channels_first':
-            x = tf.range(0, input_shape[1], dtype=K.floatx())
-            y = tf.range(0, input_shape[2], dtype=K.floatx())
+            x = K.arange(0, input_shape[1], dtype=K.floatx())
+            y = K.arange(0, input_shape[2], dtype=K.floatx())
         else:
-            x = tf.range(0, input_shape[0], dtype=K.floatx())
-            y = tf.range(0, input_shape[1], dtype=K.floatx())
+            x = K.arange(0, input_shape[0], dtype=K.floatx())
+            y = K.arange(0, input_shape[1], dtype=K.floatx())
 
-        x = tf.divide(x, tf.reduce_max(x))
-        y = tf.divide(y, tf.reduce_max(y))
+        x = x / K.max(x)
+        y = y / K.max(y)
 
         loc_x, loc_y = tf.meshgrid(x, y, indexing='ij')
 
@@ -112,17 +112,17 @@ class Location3D(Layer):
         input_shape = self.in_shape
 
         if self.data_format == 'channels_first':
-            z = tf.range(0, input_shape[1], dtype=K.floatx())
-            x = tf.range(0, input_shape[2], dtype=K.floatx())
-            y = tf.range(0, input_shape[3], dtype=K.floatx())
+            z = K.arange(0, input_shape[1], dtype=K.floatx())
+            x = K.arange(0, input_shape[2], dtype=K.floatx())
+            y = K.arange(0, input_shape[3], dtype=K.floatx())
         else:
-            z = tf.range(0, input_shape[0], dtype=K.floatx())
-            x = tf.range(0, input_shape[1], dtype=K.floatx())
-            y = tf.range(0, input_shape[2], dtype=K.floatx())
+            z = K.arange(0, input_shape[0], dtype=K.floatx())
+            x = K.arange(0, input_shape[1], dtype=K.floatx())
+            y = K.arange(0, input_shape[2], dtype=K.floatx())
 
-        x = tf.divide(x, tf.reduce_max(x))
-        y = tf.divide(y, tf.reduce_max(y))
-        z = tf.divide(z, tf.reduce_max(z))
+        x = x / K.max(x)
+        y = y / K.max(y)
+        z = z / K.max(z)
 
         loc_z, loc_x, loc_y = tf.meshgrid(z, x, y, indexing='ij')
 
