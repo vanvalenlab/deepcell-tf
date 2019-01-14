@@ -1,52 +1,51 @@
-sudo: required
+sudo: false
 dist: trusty
+
+git:
+  depth: false
+
 language: python
-matrix:
-  include:
-    - python: 3.5
-      env: TF_VERSION=1.8.0
-    - python: 3.5
-      env: TF_VERSION=1.9.0
-    - python: 3.5
-      env: TF_VERSION=1.10.0
-    - python: 3.5
-      env: TF_VERSION=1.11.0
-    - python: 3.5
-      env: TF_VERSION=1.12.0
+
+python:
+  - 3.5
+
+env:
+  - TF_VERSION=1.8.0
+  - TF_VERSION=1.9.0
+  - TF_VERSION=1.10.0
+  - TF_VERSION=1.11.0
+  - TF_VERSION=1.12.0
+
+cache: pip
+
 install:
-  # source: http://conda.pydata.org/docs/travis.html
-  # We do this conditionally because it saves us some downloading if the
-  # version is the same.
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-    else
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    fi
-
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  # Useful for debugging any issues with conda
-  - conda info -a
-
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy pytest
-  - source activate test-environment
-  - pip install pytest pytest-pep8 pytest-cov coveralls
   - pip install matplotlib nbformat scipy numpy pandas scikit-learn scikit-image
-  # install TensorFlow (CPU version).
-  - pip install tensorflow==$TF_VERSION
   # install fizyr packages for retinanet and maskrcnn
   - pip install keras-retinanet opencv-python
   - pip install git+git://github.com/fizyr/keras-maskrcnn.git@fa3d7f8e81d0ffb036fde5e134dcdbf35c206fc1
+  # install TensorFlow (CPU version).
+  - pip install tensorflow==$TF_VERSION
+  # install testing requirements
+  - pip install pytest pytest-cov==2.5.1 pytest-pep8 coveralls
+  # install deepcell with setup.py
   - python setup.py install
 
-  # set library path
-  - export LD_LIBRARY_PATH=$HOME/miniconda/envs/test-environment/lib/:$LD_LIBRARY_PATH
-
-# command to run tests
 script:
-  - PYTHONPATH=$PWD:$PYTHONPATH python -m pytest --cov=deepcell --pep8 deepcell tests
+  - python -m pytest --cov=deepcell --pep8 deepcell tests
+
+jobs:
+  include:
+    - stage: deploy
+      if: (branch = master OR branch =~ ^r[0-9]+.[0-9]+) AND type != pull_request
+      env: TF_VERSION=1.12.0
+      python: 3.5
+      script:
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - docker build -t "$TRAVIS_REPO_SLUG" .
+      - docker images
+      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":latest
+      - if [[ "$TRAVIS_BRANCH" != "master" ]] ; then docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_BRANCH#r}" ; fi
+      - docker push "$TRAVIS_REPO_SLUG"
+
 after_success:
   - coveralls
