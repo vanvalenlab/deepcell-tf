@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -61,50 +61,76 @@ def _generate_test_images():
 class TestTransformMasks(test.TestCase):
 
     def test_no_transform(self):
+        num_classes = np.random.randint(5, size=1)[0]
+        # test 2D masks
+        mask = np.random.randint(num_classes, size=(5, 30, 30, 1))
+        mask_transform = image_generators._transform_masks(
+            mask, transform=None, data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 30, 30, num_classes))
+
+        mask = np.random.randint(num_classes, size=(5, 1, 30, 30))
+        mask_transform = image_generators._transform_masks(
+            mask, transform=None, data_format='channels_first')
+        self.assertEqual(mask_transform.shape, (5, num_classes, 30, 30))
+
+        # test 3D masks
+        mask = np.random.randint(num_classes, size=(5, 10, 30, 30, 1))
+        mask_transform = image_generators._transform_masks(
+            mask, transform=None, data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, num_classes))
+
+        mask = np.random.randint(num_classes, size=(5, 1, 10, 30, 30))
+        mask_transform = image_generators._transform_masks(
+            mask, transform=None, data_format='channels_first')
+        self.assertEqual(mask_transform.shape, (5, num_classes, 10, 30, 30))
+
+    def test_fgbg_transform(self):
+        num_classes = 2  # always 2 for fg and bg
         # test 2D masks
         mask = np.random.randint(3, size=(5, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
-            mask, transform=None, data_format='channels_last')
-        self.assertEqual(mask_transform.shape, (5, 30, 30, 2))
+            mask, transform='fgbg', data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 30, 30, num_classes))
 
         mask = np.random.randint(3, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
-            mask, transform=None, data_format='channels_first')
-        self.assertEqual(mask_transform.shape, (5, 2, 30, 30))
+            mask, transform='fgbg', data_format='channels_first')
+        self.assertEqual(mask_transform.shape, (5, num_classes, 30, 30))
 
         # test 3D masks
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
-            mask, transform=None, data_format='channels_last')
-        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, 2))
+            mask, transform='fgbg', data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, num_classes))
 
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
-            mask, transform=None, data_format='channels_first')
-        self.assertEqual(mask_transform.shape, (5, 2, 10, 30, 30))
+            mask, transform='fgbg', data_format='channels_first')
+        self.assertEqual(mask_transform.shape, (5, num_classes, 10, 30, 30))
 
     def test_deepcell_transform(self):
+        num_classes = 4
         # test 2D masks
         mask = np.random.randint(3, size=(5, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask, transform='deepcell', data_format='channels_last')
-        self.assertEqual(mask_transform.shape, (5, 30, 30, 4))
+        self.assertEqual(mask_transform.shape, (5, 30, 30, num_classes))
 
         mask = np.random.randint(3, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask, transform='deepcell', data_format='channels_first')
-        self.assertEqual(mask_transform.shape, (5, 4, 30, 30))
+        self.assertEqual(mask_transform.shape, (5, num_classes, 30, 30))
 
         # test 3D masks
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask, transform='deepcell', data_format='channels_last')
-        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, 4))
+        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, num_classes))
 
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask, transform='deepcell', data_format='channels_first')
-        self.assertEqual(mask_transform.shape, (5, 4, 10, 30, 30))
+        self.assertEqual(mask_transform.shape, (5, num_classes, 10, 30, 30))
 
     def test_watershed_transform(self):
         distance_bins = 4
@@ -119,6 +145,7 @@ class TestTransformMasks(test.TestCase):
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 30, 30, distance_bins))
 
+        distance_bins = 6
         mask = np.random.randint(3, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask,
@@ -129,6 +156,7 @@ class TestTransformMasks(test.TestCase):
         self.assertEqual(mask_transform.shape, (5, distance_bins, 30, 30))
 
         # test 3D masks
+        distance_bins = 5
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask,
@@ -138,6 +166,7 @@ class TestTransformMasks(test.TestCase):
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, distance_bins))
 
+        distance_bins = 4
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask,
@@ -220,7 +249,7 @@ class TestSampleDataGenerator(test.TestCase):
                 samplewise_center=True,
                 featurewise_std_normalization=True,
                 samplewise_std_normalization=True,
-                zca_whitening=False,  # TODO: shapes not aligned when True
+                zca_whitening=False,  # dim 1 not aligned (1, 75) & (1323, 1323)
                 rotation_range=90.,
                 width_shift_range=0.1,
                 height_shift_range=0.1,
@@ -235,14 +264,15 @@ class TestSampleDataGenerator(test.TestCase):
 
             img_w, img_h = 21, 21
             win_x, win_y = 2, 2
-            test_batches = 8
+            test_batches = 3
 
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((test_batches, img_w, img_h, 3)),
                 'y': np.random.randint(2, size=(test_batches, img_w, img_h, 1))
             }
-            generator.flow(train_dict, window_size=(win_x, win_y))
+            generator.flow(train_dict, window_size=(win_x, win_y),
+                           max_class_samples=10)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -274,14 +304,14 @@ class TestSampleDataGenerator(test.TestCase):
                 samplewise_center=True,
                 featurewise_std_normalization=True,
                 samplewise_std_normalization=True,
-                zca_whitening=False,  # TODO: shapes not aligned when True
+                zca_whitening=False,  # dim 0 not aligned (1, 75) & (1323, 1323)
                 rotation_range=90.,
                 width_shift_range=0.1,
                 height_shift_range=0.1,
                 shear_range=0.5,
                 zoom_range=0.2,
                 channel_shift_range=1.,
-                # brightness_range=(1, 5),  # TODO: converts to channels_last?
+                # brightness_range=(1, 5),  # TODO: `channels_first` conflict
                 fill_mode='nearest',
                 cval=0.5,
                 horizontal_flip=True,
@@ -290,14 +320,15 @@ class TestSampleDataGenerator(test.TestCase):
 
             img_w, img_h = 21, 21
             win_x, win_y = 2, 2
-            test_batches = 8
+            test_batches = 3
 
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((test_batches, 3, img_w, img_h)),
                 'y': np.random.randint(2, size=(test_batches, 1, img_w, img_h))
             }
-            generator.flow(train_dict, window_size=(win_x, win_y))
+            generator.flow(train_dict, window_size=(win_x, win_y),
+                           max_class_samples=10)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -312,7 +343,7 @@ class TestSampleDataGenerator(test.TestCase):
                     save_to_dir=temp_dir,
                     window_size=(win_x, win_y),
                     balance_classes=True,
-                    max_class_samples=100,
+                    max_class_samples=10,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], (x.shape[1], 2 * win_x + 1, 2 * win_y + 1))
                 break
@@ -336,21 +367,21 @@ class TestSampleDataGenerator(test.TestCase):
         # Test flow with invalid dimensions
         with self.assertRaises(ValueError):
             train_dict = {
-                'X': np.random.random((32, 10, 10)),
-                'y': np.random.random((32, 10, 10))
+                'X': np.random.random((8, 10, 10)),
+                'y': np.random.random((8, 10, 10))
             }
             generator.flow(train_dict, window_size=(win_x, win_y))
 
         # Test flow with non-matching batches
         with self.assertRaises(Exception):
             train_dict = {
-                'X': np.random.random((32, 10, 10, 1)),
-                'y': np.random.random((25, 10, 10, 1))
+                'X': np.random.random((8, 10, 10, 1)),
+                'y': np.random.random((7, 10, 10, 1))
             }
             generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
-        x = np.random.random((32, 10, 10, 5))
-        y = np.random.randint(2, size=(32, 10, 10, 1))
+        x = np.random.random((8, 10, 10, 5))
+        y = np.random.randint(2, size=(8, 10, 10, 1))
         generator.flow({'X': x, 'y': y}, window_size=(win_x, win_y))
 
         with self.assertRaises(ValueError):
@@ -367,7 +398,7 @@ class TestSampleDataGenerator(test.TestCase):
 class TestSampleMovieDataGenerator(test.TestCase):
 
     def test_sample_movie_data_generator(self):
-        frames = 24
+        frames = 7
         for test_images in _generate_test_images():
             img_list = []
             for im in test_images:
@@ -385,7 +416,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
                 samplewise_center=True,
                 featurewise_std_normalization=True,
                 samplewise_std_normalization=True,
-                zca_whitening=True,
+                zca_whitening=False,
                 rotation_range=90.,
                 width_shift_range=0.1,
                 height_shift_range=0.1,
@@ -400,14 +431,15 @@ class TestSampleMovieDataGenerator(test.TestCase):
 
             img_w, img_h = 21, 21
             win_x, win_y, win_z = 2, 2, 2
-            test_batches = 8
+            test_batches = 3
 
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((test_batches, frames, img_w, img_h, 3)),
                 'y': np.random.randint(2, size=(test_batches, frames, img_w, img_h, 1))
             }
-            generator.flow(train_dict, window_size=(win_x, win_y, win_z))
+            generator.flow(train_dict, window_size=(win_x, win_y, win_z),
+                           max_class_samples=10)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -430,7 +462,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
                 break
 
     def test_sample_movie_data_generator_channels_first(self):
-        frames = 24
+        frames = 7
         for test_images in _generate_test_images():
             img_list = []
             for im in test_images:
@@ -449,14 +481,14 @@ class TestSampleMovieDataGenerator(test.TestCase):
                 samplewise_center=True,
                 featurewise_std_normalization=True,
                 samplewise_std_normalization=True,
-                zca_whitening=True,
+                zca_whitening=False,
                 rotation_range=90.,
                 width_shift_range=0.1,
                 height_shift_range=0.1,
                 shear_range=0.5,
                 zoom_range=0.2,
                 channel_shift_range=1.,
-                brightness_range=(1, 5),
+                # brightness_range=(1, 5),  # TODO: `channels_first` conflict
                 fill_mode='nearest',
                 cval=0.5,
                 horizontal_flip=True,
@@ -465,14 +497,15 @@ class TestSampleMovieDataGenerator(test.TestCase):
 
             img_w, img_h = 21, 21
             win_x, win_y, win_z = 2, 2, 2
-            test_batches = 8
+            test_batches = 3
 
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((test_batches, 3, frames, img_w, img_h)),
                 'y': np.random.randint(2, size=(test_batches, 1, frames, img_w, img_h))
             }
-            generator.flow(train_dict, window_size=(win_x, win_y, win_z))
+            generator.flow(train_dict, window_size=(win_x, win_y, win_z),
+                           max_class_samples=10)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -513,22 +546,22 @@ class TestSampleMovieDataGenerator(test.TestCase):
         # Test flow with invalid dimensions
         with self.assertRaises(ValueError):
             train_dict = {
-                'X': np.random.random((32, 10, 10, 1)),
-                'y': np.random.random((32, 10, 10, 1))
+                'X': np.random.random((8, 10, 10, 1)),
+                'y': np.random.random((8, 10, 10, 1))
             }
             generator.flow(train_dict, window_size=window_size)
 
         # Test flow with non-matching batches
         with self.assertRaises(Exception):
             train_dict = {
-                'X': np.random.random((32, 30, 10, 10, 1)),
-                'y': np.random.random((25, 30, 10, 10, 1))
+                'X': np.random.random((8, 11, 10, 10, 1)),
+                'y': np.random.random((7, 11, 10, 10, 1))
             }
             generator.flow(train_dict, window_size=window_size)
 
         # Invalid number of channels: will work but raise a warning
-        x = np.random.random((32, 30, 10, 10, 5))
-        y = np.random.randint(2, size=(32, 30, 10, 10, 1))
+        x = np.random.random((8, 11, 10, 10, 5))
+        y = np.random.randint(2, size=(8, 11, 10, 10, 1))
         generator.flow({'X': x, 'y': y}, window_size=window_size)
 
         with self.assertRaises(ValueError):
@@ -571,8 +604,8 @@ class TestFullyConvDataGenerator(test.TestCase):
 
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((32, 10, 10, 3)),
-                'y': np.random.random((32, 10, 10, 1)),
+                'X': np.random.random((8, 10, 10, 3)),
+                'y': np.random.random((8, 10, 10, 1)),
             }
             generator.flow(train_dict)
 
@@ -587,9 +620,12 @@ class TestFullyConvDataGenerator(test.TestCase):
             for x, y in generator.flow(
                     train_dict,
                     save_to_dir=temp_dir,
+                    skip=1,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], images.shape[1:])
-                self.assertEqual(y.shape[1:], y_shape[1:])
+                self.assertEqual(len(y), 2)
+                self.assertEqual(y[0].shape[1:], y_shape[1:])
+                self.assertEqual(y[-1].shape[1:], y_shape[1:])
                 break
 
     def test_fully_conv_data_generator_channels_first(self):
@@ -612,7 +648,7 @@ class TestFullyConvDataGenerator(test.TestCase):
                 shear_range=0.5,
                 zoom_range=0.2,
                 channel_shift_range=1.,
-                brightness_range=(1, 5),
+                # brightness_range=(1, 5),  # TODO: `channels_first` conflict
                 fill_mode='nearest',
                 cval=0.5,
                 horizontal_flip=True,
@@ -621,8 +657,8 @@ class TestFullyConvDataGenerator(test.TestCase):
 
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((32, 3, 10, 10)),
-                'y': np.random.random((32, 1, 10, 10)),
+                'X': np.random.random((8, 3, 10, 10)),
+                'y': np.random.random((8, 1, 10, 10)),
             }
             generator.flow(train_dict)
 
@@ -638,9 +674,12 @@ class TestFullyConvDataGenerator(test.TestCase):
             for x, y in generator.flow(
                     train_dict,
                     save_to_dir=temp_dir,
+                    skip=1,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], images.shape[1:])
-                self.assertEqual(y.shape[1:], y_shape[1:])
+                self.assertEqual(len(y), 2)
+                self.assertEqual(y[0].shape[1:], y_shape[1:])
+                self.assertEqual(y[-1].shape[1:], y_shape[1:])
                 break
 
     def test_fully_conv_data_generator_invalid_data(self):
@@ -660,22 +699,20 @@ class TestFullyConvDataGenerator(test.TestCase):
         # Test flow with invalid dimensions
         with self.assertRaises(ValueError):
             train_dict = {
-                'X': np.random.random((32, 10, 10)),
-                'y': np.random.random((32, 10, 10))
+                'X': np.random.random((8, 10, 10)),
+                'y': np.random.random((8, 10, 10))
             }
             generator.flow(train_dict)
 
         # Test flow with non-matching batches
         with self.assertRaises(Exception):
             train_dict = {
-                'X': np.random.random((32, 10, 10, 1)),
-                'y': np.random.random((25, 10, 10, 1))
+                'X': np.random.random((8, 10, 10, 1)),
+                'y': np.random.random((7, 10, 10, 1))
             }
             generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
-        x = np.random.random((32, 10, 10, 5))
-        y = np.random.random((32, 10, 10, 1))
-        generator.flow({'X': x, 'y': y})
+        generator.fit(np.random.random((8, 10, 10, 5)))
 
         with self.assertRaises(ValueError):
             generator = image_generators.ImageFullyConvDataGenerator(
@@ -696,10 +733,10 @@ class TestFullyConvDataGenerator(test.TestCase):
             zca_whitening=True,
             data_format='channels_last')
         # Test grayscale
-        x = np.random.random((32, 10, 10, 1))
+        x = np.random.random((8, 10, 10, 1))
         generator.fit(x)
         # Test RBG
-        x = np.random.random((32, 10, 10, 3))
+        x = np.random.random((8, 10, 10, 3))
         generator.fit(x)
         generator = image_generators.ImageFullyConvDataGenerator(
             featurewise_center=True,
@@ -709,10 +746,10 @@ class TestFullyConvDataGenerator(test.TestCase):
             zca_whitening=True,
             data_format='channels_first')
         # Test grayscale
-        x = np.random.random((32, 1, 10, 10))
+        x = np.random.random((8, 1, 10, 10))
         generator.fit(x)
         # Test RBG
-        x = np.random.random((32, 3, 10, 10))
+        x = np.random.random((8, 3, 10, 10))
         generator.fit(x)
 
     def test_batch_standardize(self):
@@ -752,7 +789,7 @@ class TestFullyConvDataGenerator(test.TestCase):
 class TestMovieDataGenerator(test.TestCase):
 
     def test_movie_data_generator(self):
-        frames = 30
+        frames = 7
         for test_images in _generate_test_images():
             img_list = []
             for im in test_images:
@@ -763,14 +800,14 @@ class TestMovieDataGenerator(test.TestCase):
                 img_list.append(img_stack)
 
             images = np.vstack(img_list)
-            batch_count = images.shape[0] // frames
-            images = np.reshape(images, (batch_count, frames, *images.shape[1:]))
+            batches = images.shape[0] // frames
+            images = np.reshape(images, (batches, frames, *images.shape[1:]))
             generator = image_generators.MovieDataGenerator(
                 featurewise_center=True,
                 samplewise_center=True,
                 featurewise_std_normalization=True,
                 samplewise_std_normalization=True,
-                zca_whitening=True,
+                zca_whitening=False,
                 rotation_range=90.,
                 width_shift_range=0.1,
                 height_shift_range=0.1,
@@ -785,8 +822,8 @@ class TestMovieDataGenerator(test.TestCase):
 
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((32, 30, 10, 10, 3)),
-                'y': np.random.random((32, 30, 10, 10, 1)),
+                'X': np.random.random((8, 11, 10, 10, 3)),
+                'y': np.random.random((8, 11, 10, 10, 1)),
             }
             generator.flow(train_dict, frames_per_batch=1)
 
@@ -798,20 +835,23 @@ class TestMovieDataGenerator(test.TestCase):
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.random(y_shape)
-            frames_per_batch = 10
+            frames_per_batch = 5
             for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
                     save_to_dir=temp_dir,
+                    skip=1,
                     frames_per_batch=frames_per_batch):
                 batch_x_shape = (frames_per_batch, *images.shape[2:])
                 batch_y_shape = (frames_per_batch, *y_shape[2:])
                 self.assertEqual(x.shape[1:], batch_x_shape)
-                self.assertEqual(y.shape[1:], batch_y_shape)
+                self.assertEqual(len(y), 2)
+                self.assertEqual(y[0].shape[1:], batch_y_shape)
+                self.assertEqual(y[-1].shape[1:], batch_y_shape)
                 break
 
     def test_movie_data_generator_channels_first(self):
-        frames = 30
+        frames = 7
         for test_images in _generate_test_images():
             img_list = []
             for im in test_images:
@@ -830,14 +870,14 @@ class TestMovieDataGenerator(test.TestCase):
                 samplewise_center=True,
                 featurewise_std_normalization=True,
                 samplewise_std_normalization=True,
-                zca_whitening=True,
+                zca_whitening=False,
                 rotation_range=90.,
                 width_shift_range=0.1,
                 height_shift_range=0.1,
                 shear_range=0.5,
                 zoom_range=0.2,
                 channel_shift_range=1.,
-                brightness_range=(1, 5),
+                # brightness_range=(1, 5),  # TODO: `channels_first` conflict
                 fill_mode='nearest',
                 cval=0.5,
                 horizontal_flip=True,
@@ -846,8 +886,8 @@ class TestMovieDataGenerator(test.TestCase):
 
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((32, 3, 30, 10, 10)),
-                'y': np.random.random((32, 1, 30, 10, 10)),
+                'X': np.random.random((8, 3, 11, 10, 10)),
+                'y': np.random.random((8, 1, 11, 10, 10)),
             }
             generator.flow(train_dict)
 
@@ -860,16 +900,19 @@ class TestMovieDataGenerator(test.TestCase):
             train_dict['X'] = images
             train_dict['y'] = np.random.random(y_shape)
 
-            frames_per_batch = 10
+            frames_per_batch = 5
             for x, y in generator.flow(
                     train_dict,
                     shuffle=True,
+                    skip=1,
                     save_to_dir=temp_dir,
                     frames_per_batch=frames_per_batch):
                 batch_x_shape = (images.shape[1], frames_per_batch, *images.shape[3:])
                 batch_y_shape = (y_shape[1], frames_per_batch, *y_shape[3:])
                 self.assertEqual(x.shape[1:], batch_x_shape)
-                self.assertEqual(y.shape[1:], batch_y_shape)
+                self.assertEqual(len(y), 2)
+                self.assertEqual(y[0].shape[1:], batch_y_shape)
+                self.assertEqual(y[-1].shape[1:], batch_y_shape)
                 break
 
     def test_movie_data_generator_invalid_data(self):
@@ -889,31 +932,29 @@ class TestMovieDataGenerator(test.TestCase):
         # Test flow with invalid dimensions
         with self.assertRaises(ValueError):
             train_dict = {
-                'X': np.random.random((32, 10, 10, 1)),
-                'y': np.random.random((32, 10, 10, 1))
+                'X': np.random.random((8, 10, 10, 1)),
+                'y': np.random.random((8, 10, 10, 1))
             }
             generator.flow(train_dict)
 
         # Test flow with non-matching batches
         with self.assertRaises(Exception):
             train_dict = {
-                'X': np.random.random((32, 30, 10, 10, 1)),
-                'y': np.random.random((25, 30, 10, 10, 1))
+                'X': np.random.random((8, 11, 10, 10, 1)),
+                'y': np.random.random((7, 11, 10, 10, 1))
             }
             generator.flow(train_dict)
 
         # Test flow with bigger frames_per_batch than frames
         with self.assertRaises(Exception):
             train_dict = {
-                'X': np.random.random((32, 30, 10, 10, 1)),
-                'y': np.random.random((32, 30, 10, 10, 1))
+                'X': np.random.random((8, 11, 10, 10, 1)),
+                'y': np.random.random((8, 11, 10, 10, 1))
             }
             generator.flow(train_dict, frames_per_batch=31)
 
         # Invalid number of channels: will work but raise a warning
-        x = np.random.random((32, 30, 10, 10, 5))
-        y = np.random.random((32, 30, 10, 10, 1))
-        generator.flow({'X': x, 'y': y})
+        generator.fit(np.random.random((8, 3, 10, 10, 5)))
 
         with self.assertRaises(ValueError):
             generator = image_generators.MovieDataGenerator(
@@ -934,28 +975,28 @@ class TestMovieDataGenerator(test.TestCase):
             zca_whitening=True,
             data_format='channels_last')
         # Test grayscale
-        x = np.random.random((32, 30, 10, 10, 1))
+        x = np.random.random((8, 5, 10, 10, 1))
         generator.fit(x)
         # Test RBG
-        x = np.random.random((32, 30, 10, 10, 3))
+        x = np.random.random((8, 5, 10, 10, 3))
         generator.fit(x)
         generator = image_generators.MovieDataGenerator(
             featurewise_center=True,
             samplewise_center=True,
             featurewise_std_normalization=True,
             samplewise_std_normalization=True,
-            zca_whitening=True,
+            zca_whitening=False,
             data_format='channels_first')
         # Test grayscale
-        x = np.random.random((32, 1, 30, 10, 10))
+        x = np.random.random((8, 1, 5, 4, 6))
         generator.fit(x)
         # Test RBG
-        x = np.random.random((32, 3, 30, 10, 10))
+        x = np.random.random((8, 3, 5, 4, 6))
         generator.fit(x)
 
     def test_batch_standardize(self):
         # MovieDataGenerator.standardize should work on batches
-        frames = 30
+        frames = 3
         for test_images in _generate_test_images():
             img_list = []
             for im in test_images:
@@ -966,20 +1007,22 @@ class TestMovieDataGenerator(test.TestCase):
                 img_list.append(img_stack)
 
             images = np.vstack(img_list)
-            batch_count = images.shape[0] // frames
-            images = np.reshape(images, (batch_count, frames, *images.shape[1:]))
+            batches = images.shape[0] // frames
+            images = np.reshape(images, (batches, frames, *images.shape[1:]))
             generator = image_generators.MovieDataGenerator(
                 featurewise_center=True,
                 samplewise_center=True,
                 featurewise_std_normalization=True,
                 samplewise_std_normalization=True,
-                zca_whitening=True,
+                zca_whitening=False,
+                rescale=2,
+                preprocessing_function=lambda x: x,
                 rotation_range=90.,
                 width_shift_range=0.1,
                 height_shift_range=0.1,
                 shear_range=0.5,
                 zoom_range=0.2,
-                channel_shift_range=1.,
+                channel_shift_range=0.,
                 brightness_range=(1, 5),
                 fill_mode='nearest',
                 cval=0.5,

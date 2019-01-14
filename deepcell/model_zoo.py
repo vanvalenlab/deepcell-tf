@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -23,9 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Assortment of CNN architectures for single cell segmentation
-@author: David Van Valen
-"""
+"""Assortment of CNN architectures for single cell segmentation"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -43,9 +42,9 @@ from tensorflow.python.keras.regularizers import l2
 
 from deepcell.layers import DilatedMaxPool2D, DilatedMaxPool3D
 from deepcell.layers import ImageNormalization2D, ImageNormalization3D
-from deepcell.layers import Location, Location3D
+from deepcell.layers import Location2D, Location3D
 from deepcell.layers import ReflectionPadding2D, ReflectionPadding3D
-from deepcell.layers import TensorProd2D, TensorProd3D
+from deepcell.layers import TensorProduct
 
 
 """
@@ -103,7 +102,7 @@ def bn_feature_net_2D(receptive_field=61,
             x.append(ZeroPadding2D(padding=(win, win))(x[-1]))
 
     if location:
-        x.append(Location(in_shape=tuple(x[-1].shape.as_list()[1:]))(x[-1]))
+        x.append(Location2D(in_shape=tuple(x[-1].shape.as_list()[1:]))(x[-1]))
         x.append(Concatenate(axis=channel_axis)([x[-2], x[-1]]))
 
     if multires:
@@ -164,11 +163,11 @@ def bn_feature_net_2D(receptive_field=61,
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
-    x.append(TensorProd2D(n_dense_filters, n_dense_filters, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
+    x.append(TensorProduct(n_dense_filters, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
-    x.append(TensorProd2D(n_dense_filters, n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
+    x.append(TensorProduct(n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
 
     if not dilated:
         x.append(Flatten()(x[-1]))
@@ -376,11 +375,11 @@ def bn_feature_net_3D(receptive_field=61,
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
-    x.append(TensorProd3D(n_dense_filters, n_dense_filters, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
+    x.append(TensorProduct(n_dense_filters, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
-    x.append(TensorProd3D(n_dense_filters, n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
+    x.append(TensorProduct(n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
 
     if not dilated:
         x.append(Flatten()(x[-1]))

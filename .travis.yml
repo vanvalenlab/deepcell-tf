@@ -1,0 +1,51 @@
+sudo: false
+dist: trusty
+
+git:
+  depth: false
+
+language: python
+
+python:
+  - 3.5
+
+env:
+  - TF_VERSION=1.8.0
+  - TF_VERSION=1.9.0
+  - TF_VERSION=1.10.0
+  - TF_VERSION=1.11.0
+  - TF_VERSION=1.12.0
+
+cache: pip
+
+install:
+  - pip install matplotlib nbformat scipy numpy pandas scikit-learn scikit-image
+  # install fizyr packages for retinanet and maskrcnn
+  - pip install keras-retinanet opencv-python
+  - pip install git+git://github.com/fizyr/keras-maskrcnn.git@fa3d7f8e81d0ffb036fde5e134dcdbf35c206fc1
+  # install TensorFlow (CPU version).
+  - pip install tensorflow==$TF_VERSION
+  # install testing requirements
+  - pip install pytest pytest-cov==2.5.1 pytest-pep8 coveralls
+  # install deepcell with setup.py
+  - python setup.py install
+
+script:
+  - python -m pytest --cov=deepcell --pep8 deepcell tests
+
+jobs:
+  include:
+    - stage: deploy
+      if: (branch = master OR branch =~ ^r[0-9]+.[0-9]+) AND type != pull_request
+      env: TF_VERSION=1.12.0
+      python: 3.5
+      script:
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - docker build -t "$TRAVIS_REPO_SLUG" .
+      - docker images
+      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":latest
+      - if [[ "$TRAVIS_BRANCH" != "master" ]] ; then docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_BRANCH#r}" ; fi
+      - docker push "$TRAVIS_REPO_SLUG"
+
+after_success:
+  - coveralls

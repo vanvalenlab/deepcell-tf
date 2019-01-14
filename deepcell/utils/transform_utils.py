@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -23,9 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Utilities for data transformations
-@author: David Van Valen
-"""
+"""Utilities for data transformations"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -39,15 +38,17 @@ from skimage.morphology import binary_erosion, binary_dilation
 from tensorflow.python.keras import backend as K
 
 
-def deepcell_transform(maskstack, dilation_radius=None, data_format=None):
-    """
-    Transforms a label mask for a z stack edge, interior, and background
-    # Arguments:
-        maskstack: label masks of uniquely labeled instances
+def deepcell_transform(mask, dilation_radius=None, data_format=None):
+    """Transforms a label mask for a z stack edge, interior, and background
+
+    Args:
+        mask: tensor of labels
         dilation_radius:  width to enlarge the edge feature of each instance
-    # Returns:
-        deepcell_stacks: masks of:
-        [background_edge_feature, interior_edge_feature, interior_feature, background]
+        data_format: `channels_first` or `channels_last`
+
+    Returns:
+        one-hot encoded tensor of masks:
+            [cell_background_edge, cell_cell_edge, cell_interior, background]
     """
     if data_format is None:
         data_format = K.image_data_format()
@@ -55,55 +56,56 @@ def deepcell_transform(maskstack, dilation_radius=None, data_format=None):
     if data_format == 'channels_first':
         channel_axis = 1
     else:
-        channel_axis = len(maskstack.shape) - 1
+        channel_axis = len(mask.shape) - 1
 
-    maskstack = np.squeeze(maskstack, axis=channel_axis)
+    mask = np.squeeze(mask, axis=channel_axis)
 
     # Detect the edges and interiors
-    new_masks = np.zeros(maskstack.shape)
-    edge_masks = np.zeros(maskstack.shape)
-    strel = ball(1) if maskstack.ndim > 3 else disk(1)
-    for cell_label in np.unique(maskstack):
+    new_masks = np.zeros(mask.shape)
+    edges = np.zeros(mask.shape)
+    strel = ball(1) if mask.ndim > 3 else disk(1)
+    for cell_label in np.unique(mask):
         if cell_label != 0:
-            for i in range(maskstack.shape[0]):
+            for i in range(mask.shape[0]):
                 # get the cell interior
-                img = maskstack[i] == cell_label
+                img = mask[i] == cell_label
                 img = binary_erosion(img, strel)
                 new_masks[i] += img
 
-    interior_masks = np.multiply(new_masks, maskstack)
-    edge_masks = (maskstack - interior_masks > 0).astype('int')
-    interior_masks = (interior_masks > 0).astype('int')
+    interiors = np.multiply(new_masks, mask)
+    edges = (mask - interiors > 0).astype('int')
+    interiors = (interiors > 0).astype('int')
 
     # dilate the background masks and subtract from all edges for background-edges
-    dilated_background = np.zeros(maskstack.shape)
-    for i in range(maskstack.shape[0]):
-        background = (maskstack[i] == 0).astype('int')
+    dilated_background = np.zeros(mask.shape)
+    for i in range(mask.shape[0]):
+        background = (mask[i] == 0).astype('int')
         dilated_background[i] = binary_dilation(background, strel)
 
-    background_edge_masks = (edge_masks - dilated_background > 0).astype('int')
+    background_edges = (edges - dilated_background > 0).astype('int')
 
     # edges that are not background-edges are interior-edges
-    interior_edge_masks = (edge_masks - background_edge_masks > 0).astype('int')
+    interior_edges = (edges - background_edges > 0).astype('int')
 
     if dilation_radius:
-        dil_strel = ball(dilation_radius) if maskstack.ndim > 3 else disk(dilation_radius)
+        dil_strel = ball(dilation_radius) if mask.ndim > 3 else disk(dilation_radius)
         # Thicken cell edges to be more pronounced
-        for i in range(edge_masks.shape[0]):
-            interior_edge_masks[i] = binary_dilation(interior_edge_masks[i], selem=dil_strel)
-            background_edge_masks[i] = binary_dilation(background_edge_masks[i], selem=dil_strel)
+        for i in range(edges.shape[0]):
+            interior_edges[i] = binary_dilation(interior_edges[i], selem=dil_strel)
+            background_edges[i] = binary_dilation(background_edges[i], selem=dil_strel)
 
         # Thin the augmented edges by subtracting the interior features.
-        interior_edge_masks = (interior_edge_masks - interior_masks > 0).astype('int')
-        background_edge_masks = (background_edge_masks - interior_masks > 0).astype('int')
+        interior_edges = (interior_edges - interiors > 0).astype('int')
+        background_edges = (background_edges - interiors > 0).astype('int')
 
-    background_masks = (1 - background_edge_masks - interior_edge_masks - interior_masks > 0).astype('int')
+    background = (1 - background_edges - interior_edges - interiors > 0)
+    background = background.astype('int')
 
     all_stacks = [
-        background_edge_masks,
-        interior_edge_masks,
-        interior_masks,
-        background_masks
+        background_edges,
+        interior_edges,
+        interiors,
+        background
     ]
 
     deepcell_stacks = np.stack(all_stacks, axis=channel_axis)
@@ -112,10 +114,12 @@ def deepcell_transform(maskstack, dilation_radius=None, data_format=None):
 
 def erode_edges(mask, erosion_width):
     """Erode edge of objects to prevent them from touching
-    # Arguments:
+
+    Args:
         mask: uniquely labeled instance mask
         erosion_width: integer value for pixel width to erode edges
-    # Returns:
+
+    Returns:
         mask where each instance has had the edges eroded
     """
     if erosion_width:
@@ -138,11 +142,13 @@ def erode_edges(mask, erosion_width):
 
 def distance_transform_2d(mask, bins=16, erosion_width=None):
     """Transform a label mask into distance classes.
-    # Arguments
+
+    Args:
         mask: a label mask (y data)
         bins: the number of transformed distance classes
         erosion_width: number of pixels to erode edges of each labels
-    # Returns
+
+    Returns:
         distance: a mask of same shape as input mask,
                   with each label being a distance class from 1 to bins
     """
@@ -169,14 +175,15 @@ def distance_transform_2d(mask, bins=16, erosion_width=None):
 
 
 def distance_transform_3d(maskstack, bins=4, erosion_width=None):
-    """
-    Transforms a label mask for a z stack into distance classes
+    """Transforms a label mask for a z stack into distance classes
     Uses scipy's distance_transform_edt
-    # Arguments
+
+    Args:
         maskstack: a z-stack of label masks (y data)
         bins: the number of transformed distance classes
         erosion_width: number of pixels to erode edges of each labels
-    # Returns
+
+    Returns:
         distance: 3D Euclidiean Distance Transform
     """
     maskstack = np.squeeze(maskstack)  # squeeze the channels
@@ -204,29 +211,34 @@ def rotate_array_0(arr):
 
 def rotate_array_90(arr):
     axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
-    slices = [slice(None) for _ in range(arr.ndim - 2)] + [slice(None), slice(None, None, -1)]
+    slices = [slice(None) for _ in range(arr.ndim - 2)] + \
+             [slice(None), slice(None, None, -1)]
     return arr[tuple(slices)].transpose(axes_order)
 
 
 def rotate_array_180(arr):
-    slices = [slice(None) for _ in range(arr.ndim - 2)] + [slice(None, None, -1), slice(None, None, -1)]
+    slices = [slice(None) for _ in range(arr.ndim - 2)] + \
+             [slice(None, None, -1), slice(None, None, -1)]
     return arr[tuple(slices)]
 
 
 def rotate_array_270(arr):
     axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
-    slices = [slice(None) for _ in range(arr.ndim - 2)] + [slice(None, None, -1), slice(None)]
+    slices = [slice(None) for _ in range(arr.ndim - 2)] + \
+             [slice(None, None, -1), slice(None)]
     return arr[tuple(slices)].transpose(axes_order)
 
 
 def to_categorical(y, num_classes=None):
     """Converts a class vector (integers) to binary class matrix.
     E.g. for use with categorical_crossentropy.
-    # Arguments
+
+    Args:
         y: class vector to be converted into a matrix
         (integers from 0 to num_classes).
         num_classes: total number of classes.
-    # Returns
+
+    Returns:
         A binary matrix representation of the input.
     """
     y = np.array(y, dtype='int').ravel()
@@ -236,20 +248,3 @@ def to_categorical(y, num_classes=None):
     categorical = np.zeros((n, num_classes))
     categorical[np.arange(n), y] = 1
     return categorical
-
-
-def transform_matrix_offset_center(matrix, x, y):
-    o_x = float(x) / 2 + 0.5
-    o_y = float(y) / 2 + 0.5
-    offset_matrix = np.array([
-        [1, 0, o_x],
-        [0, 1, o_y],
-        [0, 0, 1]
-    ])
-    reset_matrix = np.array([
-        [1, 0, -o_x],
-        [0, 1, -o_y],
-        [0, 0, 1]
-    ])
-    transform_matrix = np.dot(np.dot(offset_matrix, matrix), reset_matrix)
-    return transform_matrix

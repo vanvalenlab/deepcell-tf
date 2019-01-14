@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -31,7 +31,7 @@ from __future__ import print_function
 import numpy as np
 from tensorflow.python.platform import test
 
-from deepcell.utils.plot_utils import cf
+from deepcell.utils import plot_utils
 
 
 class PlotUtilsTest(test.TestCase):
@@ -44,10 +44,13 @@ class PlotUtilsTest(test.TestCase):
         # values are hard-coded for test image
         shape = img.shape
         # test coordinates outside of test_img dimensions
-        assert cf(shape[0] + 1, shape[1] + 1, img) == 'x=301.0000, y=301.0000'
-        assert cf(-1 * shape[0], -1 * shape[1], img) == 'x=-300.0000, y=-300.0000'
+        label = plot_utils.cf(shape[0] + 1, shape[1] + 1, img)
+        self.assertEqual(label, 'x=301.0000, y=301.0000')
+        label = plot_utils.cf(-1 * shape[0], -1 * shape[1], img)
+        self.assertEqual(label, 'x=-300.0000, y=-300.0000')
         # test coordinates inside test_img dimensions
-        assert cf(shape[0] / 2, shape[1] / 2, img) == 'x=150.0000, y=150.0000, z=93.0260'
+        label = plot_utils.cf(shape[0] / 2, shape[1] / 2, img)
+        self.assertEqual(label, 'x=150.0000, y=150.0000, z=93.0260')
 
 if __name__ == '__main__':
     test.main()

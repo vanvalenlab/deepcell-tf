@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -23,82 +23,122 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Layers for padding for 2D and 3D images
-@author: David Van Valen
-"""
+"""Layers for padding for 2D and 3D images"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
-from tensorflow.python.framework import tensor_shape
-from tensorflow.python.keras.layers import Layer
-from tensorflow.python.keras.layers import InputSpec
-try:  # tf v1.9 moves conv_utils from _impl to keras.utils
-    from tensorflow.python.keras.utils import conv_utils
-except ImportError:
-    from tensorflow.python.keras._impl.keras.utils import conv_utils
+from tensorflow.python.keras.layers import ZeroPadding2D
+from tensorflow.python.keras.layers import ZeroPadding3D
 
 
-class ReflectionPadding2D(Layer):
-    def __init__(self, padding=(1, 1), data_format=None, **kwargs):
-        self.padding = conv_utils.normalize_tuple(padding, 2, 'padding')
-        self.input_spec = [InputSpec(ndim=4)]
-        self.data_format = conv_utils.normalize_data_format(data_format)
-        super(ReflectionPadding2D, self).__init__(**kwargs)
+class ReflectionPadding2D(ZeroPadding2D):
+    """Reflection-padding layer for 2D input (e.g. picture).
 
-    def compute_output_shape(self, input_shape):
-        input_shape = tensor_shape.TensorShape(input_shape).as_list()
-        if self.data_format == 'channels_first':
-            output_shape = (input_shape[0],
-                            input_shape[1],
-                            input_shape[2] + 2 * self.padding[0],
-                            input_shape[3] + 2 * self.padding[1])
-        else:
-            output_shape = (input_shape[0],
-                            input_shape[1] + 2 * self.padding[0],
-                            input_shape[2] + 2 * self.padding[1],
-                            input_shape[3])
+    This layer can add rows and columns of reflected values
+    at the top, bottom, left and right side of an image tensor.
 
-        return tensor_shape.TensorShape(output_shape)
+    Args:
+        padding: int, or tuple of 2 ints, or tuple of 2 tuples of 2 ints.
+            - If int: the same symmetric padding
+                is applied to height and width.
+            - If tuple of 2 ints:
+                interpreted as two different
+                symmetric padding values for height and width:
+                `(symmetric_height_pad, symmetric_width_pad)`.
+            - If tuple of 2 tuples of 2 ints:
+                interpreted as
+                `((top_pad, bottom_pad), (left_pad, right_pad))`
 
-    def call(self, x, mask=None):
+        data_format: A string,
+            one of `channels_last` (default) or `channels_first`.
+            The ordering of the dimensions in the inputs.
+            `channels_last` corresponds to inputs with shape
+            `(batch, height, width, channels)` while `channels_first`
+            corresponds to inputs with shape
+            `(batch, channels, height, width)`.
+            It defaults to the `image_data_format` value found in your
+            Keras config file at `~/.keras/keras.json`.
+            If you never set it, then it will be "channels_last".
+
+    Input shape:
+        4D tensor with shape:
+        - If `data_format` is `"channels_last"`:
+            `(batch, rows, cols, channels)`
+        - If `data_format` is `"channels_first"`:
+            `(batch, channels, rows, cols)`
+
+    Output shape:
+        4D tensor with shape:
+        - If `data_format` is `"channels_last"`:
+            `(batch, padded_rows, padded_cols, channels)`
+        - If `data_format` is `"channels_first"`:
+            `(batch, channels, padded_rows, padded_cols)`
+    """
+
+    def call(self, inputs):
         w_pad, h_pad = self.padding
         if self.data_format == 'channels_first':
-            paddings = [[0, 0], [0, 0], [h_pad, h_pad], [w_pad, w_pad]]
+            pattern = [[0, 0], [0, 0], list(w_pad), list(h_pad)]
         else:
-            paddings = [[0, 0], [h_pad, h_pad], [w_pad, w_pad], [0, 0]]
-        return tf.pad(x, paddings, 'REFLECT')
+            pattern = [[0, 0], list(w_pad), list(h_pad), [0, 0]]
+        return tf.pad(inputs, pattern, mode='REFLECT')
 
 
-class ReflectionPadding3D(Layer):
-    def __init__(self, padding=(1, 1, 1), data_format=None, **kwargs):
-        self.padding = conv_utils.normalize_tuple(padding, 3, 'padding')
-        self.input_spec = [InputSpec(ndim=4)]
-        self.data_format = conv_utils.normalize_data_format(data_format)
-        super(ReflectionPadding3D, self).__init__(**kwargs)
+class ReflectionPadding3D(ZeroPadding3D):
+    """Reflection-padding layer for 3D data (spatial or spatio-temporal).
 
-    def compute_output_shape(self, input_shape):
-        input_shape = tensor_shape.TensorShape(input_shape).as_list()
+    Args:
+        padding: int, or tuple of 3 ints, or tuple of 3 tuples of 2 ints.
+            - If int: the same symmetric padding
+                is applied to height and width.
+            - If tuple of 3 ints:
+                interpreted as two different
+                symmetric padding values for height and width:
+                `(symmetric_dim1_pad, symmetric_dim2_pad, symmetric_dim3_pad)`.
+            - If tuple of 3 tuples of 2 ints:
+                interpreted as
+                `((left_dim1_pad, right_dim1_pad), (left_dim2_pad,
+                    right_dim2_pad), (left_dim3_pad, right_dim3_pad))`
+
+        data_format: A string,
+            one of `channels_last` (default) or `channels_first`.
+            The ordering of the dimensions in the inputs.
+            `channels_last` corresponds to inputs with shape
+            `(batch, spatial_dim1, spatial_dim2, spatial_dim3, channels)`
+            while `channels_first` corresponds to inputs with shape
+            `(batch, channels, spatial_dim1, spatial_dim2, spatial_dim3)`.
+            It defaults to the `image_data_format` value found in your
+            Keras config file at `~/.keras/keras.json`.
+            If you never set it, then it will be "channels_last".
+
+    Input shape:
+        5D tensor with shape:
+        - If `data_format` is `"channels_last"`:
+            `(batch, first_axis_to_pad, second_axis_to_pad, third_axis_to_pad,
+                depth)`
+        - If `data_format` is `"channels_first"`:
+            `(batch, depth, first_axis_to_pad, second_axis_to_pad,
+                third_axis_to_pad)`
+
+    Output shape:
+        5D tensor with shape:
+        - If `data_format` is `"channels_last"`:
+            `(batch, first_padded_axis, second_padded_axis, third_axis_to_pad,
+                depth)`
+        - If `data_format` is `"channels_first"`:
+            `(batch, depth, first_padded_axis, second_padded_axis,
+                third_axis_to_pad)`
+    """
+
+    def call(self, inputs):
+        d_pad, w_pad, h_pad = self.padding
         if self.data_format == 'channels_first':
-            output_shape = (input_shape[0],
-                            input_shape[1],
-                            input_shape[2] + 2 * self.padding[0],
-                            input_shape[3] + 2 * self.padding[1],
-                            input_shape[4] + 2 * self.padding[2])
+            pattern = [[0, 0], [0, 0], [d_pad[0], d_pad[1]],
+                       [w_pad[0], w_pad[1]], [h_pad[0], h_pad[1]]]
         else:
-            output_shape = (input_shape[0],
-                            input_shape[1] + 2 * self.padding[0],
-                            input_shape[2] + 2 * self.padding[1],
-                            input_shape[3] + 2 * self.padding[2],
-                            input_shape[4])
-
-        return tensor_shape.TensorShape(output_shape)
-
-    def call(self, x, mask=None):
-        z_pad, w_pad, h_pad = self.padding
-        if self.data_format == 'channels_first':
-            paddings = [[0, 0], [0, 0], [z_pad, z_pad], [h_pad, h_pad], [w_pad, w_pad]]
-        else:
-            paddings = [[0, 0], [z_pad, z_pad], [h_pad, h_pad], [w_pad, w_pad], [0, 0]]
-        return tf.pad(x, paddings, 'REFLECT')
+            pattern = [[0, 0], [d_pad[0], d_pad[1]],
+                       [w_pad[0], w_pad[1]], [h_pad[0], h_pad[1]], [0, 0]]
+        return tf.pad(inputs, pattern, mode='REFLECT')
