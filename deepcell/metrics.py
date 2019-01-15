@@ -145,15 +145,16 @@ def stats_objectbased(y_true,
     perc_merged = merged / stats_iou_matrix.shape[0]
     perc_divided = divided / stats_iou_matrix.shape[0]
 
+    acc = (stats_iou_matrix.shape[1] - false_positives) / stats_iou_matrix.shape[0]
+    acc = round(100 * acc, ndigits)
+
     print('\n____________________Object-based statistics____________________\n')
     print('Intersection over Union thresholded at:', dice_iou_threshold)
     print('dice/F1 index: {}\njaccard index: {}'.format(
         round(dice, ndigits), round(jaccard, ndigits)))
     print('Number of cells predicted:', stats_iou_matrix.shape[1])
     print('Number of cells present in ground truth:', stats_iou_matrix.shape[0])
-    print('Accuracy: {}%\n'.format(
-        round((100 * (stats_iou_matrix.shape[1] - false_positives)/ stats_iou_matrix.shape[0]), ndigits)
-    ))
+    print('Accuracy: {}%\n'.format(acc))
 
     print('#false positives: {}\t% of total error: {}\t% of predicted incorrect: {}'.format(
         round(false_positives, ndigits),
@@ -195,7 +196,8 @@ def stats_pixelbased(y_true, y_pred, ndigits=4):
     print('\n____________________Pixel-based statistics____________________\n')
     print('dice/F1 index: {}\njaccard index: {}'.format(
         round(dice, ndigits), round(jaccard, ndigits)))
-    print('Accuracy: {}%'.format(
-        100 * round(np.count_nonzero(np.logical_and(pred, truth)) / np.count_nonzero(truth), ndigits)))
+
+    acc = np.count_nonzero(np.logical_and(pred, truth)) / np.count_nonzero(truth), ndigits
+    print('Accuracy: {}%'.format(100 * round(acc)))
 
     return dice, jaccard

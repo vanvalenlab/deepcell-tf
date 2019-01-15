@@ -132,10 +132,14 @@ class ObjectIoU(Callback):
         perc_merged = merged / stats_iou_matrix.shape[0]
         perc_divided = divided / stats_iou_matrix.shape[0]
 
-        print('Object IoU - dice/F1 index:', _round(dice), 'jaccard index:', _round(jaccard))
-        print('cells predicted:', stats_iou_matrix.shape[1], ' - cells true:', stats_iou_matrix.shape[0])
-        print('incorrect merges:', merged, ' - ', _round(perc_merged), ' % of truth')
-        print('incorrect divisions:', divided, ' - ', _round(perc_divided), ' % of truth')
+        print('Object IoU - dice/F1 index:', _round(dice),
+              'jaccard index:', _round(jaccard))
+        print('cells predicted:', stats_iou_matrix.shape[1],
+              ' - cells true:', stats_iou_matrix.shape[0])
+        print('incorrect merges:', merged, ' - ',
+              _round(perc_merged), ' % of truth')
+        print('incorrect divisions:', divided, ' - ',
+              _round(perc_divided), ' % of truth')
 
         print('#false positives: {}\t% of total error: {}\t% of predicted incorrect: {}'.format(
             _round(false_positives), _round(false_pos_perc_err), _round(false_pos_perc_pred)))
