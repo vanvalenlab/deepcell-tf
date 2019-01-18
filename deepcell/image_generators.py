@@ -1804,7 +1804,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         for batch in range(number_of_batches):
             y = self.y[batch]
             unique_ids = np.unique(y.flatten())
-            if len(unique_ids) > 2: # You should have at least 3 id's - 2 cells and 1 background
+            if len(unique_ids) > 2: # There should be at least 3 id's - 2 cells and 1 background
                 good_batches.append(batch)
 
         X_new_shape = (len(good_batches), *self.x.shape[1:])
@@ -1840,7 +1840,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                 y_true = np.sum(y_batch == cell, axis=(self.row_axis - 1, self.col_axis - 1))
                 # get indices of frames where cell is present
                 y_index = np.where(y_true > 0)[0]
-                if y_index.size > 3: #self.min_track_length+1:  # if cell is present at all
+                if y_index.size > 3: # if cell is present at all
                     if self.daughters is not None:
                         # Only include daughters if there are enough frames in their tracks
                         if cell not in daughters_batch:
@@ -1932,10 +1932,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                         2 * self.neighborhood_scale_size + 1, num_channels)
 
         # Resize images from bounding box
-#        max_value = np.amax([np.amax(X_reduced), np.absolute(np.amin(X_reduced))])
-#        X_reduced /= max_value
         X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
-#        X_reduced *= max_value
 
         return X_reduced
 
@@ -1988,15 +1985,11 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
                 resize_shape = (self.crop_dim, self.crop_dim, X.shape[channel_axis])
 
             # Resize images from bounding box
-            max_value = np.amax([np.amax(appearance), np.absolute(np.amin(appearance))])
-            appearance /= max_value
-            appearance = resize(appearance, resize_shape, mode='constant')
-            appearance *= max_value
+            appearance = resize(appearance, resize_shape, mode='constant', preserve_range=True)
             if self.data_format == 'channels_first':
                 appearances[:, counter] = appearance
             else:
                 appearances[counter] = appearance
-
 
             neighborhoods[counter] = self._sub_area(X_frame, y_frame, cell_label, X.shape[channel_axis])
 
@@ -2043,7 +2036,6 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             batch = self.track_ids[track]['batch']
             label = self.track_ids[track]['label']
             frames = self.track_ids[track]['frames']
-#             frames = np.append(frames, frames[-1])
 
             # Make an array of labels that the same length as the frames array
             labels = [label] * len(frames)
@@ -2206,7 +2198,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         distance = np.concatenate([zero_pad, distance], axis=0)
 
         # Randomly rotate and expand all the distances
-        # TODO(enricozb): No idea why these are rotated, I feel like this would just confuse the network
+        # TODO(enricozb): Investigate effect of rotations, it should be invariant
 
         distance_1 = distance[0:-1,:]
         distance_2 = distance[-1,:]
@@ -2283,9 +2275,8 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         # Initialize batch_x_1, batch_x_2, and batch_y, as well as cell distance data
-        # DVV Notes - I'm changing how this works. We will now only compare cells in neighboring
-        # frames. I am also modifying it so it will select a sequence of cells/distances for x1
-        # and 1 cell/distance for x2
+        # Compare cells in neighboring frames. Select a sequence of cells/distances 
+        # for x1 and 1 cell/distance for x2
 
         # setup zeroed batch arrays for each feature & batch_y
         batch_features = []
@@ -2309,8 +2300,6 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             # Determine what class the track will be - different (0), same (1), division (2)
             division = False
             type_cell = np.random.choice([0, 1, 2], p=[1/3, 1/3, 1/3])
-            # type_cell = np.random.choice([0, 1, 2], p=[1/2, 1/2, 0/3])
-            # type_cell = np.random.choice([0, 1, 2], p=[1/2, 0/3, 1/2])
 
             # Dealing with edge cases
             # If class is division, check if the first cell divides. If not, change tracks

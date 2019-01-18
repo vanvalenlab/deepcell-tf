@@ -1,3 +1,30 @@
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# All rights reserved.
+#
+# Licensed under a modified Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
+#
+# The Work provided may be used for non-commercial academic purposes only.
+# For any other use of the Work, including commercial use, please contact:
+# vanvalenlab@gmail.com
+#
+# Neither the name of Caltech nor the names of its contributors may be used
+# to endorse or promote products derived from this software without specific
+# prior written permission.
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+"""A cell tracking class capable of extending labels across sequential frames."""
+
 import copy
 import json
 import numpy as np
@@ -31,8 +58,6 @@ class cell_tracker():
                  neighborhood_true_size=100,
                  data_format=None):
 
-        # TODO: Use a model that is served by tf-serving, not one on a local machine
-
         if data_format is None:
             data_format = K.image_data_format()
 
@@ -41,6 +66,7 @@ class cell_tracker():
 
         self.x = copy.copy(movie)
         self.y = copy.copy(annotation)
+        # TODO: Use a model that is served by tf-serving, not one on a local machine
         self.model = model
         self.crop_dim = crop_dim
         self.death = death
@@ -77,7 +103,8 @@ class cell_tracker():
         number_of_frames = self.y.shape[0]
 
         ### The annotations need to be unique across all frames
-        uid = 1000
+        # TO DO: Resolve the starting unique ID issue
+        uid = 1000 
         for frame in range(number_of_frames):
             unique_cells = np.unique(y[frame])
             y_frame_new = np.zeros(y[frame].shape)
@@ -88,7 +115,6 @@ class cell_tracker():
                     y_frame_new[y[frame] == old_label] = uid
                     uid += 1
             y[frame] = y_frame_new
-            # print("max label", uid)
         self.y = y.astype('int32')
 
     def _create_new_track(self, frame, old_label):
@@ -113,8 +139,6 @@ class cell_tracker():
         self.tracks[new_track].update(self._get_features(self.x, self.y, [frame], [old_label]))
 
         if frame > 0 and np.any(self.y[frame] == new_label):
-            print(new_label)
-            print(np.unique(self.y[frame]))
             raise Exception("new_label already in annotated frame and frame > 0")
 
         self.y[frame][self.y[frame] == old_label] = new_label
@@ -158,10 +182,9 @@ class cell_tracker():
             # Make sure the distances are all less than max distance
             for j in range(distances.shape[0]):
                 dist = distances[j,:]
-                # TODO(enricozb): why do we normalize distances???
+                # TODO(enricozb): Finish the distance-based optimizations
                 if np.linalg.norm(dist) > self.max_distance:
                     ok = False
-                    # distances[j,:] = dist/np.linalg.norm(dist)*self.max_distance
             return distances[0:-1,:], distances[-1,:], ok
 
         if feature_name == "neighborhood":
@@ -226,7 +249,6 @@ class cell_tracker():
         # Fill the input matrices
         for track in range(number_of_tracks):
             for cell in range(number_of_cells):
-#            for cell in cells_in_frame:
                 for feature_name in self.features:
                     track_feature, frame_feature, ok = self._compute_feature(
                             feature_name,
@@ -298,26 +320,17 @@ class cell_tracker():
         and the frame that was tracked.
         """
         number_of_tracks = len(self.tracks.keys())
-
-#       number_of_cells = np.amax(self.y[frame])       ## Switch from iterating over assumed cell range to a list of the cell labels in the frame
         cells_in_frame = np.unique(self.y[frame])
         cells_in_frame = np.delete(cells_in_frame, np.where(cells_in_frame == 0))
         number_of_cells = len(list(cells_in_frame))            ## Number of lables present in the current frame (needed to build cost matrix)
-        print("cells in frame", cells_in_frame)
-
         y_tracked_update = np.zeros((1, self.y.shape[1], self.y.shape[2], 1), dtype='int32')
 
         for a in range(assignments.shape[0]):
             track, cell = assignments[a]
             track_id = track + 1 # Labels and indices differ by 1
-            #print("assignments shape: ", assignments.shape)
-            #print("assignments: ", assignments)
-            #print("track: ", track)
-            #print("cell: ", cell)
-
-#            cell_id = cell + 1                         ## This is a mapping of the column index provided by the lap assignment to the cell label in the frame
+        # This is a mapping of the column index provided by the lap assignment to the cell label in the frame
             if cell < number_of_cells:
-                cell_id = cells_in_frame[cell]              ## This is the new mapping
+                cell_id = cells_in_frame[cell]        # This is the new mapping
 
             # Take care of everything if cells are tracked
             if track < number_of_tracks and cell < number_of_cells:
@@ -351,7 +364,6 @@ class cell_tracker():
 
             # Dont touch anything if there was a cell that "died"
             elif track < number_of_tracks and cell > number_of_cells - 1:
-                # self.tracks[track]['death_frame'] = frame - 1
                 continue
 
         # Cap the tracks of cells that divided
@@ -365,14 +377,6 @@ class cell_tracker():
         for track in range(number_of_tracks):
             if len(self.tracks[track]['daughters']) > 0:
                 if frame in self.tracks[track]['frames']:
-                    print("appearances removed from track ", track)
-                    print("frames in the track ", self.tracks[track]['frames'])
-                    print("length of daughter track ", len(self.tracks[track]['daughters']))
-                    print("daughters ", self.tracks[track]['daughters'])
-                    print("new track id ", len(self.tracks.keys()))
-                    print("label ", self.tracks[track]['label'])
-                    print("frame being removed ", frame)
-
                     # Create new track
                     old_label = self.tracks[track]['label']
                     new_track_id = len(self.tracks.keys())
@@ -408,7 +412,7 @@ class cell_tracker():
 
         cell_features = self._get_features(self.x, self.y, [frame], [cell])
 
-        # TODO(enricozb): Why are we stacking these arrays?
+        # TODO(enricozb): Investigate the viability of stacking these arrays
         frame_features = {}
         for feature in self.features:
             cell_feature_name = "~future area" if feature == "neighborhood" else feature
@@ -429,12 +433,6 @@ class cell_tracker():
 
                 track_distances = distances[:,0:-1,:]
                 cell_distances = distances[:,[-1],:]
-
-                # Make sure the distances are all less than max distance
-                # for j in range(cell_distances.shape[0]):
-                #     dist = cell_distances[j,:,:]
-                #     if np.linalg.norm(dist) > self.max_distance:
-                #         cell_distances[j,:,:] = dist/np.linalg.norm(dist)*self.max_distance
 
                 return track_distances, cell_distances
 
@@ -465,8 +463,6 @@ class cell_tracker():
 
         predictions = self.model.predict(model_input)
         probs = predictions[:,2]
-
-        # print(np.round(probs, decimals=2))
         number_of_tracks = len(self.tracks.keys())
 
         # Make sure capped tracks can't be assigned parents
@@ -685,14 +681,7 @@ class cell_tracker():
             X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
             props = skimage.measure.regionprops(np.int32(y_frame == cell_label))
-
-            try:
-                minr, minc, maxr, maxc = props[0].bbox
-            except:
-                print("frame ", frame)
-                print("cell_label:", cell_label)
-                print("unique:", np.unique(y_frame))
-
+            minr, minc, maxr, maxc = props[0].bbox
             centroids[counter] = props[0].centroid
             regionprops[counter] = np.array([props[0].area, props[0].perimeter, props[0].eccentricity])
 
@@ -716,7 +705,7 @@ class cell_tracker():
             # Get the neighborhood
             neighborhoods[counter] = self._sub_area(X_frame, y_frame, cell_label,
                                                     X.shape[channel_axis])
-
+            # Try to assign future areas if future frame is available
             try:
                 X_future_frame = X[frame + 1] if self.data_format == 'channels_last' else X[:, frame + 1]
                 future_areas[counter] = self._sub_area(X_future_frame, y_frame, cell_label,

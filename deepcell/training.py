@@ -335,7 +335,10 @@ def train_model_siamese_daughter(model=None,
                                  neighborhood_scale_size=10,
                                  features=None,
                                  expt='',
-                                 it=0, batch_size=1, n_epoch=100,
+                                 it=0, 
+                                 batch_size=1,
+                                 num_gpus=None, 
+                                 n_epoch=100,
                                  direc_save='/data/models', direc_data='/data/npz_data',
                                  focal=False,
                                  gamma=0.5,
@@ -360,7 +363,6 @@ def train_model_siamese_daughter(model=None,
     print("saving loss at:", file_name_save_loss)
 
     train_dict, val_dict = get_data(training_data_file_name, mode='siamese_daughters', seed=seed)
-    #train_dict, val_dict = get_data(training_data_file_name, mode='siamese_daughters', test_size=.2)
 
     class_weights = train_dict['class_weights']
     # the data, shuffled and split between train and test sets
@@ -382,6 +384,15 @@ def train_model_siamese_daughter(model=None,
             return losses.weighted_categorical_crossentropy(y_true, y_pred,
                                                             n_classes=n_classes,
                                                             from_logits=False)
+
+    if num_gpus is None:
+        num_gpus = train_utils.count_gpus()
+
+    if num_gpus >= 2:
+        batch_size = batch_size * num_gpus
+        model = train_utils.MultiGpuModel(model, num_gpus)
+
+    print('Training on {} GPUs'.format(num_gpus))
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
