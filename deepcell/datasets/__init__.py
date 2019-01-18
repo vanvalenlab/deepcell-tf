@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -24,9 +24,16 @@
 # limitations under the License.
 # ==============================================================================
 """Builtin Datasets"""
+
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from deepcell.datasets import hek293
 from deepcell.datasets import hela_s3
 from deepcell.datasets import mousebrain
 from deepcell.datasets import nih_3t3
+
+del absolute_import
+del division
+del print_function

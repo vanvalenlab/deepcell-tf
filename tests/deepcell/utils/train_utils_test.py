@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -28,8 +28,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import numpy as np
-from tensorflow.python import keras
 from tensorflow.python.platform import test
 
 from deepcell.utils.train_utils import rate_scheduler
@@ -39,13 +37,13 @@ class TrainUtilsTest(test.TestCase):
     def test_rate_scheduler(self):
         # if decay is small, learning rate should decrease as epochs increase
         rs = rate_scheduler(lr=.001, decay=.95)
-        assert rs(1) > rs(2)
+        self.assertGreater(rs(1), rs(2))
         # if decay is large, learning rate should increase as epochs increase
         rs = rate_scheduler(lr=.001, decay=1.05)
-        assert rs(1) < rs(2)
+        self.assertLess(rs(1), rs(2))
         # if decay is 1, learning rate should not change
         rs = rate_scheduler(lr=.001, decay=1)
-        assert rs(1) == rs(2)
+        self.assertEqual(rs(1), rs(2))
 
 if __name__ == '__main__':
     test.main()

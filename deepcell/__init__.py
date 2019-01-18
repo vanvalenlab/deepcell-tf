@@ -1,6 +1,6 @@
-# Copyright 2016-2018 David Van Valen at California Institute of Technology
-# (Caltech), with support from the Paul Allen Family Foundation, Google,
-# & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
 #
 # Licensed under a modified Apache License, Version 2.0 (the "License");
@@ -23,24 +23,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Package for single cell image segmentation with convolutional neural networks
-@author: David Van Valen
-"""
+"""Package for single cell image segmentation with convolutional neural networks"""
+
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-from . import datasets
-from . import layers
-from . import losses
-from . import image_generators
-from . import model_zoo
-from . import running
-from . import training
-from . import utils
+from deepcell import datasets
+from deepcell import layers
+from deepcell import losses
+from deepcell import image_generators
+from deepcell import model_zoo
+from deepcell import notebooks
+from deepcell import running
+from deepcell import training
+from deepcell import utils
 
-from .layers import *
-from .losses import *
-from .image_generators import *
-from .model_zoo import *
-from .running import *
-from .training import *
-from .utils import *
+from deepcell.layers import *
+from deepcell.losses import *
+from deepcell.image_generators import *
+from deepcell.model_zoo import *
+from deepcell.running import *
+from deepcell.training import *
+from deepcell.utils import *
+
+del absolute_import
+del division
+del print_function
