@@ -33,22 +33,7 @@ import tensorflow as tf
 from tensorflow.python.keras import backend as K
 
 
-def _to_tensor(x, dtype):
-    """Convert the input `x` to a tensor of type `dtype`.
-
-    Args:
-        x: An object to be converted (numpy array, list, tensors).
-        dtype: The destination type.
-
-    Returns:
-        A tensor.
-    """
-    return tf.convert_to_tensor(x, dtype=dtype)
-
-
-def categorical_crossentropy(y_true, y_pred,
-                             class_weights=None,
-                             axis=None, from_logits=False):
+def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
 
     Args:
@@ -70,7 +55,7 @@ def categorical_crossentropy(y_true, y_pred,
         # scale preds so that the class probas of each sample sum to 1
         y_pred = y_pred / K.sum(y_pred, axis=axis, keepdims=True)
         # manual computation of crossentropy
-        _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
+        _epsilon = tf.convert_to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
         y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
         if class_weights is None:
             return - K.sum(y_true * K.log(y_pred), axis=axis)
@@ -104,7 +89,7 @@ def weighted_categorical_crossentropy(y_true, y_pred,
     # scale preds so that the class probas of each sample sum to 1
     y_pred = y_pred / K.sum(y_pred, axis=axis, keepdims=True)
     # manual computation of crossentropy
-    _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
+    _epsilon = tf.convert_to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
     y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
     y_true_cast = K.cast(y_true, K.floatx())
     total_sum = K.sum(y_true_cast)
@@ -145,7 +130,7 @@ def sample_categorical_crossentropy(y_true,
         y_pred = y_pred * y_true
 
         # manual computation of crossentropy
-        _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
+        _epsilon = tf.convert_to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
         y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
         if class_weights is None:
             return - K.sum(y_true * K.log(y_pred), axis=axis)
@@ -248,7 +233,7 @@ def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_l
     # scale preds so that the class probas of each sample sum to 1
     y_pred = y_pred / K.sum(y_pred, axis=axis, keepdims=True)
     # manual computation of crossentropy
-    _epsilon = _to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
+    _epsilon = tf.convert_to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
     y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
     y_true_cast = K.cast(y_true, K.floatx())
     total_sum = K.sum(y_true_cast)

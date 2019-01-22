@@ -70,11 +70,11 @@ class Resize2D(Layer):
         else:
             channel_last = inputs
 
-        input_shape = tf.shape(channel_last)
+        input_shape = K.shape(channel_last)
 
         rows = self.scale * input_shape[1]
         cols = self.scale * input_shape[2]
-
+        # TODO: K.resize_images() ?
         resized = tf.image.resize_images(channel_last, (rows, cols))
 
         if self.data_format == 'channels_first':
