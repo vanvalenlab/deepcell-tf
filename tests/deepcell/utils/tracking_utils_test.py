@@ -23,38 +23,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Deepcell Utilities Module"""
-
+"""Tests for tracking_utils"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.utils import data_utils
-from deepcell.utils import export_utils
-from deepcell.utils import io_utils
-from deepcell.utils import misc_utils
-from deepcell.utils import plot_utils
-from deepcell.utils import testing_utils
+import numpy as np
+from tensorflow.python.platform import test
+from tensorflow.python.keras import backend as K
+
 from deepcell.utils import tracking_utils
-from deepcell.utils import train_utils
-from deepcell.utils import transform_utils
-from deepcell.utils import retinanet_anchor_utils
 
-# Globally-importable utils.
-from deepcell.utils.data_utils import get_data
-from deepcell.utils.data_utils import make_training_data
-from deepcell.utils.export_utils import export_model
-from deepcell.utils.io_utils import get_immediate_subdirs
-from deepcell.utils.io_utils import get_image
-from deepcell.utils.io_utils import nikon_getfiles
-from deepcell.utils.io_utils import get_image_sizes
-from deepcell.utils.io_utils import get_images_from_directory
-from deepcell.utils.misc_utils import sorted_nicely
-from deepcell.utils.train_utils import rate_scheduler
-from deepcell.utils.transform_utils import distance_transform_2d
-from deepcell.utils.transform_utils import distance_transform_3d
-from deepcell.utils.transform_utils import deepcell_transform
 
-del absolute_import
-del division
-del print_function
+def _get_image(img_h=300, img_w=300):
+    bias = np.random.rand(img_w, img_h) * 64
+    variance = np.random.rand(img_w, img_h) * (255 - 64)
+    img = np.random.rand(img_w, img_h) * variance + bias
+    return img
+
+
+class TrackingUtilsTests(test.TestCase):
+
+    def test_count_pairs(self):
+        batches = 1
+        frames = 2
+        classes = 4
+        prob = 0.5
+        expected = batches * frames * classes * (classes + 1) / prob
+
+        # channels_last
+        y = np.random.randint(low=0, high=classes + 1,
+                              size=(batches, frames, 30, 30, 1))
+        pairs = tracking_utils.count_pairs(
+            y, same_probability=prob, data_format='channels_last')
+        self.assertEqual(pairs, expected)
+
+        # channels_first
+        y = np.random.randint(low=0, high=classes + 1,
+                              size=(batches, 1, frames, 30, 30))
+        pairs = tracking_utils.count_pairs(
+            y, same_probability=prob, data_format='channels_first')
+        self.assertEqual(pairs, expected)
