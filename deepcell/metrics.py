@@ -121,6 +121,10 @@ def stats_objectbased(y_true,
         Change function to assign labels to raw prediction data instead of passing in labels.
 
     """
+
+    def _round(x):
+        return round(x,ndigits)
+
     stats_iou_matrix = get_iou_matrix_quick(
         y_true, y_pred, dice_iou_threshold, crop_size)
 
@@ -163,31 +167,31 @@ def stats_objectbased(y_true,
     perc_divided = divided / stats_iou_matrix.shape[0]
 
     acc = (stats_iou_matrix.shape[1] - false_positives) / stats_iou_matrix.shape[0]
-    acc = round(100 * acc, ndigits)
+    acc = _round(100 * acc)
 
     print('\n____________________Object-based statistics____________________\n')
     print('Intersection over Union thresholded at:', dice_iou_threshold)
     print('dice/F1 index: {}\njaccard index: {}'.format(
-        round(dice, ndigits), round(jaccard, ndigits)))
+        _round(dice), _round(jaccard)))
     print('Number of cells predicted:', stats_iou_matrix.shape[1])
     print('Number of cells present in ground truth:', stats_iou_matrix.shape[0])
     print('Accuracy: {}%\n'.format(acc))
 
     print('#false positives: {}\t% of total error: {}\t% of predicted incorrect: {}'.format(
-        round(false_positives, ndigits),
-        round(false_pos_perc_err, ndigits),
-        round(false_pos_perc_pred, ndigits)))
+        _round(false_positives),
+        _round(false_pos_perc_err),
+        _round(false_pos_perc_pred)))
 
     print('#false negatives: {}\t% of total error: {}\t% of ground truth missed: {}'.format(
-        round(false_negatives, ndigits),
-        round(false_neg_perc_err, ndigits),
-        round(false_neg_perc_truth, ndigits)))
+        _round(false_negatives),
+        _round(false_neg_perc_err),
+        _round(false_neg_perc_truth)))
 
     print('\nIntersection over Union thresholded at:', merge_iou_threshold)
     print('#incorrect merges: {}\t% of ground truth merged: {}'.format(
-        merged, round(perc_merged, ndigits)))
+        merged, _round(perc_merged)))
     print('#incorrect divisions: {}\t% of ground truth divided: {}'.format(
-        divided, round(perc_divided, ndigits)))
+        divided, _round(perc_divided)))
 
 
 def stats_pixelbased(y_true, y_pred, ndigits=4):
