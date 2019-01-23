@@ -102,28 +102,38 @@ def stats_objectbased(y_true,
                       crop_size=32):
     """
     Calculate summary statistics (DICE/Jaccard index and confusion matrix)
-    on a per-object basis
+    for a single channel on a per-object basis
 
     Relies on  `skimage.measure.label` to define cell objects which are used to calculate stats
 
     Args:
-        y_true (3D np.array): Ground truth annotations, can be labeled or unlabeled
-        y_pred (3D np.array): Predictions, must be labeled using skimage.measure.label
+        y_true (3D np.array): Ground truth annotations for a single channel
+        y_pred (3D np.array): Predictions for a single channel
         dice_iou_threshold (:obj:`float`, optional): default, 0.5
         merge_iou_threshold (:obj:`float`, optional): default, 1e-5
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         crop_size (:obj:`int`, optional): default 32
 
     Warning:
-        This function currently only accepts single channel data either in a 2D (x,y) or 3D (batch,x,y) form.
+        This function currently only accepts single channel data either in a 2D (x,y) 
+        or 3D (batch,x,y) form.
+        `y_true` and `y_shape` must have the same dimensions
 
-    Todo:
-        Change function to assign labels to raw prediction data instead of passing in labels.
-
+    Raises:
+        ValueError: If y_true and y_pred are not the same shape
     """
 
     def _round(x):
         return round(x,ndigits)
+
+    if y_pred.shape != y_true.shape:
+        raise ValueError('Shape of inputs need to match. Shape of prediction '
+                         'is: {}.  Shape of mask is: {}'.format(
+                             y_pred.shape, y_true.shape))
+
+    # Convert y input to labeled data
+    y_true = skimage.measure.label(y_true, connectivity=2)
+    y_pred = skimage.measure.label(y_pred, connectivity=2)
 
     stats_iou_matrix = get_iou_matrix_quick(
         y_true, y_pred, dice_iou_threshold, crop_size)
