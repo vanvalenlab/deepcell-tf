@@ -38,8 +38,6 @@ from pandas import DataFrame
 from skimage.transform import resize
 from scipy.optimize import linear_sum_assignment
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.preprocessing.image import apply_transform
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
 
 class cell_tracker():
@@ -622,7 +620,7 @@ class cell_tracker():
         y_padded = np.pad(y_frame, ((self.neighborhood_true_size, self.neighborhood_true_size),
                                     (self.neighborhood_true_size, self.neighborhood_true_size),
                                     (0,0)), mode='constant', constant_values=0)
-        props = skimage.measure.regionprops(np.int32(y_padded == cell_label))
+        props = skimage.measure.regionprops(np.squeeze(np.int32(y_padded == cell_label)))
         center_x, center_y = props[0].centroid
         center_x, center_y = np.int(center_x), np.int(center_y)
         X_reduced = X_padded[
@@ -680,7 +678,7 @@ class cell_tracker():
             # Get the bounding box
             X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
-            props = skimage.measure.regionprops(np.int32(y_frame == cell_label))
+            props = skimage.measure.regionprops(np.squeeze(np.int32(y_frame == cell_label)))
             minr, minc, maxr, maxc = props[0].bbox
             centroids[counter] = props[0].centroid
             regionprops[counter] = np.array([props[0].area, props[0].perimeter, props[0].eccentricity])

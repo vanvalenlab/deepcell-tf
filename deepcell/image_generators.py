@@ -1495,7 +1495,7 @@ Custom siamese generators
 """
 
 
-class SiameseDataGenerator(keras_preprocessing.image.ImageDataGenerator):
+class SiameseDataGenerator(ImageDataGenerator):
     def flow(self,
              train_dict,
              crop_dim=32,
@@ -1507,7 +1507,6 @@ class SiameseDataGenerator(keras_preprocessing.image.ImageDataGenerator):
              batch_size=32,
              shuffle=True,
              seed=None,
-             data_format=None,
              save_to_dir=None,
              save_prefix='',
              save_format='png'):
@@ -1523,12 +1522,12 @@ class SiameseDataGenerator(keras_preprocessing.image.ImageDataGenerator):
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
-            data_format=data_format,
+            data_format=self.data_format,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
 
-class SiameseIterator(keras_preprocessing.image.Iterator):
+class SiameseIterator(Iterator):
     def __init__(self,
                  train_dict,
                  image_data_generator,
@@ -1574,7 +1573,6 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         self.neighborhood_scale_size = np.int(neighborhood_scale_size)
         self.neighborhood_true_size = np.int(neighborhood_true_size)
         self.image_data_generator = image_data_generator
-        self.squeeze = squeeze
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
@@ -1718,7 +1716,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         y_padded = np.pad(y_frame, ((self.neighborhood_true_size, self.neighborhood_true_size),
                                     (self.neighborhood_true_size, self.neighborhood_true_size),
                                     (0,0)), mode='constant', constant_values=0)
-        props = skimage.measure.regionprops(np.int32(y_padded == cell_label))
+        props = skimage.measure.regionprops(np.squeeze(np.int32(y_padded == cell_label)))
         center_x, center_y = props[0].centroid
         center_x, center_y = np.int(center_x), np.int(center_y)
         X_reduced = X_padded[
@@ -1769,7 +1767,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
 
-            props = skimage.measure.regionprops(np.int32(y_frame == cell_label))
+            props = skimage.measure.regionprops(np.squeeze(np.int32(y_frame == cell_label)))
             minr, minc, maxr, maxc = props[0].bbox
             centroids.append(props[0].centroid)
             regionprops.append(np.array([props[0].area, props[0].perimeter, props[0].eccentricity]))
@@ -1847,10 +1845,10 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
             if self.data_format == 'channels_last':
                 all_appearances[track,np.array(frames),:,:,:] = appearance
 
-            all_centroids[track, np.array(frames),:] = centroid
-            all_neighborhoods[track, np.array(frames),:,:] = neighborhood
-            all_future_areas[track, np.array(frames[:-1]),:,:] = future_area
-            all_regionprops[track, np.array(frames),:] = regionprop
+            all_centroids[track, np.array(frames), :] = centroid
+            all_neighborhoods[track, np.array(frames), :, :] = neighborhood
+            all_future_areas[track, np.array(frames[:-1]), :, :] = future_area
+            all_regionprops[track, np.array(frames), :] = regionprop
 
         self.all_appearances = all_appearances
         self.all_centroids = all_centroids
@@ -1923,7 +1921,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         tracked_frames_index = np.arange(len(tracked_frames))
 
         # Check if there are enough frames
-        enough_frames = len(tracked_frames_index) > self.min_track_length + 1
+        enough_frames = len(tracked_frames_index) > self.min_track_length+1
 
         # We need to exclude the last frame so that we will always be able to make a comparison
         acceptable_indices = tracked_frames_index[self.min_track_length-1:-1] if enough_frames else tracked_frames_index[:-1]
@@ -2171,7 +2169,7 @@ class SiameseIterator(keras_preprocessing.image.Iterator):
         for feature_i, feature in enumerate(self.features):
             batch_feature_1, batch_feature_2 = batch_features[feature_i]
             # Remove singleton dimensions (if min_track_length is 1)
-            if self.squeeze:
+            if self.min_track_length < 2:
                 if feature == "appearance":
                     batch_feature_1 = np.squeeze(batch_feature_1, axis=self.time_axis)
                     batch_feature_2 = np.squeeze(batch_feature_2, axis=self.time_axis)
