@@ -330,43 +330,47 @@ def train_model_conv(model,
     return model
 
 
-def train_model_siamese_daughter(model=None,
-                                 dataset=None,
-                                 optimizer=None,
+def train_model_siamese_daughter(model,
+                                 dataset,
+                                 expt='',
+                                 test_size=.1,
+                                 n_epoch=100,
+                                 batch_size=1,
+                                 num_gpus=None,
                                  min_track_length=1,
                                  neighborhood_scale_size=10,
                                  features=None,
-                                 expt='',
-                                 it=0, 
-                                 batch_size=1,
-                                 num_gpus=None, 
-                                 n_epoch=100,
-                                 direc_save='/data/models', direc_data='/data/npz_data',
+                                 optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
+                                 log_dir='/data/tensorboard_logs',
+                                 model_dir='/data/models',
+                                 model_name=None,
                                  focal=False,
                                  gamma=0.5,
                                  lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-                                 rotation_range=0, flip=True, shear=0, class_weight=None,
-                                 seed=None):
-
+                                 rotation_range=0,
+                                 flip=True,
+                                 shear=0,
+                                 zoom_range=0,
+                                 seed=None,
+                                 **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
-    training_data_file_name = os.path.join(direc_data, dataset + '.trks')
-    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    features_fmt = '[' + ','.join(f[0] for f in sorted(features)) + ']'
-    features_fmt += '_neighs={}'.format(neighborhood_scale_size)
-    features_fmt += '_epochs={}'.format(n_epoch)
-    features_fmt += '_seed={}'.format(seed)
+    if model_name is None:
+        todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        data_name = os.path.splitext(os.path.basename(dataset))[0]
+        model_name = '{}_{}_[{}]_neighs={}_epochs={}_seed={}_{}'.format(
+            todays_date, data_name, ','.join(f[0] for f in sorted(features)),
+            neighborhood_scale_size, n_epoch, seed, expt)
+    model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
+    loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}_{}.h5'.format(todays_date, dataset, features_fmt, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}_{}.npz'.format(todays_date, dataset, features_fmt, expt, it))
+    print('training on dataset:', dataset)
+    print('saving model at:', model_path)
+    print('saving loss at:', loss_path)
 
-    print("training on dataset: ", training_data_file_name)
-    print("saving model at:", file_name_save)
-    print("saving loss at:", file_name_save_loss)
+    train_dict, val_dict = get_data(dataset, mode='siamese_daughters',
+                                    seed=seed, test_size=test_size))
 
-    train_dict, val_dict = get_data(training_data_file_name, mode='siamese_daughters', seed=seed)
-
-    class_weights = train_dict['class_weights']
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
     print('y_train shape:', train_dict['y'].shape)
