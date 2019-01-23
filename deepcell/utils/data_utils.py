@@ -74,8 +74,8 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         training_data = np.load(file_name)
         X = training_data['X']
         y = training_data['y']
-        #win_x = training_data['win_x']
-        #win_y = training_data['win_y']
+        # win_x = training_data['win_x']
+        # win_y = training_data['win_y']
         class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
 
     if mode == 'sample' and X.ndim == 4:
@@ -207,21 +207,20 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 
 
 def load_trks(trks_file):
-    with tarfile.open(trks_file, "r") as trks:
+    with tarfile.open(trks_file, 'r') as trks:
         # trks.extractfile opens a file in bytes mode, json can't use bytes.
         lineages = json.loads(
-                trks.extractfile(
-                    trks.getmember("lineages.json")).read().decode())
+            trks.extractfile(trks.getmember('lineages.json')).read().decode())
 
         # numpy can't read these from disk...
         array_file = BytesIO()
-        array_file.write(trks.extractfile("raw.npy").read())
+        array_file.write(trks.extractfile('raw.npy').read())
         array_file.seek(0)
         raw = np.load(array_file)
         array_file.close()
 
         array_file = BytesIO()
-        array_file.write(trks.extractfile("tracked.npy").read())
+        array_file.write(trks.extractfile('tracked.npy').read())
         array_file.seek(0)
         tracked = np.load(array_file)
         array_file.close()
@@ -230,7 +229,7 @@ def load_trks(trks_file):
     for i, tracks in enumerate(lineages):
         lineages[i] = {int(k): v for k, v in tracks.items()}
 
-    return {"lineages": lineages, "raw": raw, "tracked": tracked}
+    return {'lineages': lineages, 'raw': raw, 'tracked': tracked}
 
 
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='valid',
