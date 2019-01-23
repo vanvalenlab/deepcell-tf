@@ -67,108 +67,13 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         dict of training data, and a dict of testing data:
         train_dict, test_dict
     """
-
-    win_z = None
-
-    if mode != "siamese_daughters":
-        training_data = np.load(file_name)
-        X = training_data['X']
-        y = training_data['y']
-        # win_x = training_data['win_x']
-        # win_y = training_data['win_y']
-        class_weights = training_data['class_weights'] if 'class_weights' in training_data else None
-
-    if mode == 'sample' and X.ndim == 4:
-        batch = training_data['batch']
-        pixels_x = training_data['pixels_x']
-        pixels_y = training_data['pixels_y']
-
-        if CHANNELS_FIRST:
-            sample_shape = (len(batch), X.shape[1], 2 * win_x + 1, 2 * win_y + 1)
-        else:
-            sample_shape = (len(batch), 2 * win_x + 1, 2 * win_y + 1, X.shape[3])
-        X_sample = np.zeros(sample_shape, dtype=K.floatx())
-
-        for i, (b, px, py) in enumerate(zip(batch, pixels_x, pixels_y)):
-            if CHANNELS_FIRST:
-                X_sample[i] = X[b, :, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
-            else:
-                X_sample[i] = X[b, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
-
-        X = X_sample
-
-
-    # siamese_data mode creates additional channels for tracking data (centroid x, centroid y, etc)
-    if mode == 'siamese_data':
-        batch_length = X.shape[0]
-
-        if CHANNELS_FIRST:
-            X_new = np.zeros((X.shape[0], X.shape[1]+2, X.shape[2], X.shape[3], X.shape[4]))
-            x_centroid_weight_dist = np.zeros(X.shape[3], X.shape[4])
-            y_centroid_weight_dist = np.zeros(X.shape[3], X.shape[4])
-            num_frames = X.shape[2]
-        else:
-            X_new = np.zeros((X.shape[0], X.shape[1], X.shape[2], X.shape[3], X.shape[4]+2))
-            x_centroid_weight_dist = np.zeros((X.shape[2], X.shape[3]))
-            y_centroid_weight_dist = np.zeros((X.shape[2], X.shape[3]))
-            num_frames = X.shape[1]
-
-        for b in range(batch_length):
-            for f in range(num_frames):
-                if CHANNELS_FIRST:
-                    X_new[b,1,f,:,:] = X[b,0,f,:,:]
-                    X_new[b,1,f,:,:], X_new[b,2,f,:,:] = centroid_weighted_distance_transform_2d(y[b,0,f,:,:])
-                else:
-                    X_new[b,f,:,:,0] = X[b,f,:,:,0]
-                    X_new[b,f,:,:,1], X_new[b,f,:,:,2] = centroid_weighted_distance_transform_2d(y[b,f,:,:,0])
-
-        X = X_new
-    # End changes for data mode
-
-    elif mode == 'sample' and X.ndim == 5:
-        batch = training_data['batch']
-        pixels_x = training_data['pixels_x']
-        pixels_y = training_data['pixels_y']
-        pixels_z = training_data['pixels_z']
-        win_z = training_data['win_z']
-
-        if CHANNELS_FIRST:
-            sample_shape = (len(batch), X.shape[1], 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1)
-        else:
-            sample_shape = (len(batch), 2 * win_z + 1, 2 * win_x + 1, 2 * win_y + 1, X.shape[4])
-        X_sample = np.zeros(sample_shape, dtype=K.floatx())
-
-        for i, (b, px, py, pz) in enumerate(zip(batch, pixels_x, pixels_y, pixels_z)):
-            if CHANNELS_FIRST:
-                X_sample[i] = X[b, :, pz - win_z:pz + win_z + 1, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1]
-            else:
-                X_sample[i] = X[b, pz - win_z:pz + win_z + 1, px - win_x:px + win_x + 1, py - win_y:py + win_y + 1, :]
-
-        X = X_sample
-
-    if mode != "siamese_daughters":
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=seed)
-
-        train_dict = {
-            'X': X_train,
-            'y': y_train,
-            'class_weights': class_weights
-        }
-
-        val_dict = {
-            'X': X_test,
-            'y': y_test,
-            'class_weights': class_weights
-        }
-
-    # siamese_daughters mode is used to import lineage data and associate it with the appropriate batch
+    # siamese_daughters mode is used to import lineage data
+    # and associate it with the appropriate batch
     if mode == 'siamese_daughters':
         training_data = load_trks(file_name)
-        X = training_data["raw"]
-        y = training_data["tracked"]
-
-        # `daughters` is of the form
+        X = training_data['raw']
+        y = training_data['tracked']
+        # `daughters` is of the form:
         #
         #                   2 children / cell (potentially empty)
         #                          ___________|__________
@@ -179,31 +84,43 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         #                       dict of (cell_id -> children)
         #
         # each batch has a separate (cell_id -> children) dict
-        daughters = [{cell: fields["daughters"]
+        daughters = [{cell: fields['daughters']
                       for cell, fields in tracks.items()}
-                     for tracks in training_data["lineages"]]
+                     for tracks in training_data['lineages']]
 
-        X_train, X_test, y_train, y_test, lineage_train, lineage_test = train_test_split(X, y, daughters, test_size=test_size, random_state=seed)
+        X_train, X_test, y_train, y_test, ln_train, ln_test = train_test_split(
+            X, y, daughters, test_size=test_size, random_state=seed)
+
         train_dict = {
             'X': X_train,
             'y': y_train,
-            'daughters': lineage_train,
-            'class_weights': None
+            'daughters': ln_train
         }
 
-        val_dict = {
+        test_dict = {
             'X': X_test,
             'y': y_test,
-            'daughters': lineage_test,
-            'class_weights': None
+            'daughters': ln_test
         }
+        return train_dict, test_dict
 
-    # End changes for daughter mode
-    if win_z is not None:
-        train_dict['win_z'] = win_z
-        val_dict['win_z'] = win_z
+    X = training_data['X']
+    y = training_data['y']
 
-    return train_dict, val_dict
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=seed)
+
+    train_dict = {
+        'X': X_train,
+        'y': y_train
+    }
+
+    test_dict = {
+        'X': X_test,
+        'y': y_test
+    }
+
+    return train_dict, test_dict
 
 
 def load_trks(trks_file):
