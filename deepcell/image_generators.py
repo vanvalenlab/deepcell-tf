@@ -1914,8 +1914,8 @@ class SiameseIterator(Iterator):
 
     def _fetch_frames(self, track, division=False):
         """Fetch a random list of frames for a given track.
-        If the division flag is true, then the list of frames ends at the cell's
-        last appearance if the division flag is true.
+        If the division is true, then the list of frames ends at the cell's
+        last appearance.
         """
         track_id = self.track_ids[track]
         tracked_frames = list(track_id['frames'])

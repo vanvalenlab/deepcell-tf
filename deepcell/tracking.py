@@ -443,6 +443,7 @@ class cell_tracker():
             if feature_name == 'neighborhood':
                 neighborhoods = np.concatenate([track_feature, frame_feature], axis=1)
 
+                # TODO: Does this do anything?
                 generator = MovieDataGenerator(rotation_range=0,
                                                horizontal_flip=False,
                                                vertical_flip=False)
