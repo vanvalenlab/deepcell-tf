@@ -229,7 +229,7 @@ def centroid_weighted_distance_transform_2d(mask):
     # by that cells maximum distance value before multiplying by
     # either the x-component of the centroid or y-component
     label_matrix = label(mask)
-    for prop in regionprops(label_matrix):
+    for prop in regionprops(np.squeeze(label_matrix)):
         labeled_distance = distance[label_matrix == prop.label]
         normalized_distance = labeled_distance / np.amax(labeled_distance)
         y, x = prop.centroid
