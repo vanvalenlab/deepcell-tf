@@ -461,51 +461,48 @@ def bn_feature_net_81x81_3D(**kwargs):
     return bn_feature_net_3D(receptive_field=81, **kwargs)
 
 
-
-
 """
 Tracking Model
 """
-import numpy as np
 
-def siamese_model(
-    input_shape=None,
-    track_length=1,
-    features=None,
-    neighborhood_scale_size=10,
-    reg=1e-5, init='he_normal',
-    softmax=True,
-    norm_method='std',
-    filter_size=61):
 
+def siamese_model(input_shape=None,
+                  track_length=1,
+                  features=None,
+                  neighborhood_scale_size=10,
+                  reg=1e-5,
+                  init='he_normal',
+                  softmax=True,
+                  norm_method='std',
+                  filter_size=61):
     def compute_input_shape(feature):
-        if feature == "appearance":
+        if feature == 'appearance':
             return input_shape
-        elif feature == "distance":
+        elif feature == 'distance':
             return (None, 2)
-        elif feature == "neighborhood":
+        elif feature == 'neighborhood':
             return (None, 2 * neighborhood_scale_size + 1, 2 * neighborhood_scale_size + 1, 1)
-        elif feature == "regionprop":
+        elif feature == 'regionprop':
             return (None, 3)
         else:
-            raise ValueError(
-                "siamese_model.compute_input_shape: Unknown feature '{}'".format(feature))
+            raise ValueError('siamese_model.compute_input_shape: '
+                             'Unknown feature `{}`'.format(feature))
 
     def compute_reshape(feature):
-        if feature == "appearance":
+        if feature == 'appearance':
             return (64,)
-        elif feature == "distance":
+        elif feature == 'distance':
             return (2,)
-        elif feature == "neighborhood":
+        elif feature == 'neighborhood':
             return (64,)
-        elif feature == "regionprop":
+        elif feature == 'regionprop':
             return (3,)
         else:
-            raise ValueError(
-                "siamese_model.compute_output_shape: Unknown feature '{}'".format(feature))
+            raise ValueError('siamese_model.compute_output_shape: '
+                             'Unknown feature `{}`'.format(feature))
 
     def compute_feature_extractor(feature, shape):
-        if feature == "appearance":
+        if feature == 'appearance':
             # This should not stay: channels_first/last should be used to
             # dictate size (1 works for either right now)
             N_layers = np.int(np.floor(np.log2(input_shape[1])))
@@ -524,9 +521,9 @@ def siamese_model(
             feature_extractor.add(Reshape((-1, 64)))
             return feature_extractor
 
-        elif feature == "distance":
+        elif feature == 'distance':
             return None
-        elif feature == "neighborhood":
+        elif feature == 'neighborhood':
             N_layers_og = np.int(np.floor(np.log2(2 * neighborhood_scale_size + 1)))
             feature_extractor_neighborhood = Sequential()
             feature_extractor_neighborhood.add(
@@ -537,9 +534,9 @@ def siamese_model(
             )
             for layer in range(N_layers_og):
                 feature_extractor_neighborhood.add(Conv3D(64, (1, 3, 3),
-                                                            kernel_initializer=init,
-                                                            padding='same',
-                                                            kernel_regularizer=l2(reg)))
+                                                          kernel_initializer=init,
+                                                          padding='same',
+                                                          kernel_regularizer=l2(reg)))
                 feature_extractor_neighborhood.add(BatchNormalization(axis=channel_axis))
                 feature_extractor_neighborhood.add(Activation('relu'))
                 feature_extractor_neighborhood.add(MaxPool3D(pool_size=(1, 2, 2)))
@@ -547,14 +544,14 @@ def siamese_model(
             feature_extractor_neighborhood.add(Reshape((-1, 64)))
 
             return feature_extractor_neighborhood
-        elif feature == "regionprop":
+        elif feature == 'regionprop':
             return None
         else:
-            raise ValueError(
-                "siamese_model.compute_feature_extractor: Unknown feature '{}'".format(feature))
+            raise ValueError('siamese_model.compute_feature_extractor: '
+                             'Unknown feature `{}`'.format(feature))
 
     if features is None:
-        raise ValueError("siamese_model: No features specified.")
+        raise ValueError('siamese_model: No features specified.')
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
