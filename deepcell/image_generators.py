@@ -37,6 +37,7 @@ import numpy as np
 import skimage.measure
 
 from skimage.measure import label
+from skimage.measure import regionprops
 from skimage.transform import resize
 from skimage.io import imread
 
@@ -1555,7 +1556,7 @@ class SiameseIterator(Iterator):
             self.time_axis = 1
 
         if features is None:
-            raise ValueError("SiameseIterator: No features specified.")
+            raise ValueError('SiameseIterator: No features specified.')
 
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
         self.y = np.array(train_dict['y'], dtype='int32')
@@ -1715,7 +1716,7 @@ class SiameseIterator(Iterator):
         y_padded = np.pad(y_frame, ((self.neighborhood_true_size, self.neighborhood_true_size),
                                     (self.neighborhood_true_size, self.neighborhood_true_size),
                                     (0,0)), mode='constant', constant_values=0)
-        props = skimage.measure.regionprops(np.squeeze(np.int32(y_padded == cell_label)))
+        props = regionprops(np.squeeze(np.int32(y_padded == cell_label)))
         center_x, center_y = props[0].centroid
         center_x, center_y = np.int(center_x), np.int(center_y)
         X_reduced = X_padded[
@@ -1757,7 +1758,7 @@ class SiameseIterator(Iterator):
         # Initialize storage for appearances and centroids
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
         centroids = []
-        regionprops = []
+        rprops = []
         neighborhoods = np.zeros(neighborhood_shape, dtype = K.floatx())
         future_areas = np.zeros(future_area_shape, dtype=K.floatx())
 
@@ -1766,10 +1767,10 @@ class SiameseIterator(Iterator):
             X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
 
-            props = skimage.measure.regionprops(np.squeeze(np.int32(y_frame == cell_label)))
+            props = regionprops(np.squeeze(np.int32(y_frame == cell_label)))
             minr, minc, maxr, maxc = props[0].bbox
             centroids.append(props[0].centroid)
-            regionprops.append(np.array([props[0].area, props[0].perimeter, props[0].eccentricity]))
+            rprops.append(np.array([props[0].area, props[0].perimeter, props[0].eccentricity]))
 
             # Extract images from bounding boxes
             if self.data_format == 'channels_first':
@@ -1792,7 +1793,7 @@ class SiameseIterator(Iterator):
                 X_future_frame = X[frame + 1] if self.data_format == 'channels_last' else X[:, frame + 1]
                 future_areas[counter] = self._sub_area(X_future_frame, y_frame, cell_label, X.shape[channel_axis])
 
-        return [appearances, centroids, neighborhoods, regionprops, future_areas]
+        return [appearances, centroids, neighborhoods, rprops, future_areas]
 
     def _create_features(self):
         """
@@ -1897,7 +1898,7 @@ class SiameseIterator(Iterator):
         This function gets the regionprops after they have been extracted and stored
         """
         # TO DO: Check to make sure the frames are acceptable
-        return self.all_regionprops[track,np.array(frames)]
+        return self.all_regionprops[track, np.array(frames)]
 
     def _fetch_frames(self, track, division=False):
         """
@@ -2230,7 +2231,7 @@ class BoundingBoxIterator(Iterator):
                     mask = self.y[b, :, :, l]
                 else:
                     mask = self.y[b, l, :, :]
-                props = skimage.measure.regionprops(label(mask))
+                props = regionprops(label(mask))
                 bboxes = [np.array(list(prop.bbox) + list(l)) for prop in props]
                 bboxes = np.concatenate(bboxes, axis=0)
             bbox_list.append(bboxes)
@@ -2249,7 +2250,7 @@ class BoundingBoxIterator(Iterator):
                 mask = y[:, :, l]
             else:
                 mask = y[l, :, :]
-            props = skimage.measure.regionprops(label(mask))
+            props = regionprops(label(mask))
             bboxes = [np.array(list(prop.bbox) + list(l)) for prop in props]
             bboxes = np.concatenate(bboxes, axis=0)
         return bboxes
@@ -2423,7 +2424,7 @@ class RetinaNetGenerator(_RetinaNetGenerator):
         result = {}
         for cnt, image in enumerate(masks_list):
             result[cnt] = []
-            p = skimage.measure.regionprops(label(image))
+            p = regionprops(label(image))
 
             cell_count = 0
             for index in range(len(np.unique(label(image))) - 1):
@@ -2628,7 +2629,7 @@ class MaskRCNNGenerator(_MaskRCNNGenerator):
         for cnt, image in enumerate(maskarr):
             result[cnt] = []
             l = label(image)
-            p = skimage.measure.regionprops(l)
+            p = regionprops(l)
             cell_count = 0
             for index in range(len(np.unique(l)) - 1):
                 y1, x1, y2, x2 = p[index].bbox
