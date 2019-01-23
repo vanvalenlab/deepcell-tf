@@ -493,7 +493,7 @@ def train_model_siamese_daughter(model,
         callbacks=[
             callbacks.LearningRateScheduler(lr_sched),
             callbacks.ModelCheckpoint(
-                file_name_save, monitor='val_loss', verbose=1,
+                model_path, monitor='val_loss', verbose=1,
                 save_best_only=True, save_weights_only=num_gpus >= 2),
         ])
 
