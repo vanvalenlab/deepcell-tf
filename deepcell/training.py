@@ -405,16 +405,18 @@ def train_model_siamese_daughter(model,
 
     # this will do preprocessing and realtime data augmentation
     datagen = image_generators.SiameseDataGenerator(
-        rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
-        horizontal_flip=flip,  # randomly flip images
-        vertical_flip=flip)  # randomly flip images
+        rotation_range=rotation_range,
+        shear_range=shear,
+        zoom_range=zoom_range,
+        horizontal_flip=flip,
+        vertical_flip=flip)
 
     datagen_val = image_generators.SiameseDataGenerator(
-        rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=0,  # randomly shear images in the range (radians , -shear_range to shear_range)
-        horizontal_flip=0,  # randomly flip images
-        vertical_flip=0)  # randomly flip images
+        rotation_range=0,
+        zoom_range=0,
+        shear_range=0,
+        horizontal_flip=0,
+        vertical_flip=0)
 
     def count_pairs(y):
         """
