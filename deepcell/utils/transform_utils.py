@@ -206,11 +206,12 @@ def distance_transform_3d(maskstack, bins=4, erosion_width=None):
 
 
 def centroid_weighted_distance_transform_2d(mask):
-    """Transform a label mask into 2 scaled distance masks weighted by the
-       element's centroid.
-    # Arguments
+    """Transform a label mask into 2 distance masks weighted by the centroid.
+
+    Args:
         mask: a label mask (y data)
-    # Returns
+
+    Returns:
         distance: two masks of the same shape as input mask, with each label
                   being a distance class scaled by the labels centroid
                   (one image by the centroid's x-component and another by the y)
