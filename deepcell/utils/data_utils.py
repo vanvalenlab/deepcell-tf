@@ -58,7 +58,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 
     Args:
         file_name: path to NPZ file to load
-        mode: if 'sample', will return datapoints for each pixel,
+        mode: if 'siamese_daughters', returns lineage information from .trk file
               otherwise, returns the same data that was loaded
         test_size: percent of data to leave as testing holdout
         seed: seed number for random train/test split repeatability
