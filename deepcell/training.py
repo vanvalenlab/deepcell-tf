@@ -66,7 +66,7 @@ def train_model_sample(model,
                        flip=False,
                        shear=0,
                        zoom_range=0,
-                       seed=None
+                       seed=None,
                        **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
