@@ -498,8 +498,7 @@ def train_model_siamese_daughter(model,
             callbacks.TensorBoard(log_dir=os.path.join(log_dir, model_name))
         ])
 
-    model.save_weights(file_name_save)
-    np.savez(file_name_save_loss, loss_history=loss_history.history)
+    model.save_weights(model_path)
+    np.savez(loss_path, loss_history=loss_history.history)
 
     return model
-
