@@ -386,10 +386,9 @@ def train_model_siamese_daughter(model,
                                               gamma=gamma,
                                               n_classes=n_classes,
                                               from_logits=False)
-        else:
-            return losses.weighted_categorical_crossentropy(y_true, y_pred,
-                                                            n_classes=n_classes,
-                                                            from_logits=False)
+        return losses.weighted_categorical_crossentropy(y_true, y_pred,
+                                                        n_classes=n_classes,
+                                                        from_logits=False)
 
     if num_gpus is None:
         num_gpus = train_utils.count_gpus()
