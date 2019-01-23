@@ -460,7 +460,6 @@ def train_model_siamese_daughter(model,
             total_pairs += cell_pairings
         return total_pairs
 
-    # This shouldn't remain long term.
     total_train_pairs = count_pairs(train_dict['y'])
     total_test_pairs = count_pairs(val_dict['y'])
 
