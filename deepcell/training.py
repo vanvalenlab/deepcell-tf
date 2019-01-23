@@ -66,6 +66,7 @@ def train_model_sample(model,
                        flip=False,
                        shear=0,
                        zoom_range=0,
+                       seed=None
                        **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
@@ -76,7 +77,7 @@ def train_model_sample(model,
     model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
     loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
-    train_dict, test_dict = get_data(dataset, mode='sample', test_size=test_size)
+    train_dict, test_dict = get_data(dataset, test_size=test_size, seed=seed)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
 
@@ -192,6 +193,7 @@ def train_model_conv(model,
                      flip=True,
                      shear=0,
                      zoom_range=0,
+                     seed=None,
                      **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
@@ -202,7 +204,7 @@ def train_model_conv(model,
     model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
     loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
-    train_dict, test_dict = get_data(dataset, mode='conv', test_size=test_size)
+    train_dict, test_dict = get_data(dataset, test_size=test_size, seed=seed)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
     # the data, shuffled and split between train and test sets
