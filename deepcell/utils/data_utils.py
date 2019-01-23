@@ -104,6 +104,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         }
         return train_dict, test_dict
 
+    training_data = np.load(file_name)
     X = training_data['X']
     y = training_data['y']
 
