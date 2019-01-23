@@ -27,17 +27,18 @@
 
 import copy
 import json
-import numpy as np
 import pathlib
-import skimage.measure
 import tarfile
 import tempfile
 
-from deepcell.image_generators import MovieDataGenerator
-from pandas import DataFrame
-from skimage.transform import resize
-from scipy.optimize import linear_sum_assignment
+import numpy as np
 from tensorflow.python.keras import backend as K
+from scipy.optimize import linear_sum_assignment
+from skimage.measure import regionprops
+from skimage.transform import resize
+from pandas import DataFrame
+
+from deepcell.image_generators import MovieDataGenerator
 
 
 class cell_tracker():
@@ -520,7 +521,7 @@ class cell_tracker():
             allowed_frames = list(filter(lambda f: f < before_frame, track['frames']))
             frame_dict = {frame: idx for idx, frame in enumerate(allowed_frames)}
 
-            if len(allowed_frames) == 0:
+            if not allowed_frames:
                 continue
 
             if len(allowed_frames) >= self.track_length:
@@ -543,11 +544,11 @@ class cell_tracker():
         track_regionprops = np.zeros(shape, dtype=K.floatx())
 
         for track_id, track in self.tracks.items():
-            regionprops = track['regionprop']
+            regionprop = track['regionprop']
             allowed_frames = list(filter(lambda f: f < before_frame, track['frames']))
             frame_dict = {frame: idx for idx, frame in enumerate(allowed_frames)}
 
-            if len(allowed_frames) == 0:
+            if not allowed_frames:
                 continue
 
             if len(allowed_frames) >= self.track_length:
@@ -557,7 +558,7 @@ class cell_tracker():
                 last_frame = allowed_frames[-1]
                 frames = [*allowed_frames, *([last_frame] * num_missing)]
 
-            track_regionprops[track_id] = regionprops[[frame_dict[f] for f in frames]]
+            track_regionprops[track_id] = regionprop[[frame_dict[f] for f in frames]]
 
         return track_regionprops
 
@@ -630,7 +631,7 @@ class cell_tracker():
                 (0, 0))
         X_padded = np.pad(X_frame, pads, mode='constant', constant_values=0)
         y_padded = np.pad(y_frame, pads, mode='constant', constant_values=0)
-        props = skimage.measure.regionprops(np.squeeze(np.int32(y_padded == cell_label)))
+        props = regionprops(np.squeeze(np.int32(y_padded == cell_label)))
         center_x, center_y = props[0].centroid
         center_x, center_y = np.int(center_x), np.int(center_y)
         X_reduced = X_padded[
@@ -679,7 +680,7 @@ class cell_tracker():
         # Initialize storage for appearances and centroids
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
         centroids = np.zeros(centroid_shape, dtype=K.floatx())
-        regionprops = np.zeros(regionprop_shape, dtype=K.floatx())
+        rprops = np.zeros(regionprop_shape, dtype=K.floatx())
         neighborhoods = np.zeros(neighborhood_shape, dtype=K.floatx())
         future_areas = np.zeros(future_area_shape, dtype=K.floatx())
 
@@ -687,10 +688,10 @@ class cell_tracker():
             # Get the bounding box
             X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
-            props = skimage.measure.regionprops(np.squeeze(np.int32(y_frame == cell_label)))
+            props = regionprops(np.squeeze(np.int32(y_frame == cell_label)))
             minr, minc, maxr, maxc = props[0].bbox
             centroids[counter] = props[0].centroid
-            regionprops[counter] = np.array([
+            rprops[counter] = np.array([
                 props[0].area,
                 props[0].perimeter,
                 props[0].eccentricity
@@ -732,7 +733,7 @@ class cell_tracker():
         return {'appearance': appearances,
                 'distance': centroids,
                 'neighborhood': neighborhoods,
-                'regionprop': regionprops,
+                'regionprop': rprops,
                 '~future area': future_areas}
 
     def _track_cells(self):
