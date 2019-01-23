@@ -926,6 +926,7 @@ class MovieDataGenerator(ImageDataGenerator):
                     y_new[:, frame] = np.rollaxis(y_trans, 1, 0)
                 else:
                     y_new[frame] = self.apply_transform(y[frame], params)
+
         # Note: Undo workaround
         self.row_axis += 1
         self.col_axis += 1
@@ -1678,14 +1679,14 @@ class SiameseIterator(Iterator):
 
         # Add a field to the track_ids dict that locates all of the different cells
         # in each frame
-        for track in track_ids.keys():
+        for track in track_ids:
             track_ids[track]['different'] = {}
             batch = track_ids[track]['batch']
-            label = track_ids[track]['label']
+            cell_label = track_ids[track]['label']
             for frame in track_ids[track]['frames']:
                 y_unique = np.unique(self.y[batch][frame])
                 y_unique = np.delete(y_unique, np.where(y_unique == 0))
-                y_unique = np.delete(y_unique, np.where(y_unique == label))
+                y_unique = np.delete(y_unique, np.where(y_unique == cell_label))
                 track_ids[track]['different'][frame] = y_unique
 
         # We will need to look up the track_ids of cells if we know their batch and label. We will
@@ -1696,8 +1697,8 @@ class SiameseIterator(Iterator):
 
         for track in track_ids:
             batch = track_ids[track]['batch']
-            label = track_ids[track]['label']
-            reverse_track_ids[batch][label] = track
+            cell_label = track_ids[track]['label']
+            reverse_track_ids[batch][cell_label] = track
 
         # Save dictionaries
         self.track_ids = track_ids
