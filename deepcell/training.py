@@ -369,7 +369,7 @@ def train_model_siamese_daughter(model,
     print('saving loss at:', loss_path)
 
     train_dict, val_dict = get_data(dataset, mode='siamese_daughters',
-                                    seed=seed, test_size=test_size))
+                                    seed=seed, test_size=test_size)
 
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
@@ -470,7 +470,7 @@ def train_model_siamese_daughter(model,
         min_track_length=min_track_length,
         neighborhood_scale_size=neighborhood_scale_size,
         features=features)
-    
+
     val_data = datagen_val.flow(
         val_dict,
         batch_size=batch_size,
