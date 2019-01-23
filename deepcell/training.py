@@ -427,29 +427,37 @@ def train_model_siamese_daughter(model,
         Assume that a cell is paired with one of its other frames 50% of the time
         and a frame from another cell 50% of the time.
         """
+        same_cell_liklihood = 0.5  # liklihood that 2 cells are the same
         # TODO: channels_first axes
         total_pairs = 0
-        for image_set in range(y.shape[0]):
-            set_cells = 0
+        for b in range(y.shape[0]):
+            # count the number of cells in each image of the batch
             cells_per_image = []
-            for image in range(y.shape[1]):
-                image_cells = int(y[image_set, image, :, :, :].max())
-                set_cells = set_cells + image_cells
-                cells_per_image.append(image_cells)
+            for f in range(y.shape[1]):
+                if is_channels_first:
+                    num_cells = len(np.unique(y[b, :, f, :, :]))
+                else:
+                    num_cells = len(np.unique(y[b, f, :, :, :]))
+                cells_per_image.append(num_cells)
 
-            # Since there are many more possible non-self pairings than there are self pairings,
-            # we want to estimate the number of possible non-self pairings and then multiply
-            # that number by two, since the odds of getting a non-self pairing are 50%, to
-            # find out how many pairs we would need to sample to (statistically speaking)
-            # observe all possible cell-frame pairs.
-            # We're going to assume that the average cell is present in every frame. This will
-            # lead to an underestimate of the number of possible non-self pairings, but it's
-            # unclear how significant the underestimate is.
-            average_cells_per_frame = int(sum(cells_per_image) / len(cells_per_image))
-            non_self_cellframes = (average_cells_per_frame - 1) * len(cells_per_image)
+            # Since there are many more possible non-self pairings than there
+            # are self pairings, we want to estimate the number of possible
+            # non-self pairings and then multiply that number by two, since the
+            # odds of getting a non-self pairing are 50%, to find out how many
+            # pairs we would need to sample to (statistically speaking) observe
+            # all possible cell-frame pairs. We're going to assume that the
+            # average cell is present in every frame. This will lead to an
+            # underestimate of the number of possible non-self pairings, but it
+            # is unclear how significant the underestimate is.
+            average_cells_per_frame = sum(cells_per_image) // y.shape[1]
+            non_self_cellframes = (average_cells_per_frame - 1) * y.shape[1]
             non_self_pairings = non_self_cellframes * max(cells_per_image)
-            cell_pairings = non_self_pairings * 2
-            total_pairs = total_pairs + cell_pairings
+
+            # Multiply cell pairings by 2 since the
+            # odds of getting a non-self pairing are 50%
+            cell_pairings = non_self_pairings / same_cell_liklihood
+            # Add this batch cell-pairings to the total count
+            total_pairs += cell_pairings
         return total_pairs
 
     # This shouldn't remain long term.
