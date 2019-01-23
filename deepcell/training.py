@@ -495,6 +495,7 @@ def train_model_siamese_daughter(model,
             callbacks.ModelCheckpoint(
                 model_path, monitor='val_loss', verbose=1,
                 save_best_only=True, save_weights_only=num_gpus >= 2),
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, model_name))
         ])
 
     model.save_weights(file_name_save)
