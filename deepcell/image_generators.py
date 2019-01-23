@@ -33,7 +33,6 @@ import os
 from fnmatch import fnmatch
 
 import cv2
-import keras_preprocessing
 import numpy as np
 import skimage.measure
 
