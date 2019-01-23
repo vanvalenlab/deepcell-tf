@@ -103,6 +103,23 @@ def stats_objectbased(y_true,
     """
     Calculate summary statistics (DICE/Jaccard index and confusion matrix)
     on a per-object basis
+
+    Relies on  `skimage.measure.label` to define cell objects which are used to calculate stats
+
+    Args:
+        y_true (3D np.array): Ground truth annotations, can be labeled or unlabeled
+        y_pred (3D np.array): Predictions, must be labeled using skimage.measure.label
+        dice_iou_threshold (:obj:`float`, optional): default, 0.5
+        merge_iou_threshold (:obj:`float`, optional): default, 1e-5
+        ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
+        crop_size (:obj:`int`, optional): default 32
+
+    Warning:
+        This function currently only accepts single channel data either in a 2D (x,y) or 3D (batch,x,y) form.
+
+    Todo:
+        Change function to assign labels to raw prediction data instead of passing in labels.
+
     """
     stats_iou_matrix = get_iou_matrix_quick(
         y_true, y_pred, dice_iou_threshold, crop_size)
@@ -174,7 +191,22 @@ def stats_objectbased(y_true,
 
 
 def stats_pixelbased(y_true, y_pred, ndigits=4):
-    """Calculates pixel-based dice and jaccard scores, and prints them"""
+    """Calculates pixel-based dice and jaccard scores, and prints them
+
+    Args:
+        y_true (np.array): Ground truth data
+        y_pred (np.array): Predictions
+        ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
+
+    Returns:
+        tuple: dice score, jaccard score
+
+    Warning:
+        Currently, will accept various types in input data, e.g. labeled and unlabeled.
+        Comparing labeled to unlabeled data will produce very low accuracy scores.
+        Make sure to input the same type of data for `y_true` and `y_pred`
+
+    """
     if y_pred.shape != y_true.shape:
         raise ValueError('Shape of inputs need to match. Shape of prediction '
                          'is: {}.  Shape of mask is: {}'.format(
@@ -197,7 +229,7 @@ def stats_pixelbased(y_true, y_pred, ndigits=4):
     print('dice/F1 index: {}\njaccard index: {}'.format(
         round(dice, ndigits), round(jaccard, ndigits)))
 
-    acc = np.count_nonzero(np.logical_and(pred, truth)) / np.count_nonzero(truth), ndigits
-    print('Accuracy: {}%'.format(100 * round(acc)))
+    acc = np.count_nonzero(np.logical_and(pred, truth)) / np.count_nonzero(truth)
+    print('Accuracy: {}%'.format(100 * round(acc, ndigits)))
 
     return dice, jaccard
