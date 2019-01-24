@@ -1663,6 +1663,9 @@ class SiameseIterator(Iterator):
         self.save_format = save_format
 
         self.daughters = train_dict.get('daughters')
+        if self.daughters is None:
+            raise ValueError('`daughters` not found in `train_dict`. '
+                             'Lineage information is required for training.')
 
         self._remove_bad_images()
         self._create_track_ids()
