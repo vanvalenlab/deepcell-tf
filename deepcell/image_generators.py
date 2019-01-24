@@ -1499,11 +1499,11 @@ Custom siamese generators
 class SiameseDataGenerator(ImageDataGenerator):
     def flow(self,
              train_dict,
+             features,
              crop_dim=32,
              min_track_length=5,
              neighborhood_scale_size=64,
              neighborhood_true_size=100,
-             features=None,
              sync_transform=True,
              batch_size=32,
              shuffle=True,
@@ -1514,11 +1514,11 @@ class SiameseDataGenerator(ImageDataGenerator):
         return SiameseIterator(
             train_dict,
             self,
+            features=features,
             crop_dim=crop_dim,
             min_track_length=min_track_length,
             neighborhood_scale_size=neighborhood_scale_size,
             neighborhood_true_size=neighborhood_true_size,
-            features=features,
             sync_transform=sync_transform,
             batch_size=batch_size,
             shuffle=shuffle,
@@ -1533,12 +1533,12 @@ class SiameseIterator(Iterator):
     def __init__(self,
                  train_dict,
                  image_data_generator,
+                 features,
                  crop_dim=32,
                  min_track_length=5,
                  batch_size=32,
                  neighborhood_scale_size=64,
                  neighborhood_true_size=100,
-                 features=None,
                  sync_transform=True,
                  shuffle=False,
                  seed=None,
@@ -1556,9 +1556,6 @@ class SiameseIterator(Iterator):
             self.row_axis = 2
             self.col_axis = 3
             self.time_axis = 1
-
-        if features is None:
-            raise ValueError('SiameseIterator: No features specified.')
 
         self.x = np.asarray(train_dict['X'], dtype=K.floatx())
         self.y = np.array(train_dict['y'], dtype='int32')
@@ -1580,10 +1577,7 @@ class SiameseIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        if 'daughters' in train_dict:
-            self.daughters = train_dict['daughters']
-        else:
-            self.daughters = None
+        self.daughters = train_dict.get('daughters')
 
         self._remove_bad_images()
         self._create_track_ids()
@@ -1598,8 +1592,7 @@ class SiameseIterator(Iterator):
         good_batches = []
         number_of_batches = self.x.shape[0]
         for batch in range(number_of_batches):
-            y = self.y[batch]
-            unique_ids = np.unique(y.flatten())
+            unique_ids = np.unique(self.y[batch])
             if len(unique_ids) > 2:  # There should be at least 3 id's - 2 cells and 1 background
                 good_batches.append(batch)
 
@@ -1636,18 +1629,9 @@ class SiameseIterator(Iterator):
                 # get indices of frames where cell is present
                 y_index = np.where(y_true > 0)[0]
                 if y_index.size > 3:  # if cell is present at all
+                    # Only include daughters if there are enough frames in their tracks
                     if self.daughters is not None:
-                        # Only include daughters if there are enough frames in their tracks
-                        if cell not in daughters_batch:
-                            print('something weird...')
-                            print('y.shape', self.y.shape)
-                            print('unique values in batch:', np.unique(y_batch))
-                            print('unique values in y.batch:', np.unique(self.y[batch]))
-                            print('loaded lineage cell ids:', daughters_batch.keys())
-                            print('batch:', batch)
-
                         daughter_ids = daughters_batch.get(cell, [])
-
                         if daughter_ids:
                             daughter_track_lengths = []
                             for did in daughter_ids:
@@ -2022,7 +2006,7 @@ class SiameseIterator(Iterator):
 
         return distance_1, distance_2
 
-    def _compute_regionprops(self, track_1, frames_1, track_2, frames_2, transform):
+    def _compute_regionprops(self, track_1, frames_1, track_2, frames_2):
         regionprop_1 = self._fetch_regionprops(track_1, frames_1)
         regionprop_2 = self._fetch_regionprops(track_2, frames_2)
 
@@ -2110,9 +2094,9 @@ class SiameseIterator(Iterator):
                              'Unknown feature `{}`'.format(feature))
 
     def _get_batches_of_transformed_samples(self, index_array):
-        # Initialize batch_x_1, batch_x_2, and batch_y, as well as cell distance data
-        # Compare cells in neighboring frames. Select a sequence of cells/distances
-        # for x1 and 1 cell/distance for x2
+        # Initialize batch_x_1, batch_x_2, and batch_y, and cell distance
+        # Compare cells in neighboring frames.
+        # Select a sequence of cells/distances for x1 and 1 cell/distance for x2
 
         # setup zeroed batch arrays for each feature & batch_y
         batch_features = []
@@ -2128,9 +2112,6 @@ class SiameseIterator(Iterator):
             track_id = self.track_ids[j]
             batch = track_id['batch']
             label_1 = track_id['label']
-
-            X = self.x[batch]
-            y = self.y[batch]
 
             # Choose comparison cell
             # Determine what class the track will be - different (0), same (1), division (2)
@@ -2149,8 +2130,6 @@ class SiameseIterator(Iterator):
                     track_id = self.track_ids[j]
                     batch = track_id['batch']
                     label_1 = track_id['label']
-                    X = self.x[batch]
-                    y = self.y[batch]
 
             # Get the frames for cell 1 and frames/label for cell 2
             frames_1 = self._fetch_frames(j, division=division)
