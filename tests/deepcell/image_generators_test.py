@@ -1034,3 +1034,164 @@ class TestMovieDataGenerator(test.TestCase):
             for i, im in enumerate(transformed):
                 transformed[i] = generator.random_transform(im, seed=1)
             transformed = generator.standardize(transformed)
+
+
+class TestSiamsesDataGenerator(test.TestCase):
+
+    def test_siamese_data_generator(self):
+        frames = 7
+        for test_images in _generate_test_images():
+            img_list = []
+            for im in test_images:
+                frame_list = []
+                for _ in range(frames):
+                    frame_list.append(img_to_array(im)[None, ...])
+                img_stack = np.vstack(frame_list)
+                img_list.append(img_stack)
+
+            images = np.vstack(img_list)
+            batches = images.shape[0] // frames
+            images = np.reshape(images, (batches, frames, *images.shape[1:]))
+            generator = image_generators.SiameseDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True)
+
+            feats = ['appearance', 'distance', 'neightborhood', 'regionprop']
+
+            # Basic test before fit
+            train_dict = {
+                'X': np.random.random((8, 11, 10, 10, 3)),
+                'y': np.random.random((8, 11, 10, 10, 1)),
+            }
+            generator.flow(train_dict, features=feats)
+
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
+            y_shape = tuple(list(images.shape)[:-1] + [1])
+            train_dict['X'] = images
+            train_dict['y'] = np.random.random(y_shape)
+            # TODO(enricozb): fake the lineage data, test the correctness
+            # for x, y in generator.flow(
+            #         train_dict,
+            #         features=feats,
+            #         crop_dim=2,
+            #         save_to_dir=temp_dir,
+            #         shuffle=True):
+            #     # TODO: assertions about the data coming out of the generator
+            #     break
+
+    def test_siamese_data_generator_channels_first(self):
+        frames = 7
+        for test_images in _generate_test_images():
+            img_list = []
+            for im in test_images:
+                frame_list = []
+                for _ in range(frames):
+                    frame_list.append(img_to_array(im)[None, ...])
+                img_stack = np.vstack(frame_list)
+                img_list.append(img_stack)
+
+            images = np.vstack(img_list)
+            batch_count = images.shape[0] // frames
+            images = np.reshape(images, (batch_count, frames, *images.shape[1:]))
+            images = np.rollaxis(images, 4, 1)
+            generator = image_generators.SiameseDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                # brightness_range=(1, 5),  # TODO: `channels_first` conflict
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True,
+                data_format='channels_first')
+
+            feats = ['appearance', 'distance', 'neightborhood', 'regionprop']
+
+            # Basic test before fit
+            train_dict = {
+                'X': np.random.random((8, 3, 11, 10, 10)),
+                'y': np.random.random((8, 1, 11, 10, 10)),
+            }
+            generator.flow(train_dict, features=feats)
+
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
+            y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
+            train_dict['X'] = images
+            train_dict['y'] = np.random.random(y_shape)
+            # TODO(enricozb): fake the lineage data, test the correctness
+            # for x, y in generator.flow(
+            #         train_dict,
+            #         features=feats,
+            #         crop_dim=2,
+            #         save_to_dir=temp_dir,
+            #         shuffle=True):
+            #     # TODO: assertions about the data coming out of the generator
+            #     break
+
+    def test_siamese_data_generator_invalid_data(self):
+        generator = image_generators.SiameseDataGenerator(
+            featurewise_center=True,
+            samplewise_center=True,
+            featurewise_std_normalization=True,
+            samplewise_std_normalization=True,
+            zca_whitening=True,
+            data_format='channels_last')
+
+        feats = ['appearance', 'distance', 'neightborhood', 'regionprop']
+
+        # Test fit with invalid data
+        with self.assertRaises(ValueError):
+            x = np.random.random((3, 10, 10))
+            generator.fit(x)
+
+        # Test flow with invalid dimensions
+        with self.assertRaises(ValueError):
+            train_dict = {
+                'X': np.random.random((8, 10, 10)),
+                'y': np.random.random((8, 10, 10))
+            }
+            generator.flow(train_dict, features=feats)
+
+        # Test flow with non-matching batches
+        with self.assertRaises(Exception):
+            train_dict = {
+                'X': np.random.random((8, 11, 10, 10, 1)),
+                'y': np.random.random((7, 11, 10, 10, 1))
+            }
+            generator.flow(train_dict)
+        # Invalid number of channels: will work but raise a warning
+        generator.fit(np.random.random((8, 10, 10, 5)))
+
+        with self.assertRaises(ValueError):
+            generator = image_generators.SiameseDataGenerator(
+                data_format='unknown')
+
+        generator = image_generators.SiameseDataGenerator(
+            zoom_range=(2, 2))
+        with self.assertRaises(ValueError):
+            generator = image_generators.SiameseDataGenerator(
+                zoom_range=(2, 2, 2))
