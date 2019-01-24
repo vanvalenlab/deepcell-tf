@@ -1497,6 +1497,64 @@ Custom siamese generators
 
 
 class SiameseDataGenerator(ImageDataGenerator):
+    """Generates batches of tensor image data with real-time data augmentation.
+    The data will be looped over (in batches).
+
+    Arguments:
+        featurewise_center: boolean, set input mean to 0 over the dataset,
+            feature-wise.
+        samplewise_center: boolean, set each sample mean to 0.
+        featurewise_std_normalization: boolean, divide inputs by std
+            of the dataset, feature-wise.
+        samplewise_std_normalization: boolean, divide each input by its std.
+        zca_epsilon: epsilon for ZCA whitening. Default is 1e-6.
+        zca_whitening: boolean, apply ZCA whitening.
+        rotation_range: int, degree range for random rotations.
+        width_shift_range: float, 1-D array-like or int
+            float: fraction of total width, if < 1, or pixels if >= 1.
+            1-D array-like: random elements from the array.
+            int: integer number of pixels from interval
+                `(-width_shift_range, +width_shift_range)`
+            With `width_shift_range=2` possible values are ints [-1, 0, +1],
+            same as with `width_shift_range=[-1, 0, +1]`,
+            while with `width_shift_range=1.0` possible values are floats in
+            the interval [-1.0, +1.0).
+        shear_range: float, shear Intensity
+            (Shear angle in counter-clockwise direction in degrees)
+        zoom_range: float or [lower, upper], Range for random zoom.
+            If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
+        channel_shift_range: float, range for random channel shifts.
+        fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+            Default is 'nearest'. Points outside the boundaries of the input
+            are filled according to the given mode:
+                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                'nearest':  aaaaaaaa|abcd|dddddddd
+                'reflect':  abcddcba|abcd|dcbaabcd
+                'wrap':  abcdabcd|abcd|abcdabcd
+        cval: float or int, value used for points outside the boundaries
+            when `fill_mode = "constant"`.
+        horizontal_flip: boolean, randomly flip inputs horizontally.
+        vertical_flip: boolean, randomly flip inputs vertically.
+        rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
+            is applied, otherwise we multiply the data by the value provided
+            (before applying any other transformation).
+        preprocessing_function: function that will be implied on each input.
+            The function will run after the image is resized and augmented.
+            The function should take one argument:
+            one image (Numpy tensor with rank 3),
+            and should output a Numpy tensor with the same shape.
+        data_format: One of {"channels_first", "channels_last"}.
+            "channels_last" mode means that the images should have shape
+                `(samples, height, width, channels)`,
+            "channels_first" mode means that the images should have shape
+                `(samples, channels, height, width)`.
+            It defaults to the `image_data_format` value found in your
+                Keras config file at `~/.keras/keras.json`.
+            If you never set it, then it will be "channels_last".
+        validation_split: float, fraction of images reserved for validation
+            (strictly between 0 and 1).
+    """
+
     def flow(self,
              train_dict,
              features,
@@ -1530,16 +1588,43 @@ class SiameseDataGenerator(ImageDataGenerator):
 
 
 class SiameseIterator(Iterator):
+    """Iterator yielding two sets of features (`X`) and the relationship (`y`)
+    Features are passed in as a list of feature names, while the y is one of:
+        `same`, `different`, or `daughter`
+
+    Arguments:
+        train_dict: dictionary consisting of numpy arrays for `X` and `y`.
+        image_data_generator: Instance of `ImageDataGenerator`
+            to use for random transformations and normalization.
+        features: List of Strings, feature names to calculate and yield.
+        crop_dim: Integer, size of the resized `appearance` images
+        min_track_length: Integer, minimum number of frames to track over.
+        neighborhood_scale_size: Integer, size of resized `neighborhood` images
+        neighborhood_true_size: Integer, size of cropped `neighborhood` images
+        sync_transform: Boolean, whether to transform the features.
+        batch_size: Integer, size of a batch.
+        shuffle: Boolean, whether to shuffle the data between epochs.
+        seed: Random seed for data shuffling.
+        data_format: String, one of `channels_first`, `channels_last`.
+        save_to_dir: Optional directory where to save the pictures
+            being yielded, in a viewable format. This is useful
+            for visualizing the random transformations being
+            applied, for debugging purposes.
+        save_prefix: String prefix to use for saving sample
+            images (if `save_to_dir` is set).
+        save_format: Format to use for saving sample images
+            (if `save_to_dir` is set).
+    """
     def __init__(self,
                  train_dict,
                  image_data_generator,
                  features,
                  crop_dim=32,
                  min_track_length=5,
-                 batch_size=32,
                  neighborhood_scale_size=64,
                  neighborhood_true_size=100,
                  sync_transform=True,
+                 batch_size=32,
                  shuffle=False,
                  seed=None,
                  data_format='channels_last',
@@ -2105,7 +2190,7 @@ class SiameseIterator(Iterator):
             batch_features.append([np.zeros(shape_1, dtype=K.floatx()),
                                    np.zeros(shape_2, dtype=K.floatx())])
 
-        batch_y = np.zeros((len(index_array), 3), dtype=np.int32)
+        batch_y = np.zeros((len(index_array), 3), dtype='int32')
 
         for i, j in enumerate(index_array):
             # Identify which tracks are going to be selected
@@ -2192,12 +2277,9 @@ class SiameseIterator(Iterator):
             batch_feature_1, batch_feature_2 = batch_features[feature_i]
             # Remove singleton dimensions (if min_track_length is 1)
             if self.min_track_length < 2:
-                if feature == 'appearance':
-                    batch_feature_1 = np.squeeze(batch_feature_1, axis=self.time_axis)
-                    batch_feature_2 = np.squeeze(batch_feature_2, axis=self.time_axis)
-                else:
-                    batch_feature_1 = np.squeeze(batch_feature_1, axis=1)
-                    batch_feature_2 = np.squeeze(batch_feature_2, axis=1)
+                axis = self.time_axis if feature == 'appearance' else 1
+                batch_feature_1 = np.squeeze(batch_feature_1, axis=axis)
+                batch_feature_2 = np.squeeze(batch_feature_2, axis=axis)
 
             batch_list.append(batch_feature_1)
             batch_list.append(batch_feature_2)
