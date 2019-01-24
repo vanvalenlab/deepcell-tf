@@ -11,6 +11,8 @@ import skimage.io
 import skimage.measure
 from tensorflow.python.platform import tf_logging as logging
 
+from deepcell.image_generators import _transform_masks
+
 
 def im_prep(mask, prediction, win_size):
     """Reads images into ndarrays, and trims them to fit each other"""
@@ -96,6 +98,8 @@ def get_dice_jaccard(iou_matrix):
 
 def stats_objectbased(y_true,
                       y_pred,
+                      transform=None,
+                      channel_index=0,
                       dice_iou_threshold=.5,
                       merge_iou_threshold=1e-5,
                       ndigits=4,
@@ -104,20 +108,20 @@ def stats_objectbased(y_true,
     Calculate summary statistics (DICE/Jaccard index and confusion matrix)
     for a single channel on a per-object basis
 
-    Relies on  `skimage.measure.label` to define cell objects which are used to calculate stats
+    `y_true` and `y_pred` should be the same shape after applying `transform`
+    to `y_true`. `channel_index` selects a single channel from `y_true` and `y_pred`
+    to use for stat calculations. Relies on  `skimage.measure.label` to define cell 
+    objects which are used to calculate stats
 
     Args:
-        y_true (3D np.array): Ground truth annotations for a single channel
-        y_pred (3D np.array): Predictions for a single channel
+        y_true (4D np.array): Ground truth annotations for a single channel
+        y_pred (4D np.array): Predictions for a single channel
+        transform (:obj:`str`, optional): Applies a transformation to y_true, default None
+        channel_index (:obj:`int`, optional): Selects channel to compare for object stats, default 0
         dice_iou_threshold (:obj:`float`, optional): default, 0.5
         merge_iou_threshold (:obj:`float`, optional): default, 1e-5
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         crop_size (:obj:`int`, optional): default 32
-
-    Warning:
-        This function currently only accepts single channel data either in a 2D (x,y) 
-        or 3D (batch,x,y) form.
-        `y_true` and `y_shape` must have the same dimensions
 
     Raises:
         ValueError: If y_true and y_pred are not the same shape
@@ -126,14 +130,18 @@ def stats_objectbased(y_true,
     def _round(x):
         return round(x,ndigits)
 
+    # Apply transformation if requested
+    if transform != None:
+        y_true = _transform_masks(y_true,transform)
+
     if y_pred.shape != y_true.shape:
         raise ValueError('Shape of inputs need to match. Shape of prediction '
-                         'is: {}.  Shape of mask is: {}'.format(
+                         'is: {}.  Shape of y_true after transform is: {}'.format(
                              y_pred.shape, y_true.shape))
 
     # Convert y input to labeled data
-    y_true = skimage.measure.label(y_true, connectivity=2)
-    y_pred = skimage.measure.label(y_pred, connectivity=2)
+    y_true = skimage.measure.label(y_true[:,:,:,channel_index], connectivity=2)
+    y_pred = skimage.measure.label(y_pred[:,:,:,channel_index], connectivity=2)
 
     stats_iou_matrix = get_iou_matrix_quick(
         y_true, y_pred, dice_iou_threshold, crop_size)
@@ -219,7 +227,6 @@ def stats_pixelbased(y_true, y_pred, ndigits=4):
         Currently, will accept various types in input data, e.g. labeled and unlabeled.
         Comparing labeled to unlabeled data will produce very low accuracy scores.
         Make sure to input the same type of data for `y_true` and `y_pred`
-
     """
     if y_pred.shape != y_true.shape:
         raise ValueError('Shape of inputs need to match. Shape of prediction '
