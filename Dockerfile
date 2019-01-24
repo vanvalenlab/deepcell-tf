@@ -30,3 +30,5 @@ COPY scripts/ /notebooks/
 
 # Change matplotlibrc file to use the Agg backend
 RUN echo "backend : Agg" > /usr/local/lib/python3.5/dist-packages/matplotlib/mpl-data/matplotlibrc
+
+ENTRYPOINT ["jupyter","lab","--ip=0.0.0.0","--allow-root"]
