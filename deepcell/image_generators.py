@@ -1709,7 +1709,7 @@ class SiameseIterator(Iterator):
         for batch in range(self.y.shape[0]):
             y_batch = self.y[batch]
             daughters_batch = self.daughters[batch]
-            num_cells = np.amax(y_batch)
+            num_cells = np.amax(y_batch)  # TODO: iterate over np.unique instead
             for cell in range(1, num_cells + 1):
                 # count number of pixels cell occupies in each frame
                 y_true = np.sum(y_batch == cell, axis=(self.row_axis - 1, self.col_axis - 1))
