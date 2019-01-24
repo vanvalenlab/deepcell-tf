@@ -1955,10 +1955,8 @@ class SiameseIterator(Iterator):
         """
         # TODO: Check to make sure the frames are acceptable
         if self.data_format == 'channels_first':
-            appearances = self.all_appearances[track, :, np.array(frames), :, :]
-        if self.data_format == 'channels_last':
-            appearances = self.all_appearances[track, np.array(frames), :, :, :]
-        return appearances
+            return self.all_appearances[track, :, np.array(frames), :, :]
+        return self.all_appearances[track, np.array(frames), :, :, :]
 
     def _fetch_centroids(self, track, frames):
         """Gets the centroids after they have been extracted and stored
@@ -1970,12 +1968,16 @@ class SiameseIterator(Iterator):
         """Gets the neighborhoods after they have been extracted and stored
         """
         # TODO: Check to make sure the frames are acceptable
+        if self.data_format == 'channels_first':
+            return self.all_neighborhoods[track, :, np.array(frames), :, :]
         return self.all_neighborhoods[track, np.array(frames), :, :, :]
 
     def _fetch_future_areas(self, track, frames):
         """Gets the future areas after they have been extracted and stored
         """
         # TODO: Check to make sure the frames are acceptable
+        if self.data_format == 'channels_first':
+            return self.all_future_areas[track, :, np.array(frames), :, :]
         return self.all_future_areas[track, np.array(frames), :, :, :]
 
     def _fetch_regionprops(self, track, frames):
@@ -1986,7 +1988,7 @@ class SiameseIterator(Iterator):
 
     def _fetch_frames(self, track, division=False):
         """Fetch a random list of frames for a given track.
-        If the division is true, then the list of frames ends at the cell's
+        If division is true, then the list of frames ends at the cell's
         last appearance.
         """
         track_id = self.track_ids[track]
