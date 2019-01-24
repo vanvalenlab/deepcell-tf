@@ -1076,6 +1076,7 @@ class TestSiamsesDataGenerator(test.TestCase):
             train_dict = {
                 'X': np.random.random((8, 11, 10, 10, 3)),
                 'y': np.random.random((8, 11, 10, 10, 1)),
+                'daughters': {}
             }
             generator.flow(train_dict, features=feats)
 
@@ -1084,6 +1085,7 @@ class TestSiamsesDataGenerator(test.TestCase):
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.random(y_shape)
+            train_dict['daughters'] = {}
             # TODO(enricozb): fake the lineage data, test the correctness
             # for x, y in generator.flow(
             #         train_dict,
@@ -1134,6 +1136,7 @@ class TestSiamsesDataGenerator(test.TestCase):
             train_dict = {
                 'X': np.random.random((8, 3, 11, 10, 10)),
                 'y': np.random.random((8, 1, 11, 10, 10)),
+                'daughters': {}
             }
             generator.flow(train_dict, features=feats)
 
@@ -1142,6 +1145,7 @@ class TestSiamsesDataGenerator(test.TestCase):
             y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
             train_dict['X'] = images
             train_dict['y'] = np.random.random(y_shape)
+            train_dict['daughters'] = {}
             # TODO(enricozb): fake the lineage data, test the correctness
             # for x, y in generator.flow(
             #         train_dict,
@@ -1172,7 +1176,8 @@ class TestSiamsesDataGenerator(test.TestCase):
         with self.assertRaises(ValueError):
             train_dict = {
                 'X': np.random.random((8, 10, 10)),
-                'y': np.random.random((8, 10, 10))
+                'y': np.random.random((8, 10, 10)),
+                'daughters': {}
             }
             generator.flow(train_dict, features=feats)
 
@@ -1180,7 +1185,8 @@ class TestSiamsesDataGenerator(test.TestCase):
         with self.assertRaises(Exception):
             train_dict = {
                 'X': np.random.random((8, 11, 10, 10, 1)),
-                'y': np.random.random((7, 11, 10, 10, 1))
+                'y': np.random.random((7, 11, 10, 10, 1)),
+                'daughters': {}
             }
             generator.flow(train_dict)
         # Invalid number of channels: will work but raise a warning
