@@ -2095,10 +2095,9 @@ class SiameseIterator(Iterator):
 
         return distance_1, distance_2
 
-    def _compute_regionprops(self, track_1, frames_1, track_2, frames_2):
+    def _compute_regionprops(self, track_1, frames_1, track_2, frames_2, transform):
         regionprop_1 = self._fetch_regionprops(track_1, frames_1)
         regionprop_2 = self._fetch_regionprops(track_2, frames_2)
-
         return regionprop_1, regionprop_2
 
     def _compute_neighborhoods(self, track_1, frames_1, track_2, frames_2, transform):
@@ -2111,7 +2110,8 @@ class SiameseIterator(Iterator):
         for frame in range(neighborhoods.shape[self.time_axis - 1]):
             neigh_temp = neighborhoods[frame]
             if transform is not None:
-                neigh_temp = self.image_data_generator.apply_transform(neigh_temp, transform)
+                neigh_temp = self.image_data_generator.apply_transform(
+                    neigh_temp, transform)
             else:
                 neigh_temp = self.image_data_generator.random_transform(neigh_temp)
             neighborhoods[frame] = neigh_temp
