@@ -1678,10 +1678,9 @@ class SiameseIterator(Iterator):
         """Iterate over all image batches and remove images with only one cell.
         """
         good_batches = []
-        number_of_batches = self.x.shape[0]
-        for batch in range(number_of_batches):
-            unique_ids = np.unique(self.y[batch])
-            if len(unique_ids) > 2:  # There should be at least 3 id's - 2 cells and 1 background
+        for batch in range(self.x.shape[0]):
+            # There should be at least 3 id's - 2 cells and 1 background
+            if len(np.unique(self.y[batch])) > 2:
                 good_batches.append(batch)
 
         X_new_shape = tuple([len(good_batches)] + list(self.x.shape)[1:])
