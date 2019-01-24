@@ -34,7 +34,6 @@ from fnmatch import fnmatch
 
 import cv2
 import numpy as np
-import skimage.measure
 
 from skimage.measure import label
 from skimage.measure import regionprops
