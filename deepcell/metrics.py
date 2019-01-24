@@ -212,12 +212,13 @@ def stats_objectbased(y_true,
         divided, _round(perc_divided)))
 
 
-def stats_pixelbased(y_true, y_pred, ndigits=4):
+def stats_pixelbased(y_true, y_pred, threshold=0.5, ndigits=4):
     """Calculates pixel-based dice and jaccard scores, and prints them
 
     Args:
         y_true (np.array): Ground truth data
         y_pred (np.array): Predictions
+        threshold (:obj:`float`, optional): Threshold to use on prediction data to make binary
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
 
     Returns:
@@ -228,6 +229,10 @@ def stats_pixelbased(y_true, y_pred, ndigits=4):
         Comparing labeled to unlabeled data will produce very low accuracy scores.
         Make sure to input the same type of data for `y_true` and `y_pred`
     """
+
+    def _round(x):
+        return round(x,ndigits)
+
     if y_pred.shape != y_true.shape:
         raise ValueError('Shape of inputs need to match. Shape of prediction '
                          'is: {}.  Shape of mask is: {}'.format(
@@ -238,19 +243,28 @@ def stats_pixelbased(y_true, y_pred, ndigits=4):
                         'but prediction and truth arrays are empty. ')
         return 1.0
 
-    pred = (y_pred != 0).astype('int')
-    truth = (y_true != 0).astype('int')
+    # Threshold to boolean then convert to binary 0,1
+    pred = (y_pred >= threshold).astype('int')
+    truth = (y_true >= threshold).astype('int')
 
-    intersection = pred * truth  # where pred and truth are both nonzero
+    # where pred and truth are both nonzero
+    intersection = pred * truth  
 
+    # Add to find union and reset to binary
+    union = (pred + truth != 0).astype('int')
+
+    # Sum gets count of positive pixels
     dice = (2 * intersection.sum() / (pred.sum() + truth.sum()))
-    jaccard = dice / (2 - dice)
+    jaccard = intersection.sum() / union.sum()
 
     print('\n____________________Pixel-based statistics____________________\n')
-    print('dice/F1 index: {}\njaccard index: {}'.format(
-        round(dice, ndigits), round(jaccard, ndigits)))
+    print('Dice: {}\nJaccard: {}\n'.format(
+        _round(dice), _round(jaccard)))
 
-    acc = np.count_nonzero(np.logical_and(pred, truth)) / np.count_nonzero(truth)
-    print('Accuracy: {}%'.format(100 * round(acc, ndigits)))
+    precision = intersection.sum() / pred.sum()
+    recall = intersection.sum() / truth.sum()
+    Fmeasure = (2 * precision * recall) / (precision + recall)
+    print('Precision: {}\nRecall: {}\nF-measure: {}'.format(
+        _round(precision), _round(recall), _round(Fmeasure)))
 
     return dice, jaccard
