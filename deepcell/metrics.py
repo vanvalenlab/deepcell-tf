@@ -110,7 +110,7 @@ def stats_objectbased(y_true,
 
     `y_true` and `y_pred` should be the same shape after applying `transform`
     to `y_true`. `channel_index` selects a single channel from `y_true` and `y_pred`
-    to use for stat calculations. Relies on  `skimage.measure.label` to define cell 
+    to use for stat calculations. Relies on  `skimage.measure.label` to define cell
     objects which are used to calculate stats
 
     Args:
@@ -128,7 +128,7 @@ def stats_objectbased(y_true,
     """
 
     def _round(x):
-        return round(x,ndigits)
+        return round(x, ndigits)
 
     # Apply transformation if requested
     if transform != None:
@@ -212,20 +212,27 @@ def stats_objectbased(y_true,
         divided, _round(perc_divided)))
 
 
-def stats_pixelbased(y_true, y_pred, threshold=0.5, ndigits=4):
-    """Calculates pixel-based dice and jaccard scores, and prints them
+def stats_pixelbased(y_true, y_pred, transform=None, channel_index=0, threshold=0.5, ndigits=4, return_stats=False):
+    """Calculates pixel-based statistics (Dice, Jaccard, Precision, Recall, F-measure)
+
+    Takes in raw prediction and truth data. Applies a transformation to truth data. Before calculating statistics.
 
     Args:
-        y_true (np.array): Ground truth data
-        y_pred (np.array): Predictions
+        y_true (4D np.array): Raw ground truth annotations, (batch,x,y,channel)
+        y_pred (np.array): Raw predictions, (batch,x,y,channel)
+        transform (:obj:`str`, optional): Applies a transformation to y_true, default None
+        channel_index (:obj:`int`, optional): Selects channel to compare for object stats, default 0
         threshold (:obj:`float`, optional): Threshold to use on prediction data to make binary
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
+        return_stats (:obj:`bool`, optional): Returns dictionary of statistics, default False
 
     Returns:
-        tuple: dice score, jaccard score
+        dictionary: optionally returns a dictionary of statistics
+
+    Raises:
+        ValueError: Shapes of `y_true` and `y_pred` do not match.
 
     Warning:
-        Currently, will accept various types in input data, e.g. labeled and unlabeled.
         Comparing labeled to unlabeled data will produce very low accuracy scores.
         Make sure to input the same type of data for `y_true` and `y_pred`
     """
@@ -233,9 +240,17 @@ def stats_pixelbased(y_true, y_pred, threshold=0.5, ndigits=4):
     def _round(x):
         return round(x,ndigits)
 
+    # Apply transformation if requested
+    if transform != None:
+        y_true = _transform_masks(y_true,transform)
+
+    # Select specified channel
+    y_true = y_true[:,:,:,channel_index]
+    y_pred = y_pred[:,:,:,channel_index]
+
     if y_pred.shape != y_true.shape:
         raise ValueError('Shape of inputs need to match. Shape of prediction '
-                         'is: {}.  Shape of mask is: {}'.format(
+                         'is: {}.  Shape of y_true after transform is: {}'.format(
                              y_pred.shape, y_true.shape))
 
     if y_pred.sum() == 0 and y_true.sum() == 0:
@@ -267,4 +282,11 @@ def stats_pixelbased(y_true, y_pred, threshold=0.5, ndigits=4):
     print('Precision: {}\nRecall: {}\nF-measure: {}'.format(
         _round(precision), _round(recall), _round(Fmeasure)))
 
-    return dice, jaccard
+    if return_stats:
+        return({
+            'dice':dice,
+            'jaccard':jaccard,
+            'precision':precision,
+            'recall':recall,
+            'Fmeasure':Fmeasure
+        })
