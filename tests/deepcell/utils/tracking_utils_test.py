@@ -30,7 +30,6 @@ from __future__ import print_function
 
 import numpy as np
 from tensorflow.python.platform import test
-from tensorflow.python.keras import backend as K
 
 from deepcell.utils import tracking_utils
 
@@ -54,8 +53,7 @@ class TrackingUtilsTests(test.TestCase):
         # channels_last
         y = np.random.randint(low=0, high=classes + 1,
                               size=(batches, frames, 30, 30, 1))
-        pairs = tracking_utils.count_pairs(
-            y, same_probability=prob, data_format='channels_last')
+        pairs = tracking_utils.count_pairs(y, same_probability=prob)
         self.assertEqual(pairs, expected)
 
         # channels_first
