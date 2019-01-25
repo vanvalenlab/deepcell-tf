@@ -66,6 +66,19 @@ class PixelIoU(Callback):
 class ObjectIoU(Callback):
     """At the end of training, calculate the object based
     Intersection over Union matrix and Dice/Jaccard scores
+
+    Args:
+        X (np.array): X test data
+        y (np.array): y test data, ground truth annotation
+    
+    Notes:
+        Currently, the test data are passed to the class and 
+        predictions are generated for each run of the callback.
+        Alternative is to use the validation generator to supply
+        test data. If we don't use validation generator, then the
+        user is responsible for applying necessary transformations.
+        It does not seem currently possible to access validation 
+        data from within a Callback
     """
     def __init__(self,
                  X,
@@ -86,6 +99,7 @@ class ObjectIoU(Callback):
         def _round(x):
             return round(x, self.ndigits)
 
+        # Generates the predictions off of the test data inside the callback
         y_true = self.y
         y_pred = self.model.predict(self.X)
         if isinstance(y_pred, list):
