@@ -31,12 +31,12 @@ from __future__ import division
 
 import json
 import os
-import numpy as np
 import random
 import tarfile
-
 from io import BytesIO
 from fnmatch import fnmatch
+
+import numpy as np
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import backend as K
 
@@ -71,8 +71,8 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     # and associate it with the appropriate batch
     if mode == 'siamese_daughters':
         training_data = load_trks(file_name)
-        X = training_data['raw']
-        y = training_data['tracked']
+        X = training_data['X']
+        y = training_data['y']
         # `daughters` is of the form:
         #
         #                   2 children / cell (potentially empty)
@@ -127,8 +127,8 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 def load_trks(trks_file):
     with tarfile.open(trks_file, 'r') as trks:
         # trks.extractfile opens a file in bytes mode, json can't use bytes.
-        lineages = json.loads(
-            trks.extractfile(trks.getmember('lineages.json')).read().decode())
+        trk_data = trks.getmember('lineages.json')
+        lineages = json.loads(trks.extractfile(trk_data).read().decode())
 
         # numpy can't read these from disk...
         array_file = BytesIO()
@@ -147,7 +147,7 @@ def load_trks(trks_file):
     for i, tracks in enumerate(lineages):
         lineages[i] = {int(k): v for k, v in tracks.items()}
 
-    return {'lineages': lineages, 'raw': raw, 'tracked': tracked}
+    return {'lineages': lineages, 'X': raw, 'y': tracked}
 
 
 def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='valid',
