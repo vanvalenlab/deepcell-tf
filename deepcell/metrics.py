@@ -29,8 +29,17 @@ def im_prep(mask, prediction, win_size):
 
 def calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix):
     """
-    Calculate all Intersection over Union values within the cropped input.
-    If values are > a threshold, mark them as a hit.
+    Identifies cell objects within a cropped roi that have an IOU above `threshold`
+    which results in them being marked as a hit
+
+    Args:
+        crop_truth (2D np.array): Cropped numpy array of labeled truth mask
+        crop_pred (2D np.array): Cropped numpy array of labeled prediction mask
+        threshold (float): Threshold for accepting IOU score as a hit
+        iou_matrix (2D np.array): Array for recording hits between predicted and truth objects
+
+    Returns:
+        iou_matrix: after updating with any hits found in this crop region
     """
     # for each unique cellID in the given mask...
     for n in np.unique(crop_truth):
@@ -42,7 +51,7 @@ def calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix):
             if m == 0:
                 continue  # excluding background
 
-            # calculate the intersection over union for
+            # calculate the intersection over union for pixels in each object
             intersection = np.logical_and(crop_pred == m, crop_truth == n)
             union = np.logical_or(crop_pred == m, crop_truth == n)
             iou = np.sum(intersection) / np.sum(union)
