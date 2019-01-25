@@ -62,28 +62,37 @@ def calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix):
     return iou_matrix
 
 
-def get_iou_matrix_quick(y_true, y_pred, threshold, crop_size, im_size=2048):
+def get_iou_matrix_quick(y_true, y_pred, threshold, crop_size, im_size):
     """Calculate Intersection-Over-Union Matrix for ground truth and predictions
-    # Arguments
-        pred: predicted masks
-        truth: ground truth masks
-        threshold: If IOU is above threshold, cells are considered overlapping
-        crop_size: Cropping images is faster to calculate but less accurate
-        im_size: original image size.  (Assumes square images).
-    # Returns
-        iou_matrix
+    based on object labels
+
+    Intended to work on 2D arrays, but placing this function in a loop could extend to 3D or higher
+
+    Arguments
+        pred (2D np.array): predicted, unlabeled mask
+        truth (2D np.array): ground truth, unlabeled mask
+        threshold (float): If IOU is above threshold, cells are considered overlapping
+        crop_size (int): Cropping images is faster to calculate but less accurate
+        im_size (int): Original image size.  (Assumes square images).
+
+    Returns
+        iou_matrix: 1 indicates an object pair with an IOU score above threshold
     """
-    # label ground truth masks, neccesary if not already tagged with cellID numbers
-    labeled_truth = skimage.measure.label(y_true, connectivity=2)
+    # Calculate labels using skimage
+    y_true = skimage.measure.label(y_true,connectivity=2)
+    y_pred = skimage.measure.label(y_pred,connectivity=2)
 
-    iou_matrix = np.zeros((labeled_truth.max(), y_pred.max()))
+    # Setup empty iou matrix based on number of true and predicted cells
+    iou_matrix = np.zeros(y_true.max(),y_pred.max())
 
-    # crop input images and calculate the iou's for the cells present
+    # Crop input images and calculate the iou's for the cells present
+    # Updates iou_matrix value during each loop
     for x in range(0, im_size, crop_size):
         for y in range(0, im_size, crop_size):
             crop_pred = y_pred[x:x + crop_size, y:y + crop_size]
-            crop_truth = labeled_truth[x:x + crop_size, y:y + crop_size]
+            crop_truth = y_true[x:x + crop_size, y:y + crop_size]
             iou_matrix = calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix)
+    
     return iou_matrix
 
 
@@ -112,7 +121,8 @@ def stats_objectbased(y_true,
                       dice_iou_threshold=.5,
                       merge_iou_threshold=1e-5,
                       ndigits=4,
-                      crop_size=32):
+                      crop_size=32,
+                      im_size=2048):
     """
     Calculate summary statistics (DICE/Jaccard index and confusion matrix)
     for a single channel on a per-object basis
@@ -123,8 +133,8 @@ def stats_objectbased(y_true,
     objects which are used to calculate stats
 
     Args:
-        y_true (4D np.array): Ground truth annotations for a single channel
-        y_pred (4D np.array): Predictions for a single channel
+        y_true (4D np.array): Ground truth annotations for a single channel (batch,x,y,channel)
+        y_pred (4D np.array): Predictions for a single channel (batch,x,y,channel)
         transform (:obj:`str`, optional): Applies a transformation to y_true, default None
         channel_index (:obj:`int`, optional): Selects channel to compare for object stats, default 0
         dice_iou_threshold (:obj:`float`, optional): default, 0.5
@@ -140,20 +150,18 @@ def stats_objectbased(y_true,
         return round(x, ndigits)
 
     # Apply transformation if requested
-    if transform != None:
-        y_true = _transform_masks(y_true,transform)
+    if transform is not None:
+        y_true = _transform_masks(y_true, transform)
 
     if y_pred.shape != y_true.shape:
         raise ValueError('Shape of inputs need to match. Shape of prediction '
                          'is: {}.  Shape of y_true after transform is: {}'.format(
                              y_pred.shape, y_true.shape))
 
-    # Convert y input to labeled data
-    y_true = skimage.measure.label(y_true[:,:,:,channel_index], connectivity=2)
-    y_pred = skimage.measure.label(y_pred[:,:,:,channel_index], connectivity=2)
-
-    stats_iou_matrix = get_iou_matrix_quick(
-        y_true, y_pred, dice_iou_threshold, crop_size)
+    # Loop over each batch sample to process
+    for i in range(y_true.shape[0]):
+        stats_iou_matrix[i] = get_iou_matrix_quick(
+            y_true[i], y_pred[i], dice_iou_threshold, crop_size, im_size)
 
     dice, jaccard = get_dice_jaccard(stats_iou_matrix)
 
@@ -285,7 +293,7 @@ def stats_pixelbased(y_true, y_pred, transform=None, channel_index=0, threshold=
     """
 
     def _round(x):
-        return round(x,ndigits)
+        return round(x, ndigits)
 
     # Apply transformation if requested
     if transform != None:
