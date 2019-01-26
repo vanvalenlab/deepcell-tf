@@ -61,37 +61,87 @@ def calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix):
 
     return iou_matrix
 
+def calc_object_ious_fast(y_true, y_pred, threshold):
+    """
+    Identifies cell objects within a cropped roi that have an IOU above `threshold`
+    which results in them being marked as a hit
 
-def get_iou_matrix_quick(y_true, y_pred, threshold, crop_size, im_size):
+    Args:
+        crop_truth (2D np.array): Cropped numpy array of labeled truth mask
+        crop_pred (2D np.array): Cropped numpy array of labeled prediction mask
+        threshold (float): Threshold for accepting IOU score as a hit
+
+    Returns:
+        iou_matrix: after updating with any hits found in this crop region
+
+    Warning:
+        Currently does not handle cases in which more than 1 truth and 1 predicted cell ids are 
+        found in an intersection
+    """
+    # Initialize iou matrix
+    iou_matrix = np.zeros((y_true.max(), y_pred.max()))
+
+    # Find an intersection mask of all regions of intersection
+    mask = np.logical_and(y_true != 0, y_pred != 0)
+    mask_lbl = skimage.measure.label(mask, connectivity=2)
+
+    # Loop over each region of intersection
+    for i in np.unique(mask_lbl):
+        if i == 0:
+            continue # exclude background
+        
+        # Extract cell ids from y_pred and y_true
+        tid = np.unique(y_true[mask_lbl == i])
+        pid = np.unique(y_pred[mask_lbl == i])
+
+        # First handle cases when there are only two cell ids
+        if (len(tid) == 1)&(len(pid) == 1):
+            intersection = np.logical_and(y_true == tid[0], y_pred == pid[0])
+            union = np.logical_or(y_true == tid[0], y_pred == pid[0])
+            iou = np.sum(intersection) / np.sum(union)
+
+            if iou > threshold:
+                iou_matrix[tid - 1,pid - 1] = 1
+        
+        else:
+            print('multiple cell ids triggered')
+
+    return(iou_matrix)
+
+def get_iou_matrix_quick(y_true, y_pred, threshold, crop_size):
     """Calculate Intersection-Over-Union Matrix for ground truth and predictions
     based on object labels
 
     Intended to work on 2D arrays, but placing this function in a loop could extend to 3D or higher
 
     Arguments
-        pred (2D np.array): predicted, unlabeled mask
-        truth (2D np.array): ground truth, unlabeled mask
+        pred (2D np.array): predicted, labeled mask
+        truth (2D np.array): ground truth, labeled mask
         threshold (float): If IOU is above threshold, cells are considered overlapping
         crop_size (int): Cropping images is faster to calculate but less accurate
-        im_size (int): Original image size.  (Assumes square images).
 
     Returns
         iou_matrix: 1 indicates an object pair with an IOU score above threshold
     """
-    # Calculate labels using skimage
-    y_true = skimage.measure.label(y_true,connectivity=2)
-    y_pred = skimage.measure.label(y_pred,connectivity=2)
 
     # Setup empty iou matrix based on number of true and predicted cells
-    iou_matrix = np.zeros(y_true.max(),y_pred.max())
+    iou_matrix = np.zeros((y_true.max(), y_pred.max()))
+    print(iou_matrix.shape)
+    print('true', y_true.max(), 'pred', y_pred.max())
+
+    # Get image size parameters, assumes 2D inputs
+    x_size = y_true.shape[0]
+    y_size = y_true.shape[1]
 
     # Crop input images and calculate the iou's for the cells present
     # Updates iou_matrix value during each loop
-    for x in range(0, im_size, crop_size):
-        for y in range(0, im_size, crop_size):
+    # Consider using np.split as a potentially faster alternative
+    for x in range(0, x_size, crop_size):
+        for y in range(0, y_size, crop_size):
             crop_pred = y_pred[x:x + crop_size, y:y + crop_size]
             crop_truth = y_true[x:x + crop_size, y:y + crop_size]
-            iou_matrix = calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix)
+            # iou_matrix = calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix)
+            iou_matrix = calc_cropped_ious_fast(crop_truth, crop_pred, 0.5, iou_matrix)
     
     return iou_matrix
 
@@ -156,11 +206,11 @@ def stats_objectbased(y_true,
                       y_pred,
                       transform=None,
                       channel_index=0,
+                      object_threshold=0.5,
                       dice_iou_threshold=.5,
                       merge_iou_threshold=1e-5,
                       ndigits=4,
-                      crop_size=32,
-                      im_size=2048):
+                      crop_size=None):
     """
     Calculate summary statistics (DICE/Jaccard index and confusion matrix)
     for a single channel on a per-object basis
@@ -175,10 +225,11 @@ def stats_objectbased(y_true,
         y_pred (4D np.array): Predictions for a single channel (batch,x,y,channel)
         transform (:obj:`str`, optional): Applies a transformation to y_true, default None
         channel_index (:obj:`int`, optional): Selects channel to compare for object stats, default 0
+        object_threshold (:obj:`float`, optional): Sets criteria for jaccard index to declare object overlap
         dice_iou_threshold (:obj:`float`, optional): default, 0.5
         merge_iou_threshold (:obj:`float`, optional): default, 1e-5
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
-        crop_size (:obj:`int`, optional): default 32
+        crop_size (:obj:`int`, optional): Enables cropping for object calculations, default None
 
     Raises:
         ValueError: If y_true and y_pred are not the same shape
@@ -196,79 +247,87 @@ def stats_objectbased(y_true,
                          'is: {}.  Shape of y_true after transform is: {}'.format(
                              y_pred.shape, y_true.shape))
 
-    # Loop over each batch sample to process
-    for i in range(y_true.shape[0]):
-        stats_iou_matrix[i] = get_iou_matrix_quick(
-            y_true[i], y_pred[i], dice_iou_threshold, crop_size, im_size)
+    # Reshape to be tiled 2D image
+    y_true = reshape_padded_tiled_2d(y_true[:, :, :, channel_index])
+    y_pred = reshape_padded_tiled_2d(y_pred[:, :, :, channel_index])
 
-    dice, jaccard = get_dice_jaccard(stats_iou_matrix)
+    # Calculate labels using skimage
+    y_true = skimage.measure.label(y_true, connectivity=2)
+    y_pred = skimage.measure.label(y_pred, connectivity=2)
 
-    # Calculate false negative/positive rates
-    false_negatives = 0
-    for n in range(stats_iou_matrix.shape[0]):
-        if stats_iou_matrix[n, :].sum() == 0:
-            false_negatives += 1
+    # Calculate iou matrix on reshaped, masked arrays
+    if crop_size != None:
+        iou_matrix = get_iou_matrix_quick(y_true, y_pred, object_threshold, crop_size=crop_size)
+    else:
+        iou_matrix = calc_object_ious_fast(y_true, y_pred, object_threshold)
 
-    false_positives = 0
-    for m in range(stats_iou_matrix.shape[1]):
-        if stats_iou_matrix[:, m].sum() == 0:
-            false_positives += 1
+    # dice, jaccard = get_dice_jaccard(stats_iou_matrix)
 
-    false_pos_perc_err = false_positives / (false_positives + false_negatives)
-    false_neg_perc_err = false_negatives / (false_positives + false_negatives)
+    # # Calculate false negative/positive rates
+    # false_negatives = 0
+    # for n in range(stats_iou_matrix.shape[0]):
+    #     if stats_iou_matrix[n, :].sum() == 0:
+    #         false_negatives += 1
 
-    false_pos_perc_pred = false_positives / stats_iou_matrix.shape[1]
-    false_neg_perc_truth = false_negatives / stats_iou_matrix.shape[0]
+    # false_positives = 0
+    # for m in range(stats_iou_matrix.shape[1]):
+    #     if stats_iou_matrix[:, m].sum() == 0:
+    #         false_positives += 1
 
-    # Calculate merge/division error rates
-    merge_div_iou_matrix = get_iou_matrix_quick(
-        y_true, y_pred, merge_iou_threshold, crop_size)
+    # false_pos_perc_err = false_positives / (false_positives + false_negatives)
+    # false_neg_perc_err = false_negatives / (false_positives + false_negatives)
 
-    divided = 0
-    for n in range(merge_div_iou_matrix.shape[0]):
-        overlaps = merge_div_iou_matrix[n, :].sum()
-        if overlaps > 1:
-            divided += overlaps - 1
+    # false_pos_perc_pred = false_positives / stats_iou_matrix.shape[1]
+    # false_neg_perc_truth = false_negatives / stats_iou_matrix.shape[0]
 
-    merged = 0
-    for m in range(merge_div_iou_matrix.shape[1]):
-        overlaps = merge_div_iou_matrix[:, m].sum()
-        if overlaps > 1:
-            merged += overlaps - 1
+    # # Calculate merge/division error rates
+    # merge_div_iou_matrix = get_iou_matrix_quick(
+    #     y_true, y_pred, merge_iou_threshold, crop_size)
 
-    perc_merged = merged / stats_iou_matrix.shape[0]
-    perc_divided = divided / stats_iou_matrix.shape[0]
+    # divided = 0
+    # for n in range(merge_div_iou_matrix.shape[0]):
+    #     overlaps = merge_div_iou_matrix[n, :].sum()
+    #     if overlaps > 1:
+    #         divided += overlaps - 1
 
-    acc = (stats_iou_matrix.shape[1] - false_positives) / stats_iou_matrix.shape[0]
-    acc = _round(100 * acc)
+    # merged = 0
+    # for m in range(merge_div_iou_matrix.shape[1]):
+    #     overlaps = merge_div_iou_matrix[:, m].sum()
+    #     if overlaps > 1:
+    #         merged += overlaps - 1
 
-    print('\n____________________Object-based statistics____________________\n')
-    print('Intersection over Union thresholded at:', dice_iou_threshold)
-    print('dice/F1 index: {}\njaccard index: {}'.format(
-        _round(dice), _round(jaccard)))
-    print('Number of cells predicted:', stats_iou_matrix.shape[1])
-    print('Number of cells present in ground truth:', stats_iou_matrix.shape[0])
-    print('Accuracy: {}%\n'.format(acc))
+    # perc_merged = merged / stats_iou_matrix.shape[0]
+    # perc_divided = divided / stats_iou_matrix.shape[0]
 
-    print('#false positives: {}\t% of total error: {}\t% of predicted incorrect: {}'.format(
-        _round(false_positives),
-        _round(false_pos_perc_err),
-        _round(false_pos_perc_pred)))
+    # acc = (stats_iou_matrix.shape[1] - false_positives) / stats_iou_matrix.shape[0]
+    # acc = _round(100 * acc)
 
-    print('#false negatives: {}\t% of total error: {}\t% of ground truth missed: {}'.format(
-        _round(false_negatives),
-        _round(false_neg_perc_err),
-        _round(false_neg_perc_truth)))
+    # print('\n____________________Object-based statistics____________________\n')
+    # print('Intersection over Union thresholded at:', dice_iou_threshold)
+    # print('dice/F1 index: {}\njaccard index: {}'.format(
+    #     _round(dice), _round(jaccard)))
+    # print('Number of cells predicted:', stats_iou_matrix.shape[1])
+    # print('Number of cells present in ground truth:', stats_iou_matrix.shape[0])
+    # print('Accuracy: {}%\n'.format(acc))
 
-    print('\nIntersection over Union thresholded at:', merge_iou_threshold)
-    print('#incorrect merges: {}\t% of ground truth merged: {}'.format(
-        merged, _round(perc_merged)))
-    print('#incorrect divisions: {}\t% of ground truth divided: {}'.format(
-        divided, _round(perc_divided)))
+    # print('#false positives: {}\t% of total error: {}\t% of predicted incorrect: {}'.format(
+    #     _round(false_positives),
+    #     _round(false_pos_perc_err),
+    #     _round(false_pos_perc_pred)))
 
-    return(stats_iou_matrix)
+    # print('#false negatives: {}\t% of total error: {}\t% of ground truth missed: {}'.format(
+    #     _round(false_negatives),
+    #     _round(false_neg_perc_err),
+    #     _round(false_neg_perc_truth)))
 
-def calc_2d_object_stats(iou_matrix,return_dict=False):
+    # print('\nIntersection over Union thresholded at:', merge_iou_threshold)
+    # print('#incorrect merges: {}\t% of ground truth merged: {}'.format(
+    #     merged, _round(perc_merged)))
+    # print('#incorrect divisions: {}\t% of ground truth divided: {}'.format(
+    #     divided, _round(perc_divided)))
+
+    return(iou_matrix)
+
 def calc_2d_object_stats(iou_matrix):
     """Calculates basic statistics to evaluate classification accuracy for a 2d image
 
