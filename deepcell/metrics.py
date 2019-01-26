@@ -231,11 +231,11 @@ def stats_objectbased(y_true,
     return(stats_iou_matrix)
 
 def calc_2d_object_stats(iou_matrix,return_dict=False):
+def calc_2d_object_stats(iou_matrix):
     """Calculates basic statistics to evaluate classification accuracy for a 2d image
 
     Args:
         iou_matrix (np.array): 2D array with dimensions (#true_cells,#predicted_cells)
-        return_dict (:obj:`bool`, optional): When True, returns dictionary of computed stats. Default False
 
     Returns:
         dict: Dictionary containing all statistics computed by function
@@ -255,17 +255,16 @@ def calc_2d_object_stats(iou_matrix,return_dict=False):
     false_pos = np.count_nonzero(truth_proj==0)
     merge = np.count_nonzero(truth_proj>=2)
 
-    if return_dict:
-        return {
-            'true_cells':true_cells,
-            'pred_cells':pred_cells,
-            'truth_true_pos':truth_true_pos,
-            'false_neg':false_neg,
-            'split':split,
-            'pred_true_pos':pred_true_pos,
-            'false_pos':false_pos,
-            'merge':merge
-        }
+    return {
+        'true_cells':true_cells,
+        'pred_cells':pred_cells,
+        'truth_true_pos':truth_true_pos,
+        'false_neg':false_neg,
+        'split':split,
+        'pred_true_pos':pred_true_pos,
+        'false_pos':false_pos,
+        'merge':merge
+    }
 
 def stats_pixelbased(y_true, y_pred, transform=None, channel_index=0, threshold=0.5, ndigits=4, return_stats=False):
     """Calculates pixel-based statistics (Dice, Jaccard, Precision, Recall, F-measure)
