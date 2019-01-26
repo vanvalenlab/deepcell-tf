@@ -113,6 +113,44 @@ def get_dice_jaccard(iou_matrix):
 
     return dice, jaccard
 
+def reshape_padded_tiled_2d(arr):
+    """Takes in a 3 or 4d stack and reshapes so that arrays from the zeroth axis are tiled in 2D
+    
+    Args:
+        arr (np.array): 3 or 4D array to be reshaped with reshape axis as zeroth axis
+
+    Returns:
+        np.array: Output array should be two dimensional except for a possible channel dimension
+
+    Raises:
+        ValueError: Only accepts 3 or 4D input arrays
+    """
+    # Check if input is 3 or 4 dimensions for padding 
+    # Add border of zeros around input arr
+    if len(arr.shape) == 4:
+        pad = np.zeros((arr.shape[0],
+                        arr.shape[1]+2,
+                        arr.shape[2]+2, 
+                        arr.shape[3]))
+    elif len(arr.shape) == 3:
+        pad = np.zeros((arr.shape[0],
+                        arr.shape[1]+2,
+                        arr.shape[2]+2))
+    else:
+        raise ValueError('Only supports input of dimensions 3 or 4. Array of dimension {} received as input'.format(
+            len(arr.shape)))
+
+    # Add data into padded array
+    pad[:,1:-1,1:-1] = arr
+
+    # Split array into list of as many arrays as are in zeroth dimension
+    splitlist = np.split(pad, pad.shape[0], axis=0)
+
+    # Concatenate into single 2D array
+    out = np.concatenate(splitlist, axis=2)
+
+    return(out)
+
 
 def stats_objectbased(y_true,
                       y_pred,
