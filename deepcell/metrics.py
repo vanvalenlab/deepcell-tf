@@ -61,6 +61,7 @@ def calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix):
 
     return iou_matrix
 
+
 def calc_object_ious_fast(y_true, y_pred, threshold):
     """
     Identifies cell objects within a cropped roi that have an IOU above `threshold`
@@ -75,9 +76,16 @@ def calc_object_ious_fast(y_true, y_pred, threshold):
         iou_matrix: after updating with any hits found in this crop region
 
     Warning:
-        Currently does not handle cases in which more than 1 truth and 1 predicted cell ids are 
+        Currently does not handle cases in which more than 1 truth and 1 predicted cell ids are
         found in an intersection
     """
+    def _joint_or(arr, L):
+        '''Calculate overlap of an arr with a list of values'''
+        out = arr == L[0]
+        for i in L[1:]:
+            out = (out) | (arr == i)
+        return out
+
     # Initialize iou matrix
     iou_matrix = np.zeros((y_true.max(), y_pred.max()))
 
@@ -88,27 +96,35 @@ def calc_object_ious_fast(y_true, y_pred, threshold):
     # Loop over each region of intersection
     for i in np.unique(mask_lbl):
         if i == 0:
-            continue # exclude background
-        
+            continue  # exclude background
+
         # Extract cell ids from y_pred and y_true
         tid = np.unique(y_true[mask_lbl == i])
         pid = np.unique(y_pred[mask_lbl == i])
 
         # First handle cases when there are only two cell ids
-        if (len(tid) == 1)&(len(pid) == 1):
+        if (len(tid) == 1) & (len(pid) == 1):
             intersection = np.logical_and(y_true == tid[0], y_pred == pid[0])
             union = np.logical_or(y_true == tid[0], y_pred == pid[0])
             iou = np.sum(intersection) / np.sum(union)
 
             if iou > threshold:
-                iou_matrix[tid - 1,pid - 1] = 1
-        
+                iou_matrix[tid - 1, pid - 1] = 1
+
         else:
-            print('multiple cell ids triggered')
+            intersection = np.logical_and(_joint_or(y_true, tid), _joint_or(y_pred, pid))
+            union = np.logical_or(_joint_or(y_true, tid), _joint_or(y_pred, pid))
+            iou = np.sum(intersection) / np.sum(union)
 
-    return(iou_matrix)
+            if iou > threshold:
+                for t in tid:
+                    for p in pid:
+                        iou_matrix[t-1, p-1] = 1
 
-def get_iou_matrix_quick(y_true, y_pred, threshold, crop_size):
+    return iou_matrix
+
+
+def get_iou_matrix_quick(y_true, y_pred, crop_size, threshold=0.5):
     """Calculate Intersection-Over-Union Matrix for ground truth and predictions
     based on object labels
 
@@ -117,8 +133,8 @@ def get_iou_matrix_quick(y_true, y_pred, threshold, crop_size):
     Arguments
         pred (2D np.array): predicted, labeled mask
         truth (2D np.array): ground truth, labeled mask
-        threshold (float): If IOU is above threshold, cells are considered overlapping
         crop_size (int): Cropping images is faster to calculate but less accurate
+        threshold (:obj:`float`, optional): If IOU is above threshold, cells are considered overlapping, default 0.5
 
     Returns
         iou_matrix: 1 indicates an object pair with an IOU score above threshold
@@ -141,8 +157,9 @@ def get_iou_matrix_quick(y_true, y_pred, threshold, crop_size):
             crop_pred = y_pred[x:x + crop_size, y:y + crop_size]
             crop_truth = y_true[x:x + crop_size, y:y + crop_size]
             # iou_matrix = calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix)
-            iou_matrix = calc_cropped_ious_fast(crop_truth, crop_pred, 0.5, iou_matrix)
-    
+            iou_matrix = calc_object_ious_fast(
+                crop_truth, crop_pred, threshold)
+
     return iou_matrix
 
 
@@ -158,14 +175,16 @@ def get_dice_jaccard(iou_matrix):
     pred_max = iou_matrix.shape[1] - 1
     truth_max = iou_matrix.shape[0] - 1
 
-    dice = 2 * iou_sum / (2 * iou_sum + pred_max - iou_sum + truth_max - iou_sum)
+    dice = 2 * iou_sum / (2 * iou_sum + pred_max -
+                          iou_sum + truth_max - iou_sum)
     jaccard = dice / (2 - dice)
 
     return dice, jaccard
 
+
 def reshape_padded_tiled_2d(arr):
     """Takes in a 3 or 4d stack and reshapes so that arrays from the zeroth axis are tiled in 2D
-    
+
     Args:
         arr (np.array): 3 or 4D array to be reshaped with reshape axis as zeroth axis
 
@@ -175,23 +194,24 @@ def reshape_padded_tiled_2d(arr):
     Raises:
         ValueError: Only accepts 3 or 4D input arrays
     """
-    # Check if input is 3 or 4 dimensions for padding 
+    # Check if input is 3 or 4 dimensions for padding
     # Add border of zeros around input arr
     if len(arr.shape) == 4:
         pad = np.zeros((arr.shape[0],
                         arr.shape[1]+2,
-                        arr.shape[2]+2, 
+                        arr.shape[2]+2,
                         arr.shape[3]))
     elif len(arr.shape) == 3:
         pad = np.zeros((arr.shape[0],
                         arr.shape[1]+2,
                         arr.shape[2]+2))
     else:
-        raise ValueError('Only supports input of dimensions 3 or 4. Array of dimension {} received as input'.format(
-            len(arr.shape)))
+        raise ValueError('Only supports input of dimensions 3 or 4. '
+                         'Array of dimension {} received as input'.format(
+                             len(arr.shape)))
 
     # Add data into padded array
-    pad[:,1:-1,1:-1] = arr
+    pad[:, 1:-1, 1:-1] = arr
 
     # Split array into list of as many arrays as are in zeroth dimension
     splitlist = np.split(pad, pad.shape[0], axis=0)
@@ -199,12 +219,11 @@ def reshape_padded_tiled_2d(arr):
     # Concatenate into single 2D array
     out = np.concatenate(splitlist, axis=2)
 
-    return(out)
+    return out
 
 
 def stats_objectbased(y_true,
                       y_pred,
-                      transform=None,
                       channel_index=0,
                       object_threshold=0.5,
                       dice_iou_threshold=.5,
@@ -221,9 +240,8 @@ def stats_objectbased(y_true,
     objects which are used to calculate stats
 
     Args:
-        y_true (4D np.array): Ground truth annotations for a single channel (batch,x,y,channel)
+        y_true (4D np.array): Labled ground truth annotations for a single channel (batch,x,y,channel)
         y_pred (4D np.array): Predictions for a single channel (batch,x,y,channel)
-        transform (:obj:`str`, optional): Applies a transformation to y_true, default None
         channel_index (:obj:`int`, optional): Selects channel to compare for object stats, default 0
         object_threshold (:obj:`float`, optional): Sets criteria for jaccard index to declare object overlap
         dice_iou_threshold (:obj:`float`, optional): default, 0.5
@@ -238,26 +256,23 @@ def stats_objectbased(y_true,
     def _round(x):
         return round(x, ndigits)
 
-    # Apply transformation if requested
-    if transform is not None:
-        y_true = _transform_masks(y_true, transform)
+    # Reshape to be tiled 2D image
+    y_true = reshape_padded_tiled_2d(y_true[:, :, :, 0])
+    y_pred = reshape_padded_tiled_2d(y_pred[:, :, :, channel_index])
+
+    # Calculate labels using skimage
+    y_true = skimage.measure.label(y_true, connectivity=2)
+    y_pred = skimage.measure.label(y_pred > 0.5, connectivity=2)
 
     if y_pred.shape != y_true.shape:
         raise ValueError('Shape of inputs need to match. Shape of prediction '
                          'is: {}.  Shape of y_true after transform is: {}'.format(
                              y_pred.shape, y_true.shape))
 
-    # Reshape to be tiled 2D image
-    y_true = reshape_padded_tiled_2d(y_true[:, :, :, channel_index])
-    y_pred = reshape_padded_tiled_2d(y_pred[:, :, :, channel_index])
-
-    # Calculate labels using skimage
-    y_true = skimage.measure.label(y_true, connectivity=2)
-    y_pred = skimage.measure.label(y_pred, connectivity=2)
-
     # Calculate iou matrix on reshaped, masked arrays
-    if crop_size != None:
-        iou_matrix = get_iou_matrix_quick(y_true, y_pred, object_threshold, crop_size=crop_size)
+    if crop_size is not None:
+        iou_matrix = get_iou_matrix_quick(
+            y_true, y_pred, crop_size, threshold=object_threshold)
     else:
         iou_matrix = calc_object_ious_fast(y_true, y_pred, object_threshold)
 
@@ -326,7 +341,8 @@ def stats_objectbased(y_true,
     # print('#incorrect divisions: {}\t% of ground truth divided: {}'.format(
     #     divided, _round(perc_divided)))
 
-    return(iou_matrix)
+    return iou_matrix
+
 
 def calc_2d_object_stats(iou_matrix):
     """Calculates basic statistics to evaluate classification accuracy for a 2d image
@@ -342,26 +358,28 @@ def calc_2d_object_stats(iou_matrix):
 
     # Calculate values based on projecting along prediction axis
     pred_proj = iou_matrix.sum(axis=1)
-    truth_true_pos = np.count_nonzero(pred_proj==1)
-    false_neg = np.count_nonzero(pred_proj==0)
-    split = np.count_nonzero(pred_proj>=2)
+    # Overcounts true positives when there is a merge
+    # truth_true_pos = np.count_nonzero(pred_proj == 1)
+    false_neg = np.count_nonzero(pred_proj == 0)
+    split = np.count_nonzero(pred_proj >= 2)
 
     # Calculate values based on projecting along truth axis
     truth_proj = iou_matrix.sum(axis=0)
-    pred_true_pos = np.count_nonzero(truth_proj==1)
-    false_pos = np.count_nonzero(truth_proj==0)
-    merge = np.count_nonzero(truth_proj>=2)
+    pred_true_pos = np.count_nonzero(truth_proj == 1)
+    false_pos = np.count_nonzero(truth_proj == 0)
+    merge = np.count_nonzero(truth_proj >= 2)
 
     return {
-        'true_cells':true_cells,
-        'pred_cells':pred_cells,
-        'truth_true_pos':truth_true_pos,
-        'false_neg':false_neg,
-        'split':split,
-        'pred_true_pos':pred_true_pos,
-        'false_pos':false_pos,
-        'merge':merge
+        'true_cells': true_cells,
+        'pred_cells': pred_cells,
+        # 'truth_true_pos': truth_true_pos,
+        'false_neg': false_neg,
+        'split': split,
+        'pred_true_pos': pred_true_pos,
+        'false_pos': false_pos,
+        'merge': merge
     }
+
 
 def stats_pixelbased(y_true, y_pred, transform=None, channel_index=0, threshold=0.5, ndigits=4, return_stats=False):
     """Calculates pixel-based statistics (Dice, Jaccard, Precision, Recall, F-measure)
@@ -386,18 +404,21 @@ def stats_pixelbased(y_true, y_pred, transform=None, channel_index=0, threshold=
     Warning:
         Comparing labeled to unlabeled data will produce very low accuracy scores.
         Make sure to input the same type of data for `y_true` and `y_pred`
+
+    Todo:
+        Should `y_true` be transformed to match `y_pred` or vice versa
     """
 
     def _round(x):
         return round(x, ndigits)
 
     # Apply transformation if requested
-    if transform != None:
-        y_true = _transform_masks(y_true,transform)
+    if transform is not None:
+        y_true = _transform_masks(y_true, transform)
 
     # Select specified channel
-    y_true = y_true[:,:,:,channel_index]
-    y_pred = y_pred[:,:,:,channel_index]
+    y_true = y_true[:, :, :, channel_index]
+    y_pred = y_pred[:, :, :, channel_index]
 
     if y_pred.shape != y_true.shape:
         raise ValueError('Shape of inputs need to match. Shape of prediction '
@@ -414,7 +435,7 @@ def stats_pixelbased(y_true, y_pred, transform=None, channel_index=0, threshold=
     truth = (y_true >= threshold).astype('int')
 
     # where pred and truth are both nonzero
-    intersection = pred * truth  
+    intersection = pred * truth
 
     # Add to find union and reset to binary
     union = (pred + truth != 0).astype('int')
@@ -435,9 +456,9 @@ def stats_pixelbased(y_true, y_pred, transform=None, channel_index=0, threshold=
 
     if return_stats:
         return({
-            'dice':dice,
-            'jaccard':jaccard,
-            'precision':precision,
-            'recall':recall,
-            'Fmeasure':Fmeasure
+            'dice': dice,
+            'jaccard': jaccard,
+            'precision': precision,
+            'recall': recall,
+            'Fmeasure': Fmeasure
         })
