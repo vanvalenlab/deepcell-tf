@@ -130,14 +130,17 @@ def get_iou_matrix_quick(y_true, y_pred, crop_size, threshold=0.5):
 
     Intended to work on 2D arrays, but placing this function in a loop could extend to 3D or higher
 
-    Arguments
+    Arguments:
         pred (2D np.array): predicted, labeled mask
         truth (2D np.array): ground truth, labeled mask
         crop_size (int): Cropping images is faster to calculate but less accurate
         threshold (:obj:`float`, optional): If IOU is above threshold, cells are considered overlapping, default 0.5
 
-    Returns
+    Returns:
         iou_matrix: 1 indicates an object pair with an IOU score above threshold
+
+    Warning:
+        Currently non-functional because cropping functionality needs to be restored.
     """
 
     # Setup empty iou matrix based on number of true and predicted cells
@@ -354,15 +357,14 @@ def calc_2d_object_stats(iou_matrix):
     }
 
 
-def stats_pixelbased(y_true, y_pred, transform=None, channel_index=0, threshold=0.5, ndigits=4, return_stats=False):
+def stats_pixelbased(y_true, y_pred, channel_index=0, threshold=0.5, ndigits=4, return_stats=False):
     """Calculates pixel-based statistics (Dice, Jaccard, Precision, Recall, F-measure)
 
-    Takes in raw prediction and truth data. Applies a transformation to truth data. Before calculating statistics.
+    Takes in raw prediction and truth data. Applies labeling to prediction before calculating statistics.
 
     Args:
-        y_true (4D np.array): Raw ground truth annotations, (batch,x,y,channel)
+        y_true (4D np.array): Ground truth, labeled annotations, (batch,x,y,channel)
         y_pred (np.array): Raw predictions, (batch,x,y,channel)
-        transform (:obj:`str`, optional): Applies a transformation to y_true, default None
         channel_index (:obj:`int`, optional): Selects channel to compare for object stats, default 0
         threshold (:obj:`float`, optional): Threshold to use on prediction data to make binary
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
@@ -385,33 +387,29 @@ def stats_pixelbased(y_true, y_pred, transform=None, channel_index=0, threshold=
     def _round(x):
         return round(x, ndigits)
 
-    # Apply transformation if requested
-    if transform is not None:
-        y_true = _transform_masks(y_true, transform)
+    # Label predicted data
+    y_pred = skimage.measure.label(y_pred[:, :, :, channel_index] > threshold, connectivity=2)
 
-    # Select specified channel
-    y_true = y_true[:, :, :, channel_index]
-    y_pred = y_pred[:, :, :, channel_index]
+    # Reshape y_true from 4d to 3d
+    y_true = y_true[:, :, :, 0]
 
     if y_pred.shape != y_true.shape:
         raise ValueError('Shape of inputs need to match. Shape of prediction '
-                         'is: {}.  Shape of y_true after transform is: {}'.format(
+                         'is: {}.  Shape of y_true is: {}'.format(
                              y_pred.shape, y_true.shape))
 
-    if y_pred.sum() == 0 and y_true.sum() == 0:
+    # Convert labels to binary
+    pred = (y_pred != 0).astype('int')
+    truth = (y_true != 0).astype('int')
+
+    if pred.sum() == 0 and true.sum() == 0:
         logging.warning('DICE score is technically 1.0, '
                         'but prediction and truth arrays are empty. ')
         return 1.0
 
-    # Threshold to boolean then convert to binary 0,1
-    pred = (y_pred >= threshold).astype('int')
-    truth = (y_true >= threshold).astype('int')
-
-    # where pred and truth are both nonzero
-    intersection = pred * truth
-
-    # Add to find union and reset to binary
-    union = (pred + truth != 0).astype('int')
+    # Calculations for IOU
+    intersection = np.logical_and(pred, truth)
+    union = np.logical_or(pred, truth)
 
     # Sum gets count of positive pixels
     dice = (2 * intersection.sum() / (pred.sum() + truth.sum()))
