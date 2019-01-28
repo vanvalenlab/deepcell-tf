@@ -11,8 +11,6 @@ import skimage.io
 import skimage.measure
 from tensorflow.python.platform import tf_logging as logging
 
-from deepcell.image_generators import _transform_masks
-
 
 def im_prep(mask, prediction, win_size):
     """Reads images into ndarrays, and trims them to fit each other"""
@@ -227,23 +225,16 @@ def reshape_padded_tiled_2d(arr):
 
 def stats_objectbased(y_true,
                       y_pred,
-                      channel_index=0,
                       object_threshold=0.5,
                       ndigits=4,
                       crop_size=None):
     """
     Calculate summary statistics (DICE/Jaccard index and confusion matrix)
-    for a single channel on a per-object basis
-
-    `y_true` and `y_pred` should be the same shape after applying `transform`
-    to `y_true`. `channel_index` selects a single channel from `y_true` and `y_pred`
-    to use for stat calculations. Relies on  `skimage.measure.label` to define cell
-    objects which are used to calculate stats
+    for a labeled images on a per-object basis
 
     Args:
-        y_true (4D np.array): Labled ground truth annotations for a single channel (batch,x,y,channel)
-        y_pred (4D np.array): Predictions for a single channel (batch,x,y,channel)
-        channel_index (:obj:`int`, optional): Selects channel to compare for object stats, default 0
+        y_true (4D np.array): Labled ground truth annotations (batch,x,y,1)
+        y_pred (4D np.array): Labeled predictions (batch,x,y,1)
         object_threshold (:obj:`float`, optional): Sets criteria for jaccard index to declare object overlap
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         crop_size (:obj:`int`, optional): Enables cropping for object calculations, default None
@@ -255,18 +246,18 @@ def stats_objectbased(y_true,
     def _round(x):
         return round(x, ndigits)
 
-    # Reshape to be tiled 2D image
-    y_true = reshape_padded_tiled_2d(y_true[:, :, :, 0])
-    y_pred = reshape_padded_tiled_2d(y_pred[:, :, :, channel_index])
-
-    # Calculate labels using skimage
-    y_true = skimage.measure.label(y_true, connectivity=2)
-    y_pred = skimage.measure.label(y_pred > 0.5, connectivity=2)
-
     if y_pred.shape != y_true.shape:
         raise ValueError('Shape of inputs need to match. Shape of prediction '
-                         'is: {}.  Shape of y_true after transform is: {}'.format(
+                         'is: {}.  Shape of y_true is: {}'.format(
                              y_pred.shape, y_true.shape))
+
+    # Reshape to be tiled 2D image
+    y_true = reshape_padded_tiled_2d(y_true[:, :, :, 0])
+    y_pred = reshape_padded_tiled_2d(y_pred[:, :, :, 0])
+
+    # Calculate labels using skimage so labels unique across entire tile
+    y_true = skimage.measure.label(y_true, connectivity=2)
+    y_pred = skimage.measure.label(y_pred, connectivity=2)
 
     # Calculate iou matrix on reshaped, masked arrays
     if crop_size is not None:
@@ -357,16 +348,14 @@ def calc_2d_object_stats(iou_matrix):
     }
 
 
-def stats_pixelbased(y_true, y_pred, channel_index=0, threshold=0.5, ndigits=4, return_stats=False):
+def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
     """Calculates pixel-based statistics (Dice, Jaccard, Precision, Recall, F-measure)
 
     Takes in raw prediction and truth data. Applies labeling to prediction before calculating statistics.
 
     Args:
-        y_true (4D np.array): Ground truth, labeled annotations, (batch,x,y,channel)
-        y_pred (np.array): Raw predictions, (batch,x,y,channel)
-        channel_index (:obj:`int`, optional): Selects channel to compare for object stats, default 0
-        threshold (:obj:`float`, optional): Threshold to use on prediction data to make binary
+        y_true (4D np.array): Ground truth, labeled annotations, (batch,x,y,1)
+        y_pred (np.array): Labeled predictions, (batch,x,y,1)
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         return_stats (:obj:`bool`, optional): Returns dictionary of statistics, default False
 
@@ -387,12 +376,6 @@ def stats_pixelbased(y_true, y_pred, channel_index=0, threshold=0.5, ndigits=4, 
     def _round(x):
         return round(x, ndigits)
 
-    # Label predicted data
-    y_pred = skimage.measure.label(y_pred[:, :, :, channel_index] > threshold, connectivity=2)
-
-    # Reshape y_true from 4d to 3d
-    y_true = y_true[:, :, :, 0]
-
     if y_pred.shape != y_true.shape:
         raise ValueError('Shape of inputs need to match. Shape of prediction '
                          'is: {}.  Shape of y_true is: {}'.format(
@@ -402,7 +385,7 @@ def stats_pixelbased(y_true, y_pred, channel_index=0, threshold=0.5, ndigits=4, 
     pred = (y_pred != 0).astype('int')
     truth = (y_true != 0).astype('int')
 
-    if pred.sum() == 0 and true.sum() == 0:
+    if pred.sum() == 0 and truth.sum() == 0:
         logging.warning('DICE score is technically 1.0, '
                         'but prediction and truth arrays are empty. ')
         return 1.0
