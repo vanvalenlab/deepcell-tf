@@ -226,8 +226,6 @@ def stats_objectbased(y_true,
                       y_pred,
                       channel_index=0,
                       object_threshold=0.5,
-                      dice_iou_threshold=.5,
-                      merge_iou_threshold=1e-5,
                       ndigits=4,
                       crop_size=None):
     """
@@ -244,8 +242,6 @@ def stats_objectbased(y_true,
         y_pred (4D np.array): Predictions for a single channel (batch,x,y,channel)
         channel_index (:obj:`int`, optional): Selects channel to compare for object stats, default 0
         object_threshold (:obj:`float`, optional): Sets criteria for jaccard index to declare object overlap
-        dice_iou_threshold (:obj:`float`, optional): default, 0.5
-        merge_iou_threshold (:obj:`float`, optional): default, 1e-5
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         crop_size (:obj:`int`, optional): Enables cropping for object calculations, default None
 
@@ -276,72 +272,42 @@ def stats_objectbased(y_true,
     else:
         iou_matrix = calc_object_ious_fast(y_true, y_pred, object_threshold)
 
-    # dice, jaccard = get_dice_jaccard(stats_iou_matrix)
+    # Get performance stats
+    stats = calc_2d_object_stats(iou_matrix)
 
-    # # Calculate false negative/positive rates
-    # false_negatives = 0
-    # for n in range(stats_iou_matrix.shape[0]):
-    #     if stats_iou_matrix[n, :].sum() == 0:
-    #         false_negatives += 1
+    false_pos_perc_err = stats['false_pos'] / (stats['false_pos'] + stats['false_neg'])
+    false_neg_perc_err = stats['false_neg'] / (stats['false_pos'] + stats['false_neg'])
 
-    # false_positives = 0
-    # for m in range(stats_iou_matrix.shape[1]):
-    #     if stats_iou_matrix[:, m].sum() == 0:
-    #         false_positives += 1
+    false_pos_perc_pred = stats['false_pos'] / stats['pred_cells']
+    false_neg_perc_truth = stats['false_neg'] / stats['true_cells']
 
-    # false_pos_perc_err = false_positives / (false_positives + false_negatives)
-    # false_neg_perc_err = false_negatives / (false_positives + false_negatives)
+    perc_merged = stats['merge'] / stats['true_cells']
+    perc_divided = stats['split'] / stats['true_cells']
 
-    # false_pos_perc_pred = false_positives / stats_iou_matrix.shape[1]
-    # false_neg_perc_truth = false_negatives / stats_iou_matrix.shape[0]
+    acc = (stats['pred_cells'] - stats['false_pos']) / stats['true_cells']
 
-    # # Calculate merge/division error rates
-    # merge_div_iou_matrix = get_iou_matrix_quick(
-    #     y_true, y_pred, merge_iou_threshold, crop_size)
+    print('\n____________________Object-based statistics____________________\n')
+    print('Intersection over Union thresholded at {} for object detection'.format(object_threshold))
+    print('Dice/F1 index: {}\nJaccard index: {}'.format(
+        _round(stats['dice']), _round(stats['jaccard'])))
+    print('Number of cells predicted:', stats['pred_cells'])
+    print('Number of cells present in ground truth:', stats['true_cells'])
+    print('Accuracy: {}%\n'.format(_round(acc*100)))
 
-    # divided = 0
-    # for n in range(merge_div_iou_matrix.shape[0]):
-    #     overlaps = merge_div_iou_matrix[n, :].sum()
-    #     if overlaps > 1:
-    #         divided += overlaps - 1
+    print('#false positives: {}\t% of total error: {}\t% of predicted incorrect: {}'.format(
+        _round(stats['false_pos']),
+        _round(false_pos_perc_err*100),
+        _round(false_pos_perc_pred*100)))
 
-    # merged = 0
-    # for m in range(merge_div_iou_matrix.shape[1]):
-    #     overlaps = merge_div_iou_matrix[:, m].sum()
-    #     if overlaps > 1:
-    #         merged += overlaps - 1
+    print('#false negatives: {}\t% of total error: {}\t% of ground truth missed: {}'.format(
+        _round(stats['false_neg']),
+        _round(false_neg_perc_err*100),
+        _round(false_neg_perc_truth*100)))
 
-    # perc_merged = merged / stats_iou_matrix.shape[0]
-    # perc_divided = divided / stats_iou_matrix.shape[0]
-
-    # acc = (stats_iou_matrix.shape[1] - false_positives) / stats_iou_matrix.shape[0]
-    # acc = _round(100 * acc)
-
-    # print('\n____________________Object-based statistics____________________\n')
-    # print('Intersection over Union thresholded at:', dice_iou_threshold)
-    # print('dice/F1 index: {}\njaccard index: {}'.format(
-    #     _round(dice), _round(jaccard)))
-    # print('Number of cells predicted:', stats_iou_matrix.shape[1])
-    # print('Number of cells present in ground truth:', stats_iou_matrix.shape[0])
-    # print('Accuracy: {}%\n'.format(acc))
-
-    # print('#false positives: {}\t% of total error: {}\t% of predicted incorrect: {}'.format(
-    #     _round(false_positives),
-    #     _round(false_pos_perc_err),
-    #     _round(false_pos_perc_pred)))
-
-    # print('#false negatives: {}\t% of total error: {}\t% of ground truth missed: {}'.format(
-    #     _round(false_negatives),
-    #     _round(false_neg_perc_err),
-    #     _round(false_neg_perc_truth)))
-
-    # print('\nIntersection over Union thresholded at:', merge_iou_threshold)
-    # print('#incorrect merges: {}\t% of ground truth merged: {}'.format(
-    #     merged, _round(perc_merged)))
-    # print('#incorrect divisions: {}\t% of ground truth divided: {}'.format(
-    #     divided, _round(perc_divided)))
-
-    return iou_matrix
+    print('#incorrect merges: {}\t% of ground truth merged: {}'.format(
+        stats['merge'], _round(perc_merged*100)))
+    print('#incorrect divisions: {}\t% of ground truth divided: {}'.format(
+        stats['split'], _round(perc_divided*100)))
 
 
 def calc_2d_object_stats(iou_matrix):
@@ -358,26 +324,33 @@ def calc_2d_object_stats(iou_matrix):
 
     # Calculate values based on projecting along prediction axis
     pred_proj = iou_matrix.sum(axis=1)
-    # Overcounts true positives when there is a merge
-    # truth_true_pos = np.count_nonzero(pred_proj == 1)
+    # Zeros (aka absence of hits) correspond to true cells missed by prediction
     false_neg = np.count_nonzero(pred_proj == 0)
+    # More than 2 hits corresponds to true cells hit twice by prediction, aka split
     split = np.count_nonzero(pred_proj >= 2)
 
     # Calculate values based on projecting along truth axis
     truth_proj = iou_matrix.sum(axis=0)
+    # Single hit corresponds to predicted cells that match to true cells
     pred_true_pos = np.count_nonzero(truth_proj == 1)
+    # Empty hits indicate predicted cells that do not exist in true cells
     false_pos = np.count_nonzero(truth_proj == 0)
+    # More than 2 hits indicates more than 2 true cells corresponding to 1 predicted cell
     merge = np.count_nonzero(truth_proj >= 2)
+
+    # Calc dice jaccard stats for objects
+    dice, jaccard = get_dice_jaccard(iou_matrix)
 
     return {
         'true_cells': true_cells,
         'pred_cells': pred_cells,
-        # 'truth_true_pos': truth_true_pos,
         'false_neg': false_neg,
         'split': split,
         'pred_true_pos': pred_true_pos,
         'false_pos': false_pos,
-        'merge': merge
+        'merge': merge,
+        'dice': dice,
+        'jaccard': jaccard
     }
 
 
