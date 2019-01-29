@@ -233,8 +233,8 @@ def stats_objectbased(y_true,
     for a labeled images on a per-object basis
 
     Args:
-        y_true (4D np.array): Labled ground truth annotations (batch,x,y,1)
-        y_pred (4D np.array): Labeled predictions (batch,x,y,1)
+        y_true (3D np.array): Labled ground truth annotations (batch,x,y)
+        y_pred (3D np.array): Labeled predictions (batch,x,y)
         object_threshold (:obj:`float`, optional): Sets criteria for jaccard index to declare object overlap
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         crop_size (:obj:`int`, optional): Enables cropping for object calculations, default None
@@ -252,8 +252,8 @@ def stats_objectbased(y_true,
                              y_pred.shape, y_true.shape))
 
     # Reshape to be tiled 2D image
-    y_true = reshape_padded_tiled_2d(y_true[:, :, :, 0])
-    y_pred = reshape_padded_tiled_2d(y_pred[:, :, :, 0])
+    y_true = reshape_padded_tiled_2d(y_true[:, :, :])
+    y_pred = reshape_padded_tiled_2d(y_pred[:, :, :])
 
     # Calculate labels using skimage so labels unique across entire tile
     y_true = skimage.measure.label(y_true, connectivity=2)
