@@ -122,46 +122,46 @@ def calc_object_ious_fast(y_true, y_pred, threshold):
     return iou_matrix
 
 
-def get_iou_matrix_quick(y_true, y_pred, crop_size, threshold=0.5):
-    """Calculate Intersection-Over-Union Matrix for ground truth and predictions
-    based on object labels
+# def get_iou_matrix_quick(y_true, y_pred, crop_size, threshold=0.5):
+#     """Calculate Intersection-Over-Union Matrix for ground truth and predictions
+#     based on object labels
 
-    Intended to work on 2D arrays, but placing this function in a loop could extend to 3D or higher
+#     Intended to work on 2D arrays, but placing this function in a loop could extend to 3D or higher
 
-    Arguments:
-        pred (2D np.array): predicted, labeled mask
-        truth (2D np.array): ground truth, labeled mask
-        crop_size (int): Cropping images is faster to calculate but less accurate
-        threshold (:obj:`float`, optional): If IOU is above threshold, cells are considered overlapping, default 0.5
+#     Arguments:
+#         pred (2D np.array): predicted, labeled mask
+#         truth (2D np.array): ground truth, labeled mask
+#         crop_size (int): Cropping images is faster to calculate but less accurate
+#         threshold (:obj:`float`, optional): If IOU is above threshold, cells are considered overlapping, default 0.5
 
-    Returns:
-        iou_matrix: 1 indicates an object pair with an IOU score above threshold
+#     Returns:
+#         iou_matrix: 1 indicates an object pair with an IOU score above threshold
 
-    Warning:
-        Currently non-functional because cropping functionality needs to be restored.
-    """
+#     Warning:
+#         Currently non-functional because cropping functionality needs to be restored.
+#     """
 
-    # Setup empty iou matrix based on number of true and predicted cells
-    iou_matrix = np.zeros((y_true.max(), y_pred.max()))
-    print(iou_matrix.shape)
-    print('true', y_true.max(), 'pred', y_pred.max())
+#     # Setup empty iou matrix based on number of true and predicted cells
+#     iou_matrix = np.zeros((y_true.max(), y_pred.max()))
+#     print(iou_matrix.shape)
+#     print('true', y_true.max(), 'pred', y_pred.max())
 
-    # Get image size parameters, assumes 2D inputs
-    x_size = y_true.shape[0]
-    y_size = y_true.shape[1]
+#     # Get image size parameters, assumes 2D inputs
+#     x_size = y_true.shape[0]
+#     y_size = y_true.shape[1]
 
-    # Crop input images and calculate the iou's for the cells present
-    # Updates iou_matrix value during each loop
-    # Consider using np.split as a potentially faster alternative
-    for x in range(0, x_size, crop_size):
-        for y in range(0, y_size, crop_size):
-            crop_pred = y_pred[x:x + crop_size, y:y + crop_size]
-            crop_truth = y_true[x:x + crop_size, y:y + crop_size]
-            # iou_matrix = calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix)
-            iou_matrix = calc_object_ious_fast(
-                crop_truth, crop_pred, threshold)
+#     # Crop input images and calculate the iou's for the cells present
+#     # Updates iou_matrix value during each loop
+#     # Consider using np.split as a potentially faster alternative
+#     for x in range(0, x_size, crop_size):
+#         for y in range(0, y_size, crop_size):
+#             crop_pred = y_pred[x:x + crop_size, y:y + crop_size]
+#             crop_truth = y_true[x:x + crop_size, y:y + crop_size]
+#             # iou_matrix = calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix)
+#             iou_matrix = calc_object_ious_fast(
+#                 crop_truth, crop_pred, threshold)
 
-    return iou_matrix
+#     return iou_matrix
 
 
 def get_dice_jaccard(iou_matrix):
@@ -409,10 +409,10 @@ def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
         _round(precision), _round(recall), _round(Fmeasure)))
 
     if return_stats:
-        return({
+        return {
             'dice': dice,
             'jaccard': jaccard,
             'precision': precision,
             'recall': recall,
             'Fmeasure': Fmeasure
-        })
+        }
