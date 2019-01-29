@@ -126,13 +126,15 @@ def calc_object_ious_fast(y_true, y_pred, threshold):
 #     """Calculate Intersection-Over-Union Matrix for ground truth and predictions
 #     based on object labels
 
-#     Intended to work on 2D arrays, but placing this function in a loop could extend to 3D or higher
+#     Intended to work on 2D arrays,
+#     but placing this function in a loop could extend to 3D or higher
 
 #     Arguments:
 #         pred (2D np.array): predicted, labeled mask
 #         truth (2D np.array): ground truth, labeled mask
 #         crop_size (int): Cropping images is faster to calculate but less accurate
-#         threshold (:obj:`float`, optional): If IOU is above threshold, cells are considered overlapping, default 0.5
+#         threshold (:obj:`float`, optional): If IOU is above threshold,
+#            cells are considered overlapping, default 0.5
 
 #     Returns:
 #         iou_matrix: 1 indicates an object pair with an IOU score above threshold
@@ -235,12 +237,14 @@ def stats_objectbased(y_true,
     Args:
         y_true (3D np.array): Labled ground truth annotations (batch,x,y)
         y_pred (3D np.array): Labeled predictions (batch,x,y)
-        object_threshold (:obj:`float`, optional): Sets criteria for jaccard index to declare object overlap
+        object_threshold (:obj:`float`, optional): Sets criteria for jaccard index
+            to declare object overlap
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         crop_size (:obj:`int`, optional): Enables cropping for object calculations, default None
 
     Raises:
         ValueError: If y_true and y_pred are not the same shape
+        ValueError: If cropping specified, because cropping not currently available
     """
 
     def _round(x):
@@ -261,8 +265,9 @@ def stats_objectbased(y_true,
 
     # Calculate iou matrix on reshaped, masked arrays
     if crop_size is not None:
-        iou_matrix = get_iou_matrix_quick(
-            y_true, y_pred, crop_size, threshold=object_threshold)
+        raise ValueError('Cropping functionality is not currently available.')
+        # iou_matrix = get_iou_matrix_quick(
+        #     y_true, y_pred, crop_size, threshold=object_threshold)
     else:
         iou_matrix = calc_object_ious_fast(y_true, y_pred, object_threshold)
 
@@ -351,7 +356,8 @@ def calc_2d_object_stats(iou_matrix):
 def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
     """Calculates pixel-based statistics (Dice, Jaccard, Precision, Recall, F-measure)
 
-    Takes in raw prediction and truth data. Applies labeling to prediction before calculating statistics.
+    Takes in raw prediction and truth data. Applies labeling to prediction
+        before calculating statistics.
 
     Args:
         y_true (4D np.array): Ground truth, labeled annotations, (batch,x,y,1)
