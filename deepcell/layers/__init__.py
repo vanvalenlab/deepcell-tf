@@ -34,6 +34,8 @@ from deepcell.layers.pooling import *
 from deepcell.layers.resize import *
 from deepcell.layers.tensor_product import *
 from deepcell.layers.padding import *
+from deepcell.layers.filter_detections import *
+from deepcell.layers.retinanet import *
 
 del absolute_import
 del division
