@@ -23,7 +23,9 @@ RUN pip install -r /opt/deepcell-tf/requirements.txt
 COPY deepcell /opt/deepcell-tf/deepcell
 
 # Install deepcell via setup.py
-RUN pip install /opt/deepcell-tf
+RUN pip install /opt/deepcell-tf && \
+    cd /opt/deepcell-tf && \
+    python setup.py build_ext --inplace
 
 # Copy over deepcell notebooks
 COPY scripts/ /notebooks/
