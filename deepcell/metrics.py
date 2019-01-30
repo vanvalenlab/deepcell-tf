@@ -60,7 +60,7 @@ def calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix):
     return iou_matrix
 
 
-def calc_object_ious_fast(y_true, y_pred, threshold):
+def calc_object_ious_fast(y_true, y_pred):
     """
     Identifies cell objects within a cropped roi that have an IOU above `threshold`
     which results in them being marked as a hit
@@ -68,7 +68,6 @@ def calc_object_ious_fast(y_true, y_pred, threshold):
     Args:
         crop_truth (2D np.array): Cropped numpy array of labeled truth mask
         crop_pred (2D np.array): Cropped numpy array of labeled prediction mask
-        threshold (float): Threshold for accepting IOU score as a hit
 
     Returns:
         iou_matrix: after updating with any hits found in this crop region
@@ -106,18 +105,16 @@ def calc_object_ious_fast(y_true, y_pred, threshold):
             union = np.logical_or(y_true == tid[0], y_pred == pid[0])
             iou = np.sum(intersection) / np.sum(union)
 
-            if iou > threshold:
-                iou_matrix[tid - 1, pid - 1] = 1
+            iou_matrix[tid - 1, pid - 1] = iou
 
         else:
             intersection = np.logical_and(_joint_or(y_true, tid), _joint_or(y_pred, pid))
             union = np.logical_or(_joint_or(y_true, tid), _joint_or(y_pred, pid))
             iou = np.sum(intersection) / np.sum(union)
 
-            if iou > threshold:
-                for t in tid:
-                    for p in pid:
-                        iou_matrix[t - 1, p - 1] = 1
+            for t in tid:
+                for p in pid:
+                    iou_matrix[t - 1, p - 1] = iou
 
     return iou_matrix
 
@@ -229,7 +226,8 @@ def stats_objectbased(y_true,
                       y_pred,
                       object_threshold=0.5,
                       ndigits=4,
-                      crop_size=None):
+                      crop_size=None,
+                      return_iou=False):
     """
     Calculate summary statistics (DICE/Jaccard index and confusion matrix)
     for a labeled images on a per-object basis
@@ -241,6 +239,10 @@ def stats_objectbased(y_true,
             to declare object overlap
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         crop_size (:obj:`int`, optional): Enables cropping for object calculations, default None
+        return_iou (:obj:`bool`, optional): Returns iou_matrix if True, default False
+
+    Returns:
+        iou_matrix: np.array containing iou scores
 
     Raises:
         ValueError: If y_true and y_pred are not the same shape
@@ -269,10 +271,10 @@ def stats_objectbased(y_true,
         # iou_matrix = get_iou_matrix_quick(
         #     y_true, y_pred, crop_size, threshold=object_threshold)
     else:
-        iou_matrix = calc_object_ious_fast(y_true, y_pred, object_threshold)
+        iou_matrix = calc_object_ious_fast(y_true, y_pred)
 
     # Get performance stats
-    stats = calc_2d_object_stats(iou_matrix)
+    stats = calc_2d_object_stats((iou_matrix > object_threshold).astype('int'))
 
     false_pos_perc_err = stats['false_pos'] / (stats['false_pos'] + stats['false_neg'])
     false_neg_perc_err = stats['false_neg'] / (stats['false_pos'] + stats['false_neg'])
@@ -294,6 +296,8 @@ def stats_objectbased(y_true,
     print('Number of cells present in ground truth:', stats['true_cells'])
     print('Accuracy: {}%\n'.format(_round(acc * 100)))
 
+    print('#true positives: {}'.format(_round(stats['pred_true_pos'])))
+
     print('#false positives: {}\t% of total error: {}\t% of predicted incorrect: {}'.format(
         _round(stats['false_pos']),
         _round(false_pos_perc_err * 100),
@@ -308,6 +312,9 @@ def stats_objectbased(y_true,
         stats['merge'], _round(perc_merged * 100)))
     print('#incorrect divisions: {}\t% of ground truth divided: {}'.format(
         stats['split'], _round(perc_divided * 100)))
+
+    if return_iou:
+        return iou_matrix
 
 
 def calc_2d_object_stats(iou_matrix):
