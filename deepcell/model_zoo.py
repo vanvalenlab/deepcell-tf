@@ -50,6 +50,7 @@ from deepcell.layers import ImageNormalization2D, ImageNormalization3D
 from deepcell.layers import Location2D, Location3D
 from deepcell.layers import ReflectionPadding2D, ReflectionPadding3D
 from deepcell.layers import TensorProduct
+from deepcell.utils.retinanet_anchor_utils import AnchorParameters
 
 
 """
@@ -468,10 +469,6 @@ def bn_feature_net_81x81_3D(**kwargs):
 """
 RetinaNet Models adapted from https://github.com/fizyr/keras-retinanet
 """
-
-from tensorflow import keras
-from tf_keras_retinanet.utils.anchors import AnchorParameters
-from tf_keras_retinanet.models import assert_training_model
 
 
 def default_classification_model(num_classes,
