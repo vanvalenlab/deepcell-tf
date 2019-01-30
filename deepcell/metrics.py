@@ -3,7 +3,7 @@ metrics.py
 
 Custom error metrics
 
-@author: cpavelchek
+@author: cpavelchek, msschwartz21
 """
 
 import numpy as np
@@ -117,7 +117,7 @@ def calc_object_ious_fast(y_true, y_pred, threshold):
             if iou > threshold:
                 for t in tid:
                     for p in pid:
-                        iou_matrix[t-1, p-1] = 1
+                        iou_matrix[t - 1, p - 1] = 1
 
     return iou_matrix
 
@@ -201,13 +201,13 @@ def reshape_padded_tiled_2d(arr):
     # Add border of zeros around input arr
     if len(arr.shape) == 4:
         pad = np.zeros((arr.shape[0],
-                        arr.shape[1]+2,
-                        arr.shape[2]+2,
+                        arr.shape[1] + 2,
+                        arr.shape[2] + 2,
                         arr.shape[3]))
     elif len(arr.shape) == 3:
         pad = np.zeros((arr.shape[0],
-                        arr.shape[1]+2,
-                        arr.shape[2]+2))
+                        arr.shape[1] + 2,
+                        arr.shape[2] + 2))
     else:
         raise ValueError('Only supports input of dimensions 3 or 4. '
                          'Array of dimension {} received as input'.format(
@@ -286,27 +286,28 @@ def stats_objectbased(y_true,
     acc = (stats['pred_cells'] - stats['false_pos']) / stats['true_cells']
 
     print('\n____________________Object-based statistics____________________\n')
-    print('Intersection over Union thresholded at {} for object detection'.format(object_threshold))
+    print('Intersection over Union thresholded at {} for object detection'.format(
+        object_threshold))
     print('Dice/F1 index: {}\nJaccard index: {}'.format(
         _round(stats['dice']), _round(stats['jaccard'])))
     print('Number of cells predicted:', stats['pred_cells'])
     print('Number of cells present in ground truth:', stats['true_cells'])
-    print('Accuracy: {}%\n'.format(_round(acc*100)))
+    print('Accuracy: {}%\n'.format(_round(acc * 100)))
 
     print('#false positives: {}\t% of total error: {}\t% of predicted incorrect: {}'.format(
         _round(stats['false_pos']),
-        _round(false_pos_perc_err*100),
-        _round(false_pos_perc_pred*100)))
+        _round(false_pos_perc_err * 100),
+        _round(false_pos_perc_pred * 100)))
 
     print('#false negatives: {}\t% of total error: {}\t% of ground truth missed: {}'.format(
         _round(stats['false_neg']),
-        _round(false_neg_perc_err*100),
-        _round(false_neg_perc_truth*100)))
+        _round(false_neg_perc_err * 100),
+        _round(false_neg_perc_truth * 100)))
 
     print('#incorrect merges: {}\t% of ground truth merged: {}'.format(
-        stats['merge'], _round(perc_merged*100)))
+        stats['merge'], _round(perc_merged * 100)))
     print('#incorrect divisions: {}\t% of ground truth divided: {}'.format(
-        stats['split'], _round(perc_divided*100)))
+        stats['split'], _round(perc_divided * 100)))
 
 
 def calc_2d_object_stats(iou_matrix):

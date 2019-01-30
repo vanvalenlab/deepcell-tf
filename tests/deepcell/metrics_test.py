@@ -1,7 +1,6 @@
 import numpy as np
 from skimage.measure import label
 from tensorflow.python.platform import test
-from tensorflow.python.keras import backend as K
 
 from deepcell import metrics
 
@@ -25,13 +24,13 @@ def _generate_test_masks():
 def _generate_stack_3d():
     img_w = img_h = 30
     imarray = np.random.randint(0, high=1, size=(40, img_w, img_h))
-    return(imarray)
+    return imarray
 
 
 def _generate_stack_4d():
     img_w = img_h = 30
     imarray = np.random.randint(0, high=1, size=(40, img_w, img_h, 2))
-    return(imarray)
+    return imarray
 
 
 class TransformUtilsTest(test.TestCase):
@@ -82,7 +81,9 @@ class TransformUtilsTest(test.TestCase):
 
         # Dice and jaccard values should be between 0 and 1
         d, j = metrics.get_dice_jaccard(iou)
-        self.assertAllInRange([d, j], 0, 1)
+        # self.assertAllInRange([d, j], 0, 1)
+        self.assertTrue((d >= 0) & (d <= 1))
+        self.assertTrue((j >= 0) & (j <= 1))
 
     def test_2d_object_stats(self):
         y_true = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
