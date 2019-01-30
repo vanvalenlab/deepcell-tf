@@ -57,7 +57,7 @@ class TransformUtilsTest(test.TestCase):
         y_true = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
         y_pred = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
 
-        iou = metrics.calc_object_ious_fast(y_true, y_pred, 0.5)
+        iou = metrics.calc_object_ious_fast(y_true, y_pred)
 
         # Check that output dimensions are 2d
         self.assertEqual(len(iou.shape), 2)
@@ -77,10 +77,10 @@ class TransformUtilsTest(test.TestCase):
         y_true = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
         y_pred = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
 
-        iou = metrics.calc_object_ious_fast(y_true, y_pred, 0.5)
+        iou = metrics.calc_object_ious_fast(y_true, y_pred)
 
         # Dice and jaccard values should be between 0 and 1
-        d, j = metrics.get_dice_jaccard(iou)
+        d, j = metrics.get_dice_jaccard((iou > 0.5).astype('int'))
         # self.assertAllInRange([d, j], 0, 1)
         self.assertTrue((d >= 0) & (d <= 1))
         self.assertTrue((j >= 0) & (j <= 1))
@@ -88,9 +88,9 @@ class TransformUtilsTest(test.TestCase):
     def test_2d_object_stats(self):
         y_true = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
         y_pred = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
-        iou = metrics.calc_object_ious_fast(y_true, y_pred, 0.5)
+        iou = metrics.calc_object_ious_fast(y_true, y_pred)
 
-        stats = metrics.calc_2d_object_stats(iou)
+        stats = metrics.calc_2d_object_stats((iou > 0.5).astype('int'))
         self.assertEqual(type(stats), dict)
 
         for k in stats.keys():
