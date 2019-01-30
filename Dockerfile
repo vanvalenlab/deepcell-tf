@@ -9,9 +9,9 @@ RUN mkdir /notebooks/intro_to_tensorflow && \
 
 # System maintenance
 RUN apt-get update && apt-get install -y \
-        git \
-        python3-tk \
-        libsm6 && \
+    git \
+    python3-tk \
+    libsm6 && \
     rm -rf /var/lib/apt/lists/* && \
     /usr/local/bin/pip install --upgrade pip
 
@@ -30,5 +30,3 @@ COPY scripts/ /notebooks/
 
 # Change matplotlibrc file to use the Agg backend
 RUN echo "backend : Agg" > /usr/local/lib/python3.5/dist-packages/matplotlib/mpl-data/matplotlibrc
-
-ENTRYPOINT ["jupyter","lab","--ip=0.0.0.0","--allow-root"]
