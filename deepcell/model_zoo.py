@@ -40,7 +40,7 @@ from tensorflow.python.keras.layers import Activation, Softmax
 from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.layers import ZeroPadding2D, ZeroPadding3D
 from tensorflow.python.keras.regularizers import l2
-from tensorflow.python.keras.initializers import normal
+from tensorflow.python.keras.initializers import RandomNormal
 
 from deepcell import initializers
 from deepcell.layers import FilterDetections
@@ -508,14 +508,14 @@ def default_classification_model(num_classes,
             filters=classification_feature_size,
             activation='relu',
             name='pyramid_classification_{}'.format(i),
-            kernel_initializer=normal(mean=0.0, stddev=0.01, seed=None),
+            kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None),
             bias_initializer='zeros',
             **options
         )(outputs)
 
     outputs = Conv2D(
         filters=num_classes * num_anchors,
-        kernel_initializer=normal(mean=0.0, stddev=0.01, seed=None),
+        kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None),
         bias_initializer=initializers.PriorProbability(probability=prior_probability),
         name='pyramid_classification',
         **options
@@ -557,8 +557,7 @@ def default_regression_model(num_values,
         'kernel_size': 3,
         'strides': 1,
         'padding': 'same',
-        'kernel_initializer': normal(
-            mean=0.0, stddev=0.01, seed=None),
+        'kernel_initializer': RandomNormal(mean=0.0, stddev=0.01, seed=None),
         'bias_initializer': 'zeros'
     }
 
