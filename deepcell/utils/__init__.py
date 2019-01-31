@@ -62,6 +62,8 @@ from deepcell.utils.transform_utils import distance_transform_2d
 from deepcell.utils.transform_utils import distance_transform_3d
 from deepcell.utils.transform_utils import deepcell_transform
 
+del warnings
+
 del absolute_import
 del division
 del print_function
