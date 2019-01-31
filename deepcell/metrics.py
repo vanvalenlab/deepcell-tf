@@ -368,8 +368,8 @@ def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
         before calculating statistics.
 
     Args:
-        y_true (4D np.array): Ground truth, labeled annotations, (batch,x,y,1)
-        y_pred (np.array): Labeled predictions, (batch,x,y,1)
+        y_true (3D np.array): Binary ground truth annotations for a single feature, (batch,x,y)
+        y_pred (3D np.array): Binary predictions for a single feature, (batch,x,y)
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         return_stats (:obj:`bool`, optional): Returns dictionary of statistics, default False
 
@@ -395,14 +395,12 @@ def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
                          'is: {}.  Shape of y_true is: {}'.format(
                              y_pred.shape, y_true.shape))
 
-    # Convert labels to binary
-    pred = (y_pred != 0).astype('int')
-    truth = (y_true != 0).astype('int')
+    pred = y_pred
+    truth = y_true
 
     if pred.sum() == 0 and truth.sum() == 0:
         logging.warning('DICE score is technically 1.0, '
                         'but prediction and truth arrays are empty. ')
-        return 1.0
 
     # Calculations for IOU
     intersection = np.logical_and(pred, truth)
