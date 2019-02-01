@@ -1910,7 +1910,7 @@ class RetinaNetIterator(Iterator):
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
 
-        target_list = []
+        targets_list = []
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -1933,22 +1933,16 @@ class RetinaNetIterator(Iterator):
             annotations = {'labels': labels, 'bboxes': bboxes}
             annotations = self.filter_annotations(x, annotations)
 
-            anchors = self.generate_anchors(max_shape)
-
-            max_shape = tuple(max(image.shape[x]
-                                    for image in images)
-                                for x in range(3))
-
-            anchors = self.generate_anchors(max_shape)
+            anchors = self.generate_anchors(batch_x.shape)
 
             targets = self.compute_anchor_targets(
                 anchors,
-                images,
+                batch_x,
                 annotations,
                 self.num_classes
             )
 
-            target_list.append(targets)
+            targets_list.append(targets)
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
@@ -1960,18 +1954,6 @@ class RetinaNetIterator(Iterator):
                     hash=np.random.randint(1e4),
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
-
-                if self.y is not None:
-                    # Save argmax of y batch
-                    img_y = np.argmax(batch_y[i], axis=self.channel_axis - 1)
-                    img_y = np.expand_dims(img_y, axis=self.channel_axis - 1)
-                    img = array_to_img(img_y, self.data_format, scale=True)
-                    fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
-                        prefix=self.save_prefix,
-                        index=j,
-                        hash=np.random.randint(1e4),
-                        format=self.save_format)
-                    img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
             return batch_x
