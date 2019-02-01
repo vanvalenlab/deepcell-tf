@@ -173,7 +173,7 @@ class ImageSampleArrayIterator(Iterator):
     """Iterator yielding data from a sampled Numpy array.
     Sampling will generate a `window_size` image classifying the center pixel,
 
-    Arguments:
+    Args:
         train_dict: dictionary consisting of numpy arrays for `X` and `y`.
         image_data_generator: Instance of `ImageDataGenerator`
             to use for random transformations and normalization.
@@ -361,7 +361,7 @@ class SampleDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
     The data will be looped over (in batches).
 
-    Arguments:
+    Args:
         featurewise_center: boolean, set input mean to 0 over the dataset,
             feature-wise.
         samplewise_center: boolean, set each sample mean to 0.
@@ -431,7 +431,7 @@ class SampleDataGenerator(ImageDataGenerator):
              save_format='png'):
         """Generates batches of augmented/normalized data with given arrays.
 
-        Arguments:
+        Args:
             train_dict: dictionary consisting of numpy arrays for `X` and `y`.
             image_data_generator: Instance of `ImageDataGenerator`
                 to use for random transformations and normalization.
@@ -471,7 +471,7 @@ class SampleDataGenerator(ImageDataGenerator):
 class ImageFullyConvIterator(Iterator):
     """Iterator yielding data from Numpy arrayss (`X and `y`).
 
-    Arguments:
+    Args:
         train_dict: dictionary consisting of numpy arrays for `X` and `y`.
         image_data_generator: Instance of `ImageDataGenerator`
             to use for random transformations and normalization.
@@ -589,7 +589,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
     The data will be looped over (in batches).
 
-    Arguments:
+    Args:
         featurewise_center: boolean, set input mean to 0 over the dataset,
             feature-wise.
         samplewise_center: boolean, set each sample mean to 0.
@@ -657,7 +657,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
              save_format='png'):
         """Generates batches of augmented/normalized data with given arrays.
 
-        Arguments:
+        Args:
             train_dict: dictionary of X and y tensors. Both should be rank 4.
             batch_size: int (default: 1).
             shuffle: boolean (default: True).
@@ -718,7 +718,7 @@ class MovieDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
     The data will be looped over (in batches).
 
-    Arguments:
+    Args:
         featurewise_center: boolean, set input mean to 0 over the dataset,
             feature-wise.
         samplewise_center: boolean, set each sample mean to 0.
@@ -801,7 +801,7 @@ class MovieDataGenerator(ImageDataGenerator):
              save_format='png'):
         """Generates batches of augmented/normalized data with given arrays.
 
-        Arguments:
+        Args:
             train_dict: dictionary of X and y tensors. Both should be rank 5.
             frames_per_batch: int (default: 10).
                 size of z axis in generated batches
@@ -1008,7 +1008,7 @@ class MovieDataGenerator(ImageDataGenerator):
 class MovieArrayIterator(Iterator):
     """Iterator yielding data from two 5D Numpy arrays (`X and `y`).
 
-    Arguments:
+    Args:
         train_dict: dictionary consisting of numpy arrays for `X` and `y`.
         movie_data_generator: Instance of `MovieDataGenerator`
             to use for random transformations and normalization.
@@ -1179,7 +1179,7 @@ class SampleMovieArrayIterator(Iterator):
     """Iterator yielding data from two 5D Numpy arrays (`X and `y`).
     Sampling will generate a `window_size` voxel classifying the center pixel,
 
-    Arguments:
+    Args:
         train_dict: dictionary consisting of numpy arrays for `X` and `y`.
         movie_data_generator: Instance of `MovieDataGenerator`
             to use for random transformations and normalization.
@@ -1380,7 +1380,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
     The data will be looped over (in batches).
 
-    Arguments:
+    Args:
         featurewise_center: boolean, set input mean to 0 over the dataset,
             feature-wise.
         samplewise_center: boolean, set each sample mean to 0.
@@ -1450,7 +1450,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
              save_format='png'):
         """Generates batches of augmented/normalized data with given arrays.
 
-        Arguments:
+        Args:
             train_dict: dictionary of X and y tensors. Both should be rank 5.
             window_size: tuple (default: (30, 30 5)).
                 The size of the sampled voxels to generate.
@@ -1717,112 +1717,200 @@ class SiameseIterator(Iterator):
 
 
 """
-Bounding box generators adapted from retina net library
+RetinaNet and MaskRCNN Generators
 """
 
 
-class BoundingBoxIterator(Iterator):
-    def __init__(self, train_dict, image_data_generator,
-                 batch_size=1, shuffle=False, seed=None,
+class RetinaNetGenerator(ImageDataGenerator):
+    """Generates batches of tensor image data with real-time data augmentation.
+    The data will be looped over (in batches).
+
+    Args:
+        featurewise_center: boolean, set input mean to 0 over the dataset,
+            feature-wise.
+        samplewise_center: boolean, set each sample mean to 0.
+        featurewise_std_normalization: boolean, divide inputs by std
+            of the dataset, feature-wise.
+        samplewise_std_normalization: boolean, divide each input by its std.
+        zca_epsilon: epsilon for ZCA whitening. Default is 1e-6.
+        zca_whitening: boolean, apply ZCA whitening.
+        rotation_range: int, degree range for random rotations.
+        width_shift_range: float, 1-D array-like or int
+            float: fraction of total width, if < 1, or pixels if >= 1.
+            1-D array-like: random elements from the array.
+            int: integer number of pixels from interval
+                `(-width_shift_range, +width_shift_range)`
+            With `width_shift_range=2` possible values are ints [-1, 0, +1],
+            same as with `width_shift_range=[-1, 0, +1]`,
+            while with `width_shift_range=1.0` possible values are floats in
+            the interval [-1.0, +1.0).
+        shear_range: float, shear Intensity
+            (Shear angle in counter-clockwise direction in degrees)
+        zoom_range: float or [lower, upper], Range for random zoom.
+            If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
+        channel_shift_range: float, range for random channel shifts.
+        fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+            Default is 'nearest'. Points outside the boundaries of the input
+            are filled according to the given mode:
+                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                'nearest':  aaaaaaaa|abcd|dddddddd
+                'reflect':  abcddcba|abcd|dcbaabcd
+                'wrap':  abcdabcd|abcd|abcdabcd
+        cval: float or int, value used for points outside the boundaries
+            when `fill_mode = "constant"`.
+        horizontal_flip: boolean, randomly flip inputs horizontally.
+        vertical_flip: boolean, randomly flip inputs vertically.
+        rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
+            is applied, otherwise we multiply the data by the value provided
+            (before applying any other transformation).
+        preprocessing_function: function that will be implied on each input.
+            The function will run after the image is resized and augmented.
+            The function should take one argument:
+            one image (Numpy tensor with rank 3),
+            and should output a Numpy tensor with the same shape.
+        data_format: One of {"channels_first", "channels_last"}.
+            "channels_last" mode means that the images should have shape
+                `(samples, height, width, channels)`,
+            "channels_first" mode means that the images should have shape
+                `(samples, channels, height, width)`.
+            It defaults to the `image_data_format` value found in your
+                Keras config file at `~/.keras/keras.json`.
+            If you never set it, then it will be "channels_last".
+        validation_split: float, fraction of images reserved for validation
+            (strictly between 0 and 1).
+    """
+
+    def flow(self,
+             train_dict,
+             batch_size=32,
+             shuffle=False,
+             seed=None,
+             data_format='channels_last',
+             save_to_dir=None,
+             save_prefix='',
+             save_format='png'):
+        """Generates batches of augmented/normalized data with given arrays.
+
+        Args:
+            train_dict: dictionary of X and y tensors. Both should be rank 4.
+            batch_size: int (default: 1).
+            shuffle: boolean (default: True).
+            seed: int (default: None).
+            save_to_dir: None or str (default: None).
+                This allows you to optionally specify a directory
+                to which to save the augmented pictures being generated
+                (useful for visualizing what you are doing).
+            save_prefix: str (default: `''`). Prefix to use for filenames of
+                saved pictures (only relevant if `save_to_dir` is set).
+            save_format: one of "png", "jpeg". Default: "png".
+                (only relevant if `save_to_dir` is set)
+
+        Returns:
+            An Iterator yielding tuples of `(x, y)` where `x` is a numpy array
+            of image data and `y` is a numpy array of labels of the same shape.
+        """
+        return RetinaNetIterator(
+            train_dict,
+            self,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            seed=seed,
+            data_format=data_format,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
+
+
+class RetinaNetIterator(Iterator):
+    """Iterator yielding data from Numpy arrayss (`X and `y`).
+
+    Args:
+        train_dict: dictionary consisting of numpy arrays for `X` and `y`.
+        image_data_generator: Instance of `ImageDataGenerator`
+            to use for random transformations and normalization.
+        batch_size: Integer, size of a batch.
+        shuffle: Boolean, whether to shuffle the data between epochs.
+        seed: Random seed for data shuffling.
+        data_format: String, one of `channels_first`, `channels_last`.
+        save_to_dir: Optional directory where to save the pictures
+            being yielded, in a viewable format. This is useful
+            for visualizing the random transformations being
+            applied, for debugging purposes.
+        save_prefix: String prefix to use for saving sample
+            images (if `save_to_dir` is set).
+        save_format: Format to use for saving sample images
+            (if `save_to_dir` is set).
+    """
+
+    def __init__(self,
+                 train_dict,
+                 image_data_generator,
+                 batch_size=1,
+                 shuffle=False,
+                 seed=None,
                  data_format='channels_last',
-                 save_to_dir=None, save_prefix='', save_format='png'):
-        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+                 save_to_dir=None,
+                 save_prefix='',
+                 save_format='png'):
+        X, y = train_dict['X'], train_dict['y']
+        if X.shape[0] != y.shape[0]:
+            raise ValueError('Training batches and labels should have the same'
+                             'length. Found X.shape: {} y.shape: {}'.format(
+                                 X.shape, y.shape))
+
+        self.x = np.asarray(X, dtype=K.floatx())
+        self.y = np.asarray(y, dtype='int32')
 
         if self.x.ndim != 4:
-            raise ValueError('Input data in `BoundingBoxIterator` '
+            raise ValueError('Input data in `RetinaNetIterator` '
                              'should have rank 4. You passed an array '
                              'with shape', self.x.shape)
 
+        self.num_classes = len(np.unique(self.y))
         self.channel_axis = 3 if data_format == 'channels_last' else 1
-        self.y = train_dict['y']
-
-        if self.channel_axis == 3:
-            self.num_features = self.y.shape[-1]
-        else:
-            self.num_features = self.y.shape[1]
-
-        if self.channel_axis == 3:
-            self.image_shape = self.x.shape[1:2]
-        else:
-            self.image_shape = self.x.shape[2:]
-
-        bbox_list = []
-        for b in range(self.x.shape[0]):
-            for l in range(1, self.num_features - 1):
-                if self.channel_axis == 3:
-                    mask = self.y[b, :, :, l]
-                else:
-                    mask = self.y[b, l, :, :]
-                props = regionprops(label(mask))
-                bboxes = [np.array(list(prop.bbox) + list(l)) for prop in props]
-                bboxes = np.concatenate(bboxes, axis=0)
-            bbox_list.append(bboxes)
-        self.bbox_list = bbox_list
-
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        super(BoundingBoxIterator, self).__init__(self.x.shape[0], batch_size, shuffle, seed)
 
-    def get_annotations(self, y):
-        for l in range(1, self.num_features - 1):
-            if self.channel_axis == 3:
-                mask = y[:, :, l]
-            else:
-                mask = y[l, :, :]
-            props = regionprops(label(mask))
-            bboxes = [np.array(list(prop.bbox) + list(l)) for prop in props]
-            bboxes = np.concatenate(bboxes, axis=0)
-        return bboxes
+        super(RetinaNetIterator, self).__init__(
+            self.x.shape[0], batch_size, shuffle, seed)
 
-    def anchor_targets(self,
-                       image_shape,
-                       annotations,
-                       num_classes,
-                       mask_shape=None,
-                       negative_overlap=0.4,
-                       positive_overlap=0.5,
-                       **kwargs):
-        return self.anchor_targets_bbox(
-            image_shape,
-            annotations,
-            num_classes,
-            mask_shape,
-            negative_overlap,
-            positive_overlap,
-            **kwargs)
+    def filter_annotations(self, image, annotations):
+        """Filter annotations by removing those that are outside of the
+        image bounds or whose width/height < 0.
 
-    def compute_target(self, annotation):
-        labels, annotations, anchors = self.anchor_targets(
-            self.image_shape, annotation, self.num_features)
-        regression = self.bbox_transform(anchors, annotation)
+        Args:
+            image: ndarray, the raw image data.
+            annotations: dict of annotations including `labels` and `bboxes`
+        """
+        row_axis = 1 if self.data_format == 'channels_first' else 0
+        invalid_indices = np.where(
+            (annotations['bboxes'][:, 2] <= annotations['bboxes'][:, 0]) |
+            (annotations['bboxes'][:, 3] <= annotations['bboxes'][:, 1]) |
+            (annotations['bboxes'][:, 0] < 0) |
+            (annotations['bboxes'][:, 1] < 0) |
+            (annotations['bboxes'][:, 2] > image.shape[row_axis + 1]) |
+            (annotations['bboxes'][:, 3] > image.shape[row_axis])
+        )[0]
 
-        # append anchor state to regression targets
-        anchor_states = np.max(labels, axis=1, keepdims=True)
-        regression = np.append(regression, anchor_states, axis=1)
-        return [regression, labels]
+        # delete invalid indices
+        if invalid_indices:
+            logging.warn('Image with shape {} contains the following invalid '
+                         'boxes: {}.'.format(
+                             image.shape,
+                             annotations['bboxes'][invalid_indices, :]))
+
+            for k in annotations.keys():
+                filtered = np.delete(annotations[k], invalid_indices, axis=0)
+                annotations[k] = filtered
+        return annotations
 
     def _get_batches_of_transformed_samples(self, index_array):
-        index_array = index_array[0]
-        if self.channel_axis == 1:
-            batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:4]))
-            if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:4]))
-        else:
-            batch_x = np.zeros((len(index_array),
-                                self.x.shape[2],
-                                self.x.shape[3],
-                                self.x.shape[1]))
-            if self.y is not None:
-                batch_y = np.zeros((len(index_array),
-                                    self.y.shape[2],
-                                    self.y.shape[3],
-                                    self.y.shape[1]))
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
 
-        regressions_list = []
-        labels_list = []
+        target_list = []
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -1835,26 +1923,37 @@ class BoundingBoxIterator(Iterator):
 
             x = self.image_data_generator.standardize(x)
 
-            if self.channel_axis == 1:
-                batch_x[i] = x
-                batch_y[i] = y
+            batch_x[i] = x
 
-                # Get the bounding boxes from the transformed masks!
-                annotations = self.get_annotations(y)
-                regressions, labels = self.compute_target(annotations)
-                regressions_list.append(regressions)
-                labels_list.append(labels)
+            # Get the bounding boxes from the transformed masks!
+            labels, bboxes = [], []
+            for prop in regionprops(np.squeeze(y.astype('int'))):
+                labels.append(prop.label)
+                bboxes.append(prop.bbox)
+            annotations = {'labels': labels, 'bboxes': bboxes}
+            annotations = self.filter_annotations(x, annotations)
 
-            if self.channel_axis == 3:
-                raise NotImplementedError('Bounding box generator does not work '
-                                          'for channels last yet')
+            anchors = self.generate_anchors(max_shape)
 
-            regressions = np.stack(regressions_list, axis=0)
-            labels = np.stack(labels_list, axis=0)
+            max_shape = tuple(max(image.shape[x]
+                                    for image in images)
+                                for x in range(3))
+
+            anchors = self.generate_anchors(max_shape)
+
+            targets = self.compute_anchor_targets(
+                anchors,
+                images,
+                annotations,
+                self.num_classes
+            )
+
+            target_list.append(targets)
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
-                img = array_to_img(batch_x[i], self.data_format, scale=True)
+                img_x = np.expand_dims(batch_x[i, ..., 0], -1)
+                img = array_to_img(img_x, self.data_format, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(
                     prefix=self.save_prefix,
                     index=j,
@@ -1862,28 +1961,24 @@ class BoundingBoxIterator(Iterator):
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
+                if self.y is not None:
+                    # Save argmax of y batch
+                    img_y = np.argmax(batch_y[i], axis=self.channel_axis - 1)
+                    img_y = np.expand_dims(img_y, axis=self.channel_axis - 1)
+                    img = array_to_img(img_y, self.data_format, scale=True)
+                    fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
+                        prefix=self.save_prefix,
+                        index=j,
+                        hash=np.random.randint(1e4),
+                        format=self.save_format)
+                    img.save(os.path.join(self.save_to_dir, fname))
+
         if self.y is None:
             return batch_x
-        return batch_x, [regressions_list, labels_list]
-
-    def next(self):
-        """For python 2.x. Returns the next batch.
-        """
-        # Keeps under lock only the mechanism which advances
-        # the indexing of each batch.
-        with self.lock:
-            index_array = next(self.index_generator)
-        # The transformation of images is not under thread lock
-        # so it can be done in parallel
-        return self._get_batches_of_transformed_samples(index_array)
+        return batch_x, np.stack(targets_list)
 
 
-"""
-RetinaNet and MaskRCNN Generators
-"""
-
-
-class RetinaNetGenerator(_RetinaNetGenerator):
+class ShvmRetinaNetGenerator(_RetinaNetGenerator):
 
     def __init__(self,
                  direc_name,
