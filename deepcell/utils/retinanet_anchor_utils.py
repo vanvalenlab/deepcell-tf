@@ -107,7 +107,7 @@ def anchor_targets_bbox(anchors,
         assert('labels' in annotations), \
             'Annotations should contain labels.'
 
-    batch_size = len(image_group)
+    batch_size = image_group.shape[0]
 
     regression_batch = np.zeros((batch_size, anchors.shape[0], 4 + 1), dtype=K.floatx())
     labels_batch = np.zeros((batch_size, anchors.shape[0], num_classes + 1), dtype=K.floatx())
