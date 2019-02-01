@@ -29,10 +29,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.model_zoo.featurent import bn_feature_net_2D
-from deepcell.model_zoo.featurent import bn_feature_net_skip_2D
-from deepcell.model_zoo.featurent import bn_feature_net_3D
-from deepcell.model_zoo.featurent import bn_feature_net_skip_3D
+from deepcell.model_zoo.featurenet import bn_feature_net_2D
+from deepcell.model_zoo.featurenet import bn_feature_net_skip_2D
+from deepcell.model_zoo.featurenet import bn_feature_net_3D
+from deepcell.model_zoo.featurenet import bn_feature_net_skip_3D
 
 from deepcell.model_zoo.retinanet import retinanet
 from deepcell.model_zoo.retinanet import retinanet_bbox
