@@ -28,9 +28,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import math
-
-import numpy as np
+from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.initializers import Initializer
 
 
@@ -47,6 +45,6 @@ class PriorProbability(Initializer):
 
     def __call__(self, shape, dtype=None, partition_info=None):
         # set bias to -log((1 - p)/p) for foreground
-        result = np.ones(shape, dtype=dtype) * -math.log((1 - self.probability) / self.probability)
-
+        bias = -K.log((1 - self.probability) / self.probability)
+        result = K.ones(shape, dtype=dtype) * bias
         return result
