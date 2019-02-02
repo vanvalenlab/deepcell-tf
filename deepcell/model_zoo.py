@@ -29,6 +29,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import numpy as np
+
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Sequential, Model
 from tensorflow.python.keras.layers import Conv2D, Conv3D, ConvLSTM2D, LSTM
