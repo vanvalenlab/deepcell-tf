@@ -410,11 +410,8 @@ def resnet_retinanet(num_classes, input_shape, modifier=None, **kwargs):
     Returns
         RetinaNet model with a ResNet backbone.
     """
-    # choose default input
-    inputs = Input(shape=input_shape)
-
     # create the resnet backbone
-    resnet = backbones.ResNet50(inputs, include_top=False, freeze_bn=True)
+    resnet = backbones.ResNet50(input_shape=input_shape, include_top=False)
 
     # invoke modifier if given
     if modifier:
