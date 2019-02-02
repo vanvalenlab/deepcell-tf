@@ -34,9 +34,9 @@ from deepcell.model_zoo.featurenet import bn_feature_net_skip_2D
 from deepcell.model_zoo.featurenet import bn_feature_net_3D
 from deepcell.model_zoo.featurenet import bn_feature_net_skip_3D
 
+from deepcell.model_zoo.retinanet import RetinaNet
 from deepcell.model_zoo.retinanet import retinanet
 from deepcell.model_zoo.retinanet import retinanet_bbox
-from deepcell.model_zoo.retinanet import resnet_retinanet
 
 del absolute_import
 del division

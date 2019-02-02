@@ -29,8 +29,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.python.keras import applications as backbones
 from tensorflow.python.keras import backend as K
+from tensorflow.python.keras import applications
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D
 from tensorflow.python.keras.layers import Input, Concatenate, Add
@@ -398,28 +398,66 @@ def retinanet_bbox(model=None,
     return Model(inputs=model.inputs, outputs=detections, name=name)
 
 
-def resnet_retinanet(num_classes, input_shape, modifier=None, **kwargs):
-    """Constructs a retinanet model using a ResNet50 backbone.
+def RetinaNet(backbone,
+              num_classes,
+              input_shape,
+              weights=None,
+              pooling=None,
+              **kwargs):
+    """Constructs a retinanet model using a backbone from keras-applications.
 
-    Args
-        num_classes: Number of classes to predict.
+    Args:
+        backbone: string, name of backbone to use.
+        num_classes: Number of classes to classify.
         input_shape: The shape of the input data.
-        modifier: A function handler which can modify the backbone before using
-            it in retinanet (for example, to freeze backbone layers).
+        weights: one of `None` (random initialization),
+            'imagenet' (pre-training on ImageNet),
+            or the path to the weights file to be loaded.
+        pooling: optional pooling mode for feature extraction
+            when `include_top` is `False`.
+            - `None` means that the output of the model will be
+                the 4D tensor output of the
+                last convolutional layer.
+            - `avg` means that global average pooling
+                will be applied to the output of the
+                last convolutional layer, and thus
+                the output of the model will be a 2D tensor.
+            - `max` means that global max pooling will
+                be applied.
 
-    Returns
-        RetinaNet model with a ResNet backbone.
+    Returns:
+        RetinaNet model with a backbone.
     """
-    # create the resnet backbone
-    resnet = backbones.ResNet50(input_shape=input_shape, include_top=False)
+    backbones = {
+        'densent121': applications.DenseNet121,
+        'densent169': applications.DenseNet169,
+        'densent201': applications.DenseNet201,
+        'inceptionresnetv2': applications.InceptionResNetV2,
+        'inceptionv3': applications.InceptionV3,
+        'mobilenet': applications.MobileNet,
+        'nasnetlarge': applications.NASNetLarge,
+        'nasnetmobile': applications.NASNetMobile,
+        'resnet50': applications.ResNet50,
+        'vgg16': applications.VGG16,
+        'vgg19': applications.VGG19,
+        'xception': applications.Xception,
+    }
 
-    # invoke modifier if given
-    if modifier:
-        resnet = modifier(resnet)
+    backbone = str(backbone).lower()
+    if backbone not in backbones:
+        raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
+                         ', '.join(backbones.keys()))
+
+    # create the resnet backbone
+    backbone = backbones[backbone](
+        input_shape=input_shape,
+        include_top=False,
+        weights=weights,
+        pooling=pooling)
 
     # create the full model
     return retinanet(
         input_shape=input_shape,
         num_classes=num_classes,
-        backbone_layers=resnet.outputs[1:],
+        backbone_layers=backbone.outputs[1:],
         **kwargs)
