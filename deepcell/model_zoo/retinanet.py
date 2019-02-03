@@ -460,7 +460,7 @@ def RetinaNet(backbone,
             name = 'conv{}_block{}_concat'.format(idx + 2, block_num)
             layer_outputs.append(model.get_layer(name=name).output)
 
-    elif name in resnet_backbones:
+    elif backbone in resnet_backbones:
         model = applications.ResNet50(**model_kwargs)
         layer_outputs = model.outputs[1:]
 
