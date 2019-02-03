@@ -269,7 +269,7 @@ def __build_anchors(anchor_parameters, features):
     return Concatenate(axis=1, name='anchors')(anchors)
 
 
-def retinanet(input_shape,
+def retinanet(inputs,
               backbone_layers,
               num_classes,
               num_anchors=None,
@@ -282,11 +282,10 @@ def retinanet(input_shape,
     (with the unfortunate exception of anchors as output).
 
     Args:
-        input_shape: Shape of inputs to model.
+        inputs: The inputs to the network.
         num_classes: Number of classes to classify.
         num_anchors: Number of base anchors.
-        create_pyramid_features: Functor for creating pyramid features given
-            the features C3, C4, C5 from the backbone.
+        create_pyramid_features: Functor for creating pyramid features.
         submodels: Submodels to run on each feature map (default is regression
             and classification submodels).
         name: Name of the model.
@@ -316,7 +315,6 @@ def retinanet(input_shape,
 
     # for all pyramid levels, run available submodels
     pyramids = __build_pyramid(submodels, features)
-    inputs = Input(shape=input_shape)
 
     return Model(inputs=inputs, outputs=pyramids, name=name)
 
@@ -428,9 +426,10 @@ def RetinaNet(backbone,
     Returns:
         RetinaNet model with a backbone.
     """
+    inputs = Input(shape=input_shape)
     model_kwargs = {
         'include_top': False,
-        'input_shape': input_shape,
+        'input_tensor': inputs,
         'weights': weights,
         'pooling': pooling,
     }
@@ -471,7 +470,7 @@ def RetinaNet(backbone,
 
     # create the full model
     return retinanet(
-        input_shape=input_shape,
+        inputs=inputs,
         num_classes=num_classes,
         backbone_layers=layer_outputs,
         **kwargs)
