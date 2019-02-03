@@ -172,8 +172,7 @@ def __create_pyramid_features(C3, C4, C5, feature_size=256):
     P5 = Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P5')(P5)
 
     # add P5 elementwise to C4
-    P4 = Conv2D(
-        feature_size, kernel_size=1, strides=1, padding='same', name='C4_reduced')(C4)
+    P4 = Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C4_reduced')(C4)
     P4 = Add(name='P4_merged')([P5_upsampled, P4])
     P4_upsampled = UpsampleLike(name='P4_upsampled')([P4, C3])
     P4 = Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P4')(P4)
@@ -317,8 +316,9 @@ def retinanet(input_shape,
 
     # for all pyramid levels, run available submodels
     pyramids = __build_pyramid(submodels, features)
+    inputs = Input(shape=input_shape)
 
-    return Model(input_shape=input_shape, outputs=pyramids, name=name)
+    return Model(inputs=inputs, outputs=pyramids, name=name)
 
 
 def retinanet_bbox(model=None,
@@ -428,36 +428,50 @@ def RetinaNet(backbone,
     Returns:
         RetinaNet model with a backbone.
     """
-    backbones = {
-        'densent121': applications.DenseNet121,
-        'densent169': applications.DenseNet169,
-        'densent201': applications.DenseNet201,
-        'inceptionresnetv2': applications.InceptionResNetV2,
-        'inceptionv3': applications.InceptionV3,
-        'mobilenet': applications.MobileNet,
-        'nasnetlarge': applications.NASNetLarge,
-        'nasnetmobile': applications.NASNetMobile,
-        'resnet50': applications.ResNet50,
-        'vgg16': applications.VGG16,
-        'vgg19': applications.VGG19,
-        'xception': applications.Xception,
+    model_kwargs = {
+        'include_top': False,
+        'input_shape': input_shape,
+        'weights': weights,
+        'pooling': pooling,
     }
+    vgg_backbones = {'vgg16', 'vgg19'}
+    densenet_backbones = {'densenet121', 'densenet169', 'densenet201'}
+    resnet_backbones = {'resnet50'}
+    if backbone in vgg_backbones:
+        layer_names = ['block3_pool', 'block4_pool', 'block5_pool']
+        if backbone == 'vgg16':
+            model = applications.VGG16(**model_kwargs)
+        else:
+            model = applications.VGG19(**model_kwargs)
+        layer_outputs = [model.get_layer(n).output for n in layer_names]
 
-    backbone = str(backbone).lower()
-    if backbone not in backbones:
+    elif backbone in densenet_backbones:
+        if backbone == 'densenet121':
+            model = applications.DenseNet121(**model_kwargs)
+            blocks = [6, 12, 24, 16]
+        elif backbone == 'densenet169':
+            model = applications.DenseNet169(**model_kwargs)
+            blocks = [6, 12, 32, 32]
+        elif backbone == 'densenet201':
+            model = applications.DenseNet201(**model_kwargs)
+            blocks = [6, 12, 48, 32]
+        layer_outputs = []
+        for idx, block_num in enumerate(blocks):
+            name = 'conv{}_block{}_concat'.format(idx + 2, block_num)
+            layer_outputs.append(model.get_layer(name=name).output)
+
+    elif name in resnet_backbones:
+        model = applications.ResNet50(**model_kwargs)
+        layer_outputs = model.outputs[1:]
+
+    else:
+        backbones = list(densenet_backbones + resnet_backbones + vgg_backbones)
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
-                         ', '.join(backbones.keys()))
-
-    # create the resnet backbone
-    backbone = backbones[backbone](
-        input_shape=input_shape,
-        include_top=False,
-        weights=weights,
-        pooling=pooling)
+                         ', '.join(backbones))
 
     # create the full model
     return retinanet(
         input_shape=input_shape,
         num_classes=num_classes,
-        backbone_layers=backbone.outputs[1:],
+        backbone_layers=layer_outputs,
         **kwargs)
