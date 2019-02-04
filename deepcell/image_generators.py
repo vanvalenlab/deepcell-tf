@@ -1913,6 +1913,7 @@ class RetinaNetIterator(Iterator):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
 
         targets_list = []
+        annotations_list = []
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -1933,21 +1934,22 @@ class RetinaNetIterator(Iterator):
                 labels.append(prop.label)
                 bboxes.append(prop.bbox)
             annotations = {'labels': np.array(labels),
-                           'bboxes': np.array(bboxes)}
+                            'bboxes': np.array(bboxes)}
             annotations = self.filter_annotations(x, annotations)
+            annotations_list.append(annotations)
 
-            anchors = anchors_for_shape(
-                x.shape,
-                anchor_params=None,
-                shapes_callback=guess_shapes)
+        anchors = anchors_for_shape(
+            batch_x.shape,
+            anchor_params=None,
+            shapes_callback=guess_shapes)
 
-            targets = anchor_targets_bbox(
-                anchors,
-                x,
-                annotations,
-                self.num_classes)
+        targets = anchor_targets_bbox(
+            anchors,
+            x,
+            annotations_list,
+            self.num_classes)
 
-            targets_list.append(targets)
+        targets_list.append(targets)
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
