@@ -1949,7 +1949,7 @@ class RetinaNetIterator(Iterator):
             annotations_list,
             self.num_classes)
 
-        targets_list.append(targets)
+        targets_list.append(list(targets))
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
