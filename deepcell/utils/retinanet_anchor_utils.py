@@ -31,8 +31,8 @@ from __future__ import division
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
-# from keras_retinanet.utils.compute_overlap import compute_overlap
-# from tf_keras_retinanet.utils.compute_overlap import compute_overlap
+
+from deepcell.utils.compute_overlap import compute_overlap
 
 
 class AnchorParameters:
@@ -96,10 +96,10 @@ def anchor_targets_bbox(anchors,
             for (x1, y1, x2, y2) and the last column defines anchor states
             (-1 for ignore, 0 for bg, 1 for fg).
     """
-    if image_group.size != len(annotations_group):
+    if len(image_group) != len(annotations_group):
         raise ValueError('Images and annotations must be the same size. '
                          'Got Image size = %s and Annotation size = %s' %
-                         (image_group.size, len(annotations_group)))
+                         len((image_group), len(annotations_group)))
     elif len(annotations_group) == 0:
         raise ValueError('No data received to compute anchor targets.')
     for annotations in annotations_group:
@@ -172,7 +172,9 @@ def compute_gt_annotations(anchors,
         ignore_indices: indices of ignored anchors
         argmax_overlaps_inds: ordered overlaps indices
     """
-
+    if not compute_overlap:
+        raise ImportError('To use `compute_overlap`, the C extensions must be '
+                          'built using `python setup.py build_ext --inplace`')
     overlaps = compute_overlap(
         anchors.astype(np.float64), annotations.astype(np.float64))
     argmax_overlaps_inds = np.argmax(overlaps, axis=1)
