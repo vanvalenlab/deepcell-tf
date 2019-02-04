@@ -32,7 +32,10 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 
-from deepcell.utils.compute_overlap import compute_overlap
+try:
+    from deepcell.utils.compute_overlap import compute_overlap
+except ImportError:
+    compute_overlap = None
 
 
 class AnchorParameters:
@@ -172,6 +175,9 @@ def compute_gt_annotations(anchors,
         ignore_indices: indices of ignored anchors
         argmax_overlaps_inds: ordered overlaps indices
     """
+    if compute_overlap is None:
+        raise ImportError('To use `compute_overlap`, the C extensions must be '
+                          'built using `python setup.py build_ext --inplace`')
     overlaps = compute_overlap(
         anchors.astype(np.float64), annotations.astype(np.float64))
     argmax_overlaps_inds = np.argmax(overlaps, axis=1)
