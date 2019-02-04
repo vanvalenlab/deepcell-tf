@@ -44,7 +44,6 @@ from deepcell.utils import retinanet_anchor_utils
 try:
     from deepcell.utils import compute_overlap
 except ImportError:
-    compute_overlap = None
     warnings.warn('To use `compute_overlap`, the C extensions must be built '
                   'using `python setup.py build_ext --inplace`')
 

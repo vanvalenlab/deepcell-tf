@@ -32,7 +32,10 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 
-from deepcell.utils.compute_overlap import compute_overlap
+try:
+    from deepcell.utils.compute_overlap import compute_overlap
+except ImportError:
+    compute_overlap = None
 
 
 class AnchorParameters:
