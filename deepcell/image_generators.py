@@ -1934,7 +1934,7 @@ class RetinaNetIterator(Iterator):
                 labels.append(prop.label)
                 bboxes.append(prop.bbox)
             annotations = {'labels': np.array(labels),
-                            'bboxes': np.array(bboxes)}
+                           'bboxes': np.array(bboxes)}
             annotations = self.filter_annotations(x, annotations)
             annotations_list.append(annotations)
 
@@ -1945,7 +1945,7 @@ class RetinaNetIterator(Iterator):
 
         targets = anchor_targets_bbox(
             anchors,
-            x,
+            batch_x,
             annotations_list,
             self.num_classes)
 
