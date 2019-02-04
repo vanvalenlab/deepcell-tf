@@ -76,6 +76,7 @@ from deepcell.utils.transform_utils import distance_transform_2d
 from deepcell.utils.transform_utils import distance_transform_3d
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
 from deepcell.utils.retinanet_anchor_utils import anchors_for_shape
+from deepcell.utils.retinanet_anchor_utils import guess_shapes
 
 
 def _transform_masks(y, transform, data_format=None, **kwargs):
@@ -1938,7 +1939,7 @@ class RetinaNetIterator(Iterator):
             anchors = anchors_for_shape(
                 batch_x.shape,
                 anchor_params=None,
-                shapes_callback=self.compute_shapes)
+                shapes_callback=guess_shapes)
 
             targets = anchor_targets_bbox(
                 anchors,
