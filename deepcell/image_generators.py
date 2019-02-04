@@ -1912,7 +1912,6 @@ class RetinaNetIterator(Iterator):
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
 
-        targets_list = []
         annotations_list = []
 
         for i, j in enumerate(index_array):
@@ -1943,13 +1942,11 @@ class RetinaNetIterator(Iterator):
             anchor_params=None,
             shapes_callback=guess_shapes)
 
-        targets = anchor_targets_bbox(
+        regressions, labels = anchor_targets_bbox(
             anchors,
             batch_x,
             annotations_list,
             self.num_classes)
-
-        targets_list.append(list(targets))
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
@@ -1964,7 +1961,7 @@ class RetinaNetIterator(Iterator):
 
         if self.y is None:
             return batch_x
-        return batch_x, np.stack(targets_list)
+        return batch_x, [regressions, labels]
 
 
 class ShvmRetinaNetGenerator(_RetinaNetGenerator):
