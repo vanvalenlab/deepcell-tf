@@ -1937,13 +1937,13 @@ class RetinaNetIterator(Iterator):
             annotations = self.filter_annotations(x, annotations)
 
             anchors = anchors_for_shape(
-                batch_x.shape,
+                x.shape,
                 anchor_params=None,
                 shapes_callback=guess_shapes)
 
             targets = anchor_targets_bbox(
                 anchors,
-                batch_x,
+                x,
                 annotations,
                 self.num_classes)
 
