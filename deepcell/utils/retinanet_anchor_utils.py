@@ -96,21 +96,23 @@ def anchor_targets_bbox(anchors,
             for (x1, y1, x2, y2) and the last column defines anchor states
             (-1 for ignore, 0 for bg, 1 for fg).
     """
-
-    assert(len(image_group) == len(annotations_group)), \
-        'The length of the images and annotations need to be equal.'
-    assert(len(annotations_group) > 0), \
-        'No data received to compute anchor targets for.'
+    if image_group.size != len(annotations_group):
+        raise ValueError('Images and annotations must be the same size. '
+                         'Got Image size = %s and Annotation size = %s' %
+                         (image_group.size, len(annotations_group)))
+    elif len(annotations_group) == 0:
+        raise ValueError('No data received to compute anchor targets.')
     for annotations in annotations_group:
-        assert('bboxes' in annotations), \
-            'Annotations should contain bboxes.'
-        assert('labels' in annotations), \
-            'Annotations should contain labels.'
+        if 'bboxes' not in annotations:
+            raise ValueError('Annotations should contain bboxes.')
+        if 'labels' not in annotations:
+            raise ValueError('Annotations should contain labels.')
 
-    batch_size = image_group.shape[0]
+    regress_shape = (image_group.shape[0], anchors.shape[0], 4 + 1)
+    labels_shape = (image_group.shape[0], anchors.shape[0], num_classes + 1)
 
-    regression_batch = np.zeros((batch_size, anchors.shape[0], 4 + 1), dtype=K.floatx())
-    labels_batch = np.zeros((batch_size, anchors.shape[0], num_classes + 1), dtype=K.floatx())
+    regression_batch = np.zeros(regress_shape, dtype=K.floatx())
+    labels_batch = np.zeros(labels_shape, dtype=K.floatx())
 
     # compute labels and regression targets
     for index, (image, annotations) in enumerate(zip(image_group, annotations_group)):
