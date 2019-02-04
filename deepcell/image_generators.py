@@ -75,6 +75,7 @@ from deepcell.utils.transform_utils import deepcell_transform
 from deepcell.utils.transform_utils import distance_transform_2d
 from deepcell.utils.transform_utils import distance_transform_3d
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
+from deepcell.utils.retinanet_anchor_utils import anchors_for_shape
 
 
 def _transform_masks(y, transform, data_format=None, **kwargs):
@@ -1721,7 +1722,7 @@ RetinaNet and MaskRCNN Generators
 """
 
 
-class RetinaNetGenerator(ImageDataGenerator):
+class RetinaNetGenerator(ImageFullyConvDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
     The data will be looped over (in batches).
 
@@ -1896,7 +1897,7 @@ class RetinaNetIterator(Iterator):
         )[0]
 
         # delete invalid indices
-        if invalid_indices:
+        if invalid_indices.size > 0:
             logging.warn('Image with shape {} contains the following invalid '
                          'boxes: {}.'.format(
                              image.shape,
@@ -1930,17 +1931,20 @@ class RetinaNetIterator(Iterator):
             for prop in regionprops(np.squeeze(y.astype('int'))):
                 labels.append(prop.label)
                 bboxes.append(prop.bbox)
-            annotations = {'labels': labels, 'bboxes': bboxes}
+            annotations = {'labels': np.array(labels),
+                           'bboxes': np.array(bboxes)}
             annotations = self.filter_annotations(x, annotations)
 
-            anchors = self.generate_anchors(batch_x.shape)
+            anchors = anchors_for_shape(
+                batch_x.shape,
+                anchor_params=None,
+                shapes_callback=self.compute_shapes)
 
-            targets = self.compute_anchor_targets(
+            targets = anchor_targets_bbox(
                 anchors,
                 batch_x,
                 annotations,
-                self.num_classes
-            )
+                self.num_classes)
 
             targets_list.append(targets)
 
