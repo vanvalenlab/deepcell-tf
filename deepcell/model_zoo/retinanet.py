@@ -429,10 +429,10 @@ def RetinaNet(backbone,
         RetinaNet model with a backbone.
     """
     inputs = Input(shape=input_shape)
-    inputs = TensorProduct(required_channels)(inputs)
+    fixed_inputs = TensorProduct(required_channels)(inputs)
     model_kwargs = {
         'include_top': False,
-        'input_tensor': inputs,
+        'input_tensor': fixed_inputs,
         'weights': weights,
         'pooling': pooling,
     }
