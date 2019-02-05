@@ -424,11 +424,14 @@ def RetinaNet(backbone,
                 the output of the model will be a 2D tensor.
             - `max` means that global max pooling will
                 be applied.
+        required_channels: integer, the required number of channels of the
+            backbone.  3 is the default for all current backbones.
 
     Returns:
         RetinaNet model with a backbone.
     """
     inputs = Input(shape=input_shape)
+    # force the channel size for backbone input to be `required_channels`
     fixed_inputs = TensorProduct(required_channels)(inputs)
     model_kwargs = {
         'include_top': False,
