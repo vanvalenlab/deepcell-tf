@@ -1860,13 +1860,24 @@ class RetinaNetIterator(Iterator):
                              'length. Found X.shape: {} y.shape: {}'.format(
                                  X.shape, y.shape))
 
+        if X.ndim != 4:
+            raise ValueError('Input data in `RetinaNetIterator` '
+                             'should have rank 4. You passed an array '
+                             'with shape', X.shape)
+
         self.x = np.asarray(X, dtype=K.floatx())
         self.y = np.asarray(y, dtype='int32')
 
-        if self.x.ndim != 4:
-            raise ValueError('Input data in `RetinaNetIterator` '
-                             'should have rank 4. You passed an array '
-                             'with shape', self.x.shape)
+        # Remove images with no bounding boxes
+        invalid_indices = []
+        for i in range(y.shape[0]):
+            bboxes = [p.bbox for p in regionprops(np.squeeze(self.y))]
+            if not bboxes:
+                invalid_indices.append(i)
+
+        if invalid_indices:
+            self.x = np.delete(invalid_indices, self.x, axis=0)
+            self.y = np.delete(invalid_indices, self.y, axis=0)
 
         self.num_classes = len(np.unique(self.y))
         self.channel_axis = 3 if data_format == 'channels_last' else 1
