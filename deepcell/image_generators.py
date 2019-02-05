@@ -1784,6 +1784,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
 
     def flow(self,
              train_dict,
+             compute_shapes=guess_shapes,
              batch_size=32,
              shuffle=False,
              seed=None,
@@ -1814,6 +1815,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
         return RetinaNetIterator(
             train_dict,
             self,
+            compute_shapes=compute_shapes,
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
@@ -1847,6 +1849,7 @@ class RetinaNetIterator(Iterator):
     def __init__(self,
                  train_dict,
                  image_data_generator,
+                 compute_shapes=guess_shapes,
                  batch_size=1,
                  shuffle=False,
                  seed=None,
@@ -1880,6 +1883,8 @@ class RetinaNetIterator(Iterator):
             self.y = np.delete(invalid_indices, self.y, axis=0)
             logging.warning('Deleted %s examples without bounding boxes.')
 
+        # `compute_shapes` changes based on the model backbone.
+        self.compute_shapes = compute_shapes
         self.num_classes = len(np.unique(self.y))
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
@@ -1911,10 +1916,10 @@ class RetinaNetIterator(Iterator):
 
         # delete invalid indices
         if invalid_indices.size > 0:
-            # logging.warn('Image with shape {} contains the following invalid '
-            #              'boxes: {}.'.format(
-            #                  image.shape,
-            #                  annotations['bboxes'][invalid_indices, :]))
+            logging.warn('Image with shape {} contains the following invalid '
+                         'boxes: {}.'.format(
+                             image.shape,
+                             annotations['bboxes'][invalid_indices, :]))
 
             for k in annotations.keys():
                 filtered = np.delete(annotations[k], invalid_indices, axis=0)
@@ -1952,7 +1957,7 @@ class RetinaNetIterator(Iterator):
         anchors = anchors_for_shape(
             batch_x.shape,
             anchor_params=None,
-            shapes_callback=guess_shapes)
+            shapes_callback=self.compute_shapes)
 
         regressions, labels = anchor_targets_bbox(
             anchors,

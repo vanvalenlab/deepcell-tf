@@ -41,6 +41,8 @@ from tensorflow.python.keras.optimizers import SGD
 from deepcell import losses
 from deepcell import image_generators
 from deepcell.model_zoo import retinanet_bbox
+from deepcell.utils.retinanet_anchor_utils import make_shapes_callback
+from deepcell.utils.retinanet_anchor_utils import guess_shapes
 from deepcell.utils import train_utils
 from deepcell.utils.data_utils import get_data
 from deepcell.utils.train_utils import rate_scheduler
@@ -447,6 +449,7 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
 
 def train_model_retinanet(model,
                           dataset,
+                          backbone,
                           expt='',
                           test_size=.1,
                           n_epoch=10,
@@ -571,8 +574,20 @@ def train_model_retinanet(model,
         horizontal_flip=0,
         vertical_flip=0)
 
-    train_data = datagen.flow(train_dict, batch_size=batch_size)
-    val_data = datagen_val.flow(test_dict, batch_size=batch_size)
+    if 'vgg' in backbone or 'densenet' in backbone:
+        compute_shapes = make_shapes_callback(model)
+    else:
+        compute_shapes = guess_shapes
+
+    train_data = datagen.flow(
+        train_dict,
+        compute_shapes=compute_shapes,
+        batch_size=batch_size)
+
+    val_data = datagen_val.flow(
+        test_dict,
+        compute_shapes=compute_shapes,
+        batch_size=batch_size)
 
     # evaluation of model is done on `retinanet_bbox`
     # prediction_model = retinanet_bbox(model)
