@@ -1871,7 +1871,7 @@ class RetinaNetIterator(Iterator):
         # Remove images with no bounding boxes
         invalid_indices = []
         for i in range(y.shape[0]):
-            bboxes = [p.bbox for p in regionprops(np.squeeze(self.y))]
+            bboxes = [p.bbox for p in regionprops(np.squeeze(self.y[i]))]
             if not bboxes:
                 invalid_indices.append(i)
 
