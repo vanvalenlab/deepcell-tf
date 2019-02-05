@@ -39,6 +39,7 @@ from tensorflow.python.keras.layers import Activation
 from tensorflow.python.keras.initializers import RandomNormal
 
 from deepcell.initializers import PriorProbability
+from deepcell.layers import TensorProduct
 from deepcell.layers import FilterDetections
 from deepcell.layers import Anchors, UpsampleLike, RegressBoxes, ClipBoxes
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
@@ -89,7 +90,7 @@ def default_classification_model(num_classes,
     outputs = Conv2D(
         filters=num_classes * num_anchors,
         kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None),
-        bias_initializer=PriorProbability(probability=prior_probability),
+        # bias_initializer=PriorProbability(probability=prior_probability),
         name='pyramid_classification',
         **options
     )(outputs)
@@ -401,6 +402,7 @@ def RetinaNet(backbone,
               input_shape,
               weights=None,
               pooling=None,
+              required_channels=3,
               **kwargs):
     """Constructs a retinanet model using a backbone from keras-applications.
 
@@ -427,6 +429,7 @@ def RetinaNet(backbone,
         RetinaNet model with a backbone.
     """
     inputs = Input(shape=input_shape)
+    inputs = TensorProduct(required_channels)(inputs)
     model_kwargs = {
         'include_top': False,
         'input_tensor': inputs,
