@@ -1878,6 +1878,7 @@ class RetinaNetIterator(Iterator):
         if invalid_indices:
             self.x = np.delete(invalid_indices, self.x, axis=0)
             self.y = np.delete(invalid_indices, self.y, axis=0)
+            logging.warning('Deleted %s examples without bounding boxes.')
 
         self.num_classes = len(np.unique(self.y))
         self.channel_axis = 3 if data_format == 'channels_last' else 1
