@@ -276,7 +276,7 @@ def smooth_l1(y_true, y_pred, sigma=3.0, axis=None):
     return K.sum(regression_loss, axis=axis)
 
 
-def focal(y_true, y_pred, alpha=0.25, gamma=2.0):
+def focal(y_true, y_pred, alpha=0.25, gamma=2.0, axis=None):
     """Compute the focal loss given the target tensor and the predicted tensor.
 
     As defined in https://arxiv.org/abs/1708.02002
@@ -290,27 +290,15 @@ def focal(y_true, y_pred, alpha=0.25, gamma=2.0):
     Returns:
         The focal loss of y_pred w.r.t. y_true.
     """
-    labels = y_true[..., :-1]
-    # -1 for ignore, 0 for background, 1 for object
-    anchor_state = y_true[..., -1]
-
-    classification = y_pred
-    # filter out "ignore" anchors
-    indices = tf.where(K.not_equal(anchor_state, -1))
-    labels = tf.gather_nd(labels, indices)
-    classification = tf.gather_nd(classification, indices)
+    if axis is None:
+        axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
 
     # compute the focal loss
-    alpha_factor = K.ones_like(labels) * alpha
-    alpha_factor = tf.where(K.equal(labels, 1), alpha_factor, 1 - alpha_factor)
-    focal_weight = tf.where(K.equal(labels, 1), 1 - classification, classification)
+    alpha_factor = K.ones_like(y_true) * alpha
+    alpha_factor = tf.where(K.equal(y_true, 1), alpha_factor, 1 - alpha_factor)
+    focal_weight = tf.where(K.equal(y_true, 1), 1 - y_pred, y_pred)
     focal_weight = alpha_factor * focal_weight ** gamma
 
-    cls_loss = focal_weight * K.binary_crossentropy(labels, classification)
+    cls_loss = focal_weight * K.binary_crossentropy(y_true, y_pred)
 
-    # compute the normalizer: the number of positive anchors
-    normalizer = tf.where(K.equal(anchor_state, 1))
-    normalizer = K.cast(K.shape(normalizer)[0], K.floatx())
-    normalizer = K.maximum(K.cast_to_floatx(1.0), normalizer)
-
-    return K.sum(cls_loss) / normalizer
+    return K.sum(cls_loss, axis=axis)
