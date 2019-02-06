@@ -1926,6 +1926,24 @@ class RetinaNetIterator(Iterator):
                 annotations[k] = filtered
         return annotations
 
+    def load_annotations(self, y):
+        """Generate bounding box and label annotations for a tensor
+
+        Args:
+            y: tensor to annotate
+        
+        Returns:
+            annotations: dict of `bboxes` and `labels`
+        """
+        labels, bboxes = [], []
+        for prop in regionprops(np.squeeze(y.astype('int'))):
+            labels.append(prop.label)
+            bboxes.append(prop.bbox)
+        annotations = {'labels': np.array(labels),
+                       'bboxes': np.array(bboxes)}
+        annotations = self.filter_annotations(y, annotations)
+        return annotations
+
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
 
@@ -1945,13 +1963,7 @@ class RetinaNetIterator(Iterator):
             batch_x[i] = x
 
             # Get the bounding boxes from the transformed masks!
-            labels, bboxes = [], []
-            for prop in regionprops(np.squeeze(y.astype('int'))):
-                labels.append(prop.label)
-                bboxes.append(prop.bbox)
-            annotations = {'labels': np.array(labels),
-                           'bboxes': np.array(bboxes)}
-            annotations = self.filter_annotations(x, annotations)
+            annotations = self.load_annotations(y)
             annotations_list.append(annotations)
 
         anchors = anchors_for_shape(
