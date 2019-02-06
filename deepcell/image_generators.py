@@ -1931,7 +1931,7 @@ class RetinaNetIterator(Iterator):
 
         Args:
             y: tensor to annotate
-        
+
         Returns:
             annotations: dict of `bboxes` and `labels`
         """
@@ -1954,9 +1954,9 @@ class RetinaNetIterator(Iterator):
 
             if self.y is not None:
                 y = self.y[j]
-                x, y = self.image_data_generator.random_transform(x.astype(K.floatx()), y)
+                x, y = self.image_data_generator.random_transform(x, y)
             else:
-                x = self.image_data_generator.random_transform(x.astype(K.floatx()))
+                x = self.image_data_generator.random_transform(x)
 
             x = self.image_data_generator.standardize(x)
 
