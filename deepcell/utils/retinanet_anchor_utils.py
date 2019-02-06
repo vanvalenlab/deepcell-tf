@@ -332,7 +332,7 @@ def generate_anchors(base_size=16, ratios=None, scales=None):
     num_anchors = len(ratios) * len(scales)
 
     # initialize output anchors
-    anchors = np.zeros((num_anchors, 4))
+    anchors = np.zeros((num_anchors, 4), dtype=K.floatx())
 
     # scale base_size
     anchors[:, 2:] = base_size * np.tile(scales, (2, len(ratios))).T
