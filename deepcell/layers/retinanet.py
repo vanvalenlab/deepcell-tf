@@ -156,10 +156,11 @@ class UpsampleLike(Layer):
             source, new_shape, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
     def compute_output_shape(self, input_shape):
-        # input_shape = tensor_shape.TensorShape(input_shape).as_list()
+        in_0 = tensor_shape.TensorShape(input_shape[0]).as_list()
+        in_1 = tensor_shape.TensorShape(input_shape[1]).as_list()
         if self.data_format == 'channels_first':
-            return (input_shape[0][0], input_shape[0][1]) + input_shape[1][2:4]
-        return (input_shape[0][0],) + input_shape[1][1:3] + (input_shape[0][-1],)
+            return tuple([in_0[0], in_0[1]] + in_1[2:4])
+        return tuple([in_0[0]] + in_1[1:3] + [in_0[-1]])
 
     def get_config(self):
         config = {'data_format': self.data_format}
