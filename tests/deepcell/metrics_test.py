@@ -1,6 +1,7 @@
 import datetime
 import os
 import json
+from random import sample
 
 import numpy as np
 import pandas as pd
@@ -41,6 +42,95 @@ def _generate_stack_4d():
 def _generate_df():
     df = pd.DataFrame(np.random.rand(8, 4))
     return df
+
+def _sample1(w,h,imw,imh,merge):
+    """Basic two cell merge/split"""
+    x = np.random.randint(0, imw - w * 2)
+    y = np.random.randint(0, imh - h * 2)
+
+    im = np.zeros((imw,imh))
+    im[0:2,0:2] = 1
+    im[x:x+w,y:y+h] = 2
+    im[x+w:x+2*w,y:y+h] = 3
+
+    # Randomly rotate to pick horizontal or vertical
+    if np.random.random()>0.5:
+        im = np.rot90(im)
+
+    if merge:
+        # Return merge error
+        pred = im.copy()
+        pred[pred==3] = 2
+        return im.astype('int'), pred.astype('int')
+    else:
+        # Return split error
+        true = im.copy()
+        true[true==3] = 2
+        return true.astype('int'), im.astype('int')
+
+def _sample2(w,h,imw,imh):
+    """Merge of three cells"""
+    x = np.random.randint(0, imw - w)
+    y = np.random.randint(0, imh - h)
+
+    # Determine split points
+    xs = np.random.randint(1,w*0.9)
+    ys = np.random.randint(1,h*0.9)
+
+    im = np.zeros((imw,imh))
+    im[0:2,0:2] = 4
+    im[x:x+xs,y:y+ys] = 1
+    im[x+xs:x+w,y:y+ys] = 2
+    im[x:x+w,y+ys:y+h] = 3
+
+    return im
+
+def _sample2_2merge(w,h,imw,imh):
+
+    im = _sample2(w,h,imw,imh)
+
+    a,b = sample(set([1,2,3]),2)
+    pred = im.copy()
+    pred[pred==b] = a
+
+    return im.astype('int'),pred.astype('int')
+
+def _sample2_3merge(w,h,imw,imh):
+
+    im = _sample2(w,h,imw,imh)
+
+    pred = (im!=0).copy()
+    pred[0:2,0:2] = 2
+
+    return im.astype('int'), pred.astype('int')
+
+def _sample3(w,h,imw,imh):
+    """Wrong boundaries for 3 call clump"""
+
+    x = np.random.randint(0, imw - w)
+    y = np.random.randint(0, imh - h)
+
+    # Determine split points
+    xs = np.random.randint(1,w*0.9)
+    ys = np.random.randint(1,h*0.9)
+
+    im = np.zeros((imw,imh))
+    im[x:x+xs,y:y+ys] = 1
+    im[x+xs:x+w,y:y+ys] = 2
+    im[x:x+w,y+ys:y+h] = 3
+
+    true = im
+
+    xs = np.random.randint(1,w*0.9)
+    ys = np.random.randint(1,h*0.9)
+    im = np.zeros((imw,imh))
+    im[x:x+xs,y:y+ys] = 1
+    im[x+xs:x+w,y:y+ys] = 2
+    im[x:x+w,y+ys:y+h] = 3
+
+    pred = im
+
+    return true.astype('int'),pred.astype('int')
 
 
 class TransformUtilsTest(test.TestCase):
