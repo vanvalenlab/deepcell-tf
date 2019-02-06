@@ -2004,7 +2004,7 @@ class SiameseIterator(Iterator):
         tracked_frames_index = np.arange(len(tracked_frames))
 
         # Check if there are enough frames
-        enough_frames = len(tracked_frames_index) > self.min_track_length + 1
+        enough_frames = len(tracked_frames) > self.min_track_length + 1
 
         # We need to exclude the last frame so that we will always be able to make a comparison
         if enough_frames:
@@ -2019,11 +2019,19 @@ class SiameseIterator(Iterator):
         # Select the frames. If there aren't enough frames,
         # repeat the first frame the necessary number of times
         if enough_frames:
-            frames = tracked_frames[index + 1 - self.min_track_length:index + 1]
+            frames = tracked_frames[index + 1 - self.min_track_length:]#[-5:]
         else:
-            frames_temp = tracked_frames[0:index + 1]
+            frames_temp = tracked_frames[0:index + 1]#[0:0]
             missing_frames = self.min_track_length - len(frames_temp)
             frames = [tracked_frames[0]] * missing_frames + frames_temp
+
+        assert len(frames) >= self.min_track_length
+        if division:
+            logging.warning('last_frame: %s', last_frame)
+            logging.warning('acceptable_indices: %s', acceptable_indices)
+            logging.warning('enough_frames: %s', enough_frames)
+            logging.warning('tracked_frames: %s', tracked_frames)
+            logging.warning('frames: %s', frames)
 
         return frames
 
@@ -2209,7 +2217,7 @@ class SiameseIterator(Iterator):
             # Dealing with edge cases
             # If class is division, check if the first cell divides. If not, change tracks
             if type_cell == 2:
-                division = True  # TODO: changed from comparison to assignment
+                division = True
                 if not track_id['daughters']:
                     # No divisions so randomly choose a different track that is
                     # guaranteed to have a division
@@ -2221,9 +2229,15 @@ class SiameseIterator(Iterator):
 
             # Get the frames for cell 1 and frames/label for cell 2
             frames_1 = self._fetch_frames(j, division=division)
+            if len(frames_1) == 0:
+                logging.warning('self._fetch_frames(%s, division=%s) returned no frames', j, division)
 
             # For frame_2, choose the next frame cell 1 appears in
             last_frame_1 = np.amax(frames_1)
+
+            logging.warning('last_frame_1: %s', last_frame_1)
+            logging.warning('track_id_frames: %s', track_id['frames'])
+            
             frame_2 = np.amin([x for x in track_id['frames'] if x > last_frame_1])
             frames_2 = [frame_2]
 
@@ -2232,7 +2246,7 @@ class SiameseIterator(Iterator):
             if type_cell == 0:
                 # If there are no different cells in the subsequent frame, we must choose
                 # the same cell
-                if not different_cells:
+                if len(different_cells) == 0:
                     type_cell = 1
                 else:
                     label_2 = np.random.choice(different_cells)
@@ -2338,7 +2352,7 @@ class BoundingBoxIterator(Iterator):
                     mask = self.y[b, :, :, l]
                 else:
                     mask = self.y[b, l, :, :]
-                props = regionprops(label(mask))
+                props = regionprops(np.squeeze(label(mask)))
                 bboxes = [np.array(list(prop.bbox) + list(l)) for prop in props]
                 bboxes = np.concatenate(bboxes, axis=0)
             bbox_list.append(bboxes)
@@ -2357,7 +2371,7 @@ class BoundingBoxIterator(Iterator):
                 mask = y[:, :, l]
             else:
                 mask = y[l, :, :]
-            props = regionprops(label(mask))
+            props = regionprops(np.squeeze(label(mask)))
             bboxes = [np.array(list(prop.bbox) + list(l)) for prop in props]
             bboxes = np.concatenate(bboxes, axis=0)
         return bboxes
@@ -2531,8 +2545,7 @@ class RetinaNetGenerator(_RetinaNetGenerator):
         result = {}
         for cnt, image in enumerate(masks_list):
             result[cnt] = []
-            p = regionprops(label(image))
-
+            p = regionprops(np.squeeze(label(image)))
             cell_count = 0
             for index in range(len(np.unique(label(image))) - 1):
                 y1, x1, y2, x2 = p[index].bbox
@@ -2736,7 +2749,7 @@ class MaskRCNNGenerator(_MaskRCNNGenerator):
         for cnt, image in enumerate(maskarr):
             result[cnt] = []
             l = label(image)
-            p = regionprops(l)
+            p = regionprops(np.squeeze(l))
             cell_count = 0
             for index in range(len(np.unique(l)) - 1):
                 y1, x1, y2, x2 = p[index].bbox
