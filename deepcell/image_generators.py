@@ -1955,7 +1955,7 @@ class RetinaNetIterator(Iterator):
             annotations_list.append(annotations)
 
         anchors = anchors_for_shape(
-            batch_x.shape,
+            batch_x.shape[1:],
             anchor_params=None,
             shapes_callback=self.compute_shapes)
 
