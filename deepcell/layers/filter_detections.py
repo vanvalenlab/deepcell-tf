@@ -40,7 +40,8 @@ except ImportError:
     from tensorflow.python.keras._impl.keras.utils import conv_utils
 
 
-def filter_detections(boxes, classification,
+def filter_detections(boxes,
+                      classification,
                       other=[],
                       class_specific_filter=True,
                       nms=True,
@@ -85,7 +86,7 @@ def filter_detections(boxes, classification,
             filtered_scores = K.gather(scores, indices)[:, 0]
 
             # perform NMS
-            nms_indices = tf.non_max_suppression(
+            nms_indices = tf.image.non_max_suppression(
                 filtered_boxes,
                 filtered_scores,
                 max_output_size=max_detections,
