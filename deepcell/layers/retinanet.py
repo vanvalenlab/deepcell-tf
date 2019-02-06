@@ -156,7 +156,7 @@ class UpsampleLike(Layer):
             source, new_shape, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
     def compute_output_shape(self, input_shape):
-        input_shape = tensor_shape.TensorShape(input_shape).as_list()
+        # input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
             return (input_shape[0][0], input_shape[0][1]) + input_shape[1][2:4]
         return (input_shape[0][0],) + input_shape[1][1:3] + (input_shape[0][-1],)
@@ -218,6 +218,7 @@ class RegressBoxes(Layer):
             anchors, regression, mean=self.mean, std=self.std)
 
     def compute_output_shape(self, input_shape):
+        # input_shape = tensor_shape.TensorShape(input_shape).as_list()
         return input_shape[0]
 
     def get_config(self):
@@ -254,6 +255,7 @@ class ClipBoxes(Layer):
         return K.stack([x1, y1, x2, y2], axis=2)
 
     def compute_output_shape(self, input_shape):
+        # input_shape = tensor_shape.TensorShape(input_shape).as_list()
         return input_shape[1]
 
     def get_config(self):
