@@ -1,4 +1,9 @@
+import datetime
+import os
+import json
+
 import numpy as np
+import pandas as pd
 from skimage.measure import label
 from tensorflow.python.platform import test
 
@@ -33,6 +38,11 @@ def _generate_stack_4d():
     return imarray
 
 
+def _generate_df():
+    df = pd.DataFrame(np.random.rand(8, 4))
+    return df
+
+
 class TransformUtilsTest(test.TestCase):
     def test_reshape_3d(self):
         stack = _generate_stack_3d()
@@ -54,17 +64,21 @@ class TransformUtilsTest(test.TestCase):
         self.assertEqual(out.shape[-1], 2)
 
     def test_calc_objects_ious(self):
-        y_true = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
-        y_pred = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
+        y_true = label(metrics.reshape_padded_tiled_2d(
+            _generate_stack_3d()).astype('int'))
+        y_pred = label(metrics.reshape_padded_tiled_2d(
+            _generate_stack_3d()).astype('int'))
 
-        iou = metrics.calc_object_ious_fast(y_true, y_pred, 0.5)
+        iou = metrics.calc_object_ious_fast(y_true, y_pred)
 
         # Check that output dimensions are 2d
         self.assertEqual(len(iou.shape), 2)
 
     def test_calc_cropped_ious(self):
-        y_true = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
-        y_pred = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
+        y_true = label(metrics.reshape_padded_tiled_2d(
+            _generate_stack_3d()).astype('int'))
+        y_pred = label(metrics.reshape_padded_tiled_2d(
+            _generate_stack_3d()).astype('int'))
 
         iou_in = np.zeros((y_true.max(), y_pred.max()))
         iou_out = metrics.calc_cropped_ious(y_true, y_pred, 0.5, iou_in)
@@ -74,24 +88,28 @@ class TransformUtilsTest(test.TestCase):
         self.assertEqual(len(iou_out.shape), 2)
 
     def test_dice_jaccard_value(self):
-        y_true = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
-        y_pred = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
+        y_true = label(metrics.reshape_padded_tiled_2d(
+            _generate_stack_3d()).astype('int'))
+        y_pred = label(metrics.reshape_padded_tiled_2d(
+            _generate_stack_3d()).astype('int'))
 
-        iou = metrics.calc_object_ious_fast(y_true, y_pred, 0.5)
+        iou = metrics.calc_object_ious_fast(y_true, y_pred)
 
         # Dice and jaccard values should be between 0 and 1
-        d, j = metrics.get_dice_jaccard(iou)
+        d, j = metrics.get_dice_jaccard((iou > 0.5).astype('int'))
         # self.assertAllInRange([d, j], 0, 1)
         self.assertTrue((d >= 0) & (d <= 1))
         self.assertTrue((j >= 0) & (j <= 1))
 
     def test_2d_object_stats(self):
-        y_true = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
-        y_pred = label(metrics.reshape_padded_tiled_2d(_generate_stack_3d()).astype('int'))
-        iou = metrics.calc_object_ious_fast(y_true, y_pred, 0.5)
+        y_true = label(metrics.reshape_padded_tiled_2d(
+            _generate_stack_3d()).astype('int'))
+        y_pred = label(metrics.reshape_padded_tiled_2d(
+            _generate_stack_3d()).astype('int'))
+        iou = metrics.calc_object_ious_fast(y_true, y_pred)
 
-        stats = metrics.calc_2d_object_stats(iou)
-        self.assertEqual(type(stats), dict)
+        stats = metrics.calc_2d_object_stats((iou > 0.5).astype('int'))
+        self.assertIsInstance(stats, dict)
 
         for k in stats.keys():
             self.assertFalse(np.isnan(stats[k]))
@@ -104,10 +122,117 @@ class TransformUtilsTest(test.TestCase):
         self.assertEqual(type(out1), type(None))
 
         out2 = metrics.stats_pixelbased(y_true, y_pred, return_stats=True)
-        self.assertEqual(type(out2), dict)
+        self.assertIsInstance(out2, dict)
 
     def run_object_stats(self):
         y_true = label(_generate_stack_3d())
         y_pred = label(_generate_stack_3d())
 
         metrics.stats_objectbased(y_true, y_pred)
+
+    def test_Metrics_init(self):
+        m = metrics.Metrics('test')
+
+        self.assertEqual(hasattr(m, 'output'), True)
+
+    def test_all_pixel_stats(self):
+        m = metrics.Metrics('test')
+
+        before = len(m.output)
+
+        y_true = _get_image()
+        y_pred = _get_image()
+
+        m.all_pixel_stats(y_true, y_pred)
+
+        # Check that items were added to output
+        self.assertNotEqual(before, len(m.output))
+
+    def test_df_to_dict(self):
+        m = metrics.Metrics('test')
+        df = _generate_df()
+
+        L = m.df_to_dict(df)
+
+        # Check output types
+        self.assertNotEqual(len(L), 0)
+        self.assertIsInstance(L, list)
+        self.assertIsInstance(L[0], dict)
+
+    def test_confusion_matrix(self):
+        y_true = _generate_stack_4d()
+        y_pred = _generate_stack_4d()
+
+        m = metrics.Metrics('test')
+
+        cm = m.calc_confusion_matrix(y_true, y_pred)
+        self.assertEqual(cm.shape[0], y_true.shape[-1])
+
+    def test_metric_object_stats(self):
+        y_true = label(_generate_stack_3d())
+        y_pred = label(_generate_stack_3d())
+
+        m = metrics.Metrics('test')
+        before = len(m.output)
+
+        m.calc_object_stats(y_true, y_pred)
+
+        # Check for creation of attribute
+        self.assertEqual(hasattr(m, 'iou_matrix'), True)
+
+        # Check data added to output
+        self.assertNotEqual(len(before), len(m.output))
+
+    def test_save_to_json(self):
+        name = 'test'
+        outdir = self.get_temp_dir()
+        m = metrics.Metrics(name, outdir=outdir)
+
+        # Create test list to save
+        L = []
+        for i in range(10):
+            L.append(dict(
+                name=i,
+                value=i,
+                feature='test',
+                stat_type='output'
+            ))
+
+        m.save_to_json(L)
+        todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        outfilename = os.path.join(outdir, name+'_'+todays_date+'.json')
+
+        # Check that file exists
+        self.assertEqual(os.path.isfile(outfilename), True)
+
+        # Check that it can be opened
+        with open(outfilename) as json_file:
+            data = json.load(json_file)
+
+        # Check data types from loaded data
+        self.assertIsInstance(data, dict)
+        self.assertEqual(list(data.keys), ['metadata', 'metrics'])
+        self.assertIsInstance(data['metrics'], list)
+        self.assertIsInstance(data['metadata'], dict)
+
+    def test_run_all(self):
+        y_true_lbl = label(_generate_stack_3d())
+        y_pred_lbl = label(_generate_stack_3d())
+        y_true_unlbl = _generate_stack_4d()
+        y_pred_unlbl = _generate_stack_4d()
+
+        name = 'test'
+        outdir = self.get_temp_dir()
+        m = metrics.Metrics(name, outdir=outdir)
+
+        before = len(m.output)
+
+        m.run_all(y_true_lbl, y_pred_lbl, y_true_unlbl, y_pred_unlbl)
+
+        # Assert that data was added to output
+        self.assertEqual(len(m.output), len(before))
+
+        # Check output file
+        todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        outname = os.path.join(outdir, name+'_'+todays_date+'.json')
+        self.assertEqual(os.path.isfile(outname), True)

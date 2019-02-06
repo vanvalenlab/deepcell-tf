@@ -5,6 +5,9 @@ Custom error metrics
 
 @author: cpavelchek, msschwartz21
 """
+import datetime
+import os
+import json
 
 import operator
 
@@ -19,6 +22,8 @@ import pandas as pd
 import networkx as nx
 
 from tensorflow.python.platform import tf_logging as logging
+import pandas as pd
+from sklearn.metrics import confusion_matrix
 
 
 def im_prep(mask, prediction, win_size):
@@ -118,6 +123,9 @@ def calc_object_ious_fast(y_true, y_pred):
             iou_matrix[tid - 1, pid - 1, 0] = iou
 
         else:
+
+
+<< << << < HEAD
             # intersection = np.logical_and(
             #     _joint_or(y_true, tid), _joint_or(y_pred, pid))
             # union = np.logical_or(_joint_or(y_true, tid),
@@ -125,6 +133,13 @@ def calc_object_ious_fast(y_true, y_pred):
             # iou = np.sum(intersection) / np.sum(union)
 
             t_error, p_error = [], []
+== == == =
+            intersection = np.logical_and(
+                _joint_or(y_true, tid), _joint_or(y_pred, pid))
+            union = np.logical_or(_joint_or(y_true, tid),
+                                  _joint_or(y_pred, pid))
+            iou = np.sum(intersection) / np.sum(union)
+>>>>>> > 0dbcbf8b403d816bf12451617fb7e84229662a62
 
             for t in tid:
                 for p in pid:
@@ -442,8 +457,8 @@ def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
         before calculating statistics.
 
     Args:
-        y_true (4D np.array): Ground truth, labeled annotations, (batch,x,y,1)
-        y_pred (np.array): Labeled predictions, (batch,x,y,1)
+        y_true (3D np.array): Binary ground truth annotations for a single feature, (batch,x,y)
+        y_pred (3D np.array): Binary predictions for a single feature, (batch,x,y)
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         return_stats (:obj:`bool`, optional): Returns dictionary of statistics, default False
 
@@ -469,14 +484,12 @@ def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
                          'is: {}.  Shape of y_true is: {}'.format(
                              y_pred.shape, y_true.shape))
 
-    # Convert labels to binary
-    pred = (y_pred != 0).astype('int')
-    truth = (y_true != 0).astype('int')
+    pred = y_pred
+    truth = y_true
 
     if pred.sum() == 0 and truth.sum() == 0:
         logging.warning('DICE score is technically 1.0, '
                         'but prediction and truth arrays are empty. ')
-        return 1.0
 
     # Calculations for IOU
     intersection = np.logical_and(pred, truth)
@@ -696,3 +709,214 @@ class ObjectAccuracy:
         print('False negatives: {}'.format(self.false_neg))
         print('Merges: {}'.format(self.merge))
         print('Splits: {}'.format(self.split))
+
+class Metrics:
+    '''
+    Class to facilitate calculating and saving various classification metrics
+
+    Args:
+        model_name (str): Name of the model which determines output file names
+        outdir (:obj:`str`, optional): Directory to save json file, default ''
+        object_threshold (:obj:`float`, optional): Sets criteria for jaccard index
+            to declare object overlap
+        pixel_threshold (:obj:`float`, optional): Threshold for converting predictions to binary
+        ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
+        crop_size (:obj:`int`, optional): Enables cropping for object calculations, default None
+        return_iou (:obj:`bool`, optional): Returns iou_matrix if True, default False
+        feature_key (:obj:`list`, optional): List of strings to use as feature names
+    '''
+
+    def __init__(self, model_name,
+                 outdir='',
+                 object_threshold=0.5,
+                 pixel_threshold=0.5,
+                 ndigits=4,
+                 crop_size=None,
+                 return_iou=False,
+                 feature_key=[]):
+
+        self.model_name = model_name
+        self.outdir = outdir
+        self.object_threshold = object_threshold
+        self.pixel_threshold = pixel_threshold
+        self.ndigits = ndigits
+        self.crop_size = crop_size
+        self.return_iou = return_iou
+        self.feature_key = feature_key
+
+        # Initialize output list to collect stats
+        self.output = []
+
+    def all_pixel_stats(self, y_true, y_pred):
+        '''Collect pixel statistics for each feature.
+
+        y_true should have the appropriate transform applied to match y_pred
+
+        Args:
+            y_true (4D np.array): Ground truth annotations after application of transform
+            y_pred (4D np.array): Model predictions without labeling
+
+        Raises:
+            ValueError: If y_true and y_pred are not the same shape
+        '''
+
+        if y_pred.shape != y_true.shape:
+            raise ValueError('Shape of inputs need to match. Shape of prediction '
+                             'is: {}.  Shape of y_true is: {}'.format(
+                                 y_pred.shape, y_true.shape))
+
+        n_features = y_pred.shape[-1]
+
+        # Intialize df to collect pixel stats
+        self.pixel_df = pd.DataFrame()
+
+        # Set numeric feature key if existing key is not write length
+        if n_features != len(self.feature_key):
+            self.feature_key = range(n_features)
+
+        for i, k in enumerate(self.feature_key):
+            print('\nChannel', k)
+            yt = y_true[:, :, :, i] > self.pixel_threshold
+            yp = y_pred[:, :, :, i] > self.pixel_threshold
+            stats = stats_pixelbased(
+                yt, yp, ndigits=self.ndigits, return_stats=True)
+            self.pixel_df = self.pixel_df.append(
+                pd.DataFrame(stats, index=[k]))
+
+        # Save stats to output dictionary
+        self.output = self.output + self.df_to_dict(self.pixel_df)
+
+        # Calculate confusion matrix
+        cm = self.calc_confusion_matrix(y_true, y_pred)
+        self.output.append(dict(
+            name='confusion_matrix',
+            value=cm.tolist(),
+            feature='all',
+            stat_type='pixel'
+        ))
+
+    def df_to_dict(self, df):
+        """Output pandas df as a list of dictionary objects
+
+        Args:
+            df (pd.DataFrame): Dataframe of statistics for each channel
+
+        Returns:
+            list: List of dictionaries
+        """
+
+        # Initialize output dictionary
+        L = []
+
+        # Write out average statistics
+        for k, v in df.mean().iteritems():
+            L.append(dict(
+                name=k,
+                value=v,
+                feature='average',
+                stat_type='pixel'
+            ))
+
+        # Save individual stats to list
+        for i, row in df.iterrows():
+            for k, v in row.iteritems():
+                L.append(dict(
+                    name=k,
+                    value=v,
+                    feature=i,
+                    stat_type='pixel'
+                ))
+
+        return L
+
+    def calc_confusion_matrix(self, y_true, y_pred):
+        """Calculate confusion matrix for pixel classification data.
+
+        Args:
+            y_true (4D np.array): Ground truth annotations after any necessary transformations
+            y_pred (4D np.array): Prediction array
+
+        Returns:
+            confusion_matrix: nxn array determined by number of features
+        """
+
+        # Argmax collapses on feature dimension to assign class to each pixel
+        # Flatten is requiremed for confusion matrix
+        y_true = y_true.argmax(axis=-1).flatten()
+        y_pred = y_pred.argmax(axis=-1).flatten()
+
+        return confusion_matrix(y_true, y_pred)
+
+    def calc_object_stats(self, y_true, y_pred):
+        """Calculate object statistics and save to output
+
+        Args:
+            y_true (3D np.array): Labeled ground truth annotations
+            y_pred (3D np.array): Labeled prediction mask
+        """
+        self.iou_matrix = stats_objectbased(y_true, y_pred,
+                                            object_threshold=self.object_threshold,
+                                            ndigits=self.ndigits,
+                                            crop_size=self.crop_size,
+                                            return_iou=True)
+
+        # Get stats dictionary
+        stats = calc_2d_object_stats(self.iou_matrix)
+        for k, v in stats.items():
+            self.output.append(dict(
+                name=k,
+                value=v,
+                feature='object',
+                stat_type='object'
+            ))
+
+    def run_all(self,
+                y_true_lbl,
+                y_pred_lbl,
+                y_true_unlbl,
+                y_pred_unlbl):
+        """Runs pixel and object base statistics and ouputs to file
+
+        Args:
+            y_true_lbl (3D np.array): Labeled ground truth annotation, (sample,x,y)
+            y_pred_lbl (3D np.array): Labeled prediction mask, (sample,x,y)
+            y_true_unlbl (4D np.array): Ground truth annotation after necessary transforms,
+                (sample,x,y,feature)
+            y_pred_unlbl (4D np.array): Predictions, (sample,x,y,feature)
+        """
+
+        print('Starting pixel based statistics')
+        self.all_pixel_stats(y_true_unlbl, y_pred_unlbl)
+
+        print('Starting object based statistics')
+        self.calc_object_stats(y_true_lbl, y_pred_lbl)
+
+        self.save_to_json(self.output)
+
+    def save_to_json(self, L):
+        """Save list of dictionaries to json file with file metadata
+
+        Args:
+            L (list): List of metric dictionaries
+        """
+
+        todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        outname = os.path.join(
+            self.outdir, self.model_name+'_'+todays_date+'.json')
+
+        # Configure final output
+        D = {}
+
+        # Record metadata
+        D['metadata'] = dict(
+            model_name=self.model_name,
+            date=todays_date
+        )
+
+        # Record metrics
+        D['metrics'] = L
+
+        with open(outname, 'w') as outfile:
+            json.dump(D, outfile)
+
+        print('Saved to', outname)
