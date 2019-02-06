@@ -279,7 +279,7 @@ def anchors_for_shape(image_shape,
             ratios=anchor_params.ratios,
             scales=anchor_params.scales
         )
-        shifted_anchors = shift(image_shapes[idx], anchor_params.strides[idx], anchors)
+        shifted_anchors = _shift(image_shapes[idx].as_list(), anchor_params.strides[idx], anchors)
         all_anchors = np.append(all_anchors, shifted_anchors, axis=0)
 
     return all_anchors
