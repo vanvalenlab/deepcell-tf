@@ -110,7 +110,7 @@ class Anchors(Layer):
         return anchors
 
     def compute_output_shape(self, input_shape):
-        # input_shape = tensor_shape.TensorShape(input_shape).as_list()
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if None not in input_shape[1:]:
             if self.data_format == 'channels_first':
                 total = np.prod(input_shape[2:4]) * self.num_anchors
