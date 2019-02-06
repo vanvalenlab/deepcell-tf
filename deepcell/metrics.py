@@ -6,9 +6,18 @@ Custom error metrics
 @author: cpavelchek, msschwartz21
 """
 
+import operator
+
 import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import linear_sum_assignment
+
 import skimage.io
 import skimage.measure
+
+import pandas as pd
+import networkx as nx
+
 from tensorflow.python.platform import tf_logging as logging
 
 
@@ -84,10 +93,11 @@ def calc_object_ious_fast(y_true, y_pred):
         return out
 
     # Initialize iou matrix
-    iou_matrix = np.zeros((y_true.max(), y_pred.max()))
+    # Add third dimension to seperate merges
+    iou_matrix = np.zeros((y_true.max(), y_pred.max(), 2))
 
     # Find an intersection mask of all regions of intersection
-    mask = np.logical_and(y_true != 0, y_pred != 0)
+    mask = np.logical_or(y_true != 0, y_pred != 0)
     mask_lbl = skimage.measure.label(mask, connectivity=2)
 
     # Loop over each region of intersection
@@ -105,16 +115,23 @@ def calc_object_ious_fast(y_true, y_pred):
             union = np.logical_or(y_true == tid[0], y_pred == pid[0])
             iou = np.sum(intersection) / np.sum(union)
 
-            iou_matrix[tid - 1, pid - 1] = iou
+            iou_matrix[tid - 1, pid - 1, 0] = iou
 
         else:
-            intersection = np.logical_and(_joint_or(y_true, tid), _joint_or(y_pred, pid))
-            union = np.logical_or(_joint_or(y_true, tid), _joint_or(y_pred, pid))
-            iou = np.sum(intersection) / np.sum(union)
+            # intersection = np.logical_and(
+            #     _joint_or(y_true, tid), _joint_or(y_pred, pid))
+            # union = np.logical_or(_joint_or(y_true, tid),
+            #                       _joint_or(y_pred, pid))
+            # iou = np.sum(intersection) / np.sum(union)
+
+            t_error, p_error = [], []
 
             for t in tid:
                 for p in pid:
-                    iou_matrix[t - 1, p - 1] = iou
+                    intersection = np.logical_and(y_true == t, y_pred == p)
+                    union = np.logical_or(y_true == t, y_pred == p)
+                    iou = np.sum(intersection) / np.sum(union)
+                    iou_matrix[t - 1, p - 1, 1] = iou
 
     return iou_matrix
 
@@ -276,8 +293,10 @@ def stats_objectbased(y_true,
     # Get performance stats
     stats = calc_2d_object_stats((iou_matrix > object_threshold).astype('int'))
 
-    false_pos_perc_err = stats['false_pos'] / (stats['false_pos'] + stats['false_neg'])
-    false_neg_perc_err = stats['false_neg'] / (stats['false_pos'] + stats['false_neg'])
+    false_pos_perc_err = stats['false_pos'] / \
+        (stats['false_pos'] + stats['false_neg'])
+    false_neg_perc_err = stats['false_neg'] / \
+        (stats['false_pos'] + stats['false_neg'])
 
     false_pos_perc_pred = stats['false_pos'] / stats['pred_cells']
     false_neg_perc_truth = stats['false_neg'] / stats['true_cells']
@@ -338,12 +357,14 @@ def calc_2d_object_stats(iou_matrix):
 
     # Calculate values based on projecting along truth axis
     truth_proj = iou_matrix.sum(axis=0)
-    # Single hit corresponds to predicted cells that match to true cells
-    pred_true_pos = np.count_nonzero(truth_proj == 1)
     # Empty hits indicate predicted cells that do not exist in true cells
     false_pos = np.count_nonzero(truth_proj == 0)
     # More than 2 hits indicates more than 2 true cells corresponding to 1 predicted cell
     merge = np.count_nonzero(truth_proj >= 2)
+
+    # Ones are true positives excluding merge errors
+    true_pos = np.count_nonzero(pred_proj == 1) - \
+        (truth_proj[truth_proj >= 2].sum())
 
     # Calc dice jaccard stats for objects
     dice, jaccard = get_dice_jaccard(iou_matrix)
@@ -353,7 +374,60 @@ def calc_2d_object_stats(iou_matrix):
         'pred_cells': pred_cells,
         'false_neg': false_neg,
         'split': split,
-        'pred_true_pos': pred_true_pos,
+        'true_pos': true_pos,
+        'false_pos': false_pos,
+        'merge': merge,
+        'dice': dice,
+        'jaccard': jaccard
+    }
+
+
+def calc_2d_object_stats_3diou(iou_matrix):
+    """Calculates basic statistics to evaluate classification accuracy for a 2d image
+
+    Args:
+        iou_matrix (np.array): 2D array with dimensions (#true_cells,#predicted_cells)
+
+    Returns:
+        dict: Dictionary containing all statistics computed by function
+    """
+    true_cells = iou_matrix.shape[0]
+    pred_cells = iou_matrix.shape[1]
+
+    iou = iou_matrix[:, :, 0]
+
+    # Calculate values based on projecting along prediction axis
+    pred_proj = iou.sum(axis=1)
+    # Zeros (aka absence of hits) correspond to true cells missed by prediction
+    false_neg = np.count_nonzero(pred_proj == 0)
+
+    # Calculate values based on projecting along truth axis
+    truth_proj = iou.sum(axis=0)
+    # Empty hits indicate predicted cells that do not exist in true cells
+    false_pos = np.count_nonzero(truth_proj == 0)
+
+    # Ones are true positives excluding merge errors
+    true_pos = np.count_nonzero(pred_proj == 1)
+
+    # Deal with merges
+    iou = (iou_matrix[:, :, 1] != 0).astype('int')
+    pred_proj = iou.sum(axis=1)
+    truth_proj = iou.sum(axis=0)
+
+    # More than 2 hits corresponds to true cells hit twice by prediction, aka split
+    # split = np.count_nonzero(pred_proj >= 2)
+    # More than 2 hits indicates more than 2 true cells corresponding to 1 predicted cell
+    # merge = np.count_nonzero(truth_proj >= 2)
+
+    # # Calc dice jaccard stats for objects
+    # dice, jaccard = get_dice_jaccard(iou_matrix)
+
+    return {
+        'true_cells': true_cells,
+        'pred_cells': pred_cells,
+        'false_neg': false_neg,
+        'split': split,
+        'true_pos': true_pos,
         'false_pos': false_pos,
         'merge': merge,
         'dice': dice,
@@ -430,3 +504,195 @@ def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
             'recall': recall,
             'Fmeasure': Fmeasure
         }
+
+
+class ObjectAccuracy:
+    def __init__(self, y_true, y_pred, cutoff1, cutoff2):
+
+        self.y_true = y_true
+        self.y_pred = y_pred
+        self.cutoff1 = cutoff1
+        self.cutoff2 = cutoff2
+
+        self.n_true = y_true.max()
+        self.n_pred = y_pred.max()
+        self.n_obj = self.n_true + self.n_pred
+
+        # Initialize error counters
+        self.true_pos = 0
+        self.false_pos = 0
+        self.false_neg = 0
+        self.merge = 0
+        self.split = 0
+
+        # Check if either frame is empty before proceeding
+        if 0 not in [self.n_true, self.n_pred]:
+            self.calc_iou()
+            self.make_matrix()
+            self.linear_assignment()
+            self.assign_loners()
+            self.array_to_graph()
+            self.classify_graph()
+
+    def calc_iou(self):
+
+        self.iou = np.zeros((self.n_true, self.n_pred))
+
+        # Make all pairwise comparisons to calc iou
+        for t in np.unique(self.y_true)[1:]:  # skip 0
+            for p in np.unique(self.y_pred)[1:]:  # skip 0
+                intersection = np.logical_and(
+                    self.y_true == t, self.y_pred == p)
+                union = np.logical_or(self.y_true == t, self.y_pred == p)
+                # Subtract 1 from index to account for skipping 0
+                self.iou[t - 1, p - 1] = intersection.sum() / union.sum()
+
+    def make_matrix(self):
+
+        self.cm = np.ones((self.n_obj, self.n_obj))
+
+        # Assign 1 - iou to top left and bottom right
+        self.cm[:self.n_true, :self.n_pred] = 1 - self.iou
+        self.cm[-self.n_pred:, -self.n_true:] = 1 - self.iou.T
+
+        # Calculate diagonal corners
+        bl = self.cutoff1 * \
+            np.eye(self.n_pred) + np.ones((self.n_pred, self.n_pred)) - \
+            np.eye(self.n_pred)
+        tr = self.cutoff1 * \
+            np.eye(self.n_true) + np.ones((self.n_true, self.n_true)) - \
+            np.eye(self.n_true)
+
+        # Assign diagonals to cm
+        self.cm[-self.n_pred:, :self.n_pred] = bl
+        self.cm[:self.n_true, -self.n_true:] = tr
+
+    def linear_assignment(self):
+
+        self.results = linear_sum_assignment(self.cm)
+
+        # Map results onto cost matrix
+        self.cm_res = np.zeros(self.cm.shape)
+        self.cm_res[self.results[0], self.results[1]] = 1
+
+        self.match = np.where(self.cm_res[self.n_true:, self.n_pred:] == 1)
+        self.true_pos += len(self.match[0])
+
+        self.loners_pred, _ = np.where(
+            self.cm_res[-self.n_pred:, :self.n_pred] == 1)
+        self.loners_true, _ = np.where(
+            self.cm_res[:self.n_true, -self.n_true:] == 1)
+
+    def plot_assignment_matrix(self):
+
+        fig, ax = plt.subplots()
+        ax.imshow(self.cm_res)
+        plt.axhline(self.n_true-0.5, c='r')
+        plt.axvline(self.n_pred-0.5, c='r')
+
+    def plot_true_positives(self):
+
+        for ti, pi in zip(self.match[0], self.match[1]):
+            fig, ax = plt.subplots(1, 2)
+            # Shift index by 1 b/c skipped 0
+            ax[0].imshow(self.y_true == (ti+1))
+            ax[1].imshow(self.y_pred == (pi+1))
+
+    def plot_loners(self):
+
+        def _joint_or(arr, L):
+            '''Calculate overlap of an arr with a list of values'''
+            out = arr == L[0]
+            for i in L[1:]:
+                out = (out) | (arr == i)
+            return out
+
+        fig, ax = plt.subplots(1, 2)
+        # Shift index by 1 b/c skipped 0
+        ax[0].imshow(_joint_or(self.y_true, self.loners_true+1))
+        ax[1].imshow(_joint_or(self.y_pred, self.loners_pred+1))
+
+        # if len(self.loners_true)>1:
+        #     ax[0].imshow(_joint_or(self.y_true,self.loners_true+1))
+        # elif len(self.loners_true)==1:
+        #     ax[0].imshow(self.y_true==self.loners_true[0]+1)
+
+        # if len(self.loners_pred)>1:
+        #     ax[1].imshow(_joint_or(self.y_pred,self.loners_pred+1))
+        # elif self.loners_pred.shape[0]==1:
+        #     ax[1].imshow(self.y_pred==self.loners_pred[0]+1)
+
+    def assign_loners(self):
+
+        self.n_pred2 = len(self.loners_pred)
+        self.n_true2 = len(self.loners_true)
+        self.n_obj2 = self.n_pred2 + self.n_true2
+
+        self.cost_l = np.zeros((self.n_true2, self.n_pred2))
+
+        for i, t in enumerate(self.loners_true):
+            for j, p in enumerate(self.loners_pred):
+                self.cost_l[i, j] = self.iou[t, p]
+
+        self.cost_l_bin = self.cost_l > self.cutoff2
+
+    def array_to_graph(self):
+
+        # Use meshgrid to get true and predicted cell index for each val
+        tt, pp = np.meshgrid(np.arange(self.cost_l_bin.shape[0]), np.arange(
+            self.cost_l_bin.shape[1]), indexing='ij')
+
+        df = pd.DataFrame({
+            'true': tt.flatten(),
+            'pred': pp.flatten(),
+            'weight': self.cost_l_bin.flatten()
+        })
+
+        # Change cell index to str names
+        df['true'] = 'true_' + df['true'].astype('str')
+        df['pred'] = 'pred_' + df['pred'].astype('str')
+        nodes = list(df['true'].unique())+list(df['pred'].unique())
+
+        # Drop 0 weights to only retain overlapping cells
+        dfedge = df.drop(df[df['weight'] == 0].index)
+
+        # Create graph from edges
+        self.G = nx.from_pandas_edgelist(dfedge, source='true', target='pred')
+
+        # Add nodes to ensure all cells are included
+        self.G.add_nodes_from(nodes)
+
+    def classify_graph(self):
+
+        # Find subgraphs, e.g. merge/split
+        for g in nx.connected_component_subgraphs(self.G):
+            k = max(dict(g.degree).items(), key=operator.itemgetter(1))[0]
+
+            # Process isolates first
+            if g.degree[k] == 0:
+                if 'pred' in k:
+                    self.false_pos += 1
+                elif 'true' in k:
+                    self.false_neg += 1
+            # Eliminate anything with max degree 1
+            # Aka true pos
+            elif g.degree[k] == 1:
+                self.true_pos += 1
+            # Process merges and split
+            else:
+                if 'pred' in k:
+                    self.merge += 1
+                elif 'true' in k:
+                    self.split += 1
+
+    def print_report(self):
+
+        print('Number of cells predicted:', self.n_pred)
+        print('Number of true cells:', self.n_true)
+        print('True positives: {}, Accuracy: {}'.format(
+            self.true_pos, np.round(self.true_pos/self.n_true, 2)
+        ))
+        print('False positives: {}'.format(self.false_pos))
+        print('False negatives: {}'.format(self.false_neg))
+        print('Merges: {}'.format(self.merge))
+        print('Splits: {}'.format(self.split))
