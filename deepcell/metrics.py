@@ -17,13 +17,12 @@ from scipy.optimize import linear_sum_assignment
 
 import skimage.io
 import skimage.measure
+from sklearn.metrics import confusion_matrix
 
 import pandas as pd
 import networkx as nx
 
 from tensorflow.python.platform import tf_logging as logging
-import pandas as pd
-from sklearn.metrics import confusion_matrix
 
 
 def im_prep(mask, prediction, win_size):
@@ -124,22 +123,11 @@ def calc_object_ious_fast(y_true, y_pred):
 
         else:
 
-
-<< << << < HEAD
             # intersection = np.logical_and(
             #     _joint_or(y_true, tid), _joint_or(y_pred, pid))
             # union = np.logical_or(_joint_or(y_true, tid),
             #                       _joint_or(y_pred, pid))
             # iou = np.sum(intersection) / np.sum(union)
-
-            t_error, p_error = [], []
-== == == =
-            intersection = np.logical_and(
-                _joint_or(y_true, tid), _joint_or(y_pred, pid))
-            union = np.logical_or(_joint_or(y_true, tid),
-                                  _joint_or(y_pred, pid))
-            iou = np.sum(intersection) / np.sum(union)
->>>>>> > 0dbcbf8b403d816bf12451617fb7e84229662a62
 
             for t in tid:
                 for p in pid:
@@ -520,12 +508,32 @@ def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
 
 
 class ObjectAccuracy:
-    def __init__(self, y_true, y_pred, cutoff1, cutoff2):
+    """Classifies errors in object predictions as true positive,
+        false positive/negative, merge or split
+
+    Args:
+        y_true (2D np.array): Labeled ground truth annotation
+        y_pred (2D np.array): Labled object prediction, same size as y_true
+        cutoff1 (:obj:`float`, optional): Threshold for overlap in cost matrix,
+            smaller values are more conservative, default 0.4
+        cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned cells,
+            smaller values are better, default 0.1
+
+    Raises:
+        ValueError: If y_true and y_pred are not the same shape
+    """
+
+    def __init__(self, y_true, y_pred, cutoff1=0.4, cutoff2=0.1):
 
         self.y_true = y_true
         self.y_pred = y_pred
         self.cutoff1 = cutoff1
         self.cutoff2 = cutoff2
+
+        if y_pred.shape != y_true.shape:
+            raise ValueError('Shape of inputs need to match. Shape of prediction '
+                            'is: {}.  Shape of y_true is: {}'.format(
+                                y_pred.shape, y_true.shape))
 
         self.n_true = y_true.max()
         self.n_pred = y_pred.max()
@@ -538,16 +546,31 @@ class ObjectAccuracy:
         self.merge = 0
         self.split = 0
 
-        # Check if either frame is empty before proceeding
-        if 0 not in [self.n_true, self.n_pred]:
-            self.calc_iou()
-            self.make_matrix()
-            self.linear_assignment()
-            self.assign_loners()
-            self.array_to_graph()
-            self.classify_graph()
+        # Initialize index records
+        self.false_pos_ind = []
+        self.false_neg_ind = []
+        self.merge_ind = []
+        self.split_ind = []
 
-    def calc_iou(self):
+        # Check if either frame is empty before proceeding
+        if 0 == self.n_true:
+            print('Ground truth frame is empty')
+            self.false_pos += self.n_pred
+        elif 0 == self.n_pred:
+            print('Prediction frame is empty')
+            self.false_neg += self.n_true
+        else:
+            self._calc_iou()
+            self._make_matrix()
+            self._linear_assignment()
+            self._assign_loners()
+            self._array_to_graph()
+            self._classify_graph()
+
+    def _calc_iou(self):
+        """Calculates intersection of union matrix for each pairwise
+        comparison between true and predicted
+        """
 
         self.iou = np.zeros((self.n_true, self.n_pred))
 
@@ -560,7 +583,9 @@ class ObjectAccuracy:
                 # Subtract 1 from index to account for skipping 0
                 self.iou[t - 1, p - 1] = intersection.sum() / union.sum()
 
-    def make_matrix(self):
+    def _make_matrix(self):
+        """Assembles cost matrix using the iou matrix and cutoff1
+        """
 
         self.cm = np.ones((self.n_obj, self.n_obj))
 
@@ -580,7 +605,10 @@ class ObjectAccuracy:
         self.cm[-self.n_pred:, :self.n_pred] = bl
         self.cm[:self.n_true, -self.n_true:] = tr
 
-    def linear_assignment(self):
+    def _linear_assignment(self):
+        """Runs linear sun assignment on cost matrix, identifies true positives
+        and unassigned true and predicted cells
+        """
 
         self.results = linear_sum_assignment(self.cm)
 
@@ -588,54 +616,20 @@ class ObjectAccuracy:
         self.cm_res = np.zeros(self.cm.shape)
         self.cm_res[self.results[0], self.results[1]] = 1
 
-        self.match = np.where(self.cm_res[self.n_true:, self.n_pred:] == 1)
-        self.true_pos += len(self.match[0])
+        # Identify direct matches as true positives
+        self.true_pos_ind = np.where(
+            self.cm_res[self.n_true:, self.n_pred:] == 1)
+        self.true_pos += len(self.true_pos_ind[0])
 
+        # Collect unassigned cells
         self.loners_pred, _ = np.where(
             self.cm_res[-self.n_pred:, :self.n_pred] == 1)
         self.loners_true, _ = np.where(
             self.cm_res[:self.n_true, -self.n_true:] == 1)
 
-    def plot_assignment_matrix(self):
-
-        fig, ax = plt.subplots()
-        ax.imshow(self.cm_res)
-        plt.axhline(self.n_true-0.5, c='r')
-        plt.axvline(self.n_pred-0.5, c='r')
-
-    def plot_true_positives(self):
-
-        for ti, pi in zip(self.match[0], self.match[1]):
-            fig, ax = plt.subplots(1, 2)
-            # Shift index by 1 b/c skipped 0
-            ax[0].imshow(self.y_true == (ti+1))
-            ax[1].imshow(self.y_pred == (pi+1))
-
-    def plot_loners(self):
-
-        def _joint_or(arr, L):
-            '''Calculate overlap of an arr with a list of values'''
-            out = arr == L[0]
-            for i in L[1:]:
-                out = (out) | (arr == i)
-            return out
-
-        fig, ax = plt.subplots(1, 2)
-        # Shift index by 1 b/c skipped 0
-        ax[0].imshow(_joint_or(self.y_true, self.loners_true+1))
-        ax[1].imshow(_joint_or(self.y_pred, self.loners_pred+1))
-
-        # if len(self.loners_true)>1:
-        #     ax[0].imshow(_joint_or(self.y_true,self.loners_true+1))
-        # elif len(self.loners_true)==1:
-        #     ax[0].imshow(self.y_true==self.loners_true[0]+1)
-
-        # if len(self.loners_pred)>1:
-        #     ax[1].imshow(_joint_or(self.y_pred,self.loners_pred+1))
-        # elif self.loners_pred.shape[0]==1:
-        #     ax[1].imshow(self.y_pred==self.loners_pred[0]+1)
-
-    def assign_loners(self):
+    def _assign_loners(self):
+        """Generate an iou matrix for the subset unassigned cells
+        """
 
         self.n_pred2 = len(self.loners_pred)
         self.n_true2 = len(self.loners_true)
@@ -649,7 +643,9 @@ class ObjectAccuracy:
 
         self.cost_l_bin = self.cost_l > self.cutoff2
 
-    def array_to_graph(self):
+    def _array_to_graph(self):
+        """Transform matrix for unassigned cells into a graph object
+        """
 
         # Use meshgrid to get true and predicted cell index for each val
         tt, pp = np.meshgrid(np.arange(self.cost_l_bin.shape[0]), np.arange(
@@ -675,30 +671,46 @@ class ObjectAccuracy:
         # Add nodes to ensure all cells are included
         self.G.add_nodes_from(nodes)
 
-    def classify_graph(self):
+    def _classify_graph(self):
+        """Assign each node in graph to an error type
+        """
 
         # Find subgraphs, e.g. merge/split
         for g in nx.connected_component_subgraphs(self.G):
             k = max(dict(g.degree).items(), key=operator.itemgetter(1))[0]
+            i_loner = int(k.split('_')[-1])
+
+            # Map index back to original cost matrix index
+            if 'pred' in k:
+                i_cm = self.loners_pred[i]
+            else:
+                i_cm = self.loners_true[i]
 
             # Process isolates first
             if g.degree[k] == 0:
                 if 'pred' in k:
                     self.false_pos += 1
+                    self.false_pos_ind.append(i_cm)
                 elif 'true' in k:
                     self.false_neg += 1
+                    self.false_neg_ind.append(i_cm)
             # Eliminate anything with max degree 1
             # Aka true pos
             elif g.degree[k] == 1:
                 self.true_pos += 1
+                self.true_pos_ind.append(i_cm)
             # Process merges and split
             else:
                 if 'pred' in k:
                     self.merge += 1
+                    self.merge_ind.append(i_cm)
                 elif 'true' in k:
                     self.split += 1
+                    self.split_ind.append(i_cm)
 
     def print_report(self):
+        """Print report of error types and frequency
+        """
 
         print('Number of cells predicted:', self.n_pred)
         print('Number of true cells:', self.n_true)
@@ -709,6 +721,26 @@ class ObjectAccuracy:
         print('False negatives: {}'.format(self.false_neg))
         print('Merges: {}'.format(self.merge))
         print('Splits: {}'.format(self.split))
+
+    def save_to_dataframe(self):
+        """Save error results to a pandas dataframe
+
+        Returns:
+            pd.DataFrame: Single row dataframe with error types as columns
+        """
+
+        df = pd.DataFrame({
+            'n_pred': self.n_pred,
+            'n_true': self.n_true,
+            'true_pos': self.true_pos,
+            'false_pos': self.false_pos,
+            'false_neg': self.false_neg,
+            'merge': self.merge,
+            'split': self.split
+        }, index=[0], dtype='int32')
+
+        return df
+
 
 class Metrics:
     '''
