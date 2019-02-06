@@ -121,7 +121,8 @@ def filter_detections(boxes,
     # select top k
     scores = tf.gather_nd(classification, indices)
     labels = indices[:, 1]
-    scores, top_indices = tf.top_k(scores, k=K.minimum(max_detections, K.shape(scores)[0]))
+    scores, top_indices = tf.nn.top_k(
+        scores, k=K.minimum(max_detections, K.shape(scores)[0]))
 
     # filter input using the final set of indices
     indices = K.gather(indices[:, 0], top_indices)
@@ -188,7 +189,6 @@ class FilterDetections(Layer):
         Args
             inputs: List of [boxes, classification, other[0], other[1], ...] tensors.
         """
-        print(inputs)
         boxes = inputs[0]
         classification = inputs[1]
         other = inputs[2:]
