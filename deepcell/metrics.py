@@ -98,7 +98,7 @@ def calc_object_ious_fast(y_true, y_pred):
 
     # Initialize iou matrix
     # Add third dimension to seperate merges
-    iou_matrix = np.zeros((y_true.max(), y_pred.max(), 2))
+    iou_matrix = np.zeros((y_true.max(), y_pred.max()))
 
     # Find an intersection mask of all regions of intersection
     mask = np.logical_or(y_true != 0, y_pred != 0)
@@ -119,7 +119,7 @@ def calc_object_ious_fast(y_true, y_pred):
             union = np.logical_or(y_true == tid[0], y_pred == pid[0])
             iou = np.sum(intersection) / np.sum(union)
 
-            iou_matrix[tid - 1, pid - 1, 0] = iou
+            iou_matrix[tid - 1, pid - 1] = iou
 
         else:
 
@@ -134,7 +134,7 @@ def calc_object_ious_fast(y_true, y_pred):
                     intersection = np.logical_and(y_true == t, y_pred == p)
                     union = np.logical_or(y_true == t, y_pred == p)
                     iou = np.sum(intersection) / np.sum(union)
-                    iou_matrix[t - 1, p - 1, 1] = iou
+                    iou_matrix[t - 1, p - 1] = iou
 
     return iou_matrix
 
@@ -315,13 +315,14 @@ def stats_objectbased(y_true,
 
     if stats['true_cells'] == 0:
         false_neg_perc_truth = 0
+        perc_merged = 0
+        perc_divided = 0
+        acc = 0
     else:
         false_neg_perc_truth = stats['false_neg'] / stats['true_cells']
-
-    perc_merged = stats['merge'] / stats['true_cells']
-    perc_divided = stats['split'] / stats['true_cells']
-
-    acc = (stats['pred_cells'] - stats['false_pos']) / stats['true_cells']
+        perc_merged = stats['merge'] / stats['true_cells']
+        perc_divided = stats['split'] / stats['true_cells']
+        acc = (stats['pred_cells'] - stats['false_pos']) / stats['true_cells']
 
     print('\n____________________Object-based statistics____________________\n')
     print('Intersection over Union thresholded at {} for object detection'.format(
@@ -332,7 +333,7 @@ def stats_objectbased(y_true,
     print('Number of cells present in ground truth:', stats['true_cells'])
     print('Accuracy: {}%\n'.format(_round(acc * 100)))
 
-    print('#true positives: {}'.format(_round(stats['pred_true_pos'])))
+    print('#true positives: {}'.format(_round(stats['true_pos'])))
 
     print('#false positives: {}\t% of total error: {}\t% of predicted incorrect: {}'.format(
         _round(stats['false_pos']),
@@ -546,8 +547,8 @@ class ObjectAccuracy:
 
         if y_pred.shape != y_true.shape:
             raise ValueError('Shape of inputs need to match. Shape of prediction '
-                            'is: {}.  Shape of y_true is: {}'.format(
-                                y_pred.shape, y_true.shape))
+                             'is: {}.  Shape of y_true is: {}'.format(
+                                 y_pred.shape, y_true.shape))
 
         self.n_true = y_true.max()
         self.n_pred = y_pred.max()

@@ -17,11 +17,13 @@ def _get_image(img_h=300, img_w=300):
     img = np.random.rand(img_w, img_h) * variance + bias
     return img
 
+
 def _get_image_multichannel(img_h=300, img_w=300):
     bias = np.random.rand(img_w, img_h, 2) * 64
     variance = np.random.rand(img_w, img_h, 2) * (255 - 64)
     img = np.random.rand(img_w, img_h, 2) * variance + bias
     return img
+
 
 def _generate_test_masks():
     img_w = img_h = 30
@@ -34,13 +36,13 @@ def _generate_test_masks():
 
 def _generate_stack_3d():
     img_w = img_h = 30
-    imarray = np.random.randint(0, high=1, size=(40, img_w, img_h))
+    imarray = np.random.randint(0, high=2, size=(40, img_w, img_h))
     return imarray
 
 
 def _generate_stack_4d():
     img_w = img_h = 30
-    imarray = np.random.randint(0, high=1, size=(40, img_w, img_h, 2))
+    imarray = np.random.randint(0, high=2, size=(40, img_w, img_h, 2))
     return imarray
 
 
@@ -48,94 +50,99 @@ def _generate_df():
     df = pd.DataFrame(np.random.rand(8, 4))
     return df
 
-def _sample1(w,h,imw,imh,merge):
+
+def _sample1(w, h, imw, imh, merge):
     """Basic two cell merge/split"""
     x = np.random.randint(0, imw - w * 2)
     y = np.random.randint(0, imh - h * 2)
 
-    im = np.zeros((imw,imh))
-    im[0:2,0:2] = 1
-    im[x:x+w,y:y+h] = 2
-    im[x+w:x+2*w,y:y+h] = 3
+    im = np.zeros((imw, imh))
+    im[0:2, 0:2] = 1
+    im[x:x+w, y:y+h] = 2
+    im[x+w:x+2*w, y:y+h] = 3
 
     # Randomly rotate to pick horizontal or vertical
-    if np.random.random()>0.5:
+    if np.random.random() > 0.5:
         im = np.rot90(im)
 
     if merge:
         # Return merge error
         pred = im.copy()
-        pred[pred==3] = 2
+        pred[pred == 3] = 2
         return im.astype('int'), pred.astype('int')
     else:
         # Return split error
         true = im.copy()
-        true[true==3] = 2
+        true[true == 3] = 2
         return true.astype('int'), im.astype('int')
 
-def _sample2(w,h,imw,imh):
+
+def _sample2(w, h, imw, imh):
     """Merge of three cells"""
     x = np.random.randint(0, imw - w)
     y = np.random.randint(0, imh - h)
 
     # Determine split points
-    xs = np.random.randint(1,w*0.9)
-    ys = np.random.randint(1,h*0.9)
+    xs = np.random.randint(1, w*0.9)
+    ys = np.random.randint(1, h*0.9)
 
-    im = np.zeros((imw,imh))
-    im[0:2,0:2] = 4
-    im[x:x+xs,y:y+ys] = 1
-    im[x+xs:x+w,y:y+ys] = 2
-    im[x:x+w,y+ys:y+h] = 3
+    im = np.zeros((imw, imh))
+    im[0:2, 0:2] = 4
+    im[x:x+xs, y:y+ys] = 1
+    im[x+xs:x+w, y:y+ys] = 2
+    im[x:x+w, y+ys:y+h] = 3
 
     return im
 
-def _sample2_2merge(w,h,imw,imh):
 
-    im = _sample2(w,h,imw,imh)
+def _sample2_2merge(w, h, imw, imh):
 
-    a,b = sample(set([1,2,3]),2)
+    im = _sample2(w, h, imw, imh)
+
+    a, b = sample(set([1, 2, 3]), 2)
     pred = im.copy()
-    pred[pred==b] = a
-
-    return im.astype('int'),pred.astype('int')
-
-def _sample2_3merge(w,h,imw,imh):
-
-    im = _sample2(w,h,imw,imh)
-
-    pred = (im!=0).copy()
-    pred[0:2,0:2] = 2
+    pred[pred == b] = a
 
     return im.astype('int'), pred.astype('int')
 
-def _sample3(w,h,imw,imh):
+
+def _sample2_3merge(w, h, imw, imh):
+
+    im = _sample2(w, h, imw, imh)
+
+    pred = (im != 0).copy()
+    pred[0:2, 0:2] = 2
+
+    return im.astype('int'), pred.astype('int')
+
+
+def _sample3(w, h, imw, imh):
     """Wrong boundaries for 3 call clump"""
 
     x = np.random.randint(0, imw - w)
     y = np.random.randint(0, imh - h)
 
     # Determine split points
-    xs = np.random.randint(1,w*0.9)
-    ys = np.random.randint(1,h*0.9)
+    xs = np.random.randint(1, w*0.9)
+    ys = np.random.randint(1, h*0.9)
 
-    im = np.zeros((imw,imh))
-    im[x:x+xs,y:y+ys] = 1
-    im[x+xs:x+w,y:y+ys] = 2
-    im[x:x+w,y+ys:y+h] = 3
+    im = np.zeros((imw, imh))
+    im[x:x+xs, y:y+ys] = 1
+    im[x+xs:x+w, y:y+ys] = 2
+    im[x:x+w, y+ys:y+h] = 3
 
     true = im
 
-    xs = np.random.randint(1,w*0.9)
-    ys = np.random.randint(1,h*0.9)
-    im = np.zeros((imw,imh))
-    im[x:x+xs,y:y+ys] = 1
-    im[x+xs:x+w,y:y+ys] = 2
-    im[x:x+w,y+ys:y+h] = 3
+    xs = np.random.randint(1, w*0.9)
+    ys = np.random.randint(1, h*0.9)
+    im = np.zeros((imw, imh))
+    im[x:x+xs, y:y+ys] = 1
+    im[x+xs:x+w, y:y+ys] = 2
+    im[x:x+w, y+ys:y+h] = 3
 
     pred = im
 
-    return true.astype('int'),pred.astype('int')
+    return true.astype('int'), pred.astype('int')
 
 
 class TransformUtilsTest(test.TestCase):
@@ -276,7 +283,7 @@ class TransformUtilsTest(test.TestCase):
         self.assertEqual(hasattr(m, 'iou_matrix'), True)
 
         # Check data added to output
-        self.assertNotEqual(len(before), len(m.output))
+        self.assertNotEqual(before, len(m.output))
 
     def test_save_to_json(self):
         name = 'test'
@@ -306,7 +313,7 @@ class TransformUtilsTest(test.TestCase):
 
         # Check data types from loaded data
         self.assertIsInstance(data, dict)
-        self.assertEqual(list(data.keys()), ['metrics', 'metadata'])
+        self.assertItemsEqual(list(data.keys()), ['metrics', 'metadata'])
         self.assertIsInstance(data['metrics'], list)
         self.assertIsInstance(data['metadata'], dict)
 
@@ -325,7 +332,7 @@ class TransformUtilsTest(test.TestCase):
         m.run_all(y_true_lbl, y_pred_lbl, y_true_unlbl, y_pred_unlbl)
 
         # Assert that data was added to output
-        self.assertEqual(len(m.output), len(before))
+        self.assertNotEqual(len(m.output), before)
 
         # Check output file
         todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
