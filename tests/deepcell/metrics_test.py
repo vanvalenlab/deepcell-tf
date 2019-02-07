@@ -257,7 +257,7 @@ class TestMetricsObject(test.TestCase):
         m = metrics.Metrics('test')
         df = _generate_df()
 
-        L = m.df_to_dict(df)
+        L = m.pixel_df_to_dict(df)
 
         # Check output types
         self.assertNotEqual(len(L), 0)
@@ -270,7 +270,7 @@ class TestMetricsObject(test.TestCase):
 
         m = metrics.Metrics('test')
 
-        cm = m.calc_confusion_matrix(y_true, y_pred)
+        cm = m.calc_pixel_confusion_matrix(y_true, y_pred)
         self.assertEqual(cm.shape[0], y_true.shape[-1])
 
     def test_metric_object_stats(self):
@@ -283,7 +283,7 @@ class TestMetricsObject(test.TestCase):
         m.calc_object_stats(y_true, y_pred)
 
         # Check for creation of attribute
-        self.assertEqual(hasattr(m, 'iou_matrix'), True)
+        self.assertEqual(hasattr(m, 'o'), True)
 
         # Check data added to output
         self.assertNotEqual(before, len(m.output))

@@ -537,6 +537,9 @@ class ObjectAccuracy:
 
     Raises:
         ValueError: If y_true and y_pred are not the same shape
+
+    Warning:
+        Position indicies are not currently collected appropriately
     """
 
     def __init__(self, y_true, y_pred, cutoff1=0.4, cutoff2=0.1, test=False):
@@ -716,23 +719,23 @@ class ObjectAccuracy:
             if g.degree[k] == 0:
                 if 'pred' in k:
                     self.false_pos += 1
-                    self.false_pos_ind.append(i_cm)
+                    # self.false_pos_ind.append(i_cm)
                 elif 'true' in k:
                     self.false_neg += 1
-                    self.false_neg_ind.append(i_cm)
+                    # self.false_neg_ind.append(i_cm)
             # Eliminate anything with max degree 1
             # Aka true pos
             elif g.degree[k] == 1:
                 self.true_pos += 1
-                self.true_pos_ind.append(i_cm)
+                # self.true_pos_ind.append(i_cm)
             # Process merges and split
             else:
                 if 'pred' in k:
                     self.merge += 1
-                    self.merge_ind.append(i_cm)
+                    # self.merge_ind.append(i_cm)
                 elif 'true' in k:
                     self.split += 1
-                    self.split_ind.append(i_cm)
+                    # self.split_ind.append(i_cm)
 
     def print_report(self):
         """Print report of error types and frequency
@@ -775,8 +778,10 @@ class Metrics:
     Args:
         model_name (str): Name of the model which determines output file names
         outdir (:obj:`str`, optional): Directory to save json file, default ''
-        object_threshold (:obj:`float`, optional): Sets criteria for jaccard index
-            to declare object overlap
+        cutoff1 (:obj:`float`, optional): Threshold for overlap in cost matrix,
+            smaller values are more conservative, default 0.4
+        cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned cells,
+            smaller values are better, default 0.1
         pixel_threshold (:obj:`float`, optional): Threshold for converting predictions to binary
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         crop_size (:obj:`int`, optional): Enables cropping for object calculations, default None
@@ -786,7 +791,8 @@ class Metrics:
 
     def __init__(self, model_name,
                  outdir='',
-                 object_threshold=0.5,
+                 cutoff1=0.4,
+                 cutoff2=0.1,
                  pixel_threshold=0.5,
                  ndigits=4,
                  crop_size=None,
@@ -795,7 +801,8 @@ class Metrics:
 
         self.model_name = model_name
         self.outdir = outdir
-        self.object_threshold = object_threshold
+        self.cutoff1 = cutoff1
+        self.cutoff2 = cutoff2
         self.pixel_threshold = pixel_threshold
         self.ndigits = ndigits
         self.crop_size = crop_size
@@ -842,10 +849,10 @@ class Metrics:
                 pd.DataFrame(stats, index=[k]))
 
         # Save stats to output dictionary
-        self.output = self.output + self.df_to_dict(self.pixel_df)
+        self.output = self.output + self.pixel_df_to_dict(self.pixel_df)
 
         # Calculate confusion matrix
-        cm = self.calc_confusion_matrix(y_true, y_pred)
+        cm = self.calc_pixel_confusion_matrix(y_true, y_pred)
         self.output.append(dict(
             name='confusion_matrix',
             value=cm.tolist(),
@@ -853,7 +860,7 @@ class Metrics:
             stat_type='pixel'
         ))
 
-    def df_to_dict(self, df):
+    def pixel_df_to_dict(self, df):
         """Output pandas df as a list of dictionary objects
 
         Args:
@@ -887,7 +894,7 @@ class Metrics:
 
         return L
 
-    def calc_confusion_matrix(self, y_true, y_pred):
+    def calc_pixel_confusion_matrix(self, y_true, y_pred):
         """Calculate confusion matrix for pixel classification data.
 
         Args:
@@ -911,20 +918,19 @@ class Metrics:
         Args:
             y_true (3D np.array): Labeled ground truth annotations
             y_pred (3D np.array): Labeled prediction mask
-        """
-        self.iou_matrix = stats_objectbased(y_true, y_pred,
-                                            object_threshold=self.object_threshold,
-                                            ndigits=self.ndigits,
-                                            crop_size=self.crop_size,
-                                            return_iou=True)
 
-        # Get stats dictionary
-        stats = calc_2d_object_stats(self.iou_matrix)
-        for k, v in stats.items():
+        """
+        self.o = ObjectAccuracy(y_true, y_pred, self.cutoff1, self.cutoff2)
+
+        # Get stats dataframe
+        stats = self.o.save_to_dataframe()
+
+        # Write out summed statistics
+        for k, v in stats.sum().iteritems():
             self.output.append(dict(
                 name=k,
                 value=v,
-                feature='object',
+                feature='sum',
                 stat_type='object'
             ))
 
