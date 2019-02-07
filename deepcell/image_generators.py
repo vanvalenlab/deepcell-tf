@@ -1991,19 +1991,18 @@ class SiameseIterator(Iterator):
            If division, grab the last `min_track_length` frames.
            Otherwise, grab any interval of frames of length `min_track_length`
            that does not include the last tracked frame.
-           
+
            Args:
                track: integer, used to look up track ID
                division: boolean, is the event being tracked a division
-           
+
            Returns:
                list of interval of frames of length `min_track_length`
         """
-
         track_id = self.track_ids[track]
 
         # convert to list to use python's (+) on lists
-        all_frames = list(track_id['frames'])
+        all_frames = list(track_id["frames"])
 
         if division:
             candidate_interval = all_frames[-self.min_track_length:]
@@ -2221,8 +2220,8 @@ class SiameseIterator(Iterator):
             # Get the frames for cell 1 and frames/label for cell 2
             frames_1 = self._fetch_frames(j, division=division)
             if len(frames_1) != self.min_track_length:
-                logging.warning('self._fetch_frames(%s, division=%s) returned incorrect number
-                        of frames. Returned %s frames.', j, division, len(frames_1))
+                logging.warning("self._fetch_frames(%s, division=%s) returned incorrect number "
+                                "of frames. Returned %s frames.", j, division, len(frames_1))
 
             # If the type is not 2 (not division) then the last frame is not included in
             #`frames_1`, so we grab that to use for comparison
