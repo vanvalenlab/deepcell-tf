@@ -1986,21 +1986,26 @@ class SiameseIterator(Iterator):
         return self.all_regionprops[track, np.array(frames)]
 
     def _fetch_frames(self, track, division=False):
-        """
-        Fetch a random interval of frames given a track:
-            if division == True:
-                grab the last `min_track_length` frames
-            else:
-                grab any interval of frames of length `min_track_length` that
-                does not include the last tracked frame
+        """Fetch a random interval of frames given a track:
+
+           If division, grab the last `min_track_length` frames.
+           Otherwise, grab any interval of frames of length `min_track_length`
+           that does not include the last tracked frame.
+           
+           Args:
+               track: integer, used to look up track ID
+               division: boolean, is the event being tracked a division
+           
+           Returns:
+               list of interval of frames of length `min_track_length`
         """
 
         track_id = self.track_ids[track]
 
         # convert to list to use python's (+) on lists
-        all_frames = list(track_id["frames"])
+        all_frames = list(track_id['frames'])
 
-        if division == True:
+        if division:
             candidate_interval = all_frames[-self.min_track_length:]
         else:
             # exclude the final frame for comparison purposes
@@ -2012,7 +2017,7 @@ class SiameseIterator(Iterator):
             # is possible. If `len(candidate_frames) <= self.min_track_length`,
             # then the interval will be the entire `candidate_frames`.
             interval_start = np.random.randint(0, max(len(candidate_frames) - self.min_track_length, 1))
-            candidate_interval = candidate_frames[interval_start : interval_start + self.min_track_length]
+            candidate_interval = candidate_frames[interval_start:interval_start + self.min_track_length]
 
         # if the interval is too small, pad the interval with the oldest frame.
         if len(candidate_interval) < self.min_track_length:
