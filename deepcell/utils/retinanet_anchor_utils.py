@@ -571,7 +571,7 @@ def _get_annotations(generator):
 
     for i in range(generator.y.shape[0]):
         # load the annotations
-        annotations = generator.load_annotations(i)
+        annotations = generator.load_annotations(generator.y[i])
 
         # copy detections to all_annotations
         for label in range(generator.num_classes):
