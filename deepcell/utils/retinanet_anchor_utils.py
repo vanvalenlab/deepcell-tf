@@ -549,7 +549,7 @@ def _get_detections(generator,
             np.expand_dims(image_labels, axis=1)], axis=1)
 
         # copy detections to all_detections
-        for label in range(generator.num_classes()):
+        for label in range(generator.num_classes):
             all_detections[i][label] = image_detections[image_detections[:, -1] == label, :-1]
 
     return all_detections
@@ -569,12 +569,12 @@ def _get_annotations(generator):
     all_annotations = [[None for i in range(generator.num_classes)]
                        for j in range(generator.y.shape[0])]
 
-    for i in range(generator.size()):
+    for i in range(generator.y.shape[0]):
         # load the annotations
         annotations = generator.load_annotations(i)
 
         # copy detections to all_annotations
-        for label in range(generator.num_classes()):
+        for label in range(generator.num_classes):
             il = annotations['bboxes'][annotations['labels'] == label, :].copy()
             all_annotations[i][label] = il
 
