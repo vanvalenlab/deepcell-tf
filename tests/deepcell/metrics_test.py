@@ -17,6 +17,11 @@ def _get_image(img_h=300, img_w=300):
     img = np.random.rand(img_w, img_h) * variance + bias
     return img
 
+def _get_image_multichannel(img_h=300, img_w=300):
+    bias = np.random.rand(img_w, img_h, 2) * 64
+    variance = np.random.rand(img_w, img_h, 2) * (255 - 64)
+    img = np.random.rand(img_w, img_h, 2) * variance + bias
+    return img
 
 def _generate_test_masks():
     img_w = img_h = 30
@@ -230,8 +235,8 @@ class TransformUtilsTest(test.TestCase):
 
         before = len(m.output)
 
-        y_true = _get_image()
-        y_pred = _get_image()
+        y_true = _generate_stack_4d()
+        y_pred = _generate_stack_4d()
 
         m.all_pixel_stats(y_true, y_pred)
 
@@ -301,7 +306,7 @@ class TransformUtilsTest(test.TestCase):
 
         # Check data types from loaded data
         self.assertIsInstance(data, dict)
-        self.assertEqual(list(data.keys), ['metadata', 'metrics'])
+        self.assertEqual(list(data.keys()), ['metrics', 'metadata'])
         self.assertIsInstance(data['metrics'], list)
         self.assertIsInstance(data['metadata'], dict)
 

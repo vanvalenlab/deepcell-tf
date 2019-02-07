@@ -296,13 +296,27 @@ def stats_objectbased(y_true,
     # Get performance stats
     stats = calc_2d_object_stats((iou_matrix > object_threshold).astype('int'))
 
-    false_pos_perc_err = stats['false_pos'] / \
-        (stats['false_pos'] + stats['false_neg'])
-    false_neg_perc_err = stats['false_neg'] / \
-        (stats['false_pos'] + stats['false_neg'])
+    if stats['false_pos'] == 0:
+        false_pos_perc_err = 0
+    else:
+        false_pos_perc_err = stats['false_pos'] / \
+            (stats['false_pos'] + stats['false_neg'])
 
-    false_pos_perc_pred = stats['false_pos'] / stats['pred_cells']
-    false_neg_perc_truth = stats['false_neg'] / stats['true_cells']
+    if stats['false_neg'] == 0:
+        false_neg_perc_err = 0
+    else:
+        false_neg_perc_err = stats['false_neg'] / \
+            (stats['false_pos'] + stats['false_neg'])
+
+    if stats['pred_cells'] == 0:
+        false_pos_perc_pred = 0
+    else:
+        false_pos_perc_pred = stats['false_pos'] / stats['pred_cells']
+
+    if stats['true_cells'] == 0:
+        false_neg_perc_truth = 0
+    else:
+        false_neg_perc_truth = stats['false_neg'] / stats['true_cells']
 
     perc_merged = stats['merge'] / stats['true_cells']
     perc_divided = stats['split'] / stats['true_cells']
