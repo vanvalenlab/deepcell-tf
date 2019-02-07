@@ -145,7 +145,7 @@ def _sample3(w, h, imw, imh):
     return true.astype('int'), pred.astype('int')
 
 
-class TransformUtilsTest(test.TestCase):
+class MetricFunctionsTest(test.TestCase):
     def test_reshape_3d(self):
         stack = _generate_stack_3d()
         out = metrics.reshape_padded_tiled_2d(stack)
@@ -231,6 +231,9 @@ class TransformUtilsTest(test.TestCase):
         y_pred = label(_generate_stack_3d())
 
         metrics.stats_objectbased(y_true, y_pred)
+
+
+class TestMetricsObject(test.TestCase):
 
     def test_Metrics_init(self):
         m = metrics.Metrics('test')
@@ -338,3 +341,109 @@ class TransformUtilsTest(test.TestCase):
         todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
         outname = os.path.join(outdir, name+'_'+todays_date+'.json')
         self.assertEqual(os.path.isfile(outname), True)
+
+
+class TestObjectAccuracy(test.TestCase):
+
+    def test_init(self):
+        y_true, _ = _sample1(10, 10, 30, 30, True)
+
+        # Test basic initialization
+        o = metrics.ObjectAccuracy(y_true, y_true, test=True)
+
+        # Check that object numbers are integers
+        self.assertIsInstance(o.n_true, np.int64)
+        self.assertIsInstance(o.n_pred, np.int64)
+
+        self.assertEqual(o.empty_frame, False)
+
+    def test_init_wrongsize(self):
+        # Test mismatched input size
+        y_true = label(_get_image())
+        y_wrong = label(_get_image(img_h=200, img_w=200))
+        self.assertRaises(ValueError, metrics.ObjectAccuracy, y_true, y_wrong)
+
+    def test_init_emptyframe(self):
+        y_true, y_empty = _sample1(10, 10, 30, 30, True)
+
+        # Check handling of empty frames
+        y_empty[:, :] = 0
+        y_empty = y_empty.astype('int')
+
+        oempty = metrics.ObjectAccuracy(y_true, y_empty)
+        self.assertEqual(oempty.empty_frame, 'n_pred')
+        oempty = metrics.ObjectAccuracy(y_empty, y_true)
+        self.assertEqual(oempty.empty_frame, 'n_true')
+
+    def test_calc_iou(self):
+        y_true, y_pred = _sample1(10, 10, 30, 30, True)
+        o = metrics.ObjectAccuracy(y_true, y_pred, test=True)
+
+        o._calc_iou()
+
+        # Check that iou was created
+        self.assertTrue(hasattr(o, 'iou'))
+
+        # Check that it is not equal to initial value
+        self.assertNotEqual(np.count_nonzero(o.iou), 0)
+
+    def test_make_matrix(self):
+        y_true, y_pred = _sample1(10, 10, 30, 30, True)
+        o = metrics.ObjectAccuracy(y_true, y_pred, test=True)
+        o._calc_iou()
+
+        o._make_matrix()
+
+        self.assertTrue(hasattr(o, 'cm'))
+
+        self.assertNotEqual(np.count_nonzero(o.cm), 0)
+
+    def test_linear_assignment(self):
+        y_true, y_pred = _sample1(10, 10, 30, 30, True)
+        o = metrics.ObjectAccuracy(y_true, y_pred, test=True)
+        o._calc_iou()
+        o._make_matrix()
+
+        o._linear_assignment()
+
+        for obj in ['results', 'cm_res', 'true_pos_ind', 'loners_pred', 'loners_true']:
+            self.assertTrue(hasattr(o, obj))
+
+    def test_assign_loners(self):
+        y_true, y_pred = _sample1(10, 10, 30, 30, True)
+        o = metrics.ObjectAccuracy(y_true, y_pred, test=True)
+        o._calc_iou()
+        o._make_matrix()
+        o._linear_assignment()
+
+        o._assign_loners()
+        self.assertTrue(hasattr(o, 'cost_l_bin'))
+
+    def test_array_to_graph(self):
+        y_true, y_pred = _sample1(10, 10, 30, 30, True)
+        o = metrics.ObjectAccuracy(y_true, y_pred, test=True)
+        o._calc_iou()
+        o._make_matrix()
+        o._linear_assignment()
+        o._assign_loners()
+
+        o._array_to_graph()
+        self.assertTrue(hasattr(o, 'G'))
+
+    def test_classify_graph(self):
+        y_true, y_pred = _sample1(10, 10, 30, 30, True)
+        # Test that complete run through is succesful
+        o = metrics.ObjectAccuracy(y_true, y_pred)
+
+    def test_optional_outputs(self):
+        y_true, y_pred = _sample1(10, 10, 30, 30, True)
+        o = metrics.ObjectAccuracy(y_true, y_pred)
+
+        o.print_report()
+
+        df = o.save_to_dataframe()
+        self.assertIsInstance(df, pd.DataFrame)
+
+        columns = ['n_pred', 'n_true', 'true_pos',
+                   'false_pos', 'false_neg', 'merge', 'split']
+        self.assertItemsEqual(columns, list(df.columns))

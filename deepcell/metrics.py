@@ -533,12 +533,13 @@ class ObjectAccuracy:
             smaller values are more conservative, default 0.4
         cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned cells,
             smaller values are better, default 0.1
+        test (:obj:`bool`, optional): Utility variable to control running analysis during testing
 
     Raises:
         ValueError: If y_true and y_pred are not the same shape
     """
 
-    def __init__(self, y_true, y_pred, cutoff1=0.4, cutoff2=0.1):
+    def __init__(self, y_true, y_pred, cutoff1=0.4, cutoff2=0.1, test=False):
 
         self.y_true = y_true
         self.y_pred = y_pred
@@ -568,19 +569,29 @@ class ObjectAccuracy:
         self.split_ind = []
 
         # Check if either frame is empty before proceeding
-        if 0 == self.n_true:
+        if self.n_true == 0:
             print('Ground truth frame is empty')
             self.false_pos += self.n_pred
-        elif 0 == self.n_pred:
+            self.empty_frame = 'n_true'
+        elif self.n_pred == 0:
             print('Prediction frame is empty')
             self.false_neg += self.n_true
-        else:
+            self.empty_frame = 'n_pred'
+        elif test == False:
+            self.empty_frame = False
             self._calc_iou()
             self._make_matrix()
             self._linear_assignment()
-            self._assign_loners()
-            self._array_to_graph()
-            self._classify_graph()
+
+            # Check if there are loners before proceeding
+            if (self.loners_pred.shape[0] == 0) & (self.loners_true.shape[0] == 0):
+                pass
+            else:
+                self._assign_loners()
+                self._array_to_graph()
+                self._classify_graph()
+        else:
+            self.empty_frame = False
 
     def _calc_iou(self):
         """Calculates intersection of union matrix for each pairwise
@@ -697,9 +708,9 @@ class ObjectAccuracy:
 
             # Map index back to original cost matrix index
             if 'pred' in k:
-                i_cm = self.loners_pred[i]
+                i_cm = self.loners_pred[i_loner]
             else:
-                i_cm = self.loners_true[i]
+                i_cm = self.loners_true[i_loner]
 
             # Process isolates first
             if g.degree[k] == 0:
