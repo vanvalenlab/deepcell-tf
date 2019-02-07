@@ -1986,54 +1986,45 @@ class SiameseIterator(Iterator):
         return self.all_regionprops[track, np.array(frames)]
 
     def _fetch_frames(self, track, division=False):
-        """Fetch a random list of frames for a given track.
-        If division is true, then the list of frames ends at the cell's
-        last appearance.
+        """Fetch a random interval of frames given a track:
+
+           If division, grab the last `min_track_length` frames.
+           Otherwise, grab any interval of frames of length `min_track_length`
+           that does not include the last tracked frame.
+           
+           Args:
+               track: integer, used to look up track ID
+               division: boolean, is the event being tracked a division
+           
+           Returns:
+               list of interval of frames of length `min_track_length`
         """
+
         track_id = self.track_ids[track]
-        tracked_frames = list(track_id['frames'])
 
-        # We need to have at least one future frame to pick from, so if
-        # the last frame of the movie is a tracked frame, remove it
-        last_frame = self.x.shape[self.time_axis] - 1
-        if last_frame in tracked_frames:
-            tracked_frames.remove(last_frame)
+        # convert to list to use python's (+) on lists
+        all_frames = list(track_id['frames'])
 
-        # Get the indices of the tracked_frames list - sometimes frames
-        # are skipped
-        tracked_frames_index = np.arange(len(tracked_frames))
-
-        # Check if there are enough frames
-        enough_frames = len(tracked_frames) > self.min_track_length + 1
-
-        # We need to exclude the last frame so that we will always be able to make a comparison
-        if enough_frames:
-            acceptable_indices = tracked_frames_index[self.min_track_length - 1:-1]
-        else:
-            acceptable_indices = tracked_frames_index[:-1]
-
-        # Take the last frame if there is a division
-        # otherwise randomly pick a frame
-        index = -1 if division else np.random.choice(acceptable_indices)
-
-        # Select the frames. If there aren't enough frames,
-        # repeat the first frame the necessary number of times
-        if enough_frames:
-            frames = tracked_frames[index + 1 - self.min_track_length:]#[-5:]
-        else:
-            frames_temp = tracked_frames[0:index + 1]#[0:0]
-            missing_frames = self.min_track_length - len(frames_temp)
-            frames = [tracked_frames[0]] * missing_frames + frames_temp
-
-        assert len(frames) >= self.min_track_length
         if division:
-            logging.warning('last_frame: %s', last_frame)
-            logging.warning('acceptable_indices: %s', acceptable_indices)
-            logging.warning('enough_frames: %s', enough_frames)
-            logging.warning('tracked_frames: %s', tracked_frames)
-            logging.warning('frames: %s', frames)
+            candidate_interval = all_frames[-self.min_track_length:]
+        else:
+            # exclude the final frame for comparison purposes
+            candidate_frames = all_frames[:-1]
 
-        return frames
+            # `interval_start` is within [0, len(candidate_frames) - min_track_length]
+            # in order to have at least `min_track_length` preceding frames.
+            # The `max(..., 1)` is because `len(all_frames) <= self.min_track_length`
+            # is possible. If `len(candidate_frames) <= self.min_track_length`,
+            # then the interval will be the entire `candidate_frames`.
+            interval_start = np.random.randint(0, max(len(candidate_frames) - self.min_track_length, 1))
+            candidate_interval = candidate_frames[interval_start:interval_start + self.min_track_length]
+
+        # if the interval is too small, pad the interval with the oldest frame.
+        if len(candidate_interval) < self.min_track_length:
+            num_padding = self.min_track_length - len(candidate_interval)
+            candidate_interval = [candidate_interval[0]] * num_padding + candidate_interval
+
+        return candidate_interval
 
     def _compute_appearances(self, track_1, frames_1, track_2, frames_2, transform):
         appearance_1 = self._fetch_appearances(track_1, frames_1)
@@ -2229,19 +2220,23 @@ class SiameseIterator(Iterator):
 
             # Get the frames for cell 1 and frames/label for cell 2
             frames_1 = self._fetch_frames(j, division=division)
-            if len(frames_1) == 0:
-                logging.warning('self._fetch_frames(%s, division=%s) returned no frames', j, division)
+            if len(frames_1) != self.min_track_length:
+                logging.warning('self._fetch_frames(%s, division=%s) returned incorrect number
+                        of frames. Returned %s frames.', j, division, len(frames_1))
 
-            # For frame_2, choose the next frame cell 1 appears in
-            last_frame_1 = np.amax(frames_1)
+            # If the type is not 2 (not division) then the last frame is not included in
+            #`frames_1`, so we grab that to use for comparison
+            if type_cell != 2:
+                # For frame_2, choose the next frame cell 1 appears in
+                last_frame_1 = np.amax(frames_1)
 
-            logging.warning('last_frame_1: %s', last_frame_1)
-            logging.warning('track_id_frames: %s', track_id['frames'])
-            
-            frame_2 = np.amin([x for x in track_id['frames'] if x > last_frame_1])
-            frames_2 = [frame_2]
+                # logging.warning('last_frame_1: %s', last_frame_1)
+                # logging.warning('track_id_frames: %s', track_id['frames'])
 
-            different_cells = track_id['different'][frame_2]
+                frame_2 = np.amin([x for x in track_id['frames'] if x > last_frame_1])
+                frames_2 = [frame_2]
+
+                different_cells = track_id['different'][frame_2]
 
             if type_cell == 0:
                 # If there are no different cells in the subsequent frame, we must choose
