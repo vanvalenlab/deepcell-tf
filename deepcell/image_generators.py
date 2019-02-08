@@ -1826,7 +1826,15 @@ class SiameseIterator(Iterator):
                               2 * self.neighborhood_scale_size + 1,
                               2 * self.neighborhood_scale_size + 1,
                               1)
-        future_area_shape = (len(frames) - 1,
+
+        # future area should not include last frame in movie
+        last_frame = self.x.shape[self.time_axis] - 1
+        if last_frame in frames:
+            future_area_len = len(frames) - 1
+        else:
+            future_area_len = len(frames)
+
+        future_area_shape = (future_area_len,
                              2 * self.neighborhood_scale_size + 1,
                              2 * self.neighborhood_scale_size + 1,
                              1)
@@ -1866,7 +1874,7 @@ class SiameseIterator(Iterator):
             neighborhoods[counter] = self._sub_area(
                 X_frame, y_frame, cell_label, X.shape[channel_axis])
 
-            if frame != frames[-1]:
+            if frame != last_frame:
                 if self.data_format == 'channels_first':
                     X_future_frame = X[:, frame + 1]
                 else:
@@ -1914,7 +1922,7 @@ class SiameseIterator(Iterator):
         all_neighborhoods = np.zeros(all_neighborhoods_shape, dtype=K.floatx())
 
         all_future_area_shape = (number_of_tracks,
-                                 self.x.shape[self.time_axis],
+                                 self.x.shape[self.time_axis] - 1,
                                  2 * self.neighborhood_scale_size + 1,
                                  2 * self.neighborhood_scale_size + 1,
                                  1)
@@ -1940,7 +1948,14 @@ class SiameseIterator(Iterator):
 
             all_centroids[track, np.array(frames), :] = centroid
             all_neighborhoods[track, np.array(frames), :, :] = neighborhood
-            all_future_areas[track, np.array(frames[:-1]), :, :] = future_area
+
+            # future area should never include last frame
+            last_frame = self.x.shape[self.time_axis] - 1
+            if last_frame in frames:
+                frames_without_last = [f for f in frames if f != last_frame]
+                all_future_areas[track, np.array(frames_without_last), :, :] = future_area
+            else:
+                all_future_areas[track, np.array(frames), :, :] = future_area
             all_regionprops[track, np.array(frames), :] = regionprop
 
         self.all_appearances = all_appearances
@@ -2005,6 +2020,11 @@ class SiameseIterator(Iterator):
         all_frames = list(track_id["frames"])
 
         if division:
+            # sanity check
+            if (self.x.shape[self.time_axis] - 1) in all_frames:
+                raise Exception(
+                        "Parent cell should not be in last frame of movie")
+
             candidate_interval = all_frames[-self.min_track_length:]
         else:
             # exclude the final frame for comparison purposes
