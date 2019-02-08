@@ -154,6 +154,11 @@ class MetricFunctionsTest(test.TestCase):
         exp_width = stack.shape[0] * (stack.shape[1] + 2)
         self.assertEqual(out.shape[2], exp_width)
 
+        # Test raise error for not 3d or 4d array
+        self.assertRaises(ValueError, metrics.reshape_padded_tiled_2d, np.ones((100, 100)))
+        self.assertRaises(ValueError, metrics.reshape_padded_tiled_2d,
+                          np.ones((10, 10, 100, 100, 2)))
+
     def test_reshape_4d(self):
         stack = _generate_stack_4d()
         out = metrics.reshape_padded_tiled_2d(stack)
@@ -226,11 +231,48 @@ class MetricFunctionsTest(test.TestCase):
         out2 = metrics.stats_pixelbased(y_true, y_pred, return_stats=True)
         self.assertIsInstance(out2, dict)
 
-    def run_object_stats(self):
+        # Test mistmatch size error
+        self.assertRaises(ValueError, metrics.stats_pixelbased,
+                          np.ones((10, 10)), np.ones((20, 20)))
+
+    def test_run_object_stats(self):
         y_true = label(_generate_stack_3d())
         y_pred = label(_generate_stack_3d())
 
         metrics.stats_objectbased(y_true, y_pred)
+
+        # Test mismatch size
+        self.assertRaises(ValueError, metrics.stats_objectbased,
+                          np.ones((10, 100, 100)), np.ones((5, 50, 50)))
+
+        # Test crop error
+        self.assertRaises(ValueError, metrics.stats_objectbased, y_true, y_pred, crop_size=30)
+
+    def test_split_stack(self):
+        # Test batch True condition
+        arr = np.ones((10, 100, 100, 1))
+        out = metrics.split_stack(arr, True, 10, 1, 10, 2)
+        outshape = (10 * 10 * 10, 100 / 10, 100 / 10, 1)
+        self.assertEqual(outshape, out.shape)
+
+        # Test batch False condition
+        arr = np.ones((100, 100, 1))
+        out = metrics.split_stack(arr, False, 10, 0, 10, 1)
+        outshape = (10 * 10, 100 / 10, 100 / 10, 1)
+        self.assertEqual(outshape, out.shape)
+
+        # Test splitting in only one axis
+        out = metrics.split_stack(arr, False, 10, 0, 1, 1)
+        outshape = (10 * 1, 100 / 10, 100 / 1, 1)
+        self.assertEqual(outshape, out.shape)
+
+        out = metrics.split_stack(arr, False, 1, 0, 10, 1)
+        outshape = (10 * 1, 100 / 1, 100 / 10, 1)
+        self.assertEqual(outshape, out.shape)
+
+        # Raise errors for uneven division
+        self.assertRaises(ValueError, metrics.split_stack, arr, False, 11, 0, 10, 1)
+        self.assertRaises(ValueError, metrics.split_stack, arr, False, 10, 0, 11, 1)
 
 
 class TestMetricsObject(test.TestCase):
@@ -252,6 +294,10 @@ class TestMetricsObject(test.TestCase):
 
         # Check that items were added to output
         self.assertNotEqual(before, len(m.output))
+
+        # Check mismatch error
+        self.assertRaises(ValueError, m.all_pixel_stats, np.ones(
+            (10, 10, 10, 1)), np.ones((5, 5, 5, 1)))
 
     def test_df_to_dict(self):
         m = metrics.Metrics('test')

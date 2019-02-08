@@ -24,17 +24,17 @@ import networkx as nx
 from tensorflow.python.platform import tf_logging as logging
 
 
-def im_prep(mask, prediction, win_size):
-    """Reads images into ndarrays, and trims them to fit each other"""
-    # if trimming not needed, return
-    if win_size == 0 or prediction.shape == mask.shape:
-        return mask, prediction
+# def im_prep(mask, prediction, win_size):
+#     """Reads images into ndarrays, and trims them to fit each other"""
+#     # if trimming not needed, return
+#     if win_size == 0 or prediction.shape == mask.shape:
+#         return mask, prediction
 
-    # otherwise, pad prediction to imsize and zero out the outer layer of mask
-    mask = mask[win_size:-win_size, win_size:-win_size]
-    mask = np.pad(mask, (win_size, win_size), 'constant')
-    prediction = np.pad(prediction, (win_size, win_size), 'constant')
-    return mask, prediction
+#     # otherwise, pad prediction to imsize and zero out the outer layer of mask
+#     mask = mask[win_size:-win_size, win_size:-win_size]
+#     mask = np.pad(mask, (win_size, win_size), 'constant')
+#     prediction = np.pad(prediction, (win_size, win_size), 'constant')
+#     return mask, prediction
 
 
 def calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix):
@@ -399,59 +399,6 @@ def calc_2d_object_stats(iou_matrix):
     }
 
 
-def calc_2d_object_stats_3diou(iou_matrix):
-    """Calculates basic statistics to evaluate classification accuracy for a 2d image
-
-    Args:
-        iou_matrix (np.array): 2D array with dimensions (#true_cells,#predicted_cells)
-
-    Returns:
-        dict: Dictionary containing all statistics computed by function
-    """
-    true_cells = iou_matrix.shape[0]
-    pred_cells = iou_matrix.shape[1]
-
-    iou = iou_matrix[:, :, 0]
-
-    # Calculate values based on projecting along prediction axis
-    pred_proj = iou.sum(axis=1)
-    # Zeros (aka absence of hits) correspond to true cells missed by prediction
-    false_neg = np.count_nonzero(pred_proj == 0)
-
-    # Calculate values based on projecting along truth axis
-    truth_proj = iou.sum(axis=0)
-    # Empty hits indicate predicted cells that do not exist in true cells
-    false_pos = np.count_nonzero(truth_proj == 0)
-
-    # Ones are true positives excluding merge errors
-    true_pos = np.count_nonzero(pred_proj == 1)
-
-    # Deal with merges
-    iou = (iou_matrix[:, :, 1] != 0).astype('int')
-    pred_proj = iou.sum(axis=1)
-    truth_proj = iou.sum(axis=0)
-
-    # More than 2 hits corresponds to true cells hit twice by prediction, aka split
-    split = np.count_nonzero(pred_proj >= 2)
-    # More than 2 hits indicates more than 2 true cells corresponding to 1 predicted cell
-    merge = np.count_nonzero(truth_proj >= 2)
-
-    # Calc dice jaccard stats for objects
-    dice, jaccard = get_dice_jaccard(iou_matrix)
-
-    return {
-        'true_cells': true_cells,
-        'pred_cells': pred_cells,
-        'false_neg': false_neg,
-        'split': split,
-        'true_pos': true_pos,
-        'false_pos': false_pos,
-        'merge': merge,
-        'dice': dice,
-        'jaccard': jaccard
-    }
-
-
 def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
     """Calculates pixel-based statistics (Dice, Jaccard, Precision, Recall, F-measure)
 
@@ -743,7 +690,7 @@ class ObjectAccuracy:
         print('Number of cells predicted:', self.n_pred)
         print('Number of true cells:', self.n_true)
         print('True positives: {}, Accuracy: {}'.format(
-            self.true_pos, np.round(self.true_pos/self.n_true, 2)
+            self.true_pos, np.round(self.true_pos / self.n_true, 2)
         ))
         print('False positives: {}'.format(self.false_pos))
         print('False negatives: {}'.format(self.false_neg))
@@ -914,6 +861,9 @@ class Metrics:
     def calc_object_stats(self, y_true, y_pred):
         """Calculate object statistics and save to output
 
+        Loops over each frame in the zeroth dimension, which should pass in
+        a series of 2D arrays for analysis
+
         Args:
             y_true (3D np.array): Labeled ground truth annotations
             y_pred (3D np.array): Labeled prediction mask
@@ -965,7 +915,7 @@ class Metrics:
 
         todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
         outname = os.path.join(
-            self.outdir, self.model_name+'_'+todays_date+'.json')
+            self.outdir, self.model_name + '_' + todays_date + '.json')
 
         # Configure final output
         D = {}
@@ -983,3 +933,45 @@ class Metrics:
             json.dump(D, outfile)
 
         print('Saved to', outname)
+
+
+def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
+    """Crops an array in the width and height dimensions to produce
+    a stack of smaller arrays
+
+    Args:
+        arr (np.array): Array to be split with at least 2 dimensions
+        batch (bool): True if the zeroth dimension of arr is a batch or frame dimension
+        n_split1 (int): Number of sections to produce from the first split axis
+            Must be able to divide arr.shape[axis1] evenly by n_split1
+        axis1 (int): Axis on which to perform first split
+        n_split2 (int): Number of sections to produce from the second split axis
+            Must be able to divide arr.shape[axis2] evenly by n_split2
+        axis2 (int): Axis on which to perform first split
+
+    Returns:
+        np.array: Array after dual splitting with frames in the zeroth dimension
+
+    Raises:
+        ValueError: arr.shape[axis] must be evenly divisible by n_split
+            for both the first and second split
+    """
+    # Check that n_split will divide equally
+    if ((arr.shape[axis1] % n_split1) != 0) | ((arr.shape[axis2] % n_split2) != 0):
+        raise ValueError(
+            'arr.shape[axis] must be evenly divisible by n_split'
+            'for both the first and second split')
+
+    split1 = np.split(arr, n_split1, axis=axis1)
+
+    # If batch dimension doesn't exist, create and adjust axis2
+    if batch is False:
+        split1con = np.stack(split1)
+        axis2 += 1
+    else:
+        split1con = np.concatenate(split1, axis=0)
+
+    split2 = np.split(split1con, n_split2, axis=axis2)
+    split2con = np.concatenate(split2, axis=0)
+
+    return split2con
