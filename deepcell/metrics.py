@@ -12,7 +12,6 @@ import json
 import operator
 
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.optimize import linear_sum_assignment
 
 import skimage.io
@@ -89,12 +88,12 @@ def calc_object_ious_fast(y_true, y_pred):
         Currently does not handle cases in which more than 1 truth and 1 predicted cell ids are
         found in an intersection
     """
-    def _joint_or(arr, L):
-        '''Calculate overlap of an arr with a list of values'''
-        out = arr == L[0]
-        for i in L[1:]:
-            out = (out) | (arr == i)
-        return out
+    # def _joint_or(arr, L):
+    #     '''Calculate overlap of an arr with a list of values'''
+    #     out = arr == L[0]
+    #     for i in L[1:]:
+    #         out = (out) | (arr == i)
+    #     return out
 
     # Initialize iou matrix
     # Add third dimension to seperate merges
@@ -433,12 +432,12 @@ def calc_2d_object_stats_3diou(iou_matrix):
     truth_proj = iou.sum(axis=0)
 
     # More than 2 hits corresponds to true cells hit twice by prediction, aka split
-    # split = np.count_nonzero(pred_proj >= 2)
+    split = np.count_nonzero(pred_proj >= 2)
     # More than 2 hits indicates more than 2 true cells corresponding to 1 predicted cell
-    # merge = np.count_nonzero(truth_proj >= 2)
+    merge = np.count_nonzero(truth_proj >= 2)
 
-    # # Calc dice jaccard stats for objects
-    # dice, jaccard = get_dice_jaccard(iou_matrix)
+    # Calc dice jaccard stats for objects
+    dice, jaccard = get_dice_jaccard(iou_matrix)
 
     return {
         'true_cells': true_cells,
@@ -580,7 +579,7 @@ class ObjectAccuracy:
             print('Prediction frame is empty')
             self.false_neg += self.n_true
             self.empty_frame = 'n_pred'
-        elif test == False:
+        elif test is False:
             self.empty_frame = False
             self._calc_iou()
             self._make_matrix()
@@ -689,7 +688,7 @@ class ObjectAccuracy:
         # Change cell index to str names
         df['true'] = 'true_' + df['true'].astype('str')
         df['pred'] = 'pred_' + df['pred'].astype('str')
-        nodes = list(df['true'].unique())+list(df['pred'].unique())
+        nodes = list(df['true'].unique()) + list(df['pred'].unique())
 
         # Drop 0 weights to only retain overlapping cells
         dfedge = df.drop(df[df['weight'] == 0].index)
@@ -707,13 +706,13 @@ class ObjectAccuracy:
         # Find subgraphs, e.g. merge/split
         for g in nx.connected_component_subgraphs(self.G):
             k = max(dict(g.degree).items(), key=operator.itemgetter(1))[0]
-            i_loner = int(k.split('_')[-1])
+            # i_loner = int(k.split('_')[-1])
 
             # Map index back to original cost matrix index
-            if 'pred' in k:
-                i_cm = self.loners_pred[i_loner]
-            else:
-                i_cm = self.loners_true[i_loner]
+            # if 'pred' in k:
+            #     i_cm = self.loners_pred[i_loner]
+            # else:
+            #     i_cm = self.loners_true[i_loner]
 
             # Process isolates first
             if g.degree[k] == 0:

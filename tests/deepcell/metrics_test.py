@@ -58,8 +58,8 @@ def _sample1(w, h, imw, imh, merge):
 
     im = np.zeros((imw, imh))
     im[0:2, 0:2] = 1
-    im[x:x+w, y:y+h] = 2
-    im[x+w:x+2*w, y:y+h] = 3
+    im[x:x + w, y:y + h] = 2
+    im[x + w:x + 2 * w, y:y + h] = 3
 
     # Randomly rotate to pick horizontal or vertical
     if np.random.random() > 0.5:
@@ -83,14 +83,14 @@ def _sample2(w, h, imw, imh):
     y = np.random.randint(0, imh - h)
 
     # Determine split points
-    xs = np.random.randint(1, w*0.9)
-    ys = np.random.randint(1, h*0.9)
+    xs = np.random.randint(1, w * 0.9)
+    ys = np.random.randint(1, h * 0.9)
 
     im = np.zeros((imw, imh))
     im[0:2, 0:2] = 4
-    im[x:x+xs, y:y+ys] = 1
-    im[x+xs:x+w, y:y+ys] = 2
-    im[x:x+w, y+ys:y+h] = 3
+    im[x:x + xs, y:y + ys] = 1
+    im[x + xs:x + w, y:y + ys] = 2
+    im[x:x + w, y + ys:y + h] = 3
 
     return im
 
@@ -123,22 +123,22 @@ def _sample3(w, h, imw, imh):
     y = np.random.randint(0, imh - h)
 
     # Determine split points
-    xs = np.random.randint(1, w*0.9)
-    ys = np.random.randint(1, h*0.9)
+    xs = np.random.randint(1, w * 0.9)
+    ys = np.random.randint(1, h * 0.9)
 
     im = np.zeros((imw, imh))
-    im[x:x+xs, y:y+ys] = 1
-    im[x+xs:x+w, y:y+ys] = 2
-    im[x:x+w, y+ys:y+h] = 3
+    im[x:x + xs, y:y + ys] = 1
+    im[x + xs:x + w, y:y + ys] = 2
+    im[x:x + w, y + ys:y + h] = 3
 
     true = im
 
-    xs = np.random.randint(1, w*0.9)
-    ys = np.random.randint(1, h*0.9)
+    xs = np.random.randint(1, w * 0.9)
+    ys = np.random.randint(1, h * 0.9)
     im = np.zeros((imw, imh))
-    im[x:x+xs, y:y+ys] = 1
-    im[x+xs:x+w, y:y+ys] = 2
-    im[x:x+w, y+ys:y+h] = 3
+    im[x:x + xs, y:y + ys] = 1
+    im[x + xs:x + w, y:y + ys] = 2
+    im[x:x + w, y + ys:y + h] = 3
 
     pred = im
 
@@ -305,7 +305,7 @@ class TestMetricsObject(test.TestCase):
 
         m.save_to_json(L)
         todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-        outfilename = os.path.join(outdir, name+'_'+todays_date+'.json')
+        outfilename = os.path.join(outdir, name + '_' + todays_date + '.json')
 
         # Check that file exists
         self.assertEqual(os.path.isfile(outfilename), True)
@@ -339,7 +339,7 @@ class TestMetricsObject(test.TestCase):
 
         # Check output file
         todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
-        outname = os.path.join(outdir, name+'_'+todays_date+'.json')
+        outname = os.path.join(outdir, name + '_' + todays_date + '.json')
         self.assertEqual(os.path.isfile(outname), True)
 
 
@@ -433,7 +433,7 @@ class TestObjectAccuracy(test.TestCase):
     def test_classify_graph(self):
         y_true, y_pred = _sample1(10, 10, 30, 30, True)
         # Test that complete run through is succesful
-        o = metrics.ObjectAccuracy(y_true, y_pred)
+        _ = metrics.ObjectAccuracy(y_true, y_pred)
 
     def test_optional_outputs(self):
         y_true, y_pred = _sample1(10, 10, 30, 30, True)
