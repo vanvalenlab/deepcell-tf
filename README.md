@@ -11,6 +11,12 @@ Read the documentaiton at [deepcell.readthedocs.io](https://deepcell.readthedocs
 
 For more information on deploying DeepCell in the cloud [refer to the DeepCell Kiosk documentation](https://deepcell-kiosk.readthedocs.io)
 
+## Examples
+
+Raw Image                  |  Segmented and Tracked
+:-------------------------:|:-------------------------:
+![](/docs/images/raw.gif)  |  ![](/docs/images/tracked.gif)  
+  
 ## Getting Started
 
 The fastest way to get started with DeepCell is to run the latest docker image:
@@ -40,6 +46,10 @@ This will start a jupyter session, with several example notebooks detailing vari
 * [3D Watershed - Fully Convolutional.ipynb](scripts/watershed/Watershed%20Transform%203D%20Fully%20Convolutional.ipynb)
 
 * [3D Watershed - Sample Based.ipynb](scripts/watershed/Watershed%20Transform%203D%20Sample%20Based.ipynb)
+
+### Cell Tracking in Live Cell Imaging
+
+* [Tracking Example.ipynb](scripts/tracking/Tracking%20Example.ipynb)
 
 ## DeepCell for Developers
 
