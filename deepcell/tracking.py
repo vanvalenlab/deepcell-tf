@@ -235,49 +235,55 @@ class cell_tracker():
                     cell_feature_name = feature_name
                 frame_features[feature_name][cell_idx] = cell_features[cell_feature_name]
 
-        # Prepare zeros input matrices
-        inputs = {}
-        for feature_name in self.features:
-            shape = self.feature_shape[feature_name]
-            in_1 = np.zeros((number_of_tracks, number_of_cells, self.track_length, *shape),
-                            dtype=K.floatx())
-            in_2 = np.zeros((number_of_tracks, number_of_cells, 1, *shape),
-                            dtype=K.floatx())
-            inputs[feature_name] = [in_1, in_2]
+        # Call model.predict only on inputs that are near each other
+        inputs = {feature_name: ([], []) for feature_name in self.features}
+        input_pairs = []
 
         # Compute assignment matrix - Initialize and get model inputs
         # Fill the input matrices
         for track in range(number_of_tracks):
             for cell in range(number_of_cells):
+                feature_ok = True
+                feature_vals = {}
                 for feature_name in self.features:
                     track_feature, frame_feature, ok = self._compute_feature(
                         feature_name,
                         track_features[feature_name][track],
                         frame_features[feature_name][cell])
 
-                    if not ok:
+                    if ok:
+                        feature_vals[feature_name] = (track_feature, frame_feature)
+                    else:
+                        feature_ok = False
                         assignment_matrix[track, cell] = 1
 
-                    inputs[feature_name][0][track, cell] = track_feature
-                    inputs[feature_name][1][track, cell] = frame_feature
+                if feature_ok:
+                    input_pairs.append((track, cell))
+                    for feature_name, (track_feature, frame_feature) in feature_vals.items():
+                        inputs[feature_name][0].append(track_feature)
+                        inputs[feature_name][1].append(frame_feature)
 
-        # reshape model inputs
-        model_input = []
-        for feature_name in self.features:
-            in_1, in_2 = inputs[feature_name]
-            feature_shape = self.feature_shape[feature_name]
-            # for the siamese model:
-            # left input takes in several, right input takes in one
-            in_1 = np.reshape(in_1, (number_of_tracks * number_of_cells,
-                                     self.track_length, *feature_shape))
-            in_2 = np.reshape(in_2, (number_of_tracks * number_of_cells,
-                                     1, *feature_shape))
-            model_input.extend([in_1, in_2])
 
-        # TODO: implement some splitting function in case this is too much data
-        predictions = self.model.predict(model_input)
-        predictions = np.reshape(predictions, (number_of_tracks, number_of_cells, 3))
-        assignment_matrix = 1 - predictions[:, :, 1]
+        if input_pairs == []:
+            # if the frame is empty
+            assignment_matrix[:, :] = 1
+            predictions = []
+
+        else:
+            model_input = []
+            for feature_name in self.features:
+                in_1, in_2 = inputs[feature_name]
+                feature_shape = self.feature_shape[feature_name]
+                in_1 = np.reshape(np.stack(in_1), (len(input_pairs),
+                                         self.track_length, *feature_shape))
+                in_2 = np.reshape(np.stack(in_2), (len(input_pairs),
+                                         1, *feature_shape))
+                model_input.extend([in_1, in_2])
+
+            predictions = self.model.predict(model_input)
+
+            for i, (track, cell) in enumerate(input_pairs):
+                assignment_matrix[track, cell] = 1 - predictions[i, 1]
 
         # Make sure capped tracks are not allowed to have assignments
         for track in range(number_of_tracks):
@@ -285,8 +291,6 @@ class cell_tracker():
                 assignment_matrix[track, 0:number_of_cells] = 1
 
         # Compute birth matrix
-        predictions_birth = predictions[:, :, 2]
-        # 1 - np.amax(predictions_birth, axis=0)
         birth_diagonal = np.array([self.birth] * number_of_cells)
         birth_matrix = np.diag(birth_diagonal) + np.ones(birth_matrix.shape)
         birth_matrix = birth_matrix - np.eye(number_of_cells)
@@ -304,7 +308,10 @@ class cell_tracker():
         cost_matrix[0:number_of_tracks, number_of_cells:] = death_matrix
         cost_matrix[number_of_tracks:, number_of_cells:] = mordor_matrix
 
-        return cost_matrix
+        predictions_map = {pair: prediction
+                           for pair, prediction in zip(input_pairs, predictions)}
+
+        return cost_matrix, predictions_map
 
     def _run_lap(self, cost_matrix):
         """Runs the linear assignment function on a cost matrix.
@@ -314,7 +321,7 @@ class cell_tracker():
 
         return assignments
 
-    def _update_tracks(self, assignments, frame):
+    def _update_tracks(self, assignments, frame, predictions):
         """Update the tracks if given the assignment matrix
         and the frame that was tracked.
         """
@@ -352,7 +359,7 @@ class cell_tracker():
                 new_label = new_track_id + 1
 
                 # See if the new track has a parent
-                parent = self._get_parent(frame, new_label)
+                parent = self._get_parent(frame, cell, predictions)
                 if parent is not None:
                     print('Division detected')
                     self.tracks[new_track_id]['parent'] = parent
@@ -404,83 +411,27 @@ class cell_tracker():
         # Update the tracked label array
         self.y_tracked = np.concatenate([self.y_tracked, y_tracked_update], axis=0)
 
-    def _get_parent(self, frame, cell):
+    def _get_parent(self, frame, cell, predictions):
         """Searches the tracks for the parent of a given cell.
 
         Returns:
             The parent cell's id or None if no parent exists.
         """
-        track_features = {feature_name: self._fetch_track_feature(feature_name, before_frame=frame)
-                          for feature_name in self.features}
-
-        cell_features = self._get_features(self.x, self.y, [frame], [cell])
-
-        # TODO(enricozb): Investigate the viability of stacking these arrays
-        frame_features = {}
-        for feature in self.features:
-            cell_feature_name = "~future area" if feature == "neighborhood" else feature
-            frame_features[feature] = np.stack(
-                [cell_features[cell_feature_name]] * track_features[feature].shape[0],
-                axis=0)
-
-        def get_track_and_frame_feature(feature_name):
-            track_feature = track_features[feature_name]
-            frame_feature = frame_features[feature_name]
-            if feature_name == 'appearance':
-                return track_feature, frame_feature
-
-            if feature_name == 'distance':
-                all_centroids = np.concatenate([track_feature, frame_feature], axis=1)
-                distances = np.diff(all_centroids, axis=1)
-                zero_pad = np.zeros((track_feature.shape[0], 1, 2), dtype=K.floatx())
-                distances = np.concatenate([zero_pad, distances], axis=1)
-
-                track_distances = distances[:, 0:-1, :]
-                cell_distances = distances[:, [-1], :]
-
-                return track_distances, cell_distances
-
-            if feature_name == 'neighborhood':
-                neighborhoods = np.concatenate([track_feature, frame_feature], axis=1)
-
-                # TODO: Does this do anything?
-                generator = MovieDataGenerator(rotation_range=0,
-                                               horizontal_flip=False,
-                                               vertical_flip=False)
-                for batch in range(neighborhoods.shape[0]):
-                    neighborhood_batch = neighborhoods[batch]
-                    neighborhood_batch = generator.random_transform(neighborhood_batch)
-                    neighborhoods[batch] = neighborhood_batch
-
-                track_neighborhoods = neighborhoods[:, 0:-1, :, :, :]
-                cell_neighborhoods = neighborhoods[:, [-1], :, :, :]
-
-                return track_neighborhoods, cell_neighborhoods
-
-            if feature_name == 'regionprop':
-                return track_feature, frame_feature
-
-        # Compute the probability the cell is a daughter of a track
-        model_input = []
-        for feature_name in self.features:
-            track_feature, frame_feature = get_track_and_frame_feature(feature_name)
-            model_input.extend([track_feature, frame_feature])
-
-        predictions = self.model.predict(model_input)
-        probs = predictions[:, 2]
-        number_of_tracks = len(self.tracks.keys())
-
-        # Make sure capped tracks can't be assigned parents
-        for track in range(number_of_tracks):
-            if self.tracks[track]['capped']:
-                probs[track] = 0
-                continue
+        # are track_ids 0-something or 1-something??
+        # 0-something because of the `for track_id, p in enumerate(...)` below
+        probs = {}
+        for (track, cell_id), p in predictions.items():
+            # Make sure capped tracks can't be assigned parents
+            if cell_id == cell and not self.tracks[track]['capped']:
+                probs[track] = p[2]
 
         # Find out if the cell is a daughter of a track
         print('New track')
         max_prob = self.division
         parent_id = None
-        for track_id, p in enumerate(np.squeeze(probs)):
+        for track_id, p in probs.items():
+            # we don't want to think a sibling of `cell`, that just appeared
+            # is a parent
             if self.tracks[track_id]['frames'] == [frame]:
                 continue
             if p > max_prob:
@@ -519,7 +470,7 @@ class cell_tracker():
 
         for track_id, track in self.tracks.items():
             app = track['appearance']
-            allowed_frames = list(filter(lambda f: f < before_frame, track['frames']))
+            allowed_frames = [f for f in track["frames"] if f < before_frame]
             frame_dict = {frame: idx for idx, frame in enumerate(allowed_frames)}
 
             if not allowed_frames:
@@ -742,9 +693,9 @@ class cell_tracker():
         """
         for frame in range(1, self.x.shape[0]):
             print('Tracking frame ' + str(frame))
-            cost_matrix = self._get_cost_matrix(frame)
+            cost_matrix, predictions = self._get_cost_matrix(frame)
             assignments = self._run_lap(cost_matrix)
-            self._update_tracks(assignments, frame)
+            self._update_tracks(assignments, frame, predictions)
 
     def _track_review_dict(self):
         def process(key, track_item):
