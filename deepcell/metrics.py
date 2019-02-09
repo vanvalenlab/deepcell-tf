@@ -730,9 +730,21 @@ class Metrics:
             smaller values are better, default 0.1
         pixel_threshold (:obj:`float`, optional): Threshold for converting predictions to binary
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
-        crop_size (:obj:`int`, optional): Enables cropping for object calculations, default None
-        return_iou (:obj:`bool`, optional): Returns iou_matrix if True, default False
         feature_key (:obj:`list`, optional): List of strings to use as feature names
+        json_notes (:obj:`str`, optional): Str providing any additional information about the model
+
+    Examples:
+        >>> from deepcell import metrics
+        >>> m = metrics.Metrics('model_name')
+        >>> m.run_all(
+                y_true_lbl,
+                y_pred_lbl,
+                y_true_unlbl,
+                y_true_unlbl)
+
+        >>> m.all_pixel_stats(y_true_unlbl,y_pred_unlbl)
+        >>> m.calc_obj_stats(y_true_lbl,y_pred_lbl)
+        >>> m.save_to_json(m.output)
     '''
 
     def __init__(self, model_name,
@@ -743,7 +755,8 @@ class Metrics:
                  ndigits=4,
                  crop_size=None,
                  return_iou=False,
-                 feature_key=[]):
+                 feature_key=[],
+                 json_notes=''):
 
         self.model_name = model_name
         self.outdir = outdir
@@ -754,6 +767,7 @@ class Metrics:
         self.crop_size = crop_size
         self.return_iou = return_iou
         self.feature_key = feature_key
+        self.json_notes = json_notes
 
         # Initialize output list to collect stats
         self.output = []
@@ -869,19 +883,25 @@ class Metrics:
             y_pred (3D np.array): Labeled prediction mask
 
         """
-        self.o = ObjectAccuracy(y_true, y_pred, self.cutoff1, self.cutoff2)
+        self.stats = pd.DataFrame()
 
-        # Get stats dataframe
-        stats = self.o.save_to_dataframe()
+        for i in range(y_true.shape[0]):
+            o = ObjectAccuracy(y_true[i],y_pred[i],self.cutoff1,self.cutoff2)
+            self.stats = self.stats.append(o.save_to_dataframe())
+            if i%100 == 0:
+                print(i,'samples processed')
 
         # Write out summed statistics
-        for k, v in stats.sum().iteritems():
+        for k, v in self.stats.sum().iteritems():
             self.output.append(dict(
                 name=k,
                 value=v,
                 feature='sum',
                 stat_type='object'
             ))
+
+        # Print report
+        print(self.stats.sum())
 
     def run_all(self,
                 y_true_lbl,
@@ -923,7 +943,8 @@ class Metrics:
         # Record metadata
         D['metadata'] = dict(
             model_name=self.model_name,
-            date=todays_date
+            date=todays_date,
+            notes=self.json_notes
         )
 
         # Record metrics
