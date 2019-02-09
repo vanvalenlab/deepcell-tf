@@ -29,8 +29,17 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import os
+import json
+import tarfile
+import pathlib
+import tempfile
+from io import BytesIO
+
 import numpy as np
 from tensorflow.python.keras import backend as K
+
+from deepcell.utils.misc_utils import sorted_nicely
 
 
 def count_pairs(y, same_probability=0.5, data_format=None):
@@ -77,3 +86,131 @@ def count_pairs(y, same_probability=0.5, data_format=None):
         # Add this batch cell-pairings to the total count
         total_pairs += cell_pairings
     return total_pairs
+
+
+def load_trks(trks_file):
+    """Load a trks_file.
+
+        Args:
+            trks_file: full path to the file
+
+        Returns:
+            A dictionary with raw, tracked, and lineage data
+    """
+    with tarfile.open(trks_file, 'r') as trks:
+        # trks.extractfile opens a file in bytes mode, json can't use bytes.
+        trk_data = trks.getmember('lineages.json')
+        lineages = json.loads(trks.extractfile(trk_data).read().decode())
+
+        # numpy can't read these from disk...
+        array_file = BytesIO()
+        array_file.write(trks.extractfile('raw.npy').read())
+        array_file.seek(0)
+        raw = np.load(array_file)
+        array_file.close()
+
+        array_file = BytesIO()
+        array_file.write(trks.extractfile('tracked.npy').read())
+        array_file.seek(0)
+        tracked = np.load(array_file)
+        array_file.close()
+
+    # JSON only allows strings as keys, so we convert them back to ints here
+    for i, tracks in enumerate(lineages):
+        lineages[i] = {int(k): v for k, v in tracks.items()}
+
+    return {'lineages': lineages, 'X': raw, 'y': tracked}
+
+
+def load_trk(filename):
+    """Load a trk_file.
+
+        Args:
+            filename: full path to the file
+
+        Returns:
+            A dictionary with raw, tracked, and lineage data
+    """
+    with tarfile.open(filename, "r") as trks:
+        # trks.extractfile opens a file in bytes mode, json can't use bytes.
+        lineage = json.loads(
+                trks.extractfile(
+                    trks.getmember("lineage.json")).read().decode())
+
+        # numpy can't read these from disk...
+        array_file = BytesIO()
+        array_file.write(trks.extractfile("raw.npy").read())
+        array_file.seek(0)
+        raw = np.load(array_file)
+        array_file.close()
+
+        array_file = BytesIO()
+        array_file.write(trks.extractfile("tracked.npy").read())
+        array_file.seek(0)
+        tracked = np.load(array_file)
+        array_file.close()
+
+    # JSON only allows strings as keys, so we convert them back to ints here
+    lineage = {int(k): v for k, v in lineage.items()}
+
+    return {"lineage": lineage, "raw": raw, "tracked": tracked}
+
+
+def trk_folder_to_trks(dirname, trks_filename):
+    """Compiles a directory of trk files into one trks_file.
+
+        Args:
+            dirname: full path to the directory containing multiple trk files
+            trks_filename: desired filename (the name should end in .trks)
+
+        Returns:
+            Nothing
+    """
+    lineages = []
+    raw = []
+    tracked = []
+
+    file_list = os.listdir(dirname)
+    file_list_sorted = sorted_nicely(file_list)
+
+    for filename in file_list_sorted:
+        trk = load_trk(os.path.join(dirname, filename))
+        lineages.append(trk["lineage"])
+        raw.append(trk["raw"])
+        tracked.append(trk["tracked"])
+
+    file_path = os.path.join(os.path.dirname(dirname), trks_filename)
+
+    save_trks(file_path, lineages, raw, tracked)
+
+
+def save_trks(filename, lineages, raw, tracked):
+    """Saves raw, tracked, and lineage data into one trks_file.
+
+        Args:
+            filename: full path to the the final trk files
+            lineages: a list of dictionaries saved as a json
+            raw: raw images data
+            tracked: annotated image data
+
+        Returns:
+            Nothing
+    """
+    if not filename.endswith(".trks"):
+        raise ValueError("filename must end with '.trks'")
+
+    with tarfile.open(filename, "w") as trks:
+        with tempfile.NamedTemporaryFile("w") as lineages_file:
+            json.dump(lineages, lineages_file, indent=1)
+            lineages_file.flush()
+            trks.add(lineages_file.name, "lineages.json")
+
+        with tempfile.NamedTemporaryFile() as raw_file:
+            np.save(raw_file, raw)
+            raw_file.flush()
+            trks.add(raw_file.name, "raw.npy")
+
+        with tempfile.NamedTemporaryFile() as tracked_file:
+            np.save(tracked_file, tracked)
+            tracked_file.flush()
+            trks.add(tracked_file.name, "tracked.npy")
