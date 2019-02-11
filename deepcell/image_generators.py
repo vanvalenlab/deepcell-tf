@@ -1873,7 +1873,7 @@ class RetinaNetIterator(Iterator):
 
         # `compute_shapes` changes based on the model backbone.
         self.compute_shapes = compute_shapes
-        self.num_classes = len(np.unique(self.y))
+        self.num_classes = 1  # boolean `object` detection
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
         self.data_format = data_format
