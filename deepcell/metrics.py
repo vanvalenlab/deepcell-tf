@@ -514,10 +514,10 @@ class ObjectAccuracy:
         self.split = 0
 
         # Initialize index records
-        self.false_pos_ind = []
-        self.false_neg_ind = []
-        self.merge_ind = []
-        self.split_ind = []
+        # self.false_pos_ind = []
+        # self.false_neg_ind = []
+        # self.merge_ind = []
+        # self.split_ind = []
 
         # Check if either frame is empty before proceeding
         if self.n_true == 0:
@@ -665,13 +665,13 @@ class ObjectAccuracy:
         # Find subgraphs, e.g. merge/split
         for g in nx.connected_component_subgraphs(self.G):
             k = max(dict(g.degree).items(), key=operator.itemgetter(1))[0]
-            i_loner = int(k.split('_')[-1])
+            # i_loner = int(k.split('_')[-1])
 
             # Map index back to original cost matrix index
-            if 'pred' in k:
-                i_cm = self.loners_pred[i_loner]
-            else:
-                i_cm = self.loners_true[i_loner]
+            # if 'pred' in k:
+            #     i_cm = self.loners_pred[i_loner]
+            # else:
+            #     i_cm = self.loners_true[i_loner]
 
             # Process isolates first
             if g.degree[k] == 0:
@@ -733,8 +733,8 @@ class ObjectAccuracy:
 
         # Change appropriate columns to int dtype
         col = ['false_neg', 'false_pos', 'merge',
-                'n_pred', 'n_true', 'split',
-                'true_pos']
+               'n_pred', 'n_true', 'split',
+               'true_pos']
         df[col] = df[col].astype('int')
 
         return df
@@ -941,14 +941,15 @@ class Metrics:
         print('Number of cells predicted:', self.stats['n_pred'].sum())
         print('Number of true cells:', self.stats['n_true'].sum())
         print('True positives: {}, Accuracy: {}'.format(
-            self.stats['true_pos'].sum(), np.round(self.stats['true_pos'].sum() / self.stats['n_true'].sum(), 2)
+            self.stats['true_pos'].sum(),
+            np.round(self.stats['true_pos'].sum() / self.stats['n_true'].sum(), 2)
         ))
         print('False positives: {}'.format(self.stats['false_pos'].sum()))
         print('False negatives: {}'.format(self.stats['false_neg'].sum()))
         print('Merges: {}'.format(self.stats['merge'].sum()))
         print('Splits: {}'.format(self.stats['split'].sum()))
         if self.seg is True:
-            print('SEG: {}'.format(round(self.stats['seg'].mean(),4)))
+            print('SEG: {}'.format(round(self.stats['seg'].mean(), 4)))
 
     def run_all(self,
                 y_true_lbl,
