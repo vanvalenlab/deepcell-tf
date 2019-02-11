@@ -1850,7 +1850,7 @@ class RetinaNetIterator(Iterator):
                  train_dict,
                  image_data_generator,
                  compute_shapes=guess_shapes,
-                 batch_size=1,
+                 batch_size=32,
                  shuffle=False,
                  seed=None,
                  data_format='channels_last',
