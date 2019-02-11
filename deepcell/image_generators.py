@@ -1910,16 +1910,16 @@ class RetinaNetIterator(Iterator):
             (annotations['bboxes'][:, 3] <= annotations['bboxes'][:, 1]) |
             (annotations['bboxes'][:, 0] < 0) |
             (annotations['bboxes'][:, 1] < 0) |
-            (annotations['bboxes'][:, 2] > image.shape[row_axis + 1]) |
-            (annotations['bboxes'][:, 3] > image.shape[row_axis])
+            (annotations['bboxes'][:, 2] > image.shape[row_axis]) |
+            (annotations['bboxes'][:, 3] > image.shape[row_axis + 1])
         )[0]
 
         # delete invalid indices
         if invalid_indices.size > 0:
-            # logging.warn('Image with shape {} contains the following invalid '
-            #              'boxes: {}.'.format(
-            #                  image.shape,
-            #                  annotations['bboxes'][invalid_indices, :]))
+            logging.warn('Image with shape {} contains the following invalid '
+                         'boxes: {}.'.format(
+                             image.shape,
+                             annotations['bboxes'][invalid_indices, :]))
 
             for k in annotations.keys():
                 filtered = np.delete(annotations[k], invalid_indices, axis=0)
