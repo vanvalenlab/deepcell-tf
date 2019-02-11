@@ -90,7 +90,7 @@ def default_classification_model(num_classes,
     outputs = Conv2D(
         filters=num_classes * num_anchors,
         kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None),
-        # bias_initializer=PriorProbability(probability=prior_probability),
+        bias_initializer=PriorProbability(probability=prior_probability),
         name='pyramid_classification',
         **options
     )(outputs)

@@ -23,34 +23,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Custom initializers from https://github.com/fizyer/keras-retinanet"""
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
+"""Tests for custom initializers"""
 
-import numpy as np
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.initializers import Initializer
+from tensorflow.python.platform import test
+
+from deepcell.initializers import PriorProbability
 
 
-class PriorProbability(Initializer):
-    """Initializer that applies a prior probability to the weights.
+class InitializersTest(test.TestCase):
 
-    Args:
-        probability: The prior probability to apply to the weights
-    """
+    def _runner(self, init, shape, target_mean=None, target_std=None,
+                target_max=None, target_min=None):
+        variable = K.variable(init(shape))
+        output = K.get_value(variable)
+        # Test serialization (assumes deterministic behavior).
+        config = init.get_config()
+        reconstructed_init = init.__class__.from_config(config)
+        variable = K.variable(reconstructed_init(shape))
+        output_2 = K.get_value(variable)
+        self.assertAllClose(output, output_2, atol=1e-4)
 
-    def __init__(self, probability=0.01):
-        self.probability = probability
-
-    def get_config(self):
-        return {
-            'probability': self.probability
-        }
-
-    def __call__(self, shape, dtype=None, partition_info=None):
-        # set bias to -log((1 - p)/p) for foreground
-        bias = -K.log((1 - self.probability) / self.probability)
-        result = np.ones(shape, dtype=dtype) * bias
-        return result
+    def test_prior_probability(self):
+        tensor_shape = (8, 12, 99)
+        with self.cached_session():
+            self._runner(PriorProbability(probability=0.01),
+                         tensor_shape, target_mean=0., target_std=1)
