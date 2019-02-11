@@ -464,7 +464,8 @@ class TestObjectAccuracy(test.TestCase):
         o._make_matrix()
         o._linear_assignment()
 
-        for obj in ['results', 'cm_res', 'true_pos_ind', 'loners_pred', 'loners_true', 'seg_score']:
+        for obj in ['results', 'cm_res', 'true_pos_ind',
+                    'loners_pred', 'loners_true', 'seg_score']:
             self.assertTrue(hasattr(o, obj))
 
     def test_assign_loners(self):

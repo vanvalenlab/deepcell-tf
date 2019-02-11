@@ -731,6 +731,12 @@ class ObjectAccuracy:
 
         df = pd.DataFrame(D, index=[0], dtype='float64')
 
+        # Change appropriate columns to int dtype
+        col = ['false_neg', 'false_pos', 'merge',
+                'n_pred', 'n_true', 'split',
+                'true_pos']
+        df[col] = df[col].astype('int')
+
         return df
 
 
@@ -901,7 +907,6 @@ class Metrics:
         Args:
             y_true (3D np.array): Labeled ground truth annotations
             y_pred (3D np.array): Labeled prediction mask
-
         """
         self.stats = pd.DataFrame()
 
@@ -912,20 +917,38 @@ class Metrics:
                                cutoff2=self.cutoff2,
                                seg=self.seg)
             self.stats = self.stats.append(o.save_to_dataframe())
-            if i % 100 == 0:
-                print(i, 'samples processed')
+            # if i % 100 == 0:
+            #     print(i, 'samples processed')
 
         # Write out summed statistics
-        for k, v in self.stats.sum().iteritems():
-            self.output.append(dict(
-                name=k,
-                value=v,
-                feature='sum',
-                stat_type='object'
-            ))
+        for k, v in self.stats.iteritems():
+            if k == 'seg':
+                self.output.append(dict(
+                    name=k,
+                    value=v.mean(),
+                    feature='mean',
+                    stat_type='object'
+                ))
+            else:
+                self.output.append(dict(
+                    name=k,
+                    value=v.sum().astype('float64'),
+                    feature='sum',
+                    stat_type='object'
+                ))
 
         # Print report
-        print(self.stats.sum())
+        print('Number of cells predicted:', self.stats['n_pred'].sum())
+        print('Number of true cells:', self.stats['n_true'].sum())
+        print('True positives: {}, Accuracy: {}'.format(
+            self.stats['true_pos'].sum(), np.round(self.stats['true_pos'].sum() / self.stats['n_true'].sum(), 2)
+        ))
+        print('False positives: {}'.format(self.stats['false_pos'].sum()))
+        print('False negatives: {}'.format(self.stats['false_neg'].sum()))
+        print('Merges: {}'.format(self.stats['merge'].sum()))
+        print('Splits: {}'.format(self.stats['split'].sum()))
+        if self.seg is True:
+            print('SEG: {}'.format(round(self.stats['seg'].mean(),4)))
 
     def run_all(self,
                 y_true_lbl,
