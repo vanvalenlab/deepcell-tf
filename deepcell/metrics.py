@@ -480,6 +480,7 @@ class ObjectAccuracy:
         cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned cells,
             smaller values are better, default 0.1
         test (:obj:`bool`, optional): Utility variable to control running analysis during testing
+        seg (:obj:`bool`, optional): Calculates SEG score for cell tracking competition
 
     Raises:
         ValueError: If y_true and y_pred are not the same shape
@@ -488,12 +489,13 @@ class ObjectAccuracy:
         Position indicies are not currently collected appropriately
     """
 
-    def __init__(self, y_true, y_pred, cutoff1=0.4, cutoff2=0.1, test=False):
+    def __init__(self, y_true, y_pred, cutoff1=0.4, cutoff2=0.1, test=False, seg=False):
 
         self.y_true = y_true
         self.y_pred = y_pred
         self.cutoff1 = cutoff1
         self.cutoff2 = cutoff2
+        self.seg = seg
 
         if y_pred.shape != y_true.shape:
             raise ValueError('Shape of inputs need to match. Shape of prediction '
@@ -548,6 +550,8 @@ class ObjectAccuracy:
         """
 
         self.iou = np.zeros((self.n_true, self.n_pred))
+        if self.seg is True:
+            self.seg_thresh = np.zeros((self.n_true, self.n_pred))
 
         # Make all pairwise comparisons to calc iou
         for t in np.unique(self.y_true)[1:]:  # skip 0
@@ -557,6 +561,8 @@ class ObjectAccuracy:
                 union = np.logical_or(self.y_true == t, self.y_pred == p)
                 # Subtract 1 from index to account for skipping 0
                 self.iou[t - 1, p - 1] = intersection.sum() / union.sum()
+                if (self.seg is True) & (intersection.sum() > 0.5 * np.sum(self.y_true == t)):
+                    self.seg_thresh[t - 1, p - 1] = 1
 
     def _make_matrix(self):
         """Assembles cost matrix using the iou matrix and cutoff1
@@ -593,8 +599,14 @@ class ObjectAccuracy:
 
         # Identify direct matches as true positives
         self.true_pos_ind = np.where(
-            self.cm_res[self.n_true:, self.n_pred:] == 1)
+            self.cm_res[:self.n_true, :self.n_pred] == 1)
         self.true_pos += len(self.true_pos_ind[0])
+
+        # Calc seg score for true positives if requested
+        if self.seg is True:
+            iou_mask = self.iou.copy()
+            iou_mask[self.seg_thresh == 0] = np.nan
+            self.seg_score = np.nanmean(iou_mask[self.true_pos_ind[0], self.true_pos_ind[1]])
 
         # Collect unassigned cells
         self.loners_pred, _ = np.where(
@@ -653,13 +665,13 @@ class ObjectAccuracy:
         # Find subgraphs, e.g. merge/split
         for g in nx.connected_component_subgraphs(self.G):
             k = max(dict(g.degree).items(), key=operator.itemgetter(1))[0]
-            # i_loner = int(k.split('_')[-1])
+            i_loner = int(k.split('_')[-1])
 
             # Map index back to original cost matrix index
-            # if 'pred' in k:
-            #     i_cm = self.loners_pred[i_loner]
-            # else:
-            #     i_cm = self.loners_true[i_loner]
+            if 'pred' in k:
+                i_cm = self.loners_pred[i_loner]
+            else:
+                i_cm = self.loners_true[i_loner]
 
             # Process isolates first
             if g.degree[k] == 0:
@@ -696,6 +708,8 @@ class ObjectAccuracy:
         print('False negatives: {}'.format(self.false_neg))
         print('Merges: {}'.format(self.merge))
         print('Splits: {}'.format(self.split))
+        if self.seg is True:
+            print('SEG: {}'.format(self.seg_score))
 
     def save_to_dataframe(self):
         """Save error results to a pandas dataframe
@@ -703,8 +717,7 @@ class ObjectAccuracy:
         Returns:
             pd.DataFrame: Single row dataframe with error types as columns
         """
-
-        df = pd.DataFrame({
+        D = {
             'n_pred': self.n_pred,
             'n_true': self.n_true,
             'true_pos': self.true_pos,
@@ -712,7 +725,11 @@ class ObjectAccuracy:
             'false_neg': self.false_neg,
             'merge': self.merge,
             'split': self.split
-        }, index=[0], dtype='int32')
+        }
+        if self.seg is True:
+            D['seg'] = self.seg_score
+
+        df = pd.DataFrame(D, index=[0], dtype='float64')
 
         return df
 
@@ -732,6 +749,7 @@ class Metrics:
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         feature_key (:obj:`list`, optional): List of strings to use as feature names
         json_notes (:obj:`str`, optional): Str providing any additional information about the model
+        seg (:obj:`bool`, optional): Calculates SEG score for cell tracking competition
 
     Examples:
         >>> from deepcell import metrics
@@ -756,7 +774,8 @@ class Metrics:
                  crop_size=None,
                  return_iou=False,
                  feature_key=[],
-                 json_notes=''):
+                 json_notes='',
+                 seg=False):
 
         self.model_name = model_name
         self.outdir = outdir
@@ -768,6 +787,7 @@ class Metrics:
         self.return_iou = return_iou
         self.feature_key = feature_key
         self.json_notes = json_notes
+        self.seg = seg
 
         # Initialize output list to collect stats
         self.output = []
@@ -886,10 +906,14 @@ class Metrics:
         self.stats = pd.DataFrame()
 
         for i in range(y_true.shape[0]):
-            o = ObjectAccuracy(y_true[i],y_pred[i],self.cutoff1,self.cutoff2)
+            o = ObjectAccuracy(skimage.measure.label(y_true[i]),
+                               skimage.measure.label(y_pred[i]),
+                               cutoff1=self.cutoff1,
+                               cutoff2=self.cutoff2,
+                               seg=self.seg)
             self.stats = self.stats.append(o.save_to_dataframe())
-            if i%100 == 0:
-                print(i,'samples processed')
+            if i % 100 == 0:
+                print(i, 'samples processed')
 
         # Write out summed statistics
         for k, v in self.stats.sum().iteritems():

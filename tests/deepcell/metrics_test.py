@@ -328,9 +328,6 @@ class TestMetricsObject(test.TestCase):
 
         m.calc_object_stats(y_true, y_pred)
 
-        # Check for creation of attribute
-        self.assertEqual(hasattr(m, 'o'), True)
-
         # Check data added to output
         self.assertNotEqual(before, len(m.output))
 
@@ -433,6 +430,12 @@ class TestObjectAccuracy(test.TestCase):
         # Check that it is not equal to initial value
         self.assertNotEqual(np.count_nonzero(o.iou), 0)
 
+        # Test seg_thresh creation
+        o = metrics.ObjectAccuracy(y_true, y_pred, test=True, seg=True)
+        o._calc_iou()
+
+        self.assertTrue(hasattr(o, 'seg_thresh'))
+
     def test_make_matrix(self):
         y_true, y_pred = _sample1(10, 10, 30, 30, True)
         o = metrics.ObjectAccuracy(y_true, y_pred, test=True)
@@ -453,6 +456,15 @@ class TestObjectAccuracy(test.TestCase):
         o._linear_assignment()
 
         for obj in ['results', 'cm_res', 'true_pos_ind', 'loners_pred', 'loners_true']:
+            self.assertTrue(hasattr(o, obj))
+
+        # Test condition where seg = True
+        o = metrics.ObjectAccuracy(y_true, y_pred, test=True, seg=True)
+        o._calc_iou()
+        o._make_matrix()
+        o._linear_assignment()
+
+        for obj in ['results', 'cm_res', 'true_pos_ind', 'loners_pred', 'loners_true', 'seg_score']:
             self.assertTrue(hasattr(o, obj))
 
     def test_assign_loners(self):
@@ -492,4 +504,13 @@ class TestObjectAccuracy(test.TestCase):
 
         columns = ['n_pred', 'n_true', 'true_pos',
                    'false_pos', 'false_neg', 'merge', 'split']
+        self.assertItemsEqual(columns, list(df.columns))
+
+        # Check seg True case
+        o = metrics.ObjectAccuracy(y_true, y_pred, seg=True)
+        o.print_report()
+        df = o.save_to_dataframe()
+        columns = ['n_pred', 'n_true', 'true_pos',
+                   'false_pos', 'false_neg', 'merge', 'split',
+                   'seg']
         self.assertItemsEqual(columns, list(df.columns))
