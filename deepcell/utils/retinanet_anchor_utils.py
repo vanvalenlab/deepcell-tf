@@ -633,6 +633,8 @@ def evaluate(generator,
                     true_positives = np.append(true_positives, 0)
                     continue
 
+                # type `double` is required for `compute_overlap`
+                annotations = annotations.astype('double')
                 overlaps = compute_overlap(np.expand_dims(d, axis=0), annotations)
                 assigned = np.argmax(overlaps, axis=1)
                 max_overlap = overlaps[0, assigned]
