@@ -106,9 +106,7 @@ def filter_detections(boxes,
         # perform per class filtering
         for c in range(int(classification.shape[1])):
             scores = classification[:, c]
-            print(K.shape(scores)[0])
-            print(np.ones((K.shape(scores)[0],)).shape)
-            labels = c * np.ones((K.shape(scores)[0],), dtype='int64')
+            labels = c * K.ones((K.shape(scores)[0],), dtype='int64')
             all_indices.append(_filter_detections(scores, labels))
 
         # concatenate indices to single tensor
@@ -154,7 +152,7 @@ class FilterDetections(Layer):
 
     def __init__(self,
                  nms=True,
-                 class_specific_filter=True,
+                 class_specific_filter=False,
                  nms_threshold=0.5,
                  score_threshold=0.05,
                  max_detections=300,
