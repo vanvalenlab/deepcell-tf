@@ -1937,8 +1937,8 @@ class RetinaNetIterator(Iterator):
         """
         labels, bboxes = [], []
         for prop in regionprops(np.squeeze(y.astype('int'))):
-            labels.append(prop.label)
             bboxes.append(prop.bbox)
+            labels.append(1)  # boolean object detection
         annotations = {'labels': np.array(labels),
                        'bboxes': np.array(bboxes)}
         annotations = self.filter_annotations(y, annotations)
