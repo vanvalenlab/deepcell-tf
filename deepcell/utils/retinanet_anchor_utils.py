@@ -466,8 +466,6 @@ def shift(shape, stride, anchors):
 
     return shifted_anchors
 
-
-
 def _compute_ap(recall, precision):
     """Compute the average precision, given the recall and precision curves.
 
