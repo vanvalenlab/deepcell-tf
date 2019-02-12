@@ -39,7 +39,7 @@ from tensorflow.python.platform import tf_logging as logging
 
 def calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix):
     """
-    Identifies cell objects within a cropped roi that have an IOU above `threshold`
+    DEPRECATED Identifies cell objects within a cropped roi that have an IOU above `threshold`
     which results in them being marked as a hit
 
     Args:
@@ -74,7 +74,7 @@ def calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix):
 
 def calc_object_ious_fast(y_true, y_pred):
     """
-    Identifies cell objects within a cropped roi that have an IOU above `threshold`
+    DEPRECATED Identifies cell objects within a cropped roi that have an IOU above `threshold`
     which results in them being marked as a hit
 
     Args:
@@ -89,7 +89,7 @@ def calc_object_ious_fast(y_true, y_pred):
         found in an intersection
     """
     # def _joint_or(arr, L):
-    #     '''Calculate overlap of an arr with a list of values'''
+    #     """Calculate overlap of an arr with a list of values"""
     #     out = arr == L[0]
     #     for i in L[1:]:
     #         out = (out) | (arr == i)
@@ -139,7 +139,7 @@ def calc_object_ious_fast(y_true, y_pred):
 
 
 # def get_iou_matrix_quick(y_true, y_pred, crop_size, threshold=0.5):
-#     """Calculate Intersection-Over-Union Matrix for ground truth and predictions
+#     """DEPRECATED Calculate Intersection-Over-Union Matrix for ground truth and predictions
 #     based on object labels
 
 #     Intended to work on 2D arrays,
@@ -183,7 +183,7 @@ def calc_object_ious_fast(y_true, y_pred):
 
 
 def get_dice_jaccard(iou_matrix):
-    """Caclulates DICE score for object based metrics
+    """DEPRECATED Caclulates DICE score for object based metrics
     # Arguments:
         iou_matrix: Matrix of Intersection over Union
     # Returns
@@ -202,7 +202,8 @@ def get_dice_jaccard(iou_matrix):
 
 
 def reshape_padded_tiled_2d(arr):
-    """Takes in a 3 or 4d stack and reshapes so that arrays from the zeroth axis are tiled in 2D
+    """DEPRECATED Takes in a 3 or 4d stack and reshapes
+    so that arrays from the zeroth axis are tiled in 2D
 
     Args:
         arr (np.array): 3 or 4D array to be reshaped with reshape axis as zeroth axis
@@ -245,10 +246,9 @@ def stats_objectbased(y_true,
                       y_pred,
                       object_threshold=0.5,
                       ndigits=4,
-                      crop_size=None,
-                      return_iou=False):
+                      crop_size=None):
     """
-    Calculate summary statistics (DICE/Jaccard index and confusion matrix)
+    DEPRECATED Calculate summary statistics (DICE/Jaccard index and confusion matrix)
     for a labeled images on a per-object basis
 
     Args:
@@ -258,7 +258,6 @@ def stats_objectbased(y_true,
             to declare object overlap
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
         crop_size (:obj:`int`, optional): Enables cropping for object calculations, default None
-        return_iou (:obj:`bool`, optional): Returns iou_matrix if True, default False
 
     Returns:
         iou_matrix: np.array containing iou scores
@@ -349,12 +348,11 @@ def stats_objectbased(y_true,
     print('#incorrect divisions: {}\t% of ground truth divided: {}'.format(
         stats['split'], _round(perc_divided * 100)))
 
-    if return_iou:
-        return iou_matrix
+    return iou_matrix
 
 
 def calc_2d_object_stats(iou_matrix):
-    """Calculates basic statistics to evaluate classification accuracy for a 2d image
+    """DEPRECATED Calculates basic statistics to evaluate classification accuracy for a 2d image
 
     Args:
         iou_matrix (np.array): 2D array with dimensions (#true_cells,#predicted_cells)
@@ -399,7 +397,7 @@ def calc_2d_object_stats(iou_matrix):
     }
 
 
-def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
+def stats_pixelbased(y_true, y_pred, ndigits=4):
     """Calculates pixel-based statistics (Dice, Jaccard, Precision, Recall, F-measure)
 
     Takes in raw prediction and truth data. Applies labeling to prediction
@@ -409,7 +407,6 @@ def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
         y_true (3D np.array): Binary ground truth annotations for a single feature, (batch,x,y)
         y_pred (3D np.array): Binary predictions for a single feature, (batch,x,y)
         ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
-        return_stats (:obj:`bool`, optional): Returns dictionary of statistics, default False
 
     Returns:
         dictionary: optionally returns a dictionary of statistics
@@ -424,9 +421,6 @@ def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
     Todo:
         Should `y_true` be transformed to match `y_pred` or vice versa
     """
-
-    def _round(x):
-        return round(x, ndigits)
 
     if y_pred.shape != y_true.shape:
         raise ValueError('Shape of inputs need to match. Shape of prediction '
@@ -447,25 +441,17 @@ def stats_pixelbased(y_true, y_pred, ndigits=4, return_stats=False):
     # Sum gets count of positive pixels
     dice = (2 * intersection.sum() / (pred.sum() + truth.sum()))
     jaccard = intersection.sum() / union.sum()
-
-    print('\n____________________Pixel-based statistics____________________\n')
-    print('Dice: {}\nJaccard: {}\n'.format(
-        _round(dice), _round(jaccard)))
-
     precision = intersection.sum() / pred.sum()
     recall = intersection.sum() / truth.sum()
     Fmeasure = (2 * precision * recall) / (precision + recall)
-    print('Precision: {}\nRecall: {}\nF-measure: {}'.format(
-        _round(precision), _round(recall), _round(Fmeasure)))
 
-    if return_stats:
-        return {
-            'dice': dice,
-            'jaccard': jaccard,
-            'precision': precision,
-            'recall': recall,
-            'Fmeasure': Fmeasure
-        }
+    return {
+        'dice': dice,
+        'jaccard': jaccard,
+        'precision': precision,
+        'recall': recall,
+        'Fmeasure': Fmeasure
+    }
 
 
 class ObjectAccuracy:
@@ -521,11 +507,11 @@ class ObjectAccuracy:
 
         # Check if either frame is empty before proceeding
         if self.n_true == 0:
-            print('Ground truth frame is empty')
+            logging.info('Ground truth frame is empty')
             self.false_pos += self.n_pred
             self.empty_frame = 'n_true'
         elif self.n_pred == 0:
-            print('Prediction frame is empty')
+            logging.info('Prediction frame is empty')
             self.false_neg += self.n_true
             self.empty_frame = 'n_pred'
         elif test is False:
@@ -699,17 +685,7 @@ class ObjectAccuracy:
         """Print report of error types and frequency
         """
 
-        print('Number of cells predicted:', self.n_pred)
-        print('Number of true cells:', self.n_true)
-        print('True positives: {}, Accuracy: {}'.format(
-            self.true_pos, np.round(self.true_pos / self.n_true, 2)
-        ))
-        print('False positives: {}'.format(self.false_pos))
-        print('False negatives: {}'.format(self.false_neg))
-        print('Merges: {}'.format(self.merge))
-        print('Splits: {}'.format(self.split))
-        if self.seg is True:
-            print('SEG: {}'.format(self.seg_score))
+        print(self.save_to_dataframe())
 
     def save_to_dataframe(self):
         """Save error results to a pandas dataframe
@@ -741,7 +717,7 @@ class ObjectAccuracy:
 
 
 class Metrics:
-    '''
+    """
     Class to facilitate calculating and saving various classification metrics
 
     Args:
@@ -769,7 +745,7 @@ class Metrics:
         >>> m.all_pixel_stats(y_true_unlbl,y_pred_unlbl)
         >>> m.calc_obj_stats(y_true_lbl,y_pred_lbl)
         >>> m.save_to_json(m.output)
-    '''
+    """
 
     def __init__(self, model_name,
                  outdir='',
@@ -799,7 +775,7 @@ class Metrics:
         self.output = []
 
     def all_pixel_stats(self, y_true, y_pred):
-        '''Collect pixel statistics for each feature.
+        """Collect pixel statistics for each feature.
 
         y_true should have the appropriate transform applied to match y_pred
 
@@ -809,7 +785,8 @@ class Metrics:
 
         Raises:
             ValueError: If y_true and y_pred are not the same shape
-        '''
+        """
+        # Record length of output to use for printing later on
 
         if y_pred.shape != y_true.shape:
             raise ValueError('Shape of inputs need to match. Shape of prediction '
@@ -826,11 +803,9 @@ class Metrics:
             self.feature_key = range(n_features)
 
         for i, k in enumerate(self.feature_key):
-            print('\nChannel', k)
             yt = y_true[:, :, :, i] > self.pixel_threshold
             yp = y_pred[:, :, :, i] > self.pixel_threshold
-            stats = stats_pixelbased(
-                yt, yp, ndigits=self.ndigits, return_stats=True)
+            stats = stats_pixelbased(yt, yp, ndigits=self.ndigits)
             self.pixel_df = self.pixel_df.append(
                 pd.DataFrame(stats, index=[k]))
 
@@ -917,8 +892,8 @@ class Metrics:
                                cutoff2=self.cutoff2,
                                seg=self.seg)
             self.stats = self.stats.append(o.save_to_dataframe())
-            # if i % 100 == 0:
-            #     print(i, 'samples processed')
+            if i % 200 == 0:
+                logging.info('{} samples processed'.format(i))
 
         # Write out summed statistics
         for k, v in self.stats.iteritems():
@@ -937,20 +912,6 @@ class Metrics:
                     stat_type='object'
                 ))
 
-        # Print report
-        print('Number of cells predicted:', self.stats['n_pred'].sum())
-        print('Number of true cells:', self.stats['n_true'].sum())
-        print('True positives: {}, Accuracy: {}'.format(
-            self.stats['true_pos'].sum(),
-            np.round(self.stats['true_pos'].sum() / self.stats['n_true'].sum(), 2)
-        ))
-        print('False positives: {}'.format(self.stats['false_pos'].sum()))
-        print('False negatives: {}'.format(self.stats['false_neg'].sum()))
-        print('Merges: {}'.format(self.stats['merge'].sum()))
-        print('Splits: {}'.format(self.stats['split'].sum()))
-        if self.seg is True:
-            print('SEG: {}'.format(round(self.stats['seg'].mean(), 4)))
-
     def run_all(self,
                 y_true_lbl,
                 y_pred_lbl,
@@ -966,10 +927,10 @@ class Metrics:
             y_pred_unlbl (4D np.array): Predictions, (sample,x,y,feature)
         """
 
-        print('Starting pixel based statistics')
+        logging.info('Starting pixel based statistics')
         self.all_pixel_stats(y_true_unlbl, y_pred_unlbl)
 
-        print('Starting object based statistics')
+        logging.info('Starting object based statistics')
         self.calc_object_stats(y_true_lbl, y_pred_lbl)
 
         self.save_to_json(self.output)
@@ -1001,7 +962,7 @@ class Metrics:
         with open(outname, 'w') as outfile:
             json.dump(D, outfile)
 
-        print('Saved to', outname)
+        logging.info('Saved to {}'.format(outname))
 
 
 def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):

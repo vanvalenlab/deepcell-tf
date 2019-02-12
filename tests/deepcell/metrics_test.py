@@ -36,13 +36,13 @@ def _generate_test_masks():
 
 def _generate_stack_3d():
     img_w = img_h = 30
-    imarray = np.random.randint(0, high=2, size=(40, img_w, img_h))
+    imarray = np.random.randint(0, high=2, size=(5, img_w, img_h))
     return imarray
 
 
 def _generate_stack_4d():
     img_w = img_h = 30
-    imarray = np.random.randint(0, high=2, size=(40, img_w, img_h, 2))
+    imarray = np.random.randint(0, high=2, size=(5, img_w, img_h, 2))
     return imarray
 
 
@@ -225,10 +225,7 @@ class MetricFunctionsTest(test.TestCase):
         y_true = _get_image()
         y_pred = _get_image()
 
-        out1 = metrics.stats_pixelbased(y_true, y_pred)
-        self.assertEqual(type(out1), type(None))
-
-        out2 = metrics.stats_pixelbased(y_true, y_pred, return_stats=True)
+        out2 = metrics.stats_pixelbased(y_true, y_pred)
         self.assertIsInstance(out2, dict)
 
         # Test mistmatch size error
