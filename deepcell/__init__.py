@@ -39,6 +39,7 @@ from deepcell import notebooks
 from deepcell import running
 from deepcell import training
 from deepcell import utils
+from deepcell import metrics
 
 from deepcell.layers import *
 from deepcell.losses import *
