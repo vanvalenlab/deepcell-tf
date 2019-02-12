@@ -786,7 +786,6 @@ class Metrics:
         Raises:
             ValueError: If y_true and y_pred are not the same shape
         """
-        # Record length of output to use for printing later on
 
         if y_pred.shape != y_true.shape:
             raise ValueError('Shape of inputs need to match. Shape of prediction '
@@ -813,13 +812,15 @@ class Metrics:
         self.output = self.output + self.pixel_df_to_dict(self.pixel_df)
 
         # Calculate confusion matrix
-        cm = self.calc_pixel_confusion_matrix(y_true, y_pred)
+        self.cm = self.calc_pixel_confusion_matrix(y_true, y_pred)
         self.output.append(dict(
             name='confusion_matrix',
-            value=cm.tolist(),
+            value=self.cm.tolist(),
             feature='all',
             stat_type='pixel'
         ))
+
+        self.print_pixel_report()
 
     def pixel_df_to_dict(self, df):
         """Output pandas df as a list of dictionary objects
@@ -873,6 +874,15 @@ class Metrics:
 
         return confusion_matrix(y_true, y_pred)
 
+    def print_pixel_report(self):
+        """Print report of pixel based statistics
+        """
+
+        print('\n____________Pixel-based statistics____________\n')
+        print(self.pixel_df)
+        print('\nConfusion Matrix')
+        print(self.cm)
+
     def calc_object_stats(self, y_true, y_pred):
         """Calculate object statistics and save to output
 
@@ -911,6 +921,40 @@ class Metrics:
                     feature='sum',
                     stat_type='object'
                 ))
+
+        self.print_object_report()
+
+    def print_object_report(self):
+        """Print neat report of object based statistics
+        """
+
+        print('\n____________Object-based statistics____________\n')
+        print('Number of true cells:\t\t', int(self.stats['n_true'].sum()))
+        print('Number of predicted cells:\t', int(self.stats['n_pred'].sum()))
+
+        print('\nTrue positives:  {}\tAccuracy:   {}%'.format(
+            int(self.stats['true_pos'].sum()),
+            100 * round(self.stats['true_pos'].sum() / self.stats['n_true'].sum(), 4)))
+
+        total_err = (self.stats['false_pos'].sum()
+                     + self.stats['false_neg'].sum()
+                     + self.stats['split'].sum()
+                     + self.stats['merge'].sum())
+        print('\nFalse positives: {}\tPerc Error: {}%'.format(
+              int(self.stats['false_pos'].sum()),
+              100 * round(self.stats['false_pos'].sum() / total_err, 4)))
+        print('False negatives: {}\tPerc Error: {}%'.format(
+              int(self.stats['true_pos'].sum()),
+              100 * round(self.stats['false_neg'].sum() / total_err, 4)))
+        print('Merges:\t\t {}\tPerc Error: {}%'.format(
+              int(self.stats['merge'].sum()),
+              100 * round(self.stats['merge'].sum() / total_err, 4)))
+        print('Splits:\t\t {}\tPerc Error: {}%'.format(
+              int(self.stats['split'].sum()),
+              100 * round(self.stats['split'].sum() / total_err, 4)))
+
+        if self.seg is True:
+            print('\nSEG:', round(self.stats['seg'].mean(), 4))
 
     def run_all(self,
                 y_true_lbl,
