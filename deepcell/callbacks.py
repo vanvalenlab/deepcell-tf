@@ -136,7 +136,7 @@ class Evaluate(Callback):
         for label, (avg_precision, num_annotations) in avg_precisions.items():
             if self.verbose == 1:
                 print('{:.0f} instances of class'.format(num_annotations),
-                      self.generator.label_to_name(label),
+                      label,
                       'with average precision: {:.4f}'.format(avg_precision))
             instances.append(num_annotations)
             precisions.append(avg_precision)
@@ -151,7 +151,7 @@ class Evaluate(Callback):
             summary = tf.Summary()
             summary_value = summary.value.add()
             summary_value.simple_value = self.mean_ap
-            summary_value.tag = "mAP"
+            summary_value.tag = 'mAP'
             self.tensorboard.writer.add_summary(summary, epoch)
 
         logs['mAP'] = self.mean_ap
