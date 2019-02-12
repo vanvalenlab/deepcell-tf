@@ -183,7 +183,7 @@ class FilterDetections(Layer):
     def call(self, inputs, **kwargs):
         """Constructs the NMS graph.
 
-        Args
+        Args:
             inputs: List of [boxes, classification, other[0], other[1], ...] tensors.
         """
         boxes = inputs[0]
@@ -220,11 +220,11 @@ class FilterDetections(Layer):
     def compute_output_shape(self, input_shape):
         """ Computes the output shapes given the input shapes.
 
-        Args
+        Args:
             input_shape : List of input shapes
                 [boxes, classification, other[0], other[1], ...].
 
-        Returns
+        Returns:
             List of tuples representing the output shapes:
                 [filtered_boxes.shape, filtered_scores.shape,
                  filtered_labels.shape, filtered_other[0].shape,
