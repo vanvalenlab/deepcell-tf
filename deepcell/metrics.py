@@ -954,7 +954,7 @@ class Metrics:
               100 * round(self.stats['split'].sum() / total_err, 4)))
 
         if self.seg is True:
-            print('\nSEG:', round(self.stats['seg'].mean(), 4))
+            print('\nSEG:', round(self.stats['seg'].mean(), 4),'\n')
 
     def run_all(self,
                 y_true_lbl,
