@@ -1958,20 +1958,17 @@ class RetinaNetIterator(Iterator):
 
         for i, j in enumerate(index_array):
             x = self.x[j]
+            y = self.y[j]
 
-            if self.y is not None:
-                y = self.y[j]
-                x, y = self.image_data_generator.random_transform(x, y)
-            else:
-                x = self.image_data_generator.random_transform(x)
-
-            x = self.image_data_generator.standardize(x)
-
-            batch_x[i] = x
+            x, y = self.image_data_generator.random_transform(x, y)
 
             # Get the bounding boxes from the transformed masks!
             annotations = self.load_annotations(y)
             annotations_list.append(annotations)
+
+            x = self.image_data_generator.standardize(x)
+
+            batch_x[i] = x
 
         anchors = anchors_for_shape(
             batch_x.shape[1:],
@@ -1995,8 +1992,6 @@ class RetinaNetIterator(Iterator):
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
-        if self.y is None:
-            return batch_x
         return batch_x, [regressions, labels]
 
     def next(self):
