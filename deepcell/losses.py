@@ -261,7 +261,6 @@ def smooth_l1(y_true, y_pred, sigma=3.0, axis=None):
         axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
 
     sigma_squared = sigma ** 2
-    huber_delta = 1.0 / sigma_squared
 
     # compute smooth L1 loss
     # f(x) = 0.5 * (sigma * x)^2          if |x| < 1 / sigma / sigma
@@ -269,10 +268,9 @@ def smooth_l1(y_true, y_pred, sigma=3.0, axis=None):
     regression_diff = K.abs(y_true - y_pred)  # |y - f(x)|
 
     regression_loss = tf.where(
-        K.less(regression_diff, huber_delta),
+        K.less(regression_diff, 1.0 / sigma_squared),
         0.5 * sigma_squared * K.pow(regression_diff, 2),
-        regression_diff * huber_delta - 0.5 * K.pow(huber_delta, 2))
-
+        regression_diff - 0.5 / sigma_squared)
     return K.sum(regression_loss, axis=axis)
 
 
