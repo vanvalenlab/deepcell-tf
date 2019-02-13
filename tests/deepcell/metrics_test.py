@@ -172,80 +172,6 @@ def _sample3(w, h, imw, imh):
 
 
 class MetricFunctionsTest(test.TestCase):
-    def test_reshape_3d(self):
-        stack = _generate_stack_3d()
-        out = metrics.reshape_padded_tiled_2d(stack)
-
-        # Expected width must accommodate padding
-        exp_width = stack.shape[0] * (stack.shape[1] + 2)
-        self.assertEqual(out.shape[2], exp_width)
-
-        # Test raise error for not 3d or 4d array
-        self.assertRaises(ValueError, metrics.reshape_padded_tiled_2d, np.ones((100, 100)))
-        self.assertRaises(ValueError, metrics.reshape_padded_tiled_2d,
-                          np.ones((10, 10, 100, 100, 2)))
-
-    def test_reshape_4d(self):
-        stack = _generate_stack_4d()
-        out = metrics.reshape_padded_tiled_2d(stack)
-
-        # Expected width must accommodate padding
-        exp_width = stack.shape[0] * (stack.shape[1] + 2)
-        self.assertEqual(out.shape[2], exp_width)
-
-        # Check that channel dimension is preserved
-        self.assertEqual(out.shape[-1], 2)
-
-    def test_calc_objects_ious(self):
-        y_true = label(metrics.reshape_padded_tiled_2d(
-            _generate_stack_3d()).astype('int'))
-        y_pred = label(metrics.reshape_padded_tiled_2d(
-            _generate_stack_3d()).astype('int'))
-
-        iou = metrics.calc_object_ious_fast(y_true, y_pred)
-
-        # Check that output dimensions are 2d
-        self.assertEqual(len(iou.shape), 2)
-
-    def test_calc_cropped_ious(self):
-        y_true = label(metrics.reshape_padded_tiled_2d(
-            _generate_stack_3d()).astype('int'))
-        y_pred = label(metrics.reshape_padded_tiled_2d(
-            _generate_stack_3d()).astype('int'))
-
-        iou_in = np.zeros((y_true.max(), y_pred.max()))
-        iou_out = metrics.calc_cropped_ious(y_true, y_pred, 0.5, iou_in)
-
-        # Input and output shape should be equal
-        self.assertEqual(iou_in.shape, iou_out.shape)
-        self.assertEqual(len(iou_out.shape), 2)
-
-    def test_dice_jaccard_value(self):
-        y_true = label(metrics.reshape_padded_tiled_2d(
-            _generate_stack_3d()).astype('int'))
-        y_pred = label(metrics.reshape_padded_tiled_2d(
-            _generate_stack_3d()).astype('int'))
-
-        iou = metrics.calc_object_ious_fast(y_true, y_pred)
-
-        # Dice and jaccard values should be between 0 and 1
-        d, j = metrics.get_dice_jaccard((iou > 0.5).astype('int'))
-        # self.assertAllInRange([d, j], 0, 1)
-        self.assertTrue((d >= 0) & (d <= 1))
-        self.assertTrue((j >= 0) & (j <= 1))
-
-    def test_2d_object_stats(self):
-        y_true = label(metrics.reshape_padded_tiled_2d(
-            _generate_stack_3d()).astype('int'))
-        y_pred = label(metrics.reshape_padded_tiled_2d(
-            _generate_stack_3d()).astype('int'))
-        iou = metrics.calc_object_ious_fast(y_true, y_pred)
-
-        stats = metrics.calc_2d_object_stats((iou > 0.5).astype('int'))
-        self.assertIsInstance(stats, dict)
-
-        for k in stats.keys():
-            self.assertFalse(np.isnan(stats[k]))
 
     def test_pixelstats_output(self):
         y_true = _get_image()
@@ -257,19 +183,6 @@ class MetricFunctionsTest(test.TestCase):
         # Test mistmatch size error
         self.assertRaises(ValueError, metrics.stats_pixelbased,
                           np.ones((10, 10)), np.ones((20, 20)))
-
-    def test_run_object_stats(self):
-        y_true = label(_generate_stack_3d())
-        y_pred = label(_generate_stack_3d())
-
-        metrics.stats_objectbased(y_true, y_pred)
-
-        # Test mismatch size
-        self.assertRaises(ValueError, metrics.stats_objectbased,
-                          np.ones((10, 100, 100)), np.ones((5, 50, 50)))
-
-        # Test crop error
-        self.assertRaises(ValueError, metrics.stats_objectbased, y_true, y_pred, crop_size=30)
 
     def test_split_stack(self):
         # Test batch True condition
