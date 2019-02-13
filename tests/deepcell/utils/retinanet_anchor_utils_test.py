@@ -33,6 +33,7 @@ import configparser
 import numpy as np
 
 from tensorflow.python.keras import backend as K
+from tensorflow.python.framework import tensor_shape
 from tensorflow.python.platform import test
 
 from deepcell.utils.retinanet_anchor_utils import anchors_for_shape
@@ -86,7 +87,7 @@ class TestRetinaNetAnchorUtils(test.TestCase):
         anchor_params = AnchorParameters(sizes, strides, ratios, scales)
 
         pyramid_levels = [3, 4, 5]
-        image_shape = (64, 64)
+        image_shape = tensor_shape.TensorShape((64, 64))
         all_anchors = anchors_for_shape(
             image_shape,
             pyramid_levels=pyramid_levels,
@@ -102,7 +103,7 @@ class TestRetinaNetAnchorUtils(test.TestCase):
         anchor_params = AnchorParameters(sizes, strides, ratios, scales)
 
         pyramid_levels = [3]
-        image_shape = (16, 16)
+        image_shape = tensor_shape.TensorShape((16, 16))
         all_anchors = anchors_for_shape(
             image_shape,
             pyramid_levels=pyramid_levels,

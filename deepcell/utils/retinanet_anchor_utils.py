@@ -31,6 +31,7 @@ from __future__ import division
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
+from tensorflow.python.framework import tensor_shape
 
 try:
     from deepcell.utils.compute_overlap import compute_overlap
@@ -220,7 +221,12 @@ def make_shapes_callback(model):
     """
     def get_shapes(image_shape, pyramid_levels):
         shape = layer_shapes(image_shape, model)
-        image_shapes = [shape['P{}'.format(l)][1:3] for l in pyramid_levels]
+        # input_shape = tensor_shape.TensorShape(input_shape).as_list()
+        image_shapes = []
+        for l in pyramid_levels:
+            image_shape = shape['P{}'.format(l)[1:3]]
+            image_shape = tensor_shape.TensorShape(image_shape)
+            image_shapes.append(image_shape)
         return image_shapes
 
     return get_shapes
@@ -237,7 +243,11 @@ def guess_shapes(image_shape, pyramid_levels):
         A list of image shapes at each pyramid level.
     """
     image_shape = np.array(image_shape[:2])
-    image_shapes = [(image_shape + 2 ** x - 1) // (2 ** x) for x in pyramid_levels]
+    image_shapes = []
+    for x in pyramid_levels:
+        im_shape = (image_shape + 2 ** x - 1) // (2 ** x)
+        im_shape = tensor_shape.TensorShape(im_shape)
+        image_shapes.append(im_shape)
     return image_shapes
 
 
@@ -270,6 +280,7 @@ def anchors_for_shape(image_shape,
     if shapes_callback is None:
         shapes_callback = guess_shapes
     image_shapes = shapes_callback(image_shape, pyramid_levels)
+    print(type(image_shapes[0]))
 
     # compute anchors over all pyramid levels
     all_anchors = np.zeros((0, 4))
@@ -279,7 +290,9 @@ def anchors_for_shape(image_shape,
             ratios=anchor_params.ratios,
             scales=anchor_params.scales
         )
-        shifted_anchors = _shift(image_shapes[idx].as_list(), anchor_params.strides[idx], anchors)
+        image_shape = image_shapes[idx].as_list()
+        anchor_param = anchor_params.strides[idx]
+        shifted_anchors = _shift(image_shape, anchor_param, anchors)
         all_anchors = np.append(all_anchors, shifted_anchors, axis=0)
 
     return all_anchors
