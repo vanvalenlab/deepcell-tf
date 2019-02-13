@@ -1,7 +1,18 @@
 """
 metrics.py
 
-Custom error metrics
+Custom metrics to measuer classification accuracy of pixel based and object based classfication
+
+The schema for this analysis was adopted from the description of object-based statistics in
+Caicedo et al. (2018) Evaluation of Deep Learning Strategies for Nucleus Segmentation
+in Fluorescence Images. BioRxiv 335216.
+
+The SEG metric was adapted from Maška et al. (2014). A benchmark for comparison of cell
+tracking algorithms. Bioinformatics 30, 1609–1617.
+
+The linear classification schema used to match objects in truth and prediction frames was
+adapted from Jaqaman et al. (2008). Robust single-particle tracking in live-cell
+time-lapse sequences. Nature Methods 5, 695–702.
 
 @author: cpavelchek, msschwartz21
 """
@@ -400,8 +411,10 @@ def calc_2d_object_stats(iou_matrix):
 def stats_pixelbased(y_true, y_pred, ndigits=4):
     """Calculates pixel-based statistics (Dice, Jaccard, Precision, Recall, F-measure)
 
-    Takes in raw prediction and truth data. Applies labeling to prediction
-        before calculating statistics.
+    Takes in raw prediction and truth data in order to calculate accuracy metrics for pixel based
+        classfication. Statistics were chosen according to the guidelines presented in
+        Caicedo et al. (2018) Evaluation of Deep Learning Strategies for Nucleus Segmentation
+        in Fluorescence Images. BioRxiv 335216.
 
     Args:
         y_true (3D np.array): Binary ground truth annotations for a single feature, (batch,x,y)
@@ -457,6 +470,16 @@ def stats_pixelbased(y_true, y_pred, ndigits=4):
 class ObjectAccuracy:
     """Classifies errors in object predictions as true positive,
         false positive/negative, merge or split
+
+    The schema for this analysis was adopted from the description of object-based statistics in
+        Caicedo et al. (2018) Evaluation of Deep Learning Strategies for Nucleus Segmentation
+        in Fluorescence Images. BioRxiv 335216.
+        The SEG metric was adapted from Maška et al. (2014). A benchmark for comparison of cell
+        tracking algorithms. Bioinformatics 30, 1609–1617.
+        The linear classification schema used to match objects in truth and prediction frames was
+        adapted from Jaqaman et al. (2008). Robust single-particle tracking in live-cell
+        time-lapse sequences. Nature Methods 5, 695–702.
+
 
     Args:
         y_true (2D np.array): Labeled ground truth annotation
