@@ -304,22 +304,24 @@ class ClipBoxesTest(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
-        img_w, img_h = np.random.randint(1, 9), np.random.randint(1, 9)
+        img_w, img_h = np.random.randint(2, 9), np.random.randint(2, 9)
 
         boxes = np.array([[
             [9, 9, 9, 9],
             [-1, -1, -1, -1],
-            [0, 0, img_h, img_w],
-            [0, 0, img_h, img_w + 1],
+            [0, 0, img_w, img_h],
+            [0, 0, img_w + 1, img_h + 1],
+            [0, 0, img_w - 1, img_h - 1],
         ]], dtype='int')
         boxes = K.variable(boxes)
 
         # compute expected output
         expected = np.array([[
-            [img_h, img_w, img_h, img_w],
+            [img_w, img_h, img_w, img_h],
             [0, 0, 0, 0],
-            [0, 0, img_h, img_w],
-            [0, 0, img_h, img_w],
+            [0, 0, img_w, img_h],
+            [0, 0, img_w, img_h],
+            [0, 0, img_w - 1, img_h - 1],
         ]], dtype=K.floatx())
 
         # test channels_last

@@ -243,11 +243,11 @@ class ClipBoxes(Layer):
         image, boxes = inputs
         shape = K.cast(K.shape(image), K.floatx())
         if self.data_format == 'channels_first':
-            height = shape[2]
-            width = shape[3]
-        else:
-            height = shape[1]
+            height = shape[3]
             width = shape[2]
+        else:
+            height = shape[2]
+            width = shape[1]
         x1 = tf.clip_by_value(boxes[:, :, 0], 0, width)
         y1 = tf.clip_by_value(boxes[:, :, 1], 0, height)
         x2 = tf.clip_by_value(boxes[:, :, 2], 0, width)
