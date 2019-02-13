@@ -36,6 +36,7 @@ import cv2
 import numpy as np
 from skimage.measure import label
 from skimage.measure import regionprops
+from skimage.segmentation import clear_border
 from skimage.transform import resize
 from skimage.io import imread
 
@@ -1880,6 +1881,24 @@ class RetinaNetIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
+
+        good_batch = []
+        # Remove images with small numbers of cells
+        for b in range(self.x.shape[0]):
+            if self.data_format == 'channels_last':
+                y_batch = clear_border(self.y[b, ..., 0])
+            else:
+                y_batch = clear_border(self.y[b, 0, ...])
+
+            self.y[b] = np.expand_dims(y_batch, axis=self.channel_axis)
+
+            n_cells = len(np.unique(self.y[b])) - 1
+            if n_cells > 3:
+                good_batch.append(b)
+
+        good_batch = np.array(good_batch)
+        self.x = self.x[good_batch]
+        self.y = self.y[good_batch]
 
         super(RetinaNetIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
