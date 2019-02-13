@@ -117,9 +117,9 @@ class Anchors(Layer):
             else:
                 total = np.prod(input_shape[1:3]) * self.num_anchors
 
-            return (input_shape[0], total, 4)
+            return tensor_shape.TensorShape((input_shape[0], total, 4))
         else:
-            return (input_shape[0], None, 4)
+            return tensor_shape.TensorShape((input_shape[0], None, 4))
 
     def get_config(self):
         config = {
@@ -159,8 +159,8 @@ class UpsampleLike(Layer):
         in_0 = tensor_shape.TensorShape(input_shape[0]).as_list()
         in_1 = tensor_shape.TensorShape(input_shape[1]).as_list()
         if self.data_format == 'channels_first':
-            return tuple([in_0[0], in_0[1]] + in_1[2:4])
-        return tuple([in_0[0]] + in_1[1:3] + [in_0[-1]])
+            return tensor_shape.TensorShape(([in_0[0], in_0[1]] + in_1[2:4]))
+        return tensor_shape.TensorShape(([in_0[0]] + in_1[1:3] + [in_0[-1]]))
 
     def get_config(self):
         config = {'data_format': self.data_format}
@@ -220,7 +220,7 @@ class RegressBoxes(Layer):
 
     def compute_output_shape(self, input_shape):
         # input_shape = tensor_shape.TensorShape(input_shape).as_list()
-        return input_shape[0]
+        return tensor_shape.TensorShape(input_shape[0])
 
     def get_config(self):
         config = {
@@ -242,7 +242,7 @@ class ClipBoxes(Layer):
     def call(self, inputs, **kwargs):
         image, boxes = inputs
         shape = K.cast(K.shape(image), K.floatx())
-        if K.image_data_format() == 'channels_first':
+        if self.data_format == 'channels_first':
             height = shape[2]
             width = shape[3]
         else:

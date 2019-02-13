@@ -33,10 +33,35 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.platform import test
 
+from deepcell.utils import testing_utils
 from deepcell import layers
 
 
 class TestAnchors(test.TestCase):
+
+    @tf_test_util.run_in_graph_and_eager_modes()
+    def test_anchors_2d(self):
+        with self.test_session(use_gpu=True):
+            testing_utils.layer_test(
+                layers.Anchors,
+                kwargs={'size': 1, 'stride': 1,
+                        'data_format': 'channels_last'},
+                custom_objects={'Anchors': layers.Anchors},
+                input_shape=(3, 5, 6, 4))
+            testing_utils.layer_test(
+                layers.Anchors,
+                kwargs={'size': 1, 'stride': 1,
+                        'data_format': 'channels_last'},
+                custom_objects={'Anchors': layers.Anchors},
+                input_shape=(3, None, None, None))
+            testing_utils.layer_test(
+                layers.Anchors,
+                kwargs={'size': 1, 'stride': 1,
+                        'data_format': 'channels_first'},
+                custom_objects={'Anchors': layers.Anchors},
+                input_shape=(3, 5, 6, 4))
+
+    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
         with self.test_session():
             # create simple Anchors layer
@@ -53,7 +78,7 @@ class TestAnchors(test.TestCase):
 
             # call the Anchors layer
             anchors = anchors_layer.call(features)
-            anchors = K.eval(anchors)
+            anchors = K.get_value(anchors)
 
             # expected anchor values
             expected = np.array([[
@@ -66,7 +91,7 @@ class TestAnchors(test.TestCase):
             # test anchor values
             self.assertAllEqual(anchors, expected)
 
-    # mark test to fail
+    @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
         with self.test_session():
             # create simple Anchors layer
@@ -83,7 +108,7 @@ class TestAnchors(test.TestCase):
 
             # call the Anchors layer
             anchors = anchors_layer.call(features)
-            anchors = K.eval(anchors)
+            anchors = K.get_value(anchors)
 
             # expected anchor values
             expected = np.array([[
@@ -99,7 +124,10 @@ class TestAnchors(test.TestCase):
 
 
 class TestUpsampleLike(test.TestCase):
+
+    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
+        # channels_last
         with self.test_session():
             # create simple UpsampleLike layer
             upsample_like_layer = layers.UpsampleLike()
@@ -112,11 +140,37 @@ class TestUpsampleLike(test.TestCase):
             target = K.variable(target)
 
             # compute output
-            actual = upsample_like_layer.call([source, target])
-            actual = K.eval(actual)
+            computed_shape = upsample_like_layer.compute_output_shape(
+                [source.shape, target.shape])
 
+            actual = upsample_like_layer.call([source, target])
+            actual = K.get_value(actual)
+
+            self.assertEqual(actual.shape, computed_shape)
+            self.assertAllEqual(actual, expected)
+        # channels_first
+        with self.test_session():
+            # create simple UpsampleLike layer
+            upsample_like_layer = layers.UpsampleLike(
+                data_format='channels_first')
+
+            # create input source
+            source = np.zeros((1, 1, 2, 2), dtype=K.floatx())
+            source = K.variable(source)
+            target = np.zeros((1, 1, 5, 5), dtype=K.floatx())
+            expected = target
+            target = K.variable(target)
+
+            # compute output
+            computed_shape = upsample_like_layer.compute_output_shape(
+                [source.shape, target.shape])
+            actual = upsample_like_layer.call([source, target])
+            actual = K.get_value(actual)
+
+            self.assertEqual(actual.shape, computed_shape)
             self.assertAllEqual(actual, expected)
 
+    @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
         with self.test_session():
             # create simple UpsampleLike layer
@@ -132,19 +186,18 @@ class TestUpsampleLike(test.TestCase):
 
             # compute output
             actual = upsample_like_layer.call([source, target])
-            actual = K.eval(actual)
+            actual = K.get_value(actual)
 
             self.assertAllEqual(actual, expected)
 
 
 class TestRegressBoxes(test.TestCase):
+
+    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
         with self.test_session():
-            mean = [0, 0, 0, 0]
-            std = [0.2, 0.2, 0.2, 0.2]
-
             # create simple RegressBoxes layer
-            layer = layers.RegressBoxes(mean=mean, std=std)
+            layer = layers.RegressBoxes()
 
             # create input
             anchors = np.array([[
@@ -162,8 +215,12 @@ class TestRegressBoxes(test.TestCase):
             regression = K.variable(regression)
 
             # compute output
+            computed_shape = layer.compute_output_shape(
+                [anchors.shape, regression.shape])
             actual = layer.call([anchors, regression])
-            actual = K.eval(actual)
+            actual = K.get_value(actual)
+
+            self.assertEqual(actual.shape, computed_shape)
 
             # compute expected output
             expected = np.array([[
@@ -174,7 +231,7 @@ class TestRegressBoxes(test.TestCase):
 
             self.assertAllClose(actual, expected)
 
-    # mark test to fail
+    @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
         with self.test_session():
             mean = [0, 0, 0, 0]
@@ -214,7 +271,7 @@ class TestRegressBoxes(test.TestCase):
 
             # compute output
             actual = layer.call([anchors, regression])
-            actual = K.eval(actual)
+            actual = K.get_value(actual)
 
             # compute expected output
             expected = np.array([
@@ -232,130 +289,69 @@ class TestRegressBoxes(test.TestCase):
 
             self.assertAllClose(actual, expected)
 
+    @tf_test_util.run_in_graph_and_eager_modes()
+    def test_invalid_input(self):
+        bad_mean = 'invalid_data_type'
+        bad_std = 'invalid_data_type'
 
-# class AnchorsTest(test.TestCase):
-
-#     @tf_test_util.run_in_graph_and_eager_modes()
-#     def test_anchors_2d(self):
-#         with self.test_session(use_gpu=True):
-#             testing_utils.layer_test(
-#                 layers.Anchors,
-#                 kwargs={'size': 1, 'stride': 1,
-#                         'data_format': 'channels_last'},
-#                 custom_objects={'Anchors': layers.Anchors},
-#                 input_shape=(3, 5, 6, 4))
-#             testing_utils.layer_test(
-#                 layers.Anchors,
-#                 kwargs={'inputs': 1, 'stride': 1,
-#                         'data_format': 'channels_first'},
-#                 custom_objects={'Anchors': layers.Anchors},
-#                 input_shape=(3, 4, 5, 6))
-
-#     @tf_test_util.run_in_graph_and_eager_modes()
-#     def test_anchors_3d(self):
-#         with self.test_session(use_gpu=True):
-#             testing_utils.layer_test(
-#                 layers.Anchors,
-#                 kwargs={'size': 1, 'stride': 1,
-#                         'data_format': 'channels_last'},
-#                 custom_objects={'Anchors': layers.Anchors},
-#                 input_shape=(3, 11, 12, 10, 4))
-#             testing_utils.layer_test(
-#                 layers.Anchors,
-#                 kwargs={'size': 1, 'stride': 1,
-#                         'data_format': 'channels_first'},
-#                 custom_objects={'Anchors': layers.Anchors},
-#                 input_shape=(3, 4, 11, 12, 10))
+        with self.assertRaises(ValueError):
+            layers.RegressBoxes(mean=bad_mean, std=None)
+        with self.assertRaises(ValueError):
+            layers.RegressBoxes(mean=None, std=bad_std)
 
 
-# class UpsampleLikeTest(test.TestCase):
+class ClipBoxesTest(test.TestCase):
 
-#     @tf_test_util.run_in_graph_and_eager_modes()
-#     def test_upsample_like_2d(self):
-#         with self.test_session(use_gpu=True):
-#             testing_utils.layer_test(
-#                 layers.UpsampleLike,
-#                 kwargs={'data_format': 'channels_last'},
-#                 custom_objects={'UpsampleLike': layers.UpsampleLike},
-#                 input_shape=(3, 5, 6, 4))
-#             testing_utils.layer_test(
-#                 layers.UpsampleLike,
-#                 kwargs={'data_format': 'channels_first'},
-#                 custom_objects={'UpsampleLike': layers.UpsampleLike},
-#                 input_shape=(3, 4, 5, 6))
+    @tf_test_util.run_in_graph_and_eager_modes()
+    def test_simple(self):
+        img_w, img_h = np.random.randint(1, 9), np.random.randint(1, 9)
 
-#     @tf_test_util.run_in_graph_and_eager_modes()
-#     def test_upsample_like_3d(self):
-#         with self.test_session(use_gpu=True):
-#             testing_utils.layer_test(
-#                 layers.UpsampleLike,
-#                 kwargs={'data_format': 'channels_last'},
-#                 custom_objects={'UpsampleLike': layers.UpsampleLike},
-#                 input_shape=(3, 11, 12, 10, 4))
-#             testing_utils.layer_test(
-#                 layers.UpsampleLike,
-#                 kwargs={'data_format': 'channels_first'},
-#                 custom_objects={'UpsampleLike': layers.UpsampleLike},
-#                 input_shape=(3, 4, 11, 12, 10))
+        boxes = np.array([[
+            [9, 9, 9, 9],
+            [-1, -1, -1, -1],
+            [0, 0, img_h, img_w],
+            [0, 0, img_h, img_w + 1],
+        ]], dtype='int')
+        boxes = K.variable(boxes)
 
+        # compute expected output
+        expected = np.array([[
+            [img_h, img_w, img_h, img_w],
+            [0, 0, 0, 0],
+            [0, 0, img_h, img_w],
+            [0, 0, img_h, img_w],
+        ]], dtype=K.floatx())
 
-# class RegressBoxesTest(test.TestCase):
+        # test channels_last
+        with self.test_session():
+            # create input
+            image = K.variable(np.random.random((1, img_w, img_h, 6)))
 
-#     @tf_test_util.run_in_graph_and_eager_modes()
-#     def test_regress_boxes_2d(self):
-#         with self.test_session(use_gpu=True):
-#             testing_utils.layer_test(
-#                 layers.RegressBoxes,
-#                 kwargs={'data_format': 'channels_last'},
-#                 custom_objects={'RegressBoxes': layers.RegressBoxes},
-#                 input_shape=(3, 5, 6, 4))
-#             testing_utils.layer_test(
-#                 layers.RegressBoxes,
-#                 kwargs={'data_format': 'channels_first'},
-#                 custom_objects={'RegressBoxes': layers.RegressBoxes},
-#                 input_shape=(3, 4, 5, 6))
+            # create simple ClipBoxes layer
+            layer = layers.ClipBoxes(data_format='channels_last')
 
-#     @tf_test_util.run_in_graph_and_eager_modes()
-#     def test_regress_boxes_3d(self):
-#         with self.test_session(use_gpu=True):
-#             testing_utils.layer_test(
-#                 layers.RegressBoxes,
-#                 kwargs={'data_format': 'channels_last'},
-#                 custom_objects={'RegressBoxes': layers.RegressBoxes},
-#                 input_shape=(3, 11, 12, 10, 4))
-#             testing_utils.layer_test(
-#                 layers.RegressBoxes,
-#                 kwargs={'data_format': 'channels_first'},
-#                 custom_objects={'RegressBoxes': layers.RegressBoxes},
-#                 input_shape=(3, 4, 11, 12, 10))
+            # compute output
+            computed_shape = layer.compute_output_shape(
+                [image.shape, boxes.shape])
+            actual = layer.call([image, boxes])
+            actual = K.get_value(actual)
 
+            self.assertEqual(actual.shape, computed_shape)
+            self.assertAllClose(actual, expected)
 
-# class ClipBoxesTest(test.TestCase):
+        # test channels_first
+        with self.test_session():
+            # create input
+            image = K.variable(np.random.random((1, 6, img_w, img_h)))
 
-#     @tf_test_util.run_in_graph_and_eager_modes()
-#     def test_clip_boxes_2d(self):
-#         with self.test_session(use_gpu=True):
-#             testing_utils.layer_test(
-#                 layers.ClipBoxes,
-#                 kwargs={'data_format': 'channels_last'},
-#                 custom_objects={'ClipBoxes': layers.ClipBoxes},
-#                 input_shape=(3, 5, 6, 4))
-#             testing_utils.layer_test(
-#                 layers.ClipBoxes,
-#                 kwargs={'data_format': 'channels_first'},
-#                 custom_objects={'ClipBoxes': layers.ClipBoxes},
-#                 input_shape=(3, 4, 5, 6))
+            # create simple ClipBoxes layer
+            layer = layers.ClipBoxes(data_format='channels_first')
 
-#     @tf_test_util.run_in_graph_and_eager_modes()
-#     def test_clip_boxes_3d(self):
-#         with self.test_session(use_gpu=True):
-#             testing_utils.layer_test(
-#                 layers.ClipBoxes,
-#                 kwargs={'data_format': 'channels_last'},
-#                 custom_objects={'ClipBoxes': layers.ClipBoxes},
-#                 input_shape=(3, 11, 12, 10, 4))
-#             testing_utils.layer_test(
-#                 layers.ClipBoxes,
-#                 kwargs={'data_format': 'channels_first'},
-#                 custom_objects={'ClipBoxes': layers.ClipBoxes},
-#                 input_shape=(3, 4, 11, 12, 10))
+            # compute output
+            computed_shape = layer.compute_output_shape(
+                [image.shape, boxes.shape])
+            actual = layer.call([image, boxes])
+            actual = K.get_value(actual)
+
+            self.assertEqual(actual.shape, computed_shape)
+            self.assertAllClose(actual, expected)
