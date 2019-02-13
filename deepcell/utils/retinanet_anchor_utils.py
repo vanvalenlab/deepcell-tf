@@ -224,7 +224,7 @@ def make_shapes_callback(model):
         # input_shape = tensor_shape.TensorShape(input_shape).as_list()
         image_shapes = []
         for l in pyramid_levels:
-            image_shape = shape['P{}'.format(l)[1:3]]
+            image_shape = shape['P{}'.format(l)][1:3]
             image_shape = tensor_shape.TensorShape(image_shape)
             image_shapes.append(image_shape)
         return image_shapes
@@ -280,7 +280,6 @@ def anchors_for_shape(image_shape,
     if shapes_callback is None:
         shapes_callback = guess_shapes
     image_shapes = shapes_callback(image_shape, pyramid_levels)
-    print(type(image_shapes[0]))
 
     # compute anchors over all pyramid levels
     all_anchors = np.zeros((0, 4))
