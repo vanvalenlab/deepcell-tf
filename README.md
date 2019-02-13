@@ -89,7 +89,8 @@ NV_GPU='0' nvidia-docker run -it \
 
 ## Copyright
 
-Copyright © 2016-2019 [The Van Valen Lab](http://www.vanvalen.caltech.edu/) at the California Institute of Technology (Caltech), with support from the Paul Allen Family Foundation, Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.  All rights reserved.
+Copyright © 2016-2019 [The Van Valen Lab](http://www.vanvalen.caltech.edu/) at the California Institute of Technology (Caltech), with support from the Paul Allen Family Foundation, Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
+All rights reserved.
 
 ## License
 

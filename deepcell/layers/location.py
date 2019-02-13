@@ -56,30 +56,30 @@ class Location2D(Layer):
     def call(self, inputs):
         input_shape = self.in_shape
         if self.data_format == 'channels_first':
-            x = tf.range(0, input_shape[1], dtype=K.floatx())
-            y = tf.range(0, input_shape[2], dtype=K.floatx())
+            x = K.arange(0, input_shape[1], dtype=K.floatx())
+            y = K.arange(0, input_shape[2], dtype=K.floatx())
         else:
-            x = tf.range(0, input_shape[0], dtype=K.floatx())
-            y = tf.range(0, input_shape[1], dtype=K.floatx())
+            x = K.arange(0, input_shape[0], dtype=K.floatx())
+            y = K.arange(0, input_shape[1], dtype=K.floatx())
 
-        x = tf.divide(x, tf.reduce_max(x))
-        y = tf.divide(y, tf.reduce_max(y))
+        x = x / K.max(x)
+        y = y / K.max(y)
 
         loc_x, loc_y = tf.meshgrid(x, y, indexing='ij')
 
         if self.data_format == 'channels_first':
-            loc = tf.stack([loc_x, loc_y], axis=0)
+            loc = K.stack([loc_x, loc_y], axis=0)
         else:
-            loc = tf.stack([loc_x, loc_y], axis=-1)
+            loc = K.stack([loc_x, loc_y], axis=-1)
 
-        location = tf.expand_dims(loc, 0)
+        location = K.expand_dims(loc, axis=0)
         if self.data_format == 'channels_first':
-            location = tf.transpose(location, perm=[0, 2, 3, 1])
+            location = K.permute_dimensions(location, pattern=[0, 2, 3, 1])
 
-        location = tf.tile(location, [tf.shape(inputs)[0], 1, 1, 1])
+        location = tf.tile(location, [K.shape(inputs)[0], 1, 1, 1])
 
         if self.data_format == 'channels_first':
-            location = tf.transpose(location, perm=[0, 3, 1, 2])
+            location = K.permute_dimensions(location, pattern=[0, 3, 1, 2])
 
         return location
 
@@ -101,43 +101,45 @@ class Location3D(Layer):
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if self.data_format == 'channels_first':
-            output_shape = (input_shape[0], 3, input_shape[2], input_shape[3], input_shape[4])
+            output_shape = (input_shape[0], 3, input_shape[2],
+                            input_shape[3], input_shape[4])
         else:
-            output_shape = (input_shape[0], input_shape[1], input_shape[2], input_shape[3], 3)
+            output_shape = (input_shape[0], input_shape[1], input_shape[2],
+                            input_shape[3], 3)
         return tensor_shape.TensorShape(output_shape)
 
     def call(self, inputs):
         input_shape = self.in_shape
 
         if self.data_format == 'channels_first':
-            z = tf.range(0, input_shape[1], dtype=K.floatx())
-            x = tf.range(0, input_shape[2], dtype=K.floatx())
-            y = tf.range(0, input_shape[3], dtype=K.floatx())
+            z = K.arange(0, input_shape[1], dtype=K.floatx())
+            x = K.arange(0, input_shape[2], dtype=K.floatx())
+            y = K.arange(0, input_shape[3], dtype=K.floatx())
         else:
-            z = tf.range(0, input_shape[0], dtype=K.floatx())
-            x = tf.range(0, input_shape[1], dtype=K.floatx())
-            y = tf.range(0, input_shape[2], dtype=K.floatx())
+            z = K.arange(0, input_shape[0], dtype=K.floatx())
+            x = K.arange(0, input_shape[1], dtype=K.floatx())
+            y = K.arange(0, input_shape[2], dtype=K.floatx())
 
-        x = tf.divide(x, tf.reduce_max(x))
-        y = tf.divide(y, tf.reduce_max(y))
-        z = tf.divide(z, tf.reduce_max(z))
+        x = x / K.max(x)
+        y = y / K.max(y)
+        z = z / K.max(z)
 
         loc_z, loc_x, loc_y = tf.meshgrid(z, x, y, indexing='ij')
 
         if self.data_format == 'channels_first':
-            loc = tf.stack([loc_z, loc_x, loc_y], axis=0)
+            loc = K.stack([loc_z, loc_x, loc_y], axis=0)
         else:
-            loc = tf.stack([loc_z, loc_x, loc_y], axis=-1)
+            loc = K.stack([loc_z, loc_x, loc_y], axis=-1)
 
-        location = tf.expand_dims(loc, 0)
-
-        if self.data_format == 'channels_first':
-            location = tf.transpose(location, perm=[0, 2, 3, 4, 1])
-
-        location = tf.tile(location, [tf.shape(inputs)[0], 1, 1, 1, 1])
+        location = K.expand_dims(loc, axis=0)
 
         if self.data_format == 'channels_first':
-            location = tf.transpose(location, perm=[0, 4, 1, 2, 3])
+            location = K.permute_dimensions(location, pattern=[0, 2, 3, 4, 1])
+
+        location = tf.tile(location, [K.shape(inputs)[0], 1, 1, 1, 1])
+
+        if self.data_format == 'channels_first':
+            location = K.permute_dimensions(location, pattern=[0, 4, 1, 2, 3])
 
         return location
 
