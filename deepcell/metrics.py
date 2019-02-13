@@ -73,7 +73,7 @@ def stats_pixelbased(y_true, y_pred):
         y_pred (3D np.array): Binary predictions for a single feature, (batch,x,y)
 
     Returns:
-        dictionary: optionally returns a dictionary of statistics
+        dictionary: Containing a set of calculated statistics
 
     Raises:
         ValueError: Shapes of `y_true` and `y_pred` do not match.
@@ -128,7 +128,6 @@ class ObjectAccuracy:
         adapted from Jaqaman et al. (2008). Robust single-particle tracking in live-cell
         time-lapse sequences. Nature Methods 5, 695–702.
 
-
     Args:
         y_true (2D np.array): Labeled ground truth annotation
         y_pred (2D np.array): Labled object prediction, same size as y_true
@@ -144,6 +143,9 @@ class ObjectAccuracy:
 
     Warning:
         Position indicies are not currently collected appropriately
+
+    Todo:
+        Implement recording of object indices for each error group
     """
 
     def __init__(self, y_true, y_pred, cutoff1=0.4, cutoff2=0.1, test=False, seg=False):
@@ -202,8 +204,9 @@ class ObjectAccuracy:
             self.empty_frame = False
 
     def _calc_iou(self):
-        """Calculates intersection of union matrix for each pairwise
-        comparison between true and predicted
+        """Calculates intersection of union matrix for each pairwise comparison
+            between true and predicted. Additionally, if `seg`==True, records a 1 for
+            each pair of objects where $|T\bigcap P| > 0.5 * |T|$
         """
 
         self.iou = np.zeros((self.n_true, self.n_pred))
@@ -223,6 +226,12 @@ class ObjectAccuracy:
 
     def _make_matrix(self):
         """Assembles cost matrix using the iou matrix and cutoff1
+
+        The previously calculated iou matrix is cast into the top left and
+            transposed for the bottom right corner. The diagonals of the two remaining
+            corners are populated according to `cutoff1`. The lower the value of `cutoff1`
+            the more likely it is for the linear sum assignment to pick unmatched assignments
+            for objects.
         """
 
         self.cm = np.ones((self.n_obj, self.n_obj))
@@ -246,6 +255,10 @@ class ObjectAccuracy:
     def _linear_assignment(self):
         """Runs linear sun assignment on cost matrix, identifies true positives
         and unassigned true and predicted cells
+
+        True positives correspond to assignments in the top left or bottom right corner.
+            There are two possible unassigned positions: true cell unassigned in bottom left
+            or predicted cell unassigned in top right.
         """
 
         self.results = linear_sum_assignment(self.cm)
@@ -289,6 +302,11 @@ class ObjectAccuracy:
 
     def _array_to_graph(self):
         """Transform matrix for unassigned cells into a graph object
+
+        In order to cast the iou matrix into a graph form, we treat each unassigned cell
+            as a node. The iou values for each pair of cells is treated as an edge between
+            nodes/cells. Any iou values equal to 0 are dropped because they indicate no overlap
+            between cells.
         """
 
         # Use meshgrid to get true and predicted cell index for each val
@@ -317,6 +335,15 @@ class ObjectAccuracy:
 
     def _classify_graph(self):
         """Assign each node in graph to an error type
+
+        Nodes with a degree (connectivity) of 0 correspond to either false positives
+            or false negatives depending on the origin of the node from either the predicted
+            objects (false positive) or true objects (false negative).
+            Any nodes with a connectivity of 1 are considered to be true positives that were missed
+            during linear assignment.
+            Finally any nodes with degree >= 2 are indicative of a merge or split error. If the top
+            level node is a predicted cell, this indicates a merge event. If the top level node is
+            a true cell, this indicates a split event.
         """
 
         # Find subgraphs, e.g. merge/split
@@ -560,7 +587,8 @@ class Metrics:
         """Calculate object statistics and save to output
 
         Loops over each frame in the zeroth dimension, which should pass in
-        a series of 2D arrays for analysis
+            a series of 2D arrays for analysis. `metrics.split_stack` can be used to
+            appropriately reshape the input array if necessary
 
         Args:
             y_true (3D np.array): Labeled ground truth annotations
