@@ -34,7 +34,7 @@ install:
 
 script:
   - python -m pytest --cov=deepcell --pep8 deepcell tests
-  - sphinx-build -nWT -b dummy . _build/html
+  - sphinx-build -nWT -b dummy ./docs/source _build/html
 
 jobs:
   include:
