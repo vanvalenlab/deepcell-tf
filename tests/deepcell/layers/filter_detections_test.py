@@ -30,7 +30,7 @@ from __future__ import division
 
 import numpy as np
 from tensorflow.python.keras import backend as K
-from tensorflow.python.framework import test_util as tf_test_util
+from tensorflow.python.framework import test_util
 from tensorflow.python.platform import test
 
 from deepcell import layers
@@ -192,34 +192,3 @@ class TestFilterDetections(test.TestCase):
             self.assertAllEqual(actual_boxes, expected_boxes)
             self.assertAllEqual(actual_scores, expected_scores)
             self.assertAllEqual(actual_labels, expected_labels)
-
-
-# class LocationTest(test.TestCase):
-
-#     @tf_test_util.run_in_graph_and_eager_modes()
-#     def test_filter_detections_2d(self):
-#         with self.test_session(use_gpu=True):
-#             testing_utils.layer_test(
-#                 layers.FilterDetections,
-#                 kwargs={'data_format': 'channels_last'},
-#                 custom_objects={'FilterDetections': layers.FilterDetections},
-#                 input_shape=(3, 5, 6, 4))
-#             testing_utils.layer_test(
-#                 layers.FilterDetections,
-#                 kwargs={'data_format': 'channels_first'},
-#                 custom_objects={'FilterDetections': layers.FilterDetections},
-#                 input_shape=(3, 4, 5, 6))
-
-#     @tf_test_util.run_in_graph_and_eager_modes()
-#     def test_location_3d(self):
-#         with self.test_session(use_gpu=True):
-#             testing_utils.layer_test(
-#                 layers.FilterDetection,
-#                 kwargs={'data_format': 'channels_last'},
-#                 custom_objects={'Location3D': layers.Location3D},
-#                 input_shape=(3, 11, 12, 10, 4))
-#             testing_utils.layer_test(
-#                 layers.Location3D,
-#                 kwargs={'data_format': 'channels_first'},
-#                 custom_objects={'Location3D': layers.Location3D},
-#                 input_shape=(3, 4, 11, 12, 10))
