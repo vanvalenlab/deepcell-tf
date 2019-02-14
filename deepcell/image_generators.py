@@ -1789,7 +1789,6 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
              batch_size=32,
              shuffle=False,
              seed=None,
-             data_format='channels_last',
              save_to_dir=None,
              save_prefix='',
              save_format='png'):
@@ -1820,7 +1819,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
-            data_format=data_format,
+            data_format=self.data_format,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
@@ -1833,6 +1832,9 @@ class RetinaNetIterator(Iterator):
         train_dict: dictionary consisting of numpy arrays for `X` and `y`.
         image_data_generator: Instance of `ImageDataGenerator`
             to use for random transformations and normalization.
+        compute_shapes: functor for generating shapes, based on the model.
+        min_objects: Integer, image with fewer than `min_objects` are ignored.
+        num_classes: Integer, number of classes for classification.
         batch_size: Integer, size of a batch.
         shuffle: Boolean, whether to shuffle the data between epochs.
         seed: Random seed for data shuffling.
@@ -1851,6 +1853,8 @@ class RetinaNetIterator(Iterator):
                  train_dict,
                  image_data_generator,
                  compute_shapes=guess_shapes,
+                 min_objects=3,
+                 num_classes=1,
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -1874,7 +1878,8 @@ class RetinaNetIterator(Iterator):
 
         # `compute_shapes` changes based on the model backbone.
         self.compute_shapes = compute_shapes
-        self.num_classes = 1  # boolean `object` detection
+        self.min_objects = min_objects
+        self.num_classes = num_classes
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
         self.data_format = data_format
@@ -1882,23 +1887,27 @@ class RetinaNetIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        good_batch = []
+        invalid_batches = []
         # Remove images with small numbers of cells
         for b in range(self.x.shape[0]):
-            if self.data_format == 'channels_last':
-                y_batch = clear_border(self.y[b, ..., 0])
-            else:
-                y_batch = clear_border(self.y[b, 0, ...])
+            y_batch = np.squeeze(self.y[b], axis=self.channel_axis - 1)
+            y_batch = clear_border(y_batch)
+            y_batch = np.expand_dims(y_batch, axis=self.channel_axis - 1)
 
-            self.y[b] = np.expand_dims(y_batch, axis=self.channel_axis)
+            self.y[b] = y_batch
 
-            n_cells = len(np.unique(self.y[b])) - 1
-            if n_cells > 3:
-                good_batch.append(b)
+            if len(np.unique(self.y[b])) - 1 < self.min_objects:
+                invalid_batches.append(b)
 
-        good_batch = np.array(good_batch)
-        self.x = self.x[good_batch]
-        self.y = self.y[good_batch]
+        invalid_batches = np.array(invalid_batches, dtype='int')
+
+        if invalid_batches.size > 0:
+            logging.warning('Removing %s of %s images with fewer than %s objects',
+                            invalid_batches.size, self.x.shape[0],
+                            self.min_objects)
+
+        self.y = np.delete(self.y, invalid_batches, axis=0)
+        self.x = np.delete(self.x, invalid_batches, axis=0)
 
         super(RetinaNetIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
@@ -2045,7 +2054,7 @@ class ShvmRetinaNetGenerator(_RetinaNetGenerator):
 
         self.image_data = self._read_annotations(self.mask_stack)
         self.image_names = list(self.image_data.keys())
-        super(RetinaNetGenerator, self).__init__(**kwargs)
+        super(ShvmRetinaNetGenerator, self).__init__(**kwargs)
 
     def list_file_deepcell(self, dir_name, training_dirs, image_dir, channel_names):
         """
