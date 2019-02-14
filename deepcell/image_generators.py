@@ -359,6 +359,7 @@ class ImageSampleArrayIterator(Iterator):
 
 class SampleDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
+
     The data will be looped over (in batches).
 
     Arguments:
@@ -372,26 +373,31 @@ class SampleDataGenerator(ImageDataGenerator):
         zca_whitening: boolean, apply ZCA whitening.
         rotation_range: int, degree range for random rotations.
         width_shift_range: float, 1-D array-like or int
-            float: fraction of total width, if < 1, or pixels if >= 1.
-            1-D array-like: random elements from the array.
-            int: integer number of pixels from interval
-                `(-width_shift_range, +width_shift_range)`
-            With `width_shift_range=2` possible values are ints [-1, 0, +1],
-            same as with `width_shift_range=[-1, 0, +1]`,
-            while with `width_shift_range=1.0` possible values are floats in
-            the interval [-1.0, +1.0).
+
+            - float: fraction of total width, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval
+              `(-width_shift_range, +width_shift_range)`
+            - With `width_shift_range=2` possible values are ints [-1, 0, +1],
+              same as with `width_shift_range=[-1, 0, +1]`,
+              while with `width_shift_range=1.0` possible values are floats in
+              the interval [-1.0, +1.0).
+
         shear_range: float, shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range: float or [lower, upper], Range for random zoom.
             If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
         channel_shift_range: float, range for random channel shifts.
         fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+
             Default is 'nearest'. Points outside the boundaries of the input
             are filled according to the given mode:
-                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
-                'nearest':  aaaaaaaa|abcd|dddddddd
-                'reflect':  abcddcba|abcd|dcbaabcd
-                'wrap':  abcdabcd|abcd|abcdabcd
+
+                - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                - 'nearest':  aaaaaaaa|abcd|dddddddd
+                - 'reflect':  abcddcba|abcd|dcbaabcd
+                - 'wrap':  abcdabcd|abcd|abcdabcd
+
         cval: float or int, value used for points outside the boundaries
             when `fill_mode = "constant"`.
         horizontal_flip: boolean, randomly flip inputs horizontally.
@@ -404,14 +410,17 @@ class SampleDataGenerator(ImageDataGenerator):
             The function should take one argument:
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
+
         data_format: One of {"channels_first", "channels_last"}.
-            "channels_last" mode means that the images should have shape
-                `(samples, height, width, channels)`,
-            "channels_first" mode means that the images should have shape
-                `(samples, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-                Keras config file at `~/.keras/keras.json`.
-            If you never set it, then it will be "channels_last".
+
+            - "channels_last" mode means that the images should have shape
+              `(samples, height, width, channels)`,
+            - "channels_first" mode means that the images should have shape
+              `(samples, channels, height, width)`.
+            - It defaults to the `image_data_format` value found in your
+              Keras config file at `~/.keras/keras.json`.
+            - If you never set it, then it will be "channels_last".
+
         validation_split: float, fraction of images reserved for validation
             (strictly between 0 and 1).
     """
@@ -600,26 +609,28 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         zca_whitening: boolean, apply ZCA whitening.
         rotation_range: int, degree range for random rotations.
         width_shift_range: float, 1-D array-like or int
-            float: fraction of total width, if < 1, or pixels if >= 1.
-            1-D array-like: random elements from the array.
-            int: integer number of pixels from interval
-                `(-width_shift_range, +width_shift_range)`
-            With `width_shift_range=2` possible values are ints [-1, 0, +1],
-            same as with `width_shift_range=[-1, 0, +1]`,
-            while with `width_shift_range=1.0` possible values are floats in
-            the interval [-1.0, +1.0).
+
+            - float: fraction of total width, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval `(-width_shift_range, +width_shift_range)`
+            - With `width_shift_range=2` possible values are ints [-1, 0, +1], same as with 
+              `width_shift_range=[-1, 0, +1]`, while with `width_shift_range=1.0` possible values 
+              are floats in the interval [-1.0, +1.0).
+
         shear_range: float, shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range: float or [lower, upper], Range for random zoom.
             If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
         channel_shift_range: float, range for random channel shifts.
         fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+            
             Default is 'nearest'. Points outside the boundaries of the input
             are filled according to the given mode:
-                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
-                'nearest':  aaaaaaaa|abcd|dddddddd
-                'reflect':  abcddcba|abcd|dcbaabcd
-                'wrap':  abcdabcd|abcd|abcdabcd
+                - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                - 'nearest':  aaaaaaaa|abcd|dddddddd
+                - 'reflect':  abcddcba|abcd|dcbaabcd
+                - 'wrap':  abcdabcd|abcd|abcdabcd
+
         cval: float or int, value used for points outside the boundaries
             when `fill_mode = "constant"`.
         horizontal_flip: boolean, randomly flip inputs horizontally.
@@ -632,14 +643,17 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             The function should take one argument:
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
+
         data_format: One of {"channels_first", "channels_last"}.
-            "channels_last" mode means that the images should have shape
-                `(samples, height, width, channels)`,
-            "channels_first" mode means that the images should have shape
-                `(samples, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-                Keras config file at `~/.keras/keras.json`.
-            If you never set it, then it will be "channels_last".
+            
+            - "channels_last" mode means that the images should have shape
+              `(samples, height, width, channels)`,
+            - "channels_first" mode means that the images should have shape
+              `(samples, channels, height, width)`.
+            - It defaults to the `image_data_format` value found in your
+              Keras config file at `~/.keras/keras.json`.
+            - If you never set it, then it will be "channels_last".
+
         validation_split: float, fraction of images reserved for validation
             (strictly between 0 and 1).
     """
@@ -716,6 +730,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
 
 class MovieDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
+
     The data will be looped over (in batches).
 
     Arguments:
@@ -729,26 +744,30 @@ class MovieDataGenerator(ImageDataGenerator):
         zca_whitening: boolean, apply ZCA whitening.
         rotation_range: int, degree range for random rotations.
         width_shift_range: float, 1-D array-like or int
-            float: fraction of total width, if < 1, or pixels if >= 1.
-            1-D array-like: random elements from the array.
-            int: integer number of pixels from interval
-                `(-width_shift_range, +width_shift_range)`
-            With `width_shift_range=2` possible values are ints [-1, 0, +1],
-            same as with `width_shift_range=[-1, 0, +1]`,
-            while with `width_shift_range=1.0` possible values are floats in
-            the interval [-1.0, +1.0).
+
+            - float: fraction of total width, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval
+              `(-width_shift_range, +width_shift_range)`
+            - With `width_shift_range=2` possible values are ints [-1, 0, +1],
+              same as with `width_shift_range=[-1, 0, +1]`,
+              while with `width_shift_range=1.0` possible values are floats in
+              the interval [-1.0, +1.0).
+
         shear_range: float, shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range: float or [lower, upper], Range for random zoom.
             If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
         channel_shift_range: float, range for random channel shifts.
         fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+
             Default is 'nearest'. Points outside the boundaries of the input
             are filled according to the given mode:
-                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
-                'nearest':  aaaaaaaa|abcd|dddddddd
-                'reflect':  abcddcba|abcd|dcbaabcd
-                'wrap':  abcdabcd|abcd|abcdabcd
+                - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                - 'nearest':  aaaaaaaa|abcd|dddddddd
+                - 'reflect':  abcddcba|abcd|dcbaabcd
+                - 'wrap':  abcdabcd|abcd|abcdabcd
+
         cval: float or int, value used for points outside the boundaries
             when `fill_mode = "constant"`.
         horizontal_flip: boolean, randomly flip inputs horizontally.
@@ -762,13 +781,15 @@ class MovieDataGenerator(ImageDataGenerator):
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
         data_format: One of {"channels_first", "channels_last"}.
-            "channels_last" mode means that the images should have shape
-                `(samples, height, width, channels)`,
-            "channels_first" mode means that the images should have shape
-                `(samples, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-                Keras config file at `~/.keras/keras.json`.
-            If you never set it, then it will be "channels_last".
+            
+            - "channels_last" mode means that the images should have shape
+              `(samples, height, width, channels)`,
+            - "channels_first" mode means that the images should have shape
+              `(samples, channels, height, width)`.
+            - It defaults to the `image_data_format` value found in your
+              Keras config file at `~/.keras/keras.json`.
+            - If you never set it, then it will be "channels_last".
+
         validation_split: float, fraction of images reserved for validation
             (strictly between 0 and 1).
     """
@@ -1177,6 +1198,7 @@ class MovieArrayIterator(Iterator):
 
 class SampleMovieArrayIterator(Iterator):
     """Iterator yielding data from two 5D Numpy arrays (`X and `y`).
+    
     Sampling will generate a `window_size` voxel classifying the center pixel,
 
     Arguments:
@@ -1378,6 +1400,7 @@ class SampleMovieArrayIterator(Iterator):
 
 class SampleMovieDataGenerator(MovieDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
+
     The data will be looped over (in batches).
 
     Arguments:
@@ -1391,26 +1414,30 @@ class SampleMovieDataGenerator(MovieDataGenerator):
         zca_whitening: boolean, apply ZCA whitening.
         rotation_range: int, degree range for random rotations.
         width_shift_range: float, 1-D array-like or int
-            float: fraction of total width, if < 1, or pixels if >= 1.
-            1-D array-like: random elements from the array.
-            int: integer number of pixels from interval
-                `(-width_shift_range, +width_shift_range)`
-            With `width_shift_range=2` possible values are ints [-1, 0, +1],
-            same as with `width_shift_range=[-1, 0, +1]`,
-            while with `width_shift_range=1.0` possible values are floats in
-            the interval [-1.0, +1.0).
+
+            - float: fraction of total width, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval
+              `(-width_shift_range, +width_shift_range)`
+            - With `width_shift_range=2` possible values are ints [-1, 0, +1],
+              same as with `width_shift_range=[-1, 0, +1]`,
+              while with `width_shift_range=1.0` possible values are floats in
+              the interval [-1.0, +1.0).
+
         shear_range: float, shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range: float or [lower, upper], Range for random zoom.
             If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
         channel_shift_range: float, range for random channel shifts.
         fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+
             Default is 'nearest'. Points outside the boundaries of the input
             are filled according to the given mode:
-                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
-                'nearest':  aaaaaaaa|abcd|dddddddd
-                'reflect':  abcddcba|abcd|dcbaabcd
-                'wrap':  abcdabcd|abcd|abcdabcd
+                - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                - 'nearest':  aaaaaaaa|abcd|dddddddd
+                - 'reflect':  abcddcba|abcd|dcbaabcd
+                - 'wrap':  abcdabcd|abcd|abcdabcd
+
         cval: float or int, value used for points outside the boundaries
             when `fill_mode = "constant"`.
         horizontal_flip: boolean, randomly flip inputs horizontally.
@@ -1424,13 +1451,15 @@ class SampleMovieDataGenerator(MovieDataGenerator):
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
         data_format: One of {"channels_first", "channels_last"}.
-            "channels_last" mode means that the images should have shape
-                `(samples, height, width, channels)`,
-            "channels_first" mode means that the images should have shape
-                `(samples, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-                Keras config file at `~/.keras/keras.json`.
-            If you never set it, then it will be "channels_last".
+
+            - "channels_last" mode means that the images should have shape
+              `(samples, height, width, channels)`,
+            - "channels_first" mode means that the images should have shape
+              `(samples, channels, height, width)`.
+            - It defaults to the `image_data_format` value found in your
+              Keras config file at `~/.keras/keras.json`.
+            - If you never set it, then it will be "channels_last".
+
         validation_split: float, fraction of images reserved for validation
             (strictly between 0 and 1).
     """
