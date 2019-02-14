@@ -645,7 +645,7 @@ class Metrics:
               int(self.stats['false_pos'].sum()),
               100 * round(self.stats['false_pos'].sum() / total_err, 4)))
         print('False negatives: {}\tPerc Error: {}%'.format(
-              int(self.stats['true_pos'].sum()),
+              int(self.stats['false_neg'].sum()),
               100 * round(self.stats['false_neg'].sum() / total_err, 4)))
         print('Merges:\t\t {}\tPerc Error: {}%'.format(
               int(self.stats['merge'].sum()),
