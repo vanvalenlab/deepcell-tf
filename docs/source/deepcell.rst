@@ -22,6 +22,14 @@ deepcell.image\_generators module
     :undoc-members:
     :show-inheritance:
 
+deepcell.metrics module
+------------------------
+
+.. automodule:: deepcell.metrics
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 deepcell.losses module
 ----------------------
 
