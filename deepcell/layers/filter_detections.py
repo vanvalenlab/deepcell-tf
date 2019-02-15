@@ -218,7 +218,7 @@ class FilterDetections(Layer):
         return outputs
 
     def compute_output_shape(self, input_shape):
-        """ Computes the output shapes given the input shapes.
+        """Computes the output shapes given the input shapes.
 
         Args:
             input_shape : List of input shapes
