@@ -1904,8 +1904,8 @@ class RetinaNetIterator(Iterator):
         invalid_batches = np.array(invalid_batches, dtype='int')
 
         if invalid_batches.size > 0:
-            logging.warning('Removing %s of %s images with fewer than %s objects',
-                            invalid_batches.size, self.x.shape[0],
+            logging.warning('Removing %s of %s images with fewer than %s '
+                            'objects.', invalid_batches.size, self.x.shape[0],
                             self.min_objects)
 
         self.y = np.delete(self.y, invalid_batches, axis=0)
@@ -1958,7 +1958,13 @@ class RetinaNetIterator(Iterator):
             bboxes.append(prop.bbox)
             labels.append(0)  # boolean object detection
 
-        annotations = {'labels': np.array(labels), 'bboxes': np.array(bboxes)}
+        labels = np.array(labels)
+        bboxes = np.array(bboxes)
+
+        # reshape bboxes in case it is empty.
+        bboxes = np.reshape(bboxes, (bboxes.shape[0], 4))
+
+        annotations = {'labels': labels, 'bboxes': bboxes}
         annotations = self.filter_annotations(y, annotations)
         return annotations
 
