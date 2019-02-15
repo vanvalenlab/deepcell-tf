@@ -30,7 +30,7 @@ from __future__ import division
 
 import numpy as np
 from tensorflow.python.keras import backend as K
-from tensorflow.python.framework import test_util
+from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.platform import test
 
 from deepcell import layers
@@ -38,6 +38,7 @@ from deepcell import layers
 
 class TestFilterDetections(test.TestCase):
 
+    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
         with self.test_session():
             # create simple FilterDetections layer
@@ -59,9 +60,9 @@ class TestFilterDetections(test.TestCase):
             # compute output
             actual_boxes, actual_scores, actual_labels = layer.call(
                 [boxes, classification])
-            actual_boxes = K.eval(actual_boxes)
-            actual_scores = K.eval(actual_scores)
-            actual_labels = K.eval(actual_labels)
+            actual_boxes = K.get_value(actual_boxes)
+            actual_scores = K.get_value(actual_scores)
+            actual_labels = K.get_value(actual_labels)
 
             # define expected output
             expected_boxes = -1 * np.ones((1, 300, 4), dtype=K.floatx())
@@ -78,6 +79,7 @@ class TestFilterDetections(test.TestCase):
             self.assertAllEqual(actual_scores, expected_scores)
             self.assertAllEqual(actual_labels, expected_labels)
 
+    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple_with_other(self):
         with self.test_session():
             # create simple FilterDetections layer
@@ -109,10 +111,10 @@ class TestFilterDetections(test.TestCase):
 
             # compute output
             actual = layer.call([boxes, classification] + other)
-            actual_boxes = K.eval(actual[0])
-            actual_scores = K.eval(actual[1])
-            actual_labels = K.eval(actual[2])
-            actual_other = [K.eval(a) for a in actual[3:]]
+            actual_boxes = K.get_value(actual[0])
+            actual_scores = K.get_value(actual[1])
+            actual_labels = K.get_value(actual[2])
+            actual_other = [K.get_value(a) for a in actual[3:]]
 
             # define expected output
             expected_boxes = -1 * np.ones((1, 300, 4), dtype=K.floatx())
@@ -138,6 +140,7 @@ class TestFilterDetections(test.TestCase):
             for a, e in zip(actual_other, expected_other):
                 self.assertAllEqual(a, e)
 
+    @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
         with self.test_session():
             # create simple FilterDetections layer
@@ -171,9 +174,9 @@ class TestFilterDetections(test.TestCase):
             # compute output
             actual_boxes, actual_scores, actual_labels = layer.call(
                 [boxes, classification])
-            actual_boxes = K.eval(actual_boxes)
-            actual_scores = K.eval(actual_scores)
-            actual_labels = K.eval(actual_labels)
+            actual_boxes = K.get_value(actual_boxes)
+            actual_scores = K.get_value(actual_scores)
+            actual_labels = K.get_value(actual_labels)
 
             # define expected output
             expected_boxes = -1 * np.ones((2, 300, 4), dtype=K.floatx())
