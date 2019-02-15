@@ -23,54 +23,57 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""Custom metrics for pixel-based and object-based classification accuracy.
+
+The schema for this analysis was adopted from the description of object-based
+statistics in Caicedo et al. (2018) Evaluation of Deep Learning Strategies for
+Nucleus Segmentation in Fluorescence Images. BioRxiv 335216.
+
+The SEG metric was adapted from Maška et al. (2014). A benchmark for comparison
+of cell tracking algorithms. Bioinformatics 30, 1609–1617.
+
+The linear classification schema used to match objects in truth and prediction
+frames was adapted from Jaqaman et al. (2008). Robust single-particle tracking
+in live-cell time-lapse sequences. Nature Methods 5, 695–702.
 """
-metrics.py
 
-Custom metrics to measuer classification accuracy of pixel based and object based classfication
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
 
-The schema for this analysis was adopted from the description of object-based statistics in
-Caicedo et al. (2018) Evaluation of Deep Learning Strategies for Nucleus Segmentation
-in Fluorescence Images. BioRxiv 335216.
-
-The SEG metric was adapted from Maška et al. (2014). A benchmark for comparison of cell
-tracking algorithms. Bioinformatics 30, 1609–1617.
-
-The linear classification schema used to match objects in truth and prediction frames was
-adapted from Jaqaman et al. (2008). Robust single-particle tracking in live-cell
-time-lapse sequences. Nature Methods 5, 695–702.
-
-@author: cpavelchek, msschwartz21
-"""
-import datetime
 import os
 import json
-
+import datetime
 import operator
 
 import numpy as np
+import pandas as pd
+import networkx as nx
+
 from scipy.optimize import linear_sum_assignment
 
 import skimage.io
 import skimage.measure
 from sklearn.metrics import confusion_matrix
 
-import pandas as pd
-import networkx as nx
-
 from tensorflow.python.platform import tf_logging as logging
 
 
 def stats_pixelbased(y_true, y_pred):
-    """Calculates pixel-based statistics (Dice, Jaccard, Precision, Recall, F-measure)
+    """Calculates pixel-based statistics
+    (Dice, Jaccard, Precision, Recall, F-measure)
 
-    Takes in raw prediction and truth data in order to calculate accuracy metrics for pixel based
-        classfication. Statistics were chosen according to the guidelines presented in
-        Caicedo et al. (2018) Evaluation of Deep Learning Strategies for Nucleus Segmentation
-        in Fluorescence Images. BioRxiv 335216.
+    Takes in raw prediction and truth data in order to calculate accuracy
+    metrics for pixel based classfication. Statistics were chosen according
+    to the guidelines presented in Caicedo et al. (2018) Evaluation of Deep
+    Learning Strategies for Nucleus Segmentation in Fluorescence Images.
+    BioRxiv 335216.
 
     Args:
-        y_true (3D np.array): Binary ground truth annotations for a single feature, (batch,x,y)
-        y_pred (3D np.array): Binary predictions for a single feature, (batch,x,y)
+        y_true (3D np.array): Binary ground truth annotations for a single
+            feature, (batch,x,y)
+        y_pred (3D np.array): Binary predictions for a single feature,
+            (batch,x,y)
 
     Returns:
         dictionary: Containing a set of calculated statistics
@@ -79,7 +82,7 @@ def stats_pixelbased(y_true, y_pred):
         ValueError: Shapes of `y_true` and `y_pred` do not match.
 
     Warning:
-        Comparing labeled to unlabeled data will produce very low accuracy scores.
+        Comparing labeled to unlabeled data will produce low accuracy scores.
         Make sure to input the same type of data for `y_true` and `y_pred`
     """
 
@@ -115,28 +118,32 @@ def stats_pixelbased(y_true, y_pred):
     }
 
 
-class ObjectAccuracy:
-    """Classifies errors in object predictions as true positive,
-        false positive/negative, merge or split
+class ObjectAccuracy(object):
+    """Classifies object prediction errors as TP, FP, FN, merge or split
 
-    The schema for this analysis was adopted from the description of object-based statistics in
-        Caicedo et al. (2018) Evaluation of Deep Learning Strategies for Nucleus Segmentation
-        in Fluorescence Images. BioRxiv 335216.
-        The SEG metric was adapted from Maška et al. (2014). A benchmark for comparison of cell
-        tracking algorithms. Bioinformatics 30, 1609–1617.
-        The linear classification schema used to match objects in truth and prediction frames was
-        adapted from Jaqaman et al. (2008). Robust single-particle tracking in live-cell
-        time-lapse sequences. Nature Methods 5, 695–702.
+    The schema for this analysis was adopted from the description of
+    object-based statistics in Caicedo et al. (2018) Evaluation of Deep
+    Learning Strategies for Nucleus Segmentation in Fluorescence Images.
+    BioRxiv 335216.
+    The SEG metric was adapted from Maška et al. (2014). A benchmark for
+    comparison of cell tracking algorithms.
+    Bioinformatics 30, 1609–1617.
+    The linear classification schema used to match objects in truth and
+    prediction frames was adapted from Jaqaman et al. (2008).
+    Robust single-particle tracking in live-cell time-lapse sequences.
+    Nature Methods 5, 695–702.
 
     Args:
         y_true (2D np.array): Labeled ground truth annotation
         y_pred (2D np.array): Labled object prediction, same size as y_true
         cutoff1 (:obj:`float`, optional): Threshold for overlap in cost matrix,
             smaller values are more conservative, default 0.4
-        cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned cells,
-            smaller values are better, default 0.1
-        test (:obj:`bool`, optional): Utility variable to control running analysis during testing
-        seg (:obj:`bool`, optional): Calculates SEG score for cell tracking competition
+        cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned
+            cells, smaller values are better, default 0.1
+        test (:obj:`bool`, optional): Utility variable to control running
+            analysis during testing
+        seg (:obj:`bool`, optional): Calculates SEG score for cell tracking
+            competition
 
     Raises:
         ValueError: If y_true and y_pred are not the same shape
@@ -148,8 +155,13 @@ class ObjectAccuracy:
         Implement recording of object indices for each error group
     """
 
-    def __init__(self, y_true, y_pred, cutoff1=0.4, cutoff2=0.1, test=False, seg=False):
-
+    def __init__(self,
+                 y_true,
+                 y_pred,
+                 cutoff1=0.4,
+                 cutoff2=0.1,
+                 test=False,
+                 seg=False):
         self.y_true = y_true
         self.y_pred = y_pred
         self.cutoff1 = cutoff1
@@ -157,7 +169,7 @@ class ObjectAccuracy:
         self.seg = seg
 
         if y_pred.shape != y_true.shape:
-            raise ValueError('Shape of inputs need to match. Shape of prediction '
+            raise ValueError('Input shapes must match. Shape of prediction '
                              'is: {}.  Shape of y_true is: {}'.format(
                                  y_pred.shape, y_true.shape))
 
@@ -204,9 +216,9 @@ class ObjectAccuracy:
             self.empty_frame = False
 
     def _calc_iou(self):
-        """Calculates intersection of union matrix for each pairwise comparison
-            between true and predicted. Additionally, if `seg`==True, records a 1 for
-            each pair of objects where $|T\bigcap P| > 0.5 * |T|$
+        """Calculates IoU matrix for each pairwise comparison between true and
+        predicted. Additionally, if `seg`==True, records a 1 for each pair of
+        objects where $|T\bigcap P| > 0.5 * |T|$
         """
 
         self.iou = np.zeros((self.n_true, self.n_pred))
@@ -221,17 +233,18 @@ class ObjectAccuracy:
                 union = np.logical_or(self.y_true == t, self.y_pred == p)
                 # Subtract 1 from index to account for skipping 0
                 self.iou[t - 1, p - 1] = intersection.sum() / union.sum()
-                if (self.seg is True) & (intersection.sum() > 0.5 * np.sum(self.y_true == t)):
+                if (self.seg is True) & \
+                   (intersection.sum() > 0.5 * np.sum(self.y_true == t)):
                     self.seg_thresh[t - 1, p - 1] = 1
 
     def _make_matrix(self):
         """Assembles cost matrix using the iou matrix and cutoff1
 
         The previously calculated iou matrix is cast into the top left and
-            transposed for the bottom right corner. The diagonals of the two remaining
-            corners are populated according to `cutoff1`. The lower the value of `cutoff1`
-            the more likely it is for the linear sum assignment to pick unmatched assignments
-            for objects.
+        transposed for the bottom right corner. The diagonals of the two
+        remaining corners are populated according to `cutoff1`. The lower the
+        value of `cutoff1` the more likely it is for the linear sum assignment
+        to pick unmatched assignments for objects.
         """
 
         self.cm = np.ones((self.n_obj, self.n_obj))
@@ -254,11 +267,11 @@ class ObjectAccuracy:
 
     def _linear_assignment(self):
         """Runs linear sun assignment on cost matrix, identifies true positives
-        and unassigned true and predicted cells
+        and unassigned true and predicted cells.
 
-        True positives correspond to assignments in the top left or bottom right corner.
-            There are two possible unassigned positions: true cell unassigned in bottom left
-            or predicted cell unassigned in top right.
+        True positives correspond to assignments in the top left or bottom
+        right corner. There are two possible unassigned positions: true cell
+        unassigned in bottom left or predicted cell unassigned in top right.
         """
 
         self.results = linear_sum_assignment(self.cm)
@@ -276,7 +289,8 @@ class ObjectAccuracy:
         if self.seg is True:
             iou_mask = self.iou.copy()
             iou_mask[self.seg_thresh == 0] = np.nan
-            self.seg_score = np.nanmean(iou_mask[self.true_pos_ind[0], self.true_pos_ind[1]])
+            self.seg_score = np.nanmean(iou_mask[self.true_pos_ind[0],
+                                        self.true_pos_ind[1]])
 
         # Collect unassigned cells
         self.loners_pred, _ = np.where(
@@ -303,10 +317,10 @@ class ObjectAccuracy:
     def _array_to_graph(self):
         """Transform matrix for unassigned cells into a graph object
 
-        In order to cast the iou matrix into a graph form, we treat each unassigned cell
-            as a node. The iou values for each pair of cells is treated as an edge between
-            nodes/cells. Any iou values equal to 0 are dropped because they indicate no overlap
-            between cells.
+        In order to cast the iou matrix into a graph form, we treat each
+        unassigned cell as a node. The iou values for each pair of cells is
+        treated as an edge between nodes/cells. Any iou values equal to 0 are
+        dropped because they indicate no overlap between cells.
         """
 
         # Use meshgrid to get true and predicted cell index for each val
@@ -336,14 +350,14 @@ class ObjectAccuracy:
     def _classify_graph(self):
         """Assign each node in graph to an error type
 
-        Nodes with a degree (connectivity) of 0 correspond to either false positives
-            or false negatives depending on the origin of the node from either the predicted
-            objects (false positive) or true objects (false negative).
-            Any nodes with a connectivity of 1 are considered to be true positives that were missed
-            during linear assignment.
-            Finally any nodes with degree >= 2 are indicative of a merge or split error. If the top
-            level node is a predicted cell, this indicates a merge event. If the top level node is
-            a true cell, this indicates a split event.
+        Nodes with a degree (connectivity) of 0 correspond to either false
+        positives or false negatives depending on the origin of the node from
+        either the predicted objects (false positive) or true objects
+        (false negative). Any nodes with a connectivity of 1 are considered to
+        be true positives that were missed during linear assignment.
+        Finally any nodes with degree >= 2 are indicative of a merge or split
+        error. If the top level node is a predicted cell, this indicates a merge
+        event. If the top level node is a true cell, this indicates a split event.
         """
 
         # Find subgraphs, e.g. merge/split
@@ -414,22 +428,25 @@ class ObjectAccuracy:
         return df
 
 
-class Metrics:
-    """
-    Class to facilitate calculating and saving various classification metrics
+class Metrics(object):
+    """Class to calculate and save various classification metrics
 
     Args:
         model_name (str): Name of the model which determines output file names
         outdir (:obj:`str`, optional): Directory to save json file, default ''
         cutoff1 (:obj:`float`, optional): Threshold for overlap in cost matrix,
             smaller values are more conservative, default 0.4
-        cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned cells,
-            smaller values are better, default 0.1
-        pixel_threshold (:obj:`float`, optional): Threshold for converting predictions to binary
-        ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
-        feature_key (:obj:`list`, optional): List of strings to use as feature names
-        json_notes (:obj:`str`, optional): Str providing any additional information about the model
-        seg (:obj:`bool`, optional): Calculates SEG score for cell tracking competition
+        cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned
+            cells, smaller values are better, default 0.1
+        pixel_threshold (:obj:`float`, optional): Threshold for converting
+            predictions to binary
+        ndigits (:obj:`int`, optional): Sets number of digits for rounding,
+            default 4
+        feature_key (:obj:`list`, optional): List of strings, feature names
+        json_notes (:obj:`str`, optional): Str providing any additional
+            information about the model
+        seg (:obj:`bool`, optional): Calculates SEG score for
+            cell tracking competition
 
     Examples:
         >>> from deepcell import metrics
@@ -475,12 +492,12 @@ class Metrics:
     def all_pixel_stats(self, y_true, y_pred):
         """Collect pixel statistics for each feature.
 
-        y_true should have the appropriate transform applied to match y_pred. Each channel
-            is converted to binary using the threshold `pixel_threshold` prior to calculation
-            of accuracy metrics.
+        y_true should have the appropriate transform applied to match y_pred.
+        Each channel is converted to binary using the threshold
+        `pixel_threshold` prior to calculation of accuracy metrics.
 
         Args:
-            y_true (4D np.array): Ground truth annotations after application of transform
+            y_true (4D np.array): Ground truth annotations after transform
             y_pred (4D np.array): Model predictions without labeling
 
         Raises:
@@ -488,7 +505,7 @@ class Metrics:
         """
 
         if y_pred.shape != y_true.shape:
-            raise ValueError('Shape of inputs need to match. Shape of prediction '
+            raise ValueError('Input shapes need to match. Shape of prediction '
                              'is: {}.  Shape of y_true is: {}'.format(
                                  y_pred.shape, y_true.shape))
 
@@ -560,7 +577,8 @@ class Metrics:
         """Calculate confusion matrix for pixel classification data.
 
         Args:
-            y_true (4D np.array): Ground truth annotations after any necessary transformations
+            y_true (4D np.array): Ground truth annotations after any
+                necessary transformations
             y_pred (4D np.array): Prediction array
 
         Returns:
@@ -587,8 +605,8 @@ class Metrics:
         """Calculate object statistics and save to output
 
         Loops over each frame in the zeroth dimension, which should pass in
-            a series of 2D arrays for analysis. `metrics.split_stack` can be used to
-            appropriately reshape the input array if necessary
+        a series of 2D arrays for analysis. `metrics.split_stack` can be
+        used to appropriately reshape the input array if necessary
 
         Args:
             y_true (3D np.array): Labeled ground truth annotations
@@ -665,11 +683,13 @@ class Metrics:
         """Runs pixel and object base statistics and ouputs to file
 
         Args:
-            y_true_lbl (3D np.array): Labeled ground truth annotation, (sample,x,y)
-            y_pred_lbl (3D np.array): Labeled prediction mask, (sample,x,y)
-            y_true_unlbl (4D np.array): Ground truth annotation after necessary transforms,
-                (sample,x,y,feature)
-            y_pred_unlbl (4D np.array): Predictions, (sample,x,y,feature)
+            y_true_lbl (3D np.array): Labeled ground truth annotation,
+                (sample, x, y)
+            y_pred_lbl (3D np.array): Labeled prediction mask,
+                (sample, x, y)
+            y_true_unlbl (4D np.array): Ground truth annotation after necessary
+                transforms, (sample, x, y, feature)
+            y_pred_unlbl (4D np.array): Predictions, (sample, x, y, feature)
         """
 
         logging.info('Starting pixel based statistics')
@@ -716,7 +736,8 @@ def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
 
     Args:
         arr (np.array): Array to be split with at least 2 dimensions
-        batch (bool): True if the zeroth dimension of arr is a batch or frame dimension
+        batch (bool): True if the zeroth dimension of arr is a batch or
+            frame dimension
         n_split1 (int): Number of sections to produce from the first split axis
             Must be able to divide arr.shape[axis1] evenly by n_split1
         axis1 (int): Axis on which to perform first split
