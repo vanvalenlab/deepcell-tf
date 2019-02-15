@@ -1062,12 +1062,14 @@ class TestRetinaNetDataGenerator(test.TestCase):
                 horizontal_flip=True,
                 vertical_flip=True)
 
+            num_classes = np.random.randint(1, 3)
+
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((8, 10, 10, 3)),
                 'y': np.random.random((8, 10, 10, 1)),
             }
-            generator.flow(train_dict)
+            generator.flow(train_dict, num_classes=num_classes)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -1079,12 +1081,13 @@ class TestRetinaNetDataGenerator(test.TestCase):
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
             for x, (r, l) in generator.flow(
                     train_dict,
+                    num_classes=num_classes,
                     save_to_dir=temp_dir,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], images.shape[1:])
                 self.assertEqual(r.shape[:-1], l.shape[:-1])
-                # self.assertEqual(r.shape[-1], 4)
-                # self.assertEqual(l.shape[-1], 2)
+                self.assertEqual(r.shape[-1], 5)
+                self.assertEqual(l.shape[-1], num_classes + 1)
                 break
 
     def test_retinanet_data_generator_channels_first(self):
@@ -1114,12 +1117,14 @@ class TestRetinaNetDataGenerator(test.TestCase):
                 vertical_flip=True,
                 data_format='channels_first')
 
+            num_classes = np.random.randint(1, 3)
+
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((8, 3, 10, 10)),
                 'y': np.random.random((8, 1, 10, 10)),
             }
-            generator.flow(train_dict)
+            generator.flow(train_dict, num_classes=num_classes)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -1132,13 +1137,14 @@ class TestRetinaNetDataGenerator(test.TestCase):
 
             for x, (r, l) in generator.flow(
                     train_dict,
+                    num_classes=num_classes,
                     save_to_dir=temp_dir,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], images.shape[1:])
                 self.assertEqual(x.shape[1:], images.shape[1:])
                 self.assertEqual(r.shape[:-1], l.shape[:-1])
-                # self.assertEqual(r.shape[-1], 4)
-                # self.assertEqual(l.shape[-1], 2)
+                self.assertEqual(r.shape[-1], 5)
+                self.assertEqual(l.shape[-1], num_classes + 1)
                 break
 
     def test_retinanet_data_generator_invalid_data(self):
