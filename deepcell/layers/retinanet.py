@@ -256,8 +256,8 @@ class ClipBoxes(Layer):
         return K.stack([x1, y1, x2, y2], axis=2)
 
     def compute_output_shape(self, input_shape):
-        # input_shape = tensor_shape.TensorShape(input_shape).as_list()
-        return input_shape[1]
+        return tensor_shape.TensorShape(input_shape[1]).as_list()
+        # return input_shape[1]
 
     def get_config(self):
         config = {'data_format': self.data_format}
