@@ -103,7 +103,7 @@ def anchor_targets_bbox(anchors,
     if len(image_group) != len(annotations_group):
         raise ValueError('Images and annotations must be the same size. '
                          'Got Image size = %s and Annotation size = %s' %
-                         len((image_group), len(annotations_group)))
+                         (len(image_group), len(annotations_group)))
     elif len(annotations_group) == 0:
         raise ValueError('No data received to compute anchor targets.')
     for annotations in annotations_group:
@@ -211,7 +211,7 @@ def layer_shapes(image_shape, model):
             if not inputs:
                 continue
             i = inputs[0] if len(inputs) == 1 else inputs
-            shape[layer.name] = layer.compute_output_shape(i)
+            shape[layer.name] = tuple(layer.compute_output_shape(i).as_list())
 
     return shape
 
@@ -279,6 +279,7 @@ def anchors_for_shape(image_shape,
 
     if shapes_callback is None:
         shapes_callback = guess_shapes
+    image_shape = tensor_shape.TensorShape(image_shape)
     image_shapes = shapes_callback(image_shape, pyramid_levels)
 
     # compute anchors over all pyramid levels

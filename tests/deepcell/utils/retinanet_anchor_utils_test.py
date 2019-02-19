@@ -28,16 +28,15 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import configparser
-
 import numpy as np
 
 from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.layers import Conv2D
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.platform import test
 
-from deepcell.utils.retinanet_anchor_utils import anchors_for_shape
-from deepcell.utils.retinanet_anchor_utils import AnchorParameters
+from deepcell.utils import retinanet_anchor_utils as utils
 # from deepcell.utils.retinanet_anchor_utils import read_config_file
 # from deepcell.utils.retinanet_anchor_utils import parse_anchor_parameters
 
@@ -56,14 +55,14 @@ class TestRetinaNetAnchorUtils(test.TestCase):
     #     assert config['anchor_parameters']['ratios'] == '0.5 1 2 3'
     #     assert config['anchor_parameters']['scales'] == '1 1.2 1.6'
 
-    def create_anchor_params_config(self):
-        config = configparser.ConfigParser()
-        config['anchor_parameters'] = {}
-        config['anchor_parameters']['sizes'] = '32 64 128 256 512'
-        config['anchor_parameters']['strides'] = '8 16 32 64 128'
-        config['anchor_parameters']['ratios'] = '0.5 1'
-        config['anchor_parameters']['scales'] = '1 1.2 1.6'
-        return config
+    # def create_anchor_params_config(self):
+    #     config = configparser.ConfigParser()
+    #     config['anchor_parameters'] = {}
+    #     config['anchor_parameters']['sizes'] = '32 64 128 256 512'
+    #     config['anchor_parameters']['strides'] = '8 16 32 64 128'
+    #     config['anchor_parameters']['ratios'] = '0.5 1'
+    #     config['anchor_parameters']['scales'] = '1 1.2 1.6'
+    #     return config
 
     # def test_parse_anchor_parameters(self):
     #     config = self.create_anchor_params_config()
@@ -84,27 +83,28 @@ class TestRetinaNetAnchorUtils(test.TestCase):
         strides = [8, 16, 32]
         ratios = np.array([0.5, 1, 2, 3], K.floatx())
         scales = np.array([1, 1.2, 1.6], K.floatx())
-        anchor_params = AnchorParameters(sizes, strides, ratios, scales)
+        anchor_params = utils.AnchorParameters(sizes, strides, ratios, scales)
 
         pyramid_levels = [3, 4, 5]
         image_shape = tensor_shape.TensorShape((64, 64))
-        all_anchors = anchors_for_shape(
+        all_anchors = utils.anchors_for_shape(
             image_shape,
             pyramid_levels=pyramid_levels,
             anchor_params=anchor_params)
 
         self.assertTupleEqual(all_anchors.shape, (1008, 4))
+        self.assertEqual(anchor_params.num_anchors(), 12)
 
     def test_anchors_for_shape_values(self):
         sizes = [12]
         strides = [8]
         ratios = np.array([1, 2], K.floatx())
         scales = np.array([1, 2], K.floatx())
-        anchor_params = AnchorParameters(sizes, strides, ratios, scales)
+        anchor_params = utils.AnchorParameters(sizes, strides, ratios, scales)
 
         pyramid_levels = [3]
-        image_shape = tensor_shape.TensorShape((16, 16))
-        all_anchors = anchors_for_shape(
+        image_shape = (16, 16)
+        all_anchors = utils.anchors_for_shape(
             image_shape,
             pyramid_levels=pyramid_levels,
             anchor_params=anchor_params)
@@ -206,6 +206,86 @@ class TestRetinaNetAnchorUtils(test.TestCase):
             strides[0] * 3 / 2 + (sizes[0] * scales[1] / np.sqrt(ratios[1])) / 2,
             strides[0] * 3 / 2 + (sizes[0] * scales[1] * np.sqrt(ratios[1])) / 2,
         ])
+
+    def test_anchor_targets_bbox(self):
+        # TODO: test correct-ness
+        sizes = [12]
+        strides = [8]
+        ratios = np.array([1, 2], K.floatx())
+        scales = np.array([1, 2], K.floatx())
+        anchor_params = utils.AnchorParameters(sizes, strides, ratios, scales)
+
+        pyramid_levels = [3]
+        image_shape = (16, 16)
+        anchors = utils.anchors_for_shape(
+            image_shape,
+            pyramid_levels=pyramid_levels,
+            anchor_params=anchor_params)
+
+        # test image / annotation size mismatch
+        with self.assertRaises(ValueError):
+            utils.anchor_targets_bbox(anchors, [1], [1, 2, 3], 1)
+        # test image / annotation not empty
+        with self.assertRaises(ValueError):
+            utils.anchor_targets_bbox(anchors, [], [], 1)
+        # test annotation structure
+        with self.assertRaises(ValueError):
+            utils.anchor_targets_bbox(anchors, [1], [{'labels': 1}], 1)
+        with self.assertRaises(ValueError):
+            utils.anchor_targets_bbox(anchors, [1], [{'bboxes': 1}], 1)
+
+    def test_bbox_transform(self):
+        # TODO: test correct-ness
+        sizes = [12]
+        strides = [8]
+        ratios = np.array([1, 2], K.floatx())
+        scales = np.array([1, 2], K.floatx())
+        anchor_params = utils.AnchorParameters(sizes, strides, ratios, scales)
+
+        pyramid_levels = [3]
+        image_shape = (16, 16)
+        anchors = utils.anchors_for_shape(
+            image_shape,
+            pyramid_levels=pyramid_levels,
+            anchor_params=anchor_params)
+
+        # test custom std/mean
+        targets = utils.bbox_transform(
+            anchors, np.random.random((1, 4)), mean=[0], std=[0.2])
+
+        self.assertTupleEqual(targets.shape, (16, 4))
+
+        # test bad `mean` value
+        with self.assertRaises(ValueError):
+            utils.bbox_transform(anchors, [1], mean='invalid', std=None)
+        # test image / annotation not empty
+        with self.assertRaises(ValueError):
+            utils.bbox_transform(anchors, [1], mean=None, std='invalid')
+
+    def test_layer_shapes(self):
+        image_shape = (16, 16, 1)
+        model = Sequential()
+
+        model.add(Conv2D(3, (3, 3), input_shape=image_shape, name='P1'))
+        model.add(Conv2D(3, (3, 3), name='P2'))
+        shapes = utils.layer_shapes(image_shape, model)
+        self.assertIsInstance(shapes, dict)
+        self.assertTrue('P1' in shapes)
+        self.assertEqual(shapes['P1'], tuple([None] + list(image_shape)))
+        self.assertEqual(shapes['P2'], (None, 14, 14, 3))
+
+    def test_make_shapes_callback(self):
+        image_shape = (16, 16, 1)
+        level = np.random.randint(1, 3)
+        pyramid_levels = [level]
+        name = 'P{}'.format(level)
+        model = Sequential()
+
+        model.add(Conv2D(3, (3, 3), input_shape=image_shape, name=name))
+        cb = utils.make_shapes_callback(model)
+        shape = cb(image_shape, pyramid_levels)
+        # TODO: should the output be a TensorShape?
+        self.assertEqual(shape, [tensor_shape.TensorShape((16, 16))])
 
 
 if __name__ == '__main__':
