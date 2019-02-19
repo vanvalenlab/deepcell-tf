@@ -274,6 +274,14 @@ class TestRetinaNetAnchorUtils(test.TestCase):
         self.assertEqual(shapes['P1'], tuple([None] + list(image_shape)))
         self.assertEqual(shapes['P2'], (None, 14, 14, 3))
 
+        # test TensorShape compatibility
+        image_shape = tensor_shape.TensorShape(image_shape)
+        shapes = utils.layer_shapes(image_shape, model)
+        self.assertIsInstance(shapes, dict)
+        self.assertTrue('P1' in shapes)
+        self.assertEqual(shapes['P1'], tuple([None] + list(image_shape)))
+        self.assertEqual(shapes['P2'], (None, 14, 14, 3))
+
     def test_make_shapes_callback(self):
         image_shape = (16, 16, 1)
         level = np.random.randint(1, 3)

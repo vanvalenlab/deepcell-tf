@@ -202,6 +202,9 @@ def layer_shapes(image_shape, model):
     Returns:
         A dictionary mapping layer names to image shapes.
     """
+    if isinstance(image_shape, tensor_shape.TensorShape):
+        image_shape = tuple(image_shape.as_list())
+
     shape = {model.layers[0].name: (None,) + image_shape}
 
     for layer in model.layers[1:]:
