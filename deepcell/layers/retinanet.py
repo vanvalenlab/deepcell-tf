@@ -113,9 +113,10 @@ class Anchors(Layer):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if None not in input_shape[1:]:
             if self.data_format == 'channels_first':
-                total = np.prod(input_shape[2:4]) * self.num_anchors
+                total = K.prod(input_shape[2:4]) * self.num_anchors
             else:
-                total = np.prod(input_shape[1:3]) * self.num_anchors
+                total = K.prod(input_shape[1:3]) * self.num_anchors
+            total = K.get_value(total)
 
             return tensor_shape.TensorShape((input_shape[0], total, 4))
         else:
