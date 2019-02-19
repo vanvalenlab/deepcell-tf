@@ -304,7 +304,7 @@ class ClipBoxesTest(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
-        img_w, img_h = np.random.randint(2, 5), np.random.randint(5, 9)
+        img_h, img_w = np.random.randint(2, 5), np.random.randint(5, 9)
 
         boxes = np.array([[
             [9, 9, 9, 9],
@@ -327,7 +327,7 @@ class ClipBoxesTest(test.TestCase):
         # test channels_last
         with self.test_session():
             # create input
-            image = K.variable(np.random.random((1, img_w, img_h, 3)))
+            image = K.variable(np.random.random((1, img_h, img_w, 3)))
 
             # create simple ClipBoxes layer
             layer = layers.ClipBoxes(data_format='channels_last')
@@ -344,7 +344,7 @@ class ClipBoxesTest(test.TestCase):
         # test channels_first
         with self.test_session():
             # create input
-            image = K.variable(np.random.random((1, 6, img_w, img_h)))
+            image = K.variable(np.random.random((1, 6, img_h, img_w)))
 
             # create simple ClipBoxes layer
             layer = layers.ClipBoxes(data_format='channels_first')
