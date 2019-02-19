@@ -42,7 +42,7 @@ except ImportError:
 class AnchorParameters:
     """The parameteres that define how anchors are generated.
 
-    Args
+    Args:
         sizes: List of sizes to use. Each size corresponds to one feature level.
         strides: List of strides to use. Each stride correspond to one feature level.
         ratios: List of ratios to use per location in a feature map.
@@ -163,7 +163,7 @@ def compute_gt_annotations(anchors,
                            positive_overlap=0.5):
     """Obtain indices of gt annotations with the greatest overlap.
 
-    Args
+    Args:
         anchors: np.array of annotations of shape (N, 4) for (x1, y1, x2, y2).
         annotations: np.array of shape (N, 5) for (x1, y1, x2, y2, label).
         negative_overlap: IoU overlap for negative anchors
@@ -171,7 +171,7 @@ def compute_gt_annotations(anchors,
         positive_overlap: IoU overlap or positive anchors
             (all anchors with overlap > positive_overlap are positive).
 
-    Returns
+    Returns:
         positive_indices: indices of positive anchors
         ignore_indices: indices of ignored anchors
         argmax_overlaps_inds: ordered overlaps indices
@@ -194,12 +194,12 @@ def compute_gt_annotations(anchors,
 def layer_shapes(image_shape, model):
     """Compute layer shapes given input image shape and the model.
 
-    Args
+    Args:
         image_shape: The shape of the image.
         model: The model to use for computing how the image shape is
             transformed in the pyramid.
 
-    Returns
+    Returns:
         A dictionary mapping layer names to image shapes.
     """
     shape = {model.layers[0].name: (None,) + image_shape}
@@ -218,6 +218,9 @@ def layer_shapes(image_shape, model):
 
 def make_shapes_callback(model):
     """Make a function for getting the shape of the pyramid levels.
+
+    Args:
+        model: keras.Model to get shapes of pyramid levels
     """
     def get_shapes(image_shape, pyramid_levels):
         shape = layer_shapes(image_shape, model)
@@ -235,11 +238,11 @@ def make_shapes_callback(model):
 def guess_shapes(image_shape, pyramid_levels):
     """Guess shapes based on pyramid levels.
 
-    Args
-         image_shape: The shape of the image.
-         pyramid_levels: A list of what pyramid levels are used.
+    Args:
+        image_shape: The shape of the image.
+        pyramid_levels: A list of what pyramid levels are used.
 
-    Returns
+    Returns:
         A list of image shapes at each pyramid level.
     """
     image_shape = np.array(image_shape[:2])
@@ -257,7 +260,7 @@ def anchors_for_shape(image_shape,
                       shapes_callback=None):
     """Generators anchors for a given shape.
 
-    Args
+    Args:
         image_shape: The shape of the image.
         pyramid_levels: List of ints representing which pyramids to use
             (defaults to [3, 4, 5, 6, 7]).
@@ -266,7 +269,7 @@ def anchors_for_shape(image_shape,
         shapes_callback: Function to call for getting the shape of the image
             at different pyramid levels.
 
-    Returns
+    Returns:
         np.array of shape (N, 4) containing the (x1, y1, x2, y2) coordinates
             for the anchors.
     """
@@ -301,7 +304,7 @@ def anchors_for_shape(image_shape,
 def _shift(shape, stride, anchors):
     """Produce shifted anchors based on shape of the map and stride size.
 
-    Args
+    Args:
         shape: Shape to shift the anchors over.
         stride: Stride to shift the anchors with over the shape.
         anchors: The anchors to apply at each location.
@@ -408,7 +411,7 @@ def bbox_transform_inv(boxes, deltas, mean=None, std=None):
     The mean and std are the mean and std as applied in the generator.
     They are unnormalized in this function and then applied to the boxes.
 
-    Args
+    Args:
         boxes: np.array of shape (B, N, 4), where B is the batch size,
                N the number of boxes and 4 values for (x1, y1, x2, y2).
         deltas: np.array of same shape as boxes. These deltas
@@ -418,7 +421,7 @@ def bbox_transform_inv(boxes, deltas, mean=None, std=None):
         std: The standard deviation used when computing deltas
              (defaults to [0.2, 0.2, 0.2, 0.2]).
 
-    Returns
+    Returns:
         A np.array of the same shape as boxes with deltas applied to each box.
         The mean and std are used during training to normalize the
         regression values (networks love normalization).
@@ -444,7 +447,7 @@ def bbox_transform_inv(boxes, deltas, mean=None, std=None):
 def shift(shape, stride, anchors):
     """Produce shifted anchors based on shape of the map and stride size.
 
-    Args
+    Args:
         shape: Shape to shift the anchors over.
         stride: Stride to shift the anchors with over the shape.
         anchors: The anchors to apply at each location.
@@ -485,10 +488,10 @@ def _compute_ap(recall, precision):
 
     Code originally from https://github.com/rbgirshick/py-faster-rcnn.
 
-    # Arguments
+    Args:
         recall: The recall curve (list).
         precision: The precision curve (list).
-    # Returns
+    Returns:
         The average precision as computed in py-faster-rcnn.
     """
     # correct AP calculation
@@ -518,12 +521,12 @@ def _get_detections(generator,
     The result is a list of lists such that the size is:
         all_detections[num_images][num_classes] = detections[num_detections, 4 + num_classes]
 
-    # Arguments
+    Args:
         generator: The generator used to run images through the model.
         model: The model to run on the images.
         score_threshold: The score confidence threshold to use.
         max_detections: The maximum number of detections to use per image.
-    # Returns
+    Returns:
         A list of lists containing the detections for each image in the generator.
     """
     all_detections = [[None for i in range(generator.num_classes)]
@@ -573,9 +576,9 @@ def _get_annotations(generator):
     The result is a list of lists such that the size is:
         all_detections[num_images][num_classes] = annotations[num_detections, 5]
 
-    # Arguments
+    Args:
         generator : The generator used to retrieve ground truth annotations.
-    # Returns
+    Returns:
         A list of lists containing the annotations for each image in the generator.
     """
     all_annotations = [[None for i in range(generator.num_classes)]
@@ -600,14 +603,14 @@ def evaluate(generator,
              max_detections=100):
     """Evaluate a given dataset using a given model.
 
-    # Arguments
+    Args:
         generator: The generator that represents the dataset to evaluate.
         model: The model to evaluate.
         iou_threshold: The threshold used to consider when a detection
             is positive or negative.
         score_threshold: The score confidence threshold to use for detections.
         max_detections: The maximum number of detections to use per image.
-    # Returns
+    Returns:
         A dict mapping class names to mAP scores.
     """
     # gather all detections and annotations
