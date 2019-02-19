@@ -1928,8 +1928,8 @@ class RetinaNetIterator(Iterator):
             (annotations['bboxes'][:, 3] <= annotations['bboxes'][:, 1]) |
             (annotations['bboxes'][:, 0] < 0) |
             (annotations['bboxes'][:, 1] < 0) |
-            (annotations['bboxes'][:, 2] > image.shape[row_axis]) |
-            (annotations['bboxes'][:, 3] > image.shape[row_axis + 1])
+            (annotations['bboxes'][:, 2] > image.shape[row_axis + 1]) |
+            (annotations['bboxes'][:, 3] > image.shape[row_axis])
         )[0]
 
         # delete invalid indices
@@ -1955,7 +1955,8 @@ class RetinaNetIterator(Iterator):
         """
         labels, bboxes = [], []
         for prop in regionprops(np.squeeze(y.astype('int'))):
-            bboxes.append(prop.bbox)
+            y1, x1, y2, x2 = prop.bbox
+            bboxes.append([x1, y1, x2, y2])
             labels.append(0)  # boolean object detection
 
         labels = np.array(labels)
