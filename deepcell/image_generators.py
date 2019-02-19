@@ -335,7 +335,11 @@ class ImageSampleArrayIterator(Iterator):
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
-                img = array_to_img(batch_x[i], self.data_format, scale=True)
+                if self.data_format == 'channels_first':
+                    img_x = np.expand_dims(batch_x[i, 0, ...], 0)
+                else:
+                    img_x = np.expand_dims(batch_x[i, ..., 0], -1)
+                img = array_to_img(img_x, self.data_format, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(
                     prefix=self.save_prefix,
                     index=j,
@@ -548,7 +552,10 @@ class ImageFullyConvIterator(Iterator):
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
-                img_x = np.expand_dims(batch_x[i, :, :, 0], -1)
+                if self.data_format == 'channels_first':
+                    img_x = np.expand_dims(batch_x[i, 0, ...], 0)
+                else:
+                    img_x = np.expand_dims(batch_x[i, ..., 0], -1)
                 img = array_to_img(img_x, self.data_format, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(
                     prefix=self.save_prefix,
@@ -2001,7 +2008,10 @@ class RetinaNetIterator(Iterator):
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
-                img_x = np.expand_dims(batch_x[i, ..., 0], -1)
+                if self.data_format == 'channels_first':
+                    img_x = np.expand_dims(batch_x[i, 0, ...], 0)
+                else:
+                    img_x = np.expand_dims(batch_x[i, ..., 0], -1)
                 img = array_to_img(img_x, self.data_format, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(
                     prefix=self.save_prefix,
