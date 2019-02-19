@@ -214,7 +214,10 @@ def layer_shapes(image_shape, model):
             if not inputs:
                 continue
             i = inputs[0] if len(inputs) == 1 else inputs
-            shape[layer.name] = tuple(layer.compute_output_shape(i).as_list())
+            computed_shape = layer.compute_output_shape(i)
+            if isinstance(computed_shape, tensor_shape.TensorShape):
+                computed_shape = computed_shape.as_list()
+            shape[layer.name] = tuple(computed_shape)
 
     return shape
 
