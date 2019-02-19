@@ -161,7 +161,7 @@ class FilterDetections(Layer):
         """Filters detections using score threshold,
         NMS and selecting the top-k detections.
 
-        Args
+        Args:
             nms: Flag to enable/disable NMS.
             class_specific_filter: Whether to perform filtering per class,
                 or take the best scoring class and filter those.
