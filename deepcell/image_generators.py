@@ -1863,6 +1863,7 @@ class RetinaNetIterator(Iterator):
                  compute_shapes=guess_shapes,
                  min_objects=3,
                  num_classes=1,
+                 clear_borders=False,
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -1899,7 +1900,7 @@ class RetinaNetIterator(Iterator):
         # Remove images with small numbers of cells
         for b in range(self.x.shape[0]):
             y_batch = np.squeeze(self.y[b], axis=self.channel_axis - 1)
-            y_batch = clear_border(y_batch)
+            y_batch = clear_border(y_batch) if clear_borders else y_batch
             y_batch = np.expand_dims(y_batch, axis=self.channel_axis - 1)
 
             self.y[b] = y_batch
