@@ -180,7 +180,7 @@ def compute_gt_annotations(anchors,
         raise ImportError('To use `compute_overlap`, the C extensions must be '
                           'built using `python setup.py build_ext --inplace`')
     overlaps = compute_overlap(
-        anchors.astype(np.float64), annotations.astype(np.float64))
+        anchors.astype('float64'), annotations.astype('float64'))
     argmax_overlaps_inds = np.argmax(overlaps, axis=1)
     max_overlaps = overlaps[np.arange(overlaps.shape[0]), argmax_overlaps_inds]
 
