@@ -1793,6 +1793,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
              train_dict,
              compute_shapes=guess_shapes,
              num_classes=1,
+             clear_borders=False,
              batch_size=32,
              shuffle=False,
              seed=None,
@@ -1803,6 +1804,9 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
 
         Args:
             train_dict: dictionary of X and y tensors. Both should be rank 4.
+            compute_shapes: function to determine the shapes of the anchors
+            num_classes: number of classes to predict
+            clear_borders: boolean, whether to use `clear_border` on y.
             batch_size: int (default: 1).
             shuffle: boolean (default: True).
             seed: int (default: None).
@@ -1824,6 +1828,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             self,
             compute_shapes=compute_shapes,
             num_classes=num_classes,
+            clear_borders=clear_borders,
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
