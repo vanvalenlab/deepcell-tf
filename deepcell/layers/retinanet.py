@@ -98,12 +98,10 @@ class Anchors(Layer):
         features_shape = K.shape(inputs)
 
         # generate proposals from bbox deltas and shifted anchors
-        if self.data_format == 'channels_first':
-            anchors = retinanet_anchor_utils.shift(
-                features_shape[2:4], self.stride, self.anchors)
-        else:
-            anchors = retinanet_anchor_utils.shift(
-                features_shape[1:3], self.stride, self.anchors)
+        row_axis = 2 if self.data_format == 'channels_first' else 1
+        anchors = retinanet_anchor_utils.shift(
+            features_shape[row_axis:row_axis + 2], self.stride, self.anchors)
+
         anchors = tf.tile(K.expand_dims(anchors, axis=0),
                           (features_shape[0], 1, 1))
 
