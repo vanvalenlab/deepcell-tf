@@ -41,6 +41,7 @@ from tensorflow.python.keras.initializers import RandomNormal
 from deepcell.initializers import PriorProbability
 from deepcell.layers import TensorProduct
 from deepcell.layers import FilterDetections
+from deepcell.layers import ImageNormalization2D
 from deepcell.layers import Anchors, UpsampleLike, RegressBoxes, ClipBoxes
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
 
@@ -432,7 +433,8 @@ def RetinaNet(backbone,
     """
     inputs = Input(shape=input_shape)
     # force the channel size for backbone input to be `required_channels`
-    fixed_inputs = TensorProduct(required_channels)(inputs)
+    norm = ImageNormalization2D(norm_method='whole_image')(inputs)
+    fixed_inputs = TensorProduct(required_channels)(norm)
     model_kwargs = {
         'include_top': False,
         'input_tensor': fixed_inputs,
