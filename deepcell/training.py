@@ -617,8 +617,8 @@ def train_model_retinanet(model,
                 cooldown=0, min_lr=0),
             RedirectModel(
                 Evaluate(val_data, iou_threshold=.5, score_threshold=.01,
-                         max_detections=100, tensorboard=None,
-                         weighted_average=False),
+                         max_detections=100, tensorboard=tensorboard_callback,
+                         weighted_average=weighted_average),
                 prediction_model),
         ])
 
