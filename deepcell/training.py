@@ -44,6 +44,7 @@ from deepcell.callbacks import RedirectModel, Evaluate
 from deepcell.model_zoo import retinanet_bbox
 from deepcell.utils.retinanet_anchor_utils import make_shapes_callback
 from deepcell.utils.retinanet_anchor_utils import guess_shapes
+from deepcell.utils.retinanet_anchor_utils import evaluate
 from deepcell.utils import train_utils
 from deepcell.utils.data_utils import get_data
 from deepcell.utils.train_utils import rate_scheduler
@@ -463,6 +464,9 @@ def train_model_retinanet(model,
                           sigma=3.0,
                           alpha=0.25,
                           gamma=2.0,
+                          score_threshold=0.01,
+                          iou_threshold=0.5,
+                          max_detections=100,
                           weighted_average=True,
                           lr_sched=rate_scheduler(lr=0.01, decay=0.95),
                           rotation_range=0,
@@ -616,13 +620,40 @@ def train_model_retinanet(model,
                 mode='auto', min_delta=0.0001,
                 cooldown=0, min_lr=0),
             RedirectModel(
-                Evaluate(val_data, iou_threshold=.5, score_threshold=.01,
-                         max_detections=100, tensorboard=tensorboard_callback,
+                Evaluate(val_data,
+                         iou_threshold=iou_threshold,
+                         score_threshold=score_threshold,
+                         max_detections=max_detections,
+                         tensorboard=tensorboard_callback,
                          weighted_average=weighted_average),
                 prediction_model),
         ])
 
     model.save_weights(model_path)
     np.savez(loss_path, loss_history=loss_history.history)
+
+    average_precisions = evaluate(
+        val_data,
+        prediction_model,
+        iou_threshold=iou_threshold,
+        score_threshold=score_threshold,
+        max_detections=max_detections,
+    )
+
+    # print evaluation
+    total_instances = []
+    precisions = []
+    for label, (average_precision, num_annotations) in average_precisions.items():
+        print('{:.0f} instances of class'.format(num_annotations),
+              label, 'with average precision: {:.4f}'.format(average_precision))
+        total_instances.append(num_annotations)
+        precisions.append(average_precision)
+
+    if sum(total_instances) == 0:
+        print('No test instances found.')
+    else:
+        print('mAP using the weighted average of precisions among classes: {:.4f}'.format(
+            sum([a * b for a, b in zip(total_instances, precisions)]) / sum(total_instances)))
+        print('mAP: {:.4f}'.format(sum(precisions) / sum(x > 0 for x in total_instances)))
 
     return model
