@@ -73,9 +73,9 @@ def draw_caption(image, box, caption):
     """
     b = np.array(box).astype(int)
     cv2.putText(image, caption, (b[0], b[1] - 10),
-                cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 0), 2)
+                cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 0), 2)
     cv2.putText(image, caption, (b[0], b[1] - 10),
-                cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 255), 1)
+                cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1)
 
 
 def draw_detections(image,
@@ -102,7 +102,7 @@ def draw_detections(image,
 
         # draw labels
         name = label_to_name(labels[i]) if label_to_name else labels[i]
-        caption = '{}: {0:.2f}'.format(name, scores[i])
+        caption = '{0}: {1:.2f}'.format(name, scores[i])
         draw_caption(image, boxes[i, :], caption)
 
 
