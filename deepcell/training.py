@@ -517,7 +517,7 @@ def train_model_retinanet(model,
         normalizer = K.maximum(1, K.shape(indices)[0])
         normalizer = K.cast(normalizer, dtype=K.floatx())
 
-        return loss / normalizer
+        return K.sum(loss) / normalizer
 
     def classification_loss(y_true, y_pred):
         # TODO: try weighted_categorical_crossentropy
@@ -539,7 +539,7 @@ def train_model_retinanet(model,
         normalizer = K.cast(K.shape(normalizer)[0], K.floatx())
         normalizer = K.maximum(K.cast_to_floatx(1.0), normalizer)
 
-        return loss / normalizer
+        return K.sum(loss) / normalizer
 
     model.compile(loss={'regression': regress_loss,
                         'classification': classification_loss},
