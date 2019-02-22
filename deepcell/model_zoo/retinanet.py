@@ -445,6 +445,7 @@ def RetinaNet(backbone,
     vgg_backbones = {'vgg16', 'vgg19'}
     densenet_backbones = {'densenet121', 'densenet169', 'densenet201'}
     resnet_backbones = {'resnet50'}
+
     if backbone in vgg_backbones:
         layer_names = ['block3_pool', 'block4_pool', 'block5_pool']
         if backbone == 'vgg16':
@@ -467,6 +468,9 @@ def RetinaNet(backbone,
         for idx, block_num in enumerate(blocks):
             name = 'conv{}_block{}_concat'.format(idx + 2, block_num)
             layer_outputs.append(model.get_layer(name=name).output)
+        # create the densenet backbone
+        model = Model(inputs=inputs, outputs=layer_outputs[1:], name=model.name)
+        layer_outputs = model.outputs
 
     elif backbone in resnet_backbones:
         model = applications.ResNet50(**model_kwargs)
