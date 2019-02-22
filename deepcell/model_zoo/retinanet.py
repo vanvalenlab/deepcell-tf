@@ -356,6 +356,10 @@ def retinanet_bbox(model=None,
         ]
         ```
     """
+    # TODO: class_specific_filter=True is broken.
+    # ValueError: Cannot use 'filtered_detections/map/while/strided_slice_1'
+    # as input to 'filtered_detections/map/while/ones/packed' because
+    # 'filtered_detections/map/while/strided_slice_1' is in a while loop.
 
     # if no anchor parameters are passed, use default values
     if anchor_params is None:
