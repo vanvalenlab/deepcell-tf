@@ -448,6 +448,7 @@ def RetinaNet(backbone,
     }
     vgg_backbones = {'vgg16', 'vgg19'}
     densenet_backbones = {'densenet121', 'densenet169', 'densenet201'}
+    mobilenet_backbones = {'mobilenet', 'mobilenetv2'}
     resnet_backbones = {'resnet50'}
 
     if backbone in vgg_backbones:
@@ -479,6 +480,20 @@ def RetinaNet(backbone,
     elif backbone in resnet_backbones:
         model = applications.ResNet50(**model_kwargs)
         layer_outputs = model.outputs[1:]
+
+    elif backbone in mobilenet_backbones:
+        alpha = kwargs.get('alpha', 1.0)
+        if backbone.endswith('v2'):
+            model = applications.MobileNetV2(alpha=alpha, **model_kwargs)
+            block_ids = (12, 15, 16)
+            layer_names = ['block_%s_depthwise_relu' % i for i in block_ids]
+        else:
+            model = applications.MobileNet(alpha=alpha, **model_kwargs)
+            block_ids = (5, 11, 13)
+            layer_names = ['conv_pw_%s_relu' % i for i in block_ids]
+        layer_outputs = [model.get_layer(name).output for name in layer_names]
+        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
+        layer_outputs = model.outputs
 
     else:
         backbones = list(densenet_backbones + resnet_backbones + vgg_backbones)
