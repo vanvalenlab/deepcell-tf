@@ -401,6 +401,7 @@ def retinanet_bbox(model=None,
 def RetinaNet(backbone,
               num_classes,
               input_shape,
+              norm_method='whole_image',
               weights=None,
               pooling=None,
               required_channels=3,
@@ -433,7 +434,7 @@ def RetinaNet(backbone,
     """
     inputs = Input(shape=input_shape)
     # force the channel size for backbone input to be `required_channels`
-    norm = ImageNormalization2D(norm_method='whole_image')(inputs)
+    norm = ImageNormalization2D(norm_method=norm_method)(inputs)
     fixed_inputs = TensorProduct(required_channels)(norm)
     model_kwargs = {
         'include_top': False,
