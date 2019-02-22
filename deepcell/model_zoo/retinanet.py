@@ -448,7 +448,7 @@ def RetinaNet(backbone,
     }
     vgg_backbones = {'vgg16', 'vgg19'}
     densenet_backbones = {'densenet121', 'densenet169', 'densenet201'}
-    mobilenet_backbones = {'mobilenet', 'mobilenetv2'}
+    mobilenet_backbones = {'mobilenet', 'mobilenet_v2'}
     resnet_backbones = {'resnet50'}
 
     if backbone in vgg_backbones:
