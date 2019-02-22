@@ -1847,6 +1847,8 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
 class RetinaNetIterator(Iterator):
     """Iterator yielding data from Numpy arrayss (`X and `y`).
 
+    Adapted from https://github.com/fizyr/keras-retinanet.
+
     Args:
         train_dict: dictionary consisting of numpy arrays for `X` and `y`.
         image_data_generator: Instance of `ImageDataGenerator`

@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Custom initializers from https://github.com/fizyer/keras-retinanet"""
+"""Custom initializers"""
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -35,6 +35,8 @@ from tensorflow.python.keras.initializers import Initializer
 
 class PriorProbability(Initializer):
     """Initializer that applies a prior probability to the weights.
+
+    Adapted from https://github.com/fizyr/keras-retinanet.
 
     Args:
         probability: The prior probability to apply to the weights

@@ -54,6 +54,9 @@ def get_js_video(images, batch=0, channel=0, cmap='jet'):
 
 def draw_box(image, box, color, thickness=2):
     """Draws a box on an image with a given color.
+
+    Adapted from https://github.com/fizyr/keras-retinanet.
+
     Args:
         image: The image to draw on.
         box: A list of 4 elements (x1, y1, x2, y2).
@@ -66,6 +69,9 @@ def draw_box(image, box, color, thickness=2):
 
 def draw_caption(image, box, caption):
     """Draws a caption above the box in an image.
+
+    Adapted from https://github.com/fizyr/keras-retinanet.
+
     Args:
         image   : The image to draw on.
         box     : A list of 4 elements (x1, y1, x2, y2).
@@ -86,6 +92,9 @@ def draw_detections(image,
                     label_to_name=None,
                     score_threshold=0.5):
     """Draws detections in an image.
+
+    Adapted from https://github.com/fizyr/keras-retinanet.
+
     Args:
         image: The image to draw on.
         boxes: A [N, 4] matrix (x1, y1, x2, y2).
@@ -111,6 +120,9 @@ def draw_annotations(image,
                      color=[31, 0, 255],
                      label_to_name=None):
     """Draws annotations in an image.
+
+    Adapted from https://github.com/fizyr/keras-retinanet.
+
     Args:
         image: The image to draw on.
         annotations: A [N, 5] matrix (x1, y1, x2, y2, label) or dictionary

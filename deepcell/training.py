@@ -474,6 +474,10 @@ def train_model_retinanet(model,
                           shear=0,
                           zoom_range=0,
                           **kwargs):
+    """Train a RetinaNet model from the given backbone
+    
+    Adapted from https://github.com/fizyr/keras-retinanet.
+    """
     is_channels_first = K.image_data_format() == 'channels_first'
 
     if model_name is None:
@@ -566,6 +570,7 @@ def train_model_retinanet(model,
 
     # this will do preprocessing and realtime data augmentation
     datagen = image_generators.RetinaNetGenerator(
+        fill_mode='constant',  # for rotations
         rotation_range=rotation_range,
         shear_range=shear,
         zoom_range=zoom_range,
@@ -573,6 +578,7 @@ def train_model_retinanet(model,
         vertical_flip=flip)
 
     datagen_val = image_generators.RetinaNetGenerator(
+        fill_mode='constant',  # for rotations
         rotation_range=0,
         shear_range=0,
         zoom_range=0,
