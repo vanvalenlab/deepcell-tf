@@ -719,7 +719,10 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         # Nullify the transforms that don't affect `y`
         params['brightness'] = None
         params['channel_shift_intensity'] = None
+        _interpolation_order = self.interpolation_order
+        self.interpolation_order = 0
         y = self.apply_transform(y, params)
+        self.interpolation_order = _interpolation_order
         return x, y
 
 
@@ -927,11 +930,14 @@ class MovieDataGenerator(ImageDataGenerator):
             if y is not None:
                 params['brightness'] = None
                 params['channel_shift_intensity'] = None
+                _interpolation_order = self.interpolation_order
+                self.interpolation_order = 0
                 if self.data_format == 'channels_first':
                     y_trans = self.apply_transform(y[:, frame], params)
                     y_new[:, frame] = np.rollaxis(y_trans, 1, 0)
                 else:
                     y_new[frame] = self.apply_transform(y[frame], params)
+                self.interpolation_order = _interpolation_order
         # Note: Undo workaround
         self.row_axis += 1
         self.col_axis += 1
