@@ -444,12 +444,13 @@ def RetinaNet(backbone,
         'include_top': False,
         'input_tensor': fixed_inputs,
         'weights': weights,
-        'pooling': pooling,
+        'pooling': pooling
     }
     vgg_backbones = {'vgg16', 'vgg19'}
     densenet_backbones = {'densenet121', 'densenet169', 'densenet201'}
     mobilenet_backbones = {'mobilenet', 'mobilenet_v2'}
     resnet_backbones = {'resnet50'}
+    nasnet_backbones = {'nasnet_large', 'nasnet_mobile'}
 
     if backbone in vgg_backbones:
         layer_names = ['block3_pool', 'block4_pool', 'block5_pool']
@@ -491,6 +492,18 @@ def RetinaNet(backbone,
             model = applications.MobileNet(alpha=alpha, **model_kwargs)
             block_ids = (5, 11, 13)
             layer_names = ['conv_pw_%s_relu' % i for i in block_ids]
+        layer_outputs = [model.get_layer(name).output for name in layer_names]
+        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
+        layer_outputs = model.outputs
+
+    elif backbone in nasnet_backbones:
+        if backbone.endswith('large'):
+            model = applications.NASNetLarge(**model_kwargs)
+            block_ids = [3, 8, 12]
+        else:
+            model = applications.NASNetMobile(**model_kwargs)
+            block_ids = [5, 12, 18]
+        layer_names = ['normal_conv_1_%s' % i for i in block_ids]
         layer_outputs = [model.get_layer(name).output for name in layer_names]
         model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
         layer_outputs = model.outputs
