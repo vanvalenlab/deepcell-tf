@@ -229,11 +229,7 @@ class cell_tracker():
         for cell_idx, cell_id in enumerate(cells_in_frame):
             cell_features = self._get_features(self.x, self.y, [frame], [cell_id])
             for feature_name in self.features:
-                if feature_name == 'neighborhood':
-                    cell_feature_name = '~future area'
-                else:
-                    cell_feature_name = feature_name
-                frame_features[feature_name][cell_idx] = cell_features[cell_feature_name]
+                frame_features[feature_name][cell_idx] = cell_features[feature_name]
 
         # Call model.predict only on inputs that are near each other
         inputs = {feature_name: ([], []) for feature_name in self.features}
@@ -250,6 +246,18 @@ class cell_tracker():
                         feature_name,
                         track_features[feature_name][track],
                         frame_features[feature_name][cell])
+
+                    # this condition changes `frame_feature`
+                    if feature_name == "neighborhood":
+                        # we need to get the future frame for the track we are comparing to
+                        track_label = self.tracks[track]["label"]
+                        try:
+                            track_frame_features = self._get_features(self.x, self.y_tracked, [frame - 1], [track_label])
+                            frame_feature = track_frame_features["~future area"]
+                        except:
+                            # `track_label` might not exist in `frame - 1`
+                            # if this happens, default to the cell's neighborhood
+                            pass
 
                     if ok:
                         feature_vals[feature_name] = (track_feature, frame_feature)
@@ -641,6 +649,7 @@ class cell_tracker():
             X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
             props = regionprops(np.squeeze(np.int32(y_frame == cell_label)))
+
             minr, minc, maxr, maxc = props[0].bbox
             centroids[counter] = props[0].centroid
             rprops[counter] = np.array([
