@@ -131,7 +131,6 @@ class cell_tracker():
         self.tracks[new_track]['daughters'] = []
         self.tracks[new_track]['capped'] = False
         self.tracks[new_track]['frame_div'] = None
-        # self.tracks[track]['death_frame'] = None
         self.tracks[new_track]['parent'] = None
 
         self.tracks[new_track].update(self._get_features(self.x, self.y, [frame], [old_label]))
@@ -444,6 +443,7 @@ class cell_tracker():
                 continue
             if p > max_prob:
                 parent_id, max_prob = track_id, p
+                print(p)
 
         return parent_id
 
@@ -680,11 +680,15 @@ class cell_tracker():
                 X_frame, y_frame, cell_label, X.shape[channel_axis])
 
             # Try to assign future areas if future frame is available
+            # TODO: We shouldn't grab a future frame if the frame is dark (was padded)
             try:
                 if self.data_format == 'channels_first':
                     X_future_frame = X[:, frame + 1]
                 else:
                     X_future_frame = X[frame + 1]
+                # Temp fix to daughters at end of movie
+                if len(np.unique(X_future_frame)) == 1:
+                    raise IndexError
                 future_areas[counter] = self._sub_area(
                     X_future_frame, y_frame, cell_label, X.shape[channel_axis])
             except IndexError:
