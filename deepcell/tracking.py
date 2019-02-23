@@ -686,9 +686,6 @@ class cell_tracker():
                     X_future_frame = X[:, frame + 1]
                 else:
                     X_future_frame = X[frame + 1]
-                # Temp fix to daughters at end of movie
-                if len(np.unique(X_future_frame)) == 1:
-                    raise IndexError
                 future_areas[counter] = self._sub_area(
                     X_future_frame, y_frame, cell_label, X.shape[channel_axis])
             except IndexError:
