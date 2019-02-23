@@ -480,7 +480,10 @@ def RetinaNet(backbone,
 
     elif backbone in resnet_backbones:
         model = applications.ResNet50(**model_kwargs)
-        layer_outputs = model.outputs[1:]
+        layer_names = ['res3d_branch2c', 'res4f_branch2c', 'res5c_branch2c']
+        layer_outputs = [model.get_layer(name).output for name in layer_names]
+        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
+        layer_outputs = model.outputs
 
     elif backbone in mobilenet_backbones:
         alpha = kwargs.get('alpha', 1.0)
