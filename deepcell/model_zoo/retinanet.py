@@ -499,10 +499,10 @@ def RetinaNet(backbone,
     elif backbone in nasnet_backbones:
         if backbone.endswith('large'):
             model = applications.NASNetLarge(**model_kwargs)
-            block_ids = [3, 8, 12]
+            block_ids = [5, 12, 18]
         else:
             model = applications.NASNetMobile(**model_kwargs)
-            block_ids = [5, 12, 18]
+            block_ids = [3, 8, 12]
         layer_names = ['normal_conv_1_%s' % i for i in block_ids]
         layer_outputs = [model.get_layer(name).output for name in layer_names]
         model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
