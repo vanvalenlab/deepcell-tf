@@ -489,6 +489,35 @@ def shift(shape, stride, anchors):
     return shifted_anchors
 
 
+def overlap(a, b):
+    """Computes the IoU overlap of boxes in a and b.
+
+    Args:
+        a: np.array of shape (N, 4) of boxes.
+        b: np.array of shape (K, 4) of boxes.
+
+    Returns:
+        A np.array of shape (N, K) of overlap between boxes from a and b.
+    """
+    area = (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
+
+    iw = K.minimum(K.expand_dims(a[:, 2], axis=1), b[:, 2]) - \
+        K.maximum(K.expand_dims(a[:, 0], axis=1), b[:, 0])
+    ih = K.minimum(K.expand_dims(a[:, 3], axis=1), b[:, 3]) - \
+        K.maximum(K.expand_dims(a[:, 1], axis=1), b[:, 1])
+
+    iw = K.maximum(iw, 0)
+    ih = K.maximum(ih, 0)
+
+    ua = K.expand_dims((a[:, 2] - a[:, 0]) * (a[:, 3] - a[:, 1]), axis=1) + \
+        area - iw * ih
+    ua = K.maximum(ua, K.epsilon())
+
+    intersection = iw * ih
+
+    return intersection / ua
+
+
 def _compute_ap(recall, precision):
     """Compute the average precision, given the recall and precision curves.
 
