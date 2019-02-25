@@ -317,14 +317,14 @@ def mask(y_true, y_pred, iou_threshold=0.5, mask_size=(28, 28)):
 
     # reshape the masks back to their original size
     masks_target = K.reshape(masks_target,
-                                (K.shape(masks_target)[0],
-                                K.shape(masks_target)[1],
-                                height, width))
+                             (K.shape(masks_target)[0],
+                              K.shape(masks_target)[1],
+                              height, width))
     masks = K.reshape(masks,
-                        (K.shape(masks)[0],
-                        K.shape(masks)[1],
-                        mask_size[0],
-                        mask_size[1], -1))
+                      (K.shape(masks)[0],
+                       K.shape(masks)[1],
+                       mask_size[0],
+                       mask_size[1], -1))
 
     # TODO: Fix batch_size > 1
     boxes = boxes[0]
