@@ -1800,6 +1800,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
              compute_shapes=guess_shapes,
              num_classes=1,
              clear_borders=False,
+             include_masks=False,
              batch_size=32,
              shuffle=False,
              seed=None,
@@ -1812,7 +1813,8 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             train_dict: dictionary of X and y tensors. Both should be rank 4.
             compute_shapes: function to determine the shapes of the anchors
             num_classes: number of classes to predict
-            clear_borders: boolean, whether to use `clear_border` on y.
+            clear_borders: boolean, whether to use `clear_border` on `y`.
+            include_masks: boolean, train on mask data (MaskRCNN).
             batch_size: int (default: 1).
             shuffle: boolean (default: True).
             seed: int (default: None).
@@ -1835,6 +1837,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             compute_shapes=compute_shapes,
             num_classes=num_classes,
             clear_borders=clear_borders,
+            include_masks=include_masks,
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
@@ -1856,6 +1859,8 @@ class RetinaNetIterator(Iterator):
         compute_shapes: functor for generating shapes, based on the model.
         min_objects: Integer, image with fewer than `min_objects` are ignored.
         num_classes: Integer, number of classes for classification.
+        clear_borders: Boolean, whether to call `clear_border` on `y`.
+        include_masks: Boolean, whether to yield mask data.
         batch_size: Integer, size of a batch.
         shuffle: Boolean, whether to shuffle the data between epochs.
         seed: Random seed for data shuffling.
@@ -1877,6 +1882,7 @@ class RetinaNetIterator(Iterator):
                  min_objects=3,
                  num_classes=1,
                  clear_borders=False,
+                 include_masks=False,
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -1902,6 +1908,7 @@ class RetinaNetIterator(Iterator):
         self.compute_shapes = compute_shapes
         self.min_objects = min_objects
         self.num_classes = num_classes
+        self.include_masks = include_masks
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
         self.data_format = data_format
@@ -1973,19 +1980,25 @@ class RetinaNetIterator(Iterator):
         Returns:
             annotations: dict of `bboxes` and `labels`
         """
-        labels, bboxes = [], []
+        labels, bboxes, masks = [], [], []
         for prop in regionprops(np.squeeze(y.astype('int'))):
             y1, x1, y2, x2 = prop.bbox
             bboxes.append([x1, y1, x2, y2])
             labels.append(0)  # boolean object detection
+            masks.append(np.where(y == prop.label, 1, 0))
 
         labels = np.array(labels)
         bboxes = np.array(bboxes)
+        masks = np.array(masks).astype('uint8')
 
         # reshape bboxes in case it is empty.
         bboxes = np.reshape(bboxes, (bboxes.shape[0], 4))
 
         annotations = {'labels': labels, 'bboxes': bboxes}
+
+        if self.include_masks:
+            annotations['masks'] = masks
+
         annotations = self.filter_annotations(y, annotations)
         return annotations
 
