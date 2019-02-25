@@ -457,6 +457,7 @@ def train_model_retinanet(model,
                           n_epoch=10,
                           batch_size=1,
                           num_gpus=None,
+                          include_masks=False,
                           optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
                           log_dir='/data/tensorboard_logs',
                           model_dir='/data/models',
@@ -571,6 +572,7 @@ def train_model_retinanet(model,
     # this will do preprocessing and realtime data augmentation
     datagen = image_generators.RetinaNetGenerator(
         # fill_mode='constant',  # for rotations
+        include_masks=include_masks,
         rotation_range=rotation_range,
         shear_range=shear,
         zoom_range=zoom_range,
@@ -579,6 +581,7 @@ def train_model_retinanet(model,
 
     datagen_val = image_generators.RetinaNetGenerator(
         # fill_mode='constant',  # for rotations
+        include_masks=include_masks,
         rotation_range=0,
         shear_range=0,
         zoom_range=0,
