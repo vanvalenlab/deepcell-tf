@@ -87,8 +87,7 @@ def draw_caption(image, box, caption):
 def draw_mask(image,
               box,
               mask,
-              label=None,
-              color=None,
+              color=[31, 0, 255],
               binarize_threshold=0.5):
     """Draws a mask in a given box.
 
@@ -103,37 +102,36 @@ def draw_mask(image,
             construct a default color.
         binarize_threshold: Threshold used for binarizing the mask.
     """
-    if label is not None:
-        color = label_color(label)
-    if color is None:
-        color = (0, 255, 0)
-
     # resize to fit the box
     mask = mask.astype(np.float32)
     mask = cv2.resize(mask, (box[2] - box[0], box[3] - box[1]))
 
     # binarize the mask
-    mask = (mask > binarize_threshold).astype(np.uint8)
+    mask = (mask > binarize_threshold).astype('uint8')
 
     # draw the mask in the image
-    mask_image = np.zeros((image.shape[0], image.shape[1]), np.uint8)
+    mask_image = np.zeros((image.shape[0], image.shape[1]), 'uint8')
     mask_image[box[1]:box[3], box[0]:box[2]] = mask
     mask = mask_image
 
     # compute a nice border around the mask
-    border = mask - cv2.erode(mask, np.ones((5, 5), np.uint8), iterations=1)
+    border = mask - cv2.erode(mask, np.ones((5, 5), 'uint8'), iterations=1)
 
     # apply color to the mask and border
-    mask = (np.stack([mask] * 3, axis=2) * color).astype(np.uint8)
-    border = (np.stack([border] * 3, axis=2) * (255, 255, 255)).astype(np.uint8)
+    mask = (np.stack([mask] * 3, axis=2) * color).astype('uint8')
+    border = (np.stack([border] * 3, axis=2) * (255, 255, 255)).astype('uint8')
 
     # draw the mask
     indices = np.where(mask != [0, 0, 0])
-    image[indices[0], indices[1], :] = 0.5 * image[indices[0], indices[1], :] + 0.5 * mask[indices[0], indices[1], :]
+    _mask = 0.5 * image[indices[0], indices[1], :] + \
+        0.5 * mask[indices[0], indices[1], :]
+    image[indices[0], indices[1], :] = _mask
 
     # draw the border
     indices = np.where(border != [0, 0, 0])
-    image[indices[0], indices[1], :] = 0.2 * image[indices[0], indices[1], :] + 0.8 * border[indices[0], indices[1], :]
+    _border = 0.2 * image[indices[0], indices[1], :] + \
+        0.8 * border[indices[0], indices[1], :]
+    image[indices[0], indices[1], :] = _border
 
 
 def draw_detections(image,
@@ -154,7 +152,7 @@ def draw_detections(image,
         labels: A list of N labels.
         color: The color of the boxes.
         label_to_name: (optional) Functor for mapping a label to a name.
-        score_threshold: Threshold used for determining what detections to draw.
+        score_threshold: Threshold used for determining the detections to draw.
     """
     selection = np.where(scores > score_threshold)[0]
 
