@@ -550,9 +550,23 @@ def train_model_retinanet(model,
 
         return K.sum(loss) / normalizer
 
-    model.compile(loss={'regression': regress_loss,
-                        'classification': classification_loss},
-                  optimizer=optimizer)
+    def mask_loss(y_true, y_pred):
+        return tf.cond(
+            K.any(K.equal(K.shape(y_true), 0)),
+            lambda: K.cast_to_floatx(0.0),
+            lambda: losses.mask(y_true, y_pred,
+                                iou_threshold=iou_threshold,
+                                mask_size=(28, 28)))
+
+    loss = {
+        'regression': regress_loss,
+        'classification': classification_loss
+    }
+
+    if include_masks:
+        loss['masks']: mask_loss
+
+    model.compile(loss=loss, optimizer=optimizer)
 
     if num_gpus >= 2:
         # Each GPU must have at least one validation example
