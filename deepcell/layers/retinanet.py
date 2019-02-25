@@ -132,41 +132,6 @@ class Anchors(Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-class UpsampleLike(Layer):
-    """Layer for upsampling a Tensor to be the same shape as another Tensor."""
-
-    def __init__(self, data_format=None, **kwargs):
-        super(UpsampleLike, self).__init__(**kwargs)
-        self.data_format = conv_utils.normalize_data_format(data_format)
-
-    def call(self, inputs, **kwargs):
-        source, target = inputs
-        target_shape = K.shape(target)
-        if self.data_format == 'channels_first':
-            source = tf.transpose(source, (0, 2, 3, 1))
-            new_shape = (target_shape[2], target_shape[3])
-            output = tf.image.resize_images(
-                source, new_shape,
-                method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-            output = tf.transpose(output, (0, 3, 1, 2))
-            return output
-        new_shape = (target_shape[1], target_shape[2])
-        return tf.image.resize_images(
-            source, new_shape, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-
-    def compute_output_shape(self, input_shape):
-        in_0 = tensor_shape.TensorShape(input_shape[0]).as_list()
-        in_1 = tensor_shape.TensorShape(input_shape[1]).as_list()
-        if self.data_format == 'channels_first':
-            return tensor_shape.TensorShape(([in_0[0], in_0[1]] + in_1[2:4]))
-        return tensor_shape.TensorShape(([in_0[0]] + in_1[1:3] + [in_0[-1]]))
-
-    def get_config(self):
-        config = {'data_format': self.data_format}
-        base_config = super(UpsampleLike, self).get_config()
-        return dict(list(base_config.items()) + list(config.items()))
-
-
 class RegressBoxes(Layer):
     """Keras layer for applying regression values to boxes."""
 
