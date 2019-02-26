@@ -292,6 +292,8 @@ def MaskRCNN(backbone,
     }
     layer_outputs = get_pyramid_layer_outputs(backbone, inputs, **model_kwargs)
 
+    kwargs['backbone_layers'] = layer_outputs
+
     # create the full model
     return retinanet_mask(
         inputs=inputs,
@@ -299,5 +301,4 @@ def MaskRCNN(backbone,
         crop_size=crop_size,
         name='{}_retinanet_mask'.format(backbone),
         mask_dtype=mask_dtype,
-        backbone_layers=layer_outputs,
         **kwargs)
