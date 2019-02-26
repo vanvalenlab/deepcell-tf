@@ -42,6 +42,7 @@ from deepcell.layers import ClipBoxes, RegressBoxes, FilterDetections
 from deepcell.layers import TensorProduct, ImageNormalization2D
 from deepcell.model_zoo.retinanet import retinanet, __build_anchors
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
+from deepcell.utils.misc_utils import get_pyramid_layer_outputs
 
 
 def default_mask_model(num_classes,
@@ -52,7 +53,22 @@ def default_mask_model(num_classes,
                        name='mask_submodel',
                        mask_dtype=K.floatx(),
                        retinanet_dtype=K.floatx()):
+    """Creates the default mask submodel.
 
+    Args:
+        num_classes: Number of classes to predict a score for at each feature level.
+        pyramid_feature_size: The number of filters to expect from the
+            feature pyramid levels.
+        mask_feature_size: The number of filters to expect from the masks.
+        roi_size: The number of filters to use in the Roi Layers.
+        mask_size: The size of the masks.
+        mask_dtype: Dtype to use for mask tensors.
+        retinanet_dtype: Dtype retinanet models expect.
+        name: The name of the submodel.
+
+    Returns:
+        A keras.models.Model that predicts classes for each anchor.
+    """
     options = {
         'kernel_size': 3,
         'strides': 1,
@@ -106,6 +122,19 @@ def default_mask_model(num_classes,
 def default_roi_submodels(num_classes,
                           mask_dtype=K.floatx(),
                           retinanet_dtype=K.floatx()):
+    """Create a list of default roi submodels.
+
+    The default submodels contains a single mask model.
+
+    Args:
+        num_classes: Number of classes to use.
+        mask_dtype: Dtype to use for mask tensors.
+        retinanet_dtype: Dtype retinanet models expect.
+
+    Returns:
+        A list of tuple, where the first element is the name of the submodel
+        and the second element is the submodel itself.
+    """
     return [
         ('masks', default_mask_model(num_classes, mask_dtype=mask_dtype,
                                      retinanet_dtype=retinanet_dtype)),
@@ -118,6 +147,7 @@ def retinanet_mask(inputs,
                    anchor_params=None,
                    nms=True,
                    class_specific_filter=False,
+                   crop_size=(14, 14),
                    name='retinanet-mask',
                    roi_submodels=None,
                    mask_dtype=K.floatx(),
@@ -139,6 +169,7 @@ def retinanet_mask(inputs,
         mask_dtype: Data type of the masks, can be different from the main one.
         name: Name of the model.
         **kwargs: Additional kwargs to pass to the retinanet bbox model.
+
     Returns:
         Model with inputs as input and as output the output of each submodel
         for each pyramid level and the detections. The order is as defined in
@@ -196,19 +227,19 @@ def retinanet_mask(inputs,
     scores = detections[1]
 
     # get the region of interest features
-    rois = RoiAlign()([image_shape, boxes, scores] + features)
+    rois = RoiAlign(crop_size)([image_shape, boxes, scores] + features)
 
     # execute maskrcnn submodels
     maskrcnn_outputs = [submodel(rois) for _, submodel in roi_submodels]
 
     # concatenate boxes for loss computation
-    zipped = zip(roi_submodels, maskrcnn_outputs)
     trainable_outputs = [ConcatenateBoxes(name=name)([boxes, output])
-                         for (name, _), output in zipped]
+                         for (name, _), output in zip(
+                             roi_submodels, maskrcnn_outputs)]
 
     # reconstruct the new output
-    outputs = [regression, classification]
-    outputs += other + trainable_outputs + detections + maskrcnn_outputs
+    outputs = [regression, classification] + \
+        other + trainable_outputs + detections + maskrcnn_outputs
 
     return Model(inputs=inputs, outputs=outputs, name=name)
 
@@ -217,6 +248,7 @@ def MaskRCNN(backbone,
              num_classes,
              input_shape,
              norm_method='whole_image',
+             crop_size=(14, 14),
              weights=None,
              pooling=None,
              required_channels=3,
@@ -257,79 +289,12 @@ def MaskRCNN(backbone,
         'weights': weights,
         'pooling': pooling
     }
-    vgg_backbones = {'vgg16', 'vgg19'}
-    densenet_backbones = {'densenet121', 'densenet169', 'densenet201'}
-    mobilenet_backbones = {'mobilenet', 'mobilenet_v2'}
-    resnet_backbones = {'resnet50'}
-    nasnet_backbones = {'nasnet_large', 'nasnet_mobile'}
-
-    if backbone in vgg_backbones:
-        layer_names = ['block3_pool', 'block4_pool', 'block5_pool']
-        if backbone == 'vgg16':
-            model = applications.VGG16(**model_kwargs)
-        else:
-            model = applications.VGG19(**model_kwargs)
-        layer_outputs = [model.get_layer(n).output for n in layer_names]
-
-    elif backbone in densenet_backbones:
-        if backbone == 'densenet121':
-            model = applications.DenseNet121(**model_kwargs)
-            blocks = [6, 12, 24, 16]
-        elif backbone == 'densenet169':
-            model = applications.DenseNet169(**model_kwargs)
-            blocks = [6, 12, 32, 32]
-        elif backbone == 'densenet201':
-            model = applications.DenseNet201(**model_kwargs)
-            blocks = [6, 12, 48, 32]
-        layer_outputs = []
-        for idx, block_num in enumerate(blocks):
-            name = 'conv{}_block{}_concat'.format(idx + 2, block_num)
-            layer_outputs.append(model.get_layer(name=name).output)
-        # create the densenet backbone
-        model = Model(inputs=inputs, outputs=layer_outputs[1:], name=model.name)
-        layer_outputs = model.outputs
-
-    elif backbone in resnet_backbones:
-        model = applications.ResNet50(**model_kwargs)
-        layer_names = ['res3d_branch2c', 'res4f_branch2c', 'res5c_branch2c']
-        layer_outputs = [model.get_layer(name).output for name in layer_names]
-        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
-        layer_outputs = model.outputs
-
-    elif backbone in mobilenet_backbones:
-        alpha = kwargs.get('alpha', 1.0)
-        if backbone.endswith('v2'):
-            model = applications.MobileNetV2(alpha=alpha, **model_kwargs)
-            block_ids = (12, 15, 16)
-            layer_names = ['block_%s_depthwise_relu' % i for i in block_ids]
-        else:
-            model = applications.MobileNet(alpha=alpha, **model_kwargs)
-            block_ids = (5, 11, 13)
-            layer_names = ['conv_pw_%s_relu' % i for i in block_ids]
-        layer_outputs = [model.get_layer(name).output for name in layer_names]
-        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
-        layer_outputs = model.outputs
-
-    elif backbone in nasnet_backbones:
-        if backbone.endswith('large'):
-            model = applications.NASNetLarge(**model_kwargs)
-            block_ids = [5, 12, 18]
-        else:
-            model = applications.NASNetMobile(**model_kwargs)
-            block_ids = [3, 8, 12]
-        layer_names = ['normal_conv_1_%s' % i for i in block_ids]
-        layer_outputs = [model.get_layer(name).output for name in layer_names]
-        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
-        layer_outputs = model.outputs
-
-    else:
-        backbones = list(densenet_backbones + resnet_backbones + vgg_backbones)
-        raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
-                         ', '.join(backbones))
+    layer_outputs = get_pyramid_layer_outputs(backbone, inputs, **model_kwargs)
 
     # create the full model
     return retinanet_mask(
         inputs=inputs,
         num_classes=num_classes,
         backbone_layers=layer_outputs,
+        crop_size=crop_size,
         **kwargs)

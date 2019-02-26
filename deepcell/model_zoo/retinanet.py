@@ -44,6 +44,7 @@ from deepcell.layers import FilterDetections
 from deepcell.layers import ImageNormalization2D
 from deepcell.layers import Anchors, UpsampleLike, RegressBoxes, ClipBoxes
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
+from deepcell.utils.misc_utils import get_pyramid_layer_outputs
 
 
 def default_classification_model(num_classes,
@@ -446,75 +447,7 @@ def RetinaNet(backbone,
         'weights': weights,
         'pooling': pooling
     }
-    vgg_backbones = {'vgg16', 'vgg19'}
-    densenet_backbones = {'densenet121', 'densenet169', 'densenet201'}
-    mobilenet_backbones = {'mobilenet', 'mobilenet_v2'}
-    resnet_backbones = {'resnet50'}
-    nasnet_backbones = {'nasnet_large', 'nasnet_mobile'}
-
-    if backbone in vgg_backbones:
-        layer_names = ['block3_pool', 'block4_pool', 'block5_pool']
-        if backbone == 'vgg16':
-            model = applications.VGG16(**model_kwargs)
-        else:
-            model = applications.VGG19(**model_kwargs)
-        layer_outputs = [model.get_layer(n).output for n in layer_names]
-
-    elif backbone in densenet_backbones:
-        if backbone == 'densenet121':
-            model = applications.DenseNet121(**model_kwargs)
-            blocks = [6, 12, 24, 16]
-        elif backbone == 'densenet169':
-            model = applications.DenseNet169(**model_kwargs)
-            blocks = [6, 12, 32, 32]
-        elif backbone == 'densenet201':
-            model = applications.DenseNet201(**model_kwargs)
-            blocks = [6, 12, 48, 32]
-        layer_outputs = []
-        for idx, block_num in enumerate(blocks):
-            name = 'conv{}_block{}_concat'.format(idx + 2, block_num)
-            layer_outputs.append(model.get_layer(name=name).output)
-        # create the densenet backbone
-        model = Model(inputs=inputs, outputs=layer_outputs[1:], name=model.name)
-        layer_outputs = model.outputs
-
-    elif backbone in resnet_backbones:
-        model = applications.ResNet50(**model_kwargs)
-        layer_names = ['res3d_branch2c', 'res4f_branch2c', 'res5c_branch2c']
-        layer_outputs = [model.get_layer(name).output for name in layer_names]
-        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
-        layer_outputs = model.outputs
-
-    elif backbone in mobilenet_backbones:
-        alpha = kwargs.get('alpha', 1.0)
-        if backbone.endswith('v2'):
-            model = applications.MobileNetV2(alpha=alpha, **model_kwargs)
-            block_ids = (12, 15, 16)
-            layer_names = ['block_%s_depthwise_relu' % i for i in block_ids]
-        else:
-            model = applications.MobileNet(alpha=alpha, **model_kwargs)
-            block_ids = (5, 11, 13)
-            layer_names = ['conv_pw_%s_relu' % i for i in block_ids]
-        layer_outputs = [model.get_layer(name).output for name in layer_names]
-        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
-        layer_outputs = model.outputs
-
-    elif backbone in nasnet_backbones:
-        if backbone.endswith('large'):
-            model = applications.NASNetLarge(**model_kwargs)
-            block_ids = [5, 12, 18]
-        else:
-            model = applications.NASNetMobile(**model_kwargs)
-            block_ids = [3, 8, 12]
-        layer_names = ['normal_conv_1_%s' % i for i in block_ids]
-        layer_outputs = [model.get_layer(name).output for name in layer_names]
-        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
-        layer_outputs = model.outputs
-
-    else:
-        backbones = list(densenet_backbones + resnet_backbones + vgg_backbones)
-        raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
-                         ', '.join(backbones))
+    layer_outputs = get_pyramid_layer_outputs(backbone, inputs, **model_kwargs)
 
     # create the full model
     return retinanet(
