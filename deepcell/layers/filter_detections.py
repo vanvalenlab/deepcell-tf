@@ -103,7 +103,7 @@ def filter_detections(boxes,
     if class_specific_filter:
         all_indices = []
         # perform per class filtering
-        for c in range(int(K.shape(classification[1])):
+        for c in range(int(K.shape(classification[1]))):
             scores = classification[:, c]
             labels = c * tf.ones((K.shape(scores)[0],), dtype='int64')
             all_indices.append(_filter_detections(scores, labels))
