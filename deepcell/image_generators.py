@@ -2044,7 +2044,7 @@ class RetinaNetIterator(Iterator):
             #     width + height + max_image_dimension)
             max_annotations = max(len(a['masks']) for a in annotations_list)
             masks_batch_shape = (self.batch_size, max_annotations,
-                                5 + 2 + max_shape[0] * max_shape[1])
+                                 5 + 2 + max_shape[0] * max_shape[1])
             masks_batch = np.zeros(masks_batch_shape, dtype=K.floatx())
 
             for i, ann in enumerate(annotations_list):
