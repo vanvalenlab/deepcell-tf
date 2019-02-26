@@ -638,6 +638,13 @@ def train_model_retinanet(model,
                             mask_size=mask_size)
         )
 
+    # evaluation of model is done on `retinanet_bbox`
+    if include_masks:
+        prediction_model = model
+    else:
+        prediction_model = retinanet_bbox(
+            model, nms=True, class_specific_filter=False)
+
     loss = {
         'regression': regress_loss,
         'classification': classification_loss
@@ -696,10 +703,6 @@ def train_model_retinanet(model,
         test_dict,
         compute_shapes=compute_shapes,
         batch_size=batch_size)
-
-    # evaluation of model is done on `retinanet_bbox`
-    prediction_model = retinanet_bbox(
-        model, nms=True, class_specific_filter=False)
 
     tensorboard_callback = callbacks.TensorBoard(
         log_dir=os.path.join(log_dir, model_name))
