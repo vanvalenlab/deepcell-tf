@@ -323,7 +323,7 @@ def retinanet(inputs,
 
 def retinanet_bbox(model=None,
                    nms=True,
-                   class_specific_filter=False,
+                   class_specific_filter=True,
                    name='retinanet-bbox',
                    anchor_params=None,
                    **kwargs):
