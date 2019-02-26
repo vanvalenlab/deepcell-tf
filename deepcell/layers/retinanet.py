@@ -240,7 +240,7 @@ class ConcatenateBoxes(Layer):
     def compute_output_shape(self, input_shape):
         boxes_shape, other_shape = input_shape
         output_shape = tuple(list(boxes_shape[:2]) +
-                             [tf.prod([s for s in other_shape[2:]]) + 4])
+                             [K.prod([s for s in other_shape[2:]]) + 4])
         return tensor_shape.TensorShape(output_shape)
 
 
