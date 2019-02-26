@@ -308,7 +308,7 @@ class RoiAlign(Layer):
             rois.append(tf.image.crop_and_resize(
                 K.expand_dims(fpn[i], axis=0),
                 level_boxes,
-                K.zeros((K.shape(level_boxes)[0],), dtype='int32'),
+                tf.zeros((K.shape(level_boxes)[0],), dtype='int32'),
                 self.crop_size
             ))
 
