@@ -2037,24 +2037,25 @@ class RetinaNetIterator(Iterator):
             self.num_classes)
 
         max_shape = tuple(max_shape)  # was a list for max shape indexing
-        max_annotations = max(len(a['masks']) for a in annotations_list)
 
-        # masks_batch has shape: (batch size, max_annotations,
-        #     bbox_x1 + bbox_y1 + bbox_x2 + bbox_y2 + label +
-        #     width + height + max_image_dimension)
-        masks_batch_shape = (self.batch_size, max_annotations,
-                             5 + 2 + max_shape[0] * max_shape[1])
-        masks_batch = np.zeros(masks_batch_shape, dtype=K.floatx())
+        if self.include_masks:
+            # masks_batch has shape: (batch size, max_annotations,
+            #     bbox_x1 + bbox_y1 + bbox_x2 + bbox_y2 + label +
+            #     width + height + max_image_dimension)
+            max_annotations = max(len(a['masks']) for a in annotations_list)
+            masks_batch_shape = (self.batch_size, max_annotations,
+                                5 + 2 + max_shape[0] * max_shape[1])
+            masks_batch = np.zeros(masks_batch_shape, dtype=K.floatx())
 
-        for i, annots in enumerate(annotations_list):
-            masks_batch[i, :annots['bboxes'].shape[0], :4] = annots['bboxes']
-            masks_batch[i, :annots['labels'].shape[0], 4] = annots['labels']
-            masks_batch[i, :, 5] = max_shape[1]  # width
-            masks_batch[i, :, 6] = max_shape[0]  # height
+            for i, ann in enumerate(annotations_list):
+                masks_batch[i, :ann['bboxes'].shape[0], :4] = ann['bboxes']
+                masks_batch[i, :ann['labels'].shape[0], 4] = ann['labels']
+                masks_batch[i, :, 5] = max_shape[1]  # width
+                masks_batch[i, :, 6] = max_shape[0]  # height
 
-            # add flattened mask
-            for j, mask in enumerate(annots['masks']):
-                masks_batch[i, j, 7:] = mask.flatten()
+                # add flattened mask
+                for j, mask in enumerate(ann['masks']):
+                    masks_batch[i, j, 7:] = mask.flatten()
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
