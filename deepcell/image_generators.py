@@ -2000,6 +2000,7 @@ class RetinaNetIterator(Iterator):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
 
         annotations_list = []
+        masks = []
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -2010,6 +2011,8 @@ class RetinaNetIterator(Iterator):
             # Get the bounding boxes from the transformed masks!
             annotations = self.load_annotations(y)
             annotations_list.append(annotations)
+            if 'masks' in annotations:
+                masks.append(annotations['masks'])
 
             x = self.image_data_generator.standardize(x)
 
@@ -2040,6 +2043,8 @@ class RetinaNetIterator(Iterator):
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
+        if self.include_masks:
+            return batch_x, [regressions, labels, np.stack(masks, axis=0)]
         return batch_x, [regressions, labels]
 
     def next(self):
