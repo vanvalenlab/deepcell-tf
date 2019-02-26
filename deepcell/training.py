@@ -42,6 +42,7 @@ from deepcell import losses
 from deepcell import image_generators
 from deepcell.callbacks import RedirectModel, Evaluate
 from deepcell.model_zoo import retinanet_bbox
+from deepcell.utils.retinanet_anchor_utils import overlap
 from deepcell.utils.retinanet_anchor_utils import make_shapes_callback
 from deepcell.utils.retinanet_anchor_utils import guess_shapes
 from deepcell.utils.retinanet_anchor_utils import evaluate
@@ -477,7 +478,9 @@ def train_model_retinanet(model,
                           **kwargs):
     """Train a RetinaNet model from the given backbone
 
-    Adapted from https://github.com/fizyr/keras-retinanet.
+    Adapted from:
+        https://github.com/fizyr/keras-retinanet &
+        https://github.com/fizyr/keras-maskrcnn
     """
     is_channels_first = K.image_data_format() == 'channels_first'
 
@@ -551,12 +554,89 @@ def train_model_retinanet(model,
         return K.sum(loss) / normalizer
 
     def mask_loss(y_true, y_pred):
+
+        def _mask(y_true, y_pred, iou_threshold=0.5, mask_size=(28, 28)):
+            # split up the different predicted blobs
+            boxes = y_pred[:, :, :4]
+            masks = y_pred[:, :, 4:]
+
+            # split up the different blobs
+            annotations = y_true[:, :, :5]
+            width = K.cast(y_true[0, 0, 5], dtype='int32')
+            height = K.cast(y_true[0, 0, 6], dtype='int32')
+            masks_target = y_true[:, :, 7:]
+
+            # reshape the masks back to their original size
+            masks_target = K.reshape(masks_target, (K.shape(masks_target)[0],
+                                                    K.shape(masks_target)[1],
+                                                    height, width))
+            masks = K.reshape(masks, (K.shape(masks)[0], K.shape(masks)[1],
+                                      mask_size[0], mask_size[1], -1))
+
+            # TODO: Fix batch_size > 1
+            boxes = boxes[0]
+            masks = masks[0]
+            annotations = annotations[0]
+            masks_target = masks_target[0]
+
+            # compute overlap of boxes with annotations
+            iou = overlap(boxes, annotations)
+            argmax_overlaps_inds = K.argmax(iou, axis=1)
+            max_iou = K.max(iou, axis=1)
+
+            # filter those with IoU > 0.5
+            indices = tf.where(K.greater_equal(max_iou, iou_threshold))
+            boxes = tf.gather_nd(boxes, indices)
+            masks = tf.gather_nd(masks, indices)
+            argmax_overlaps_inds = tf.gather_nd(argmax_overlaps_inds, indices)
+            argmax_overlaps_inds = K.cast(argmax_overlaps_inds, 'int32')
+            labels = K.gather(annotations[:, 4], argmax_overlaps_inds)
+            labels = K.cast(labels, 'int32')
+
+            # make normalized boxes
+            boxes = K.stack([
+                boxes[:, 1] / (K.cast(height, dtype=K.floatx()) - 1),  # y1
+                boxes[:, 0] / (K.cast(width, dtype=K.floatx()) - 1),   # x1
+                (boxes[:, 3] - 1) / (K.cast(height, dtype=K.floatx()) - 1),  # y2
+                (boxes[:, 2] - 1) / (K.cast(width, dtype=K.floatx()) - 1),   # x2
+            ], axis=1)
+
+            # crop and resize masks_target
+            # append a fake channel dimension
+            masks_target = K.expand_dims(masks_target, axis=3)
+            masks_target = tf.image.crop_and_resize(
+                masks_target,
+                boxes,
+                argmax_overlaps_inds,
+                mask_size)
+            # remove fake channel dimension
+            masks_target = masks_target[:, :, :, 0]
+
+            # gather the predicted masks using the annotation label
+            masks = tf.transpose(masks, (0, 3, 1, 2))
+            label_indices = K.stack([
+                K.arange(K.shape(labels)[0]),
+                labels
+            ], axis=1)
+            masks = tf.gather_nd(masks, label_indices)
+
+            # compute mask loss
+            _mask_loss = K.binary_crossentropy(masks_target, masks)
+            normalizer = K.shape(masks)[0] * K.shape(masks)[1] * K.shape(masks)[2]
+            normalizer = K.maximum(K.cast(normalizer, K.floatx()), 1)
+            _mask_loss = K.sum(_mask_loss) / normalizer
+
+            return _mask_loss
+
+        mask_size = (28, 28)
+
         return tf.cond(
             K.any(K.equal(K.shape(y_true), 0)),
             lambda: K.cast_to_floatx(0.0),
-            lambda: losses.mask(y_true, y_pred,
-                                iou_threshold=iou_threshold,
-                                mask_size=(28, 28)))
+            lambda: _mask(y_true, y_pred,
+                            iou_threshold=iou_threshold,
+                            mask_size=mask_size)
+        )
 
     loss = {
         'regression': regress_loss,
