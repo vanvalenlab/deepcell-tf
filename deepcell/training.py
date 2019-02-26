@@ -667,7 +667,6 @@ def train_model_retinanet(model,
     # this will do preprocessing and realtime data augmentation
     datagen = image_generators.RetinaNetGenerator(
         # fill_mode='constant',  # for rotations
-        include_masks=include_masks,
         rotation_range=rotation_range,
         shear_range=shear,
         zoom_range=zoom_range,
@@ -676,7 +675,6 @@ def train_model_retinanet(model,
 
     datagen_val = image_generators.RetinaNetGenerator(
         # fill_mode='constant',  # for rotations
-        include_masks=include_masks,
         rotation_range=0,
         shear_range=0,
         zoom_range=0,
@@ -690,11 +688,13 @@ def train_model_retinanet(model,
 
     train_data = datagen.flow(
         train_dict,
+        include_masks=include_masks,
         compute_shapes=compute_shapes,
         batch_size=batch_size)
 
     val_data = datagen_val.flow(
         test_dict,
+        include_masks=include_masks,
         compute_shapes=compute_shapes,
         batch_size=batch_size)
 
