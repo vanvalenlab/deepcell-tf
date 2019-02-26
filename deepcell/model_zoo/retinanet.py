@@ -453,4 +453,5 @@ def RetinaNet(backbone,
         inputs=inputs,
         num_classes=num_classes,
         backbone_layers=layer_outputs,
+        name='{}_retinanet'.format(backbone),
         **kwargs)

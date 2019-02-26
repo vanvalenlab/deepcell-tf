@@ -49,7 +49,7 @@ def default_mask_model(num_classes,
                        mask_feature_size=256,
                        roi_size=(14, 14),
                        mask_size=(28, 28),
-                       name='mask_submodel',
+                       name='masks_submodel',
                        mask_dtype=K.floatx(),
                        retinanet_dtype=K.floatx()):
     """Creates the default mask submodel.
@@ -135,7 +135,8 @@ def default_roi_submodels(num_classes,
         and the second element is the submodel itself.
     """
     return [
-        ('masks', default_mask_model(num_classes, mask_dtype=mask_dtype,
+        ('masks', default_mask_model(num_classes,
+                                     mask_dtype=mask_dtype,
                                      retinanet_dtype=retinanet_dtype)),
     ]
 
@@ -296,4 +297,5 @@ def MaskRCNN(backbone,
         num_classes=num_classes,
         backbone_layers=layer_outputs,
         crop_size=crop_size,
+        name='{}_retinanet_mask'.format(backbone),
         **kwargs)
