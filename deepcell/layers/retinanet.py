@@ -239,7 +239,9 @@ class ConcatenateBoxes(Layer):
 
     def compute_output_shape(self, input_shape):
         boxes_shape, other_shape = input_shape
-        return boxes_shape[:2] + (np.prod([s for s in other_shape[2:]]) + 4,)
+        output_shape = tuple(list(boxes_shape[:2]) +
+                             [tf.prod([s for s in other_shape[2:]]) + 4])
+        return tensor_shape.TensorShape(output_shape)
 
 
 class RoiAlign(Layer):
@@ -340,7 +342,7 @@ class Shape(Layer):
         return K.shape(inputs)
 
     def compute_output_shape(self, input_shape):
-        return (len(input_shape),)
+        return tensor_shape.TensorShape((len(input_shape),))
 
 
 class Cast(Layer):
@@ -348,7 +350,6 @@ class Cast(Layer):
         if dtype is None:
             dtype = K.floatx()
         self.dtype = dtype
-
         super(Cast, self).__init__(*args, **kwargs)
 
     def call(self, inputs, **kwargs):
