@@ -611,7 +611,7 @@ def train_model_retinanet(model,
 
             # gather the predicted masks using the annotation label
             masks = tf.transpose(masks, (0, 3, 1, 2))
-            label_indices = K.stack([K.arange(K.shape(labels)[0]), labels], axis=1)
+            label_indices = K.stack([tf.range(K.shape(labels)[0]), labels], axis=1)
             masks = tf.gather_nd(masks, label_indices)
 
             # compute mask loss
