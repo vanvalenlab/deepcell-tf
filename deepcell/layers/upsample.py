@@ -87,13 +87,17 @@ class Upsample(Layer):
 
     def call(self, inputs, **kwargs):
         new_shape = (self.target_size[0], self.target_size[1])
-        return tf.resize_images(
+        return tf.image.resize_images(
             inputs, new_shape,
             method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
     def compute_output_shape(self, input_shape):
-        new_shape = tuple([input_shape[0], self.target_size, input_shape[-1]])
-        return tensor_shape.TensorShape(new_shape)
+        output_shape = tuple([
+            input_shape[0],
+            self.target_size[0],
+            self.target_size[1],
+            input_shape[-1]])
+        return tensor_shape.TensorShape(output_shape)
 
     def get_config(self):
         config = {
