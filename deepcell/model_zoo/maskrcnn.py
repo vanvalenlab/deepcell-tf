@@ -49,7 +49,7 @@ def default_mask_model(num_classes,
                        mask_feature_size=256,
                        roi_size=(14, 14),
                        mask_size=(28, 28),
-                       name='masks_submodel',
+                       name='mask_submodel',
                        mask_dtype=K.floatx(),
                        retinanet_dtype=K.floatx()):
     """Creates the default mask submodel.
