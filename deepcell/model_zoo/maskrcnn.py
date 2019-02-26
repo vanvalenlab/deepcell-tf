@@ -119,6 +119,8 @@ def default_mask_model(num_classes,
 
 
 def default_roi_submodels(num_classes,
+                          roi_size=(14, 14),
+                          mask_size=(28, 28),
                           mask_dtype=K.floatx(),
                           retinanet_dtype=K.floatx()):
     """Create a list of default roi submodels.
@@ -136,6 +138,8 @@ def default_roi_submodels(num_classes,
     """
     return [
         ('masks', default_mask_model(num_classes,
+                                     roi_size=roi_size,
+                                     mask_size=mask_size,
                                      mask_dtype=mask_dtype,
                                      retinanet_dtype=retinanet_dtype)),
     ]
@@ -148,6 +152,7 @@ def retinanet_mask(inputs,
                    nms=True,
                    class_specific_filter=True,
                    crop_size=(14, 14),
+                   mask_size=(28, 28),
                    name='retinanet-mask',
                    roi_submodels=None,
                    mask_dtype=K.floatx(),
@@ -188,7 +193,8 @@ def retinanet_mask(inputs,
         retinanet_dtype = K.floatx()
         K.set_floatx(mask_dtype)
         roi_submodels = default_roi_submodels(
-            num_classes, mask_dtype, retinanet_dtype)
+            num_classes, crop_size, mask_size,
+            mask_dtype, retinanet_dtype)
         K.set_floatx(retinanet_dtype)
 
     image = inputs
