@@ -127,17 +127,16 @@ def retinanet_mask(inputs,
     Uses the retinanet bbox model and appends layers to compute masks.
 
     Args:
-        inputs: List of tf.keras.layers.Input. The first input is the image,
-            the second input the blob of masks.
-        num_classes: Number of classes to classify.
-        retinanet_model: model_zoo.retinanet.retinanet model,
+        inputs: List of tensorflow.keras.layers.Input.
+            The first input is the image, the second input the blob of masks.
+        num_classes: Integer, number of classes to classify.
+        retinanet_model: deepcell.model_zoo.retinanet.retinanet model,
             returning regression and classification values.
         anchor_params: Struct containing anchor parameters.
-        nms: Use NMS.
-        class_specific_filter: Use class specific filtering.
+        nms: Boolean, whether to use NMS.
+        class_specific_filter: Boolean, use class specific filtering.
         roi_submodels: Submodels for processing ROIs.
         mask_dtype: Data type of the masks, can be different from the main one.
-        modifier: Modifier for the underlying retinanet model, such as freeze.
         name: Name of the model.
         **kwargs: Additional kwargs to pass to the retinanet bbox model.
     Returns:
