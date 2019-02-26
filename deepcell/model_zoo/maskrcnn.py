@@ -251,6 +251,7 @@ def MaskRCNN(backbone,
              crop_size=(14, 14),
              weights=None,
              pooling=None,
+             mask_dtype=K.floatx(),
              required_channels=3,
              **kwargs):
     """Constructs a mrcnn model using a backbone from keras-applications.
@@ -295,7 +296,8 @@ def MaskRCNN(backbone,
     return retinanet_mask(
         inputs=inputs,
         num_classes=num_classes,
-        backbone_layers=layer_outputs,
         crop_size=crop_size,
         name='{}_retinanet_mask'.format(backbone),
+        mask_dtype=mask_dtype,
+        backbone_layers=layer_outputs,
         **kwargs)
