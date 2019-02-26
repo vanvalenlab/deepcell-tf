@@ -30,7 +30,6 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import applications
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D
 from tensorflow.python.keras.layers import Input, Concatenate, Add

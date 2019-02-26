@@ -29,7 +29,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from tensorflow.python.keras import applications
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Input
 from tensorflow.python.keras.layers import TimeDistributed, Conv2D
