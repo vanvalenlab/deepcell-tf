@@ -605,19 +605,13 @@ def train_model_retinanet(model,
             # append a fake channel dimension
             masks_target = K.expand_dims(masks_target, axis=3)
             masks_target = tf.image.crop_and_resize(
-                masks_target,
-                boxes,
-                argmax_overlaps_inds,
-                mask_size)
+                masks_target, boxes, argmax_overlaps_inds, mask_size)
             # remove fake channel dimension
             masks_target = masks_target[:, :, :, 0]
 
             # gather the predicted masks using the annotation label
             masks = tf.transpose(masks, (0, 3, 1, 2))
-            label_indices = K.stack([
-                K.arange(K.ndim(labels)),
-                labels
-            ], axis=1)
+            label_indices = K.stack([K.arange(K.ndim(labels)), labels], axis=1)
             masks = tf.gather_nd(masks, label_indices)
 
             # compute mask loss
@@ -634,8 +628,8 @@ def train_model_retinanet(model,
             K.any(K.equal(K.shape(y_true), 0)),
             lambda: K.cast_to_floatx(0.0),
             lambda: _mask(y_true, y_pred,
-                            iou_threshold=iou_threshold,
-                            mask_size=mask_size)
+                          iou_threshold=iou_threshold,
+                          mask_size=mask_size)
         )
 
     # evaluation of model is done on `retinanet_bbox`
