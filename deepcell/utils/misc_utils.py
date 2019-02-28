@@ -46,7 +46,7 @@ def get_pyramid_layer_outputs(backbone, inputs, **kwargs):
 
     vgg_backbones = {'vgg16', 'vgg19'}
     densenet_backbones = {'densenet121', 'densenet169', 'densenet201'}
-    mobilenet_backbones = {'mobilenet', 'mobilenet_v2'}
+    mobilenet_backbones = {'mobilenet', 'mobilenetv2', 'mobilenet_v2'}
     resnet_backbones = {'resnet50'}
     nasnet_backbones = {'nasnet_large', 'nasnet_mobile'}
 
