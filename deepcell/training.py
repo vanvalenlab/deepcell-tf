@@ -505,7 +505,7 @@ def train_model_retinanet(model,
     if num_gpus is None:
         num_gpus = train_utils.count_gpus()
 
-    if num_gpus >= 2:
+    if num_gpus >= 1e6:
         batch_size = batch_size * num_gpus
         model = train_utils.MultiGpuModel(model, num_gpus)
 

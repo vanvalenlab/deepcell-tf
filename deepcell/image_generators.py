@@ -1998,7 +1998,6 @@ class RetinaNetIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
-
         annotations_list = []
 
         max_shape = []
@@ -2043,7 +2042,7 @@ class RetinaNetIterator(Iterator):
             #     bbox_x1 + bbox_y1 + bbox_x2 + bbox_y2 + label +
             #     width + height + max_image_dimension)
             max_annotations = max(len(a['masks']) for a in annotations_list)
-            masks_batch_shape = (self.batch_size, max_annotations,
+            masks_batch_shape = (len(index_array), max_annotations,
                                  5 + 2 + max_shape[0] * max_shape[1])
             masks_batch = np.zeros(masks_batch_shape, dtype=K.floatx())
 

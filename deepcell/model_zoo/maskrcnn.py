@@ -36,7 +36,7 @@ from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.initializers import normal
 
 from deepcell.layers import Cast, Shape
-from deepcell.layers import Upsample, RoiAlign, ConcatenateBoxes
+from deepcell.layers import Upsample, RoiAlign, ConcatenateBoxes, ConcatenateBoxesMasks
 from deepcell.layers import ClipBoxes, RegressBoxes, FilterDetections
 from deepcell.layers import TensorProduct, ImageNormalization2D
 from deepcell.model_zoo.retinanet import retinanet, __build_anchors
@@ -220,32 +220,43 @@ def retinanet_mask(inputs,
     boxes = RegressBoxes(name='boxes')([anchors, regression])
     boxes = ClipBoxes(name='clipped_boxes')([image, boxes])
 
+    # get the region of interest features
+    top_boxes, top_classification, rois = RoiAlign(crop_size=crop_size)([image_shape, boxes, classification] + features)
+
+
+    # Using code from keras-maskrcnn library instead
+    # execute maskrcnn submodels
+    # maskrcnn_outputs = [submodel(rois) for _, submodel in roi_submodels]
+
+    # concatenate boxes for loss computation
+    # trainable_outputs = [ConcatenateBoxes(name=name)([boxes, output])
+    #                      for (name, _), output in zip(
+    #                          roi_submodels, maskrcnn_outputs)]
+
     # filter detections (apply NMS / score threshold / select top-k)
+
+
+    # estimate masks
+    # TODO: Change this so that it iterates over roi_submodels
+    masks = roi_submodels[0][1](rois)
+
+    # concatenate boxes and masks together
+    boxes_masks = ConcatenateBoxesMasks(name='boxes_masks')([top_boxes, masks])
+
     detections = FilterDetections(
         nms=nms,
         class_specific_filter=class_specific_filter,
         max_detections=100,
         name='filtered_detections'
-    )([boxes, classification] + other)
+    )([top_boxes, top_classification] + other + [masks])
 
     # split up in known outputs and "other"
     boxes = detections[0]
     scores = detections[1]
 
-    # get the region of interest features
-    rois = RoiAlign(crop_size)([image_shape, boxes, scores] + features)
-
-    # execute maskrcnn submodels
-    maskrcnn_outputs = [submodel(rois) for _, submodel in roi_submodels]
-
-    # concatenate boxes for loss computation
-    trainable_outputs = [ConcatenateBoxes(name=name)([boxes, output])
-                         for (name, _), output in zip(
-                             roi_submodels, maskrcnn_outputs)]
-
     # reconstruct the new output
     outputs = [regression, classification] + \
-        other + trainable_outputs + detections + maskrcnn_outputs
+        other + [boxes_masks] + detections
 
     return Model(inputs=inputs, outputs=outputs, name=name)
 

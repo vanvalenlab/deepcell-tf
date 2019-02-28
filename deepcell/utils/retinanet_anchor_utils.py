@@ -571,11 +571,19 @@ def _get_detections(generator,
         # raw_image = generator.load_image(i)
         # image = generator.preprocess_image(raw_image.copy())
         # image, scale = generator.resize_image(image)
-        image = generator.y[i]
+        image = generator.x[i]
 
         # run network
         results = model.predict_on_batch(np.expand_dims(image, axis=0))
-        boxes, scores, labels = results[:3]
+        if generator.include_masks:
+            masks = results[-1]
+            labels = results[-2]
+            scores = results[-3]
+            boxes = results[-4]
+        else:
+            boxes, scores, labels = results[:3]
+        # print(boxes.shape, scores.shape, labels.shape)
+        # print([o.shape for o in results])
 
         # correct boxes for image scale
         # boxes = boxes / scale
@@ -593,6 +601,7 @@ def _get_detections(generator,
         image_boxes = boxes[0, indices[scores_sort], :]
         image_scores = scores[scores_sort]
         image_labels = labels[0, indices[scores_sort]]
+        # print(image_boxes.shape, image_scores.shape, image_labels.shape)
         image_detections = np.concatenate([
             image_boxes,
             np.expand_dims(image_scores, axis=1),
