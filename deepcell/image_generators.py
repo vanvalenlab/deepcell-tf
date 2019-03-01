@@ -2025,6 +2025,11 @@ class SiameseIterator(Iterator):
                 raise Exception(
                         "Parent cell should not be in last frame of movie")
 
+                logging.warning("Track %s is annotated incorrectly. No parent cell "
+                                "should not be in the last frame of any movie.", track_id)
+
+
+
             candidate_interval = all_frames[-self.min_track_length:]
         else:
             # exclude the final frame for comparison purposes

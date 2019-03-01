@@ -61,7 +61,7 @@ def load_tracked_data(path='3T3_NIH.trks', test_size=.2, seed=0):
 
     path = get_file(path,
                     origin='https://deepcell-data.s3.amazonaws.com/tracked/3T3_NIH.trks',
-                    file_hash='a21ec3e4b85b90e96b4a698963753f77')
+                    file_hash='0d90ad370e1cb9655727065ada3ded65')
 
     train_dict, test_dict = get_data(path, mode='siamese_daughters',
                                     test_size=test_size, seed=seed)

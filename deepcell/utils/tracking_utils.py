@@ -191,23 +191,19 @@ def save_trks(filename, lineages, raw, tracked):
             tracked_file.flush()
             trks.add(tracked_file.name, "tracked.npy")
 
-def trks_stats(filename):
+def trks_stats(trks_file_name):
     """For a given trks_file, find the Number of cell tracks, 
        the Number of frames per track, and the Number of divisions.
 
         Args:
-            filename: full path to the the final trk files
-            lineages: a list of dictionaries saved as a json
-            raw: raw images data
-            tracked: annotated image data
+            filename: full path to a trks file
 
         Returns:
             Nothing
     """
-    trks_file_name = os.path.join(direc_data, dataset + ".trks")
     training_data = load_trks(trks_file_name)
-    X = training_data["raw"]
-    y = training_data["tracked"]
+    X = training_data["X"]
+    y = training_data["y"]
     daughters = [{cell: fields["daughters"]
                  for cell, fields in tracks.items()}
                 for tracks in training_data["lineages"]]

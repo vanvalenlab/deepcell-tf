@@ -443,8 +443,7 @@ class cell_tracker():
                 continue
             if p > max_prob:
                 parent_id, max_prob = track_id, p
-                print(p)
-
+                
         return parent_id
 
     def _fetch_track_feature(self, feature, before_frame=None):

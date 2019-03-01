@@ -338,6 +338,7 @@ def train_model_siamese_daughter(model,
                                  n_epoch=100,
                                  batch_size=1,
                                  num_gpus=None,
+                                 crop_dim=32,
                                  min_track_length=1,
                                  neighborhood_scale_size=10,
                                  features=None,
@@ -424,6 +425,7 @@ def train_model_siamese_daughter(model,
 
     train_data = datagen.flow(
         train_dict,
+        crop_dim=crop_dim,
         batch_size=batch_size,
         min_track_length=min_track_length,
         neighborhood_scale_size=neighborhood_scale_size,
@@ -431,6 +433,7 @@ def train_model_siamese_daughter(model,
 
     val_data = datagen_val.flow(
         val_dict,
+        crop_dim=crop_dim,
         batch_size=batch_size,
         min_track_length=min_track_length,
         neighborhood_scale_size=neighborhood_scale_size,
