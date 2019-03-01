@@ -616,7 +616,7 @@ def _get_detections(generator,
 
         if generator.include_masks:
             image_masks = masks[0, indices[scores_sort], :, :, image_labels]
-            for label in range(generator.num_classes()):
+            for label in range(generator.num_classes):
                 imm = image_masks[image_detections[:, -1] == label, ...]
                 all_masks[i][label] = imm
 
@@ -784,13 +784,13 @@ def evaluate_mask(generator, model,
     # pickle.dump(all_gt_masks, open('all_gt_masks.pkl', 'wb'))
 
     # process detections and annotations
-    for label in range(generator.num_classes()):
+    for label in range(generator.num_classes):
         false_positives = np.zeros((0,))
         true_positives = np.zeros((0,))
         scores = np.zeros((0,))
         num_annotations = 0.0
 
-        for i in range(generator.size()):
+        for i in range(generator.y.shape[0]):
             detections = all_detections[i][label]
             masks = all_masks[i][label]
             annotations = all_annotations[i][label]
@@ -804,7 +804,7 @@ def evaluate_mask(generator, model,
 
                 if annotations.shape[0] == 0:
                     false_positives = np.append(false_positives, 1)
-                    true_positives  = np.append(true_positives, 0)
+                    true_positives = np.append(true_positives, 0)
                     continue
 
                 # resize to fit the box
