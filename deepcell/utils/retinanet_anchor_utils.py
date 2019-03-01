@@ -841,7 +841,8 @@ def evaluate_mask(generator, model,
                 assigned_annotation = np.argmax(overlaps, axis=1)
                 max_overlap = overlaps[0, assigned_annotation]
 
-                if max_overlap >= iou_threshold and assigned_annotation not in detected_annotations:
+                if max_overlap >= iou_threshold and \
+                   assigned_annotation not in detected_annotations:
                     false_positives = np.append(false_positives, 0)
                     true_positives = np.append(true_positives, 1)
                     detected_annotations.append(assigned_annotation)
