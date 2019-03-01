@@ -61,7 +61,7 @@ def load_data(path='HeLa_S3.npz', test_size=.2, seed=0):
 
     path = get_file(path,
                     origin='https://deepcell-data.s3.amazonaws.com/nuclei/HeLa_S3.npz',
-                    file_hash='42c631726713bbb180d4a0a07c2e8107')
+                    file_hash='759d28d87936fd59b250dea3b126b647')
 
     train_dict, test_dict = get_data(path, test_size=test_size, seed=seed)
 
