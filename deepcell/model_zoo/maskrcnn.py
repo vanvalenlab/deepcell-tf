@@ -221,8 +221,8 @@ def retinanet_mask(inputs,
     boxes = ClipBoxes(name='clipped_boxes')([image, boxes])
 
     # get the region of interest features
-    top_boxes, top_classification, rois = RoiAlign(crop_size=crop_size)([image_shape, boxes, classification] + features)
-
+    top_boxes, top_classification, rois = RoiAlign(crop_size=crop_size)([
+        image_shape, boxes, classification] + features)
 
     # Using code from keras-maskrcnn library instead
     # execute maskrcnn submodels
@@ -233,9 +233,6 @@ def retinanet_mask(inputs,
     #                      for (name, _), output in zip(
     #                          roi_submodels, maskrcnn_outputs)]
 
-    # filter detections (apply NMS / score threshold / select top-k)
-
-
     # estimate masks
     # TODO: Change this so that it iterates over roi_submodels
     masks = roi_submodels[0][1](rois)
@@ -243,6 +240,7 @@ def retinanet_mask(inputs,
     # concatenate boxes and masks together
     boxes_masks = ConcatenateBoxesMasks(name='boxes_masks')([top_boxes, masks])
 
+    # filter detections (apply NMS / score threshold / select top-k)
     detections = FilterDetections(
         nms=nms,
         class_specific_filter=class_specific_filter,

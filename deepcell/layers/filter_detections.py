@@ -232,7 +232,7 @@ class FilterDetections(Layer):
         """
         input_shape = [tensor_shape.TensorShape(insh) for insh in input_shape]
         # input_shape = tensor_shape.TensorShape(input_shape).as_list()
-        
+
         return [
             (input_shape[0][0], self.max_detections, 4),
             (input_shape[1][0], self.max_detections),
@@ -240,7 +240,7 @@ class FilterDetections(Layer):
         ] + [
             tuple([input_shape[i][0], self.max_detections] +
                   list(input_shape[i][2:])) for i in range(2, len(input_shape))
-]
+        ]
 
     def compute_mask(self, inputs, mask=None):
         """This is required in Keras when there is more than 1 output."""

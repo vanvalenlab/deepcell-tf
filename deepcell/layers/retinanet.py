@@ -242,6 +242,7 @@ class ConcatenateBoxes(Layer):
                              [K.prod([s for s in other_shape[2:]]) + 4])
         return tensor_shape.TensorShape(output_shape)
 
+
 class ConcatenateBoxesMasks(Layer):
     def call(self, inputs, **kwargs):
         detections, masks = inputs
@@ -286,36 +287,33 @@ class RoiAlign(Layer):
         return levels
 
     def call(self, inputs, **kwargs):
-        image_shape    = K.cast(inputs[0], K.floatx())
-        boxes          = K.stop_gradient(inputs[1])
+        image_shape = K.cast(inputs[0], K.floatx())
+        boxes = K.stop_gradient(inputs[1])
         classification = K.stop_gradient(inputs[2])
-        fpn            = [K.stop_gradient(i) for i in inputs[3:]]
-        
+        fpn = [K.stop_gradient(i) for i in inputs[3:]]
+
         # compute best scores for each detection
         scores = K.max(classification, axis=-1)
         print(boxes.get_shape(), classification.get_shape())
 
         # select the top k for mask ROI computation
-        k=K.minimum(self.top_k, K.shape(boxes)[1])
-        _, indices     = tf.nn.top_k(scores, k=self.top_k, sorted=False)
-        boxes          = tf.batch_gather(boxes, indices)
+        _, indices = tf.nn.top_k(scores, k=self.top_k, sorted=False)
+        boxes = tf.batch_gather(boxes, indices)
         classification = tf.batch_gather(classification, indices)
-        
-        print(indices.get_shape(), boxes.get_shape(), classification.get_shape())
 
         # compute from which level to get features from
         target_levels = self.map_to_level(boxes)
 
         # process each pyramid independently
-        rois                   = []
-        ordered_boxes          = []
+        rois = []
+        ordered_boxes = []
         ordered_classification = []
         for i in range(len(fpn)):
             # select the boxes and classification from this pyramid level
             level_indices = tf.where(K.equal(target_levels, i))
-            box_indices = tf.cast(level_indices[:,0], tf.int32)
+            box_indices = tf.cast(level_indices[:, 0], tf.int32)
 
-            level_boxes          = tf.gather_nd(boxes, level_indices)
+            level_boxes = tf.gather_nd(boxes, level_indices)
             level_classification = tf.gather_nd(classification, level_indices)
 
             ordered_boxes.append(level_boxes)
@@ -344,27 +342,32 @@ class RoiAlign(Layer):
             ))
 
         # reassemble the boxes in a different order
-        boxes          = K.concatenate(ordered_boxes, axis=0)
+        boxes = K.concatenate(ordered_boxes, axis=0)
         classification = K.concatenate(ordered_classification, axis=0)
 
         # concatenate rois to one blob
         rois = K.concatenate(rois, axis=0)
 
         # Re-add the batch dimension
-        shape_rois = tf.concat([tf.shape(indices)[:2], tf.shape(rois)[1:]], axis=0)
-        shape_boxes = tf.concat([tf.shape(indices)[:2], tf.shape(boxes)[1:]], axis=0)
-        shape_classification = tf.concat([tf.shape(indices)[:2], tf.shape(classification)[1:]], axis=0)
-
+        shape_rois = tf.concat([
+            tf.shape(indices)[:2],
+            tf.shape(rois)[1:]
+        ], axis=0)
+        shape_boxes = tf.concat([
+            tf.shape(indices)[:2],
+            tf.shape(boxes)[1:]
+        ], axis=0)
+        shape_classification = tf.concat([
+            tf.shape(indices)[:2],
+            tf.shape(classification)[1:]
+        ], axis=0)
         rois = tf.reshape(rois, shape_rois)
         boxes = tf.reshape(boxes, shape_boxes)
         classification = tf.reshape(classification, shape_classification)
-
-        print(boxes.get_shape(), classification.get_shape(), rois.get_shape())
         return [boxes, classification, rois]
 
     def compute_output_shape(self, input_shape):
         # input_shape = [tensor_shape.TensorShape(insh).as_list() for insh in input_shape]
-
         output_shape = [
             input_shape[1][0],
             None,
@@ -375,13 +378,9 @@ class RoiAlign(Layer):
         return tensor_shape.TensorShape(output_shape)
 
     def get_config(self):
-        config = super(RoiAlign, self).get_config()
-        config.update({
-            'crop_size' : self.crop_size,
-            'top_k'     : self.top_k,
-        })
-
-        return config
+        config = {'crop_size': self.crop_size, 'top_k': self.top_k}
+        base_config = super(RoiAlign, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
 
 # class RoiAlign(Layer):
 #     def __init__(self, crop_size=(14, 14), **kwargs):
