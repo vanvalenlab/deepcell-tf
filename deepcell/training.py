@@ -459,6 +459,7 @@ def train_model_retinanet(model,
                           batch_size=1,
                           num_gpus=None,
                           include_masks=False,
+                          mask_size=(28, 28),
                           optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
                           log_dir='/data/tensorboard_logs',
                           model_dir='/data/models',
@@ -567,17 +568,15 @@ def train_model_retinanet(model,
             masks_target = y_true[:, :, 7:]
 
             # reshape the masks back to their original size
-            masks_target = K.reshape(masks_target, (K.shape(masks_target)[0],
-                                                    K.shape(masks_target)[1],
-                                                    height, width))
-            masks = K.reshape(masks, (K.shape(masks)[0], K.shape(masks)[1],
+            masks_target = K.reshape(masks_target,
+                                     (K.shape(masks_target)[0] * K.shape(masks_target)[1],
+                                      height, width))
+            masks = K.reshape(masks, (K.shape(masks)[0] * K.shape(masks)[1],
                                       mask_size[0], mask_size[1], -1))
 
-            # TODO: Fix batch_size > 1
-            boxes = boxes[0]
-            masks = masks[0]
-            annotations = annotations[0]
-            masks_target = masks_target[0]
+            # batch size > 1 fix
+            boxes = K.reshape(boxes, (-1, K.shape(boxes)[2]))
+            annotations = K.reshape(annotations, (-1, K.shape(annotations)[2]))
 
             # compute overlap of boxes with annotations
             iou = overlap(boxes, annotations)
@@ -594,11 +593,15 @@ def train_model_retinanet(model,
             labels = K.cast(labels, 'int32')
 
             # make normalized boxes
+            x1 = boxes[:, 0]
+            y1 = boxes[:, 1]
+            x2 = boxes[:, 2]
+            y2 = boxes[:, 3]
             boxes = K.stack([
-                boxes[:, 1] / (K.cast(height, dtype=K.floatx()) - 1),  # y1
-                boxes[:, 0] / (K.cast(width, dtype=K.floatx()) - 1),   # x1
-                (boxes[:, 3] - 1) / (K.cast(height, dtype=K.floatx()) - 1),  # y2
-                (boxes[:, 2] - 1) / (K.cast(width, dtype=K.floatx()) - 1),   # x2
+                y1 / (K.cast(height, dtype=K.floatx()) - 1),
+                x1 / (K.cast(width, dtype=K.floatx()) - 1),
+                (y2 - 1) / (K.cast(height, dtype=K.floatx()) - 1),
+                (x2 - 1) / (K.cast(width, dtype=K.floatx()) - 1),
             ], axis=1)
 
             # crop and resize masks_target
@@ -606,6 +609,7 @@ def train_model_retinanet(model,
             masks_target = K.expand_dims(masks_target, axis=3)
             masks_target = tf.image.crop_and_resize(
                 masks_target, boxes, argmax_overlaps_inds, mask_size)
+
             # remove fake channel dimension
             masks_target = masks_target[:, :, :, 0]
 
@@ -615,15 +619,14 @@ def train_model_retinanet(model,
             masks = tf.gather_nd(masks, label_indices)
 
             # compute mask loss
-            _mask_loss = K.binary_crossentropy(masks_target, masks)
+            mask_loss = K.binary_crossentropy(masks_target, masks)
             normalizer = K.shape(masks)[0] * K.shape(masks)[1] * K.shape(masks)[2]
             normalizer = K.maximum(K.cast(normalizer, K.floatx()), 1)
-            _mask_loss = K.sum(_mask_loss) / normalizer
+            mask_loss = K.sum(mask_loss) / normalizer
 
-            return _mask_loss
+            return mask_loss
 
-        mask_size = (28, 28)
-
+        # if there are no masks annotations, return 0; else, compute the masks loss
         return tf.cond(
             K.any(K.equal(K.shape(y_true), 0)),
             lambda: K.cast_to_floatx(0.0),
@@ -645,7 +648,7 @@ def train_model_retinanet(model,
     }
 
     if include_masks:
-        loss['masks'] = mask_loss
+        loss['boxes_masks'] = mask_loss
 
     model.compile(loss=loss, optimizer=optimizer)
 
