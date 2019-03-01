@@ -28,6 +28,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import cv2
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
@@ -489,6 +490,23 @@ def shift(shape, stride, anchors):
     return shifted_anchors
 
 
+def compute_iou(a, b):
+    """Computes the IoU overlap of boxes in a and b.
+    Args:
+        a: (N, H, W) ndarray of float
+        b: (K, H, W) ndarray of float
+    Returns
+        overlaps: (N, K) ndarray of overlap between boxes and query_boxes
+    """
+    intersection = np.zeros((a.shape[0], b.shape[0]))
+    union = np.zeros((a.shape[0], b.shape[0]))
+    for index, mask in enumerate(a):
+        intersection[index, :] = np.sum(np.count_nonzero(b == mask, axis=1), axis=1)
+        union[index, :] = np.sum(np.count_nonzero(b + mask, axis=1), axis=1)
+
+    return intersection / union
+
+
 def overlap(a, b):
     """Computes the IoU overlap of boxes in a and b.
 
@@ -818,7 +836,8 @@ def evaluate_mask(generator, model,
                 mask_image[box[1]:box[3], box[0]:box[2]] = mask
                 mask = mask_image
 
-                overlaps = overlap(np.expand_dims(mask, axis=0), gt_masks)
+                overlaps = compute_iou(np.expand_dims(mask, axis=0), gt_masks)
+
                 assigned_annotation = np.argmax(overlaps, axis=1)
                 max_overlap = overlaps[0, assigned_annotation]
 
