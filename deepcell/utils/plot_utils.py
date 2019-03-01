@@ -134,6 +134,24 @@ def draw_mask(image,
     image[indices[0], indices[1], :] = _border
 
 
+def draw_masks(image, boxes, masks, color=[31, 0, 255], binarize_threshold=0.5):
+    """Draws a list of masks given a list of boxes.
+
+    Args:
+        image: Three dimensional image to draw on.
+        boxes: Matrix of shape (N, >=4) (at least 4 values: (x1, y1, x2, y2))
+            representing boxes in the image.
+        masks: Matrix of shape (N, H, W) of N masks of shape (H, W) which will
+            be reshaped to the size of the corresponding box, binarized and
+            drawn over the image.
+        color: Color or to draw the masks with.
+        binarize_threshold: Threshold used for binarizing the masks.
+    """
+    for box, mask in zip(boxes, masks):
+        draw_mask(image, box, mask, color=color,
+                  binarize_threshold=binarize_threshold)
+
+
 def draw_detections(image,
                     boxes,
                     scores,
