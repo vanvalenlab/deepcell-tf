@@ -567,6 +567,9 @@ def _get_detections(generator,
     all_detections = [[None for i in range(generator.num_classes)]
                       for j in range(generator.y.shape[0])]
 
+    all_masks = [[None for i in range(generator.num_classes)]
+                 for j in range(generator.y.shape[0])]
+
     for i in range(generator.y.shape[0]):
         # raw_image = generator.load_image(i)
         # image = generator.preprocess_image(raw_image.copy())
@@ -576,14 +579,12 @@ def _get_detections(generator,
         # run network
         results = model.predict_on_batch(np.expand_dims(image, axis=0))
         if generator.include_masks:
-            masks = results[-1]
-            labels = results[-2]
-            scores = results[-3]
             boxes = results[-4]
+            scores = results[-3]
+            labels = results[-2]
+            masks = results[-1]
         else:
             boxes, scores, labels = results[:3]
-        # print(boxes.shape, scores.shape, labels.shape)
-        # print([o.shape for o in results])
 
         # correct boxes for image scale
         # boxes = boxes / scale
@@ -601,17 +602,25 @@ def _get_detections(generator,
         image_boxes = boxes[0, indices[scores_sort], :]
         image_scores = scores[scores_sort]
         image_labels = labels[0, indices[scores_sort]]
-        # print(image_boxes.shape, image_scores.shape, image_labels.shape)
+
         image_detections = np.concatenate([
             image_boxes,
             np.expand_dims(image_scores, axis=1),
-            np.expand_dims(image_labels, axis=1)], axis=1)
+            np.expand_dims(image_labels, axis=1)
+        ], axis=1)
 
         # copy detections to all_detections
         for label in range(generator.num_classes):
-            all_detections[i][label] = image_detections[image_detections[:, -1] == label, :-1]
+            imd = image_detections[image_detections[:, -1] == label, :-1]
+            all_detections[i][label] = imd
 
-    return all_detections
+        if generator.include_masks:
+            image_masks = masks[0, indices[scores_sort], :, :, image_labels]
+            for label in range(generator.num_classes()):
+                imm = image_masks[image_detections[:, -1] == label, ...]
+                all_masks[i][label] = imm
+
+    return all_detections, all_masks
 
 
 def _get_annotations(generator):
@@ -628,16 +637,25 @@ def _get_annotations(generator):
     all_annotations = [[None for i in range(generator.num_classes)]
                        for j in range(generator.y.shape[0])]
 
+    all_masks = [[None for i in range(generator.num_classes)]
+                 for j in range(generator.y.shape[0])]
+
     for i in range(generator.y.shape[0]):
         # load the annotations
         annotations = generator.load_annotations(generator.y[i])
 
+        if generator.include_masks:
+            annotations['masks'] = np.stack(annotations['masks'], axis=0)
+
         # copy detections to all_annotations
         for label in range(generator.num_classes):
-            il = annotations['bboxes'][annotations['labels'] == label, :].copy()
-            all_annotations[i][label] = il
+            imb = annotations['bboxes'][annotations['labels'] == label, :].copy()
+            all_annotations[i][label] = imb
+            if generator.include_masks:
+                imm = annotations['masks'][annotations['labels'] == label, ..., 0].copy()
+                all_masks[i][label] = imm
 
-    return all_annotations
+    return all_annotations, all_masks
 
 
 def evaluate(generator,
@@ -658,12 +676,12 @@ def evaluate(generator,
         A dict mapping class names to mAP scores.
     """
     # gather all detections and annotations
-    all_detections = _get_detections(
+    all_detections, _ = _get_detections(
         generator, model,
         score_threshold=score_threshold,
         max_detections=max_detections)
 
-    all_annotations = _get_annotations(generator)
+    all_annotations, _ = _get_annotations(generator)
     average_precisions = {}
 
     # all_detections = pickle.load(open('all_detections.pkl', 'rb'))
@@ -702,6 +720,112 @@ def evaluate(generator,
                     false_positives = np.append(false_positives, 0)
                     true_positives = np.append(true_positives, 1)
                     detected.append(assigned)
+                else:
+                    false_positives = np.append(false_positives, 1)
+                    true_positives = np.append(true_positives, 0)
+
+        # no annotations -> AP for this class is 0 (is this correct?)
+        if num_annotations == 0:
+            average_precisions[label] = 0, 0
+            continue
+
+        # sort by score
+        indices = np.argsort(-scores)
+        false_positives = false_positives[indices]
+        true_positives = true_positives[indices]
+
+        # compute false positives and true positives
+        false_positives = np.cumsum(false_positives)
+        true_positives = np.cumsum(true_positives)
+
+        # compute recall and precision
+        recall = true_positives / num_annotations
+        precision = true_positives / np.maximum(true_positives + false_positives,
+                                                np.finfo(np.float64).eps)
+
+        # compute average precision
+        average_precision = _compute_ap(recall, precision)
+        average_precisions[label] = average_precision, num_annotations
+
+    return average_precisions
+
+
+def evaluate_mask(generator, model,
+                  iou_threshold=0.5,
+                  score_threshold=0.05,
+                  max_detections=100,
+                  binarize_threshold=0.5):
+    """Evaluate a given dataset using a given model.
+
+    Args:
+        generator: The generator that represents the dataset to evaluate.
+        model: The model to evaluate.
+        iou_threshold: The threshold used to consider when a detection is
+            positive or negative.
+        score_threshold: The score confidence threshold to use for detections.
+        max_detections: The maximum number of detections to use per image.
+        binarize_threshold: Threshold to binarize the masks with.
+
+    Returns:
+        A dict mapping class names to mAP scores.
+    """
+    # gather all detections and annotations
+    all_detections, all_masks = _get_detections(
+        generator, model,
+        score_threshold=score_threshold,
+        max_detections=max_detections)
+    all_annotations, all_gt_masks = _get_annotations(generator)
+    average_precisions = {}
+
+    # import pickle
+    # pickle.dump(all_detections, open('all_detections.pkl', 'wb'))
+    # pickle.dump(all_masks, open('all_masks.pkl', 'wb'))
+    # pickle.dump(all_annotations, open('all_annotations.pkl', 'wb'))
+    # pickle.dump(all_gt_masks, open('all_gt_masks.pkl', 'wb'))
+
+    # process detections and annotations
+    for label in range(generator.num_classes()):
+        false_positives = np.zeros((0,))
+        true_positives = np.zeros((0,))
+        scores = np.zeros((0,))
+        num_annotations = 0.0
+
+        for i in range(generator.size()):
+            detections = all_detections[i][label]
+            masks = all_masks[i][label]
+            annotations = all_annotations[i][label]
+            gt_masks = all_gt_masks[i][label]
+            num_annotations += annotations.shape[0]
+            detected_annotations = []
+
+            for d, mask in zip(detections, masks):
+                box = d[:4].astype(int)
+                scores = np.append(scores, d[4])
+
+                if annotations.shape[0] == 0:
+                    false_positives = np.append(false_positives, 1)
+                    true_positives  = np.append(true_positives, 0)
+                    continue
+
+                # resize to fit the box
+                mask = cv2.resize(mask, (box[2] - box[0], box[3] - box[1]))
+
+                # binarize the mask
+                mask = (mask > binarize_threshold).astype(np.uint8)
+
+                # place mask in image frame
+                mask_image = np.zeros_like(gt_masks[0])
+                mask_image[box[1]:box[3], box[0]:box[2]] = mask
+                mask = mask_image
+
+                overlaps = overlap(np.expand_dims(mask, axis=0), gt_masks)
+                assigned_annotation = np.argmax(overlaps, axis=1)
+                max_overlap = overlaps[0, assigned_annotation]
+
+                if max_overlap >= iou_threshold and assigned_annotation not in detected_annotations:
+                    false_positives = np.append(false_positives, 0)
+                    true_positives = np.append(true_positives, 1)
+                    detected_annotations.append(assigned_annotation)
                 else:
                     false_positives = np.append(false_positives, 1)
                     true_positives = np.append(true_positives, 0)
