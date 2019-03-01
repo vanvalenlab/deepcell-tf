@@ -28,9 +28,10 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import cv2
 import numpy as np
 import tensorflow as tf
+# from cv2 import resize
+from skimage.transform import resize
 from tensorflow.python.keras import backend as K
 from tensorflow.python.framework import tensor_shape
 
@@ -676,8 +677,7 @@ def _get_annotations(generator):
     return all_annotations, all_masks
 
 
-def evaluate(generator,
-             model,
+def evaluate(generator, model,
              iou_threshold=0.5,
              score_threshold=0.05,
              max_detections=100):
@@ -826,10 +826,11 @@ def evaluate_mask(generator, model,
                     continue
 
                 # resize to fit the box
-                mask = cv2.resize(mask, (box[2] - box[0], box[3] - box[1]))
+                # mask = cv2.resize(mask, (box[2] - box[0], box[3] - box[1]))
+                mask = resize(mask, (box[3] - box[1], box[2] - box[0]))
 
                 # binarize the mask
-                mask = (mask > binarize_threshold).astype(np.uint8)
+                mask = (mask > binarize_threshold).astype('uint8')
 
                 # place mask in image frame
                 mask_image = np.zeros_like(gt_masks[0])
