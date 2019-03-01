@@ -148,8 +148,9 @@ def draw_masks(image, boxes, masks, color=[31, 0, 255], binarize_threshold=0.5):
         binarize_threshold: Threshold used for binarizing the masks.
     """
     for box, mask in zip(boxes, masks):
-        draw_mask(image, box, mask, color=color,
-                  binarize_threshold=binarize_threshold)
+        if not any(b == -1 for b in box):
+            draw_mask(image, box, mask, color=color,
+                      binarize_threshold=binarize_threshold)
 
 
 def draw_detections(image,
