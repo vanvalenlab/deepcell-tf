@@ -420,8 +420,8 @@ def train_model_siamese_daughter(model,
         horizontal_flip=0,
         vertical_flip=0)
 
-    total_train_pairs = tracking_utils.count_pairs(train_dict['y'])
-    total_test_pairs = tracking_utils.count_pairs(val_dict['y'])
+    total_train_pairs = tracking_utils.count_pairs(train_dict['y'], same_probability=5.0)
+    total_test_pairs = tracking_utils.count_pairs(val_dict['y'], same_probability=5.0)
 
     train_data = datagen.flow(
         train_dict,
