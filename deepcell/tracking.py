@@ -247,12 +247,13 @@ class cell_tracker():
                         frame_features[feature_name][cell])
 
                     # this condition changes `frame_feature`
-                    if feature_name == "neighborhood":
+                    if feature_name == 'neighborhood':
                         # we need to get the future frame for the track we are comparing to
-                        track_label = self.tracks[track]["label"]
+                        track_label = self.tracks[track]['label']
                         try:
-                            track_frame_features = self._get_features(self.x, self.y_tracked, [frame - 1], [track_label])
-                            frame_feature = track_frame_features["~future area"]
+                            track_frame_features = self._get_features(
+                                self.x, self.y_tracked, [frame - 1], [track_label])
+                            frame_feature = track_frame_features['~future area']
                         except:
                             # `track_label` might not exist in `frame - 1`
                             # if this happens, default to the cell's neighborhood
@@ -270,21 +271,19 @@ class cell_tracker():
                         inputs[feature_name][0].append(track_feature)
                         inputs[feature_name][1].append(frame_feature)
 
-
         if input_pairs == []:
             # if the frame is empty
             assignment_matrix[:, :] = 1
             predictions = []
-
         else:
             model_input = []
             for feature_name in self.features:
                 in_1, in_2 = inputs[feature_name]
                 feature_shape = self.feature_shape[feature_name]
                 in_1 = np.reshape(np.stack(in_1), (len(input_pairs),
-                                         self.track_length, *feature_shape))
+                                  self.track_length, *feature_shape))
                 in_2 = np.reshape(np.stack(in_2), (len(input_pairs),
-                                         1, *feature_shape))
+                                  1, *feature_shape))
                 model_input.extend([in_1, in_2])
 
             predictions = self.model.predict(model_input)
@@ -443,7 +442,6 @@ class cell_tracker():
                 continue
             if p > max_prob:
                 parent_id, max_prob = track_id, p
-                
         return parent_id
 
     def _fetch_track_feature(self, feature, before_frame=None):
@@ -477,7 +475,7 @@ class cell_tracker():
 
         for track_id, track in self.tracks.items():
             app = track['appearance']
-            allowed_frames = [f for f in track["frames"] if f < before_frame]
+            allowed_frames = [f for f in track['frames'] if f < before_frame]
             frame_dict = {frame: idx for idx, frame in enumerate(allowed_frames)}
 
             if not allowed_frames:

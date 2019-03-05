@@ -42,11 +42,18 @@ def get_js_video(images, batch=0, channel=0, cmap='jet', vmin=0, vmax=30):
     fig = plt.figure()
 
     ims = []
+    plot_kwargs = {
+        'animated': True,
+        'cmap': cmap,
+    }
+
+    # TODO: do these not work for other cmaps?
+    if cmap == 'cubehelix':
+        plot_kwargs['vmin'] = vmin
+        plot_kwargs['vmax'] = vmax
+
     for i in range(images.shape[1]):
-        if cmap == 'cubehelix':
-            im = plt.imshow(images[batch, i, :, :, channel], animated=True, cmap=cmap, vmin=vmin, vmax=vmax)
-        else:
-            im = plt.imshow(images[batch, i, :, :, channel], animated=True, cmap=cmap)
+        im = plt.imshow(images[batch, i, :, :, channel], **plot_kwargs)
         ims.append([im])
 
     ani = animation.ArtistAnimation(fig, ims, interval=150, repeat_delay=1000)

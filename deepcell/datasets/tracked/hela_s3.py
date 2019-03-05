@@ -64,8 +64,8 @@ def load_tracked_data(path='HeLa_S3.trks', test_size=.2, seed=0):
                     file_hash='590ee37d3c703cfe029a2e60c9dc777b')
 
     train_dict, test_dict = get_data(path, mode='siamese_daughters',
-                                    test_size=test_size, seed=seed)
-    
+                                     test_size=test_size, seed=seed)
+
     x_train, y_train = train_dict['X'], train_dict['y']
     x_test, y_test = test_dict['X'], test_dict['y']
     return (x_train, y_train), (x_test, y_test)
