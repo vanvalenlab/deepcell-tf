@@ -64,7 +64,7 @@ def load_tracked_data(path='HEK293.trks', test_size=.2, seed=0):
                     file_hash='d19e0fe144633a08d41cf6695e11f72b')
 
     train_dict, test_dict = get_data(path, mode='siamese_daughters',
-                                    test_size=test_size, seed=seed)
+                                     test_size=test_size, seed=seed)
 
     x_train, y_train = train_dict['X'], train_dict['y']
     x_test, y_test = test_dict['X'], test_dict['y']

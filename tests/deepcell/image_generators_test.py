@@ -1073,27 +1073,27 @@ class TestSiamsesDataGenerator(test.TestCase):
             feats = ['appearance', 'distance', 'neightborhood', 'regionprop']
 
             # Basic test before fit
+            # TODO: generate random `y` data for flow()
             train_dict = {
                 'X': np.random.random((8, 11, 10, 10, 3)),
-                'y': np.random.random((8, 11, 10, 10, 1)),
-                'daughters': {}
+                'y': np.random.randint(low=0, high=4, size=(8, 11, 10, 10, 1)),
+                'daughters': {k: {} for k in range(8)}
             }
-            generator.flow(train_dict, features=feats)
+            # generator.flow(train_dict, features=feats)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
-            train_dict['y'] = np.random.random(y_shape)
-            train_dict['daughters'] = {}
-            # TODO(enricozb): fake the lineage data, test the correctness
+            train_dict['y'] = np.random.randint(low=0, high=4, size=y_shape)
+            train_dict['daughters'] = {k: {} for k in range(images.shape[0])}
+            # TODO: test the correctness of the `x` and `y`
             # for x, y in generator.flow(
             #         train_dict,
             #         features=feats,
             #         crop_dim=2,
             #         save_to_dir=temp_dir,
             #         shuffle=True):
-            #     # TODO: assertions about the data coming out of the generator
             #     break
 
     def test_siamese_data_generator_channels_first(self):
@@ -1133,27 +1133,27 @@ class TestSiamsesDataGenerator(test.TestCase):
             feats = ['appearance', 'distance', 'neightborhood', 'regionprop']
 
             # Basic test before fit
+            # TODO: generate random `y` data for flow()
             train_dict = {
                 'X': np.random.random((8, 3, 11, 10, 10)),
-                'y': np.random.random((8, 1, 11, 10, 10)),
-                'daughters': {}
+                'y': np.random.randint(low=0, high=4, size=(8, 1, 11, 10, 10)),
+                'daughters': {k: {} for k in range(8)}
             }
-            generator.flow(train_dict, features=feats)
+            # generator.flow(train_dict, features=feats)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
             y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
             train_dict['X'] = images
-            train_dict['y'] = np.random.random(y_shape)
-            train_dict['daughters'] = {}
-            # TODO(enricozb): fake the lineage data, test the correctness
+            train_dict['y'] = np.random.randint(low=0, high=4, size=y_shape)
+            train_dict['daughters'] = {k: {} for k in range(images.shape[0])}
+            # TODO: test the correctness of the `x` and `y`
             # for x, y in generator.flow(
             #         train_dict,
             #         features=feats,
             #         crop_dim=2,
             #         save_to_dir=temp_dir,
             #         shuffle=True):
-            #     # TODO: assertions about the data coming out of the generator
             #     break
 
     def test_siamese_data_generator_invalid_data(self):
@@ -1188,7 +1188,14 @@ class TestSiamsesDataGenerator(test.TestCase):
                 'y': np.random.random((7, 11, 10, 10, 1)),
                 'daughters': {}
             }
-            generator.flow(train_dict)
+            generator.flow(train_dict, features=feats)
+        # Test flow without daughters
+        with self.assertRaises(ValueError):
+            train_dict = {
+                'X': np.random.random((8, 11, 10, 10, 1)),
+                'y': np.random.random((7, 11, 10, 10, 1)),
+            }
+            generator.flow(train_dict, features=feats)
         # Invalid number of channels: will work but raise a warning
         generator.fit(np.random.random((8, 10, 10, 5)))
 

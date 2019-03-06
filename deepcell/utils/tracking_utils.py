@@ -91,11 +91,11 @@ def count_pairs(y, same_probability=0.5, data_format=None):
 def load_trks(filename):
     """Load a trk/trks file.
 
-        Args:
-            trks_file: full path to the file including .trk/.trks
+    Args:
+        trks_file: full path to the file including .trk/.trks
 
-        Returns:
-            A dictionary with raw, tracked, and lineage data
+    Returns:
+        A dictionary with raw, tracked, and lineage data
     """
     with tarfile.open(filename, 'r') as trks:
 
@@ -115,17 +115,17 @@ def load_trks(filename):
         # trks.extractfile opens a file in bytes mode, json can't use bytes.
         __, file_extension = os.path.splitext(filename)
 
-        if file_extension == ".trks":
+        if file_extension == '.trks':
             trk_data = trks.getmember('lineages.json')
             lineages = json.loads(trks.extractfile(trk_data).read().decode())
-            # JSON only allows strings as keys, so we convert them back to ints here
+            # JSON only allows strings as keys, so convert them back to ints
             for i, tracks in enumerate(lineages):
                 lineages[i] = {int(k): v for k, v in tracks.items()}
 
-        elif file_extension == ".trk":
-            trk_data = trks.getmember("lineage.json")
+        elif file_extension == '.trk':
+            trk_data = trks.getmember('lineage.json')
             lineage = json.loads(trks.extractfile(trk_data).read().decode())
-            # JSON only allows strings as keys, so we convert them back to ints here
+            # JSON only allows strings as keys, so convert them back to ints
             lineages = []
             lineages.append({int(k): v for k, v in lineage.items()})
 
@@ -135,12 +135,12 @@ def load_trks(filename):
 def trk_folder_to_trks(dirname, trks_filename):
     """Compiles a directory of trk files into one trks_file.
 
-        Args:
-            dirname: full path to the directory containing multiple trk files
-            trks_filename: desired filename (the name should end in .trks)
+    Args:
+        dirname: full path to the directory containing multiple trk files
+        trks_filename: desired filename (the name should end in .trks)
 
-        Returns:
-            Nothing
+    Returns:
+        Nothing
     """
     lineages = []
     raw = []
@@ -163,60 +163,62 @@ def trk_folder_to_trks(dirname, trks_filename):
 def save_trks(filename, lineages, raw, tracked):
     """Saves raw, tracked, and lineage data into one trks_file.
 
-        Args:
-            filename: full path to the final trk files
-            lineages: a list of dictionaries saved as a json
-            raw: raw images data
-            tracked: annotated image data
+    Args:
+        filename: full path to the final trk files
+        lineages: a list of dictionaries saved as a json
+        raw: raw images data
+        tracked: annotated image data
 
-        Returns:
-            Nothing
+    Returns:
+        Nothing
     """
-    if not filename.endswith(".trks"):
-        raise ValueError("filename must end with '.trks'")
+    if not str(filename).lower().endswith('.trks'):
+        raise ValueError('filename must end with `.trks`. Found %s' % filename)
 
-    with tarfile.open(filename, "w") as trks:
-        with tempfile.NamedTemporaryFile("w") as lineages_file:
+    with tarfile.open(filename, 'w') as trks:
+        with tempfile.NamedTemporaryFile('w') as lineages_file:
             json.dump(lineages, lineages_file, indent=1)
             lineages_file.flush()
-            trks.add(lineages_file.name, "lineages.json")
+            trks.add(lineages_file.name, 'lineages.json')
 
         with tempfile.NamedTemporaryFile() as raw_file:
             np.save(raw_file, raw)
             raw_file.flush()
-            trks.add(raw_file.name, "raw.npy")
+            trks.add(raw_file.name, 'raw.npy')
 
         with tempfile.NamedTemporaryFile() as tracked_file:
             np.save(tracked_file, tracked)
             tracked_file.flush()
-            trks.add(tracked_file.name, "tracked.npy")
+            trks.add(tracked_file.name, 'tracked.npy')
+
 
 def trks_stats(trks_file_name):
-    """For a given trks_file, find the Number of cell tracks, 
+    """For a given trks_file, find the Number of cell tracks,
        the Number of frames per track, and the Number of divisions.
 
-        Args:
-            filename: full path to a trks file
+    Args:
+        filename: full path to a trks file
 
-        Returns:
-            Nothing
+    Returns:
+        Nothing
     """
     training_data = load_trks(trks_file_name)
-    X = training_data["X"]
-    y = training_data["y"]
-    daughters = [{cell: fields["daughters"]
-                 for cell, fields in tracks.items()}
-                for tracks in training_data["lineages"]]
+    X = training_data['X']
+    y = training_data['y']
+    daughters = [{cell: fields['daughters']
+                  for cell, fields in tracks.items()}
+                 for tracks in training_data['lineages']]
 
-    print("Image data shape: ", X.shape)
-    print("Number of lineages (should equal batch size): ", len(training_data["lineages"]))
+    print('Image data shape: ', X.shape)
+    print('Number of lineages (should equal batch size): ',
+          len(training_data['lineages']))
 
     total_tracks = 0
     total_divisions = 0
     avg_frame_counts_in_batches = []
     for batch, daughter_batch in enumerate(daughters):
         num_tracks_in_batch = len(daughter_batch)
-        num_div_in_batch = len([children for children in daughter_batch if daughter_batch[children]])
+        num_div_in_batch = len([c for c in daughter_batch if daughter_batch[c]])
         total_tracks = total_tracks + num_tracks_in_batch
         total_divisions = total_divisions + num_div_in_batch
         frame_counts = []
@@ -230,7 +232,7 @@ def trks_stats(trks_file_name):
         avg_frame_counts_in_batches.append(np.average(frame_counts))
     avg_num_frames_per_track = np.average(avg_frame_counts_in_batches)
 
-    print("Dataset Statistics:")
-    print("Total number of unique tracks (cells) - ", total_tracks)
-    print("Total number of divisions             - ", total_divisions)
-    print("Average number of frames per track    - ", int(avg_num_frames_per_track))
+    print('Dataset Statistics:')
+    print('Total number of unique tracks (cells) - ', total_tracks)
+    print('Total number of divisions             - ', total_divisions)
+    print('Average number of frames per track    - ', int(avg_num_frames_per_track))

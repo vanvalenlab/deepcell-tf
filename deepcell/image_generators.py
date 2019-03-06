@@ -2017,31 +2017,29 @@ class SiameseIterator(Iterator):
         track_id = self.track_ids[track]
 
         # convert to list to use python's (+) on lists
-        all_frames = list(track_id["frames"])
+        all_frames = list(track_id['frames'])
 
         if division:
             # sanity check
             if (self.x.shape[self.time_axis] - 1) in all_frames:
-                raise Exception(
-                        "Parent cell should not be in last frame of movie")
-
-                logging.warning("Track %s is annotated incorrectly. No parent cell "
-                                "should not be in the last frame of any movie.", track_id)
-
-
+                logging.warning('Track %s is annotated incorrectly. '
+                                'No parent cell should be in the last frame of'
+                                ' any movie.', track_id)
+                raise Exception('Parent cell should not be in last frame of movie')
 
             candidate_interval = all_frames[-self.min_track_length:]
         else:
             # exclude the final frame for comparison purposes
             candidate_frames = all_frames[:-1]
 
-            # `interval_start` is within [0, len(candidate_frames) - min_track_length]
+            # `start` is within [0, len(candidate_frames) - min_track_length]
             # in order to have at least `min_track_length` preceding frames.
             # The `max(..., 1)` is because `len(all_frames) <= self.min_track_length`
             # is possible. If `len(candidate_frames) <= self.min_track_length`,
             # then the interval will be the entire `candidate_frames`.
-            interval_start = np.random.randint(0, max(len(candidate_frames) - self.min_track_length, 1))
-            candidate_interval = candidate_frames[interval_start:interval_start + self.min_track_length]
+            high = max(len(candidate_frames) - self.min_track_length, 1)
+            start = np.random.randint(0, high)
+            candidate_interval = candidate_frames[start:start + self.min_track_length]
 
         # if the interval is too small, pad the interval with the oldest frame.
         if len(candidate_interval) < self.min_track_length:
@@ -2245,11 +2243,13 @@ class SiameseIterator(Iterator):
             # Get the frames for cell 1 and frames/label for cell 2
             frames_1 = self._fetch_frames(j, division=division)
             if len(frames_1) != self.min_track_length:
-                logging.warning("self._fetch_frames(%s, division=%s) returned incorrect number "
-                                "of frames. Returned %s frames.", j, division, len(frames_1))
+                logging.warning('self._fetch_frames(%s, division=%s) returned'
+                                ' %s frames but %s frames were expected.',
+                                j, division, len(frames_1),
+                                self.min_track_length)
 
-            # If the type is not 2 (not division) then the last frame is not included in
-            #`frames_1`, so we grab that to use for comparison
+            # If the type is not 2 (not division) then the last frame is not
+            # included in `frames_1`, so we grab that to use for comparison
             if type_cell != 2:
                 # For frame_2, choose the next frame cell 1 appears in
                 last_frame_1 = np.amax(frames_1)
