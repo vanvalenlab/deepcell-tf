@@ -1039,8 +1039,9 @@ class TestMovieDataGenerator(test.TestCase):
 class TestSiamsesDataGenerator(test.TestCase):
 
     def test_siamese_data_generator(self):
-        frames = 7
-        for test_images in _generate_test_images():
+        frames = 5
+        # TODO: image generator should handle RGB as well as grayscale
+        for test_images in _generate_test_images()[1:]:
             img_list = []
             for im in test_images:
                 frame_list = []
@@ -1070,14 +1071,15 @@ class TestSiamsesDataGenerator(test.TestCase):
                 horizontal_flip=True,
                 vertical_flip=True)
 
-            feats = ['appearance', 'distance', 'neightborhood', 'regionprop']
+            feats = ['appearance', 'distance', 'neighborhood', 'regionprop']
 
             # Basic test before fit
             train_dict = {
-                # Test grayscale
-                'X': np.random.random((8, 11, 10, 10, 1)),
-                'y': np.random.randint(low=0, high=4, size=(8, 11, 10, 10, 1)),
-                'daughters': [{kk: [] for kk in range(1, 4)} for k in range(8)]
+                # TODO: image generator should handle RGB as well as grayscale
+                'X': np.random.random((8, 5, 10, 10, 1)),
+                'y': np.random.randint(low=0, high=4, size=(8, 5, 10, 10, 1)),
+                'daughters': [{j: [{1: [2, 3]}] for j in range(1, 4)}
+                              for k in range(8)]
             }
             generator.flow(train_dict, features=feats)
 
@@ -1086,7 +1088,8 @@ class TestSiamsesDataGenerator(test.TestCase):
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(low=0, high=4, size=y_shape)
-            train_dict['daughters'] = {k: {} for k in range(images.shape[0])}
+            train_dict['daughters'] = [{j: [{1: [2, 3]}] for j in range(1, 4)}
+                                       for k in range(y_shape[0])]
             # TODO: test the correctness of the `x` and `y`
             # for x, y in generator.flow(
             #         train_dict,
@@ -1097,8 +1100,9 @@ class TestSiamsesDataGenerator(test.TestCase):
             #     break
 
     def test_siamese_data_generator_channels_first(self):
-        frames = 7
-        for test_images in _generate_test_images():
+        frames = 5
+        # TODO: image generator should handle RGB as well as grayscale
+        for test_images in _generate_test_images()[1:]:
             img_list = []
             for im in test_images:
                 frame_list = []
@@ -1130,23 +1134,24 @@ class TestSiamsesDataGenerator(test.TestCase):
                 vertical_flip=True,
                 data_format='channels_first')
 
-            feats = ['appearance', 'distance', 'neightborhood', 'regionprop']
+            feats = ['appearance', 'distance', 'neighborhood', 'regionprop']
 
             # Basic test before fit
-            # TODO: generate random `y` data for flow()
             train_dict = {
-                'X': np.random.random((8, 1, 11, 10, 10)),
-                'y': np.random.randint(low=0, high=4, size=(8, 1, 11, 10, 10)),
-                'daughters': [{kk: [] for kk in range(1, 4)} for k in range(8)]
+                # TODO: image generator should handle RGB as well as grayscale
+                'X': np.random.random((8, 1, 5, 10, 10)),
+                'y': np.random.randint(low=0, high=4, size=(8, 1, 5, 10, 10)),
+                'daughters': [{j: [{1: [2, 3]}] for j in range(1, 4)} for k in range(8)]
             }
-            # generator.flow(train_dict, features=feats)
+            generator.flow(train_dict, features=feats)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
             y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(low=0, high=4, size=y_shape)
-            train_dict['daughters'] = {k: {} for k in range(images.shape[0])}
+            train_dict['daughters'] = [{j: [{1: [2, 3]}] for j in range(1, 4)}
+                                       for k in range(y_shape[0])]
             # TODO: test the correctness of the `x` and `y`
             # for x, y in generator.flow(
             #         train_dict,
@@ -1165,7 +1170,7 @@ class TestSiamsesDataGenerator(test.TestCase):
             zca_whitening=True,
             data_format='channels_last')
 
-        feats = ['appearance', 'distance', 'neightborhood', 'regionprop']
+        feats = ['appearance', 'distance', 'neighborhood', 'regionprop']
 
         # Test fit with invalid data
         with self.assertRaises(ValueError):
