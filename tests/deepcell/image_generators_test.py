@@ -1073,13 +1073,13 @@ class TestSiamsesDataGenerator(test.TestCase):
             feats = ['appearance', 'distance', 'neightborhood', 'regionprop']
 
             # Basic test before fit
-            # TODO: generate random `y` data for flow()
             train_dict = {
-                'X': np.random.random((8, 11, 10, 10, 3)),
+                # Test grayscale
+                'X': np.random.random((8, 11, 10, 10, 1)),
                 'y': np.random.randint(low=0, high=4, size=(8, 11, 10, 10, 1)),
-                'daughters': {k: {} for k in range(8)}
+                'daughters': [{kk: [] for kk in range(1, 4)} for k in range(8)]
             }
-            # generator.flow(train_dict, features=feats)
+            generator.flow(train_dict, features=feats)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
@@ -1135,9 +1135,9 @@ class TestSiamsesDataGenerator(test.TestCase):
             # Basic test before fit
             # TODO: generate random `y` data for flow()
             train_dict = {
-                'X': np.random.random((8, 3, 11, 10, 10)),
+                'X': np.random.random((8, 1, 11, 10, 10)),
                 'y': np.random.randint(low=0, high=4, size=(8, 1, 11, 10, 10)),
-                'daughters': {k: {} for k in range(8)}
+                'daughters': [{kk: [] for kk in range(1, 4)} for k in range(8)]
             }
             # generator.flow(train_dict, features=feats)
 
