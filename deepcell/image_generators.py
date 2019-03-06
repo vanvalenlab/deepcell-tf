@@ -1781,6 +1781,10 @@ class SiameseIterator(Iterator):
                 self.tracks_with_divisions.append(track)
 
     def _sub_area(self, X_frame, y_frame, cell_label, num_channels):
+        if self.data_format == 'channels_first':
+            X_frame = np.rollaxis(X_frame, 0, 3)
+            y_frame = np.rollaxis(y_frame, 0, 3)
+
         pads = ((self.neighborhood_true_size, self.neighborhood_true_size),
                 (self.neighborhood_true_size, self.neighborhood_true_size),
                 (0, 0))
@@ -1801,6 +1805,10 @@ class SiameseIterator(Iterator):
 
         # Resize images from bounding box
         X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
+
+        if self.data_format == 'channels_first':
+            X_frame = np.rollaxis(X_frame, -1, 0)
+            y_frame = np.rollaxis(y_frame, -1, 0)
 
         return X_reduced
 
@@ -1941,11 +1949,7 @@ class SiameseIterator(Iterator):
             appearance, centroid, neighborhood, regionprop, future_area = self._get_features(
                 X, y, frames, labels)
 
-            if self.data_format == 'channels_first':
-                all_appearances[track, :, np.array(frames), :, :] = appearance
-            if self.data_format == 'channels_last':
-                all_appearances[track, np.array(frames), :, :, :] = appearance
-
+            all_appearances[track] = appearance
             all_centroids[track, np.array(frames), :] = centroid
             all_neighborhoods[track, np.array(frames), :, :] = neighborhood
 
