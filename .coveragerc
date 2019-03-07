@@ -18,3 +18,4 @@ omit =
     deepcell/utils/testing_utils.py
     deepcell/datasets/*
     deepcell/notebooks/*
+    deepcell/tracking.py

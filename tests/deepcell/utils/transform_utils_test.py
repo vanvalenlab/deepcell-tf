@@ -197,6 +197,16 @@ class TransformUtilsTest(test.TestCase):
             self.assertAllEqual(np.unique(distance), np.array([0, 1, 2, 3]))
             self.assertEqual(np.expand_dims(distance, axis=1).shape, img.shape)
 
+    def test_centroid_weighted_distance_transform_2d(self):
+        centroid_dist = transform_utils.centroid_weighted_distance_transform_2d
+        for img in _generate_test_masks():
+            K.set_image_data_format('channels_last')
+            dist_x, dist_y = centroid_dist(img)
+            self.assertEqual(str(dist_x.dtype), str(K.floatx()))
+            self.assertEqual(dist_x.shape, img.shape)
+            self.assertEqual(str(dist_y.dtype), str(K.floatx()))
+            self.assertEqual(dist_y.shape, img.shape)
+
     def test_to_categorical(self):
         num_classes = 5
         shapes = [(1,), (3,), (4, 3), (5, 4, 3), (3, 1), (3, 2, 1)]

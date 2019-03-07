@@ -24,7 +24,6 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for running functions
-@author: David Van Valen
 """
 from __future__ import absolute_import
 from __future__ import division
