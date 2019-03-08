@@ -29,6 +29,9 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import json
+import tarfile
+import tempfile
 
 import numpy as np
 from tensorflow.python.keras import backend as K
@@ -38,6 +41,32 @@ from deepcell.utils import data_utils
 
 
 class TestDataUtils(test.TestCase):
+
+    def _write_test_trks(self, path):
+        img_w, img_h = 30, 30
+        X = np.random.random((10, img_w, img_h, 1))
+        y = np.random.randint(4, size=(10, img_w, img_h, 1))
+        lineages = [{
+            1: {'daughters': [2, 3]},
+            2: {'daughters': []},
+            3: {'daughters': []}
+        }] * X.shape[0]
+
+        with tarfile.open(path, 'w') as trks:
+            with tempfile.NamedTemporaryFile('w') as lineages_file:
+                json.dump(lineages, lineages_file, indent=4)
+                lineages_file.flush()
+                trks.add(lineages_file.name, 'lineages.json')
+
+            with tempfile.NamedTemporaryFile() as raw_file:
+                np.save(raw_file, X)
+                raw_file.flush()
+                trks.add(raw_file.name, 'raw.npy')
+
+            with tempfile.NamedTemporaryFile() as tracked_file:
+                np.save(tracked_file, y)
+                tracked_file.flush()
+                trks.add(tracked_file.name, 'tracked.npy')
 
     def test_get_data(self):
         test_size = .1
@@ -56,13 +85,53 @@ class TestDataUtils(test.TestCase):
 
         self.assertIsInstance(train_dict, dict)
         self.assertIsInstance(test_dict, dict)
+        self.assertAlmostEqual(X_test.size / (X_test.size + X_train.size), test_size)
 
-        self.assertEqual(X_test.size / (X_test.size + X_train.size), test_size)
-
+        # test bad filepath
         bad_file = os.path.join(temp_dir, 'bad.npz')
         np.savez(bad_file, X_bad=X, y_bad=y)
         with self.assertRaises(KeyError):
             _, _ = data_utils.get_data(bad_file)
+
+        # test siamese_daughters mode
+        good_file = os.path.join(temp_dir, 'siamese.trks')
+        self._write_test_trks(good_file)
+
+        train_dict, test_dict = data_utils.get_data(
+            good_file, mode='siamese_daughters', test_size=test_size)
+
+        X_test, X_train = test_dict['X'], train_dict['X']
+
+        d_test, d_train = test_dict['daughters'], train_dict['daughters']
+
+        self.assertIsInstance(train_dict, dict)
+        self.assertIsInstance(test_dict, dict)
+        self.assertIsInstance(d_test, list)
+        self.assertIsInstance(d_train, list)
+        self.assertEqual(len(d_train), X_train.shape[0])
+        self.assertEqual(len(d_test), X_test.shape[0])
+        self.assertAlmostEqual(X_test.size / (X_test.size + X_train.size), test_size)
+
+    def test_load_trks(self):
+        temp_dir = self.get_temp_dir()
+        good_file = os.path.join(temp_dir, 'siamese.trks')
+        self._write_test_trks(good_file)
+
+        trks = data_utils.load_trks(good_file)
+        X = trks.get('X')
+        y = trks.get('y')
+        lineages = trks.get('lineages')
+        self.assertIsInstance(trks, dict)
+        self.assertIsInstance(trks.get('X'), np.ndarray)
+        self.assertIsInstance(trks.get('y'), np.ndarray)
+        self.assertIsInstance(trks.get('lineages'), list)
+        self.assertEqual(len(lineages), X.shape[0])
+        for i in range(y.shape[0]):
+            expected_keys = sorted([u for u in np.unique(y[i]) if u != 0])
+            print(expected_keys)
+            self.assertAllEqual(sorted(lineages[i].keys()), expected_keys)
+            for k in lineages[i]:
+                self.assertIsInstance(lineages[i][k]['daughters'], list)
 
     def test_get_max_sample_num_list(self):
         K.set_image_data_format('channels_last')
