@@ -38,13 +38,23 @@ from matplotlib import animation
 from tensorflow.python.keras import backend as K
 
 
-def get_js_video(images, batch=0, channel=0, cmap='jet'):
+def get_js_video(images, batch=0, channel=0, cmap='jet', vmin=0, vmax=30):
     """Create a JavaScript video as HTML for visualizing 3D data as a movie"""
     fig = plt.figure()
 
     ims = []
+    plot_kwargs = {
+        'animated': True,
+        'cmap': cmap,
+    }
+
+    # TODO: do these not work for other cmaps?
+    if cmap == 'cubehelix':
+        plot_kwargs['vmin'] = vmin
+        plot_kwargs['vmax'] = vmax
+
     for i in range(images.shape[1]):
-        im = plt.imshow(images[batch, i, :, :, channel], animated=True, cmap=cmap)
+        im = plt.imshow(images[batch, i, :, :, channel], **plot_kwargs)
         ims.append([im])
 
     ani = animation.ArtistAnimation(fig, ims, interval=150, repeat_delay=1000)
