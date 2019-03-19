@@ -228,6 +228,7 @@ def retinanet_mask(inputs,
         name='filtered_detections'
     )([boxes, classification] + other)
 
+    # split up in known outputs and "other"
     boxes = detections[0]
     scores = detections[1]
 
@@ -239,22 +240,15 @@ def retinanet_mask(inputs,
     maskrcnn_outputs = [submodel(rois) for _, submodel in roi_submodels]
 
     # concatenate boxes for loss computation
-    trainable_outputs = [ConcatenateBoxes(name=name)([boxes, output]) for (name, _), output in zip(roi_submodels, maskrcnn_outputs)]
+    trainable_outputs = [ConcatenateBoxes(name=name)([boxes, output])
+                         for (name, _), output in zip(
+                             roi_submodels, maskrcnn_outputs)]
 
     # reconstruct the new output
-    outputs = [regression, classification] + other + trainable_outputs + detections + maskrcnn_outputs
+    outputs = [regression, classification] + other + trainable_outputs + \
+        detections + maskrcnn_outputs
 
     return Model(inputs=inputs, outputs=outputs, name=name)
-
-    # # split up in known outputs and "other"
-    # boxes = detections[0]
-    # scores = detections[1]
-
-    # # reconstruct the new output
-    # outputs = [regression, classification] + \
-    #     other + [boxes_masks] + detections
-
-    # return Model(inputs=inputs, outputs=outputs, name=name)
 
 
 def MaskRCNN(backbone,
@@ -315,4 +309,3 @@ def MaskRCNN(backbone,
         name='{}_retinanet_mask'.format(backbone),
         mask_dtype=mask_dtype,
         **kwargs)
-
