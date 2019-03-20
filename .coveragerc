@@ -18,3 +18,4 @@ omit =
     deepcell/model_zoo/*
     deepcell/datasets/*
     deepcell/notebooks/*
+    deepcell/tracking.py

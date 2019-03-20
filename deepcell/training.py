@@ -42,10 +42,12 @@ from deepcell import losses
 from deepcell import image_generators
 from deepcell.callbacks import RedirectModel, Evaluate
 from deepcell.model_zoo import retinanet_bbox
+from deepcell.utils.retinanet_anchor_utils import overlap
 from deepcell.utils.retinanet_anchor_utils import make_shapes_callback
 from deepcell.utils.retinanet_anchor_utils import guess_shapes
 from deepcell.utils.retinanet_anchor_utils import evaluate
 from deepcell.utils import train_utils
+from deepcell.utils import tracking_utils
 from deepcell.utils.data_utils import get_data
 from deepcell.utils.train_utils import rate_scheduler
 
@@ -72,6 +74,7 @@ def train_model_sample(model,
                        flip=False,
                        shear=0,
                        zoom_range=0,
+                       seed=None,
                        **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
@@ -82,7 +85,7 @@ def train_model_sample(model,
     model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
     loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
-    train_dict, test_dict = get_data(dataset, mode='sample', test_size=test_size)
+    train_dict, test_dict = get_data(dataset, test_size=test_size, seed=seed)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
 
@@ -198,6 +201,7 @@ def train_model_conv(model,
                      flip=True,
                      shear=0,
                      zoom_range=0,
+                     seed=None,
                      **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
@@ -208,7 +212,7 @@ def train_model_conv(model,
     model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
     loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
-    train_dict, test_dict = get_data(dataset, mode='conv', test_size=test_size)
+    train_dict, test_dict = get_data(dataset, test_size=test_size, seed=seed)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
     # the data, shuffled and split between train and test sets
@@ -334,27 +338,53 @@ def train_model_conv(model,
     return model
 
 
-def train_model_siamese(model=None, dataset=None, optimizer=None,
-                        expt='', it=0, batch_size=1, n_epoch=100,
-                        direc_save='/data/models', direc_data='/data/npz_data',
-                        focal=False, gamma=0.5,
-                        lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-                        rotation_range=0, flip=True, shear=0, class_weight=None):
+def train_model_siamese_daughter(model,
+                                 dataset,
+                                 expt='',
+                                 test_size=.1,
+                                 n_epoch=100,
+                                 batch_size=1,
+                                 num_gpus=None,
+                                 crop_dim=32,
+                                 min_track_length=1,
+                                 neighborhood_scale_size=10,
+                                 features=None,
+                                 optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
+                                 log_dir='/data/tensorboard_logs',
+                                 model_dir='/data/models',
+                                 model_name=None,
+                                 focal=False,
+                                 gamma=0.5,
+                                 lr_sched=rate_scheduler(lr=0.01, decay=0.95),
+                                 rotation_range=0,
+                                 flip=True,
+                                 shear=0,
+                                 zoom_range=0,
+                                 seed=None,
+                                 **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
-    training_data_file_name = os.path.join(direc_data, dataset + '.npz')
-    todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    file_name_save = os.path.join(direc_save, '{}_{}_{}_{}.h5'.format(todays_date, dataset, expt, it))
-    file_name_save_loss = os.path.join(direc_save, '{}_{}_{}_{}.npz'.format(todays_date, dataset, expt, it))
+    if model_name is None:
+        todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        data_name = os.path.splitext(os.path.basename(dataset))[0]
+        model_name = '{}_{}_[{}]_neighs={}_epochs={}_seed={}_{}'.format(
+            todays_date, data_name, ','.join(f[0] for f in sorted(features)),
+            neighborhood_scale_size, n_epoch, seed, expt)
+    model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
+    loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
-    train_dict, test_dict = get_data(training_data_file_name, mode='siamese')
+    print('training on dataset:', dataset)
+    print('saving model at:', model_path)
+    print('saving loss at:', loss_path)
 
-    class_weights = train_dict['class_weights']
+    train_dict, val_dict = get_data(dataset, mode='siamese_daughters',
+                                    seed=seed, test_size=test_size)
+
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
     print('y_train shape:', train_dict['y'].shape)
-    print('X_test shape:', test_dict['X'].shape)
-    print('y_test shape:', test_dict['y'].shape)
+    print('X_test shape:', val_dict['X'].shape)
+    print('y_test shape:', val_dict['y'].shape)
     print('Output Shape:', model.layers[-1].output_shape)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
@@ -365,10 +395,18 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
                                               gamma=gamma,
                                               n_classes=n_classes,
                                               from_logits=False)
-        else:
-            return losses.weighted_categorical_crossentropy(y_true, y_pred,
-                                                            n_classes=n_classes,
-                                                            from_logits=False)
+        return losses.weighted_categorical_crossentropy(y_true, y_pred,
+                                                        n_classes=n_classes,
+                                                        from_logits=False)
+
+    if num_gpus is None:
+        num_gpus = train_utils.count_gpus()
+
+    if num_gpus >= 2:
+        batch_size = batch_size * num_gpus
+        model = train_utils.MultiGpuModel(model, num_gpus)
+
+    print('Training on {} GPUs'.format(num_gpus))
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
@@ -376,75 +414,60 @@ def train_model_siamese(model=None, dataset=None, optimizer=None,
 
     # this will do preprocessing and realtime data augmentation
     datagen = image_generators.SiameseDataGenerator(
-        rotation_range=rotation_range,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=shear,  # randomly shear images in the range (radians , -shear_range to shear_range)
-        horizontal_flip=flip,  # randomly flip images
-        vertical_flip=flip)  # randomly flip images
+        rotation_range=rotation_range,
+        shear_range=shear,
+        zoom_range=zoom_range,
+        horizontal_flip=flip,
+        vertical_flip=flip)
 
     datagen_val = image_generators.SiameseDataGenerator(
-        rotation_range=0,  # randomly rotate images by 0 to rotation_range degrees
-        shear_range=0,  # randomly shear images in the range (radians , -shear_range to shear_range)
-        horizontal_flip=0,  # randomly flip images
-        vertical_flip=0)  # randomly flip images
+        rotation_range=0,
+        zoom_range=0,
+        shear_range=0,
+        horizontal_flip=0,
+        vertical_flip=0)
 
-    def count_pairs(y):
-        """
-        Compute number of training samples needed to (stastically speaking)
-        observe all cell pairs.
-        Assume that the number of images is encoded in the second dimension.
-        Assume that y values are a cell-uniquely-labeled mask.
-        Assume that a cell is paired with one of its other frames 50% of the time
-        and a frame from another cell 50% of the time.
-        """
-        # TODO: channels_first axes
-        total_pairs = 0
-        for image_set in range(y.shape[0]):
-            set_cells = 0
-            cells_per_image = []
-            for image in range(y.shape[1]):
-                image_cells = int(y[image_set, image, :, :, :].max())
-                set_cells = set_cells + image_cells
-                cells_per_image.append(image_cells)
+    total_train_pairs = tracking_utils.count_pairs(train_dict['y'], same_probability=5.0)
+    total_test_pairs = tracking_utils.count_pairs(val_dict['y'], same_probability=5.0)
 
-            # Since there are many more possible non-self pairings than there are self pairings,
-            # we want to estimate the number of possible non-self pairings and then multiply
-            # that number by two, since the odds of getting a non-self pairing are 50%, to
-            # find out how many pairs we would need to sample to (statistically speaking)
-            # observe all possible cell-frame pairs.
-            # We're going to assume that the average cell is present in every frame. This will
-            # lead to an underestimate of the number of possible non-self pairings, but it's
-            # unclear how significant the underestimate is.
-            average_cells_per_frame = int(sum(cells_per_image) / len(cells_per_image))
-            non_self_cellframes = (average_cells_per_frame - 1) * len(cells_per_image)
-            non_self_pairings = non_self_cellframes * max(cells_per_image)
-            cell_pairings = non_self_pairings * 2
-            total_pairs = total_pairs + cell_pairings
-        return total_pairs
+    train_data = datagen.flow(
+        train_dict,
+        crop_dim=crop_dim,
+        batch_size=batch_size,
+        min_track_length=min_track_length,
+        neighborhood_scale_size=neighborhood_scale_size,
+        features=features)
 
-    # This shouldn't remain long term.
-    magic_number = 2048  # A power of 2 chosen just to reduce training time.
-    total_train_pairs = count_pairs(train_dict['y'])
-    total_train_pairs = int(total_train_pairs // magic_number)
+    val_data = datagen_val.flow(
+        val_dict,
+        crop_dim=crop_dim,
+        batch_size=batch_size,
+        min_track_length=min_track_length,
+        neighborhood_scale_size=neighborhood_scale_size,
+        features=features)
 
-    total_test_pairs = count_pairs(test_dict['y'])
-    total_test_pairs = int(total_test_pairs // magic_number)
+    print('total_train_pairs:', total_train_pairs)
+    print('total_test_pairs:', total_test_pairs)
+    print('batch size:', batch_size)
+    print('validation_steps: ', total_test_pairs // batch_size)
 
     # fit the model on the batches generated by datagen.flow()
     loss_history = model.fit_generator(
-        datagen.flow(train_dict, batch_size=batch_size),
+        train_data,
         steps_per_epoch=total_train_pairs // batch_size,
         epochs=n_epoch,
-        validation_data=datagen_val.flow(test_dict, batch_size=batch_size),
+        validation_data=val_data,
         validation_steps=total_test_pairs // batch_size,
         callbacks=[
             callbacks.LearningRateScheduler(lr_sched),
             callbacks.ModelCheckpoint(
-                file_name_save, monitor='val_loss', verbose=1,
+                model_path, monitor='val_loss', verbose=1,
                 save_best_only=True, save_weights_only=num_gpus >= 2),
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, model_name))
         ])
 
-    model.save_weights(file_name_save)
-    np.savez(file_name_save_loss, loss_history=loss_history.history)
+    model.save_weights(model_path)
+    np.savez(loss_path, loss_history=loss_history.history)
 
     return model
 
@@ -457,6 +480,8 @@ def train_model_retinanet(model,
                           n_epoch=10,
                           batch_size=1,
                           num_gpus=None,
+                          include_masks=False,
+                          mask_size=(28, 28),
                           optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
                           log_dir='/data/tensorboard_logs',
                           model_dir='/data/models',
@@ -476,7 +501,9 @@ def train_model_retinanet(model,
                           **kwargs):
     """Train a RetinaNet model from the given backbone
 
-    Adapted from https://github.com/fizyr/keras-retinanet.
+    Adapted from:
+        https://github.com/fizyr/keras-retinanet &
+        https://github.com/fizyr/keras-maskrcnn
     """
     is_channels_first = K.image_data_format() == 'channels_first'
 
@@ -501,7 +528,7 @@ def train_model_retinanet(model,
     if num_gpus is None:
         num_gpus = train_utils.count_gpus()
 
-    if num_gpus >= 2:
+    if num_gpus >= 1e6:
         batch_size = batch_size * num_gpus
         model = train_utils.MultiGpuModel(model, num_gpus)
 
@@ -549,9 +576,103 @@ def train_model_retinanet(model,
 
         return K.sum(loss) / normalizer
 
-    model.compile(loss={'regression': regress_loss,
-                        'classification': classification_loss},
-                  optimizer=optimizer)
+    def mask_loss(y_true, y_pred):
+
+        def _mask(y_true, y_pred, iou_threshold=0.5, mask_size=(28, 28)):
+            # split up the different predicted blobs
+            boxes = y_pred[:, :, :4]
+            masks = y_pred[:, :, 4:]
+
+            # split up the different blobs
+            annotations = y_true[:, :, :5]
+            width = K.cast(y_true[0, 0, 5], dtype='int32')
+            height = K.cast(y_true[0, 0, 6], dtype='int32')
+            masks_target = y_true[:, :, 7:]
+
+            # reshape the masks back to their original size
+            masks_target = K.reshape(masks_target,
+                                     (K.shape(masks_target)[0] * K.shape(masks_target)[1],
+                                      height, width))
+            masks = K.reshape(masks, (K.shape(masks)[0] * K.shape(masks)[1],
+                                      mask_size[0], mask_size[1], -1))
+
+            # batch size > 1 fix
+            boxes = K.reshape(boxes, (-1, K.shape(boxes)[2]))
+            annotations = K.reshape(annotations, (-1, K.shape(annotations)[2]))
+
+            # compute overlap of boxes with annotations
+            iou = overlap(boxes, annotations)
+            argmax_overlaps_inds = K.argmax(iou, axis=1)
+            max_iou = K.max(iou, axis=1)
+
+            # filter those with IoU > 0.5
+            indices = tf.where(K.greater_equal(max_iou, iou_threshold))
+            boxes = tf.gather_nd(boxes, indices)
+            masks = tf.gather_nd(masks, indices)
+            argmax_overlaps_inds = tf.gather_nd(argmax_overlaps_inds, indices)
+            argmax_overlaps_inds = K.cast(argmax_overlaps_inds, 'int32')
+            labels = K.gather(annotations[:, 4], argmax_overlaps_inds)
+            labels = K.cast(labels, 'int32')
+
+            # make normalized boxes
+            x1 = boxes[:, 0]
+            y1 = boxes[:, 1]
+            x2 = boxes[:, 2]
+            y2 = boxes[:, 3]
+            boxes = K.stack([
+                y1 / (K.cast(height, dtype=K.floatx()) - 1),
+                x1 / (K.cast(width, dtype=K.floatx()) - 1),
+                (y2 - 1) / (K.cast(height, dtype=K.floatx()) - 1),
+                (x2 - 1) / (K.cast(width, dtype=K.floatx()) - 1),
+            ], axis=1)
+
+            # crop and resize masks_target
+            # append a fake channel dimension
+            masks_target = K.expand_dims(masks_target, axis=3)
+            masks_target = tf.image.crop_and_resize(
+                masks_target, boxes, argmax_overlaps_inds, mask_size)
+
+            # remove fake channel dimension
+            masks_target = masks_target[:, :, :, 0]
+
+            # gather the predicted masks using the annotation label
+            masks = tf.transpose(masks, (0, 3, 1, 2))
+            label_indices = K.stack([tf.range(K.shape(labels)[0]), labels], axis=1)
+            masks = tf.gather_nd(masks, label_indices)
+
+            # compute mask loss
+            mask_loss = K.binary_crossentropy(masks_target, masks)
+            normalizer = K.shape(masks)[0] * K.shape(masks)[1] * K.shape(masks)[2]
+            normalizer = K.maximum(K.cast(normalizer, K.floatx()), 1)
+            mask_loss = K.sum(mask_loss) / normalizer
+
+            return mask_loss
+
+        # if there are no masks annotations, return 0; else, compute the masks loss
+        return tf.cond(
+            K.any(K.equal(K.shape(y_true), 0)),
+            lambda: K.cast_to_floatx(0.0),
+            lambda: _mask(y_true, y_pred,
+                          iou_threshold=iou_threshold,
+                          mask_size=mask_size)
+        )
+
+    # evaluation of model is done on `retinanet_bbox`
+    if include_masks:
+        prediction_model = model
+    else:
+        prediction_model = retinanet_bbox(
+            model, nms=True, class_specific_filter=False)
+
+    loss = {
+        'regression': regress_loss,
+        'classification': classification_loss
+    }
+
+    if include_masks:
+        loss['boxes_masks'] = mask_loss
+
+    model.compile(loss=loss, optimizer=optimizer)
 
     if num_gpus >= 2:
         # Each GPU must have at least one validation example
@@ -592,17 +713,15 @@ def train_model_retinanet(model,
 
     train_data = datagen.flow(
         train_dict,
+        include_masks=include_masks,
         compute_shapes=compute_shapes,
         batch_size=batch_size)
 
     val_data = datagen_val.flow(
         test_dict,
+        include_masks=include_masks,
         compute_shapes=compute_shapes,
         batch_size=batch_size)
-
-    # evaluation of model is done on `retinanet_bbox`
-    prediction_model = retinanet_bbox(
-        model, nms=True, class_specific_filter=False)
 
     tensorboard_callback = callbacks.TensorBoard(
         log_dir=os.path.join(log_dir, model_name))

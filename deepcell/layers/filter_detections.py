@@ -103,9 +103,9 @@ def filter_detections(boxes,
     if class_specific_filter:
         all_indices = []
         # perform per class filtering
-        for c in range(int(classification.shape[1])):
+        for c in range(K.int_shape(classification)[1]):
             scores = classification[:, c]
-            labels = c * K.ones((K.shape(scores)[0],), dtype='int64')
+            labels = c * tf.ones((K.shape(scores)[0],), dtype='int64')
             all_indices.append(_filter_detections(scores, labels))
 
         # concatenate indices to single tensor
@@ -133,7 +133,7 @@ def filter_detections(boxes,
     scores = tf.pad(scores, [[0, pad_size]], constant_values=-1)
     labels = tf.pad(labels, [[0, pad_size]], constant_values=-1)
     labels = K.cast(labels, 'int32')
-    pads = lambda x: [[0, pad_size]] + [[0, 0] for _ in range(1, len(x.shape))]
+    pads = lambda x: [[0, pad_size]] + [[0, 0] for _ in range(1, K.ndim(x))]
     other_ = [tf.pad(o, pads(o), constant_values=-1) for o in other_]
 
     # set shapes, since we know what they are
@@ -230,7 +230,9 @@ class FilterDetections(Layer):
                  filtered_labels.shape, filtered_other[0].shape,
                  filtered_other[1].shape, ...]
         """
-        input_shape = tensor_shape.TensorShape(input_shape).as_list()
+        input_shape = [tensor_shape.TensorShape(insh) for insh in input_shape]
+        # input_shape = tensor_shape.TensorShape(input_shape).as_list()
+
         return [
             (input_shape[0][0], self.max_detections, 4),
             (input_shape[1][0], self.max_detections),

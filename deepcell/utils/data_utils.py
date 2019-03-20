@@ -29,9 +29,10 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from fnmatch import fnmatch
 import os
 import random
+
+from fnmatch import fnmatch
 
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -48,6 +49,7 @@ from deepcell.utils.io_utils import nikon_getfiles
 from deepcell.utils.io_utils import get_immediate_subdirs
 from deepcell.utils.io_utils import count_image_files
 from deepcell.utils.misc_utils import sorted_nicely
+from deepcell.utils.tracking_utils import load_trks
 
 
 def get_data(file_name, mode='sample', test_size=.1, seed=None):
@@ -55,7 +57,7 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
 
     Args:
         file_name: path to NPZ file to load
-        mode: if 'sample', will return datapoints for each pixel,
+        mode: if 'siamese_daughters', returns lineage information from .trk file
               otherwise, returns the same data that was loaded
         test_size: percent of data to leave as testing holdout
         seed: seed number for random train/test split repeatability
@@ -64,6 +66,43 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
         dict of training data, and a dict of testing data:
         train_dict, test_dict
     """
+    # siamese_daughters mode is used to import lineage data
+    # and associate it with the appropriate batch
+    if mode == 'siamese_daughters':
+        training_data = load_trks(file_name)
+        X = training_data['X']
+        y = training_data['y']
+        # `daughters` is of the form:
+        #
+        #                   2 children / cell (potentially empty)
+        #                          ___________|__________
+        #                         /                      \
+        #      daughers = [{id_1: [daughter_1, daughter_2], ...}, ]
+        #                  \___________________________________/
+        #                                    |
+        #                       dict of (cell_id -> children)
+        #
+        # each batch has a separate (cell_id -> children) dict
+        daughters = [{cell: fields['daughters']
+                      for cell, fields in tracks.items()}
+                     for tracks in training_data['lineages']]
+
+        X_train, X_test, y_train, y_test, ln_train, ln_test = train_test_split(
+            X, y, daughters, test_size=test_size, random_state=seed)
+
+        train_dict = {
+            'X': X_train,
+            'y': y_train,
+            'daughters': ln_train
+        }
+
+        test_dict = {
+            'X': X_test,
+            'y': y_test,
+            'daughters': ln_test
+        }
+        return train_dict, test_dict
+
     training_data = np.load(file_name)
     X = training_data['X']
     y = training_data['y']

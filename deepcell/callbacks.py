@@ -31,7 +31,7 @@ from __future__ import division
 
 from tensorflow.python.keras.callbacks import Callback
 
-from deepcell.utils.retinanet_anchor_utils import evaluate
+from deepcell.utils.retinanet_anchor_utils import evaluate, evaluate_mask
 
 
 class RedirectModel(Callback):
@@ -121,8 +121,10 @@ class Evaluate(Callback):
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
 
+        E = evaluate_mask if self.generator.include_masks else evaluate
+
         # run evaluation
-        avg_precisions = evaluate(
+        avg_precisions = E(
             self.generator,
             self.model,
             iou_threshold=self.iou_threshold,
@@ -141,20 +143,20 @@ class Evaluate(Callback):
             instances.append(num_annotations)
             precisions.append(avg_precision)
         if self.weighted_average:
-            self.mean_ap = sum([a * b for a, b in zip(instances, precisions)])
-            self.mean_ap = self.mean_ap / sum(instances)
+            mean_ap = sum([a * b for a, b in zip(instances, precisions)])
+            mean_ap = mean_ap / sum(instances)
         else:
-            self.mean_ap = sum(precisions) / sum(x > 0 for x in instances)
+            mean_ap = sum(precisions) / sum(x > 0 for x in instances)
 
         if self.tensorboard is not None and self.tensorboard.writer is not None:
             import tensorflow as tf
             summary = tf.Summary()
             summary_value = summary.value.add()
-            summary_value.simple_value = self.mean_ap
+            summary_value.simple_value = mean_ap
             summary_value.tag = 'mAP'
             self.tensorboard.writer.add_summary(summary, epoch)
 
-        logs['mAP'] = self.mean_ap
+        logs['mAP'] = mean_ap
 
         if self.verbose == 1:
-            print('mAP: {:.4f}'.format(self.mean_ap))
+            print('mAP: {:.4f}'.format(mean_ap))
