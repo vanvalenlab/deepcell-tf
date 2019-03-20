@@ -144,22 +144,29 @@ def draw_mask(image,
     image[indices[0], indices[1], :] = _border
 
 
-def draw_masks(image, boxes, masks, color=[31, 0, 255], binarize_threshold=0.5):
+def draw_masks(image, boxes, scores, masks,
+               color=[31, 0, 255],
+               score_threshold=0.5,
+               binarize_threshold=0.5):
     """Draws a list of masks given a list of boxes.
 
     Args:
         image: Three dimensional image to draw on.
         boxes: Matrix of shape (N, >=4) (at least 4 values: (x1, y1, x2, y2))
             representing boxes in the image.
+        scores: A list of N classification scores.
         masks: Matrix of shape (N, H, W) of N masks of shape (H, W) which will
             be reshaped to the size of the corresponding box, binarized and
             drawn over the image.
         color: Color or to draw the masks with.
+        score_threshold: Threshold used for determining the masks to draw.
         binarize_threshold: Threshold used for binarizing the masks.
     """
-    for box, mask in zip(boxes, masks):
-        if not any(b == -1 for b in box):
-            draw_mask(image, box, mask, color=color,
+    selection = np.where(scores > score_threshold)[0]
+
+    for i in selection:
+        if not any(b == -1 for b in boxes[i]):
+            draw_mask(image, boxes[i].astype(int), masks[i], color=color,
                       binarize_threshold=binarize_threshold)
 
 
