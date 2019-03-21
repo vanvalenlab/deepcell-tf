@@ -138,7 +138,7 @@ class TestFilterDetections(test.TestCase):
         for a, e in zip(actual_other, expected_other):
             np.testing.assert_array_equal(a, e)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
+    # @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
         # create simple FilterDetections layer
         filter_detections_layer = layers.FilterDetections()
