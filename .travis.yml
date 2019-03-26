@@ -19,6 +19,7 @@ env:
 cache: pip
 
 install:
+  - pip install cython
   - pip install matplotlib nbformat scipy numpy pandas scikit-learn scikit-image opencv-python
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
