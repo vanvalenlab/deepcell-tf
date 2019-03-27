@@ -20,12 +20,22 @@ cache: pip
 
 install:
   - pip install cython
-  - pip install matplotlib nbformat scipy numpy pandas scikit-learn scikit-image opencv-python
+  - pip install matplotlib
+  - pip install nbformat
+  - pip install scipy
+  - pip install numpy
+  - pip install pandas
+  - pip install networkx
+  - pip install scikit-learn
+  - pip install scikit-image
+  - pip install opencv-python
+  - pip install keras_preprocessing>=1.0.6
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
   # install testing requirements
   - pip install pytest pytest-cov==2.5.1 pytest-pep8 coveralls
   # install deepcell with setup.py
+  # - python setup.py install
   - python setup.py build_ext --inplace
 
 script:
