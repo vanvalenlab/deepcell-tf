@@ -670,7 +670,7 @@ def train_model_retinanet(model,
     }
 
     if include_masks:
-        loss['boxes_masks'] = mask_loss
+        loss['masks'] = mask_loss
 
     model.compile(loss=loss, optimizer=optimizer)
 
