@@ -23,21 +23,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Custom Layers"""
+"""Tests for custom initializers"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.layers.location import *
-from deepcell.layers.normalization import *
-from deepcell.layers.pooling import *
-from deepcell.layers.resize import *
-from deepcell.layers.tensor_product import *
-from deepcell.layers.padding import *
-from deepcell.layers.filter_detections import *
-from deepcell.layers.retinanet import *
-from deepcell.layers.upsample import *
+from tensorflow.python.keras import backend as K
+from tensorflow.python.platform import test
 
-del absolute_import
-del division
-del print_function
+from deepcell.initializers import PriorProbability
+
+
+class InitializersTest(test.TestCase):
+
+    def _runner(self, init, shape, target_mean=None, target_std=None,
+                target_max=None, target_min=None):
+        variable = K.variable(init(shape))
+        output = K.get_value(variable)
+        # Test serialization (assumes deterministic behavior).
+        config = init.get_config()
+        reconstructed_init = init.__class__.from_config(config)
+        variable = K.variable(reconstructed_init(shape))
+        output_2 = K.get_value(variable)
+        self.assertAllClose(output, output_2, atol=1e-4)
+
+    def test_prior_probability(self):
+        tensor_shape = (8, 12, 99)
+        # TODO: use self.cached_session() if tf version >= 1.11.0
+        with self.test_session():
+            self._runner(PriorProbability(probability=0.01),
+                         tensor_shape, target_mean=0., target_std=1)

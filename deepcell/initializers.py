@@ -23,21 +23,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Custom Layers"""
+"""Custom initializers"""
+
 from __future__ import absolute_import
-from __future__ import division
 from __future__ import print_function
+from __future__ import division
 
-from deepcell.layers.location import *
-from deepcell.layers.normalization import *
-from deepcell.layers.pooling import *
-from deepcell.layers.resize import *
-from deepcell.layers.tensor_product import *
-from deepcell.layers.padding import *
-from deepcell.layers.filter_detections import *
-from deepcell.layers.retinanet import *
-from deepcell.layers.upsample import *
+from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.initializers import Initializer
 
-del absolute_import
-del division
-del print_function
+
+class PriorProbability(Initializer):
+    """Initializer that applies a prior probability to the weights.
+
+    Adapted from https://github.com/fizyr/keras-retinanet.
+
+    Args:
+        probability: The prior probability to apply to the weights
+    """
+
+    def __init__(self, probability=0.01):
+        self.probability = probability
+
+    def get_config(self):
+        return {
+            'probability': self.probability
+        }
+
+    def __call__(self, shape, dtype=None, partition_info=None):
+        # set bias to -log((1 - p)/p) for foreground
+        bias = -K.log((1 - self.probability) / self.probability)
+        result = K.get_value(K.ones(shape, dtype=dtype)) * bias
+        return result

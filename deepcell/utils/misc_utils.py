@@ -31,8 +31,85 @@ from __future__ import division
 
 import re
 
+from tensorflow.python.keras import applications
+from tensorflow.python.keras.models import Model
+
 
 def sorted_nicely(l):
     convert = lambda text: int(text) if text.isdigit() else text
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     return sorted(l, key=alphanum_key)
+
+
+def get_pyramid_layer_outputs(backbone, inputs, **kwargs):
+    _backbone = str(backbone).lower()
+
+    vgg_backbones = {'vgg16', 'vgg19'}
+    densenet_backbones = {'densenet121', 'densenet169', 'densenet201'}
+    mobilenet_backbones = {'mobilenet', 'mobilenetv2', 'mobilenet_v2'}
+    resnet_backbones = {'resnet50'}
+    nasnet_backbones = {'nasnet_large', 'nasnet_mobile'}
+
+    if _backbone in vgg_backbones:
+        layer_names = ['block3_pool', 'block4_pool', 'block5_pool']
+        if _backbone == 'vgg16':
+            model = applications.VGG16(**kwargs)
+        else:
+            model = applications.VGG19(**kwargs)
+        return [model.get_layer(n).output for n in layer_names]
+
+    elif _backbone in densenet_backbones:
+        if _backbone == 'densenet121':
+            model = applications.DenseNet121(**kwargs)
+            blocks = [6, 12, 24, 16]
+        elif _backbone == 'densenet169':
+            model = applications.DenseNet169(**kwargs)
+            blocks = [6, 12, 32, 32]
+        elif _backbone == 'densenet201':
+            model = applications.DenseNet201(**kwargs)
+            blocks = [6, 12, 48, 32]
+        layer_outputs = []
+        for idx, block_num in enumerate(blocks):
+            name = 'conv{}_block{}_concat'.format(idx + 2, block_num)
+            layer_outputs.append(model.get_layer(name=name).output)
+        # create the densenet backbone
+        model = Model(inputs=inputs, outputs=layer_outputs[1:], name=model.name)
+        return model.outputs
+
+    elif _backbone in resnet_backbones:
+        model = applications.ResNet50(**kwargs)
+        layer_names = ['res3d_branch2c', 'res4f_branch2c', 'res5c_branch2c']
+        layer_outputs = [model.get_layer(name).output for name in layer_names]
+        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
+        return model.outputs
+
+    elif _backbone in mobilenet_backbones:
+        alpha = kwargs.get('alpha', 1.0)
+        if _backbone.endswith('v2'):
+            model = applications.MobileNetV2(alpha=alpha, **kwargs)
+            block_ids = (12, 15, 16)
+            layer_names = ['block_%s_depthwise_relu' % i for i in block_ids]
+        else:
+            model = applications.MobileNet(alpha=alpha, **kwargs)
+            block_ids = (5, 11, 13)
+            layer_names = ['conv_pw_%s_relu' % i for i in block_ids]
+        layer_outputs = [model.get_layer(name).output for name in layer_names]
+        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
+        return model.outputs
+
+    elif _backbone in nasnet_backbones:
+        if _backbone.endswith('large'):
+            model = applications.NASNetLarge(**kwargs)
+            block_ids = [5, 12, 18]
+        else:
+            model = applications.NASNetMobile(**kwargs)
+            block_ids = [3, 8, 12]
+        layer_names = ['normal_conv_1_%s' % i for i in block_ids]
+        layer_outputs = [model.get_layer(name).output for name in layer_names]
+        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
+        return model.outputs
+
+    else:
+        backbones = list(densenet_backbones + resnet_backbones + vgg_backbones)
+        raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
+                         ', '.join(backbones))

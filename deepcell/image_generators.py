@@ -30,15 +30,13 @@ from __future__ import print_function
 from __future__ import division
 
 import os
-from fnmatch import fnmatch
 
-import cv2
 import numpy as np
 
 from skimage.measure import label
 from skimage.measure import regionprops
+from skimage.segmentation import clear_border
 from skimage.transform import resize
-from skimage.io import imread
 
 try:
     import scipy
@@ -68,15 +66,14 @@ if not hasattr(ImageDataGenerator, 'apply_transform'):
     from keras_preprocessing.image import Iterator
     from keras_preprocessing.image import ImageDataGenerator
 
-from keras_retinanet.preprocessing.generator import Generator as _RetinaNetGenerator
-from keras_maskrcnn.preprocessing.generator import Generator as _MaskRCNNGenerator
-
 from deepcell.utils.data_utils import sample_label_movie
 from deepcell.utils.data_utils import sample_label_matrix
 from deepcell.utils.transform_utils import deepcell_transform
 from deepcell.utils.transform_utils import distance_transform_2d
 from deepcell.utils.transform_utils import distance_transform_3d
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
+from deepcell.utils.retinanet_anchor_utils import anchors_for_shape
+from deepcell.utils.retinanet_anchor_utils import guess_shapes
 
 
 def _transform_masks(y, transform, data_format=None, **kwargs):
@@ -175,7 +172,7 @@ class ImageSampleArrayIterator(Iterator):
     """Iterator yielding data from a sampled Numpy array.
     Sampling will generate a `window_size` image classifying the center pixel,
 
-    Arguments:
+    Args:
         train_dict: dictionary consisting of numpy arrays for `X` and `y`.
         image_data_generator: Instance of `ImageDataGenerator`
             to use for random transformations and normalization.
@@ -334,7 +331,11 @@ class ImageSampleArrayIterator(Iterator):
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
-                img = array_to_img(batch_x[i], self.data_format, scale=True)
+                if self.data_format == 'channels_first':
+                    img_x = np.expand_dims(batch_x[i, 0, ...], 0)
+                else:
+                    img_x = np.expand_dims(batch_x[i, ..., 0], -1)
+                img = array_to_img(img_x, self.data_format, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(
                     prefix=self.save_prefix,
                     index=j,
@@ -363,7 +364,7 @@ class SampleDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
     The data will be looped over (in batches).
 
-    Arguments:
+    Args:
         featurewise_center: boolean, set input mean to 0 over the dataset,
             feature-wise.
         samplewise_center: boolean, set each sample mean to 0.
@@ -433,7 +434,7 @@ class SampleDataGenerator(ImageDataGenerator):
              save_format='png'):
         """Generates batches of augmented/normalized data with given arrays.
 
-        Arguments:
+        Args:
             train_dict: dictionary consisting of numpy arrays for `X` and `y`.
             image_data_generator: Instance of `ImageDataGenerator`
                 to use for random transformations and normalization.
@@ -473,7 +474,7 @@ class SampleDataGenerator(ImageDataGenerator):
 class ImageFullyConvIterator(Iterator):
     """Iterator yielding data from Numpy arrayss (`X and `y`).
 
-    Arguments:
+    Args:
         train_dict: dictionary consisting of numpy arrays for `X` and `y`.
         image_data_generator: Instance of `ImageDataGenerator`
             to use for random transformations and normalization.
@@ -547,7 +548,10 @@ class ImageFullyConvIterator(Iterator):
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
-                img_x = np.expand_dims(batch_x[i, :, :, 0], -1)
+                if self.data_format == 'channels_first':
+                    img_x = np.expand_dims(batch_x[i, 0, ...], 0)
+                else:
+                    img_x = np.expand_dims(batch_x[i, ..., 0], -1)
                 img = array_to_img(img_x, self.data_format, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(
                     prefix=self.save_prefix,
@@ -591,7 +595,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
     The data will be looped over (in batches).
 
-    Arguments:
+    Args:
         featurewise_center: boolean, set input mean to 0 over the dataset,
             feature-wise.
         samplewise_center: boolean, set each sample mean to 0.
@@ -659,7 +663,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
              save_format='png'):
         """Generates batches of augmented/normalized data with given arrays.
 
-        Arguments:
+        Args:
             train_dict: dictionary of X and y tensors. Both should be rank 4.
             batch_size: int (default: 1).
             shuffle: boolean (default: True).
@@ -712,7 +716,10 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         # Nullify the transforms that don't affect `y`
         params['brightness'] = None
         params['channel_shift_intensity'] = None
+        _interpolation_order = self.interpolation_order
+        self.interpolation_order = 0
         y = self.apply_transform(y, params)
+        self.interpolation_order = _interpolation_order
         return x, y
 
 
@@ -720,7 +727,7 @@ class MovieDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
     The data will be looped over (in batches).
 
-    Arguments:
+    Args:
         featurewise_center: boolean, set input mean to 0 over the dataset,
             feature-wise.
         samplewise_center: boolean, set each sample mean to 0.
@@ -803,7 +810,7 @@ class MovieDataGenerator(ImageDataGenerator):
              save_format='png'):
         """Generates batches of augmented/normalized data with given arrays.
 
-        Arguments:
+        Args:
             train_dict: dictionary of X and y tensors. Both should be rank 5.
             frames_per_batch: int (default: 10).
                 size of z axis in generated batches
@@ -920,12 +927,14 @@ class MovieDataGenerator(ImageDataGenerator):
             if y is not None:
                 params['brightness'] = None
                 params['channel_shift_intensity'] = None
+                _interpolation_order = self.interpolation_order
+                self.interpolation_order = 0
                 if self.data_format == 'channels_first':
                     y_trans = self.apply_transform(y[:, frame], params)
                     y_new[:, frame] = np.rollaxis(y_trans, 1, 0)
                 else:
                     y_new[frame] = self.apply_transform(y[frame], params)
-
+                self.interpolation_order = _interpolation_order
         # Note: Undo workaround
         self.row_axis += 1
         self.col_axis += 1
@@ -1011,7 +1020,7 @@ class MovieDataGenerator(ImageDataGenerator):
 class MovieArrayIterator(Iterator):
     """Iterator yielding data from two 5D Numpy arrays (`X and `y`).
 
-    Arguments:
+    Args:
         train_dict: dictionary consisting of numpy arrays for `X` and `y`.
         movie_data_generator: Instance of `MovieDataGenerator`
             to use for random transformations and normalization.
@@ -1182,7 +1191,7 @@ class SampleMovieArrayIterator(Iterator):
     """Iterator yielding data from two 5D Numpy arrays (`X and `y`).
     Sampling will generate a `window_size` voxel classifying the center pixel,
 
-    Arguments:
+    Args:
         train_dict: dictionary consisting of numpy arrays for `X` and `y`.
         movie_data_generator: Instance of `MovieDataGenerator`
             to use for random transformations and normalization.
@@ -1383,7 +1392,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
     The data will be looped over (in batches).
 
-    Arguments:
+    Args:
         featurewise_center: boolean, set input mean to 0 over the dataset,
             feature-wise.
         samplewise_center: boolean, set each sample mean to 0.
@@ -1453,7 +1462,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
              save_format='png'):
         """Generates batches of augmented/normalized data with given arrays.
 
-        Arguments:
+        Args:
             train_dict: dictionary of X and y tensors. Both should be rank 5.
             window_size: tuple (default: (30, 30 5)).
                 The size of the sampled voxels to generate.
@@ -2339,144 +2348,343 @@ class SiameseIterator(Iterator):
 
 
 """
-Bounding box generators adapted from retina net library
+RetinaNet and MaskRCNN Generators
 """
 
 
-class BoundingBoxIterator(Iterator):
-    def __init__(self, train_dict, image_data_generator,
-                 batch_size=1, shuffle=False, seed=None,
+class RetinaNetGenerator(ImageFullyConvDataGenerator):
+    """Generates batches of tensor image data with real-time data augmentation.
+    The data will be looped over (in batches).
+
+    Args:
+        featurewise_center: boolean, set input mean to 0 over the dataset,
+            feature-wise.
+        samplewise_center: boolean, set each sample mean to 0.
+        featurewise_std_normalization: boolean, divide inputs by std
+            of the dataset, feature-wise.
+        samplewise_std_normalization: boolean, divide each input by its std.
+        zca_epsilon: epsilon for ZCA whitening. Default is 1e-6.
+        zca_whitening: boolean, apply ZCA whitening.
+        rotation_range: int, degree range for random rotations.
+        width_shift_range: float, 1-D array-like or int
+            float: fraction of total width, if < 1, or pixels if >= 1.
+            1-D array-like: random elements from the array.
+            int: integer number of pixels from interval
+                `(-width_shift_range, +width_shift_range)`
+            With `width_shift_range=2` possible values are ints [-1, 0, +1],
+            same as with `width_shift_range=[-1, 0, +1]`,
+            while with `width_shift_range=1.0` possible values are floats in
+            the interval [-1.0, +1.0).
+        shear_range: float, shear Intensity
+            (Shear angle in counter-clockwise direction in degrees)
+        zoom_range: float or [lower, upper], Range for random zoom.
+            If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
+        channel_shift_range: float, range for random channel shifts.
+        fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+            Default is 'nearest'. Points outside the boundaries of the input
+            are filled according to the given mode:
+                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                'nearest':  aaaaaaaa|abcd|dddddddd
+                'reflect':  abcddcba|abcd|dcbaabcd
+                'wrap':  abcdabcd|abcd|abcdabcd
+        cval: float or int, value used for points outside the boundaries
+            when `fill_mode = "constant"`.
+        horizontal_flip: boolean, randomly flip inputs horizontally.
+        vertical_flip: boolean, randomly flip inputs vertically.
+        rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
+            is applied, otherwise we multiply the data by the value provided
+            (before applying any other transformation).
+        preprocessing_function: function that will be implied on each input.
+            The function will run after the image is resized and augmented.
+            The function should take one argument:
+            one image (Numpy tensor with rank 3),
+            and should output a Numpy tensor with the same shape.
+        data_format: One of {"channels_first", "channels_last"}.
+            "channels_last" mode means that the images should have shape
+                `(samples, height, width, channels)`,
+            "channels_first" mode means that the images should have shape
+                `(samples, channels, height, width)`.
+            It defaults to the `image_data_format` value found in your
+                Keras config file at `~/.keras/keras.json`.
+            If you never set it, then it will be "channels_last".
+        validation_split: float, fraction of images reserved for validation
+            (strictly between 0 and 1).
+    """
+
+    def flow(self,
+             train_dict,
+             compute_shapes=guess_shapes,
+             num_classes=1,
+             clear_borders=False,
+             include_masks=False,
+             batch_size=32,
+             shuffle=False,
+             seed=None,
+             save_to_dir=None,
+             save_prefix='',
+             save_format='png'):
+        """Generates batches of augmented/normalized data with given arrays.
+
+        Args:
+            train_dict: dictionary of X and y tensors. Both should be rank 4.
+            compute_shapes: function to determine the shapes of the anchors
+            num_classes: number of classes to predict
+            clear_borders: boolean, whether to use `clear_border` on `y`.
+            include_masks: boolean, train on mask data (MaskRCNN).
+            batch_size: int (default: 1).
+            shuffle: boolean (default: True).
+            seed: int (default: None).
+            save_to_dir: None or str (default: None).
+                This allows you to optionally specify a directory
+                to which to save the augmented pictures being generated
+                (useful for visualizing what you are doing).
+            save_prefix: str (default: `''`). Prefix to use for filenames of
+                saved pictures (only relevant if `save_to_dir` is set).
+            save_format: one of "png", "jpeg". Default: "png".
+                (only relevant if `save_to_dir` is set)
+
+        Returns:
+            An Iterator yielding tuples of `(x, y)` where `x` is a numpy array
+            of image data and `y` is a numpy array of labels of the same shape.
+        """
+        return RetinaNetIterator(
+            train_dict,
+            self,
+            compute_shapes=compute_shapes,
+            num_classes=num_classes,
+            clear_borders=clear_borders,
+            include_masks=include_masks,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            seed=seed,
+            data_format=self.data_format,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
+
+
+class RetinaNetIterator(Iterator):
+    """Iterator yielding data from Numpy arrayss (`X and `y`).
+
+    Adapted from https://github.com/fizyr/keras-retinanet.
+
+    Args:
+        train_dict: dictionary consisting of numpy arrays for `X` and `y`.
+        image_data_generator: Instance of `ImageDataGenerator`
+            to use for random transformations and normalization.
+        compute_shapes: functor for generating shapes, based on the model.
+        min_objects: Integer, image with fewer than `min_objects` are ignored.
+        num_classes: Integer, number of classes for classification.
+        clear_borders: Boolean, whether to call `clear_border` on `y`.
+        include_masks: Boolean, whether to yield mask data.
+        batch_size: Integer, size of a batch.
+        shuffle: Boolean, whether to shuffle the data between epochs.
+        seed: Random seed for data shuffling.
+        data_format: String, one of `channels_first`, `channels_last`.
+        save_to_dir: Optional directory where to save the pictures
+            being yielded, in a viewable format. This is useful
+            for visualizing the random transformations being
+            applied, for debugging purposes.
+        save_prefix: String prefix to use for saving sample
+            images (if `save_to_dir` is set).
+        save_format: Format to use for saving sample images
+            (if `save_to_dir` is set).
+    """
+
+    def __init__(self,
+                 train_dict,
+                 image_data_generator,
+                 compute_shapes=guess_shapes,
+                 min_objects=3,
+                 num_classes=1,
+                 clear_borders=False,
+                 include_masks=False,
+                 batch_size=32,
+                 shuffle=False,
+                 seed=None,
                  data_format='channels_last',
-                 save_to_dir=None, save_prefix='', save_format='png'):
-        self.x = np.asarray(train_dict['X'], dtype=K.floatx())
+                 save_to_dir=None,
+                 save_prefix='',
+                 save_format='png'):
+        X, y = train_dict['X'], train_dict['y']
+        if X.shape[0] != y.shape[0]:
+            raise ValueError('Training batches and labels should have the same'
+                             'length. Found X.shape: {} y.shape: {}'.format(
+                                 X.shape, y.shape))
 
-        if self.x.ndim != 4:
-            raise ValueError('Input data in `BoundingBoxIterator` '
+        if X.ndim != 4:
+            raise ValueError('Input data in `RetinaNetIterator` '
                              'should have rank 4. You passed an array '
-                             'with shape', self.x.shape)
+                             'with shape', X.shape)
 
+        self.x = np.asarray(X, dtype=K.floatx())
+        self.y = np.asarray(y, dtype='int32')
+
+        # `compute_shapes` changes based on the model backbone.
+        self.compute_shapes = compute_shapes
+        self.min_objects = min_objects
+        self.num_classes = num_classes
+        self.include_masks = include_masks
         self.channel_axis = 3 if data_format == 'channels_last' else 1
-        self.y = train_dict['y']
-
-        if self.channel_axis == 3:
-            self.num_features = self.y.shape[-1]
-        else:
-            self.num_features = self.y.shape[1]
-
-        if self.channel_axis == 3:
-            self.image_shape = self.x.shape[1:2]
-        else:
-            self.image_shape = self.x.shape[2:]
-
-        bbox_list = []
-        for b in range(self.x.shape[0]):
-            for l in range(1, self.num_features - 1):
-                if self.channel_axis == 3:
-                    mask = self.y[b, :, :, l]
-                else:
-                    mask = self.y[b, l, :, :]
-                props = regionprops(np.squeeze(label(mask)))
-                bboxes = [np.array(list(prop.bbox) + list(l)) for prop in props]
-                bboxes = np.concatenate(bboxes, axis=0)
-            bbox_list.append(bboxes)
-        self.bbox_list = bbox_list
-
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        super(BoundingBoxIterator, self).__init__(self.x.shape[0], batch_size, shuffle, seed)
 
-    def get_annotations(self, y):
-        for l in range(1, self.num_features - 1):
-            if self.channel_axis == 3:
-                mask = y[:, :, l]
-            else:
-                mask = y[l, :, :]
-            props = regionprops(np.squeeze(label(mask)))
-            bboxes = [np.array(list(prop.bbox) + list(l)) for prop in props]
-            bboxes = np.concatenate(bboxes, axis=0)
-        return bboxes
+        invalid_batches = []
+        # Remove images with small numbers of cells
+        for b in range(self.x.shape[0]):
+            y_batch = np.squeeze(self.y[b], axis=self.channel_axis - 1)
+            y_batch = clear_border(y_batch) if clear_borders else y_batch
+            y_batch = np.expand_dims(y_batch, axis=self.channel_axis - 1)
 
-    def anchor_targets(self,
-                       image_shape,
-                       annotations,
-                       num_classes,
-                       mask_shape=None,
-                       negative_overlap=0.4,
-                       positive_overlap=0.5,
-                       **kwargs):
-        return self.anchor_targets_bbox(
-            image_shape,
-            annotations,
-            num_classes,
-            mask_shape,
-            negative_overlap,
-            positive_overlap,
-            **kwargs)
+            self.y[b] = y_batch
 
-    def compute_target(self, annotation):
-        labels, annotations, anchors = self.anchor_targets(
-            self.image_shape, annotation, self.num_features)
-        regression = self.bbox_transform(anchors, annotation)
+            if len(np.unique(self.y[b])) - 1 < self.min_objects:
+                invalid_batches.append(b)
 
-        # append anchor state to regression targets
-        anchor_states = np.max(labels, axis=1, keepdims=True)
-        regression = np.append(regression, anchor_states, axis=1)
-        return [regression, labels]
+        invalid_batches = np.array(invalid_batches, dtype='int')
+
+        if invalid_batches.size > 0:
+            logging.warning('Removing %s of %s images with fewer than %s '
+                            'objects.', invalid_batches.size, self.x.shape[0],
+                            self.min_objects)
+
+        self.y = np.delete(self.y, invalid_batches, axis=0)
+        self.x = np.delete(self.x, invalid_batches, axis=0)
+
+        super(RetinaNetIterator, self).__init__(
+            self.x.shape[0], batch_size, shuffle, seed)
+
+    def filter_annotations(self, image, annotations):
+        """Filter annotations by removing those that are outside of the
+        image bounds or whose width/height < 0.
+
+        Args:
+            image: ndarray, the raw image data.
+            annotations: dict of annotations including `labels` and `bboxes`
+        """
+        row_axis = 1 if self.data_format == 'channels_first' else 0
+        invalid_indices = np.where(
+            (annotations['bboxes'][:, 2] <= annotations['bboxes'][:, 0]) |
+            (annotations['bboxes'][:, 3] <= annotations['bboxes'][:, 1]) |
+            (annotations['bboxes'][:, 0] < 0) |
+            (annotations['bboxes'][:, 1] < 0) |
+            (annotations['bboxes'][:, 2] > image.shape[row_axis + 1]) |
+            (annotations['bboxes'][:, 3] > image.shape[row_axis])
+        )[0]
+
+        # delete invalid indices
+        if invalid_indices.size > 0:
+            logging.warn('Image with shape {} contains the following invalid '
+                         'boxes: {}.'.format(
+                             image.shape,
+                             annotations['bboxes'][invalid_indices, :]))
+
+            for k in annotations.keys():
+                filtered = np.delete(annotations[k], invalid_indices, axis=0)
+                annotations[k] = filtered
+        return annotations
+
+    def load_annotations(self, y):
+        """Generate bounding box and label annotations for a tensor
+
+        Args:
+            y: tensor to annotate
+
+        Returns:
+            annotations: dict of `bboxes` and `labels`
+        """
+        labels, bboxes, masks = [], [], []
+        for prop in regionprops(np.squeeze(y.astype('int'))):
+            y1, x1, y2, x2 = prop.bbox
+            bboxes.append([x1, y1, x2, y2])
+            labels.append(0)  # boolean object detection
+            masks.append(np.where(y == prop.label, 1, 0))
+
+        labels = np.array(labels)
+        bboxes = np.array(bboxes)
+        masks = np.array(masks).astype('uint8')
+
+        # reshape bboxes in case it is empty.
+        bboxes = np.reshape(bboxes, (bboxes.shape[0], 4))
+
+        annotations = {'labels': labels, 'bboxes': bboxes}
+
+        if self.include_masks:
+            annotations['masks'] = masks
+
+        annotations = self.filter_annotations(y, annotations)
+        return annotations
 
     def _get_batches_of_transformed_samples(self, index_array):
-        index_array = index_array[0]
-        if self.channel_axis == 1:
-            batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:4]))
-            if self.y is not None:
-                batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:4]))
-        else:
-            batch_x = np.zeros((len(index_array),
-                                self.x.shape[2],
-                                self.x.shape[3],
-                                self.x.shape[1]))
-            if self.y is not None:
-                batch_y = np.zeros((len(index_array),
-                                    self.y.shape[2],
-                                    self.y.shape[3],
-                                    self.y.shape[1]))
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
+        annotations_list = []
 
-        regressions_list = []
-        labels_list = []
+        max_shape = []
 
         for i, j in enumerate(index_array):
             x = self.x[j]
+            y = self.y[j]
 
-            if self.y is not None:
-                y = self.y[j]
-                x, y = self.image_data_generator.random_transform(x.astype(K.floatx()), y)
+            x, y = self.image_data_generator.random_transform(x, y)
+
+            # Find max shape of image data.  Used for masking.
+            if not max_shape:
+                max_shape = list(x.shape)
             else:
-                x = self.image_data_generator.random_transform(x.astype(K.floatx()))
+                for k in range(len(x.shape)):
+                    if x.shape[k] > max_shape[k]:
+                        max_shape[k] = x.shape[k]
+
+            # Get the bounding boxes from the transformed masks!
+            annotations = self.load_annotations(y)
+            annotations_list.append(annotations)
 
             x = self.image_data_generator.standardize(x)
 
-            if self.channel_axis == 1:
-                batch_x[i] = x
-                batch_y[i] = y
+            batch_x[i] = x
 
-                # Get the bounding boxes from the transformed masks!
-                annotations = self.get_annotations(y)
-                regressions, labels = self.compute_target(annotations)
-                regressions_list.append(regressions)
-                labels_list.append(labels)
+        anchors = anchors_for_shape(
+            batch_x.shape[1:],
+            anchor_params=None,
+            shapes_callback=self.compute_shapes)
 
-            if self.channel_axis == 3:
-                raise NotImplementedError('Bounding box generator does not work '
-                                          'for channels last yet')
+        regressions, labels = anchor_targets_bbox(
+            anchors,
+            batch_x,
+            annotations_list,
+            self.num_classes)
 
-            regressions = np.stack(regressions_list, axis=0)
-            labels = np.stack(labels_list, axis=0)
+        max_shape = tuple(max_shape)  # was a list for max shape indexing
+
+        if self.include_masks:
+            # masks_batch has shape: (batch size, max_annotations,
+            #     bbox_x1 + bbox_y1 + bbox_x2 + bbox_y2 + label +
+            #     width + height + max_image_dimension)
+            max_annotations = max(len(a['masks']) for a in annotations_list)
+            masks_batch_shape = (len(index_array), max_annotations,
+                                 5 + 2 + max_shape[0] * max_shape[1])
+            masks_batch = np.zeros(masks_batch_shape, dtype=K.floatx())
+
+            for i, ann in enumerate(annotations_list):
+                masks_batch[i, :ann['bboxes'].shape[0], :4] = ann['bboxes']
+                masks_batch[i, :ann['labels'].shape[0], 4] = ann['labels']
+                masks_batch[i, :, 5] = max_shape[1]  # width
+                masks_batch[i, :, 6] = max_shape[0]  # height
+
+                # add flattened mask
+                for j, mask in enumerate(ann['masks']):
+                    masks_batch[i, j, 7:] = mask.flatten()
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
-                img = array_to_img(batch_x[i], self.data_format, scale=True)
+                if self.data_format == 'channels_first':
+                    img_x = np.expand_dims(batch_x[i, 0, ...], 0)
+                else:
+                    img_x = np.expand_dims(batch_x[i, ..., 0], -1)
+                img = array_to_img(img_x, self.data_format, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(
                     prefix=self.save_prefix,
                     index=j,
@@ -2484,9 +2692,9 @@ class BoundingBoxIterator(Iterator):
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
-        if self.y is None:
-            return batch_x
-        return batch_x, [regressions_list, labels_list]
+        if self.include_masks:
+            return batch_x, [regressions, labels, masks_batch]
+        return batch_x, [regressions, labels]
 
     def next(self):
         """For python 2.x. Returns the next batch.
@@ -2498,341 +2706,3 @@ class BoundingBoxIterator(Iterator):
         # The transformation of images is not under thread lock
         # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
-
-
-"""
-RetinaNet and MaskRCNN Generators
-"""
-
-
-class RetinaNetGenerator(_RetinaNetGenerator):
-
-    def __init__(self,
-                 direc_name,
-                 training_dirs,
-                 raw_image_dir,
-                 channel_names,
-                 annotation_dir,
-                 annotation_names,
-                 **kwargs):
-        self.image_names = []
-        self.image_data = {}
-        self.image_stack = []
-        self.mask_stack = []
-        self.base_dir = kwargs.get('base_dir')
-
-        train_files = self.list_file_deepcell(
-            dir_name=direc_name,
-            training_dirs=training_dirs,
-            image_dir=raw_image_dir,
-            channel_names=channel_names)
-
-        annotation_files = self.list_file_deepcell(
-            dir_name=direc_name,
-            training_dirs=training_dirs,
-            image_dir=annotation_dir,
-            channel_names=annotation_names)
-
-        self.image_stack = self.generate_subimage(train_files, 3, 3, True)
-        self.mask_stack = self.generate_subimage(annotation_files, 3, 3, False)
-
-        self.classes = {'cell': 0}
-
-        self.labels = {}
-        for key, value in self.classes.items():
-            self.labels[value] = key
-
-        self.image_data = self._read_annotations(self.mask_stack)
-        self.image_names = list(self.image_data.keys())
-        super(RetinaNetGenerator, self).__init__(**kwargs)
-
-    def list_file_deepcell(self, dir_name, training_dirs, image_dir, channel_names):
-        """
-        List all image files inside each `dir_name/training_dir/image_dir`
-        with "channel_name" in the filename.
-        """
-        filelist = []
-        for direc in training_dirs:
-            imglist = os.listdir(os.path.join(dir_name, direc, image_dir))
-
-            for channel in channel_names:
-                for img in imglist:
-                    # if channel string is NOT in image file name, skip it.
-                    if not fnmatch(img, '*{}*'.format(channel)):
-                        continue
-                    image_file = os.path.join(dir_name, direc, image_dir, img)
-                    filelist.append(image_file)
-        return sorted(filelist)
-
-    def _read_annotations(self, masks_list):
-        result = {}
-        for cnt, image in enumerate(masks_list):
-            result[cnt] = []
-            p = regionprops(np.squeeze(label(image)))
-            cell_count = 0
-            for index in range(len(np.unique(label(image))) - 1):
-                y1, x1, y2, x2 = p[index].bbox
-                result[cnt].append({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2})
-                cell_count += 1
-            if cell_count == 0:
-                logging.warning('No cells found in image {}'.format(cnt))
-        return result
-
-    def generate_subimage(self, img_pathstack, horizontal, vertical, flag):
-        sub_img = []
-        for img_path in img_pathstack:
-            img = np.asarray(np.float32(imread(img_path)))
-            if flag:
-                img = (img / np.max(img))
-            vway = np.zeros(vertical + 1)  # The dimentions of vertical cuts
-            hway = np.zeros(horizontal + 1)  # The dimentions of horizontal cuts
-            vcnt = 0  # The initial value for vertical
-            hcnt = 0  # The initial value for horizontal
-
-            for i in range(vertical + 1):
-                vway[i] = int(vcnt)
-                vcnt += (img.shape[1] / vertical)
-
-            for j in range(horizontal + 1):
-                hway[j] = int(hcnt)
-                hcnt += (img.shape[0] / horizontal)
-
-            vb = 0
-
-            for i in range(len(hway) - 1):
-                for j in range(len(vway) - 1):
-                    vb += 1
-
-            for i in range(len(hway) - 1):
-                for j in range(len(vway) - 1):
-                    s = img[int(hway[i]):int(hway[i + 1]), int(vway[j]):int(vway[j + 1])]
-                    sub_img.append(s)
-
-        if flag:
-            sub_img = [np.tile(np.expand_dims(i, axis=-1), (1, 1, 3)) for i in sub_img]
-
-        return sub_img
-
-    def size(self):
-        """Size of the dataset."""
-        return len(self.image_names)
-
-    def num_classes(self):
-        """Number of classes in the dataset."""
-        return max(self.classes.values()) + 1
-
-    def name_to_label(self, name):
-        """Map name to label."""
-        return self.classes[name]
-
-    def label_to_name(self, label):
-        """Map label to name."""
-        return self.labels[label]
-
-    def image_path(self, image_index):
-        """Returns the image path for image_index."""
-        return os.path.join(self.base_dir, self.image_names[image_index])
-
-    def image_aspect_ratio(self, image_index):
-        """Compute the aspect ratio for an image with image_index."""
-        image = self.image_stack[image_index]
-        return float(image.shape[1]) / float(image.shape[0])
-
-    def load_image(self, image_index):
-        """Load an image at the image_index."""
-        return self.image_stack[image_index]
-
-    def load_annotations(self, image_index):
-        """Load annotations for an image_index."""
-        path = self.image_names[image_index]
-        annots = self.image_data[path]
-        boxes = np.zeros((len(annots), 5))
-
-        for idx, annot in enumerate(annots):
-            class_name = 'cell'
-            boxes[idx, 0] = float(annot['x1'])
-            boxes[idx, 1] = float(annot['y1'])
-            boxes[idx, 2] = float(annot['x2'])
-            boxes[idx, 3] = float(annot['y2'])
-            boxes[idx, 4] = self.name_to_label(class_name)
-
-        return boxes
-
-
-class MaskRCNNGenerator(_MaskRCNNGenerator):
-    def __init__(self,
-                 direc_name,
-                 training_dirs,
-                 raw_image_dir,
-                 channel_names,
-                 annotation_dir,
-                 annotation_names,
-                 base_dir=None,
-                 image_min_side=200,
-                 image_max_side=200,
-                 crop_iterations=1,
-                 **kwargs):
-        self.image_names = []
-        self.image_data = {}
-        self.base_dir = base_dir
-        self.image_stack = []
-
-        train_files = self.list_file_deepcell(
-            dir_name=direc_name,
-            training_dirs=training_dirs,
-            image_dir=raw_image_dir,
-            channel_names=channel_names)
-
-        annotation_files = self.list_file_deepcell(
-            dir_name=direc_name,
-            training_dirs=training_dirs,
-            image_dir=annotation_dir,
-            channel_names=annotation_names)
-
-        store = self.randomcrops(
-            train_files,
-            annotation_files,
-            image_min_side,
-            image_max_side,
-            iteration=crop_iterations)
-
-        self.image_stack = store[0]
-        self.classes = {'cell': 0}
-
-        self.labels = {}
-        for key, value in self.classes.items():
-            self.labels[value] = key
-
-        self.image_data = self._read_annotations(store[1])
-
-        self.image_names = list(self.image_data.keys())
-
-        # Override default Generator value with custom anchor_targets_bbox
-        if 'compute_anchor_targets' not in kwargs:
-            kwargs['compute_anchor_targets'] = anchor_targets_bbox
-
-        super(MaskRCNNGenerator, self).__init__(
-            image_min_side=image_min_side,
-            image_max_side=image_max_side,
-            **kwargs)
-
-    def list_file_deepcell(self, dir_name, training_dirs, image_dir, channel_names):
-        """
-        List all image files inside each `dir_name/training_dir/image_dir`
-        with "channel_name" in the filename.
-
-        """
-        filelist = []
-        for direc in training_dirs:
-            imglist = os.listdir(os.path.join(dir_name, direc, image_dir))
-
-            for channel in channel_names:
-                for img in imglist:
-                    # if channel string is NOT in image file name, skip it.
-                    if not fnmatch(img, '*{}*'.format(channel)):
-                        continue
-                    image_file = os.path.join(dir_name, direc, image_dir, img)
-                    filelist.append(image_file)
-        return sorted(filelist)
-
-    def randomcrops(self, dirpaths, maskpaths, size_x, size_y, iteration=1):
-        img = cv2.imread(dirpaths[0], 0)
-        img_y = img.shape[0]
-        img_x = img.shape[1]
-        act_x = img_x - size_x
-        act_y = img_y - size_y
-        if act_x < 0 or act_y < 0:
-            logging.warning('Image to crop is of a smaller size')
-            return ([], [])
-        outputi = []
-        outputm = []
-        while iteration > 0:
-            cropindex = []
-            for path in dirpaths:
-                rand_x = np.random.randint(0, act_x)
-                rand_y = np.random.randint(0, act_y)
-                cropindex.append((rand_x, rand_y))
-                image = cv2.imread(path, 0)
-                newimg = image[rand_y:rand_y + size_y, rand_x:rand_x + size_x]
-                newimg = np.tile(np.expand_dims(newimg, axis=-1), (1, 1, 3))
-                outputi.append(newimg)
-
-            for i, path in enumerate(maskpaths):
-                image = cv2.imread(path, 0)
-                rand_x = cropindex[i][0]
-                rand_y = cropindex[i][1]
-                newimg = image[rand_y:rand_y + size_y, rand_x:rand_x + size_x]
-                outputm.append(newimg)
-
-            iteration -= 1
-        return (outputi, outputm)
-
-    def _read_annotations(self, maskarr):
-        result = {}
-        for cnt, image in enumerate(maskarr):
-            result[cnt] = []
-            l = label(image)
-            p = regionprops(np.squeeze(l))
-            cell_count = 0
-            for index in range(len(np.unique(l)) - 1):
-                y1, x1, y2, x2 = p[index].bbox
-                result[cnt].append({
-                    'x1': x1,
-                    'x2': x2,
-                    'y1': y1,
-                    'y2': y2,
-                    'class': 'cell',
-                    'mask_path': np.where(l == index + 1, 1, 0)
-                })
-                cell_count += 1
-            print('Image number {} has {} cells'.format(cnt, cell_count))
-            # If there are no cells in this image, remove it from the annotations
-            if not result[cnt]:
-                del result[cnt]
-        return result
-
-    def size(self):
-        return len(self.image_names)
-
-    def num_classes(self):
-        return max(self.classes.values()) + 1
-
-    def name_to_label(self, name):
-        return self.classes[name]
-
-    def label_to_name(self, label):
-        return self.labels[label]
-
-    def image_path(self, image_index):
-        return os.path.join(self.base_dir, self.image_names[image_index])
-
-    def image_aspect_ratio(self, image_index):
-        # PIL is fast for metadata
-        # image = Image.open(self.image_path(image_index))
-        # return float(image.width) / float(image.height)
-        image = self.image_stack[image_index]
-        return float(image.shape[1]) / float(image.shape[0])
-
-    def load_image(self, image_index):
-        # return read_image_bgr(self.image_path(image_index))
-        return self.image_stack[image_index]
-
-    def load_annotations(self, image_index):
-        path = self.image_names[image_index]
-        annots = self.image_data[path]
-
-        # find mask size in order to allocate the right dimension for the annotations
-        annotations = np.zeros((len(annots), 5))
-        masks = []
-
-        for idx, annot in enumerate(annots):
-            annotations[idx, 0] = float(annot['x1'])
-            annotations[idx, 1] = float(annot['y1'])
-            annotations[idx, 2] = float(annot['x2'])
-            annotations[idx, 3] = float(annot['y2'])
-            annotations[idx, 4] = self.name_to_label(annot['class'])
-            mask = annot['mask_path']
-            mask = (mask > 0).astype(np.uint8)  # convert from 0-255 to binary mask
-            masks.append(np.expand_dims(mask, axis=-1))
-
-        return annotations, masks

@@ -23,20 +23,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Custom Layers"""
+"""Deepcell Model Zoo Module"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.layers.location import *
-from deepcell.layers.normalization import *
-from deepcell.layers.pooling import *
-from deepcell.layers.resize import *
-from deepcell.layers.tensor_product import *
-from deepcell.layers.padding import *
-from deepcell.layers.filter_detections import *
-from deepcell.layers.retinanet import *
-from deepcell.layers.upsample import *
+from deepcell.model_zoo.featurenet import bn_feature_net_2D
+from deepcell.model_zoo.featurenet import bn_feature_net_skip_2D
+from deepcell.model_zoo.featurenet import bn_feature_net_3D
+from deepcell.model_zoo.featurenet import bn_feature_net_skip_3D
+
+from deepcell.model_zoo.retinanet import RetinaNet
+from deepcell.model_zoo.retinanet import retinanet
+from deepcell.model_zoo.retinanet import retinanet_bbox
+
+from deepcell.model_zoo.maskrcnn import MaskRCNN
+from deepcell.model_zoo.maskrcnn import retinanet_mask
 
 del absolute_import
 del division
