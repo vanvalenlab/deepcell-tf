@@ -43,7 +43,7 @@ from deepcell.layers import FilterDetections
 from deepcell.layers import ImageNormalization2D
 from deepcell.layers import Anchors, UpsampleLike, RegressBoxes, ClipBoxes
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
-from deepcell.utils.misc_utils import get_pyramid_layer_outputs
+from deepcell.utils.misc_utils import get_backbone
 
 
 def default_classification_model(num_classes,

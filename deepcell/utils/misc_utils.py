@@ -30,86 +30,232 @@ from __future__ import print_function
 from __future__ import division
 
 import re
+import copy
 
 from tensorflow.python.keras import applications
 from tensorflow.python.keras.models import Model
-
+from tensorflow.python.keras.layers import Conv2D, BatchNormalization, Activation, MaxPool2D
 
 def sorted_nicely(l):
     convert = lambda text: int(text) if text.isdigit() else text
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     return sorted(l, key=alphanum_key)
 
+"""
+Featurenet-like backbone for feature pyramid networks
+"""
 
-def get_pyramid_layer_outputs(backbone, inputs, **kwargs):
+def dc_block(x, n_filters):
+    """Add a set of layers that make up one unit of the deepcell backbone
+    Args:
+        x (layer): Keras layer object to pass to backbone unit
+        n_filters (int): Number of filters to use for convolutional layers
+    Returns:
+        layer: Keras layer object
+    """
+
+    # conv set 1
+    x = Conv2D(n_filters, (3, 3), strides=(1, 1), padding='same', data_format='channels_last')(x)
+    x = BatchNormalization(axis=-1)(x)
+    x = Activation('relu')(x)
+    # conv set 2
+    x = Conv2D(n_filters, (3, 3), strides=(1, 1), padding='same', data_format='channels_last')(x)
+    x = BatchNormalization(axis=-1)(x)
+    x = Activation('relu')(x)
+    # Final max pooling stage
+    x = MaxPool2D(pool_size=(2, 2), data_format='channels_last')(x)
+
+    return (x)
+
+def dc_model(input_tensor=None, weights=None, include_top=False, pooling=None, n_filters=32, n_dense=128, n_classes=3):
+    """Construct the deepcell backbone with five convolutional units
+        input_tensor (tensor): Input tensor to specify input size
+        n_filters (int, optional): Defaults to 32. Number of filters for convolutionaal layers
+    Returns:
+        (backbone_names, backbone_features): List of backbone layers, list of backbone names
+    """
+
+    # Build out backbone
+    c1 = dc_block(input_tensor, n_filters)  # 1/2 64x64
+    c2 = dc_block(c1, n_filters)  # 1/4 32x32
+    c3 = dc_block(c2, n_filters)  # 1/8 16x16
+    c4 = dc_block(c3, n_filters)  # 1/16 8x8
+    c5 = dc_block(c4, n_filters)  # 1/32 4x4
+
+    backbone_features = [c1, c2, c3, c4, c5]
+    backbone_names = ['C1', 'C2', 'C3', 'C4', 'C5']
+    output_dict = {}
+    for name, feature in zip(backbone_names, backbone_features):
+        output_dict[name] = feature
+
+    return output_dict
+
+"""
+Backbone utils
+"""
+
+def get_backbone(backbone, input_tensor, use_imagenet=None, return_dict=True, **kwargs):
     _backbone = str(backbone).lower()
 
-    vgg_backbones = {'vgg16', 'vgg19'}
-    densenet_backbones = {'densenet121', 'densenet169', 'densenet201'}
-    mobilenet_backbones = {'mobilenet', 'mobilenetv2', 'mobilenet_v2'}
-    resnet_backbones = {'resnet50'}
-    nasnet_backbones = {'nasnet_large', 'nasnet_mobile'}
-
-    if _backbone in vgg_backbones:
-        layer_names = ['block3_pool', 'block4_pool', 'block5_pool']
-        if _backbone == 'vgg16':
-            model = applications.VGG16(**kwargs)
+    deepcell_backbones = ['deepcell']
+    vgg_backbones = ['vgg16', 'vgg19']
+    densenet_backbones = ['densenet121', 'densenet169', 'densenet201']
+    mobilenet_backbones = ['mobilenet', 'mobilenetv2', 'mobilenet_v2']
+    resnet_backbones = ['resnet50']
+    nasnet_backbones = ['nasnet_large', 'nasnet_mobile']
+    
+    if use_imagenet:
+        kwargs_with_weights = copy.copy(kwargs)
+        kwargs_with_weights['weights'] = 'imagenet'
+        
+    if _backbone in deepcell_backbones:
+        output_dict = dc_model(input_tensor=input_tensor, **kwargs)
+        if return_dict:
+            return output_dict
         else:
-            model = applications.VGG19(**kwargs)
-        return [model.get_layer(n).output for n in layer_names]
+            return model
+            
+    if _backbone in vgg_backbones:            
+        if _backbone == 'vgg16':
+            model = applications.VGG16(input_tensor=input_tensor, **kwargs)
+        else:
+            model = applications.VGG19(input_tensor=input_tensor, **kwargs)
+            
+        # Set the weights of the model if requested
+        if use_imagenet:
+            if _backbone == 'vgg16':
+                model_with_weights = applications.VGG16(**kwargs_with_weights)
+            else:
+                model_with_weights = applications.VGG19(**kwargs_with_weights)    
+            model_with_weights.save_weights('model_weights.h5')
+            model.load_weights('model_weights.h5', by_name=True)
+                
+        layer_names = ['block1_pool', 'block2_pool', 'block3_pool', 'block4_pool', 'block5_pool']
+        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
+        
+        output_dict = {}
+        for i, j in enumerate(layer_names):
+            output_dict['C' + str(i+1)] = layer_outputs[i]
+        if return_dict:
+            return output_dict
+        else:
+            return model
 
     elif _backbone in densenet_backbones:
         if _backbone == 'densenet121':
-            model = applications.DenseNet121(**kwargs)
+            model = applications.DenseNet121(input_tensor=input_tensor, **kwargs)
             blocks = [6, 12, 24, 16]
         elif _backbone == 'densenet169':
-            model = applications.DenseNet169(**kwargs)
+            model = applications.DenseNet169(input_tensor=input_tensor, **kwargs)
             blocks = [6, 12, 32, 32]
         elif _backbone == 'densenet201':
-            model = applications.DenseNet201(**kwargs)
+            model = applications.DenseNet201(input_tensor=input_tensor, **kwargs)
             blocks = [6, 12, 48, 32]
-        layer_outputs = []
-        for idx, block_num in enumerate(blocks):
-            name = 'conv{}_block{}_concat'.format(idx + 2, block_num)
-            layer_outputs.append(model.get_layer(name=name).output)
-        # create the densenet backbone
-        model = Model(inputs=inputs, outputs=layer_outputs[1:], name=model.name)
-        return model.outputs
+            
+        # Set the weights of the model if requested
+        if use_imagenet:
+            if _backbone == 'densenet121':
+                model_with_weights = applications.DenseNet121(**kwargs_with_weights)
+            elif _backbone == 'densenet169':
+                model_with_weights = applications.DenseNet169(**kwargs_with_weights) 
+            elif _backbone == 'densenet201':
+                model_with_weights = applications.DenseNet201(**kwargs_with_weights)
+            for layer in model_with_weights.layers[1:]:
+                model.get_layer(name=layer.name).set_weights(layer.get_weights())
+                
+        layer_names = ['conv1/relu'] + ['conv{}_block{}_concat'.format(idx + 2, block_num) 
+                                        for idx, block_num in enumerate(blocks)]
+        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
+        
+        output_dict = {}
+        for i, j in enumerate(layer_names):
+            output_dict['C' + str(i+1)] = layer_outputs[i]
+        if return_dict:
+            return output_dict
+        else:
+            return model
 
-    elif _backbone in resnet_backbones:
-        model = applications.ResNet50(**kwargs)
-        layer_names = ['res3d_branch2c', 'res4f_branch2c', 'res5c_branch2c']
-        layer_outputs = [model.get_layer(name).output for name in layer_names]
-        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
-        return model.outputs
+    elif _backbone in resnet_backbones:            
+        model = applications.ResNet50(input_tensor=input_tensor, **kwargs)
+        
+        # Set the weights of the model if requested
+        if use_imagenet:
+            model_with_weights = applications.ResNet50( **kwargs_with_weights)
+            model_with_weights.save_weights('model_weights.h5')
+            model.load_weights('model_weights.h5', by_name=True)
+                
+        layer_names = ['bn_conv1', 'res2c_branch2c', 'res3d_branch2c', 'res4f_branch2c', 'res5c_branch2c']
+        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
+        
+        output_dict = {}
+        for i, j in enumerate(layer_names):
+            output_dict['C' + str(i+1)] = layer_outputs[i]
+        if return_dict:
+            return output_dict
+        else:
+            return model
 
     elif _backbone in mobilenet_backbones:
         alpha = kwargs.get('alpha', 1.0)
         if _backbone.endswith('v2'):
-            model = applications.MobileNetV2(alpha=alpha, **kwargs)
-            block_ids = (12, 15, 16)
-            layer_names = ['block_%s_depthwise_relu' % i for i in block_ids]
+            model = applications.MobileNetV2(alpha=alpha, input_tensor=input_tensor, **kwargs)
+            block_ids = (2, 5, 12)
+            layer_names = ['expanded_conv_project_BN'] + ['block_%s_add' % i for i in block_ids] + ['block_16_project_BN']
         else:
-            model = applications.MobileNet(alpha=alpha, **kwargs)
-            block_ids = (5, 11, 13)
+            model = applications.MobileNet(alpha=alpha, input_tensor=input_tensor, **kwargs)
+            block_ids = (1, 3, 5, 11, 13)
             layer_names = ['conv_pw_%s_relu' % i for i in block_ids]
-        layer_outputs = [model.get_layer(name).output for name in layer_names]
-        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
-        return model.outputs
+        
+        # Set the weights of the model if requested
+        if use_imagnet:
+            if _backbone.endswith('v2'):
+                model_with_weights = applications.MobileNetV2(alpha=alpha, **kwargs_with_weights)
+            else:
+                model_with_weights = applications.MobileNet(alpha=alpha, **kwargs_with_weights)
+            model_with_weights.save_weights('model_weights.h5')
+            model.load_weights('model_weights.h5', by_name=True)
+            
+        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
+        
+        output_dict = {}
+        for i, j in enumerate(layer_names):
+            output_dict['C' + str(i+1)] = layer_outputs[i]
+        if return_dict:
+            return output_dict
+        else:
+            return model
 
     elif _backbone in nasnet_backbones:
         if _backbone.endswith('large'):
-            model = applications.NASNetLarge(**kwargs)
+            model = applications.NASNetLarge(input_tensor=input_tensor, **kwargs)
             block_ids = [5, 12, 18]
         else:
-            model = applications.NASNetMobile(**kwargs)
+            model = applications.NASNetMobile(input_tensor=input_tensor, **kwargs)
             block_ids = [3, 8, 12]
-        layer_names = ['normal_conv_1_%s' % i for i in block_ids]
-        layer_outputs = [model.get_layer(name).output for name in layer_names]
-        model = Model(inputs=inputs, outputs=layer_outputs, name=model.name)
-        return model.outputs
+            
+        # Set the weights of the model if requested
+        if use_imagenet:
+            if _backbone.endswith('large'):
+                model_with_weights = applications.NASNetLarge(**kwargs_with_weights)
+            else:
+                model_with_weights = applications.NASNetMobile(**kwargs_with_weights)
+            model_with_weights.save_weights('model_weights.h5')
+            model.load_weights('model_weights.h5', by_name=True)
+        
+        layer_names = ['stem_bn1', 'reduction_concat_stem_1']
+        layer_names += ['normal_concat_%s' % i for i in block_ids]
+        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
+        
+        output_dict = {}
+        for i, j in enumerate(layer_names):
+            output_dict['C' + str(i+1)] = layer_outputs[i]
+        if return_dict:
+            return output_dict
+        else:
+            return model
 
     else:
-        backbones = list(densenet_backbones + resnet_backbones + vgg_backbones)
+        backbones = list(deepcell_backbones + densenet_backbones + resnet_backbones + vgg_backbones + nasnet_backbones)
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
                          ', '.join(backbones))
+
