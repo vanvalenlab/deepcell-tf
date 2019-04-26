@@ -32,9 +32,10 @@ from __future__ import division
 import re
 import copy
 
+from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import applications
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, BatchNormalization, Activation, MaxPool2D
+from tensorflow.python.keras.layers import Input, Conv2D, BatchNormalization, Activation, MaxPool2D
 
 def sorted_nicely(l):
     convert = lambda text: int(text) if text.isdigit() else text
@@ -45,7 +46,7 @@ def sorted_nicely(l):
 Featurenet-like backbone for feature pyramid networks
 """
 
-def dc_block(x, n_filters):
+def featurenet_block(x, n_filters):
     """Add a set of layers that make up one unit of the deepcell backbone
     Args:
         x (layer): Keras layer object to pass to backbone unit
@@ -67,7 +68,7 @@ def dc_block(x, n_filters):
 
     return (x)
 
-def dc_model(input_tensor=None, weights=None, include_top=False, pooling=None, n_filters=32, n_dense=128, n_classes=3):
+def featurenet_backbone(input_tensor=None, input_shape=None, weights=None, include_top=False, pooling=None, n_filters=32, n_dense=128, n_classes=3):
     """Construct the deepcell backbone with five convolutional units
         input_tensor (tensor): Input tensor to specify input size
         n_filters (int, optional): Defaults to 32. Number of filters for convolutionaal layers
@@ -75,12 +76,21 @@ def dc_model(input_tensor=None, weights=None, include_top=False, pooling=None, n
         (backbone_names, backbone_features): List of backbone layers, list of backbone names
     """
 
+
+    if input_tensor is None:
+        img_input = Input(shape=input_shape)
+    else:
+        if not K.is_keras_tensor(input_tensor):
+            img_input = Input(tensor=input_tensor, shape=input_shape)
+        else:
+            img_input = input_tensor        
+
     # Build out backbone
-    c1 = dc_block(input_tensor, n_filters)  # 1/2 64x64
-    c2 = dc_block(c1, n_filters)  # 1/4 32x32
-    c3 = dc_block(c2, n_filters)  # 1/8 16x16
-    c4 = dc_block(c3, n_filters)  # 1/16 8x8
-    c5 = dc_block(c4, n_filters)  # 1/32 4x4
+    c1 = featurenet_block(img_input, n_filters)  # 1/2 64x64
+    c2 = featurenet_block(c1, n_filters)  # 1/4 32x32
+    c3 = featurenet_block(c2, n_filters)  # 1/8 16x16
+    c4 = featurenet_block(c3, n_filters)  # 1/16 8x8
+    c5 = featurenet_block(c4, n_filters)  # 1/32 4x4
 
     backbone_features = [c1, c2, c3, c4, c5]
     backbone_names = ['C1', 'C2', 'C3', 'C4', 'C5']
@@ -119,7 +129,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     
     # FUTURE WORK: Check and make sure **kwargs is in the right format. 'weights' flag should be None,
     # and 'input_shape' must have size 3 on the channel axis
-    
+
     if use_imagenet:
         kwargs_with_weights = copy.copy(kwargs)
         kwargs_with_weights['weights'] = 'imagenet'
@@ -128,7 +138,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         if use_imagenet:
             raise ValueError('A featurenet backbone that is pre-trained on imagenet does not exist')    
         
-        output_dict = dc_model(input_tensor=input_tensor, **kwargs)
+        output_dict = featurenet_backbone(input_tensor=input_tensor, **kwargs)
         if return_dict:
             return output_dict
         else:
