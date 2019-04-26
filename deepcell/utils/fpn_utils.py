@@ -88,15 +88,18 @@ def create_pyramid_level(backbone_input,
     return pyramid_final, pyramid_upsample
 
 
-def __create_pyramid_features(backbone_names, backbone_features, feature_size=256):
+def __create_pyramid_features(backbone_dict, feature_size=256, include_final_layers=True):
     """Creates the FPN layers on top of the backbone features.
     Args:
-        backbone_names (list): A list of all the backbone names in ascending order,
-            e.g. [C0, C1, C2, C3, ...]
-        backbone_features (list): A list of all the backbone features
+    	backbone_dict (dictionary): A dictionary of the backbone layers, with the names as keys, 
+    		e.g. {'C0': C0, 'C1': C1, 'C2': C2, ...}
         feature_size (int, optional): Defaults to 256. The feature size to use for the resulting feature levels.
+        include_final_layers: Defaults to True. Option to add two coarser pyramid levels
     Returns:
-        A list of feature levels [P3, P4, P5, P6, P7].
+        A dictionary with the feature pyramid names and levels,
+        	e.g. {'P3': P3, 'P4': P4, ...} 
+        Each backbone layer gets a pyramid level, and two additional levels are added, 
+        e.g. [C3, C4, C5] --> [P3, P4, P5, P6, P7]
     """
 
     # Get names of the backbone levels and place in ascending order
@@ -142,24 +145,25 @@ def __create_pyramid_features(backbone_names, backbone_features, feature_size=25
         pyramid_upsamples.append(pu)
 
     # Add the final two pyramid layers
-    # "Second to last pyramid layer is obtained via a 3x3 stride-2 conv on the coarsest backbone"
-    N = backbone_names[0]
-    F = backbone_features[0]
-    level = int(re.findall(r'\d+', N)[0]) + 1
-    P_minus_2_name = 'P' + str(level)
-    P_minus_2 = Conv2D(feature_size, kernel_size=3, strides=2,
-                       padding='same', name=P_minus_2_name)(F)
-    pyramid_names.insert(0, P_minus_2_name)
-    pyramid_finals.insert(0, P_minus_2)
+    if include_final_layers:
+	    # "Second to last pyramid layer is obtained via a 3x3 stride-2 conv on the coarsest backbone"
+	    N = backbone_names[0]
+	    F = backbone_features[0]
+	    level = int(re.findall(r'\d+', N)[0]) + 1
+	    P_minus_2_name = 'P' + str(level)
+	    P_minus_2 = Conv2D(feature_size, kernel_size=3, strides=2,
+	                       padding='same', name=P_minus_2_name)(F)
+	    pyramid_names.insert(0, P_minus_2_name)
+	    pyramid_finals.insert(0, P_minus_2)
 
-    # "Last pyramid layer is computed by applying ReLU followed by a 3x3 stride-2 conv on second to last layer"
-    level = int(re.findall(r'\d+', N)[0]) + 2
-    P_minus_1_name = 'P' + str(level)
-    P_minus_1 = Activation('relu', name=N+'_relu')(P_minus_2)
-    P_minus_1 = Conv2D(feature_size, kernel_size=3, strides=2,
-                       padding='same', name=P_minus_1_name)(P_minus_1)
-    pyramid_names.insert(0, P_minus_1_name)
-    pyramid_finals.insert(0, P_minus_1)
+	    # "Last pyramid layer is computed by applying ReLU followed by a 3x3 stride-2 conv on second to last layer"
+	    level = int(re.findall(r'\d+', N)[0]) + 2
+	    P_minus_1_name = 'P' + str(level)
+	    P_minus_1 = Activation('relu', name=N+'_relu')(P_minus_2)
+	    P_minus_1 = Conv2D(feature_size, kernel_size=3, strides=2,
+	                       padding='same', name=P_minus_1_name)(P_minus_1)
+	    pyramid_names.insert(0, P_minus_1_name)
+	    pyramid_finals.insert(0, P_minus_1)
 
     pyramid_names.reverse()
     pyramid_finals.reverse()
@@ -168,8 +172,11 @@ def __create_pyramid_features(backbone_names, backbone_features, feature_size=25
     backbone_names.reverse()
     backbone_features.reverse()
 
-    return pyramid_names, pyramid_finals
+    pyramid_dict = {}
+    for name, feature in zip(pyramid_names, pyramid_finals):
+    	pyramid_dict[name] = feature
 
+    return pyramid_dict
 
 def semantic_upsample(x, n_upsample, n_filters=256, target=None):
     """
@@ -202,7 +209,6 @@ def semantic_upsample(x, n_upsample, n_filters=256, target=None):
             x = UpsampleLike()([x, target])
 
     return x
-
 
 def semantic_prediction(semantic_names,
                         semantic_features,
@@ -257,7 +263,6 @@ def semantic_prediction(semantic_names,
 
     return x
 
-
 def __create_semantic_head(pyramid_names,
                            pyramid_features,
                            input_target=None,
@@ -279,6 +284,10 @@ def __create_semantic_head(pyramid_names,
     Returns:
         The semantic segmentation head
     """
+    # Get pyramid names and features into list form
+    pyramid_names = list(pyramid_dict.keys())
+    pyramid_names.sort(key=lambda x: int(x[1:]))
+    pyramid_features = [pyramid_dict[name] for name in pyramid_names]
 
     # Reverse pyramid names and features
     pyramid_names.reverse()
@@ -306,7 +315,6 @@ def __create_semantic_head(pyramid_names,
                             n_classes=n_classes, input_target=input_target)
 
     return x
-
 
 def FPNet(backbone,
           input_shape,

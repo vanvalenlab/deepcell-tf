@@ -94,21 +94,40 @@ def dc_model(input_tensor=None, weights=None, include_top=False, pooling=None, n
 Backbone utils
 """
 
-def get_backbone(backbone, input_tensor, use_imagenet=None, return_dict=True, **kwargs):
+def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, **kwargs):
+    """Retrieve backbones - helper function for the construction of feature pyramid networks
+        backbone: Name of the backbone to be retrieved. Options include featurenets, resnets
+            densenets, mobilenets, and nasnets
+        input_tensor: The tensor to be used as the input for the backbone. Should have channel 
+            dimension of size 3
+        use_imagenet: Defaults to False. Whether to load pre-trained weights for the backbone
+        return_dict: Defaults to True. Whether to return a dictionary of backbone layers,
+            e.g. {'C1': C1, 'C2': C2, 'C3': C3, 'C4': C4, 'C5': C5}. If false, the whole model
+            is returned instead
+        **kwargs: Keyword dictionary for backbone constructions. Relevant keys include 'include_top',
+            'weights' (should be set to None), 'input_shape', and 'pooling'
+
+    """
     _backbone = str(backbone).lower()
 
-    deepcell_backbones = ['deepcell']
+    featurenet_backbones = ['featurenet']
     vgg_backbones = ['vgg16', 'vgg19']
     densenet_backbones = ['densenet121', 'densenet169', 'densenet201']
     mobilenet_backbones = ['mobilenet', 'mobilenetv2', 'mobilenet_v2']
     resnet_backbones = ['resnet50']
     nasnet_backbones = ['nasnet_large', 'nasnet_mobile']
     
+    # FUTURE WORK: Check and make sure **kwargs is in the right format. 'weights' flag should be None,
+    # and 'input_shape' must have size 3 on the channel axis
+    
     if use_imagenet:
         kwargs_with_weights = copy.copy(kwargs)
         kwargs_with_weights['weights'] = 'imagenet'
         
-    if _backbone in deepcell_backbones:
+    if _backbone in featurenet_backbones:
+        if use_imagenet:
+            raise ValueError('A featurenet backbone that is pre-trained on imagenet does not exist')    
+        
         output_dict = dc_model(input_tensor=input_tensor, **kwargs)
         if return_dict:
             return output_dict
@@ -255,7 +274,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=None, return_dict=True, **
             return model
 
     else:
-        backbones = list(deepcell_backbones + densenet_backbones + resnet_backbones + vgg_backbones + nasnet_backbones)
+        backbones = list(featurenet_backbones + densenet_backbones + resnet_backbones + vgg_backbones + nasnet_backbones)
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
                          ', '.join(backbones))
 
