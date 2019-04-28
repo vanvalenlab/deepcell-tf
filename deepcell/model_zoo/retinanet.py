@@ -376,7 +376,12 @@ def retinanet_bbox(model=None,
     classification = model.outputs[1]
 
     # "other" can be any additional output from custom submodels, by default this will be []
-    other = model.outputs[2:]
+    if panoptic:
+        # The last output is the panoptic output, which should not be
+        # sent to filter detections
+        other = model.outputs[2:-1]
+    else:
+        other = model.outputs[2:]
 
     # apply predicted regression to anchors
     boxes = RegressBoxes(name='boxes')([anchors, regression])
@@ -391,7 +396,7 @@ def retinanet_bbox(model=None,
 
     # add the semantic head's output if needed
     if panoptic:
-        outputs = [detections, model.layer(name='semantic').output]
+        outputs = [detections, model.get_layer(name='semantic').output]
     else:
         outputs = [detections]
 
@@ -403,6 +408,7 @@ def RetinaNet(backbone,
               num_classes,
               input_shape,
               norm_method='whole_image',
+              location=False,
               use_imagenet=False,
               pooling=None,
               required_channels=3,
@@ -434,6 +440,10 @@ def RetinaNet(backbone,
         RetinaNet model with a backbone.
     """
     inputs = Input(shape=input_shape)
+    if location:
+        location = Location2D(in_shape=input_shape)(inputs)
+        inputs = Concatenate(axis=channel_axis)([inputs, location])
+
     # force the channel size for backbone input to be `required_channels`
     norm = ImageNormalization2D(norm_method=norm_method)(inputs)
     fixed_inputs = TensorProduct(required_channels)(norm)
@@ -449,6 +459,6 @@ def RetinaNet(backbone,
     return retinanet(
         inputs=inputs,
         num_classes=num_classes,
-        backbone_layers=layer_outputs,
+        backbone_dict=backbone_dict,
         name='{}_retinanet'.format(backbone),
         **kwargs)

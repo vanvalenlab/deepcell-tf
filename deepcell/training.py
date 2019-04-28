@@ -471,7 +471,6 @@ def train_model_siamese_daughter(model,
 
     return model
 
-
 def train_model_retinanet(model,
                           dataset,
                           backbone,
@@ -481,6 +480,8 @@ def train_model_retinanet(model,
                           batch_size=1,
                           num_gpus=None,
                           include_masks=False,
+                          panoptic=False,
+                          panoptic_weight=1,
                           mask_size=(28, 28),
                           optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
                           log_dir='/data/tensorboard_logs',
@@ -517,6 +518,9 @@ def train_model_retinanet(model,
     train_dict, test_dict = get_data(dataset, mode='conv', test_size=test_size)
 
     n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
+    if panoptic:
+        n_semantic_classes = model.get_layer(name='semantic').output_shape[1 if is_channels_first else -1]
+
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
     print('y_train shape:', train_dict['y'].shape)
@@ -542,12 +546,18 @@ def train_model_retinanet(model,
             model, nms=True, class_specific_filter=False)
 
     loss = {
-        'regression': losses.regress_loss,
-        'classification': losses.classification_loss
+        'regression': losses.retinanet.regress_loss,
+        'classification': losses.retinanet.classification_loss
     }
 
     if include_masks:
-        loss['masks'] = losses.mask_loss
+        loss['masks'] = losses.retinanet.mask_loss
+
+    if panoptic:
+        def semantic_loss(y_pred, y_true):
+            return panoptic_weight*weighted_categorical_crossentropy(y_pred, y_true, 
+                        n_classes=n_semantic_classes)
+        loss['semantic'] = semantic_loss
 
     model.compile(loss=loss, optimizer=optimizer)
 
@@ -591,12 +601,14 @@ def train_model_retinanet(model,
     train_data = datagen.flow(
         train_dict,
         include_masks=include_masks,
+        panoptic=panoptic,
         compute_shapes=compute_shapes,
         batch_size=batch_size)
 
     val_data = datagen_val.flow(
         test_dict,
         include_masks=include_masks,
+        panoptic=panoptic,
         compute_shapes=compute_shapes,
         batch_size=batch_size)
 

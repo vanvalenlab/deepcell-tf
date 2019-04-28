@@ -699,8 +699,10 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         """Applies a random transformation to an image.
 
         Args:
-            x: 3D tensor, single image.
-            y: 3D tensor, label mask for `x`, optional.
+            x: 3D tensor or list of 3D tensors, 
+                single image.
+            y: 3D tensor or list of 3D tensors, 
+                label mask(s) for `x`, optional.
             seed: Random seed.
 
         Returns:
@@ -708,7 +710,11 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             If `y` is passed, it is transformed if necessary and returned.
         """
         params = self.get_random_transform(x.shape, seed)
-        x = self.apply_transform(x, params)
+        
+        if isinstance(x, list):
+            x = [self.apply_transform(x_i, params) for x_i in x]
+        else:
+            x = self.apply_transform(x, params)
 
         if y is None:
             return x
@@ -718,7 +724,12 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         params['channel_shift_intensity'] = None
         _interpolation_order = self.interpolation_order
         self.interpolation_order = 0
-        y = self.apply_transform(y, params)
+
+        if isinstance(y, list):
+            y = [self.apply_transform(y_i,params) for y_i in y]
+        else:
+            y = self.apply_transform(y, params)
+
         self.interpolation_order = _interpolation_order
         return x, y
 
@@ -2495,10 +2506,14 @@ class RetinaNetIterator(Iterator):
                  train_dict,
                  image_data_generator,
                  compute_shapes=guess_shapes,
+                 anchor_params=None,
                  min_objects=3,
                  num_classes=1,
                  clear_borders=False,
                  include_masks=False,
+                 panoptic=False,
+                 transform=None,
+                 transform_kwargs={},
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -2507,6 +2522,7 @@ class RetinaNetIterator(Iterator):
                  save_prefix='',
                  save_format='png'):
         X, y = train_dict['X'], train_dict['y']
+       
         if X.shape[0] != y.shape[0]:
             raise ValueError('Training batches and labels should have the same'
                              'length. Found X.shape: {} y.shape: {}'.format(
@@ -2522,15 +2538,28 @@ class RetinaNetIterator(Iterator):
 
         # `compute_shapes` changes based on the model backbone.
         self.compute_shapes = compute_shapes
+        self.anchor_params = anchor_params
         self.min_objects = min_objects
         self.num_classes = num_classes
         self.include_masks = include_masks
+        self.panoptic = panoptic
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
+
+        # Add semantic segmentation targets if panoptic segmentation
+        # flag is True
+        if panoptic:
+            if 'y_semantic' in train_dict.keys():
+                y_semantic = train_dict['y_semantic']
+            else:
+                y_semantic = y
+                y_semantic = _transform_masks(y_semantic, transform, data_format=data_format, **transform_kwargs)
+            self.y_semantic = np.asarray(y_semantic, dtype='int32')
+
 
         invalid_batches = []
         # Remove images with small numbers of cells
@@ -2553,6 +2582,8 @@ class RetinaNetIterator(Iterator):
 
         self.y = np.delete(self.y, invalid_batches, axis=0)
         self.x = np.delete(self.x, invalid_batches, axis=0)
+        if self.panoptic:
+            self.y_semantic = np.delete(self.y_semantic, invalid_batches, axis=0)
 
         super(RetinaNetIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
@@ -2620,6 +2651,10 @@ class RetinaNetIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
+        if self.panoptic:
+            batch_y_semantic = np.zeros(tuple([len(index_array)] 
+                                    + list(self.y_semantic.shape[1:])))
+
         annotations_list = []
 
         max_shape = []
@@ -2628,7 +2663,16 @@ class RetinaNetIterator(Iterator):
             x = self.x[j]
             y = self.y[j]
 
-            x, y = self.image_data_generator.random_transform(x, y)
+            if self.panoptic:
+                y_semantic = self.y_semantic[j]
+
+            # Apply transformation
+            if self.panoptic:
+                x, y_list = self.image_data_generator.random_transform(x, [y, y_semantic])
+                y = y_list[0]
+                y_semantic = y_list[1]
+            else:
+                x, y = self.image_data_generator.random_transform(x, y)
 
             # Find max shape of image data.  Used for masking.
             if not max_shape:
@@ -2645,10 +2689,11 @@ class RetinaNetIterator(Iterator):
             x = self.image_data_generator.standardize(x)
 
             batch_x[i] = x
+            batch_y_semantic[i] = y_semantic
 
         anchors = anchors_for_shape(
             batch_x.shape[1:],
-            anchor_params=None,
+            anchor_params=self.anchor_params,
             shapes_callback=self.compute_shapes)
 
         regressions, labels = anchor_targets_bbox(
@@ -2692,9 +2737,13 @@ class RetinaNetIterator(Iterator):
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
+        batch_outputs = [regressions, labels]
         if self.include_masks:
-            return batch_x, [regressions, labels, masks_batch]
-        return batch_x, [regressions, labels]
+            batch_outputs.append(masks_batch)
+        if self.panoptic:
+            batch_outputs.append(batch_y_semantic)
+
+        return batch_outputs 
 
     def next(self):
         """For python 2.x. Returns the next batch.
