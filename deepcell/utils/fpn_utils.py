@@ -47,6 +47,18 @@ from deepcell.layers import UpsampleLike
 from deepcell.layers import TensorProduct, ImageNormalization2D
 from deepcell.utils.misc_utils import get_backbone
 
+def get_sorted_keys(dict_to_sory):
+    """Gets the keys from a dict and sorts them.
+    Assumes keys are of the form Ni, where N is a 
+    letter and i is an integer. Sorts in ascending 
+    order.
+    Args:
+        dict_to_sort: dict whose keys need sorting
+    """
+    sorted_keys= list(dict_to_sort.keys())
+    sorted_keys.sort(key=lambda x: int(x[1:]))
+
+    return sorted_keys
 
 def create_pyramid_level(backbone_input,
                          upsamplelike_input=None,
@@ -104,8 +116,7 @@ def __create_pyramid_features(backbone_dict, feature_size=256, include_final_lay
     """
 
     # Get names of the backbone levels and place in ascending order
-    backbone_names = list(backbone_dict.keys())
-    backbone_names.sort(key=lambda x: int(x[1:]))
+    backbone_names = get_sorted_keys(backbone_dict)
     backbone_features = [backbone_dict[name] for name in backbone_names]
 
     pyramid_names = []
@@ -260,7 +271,7 @@ def semantic_prediction(semantic_names,
 
     # Apply tensor product and softmax layer
     x = TensorProduct(n_classes)(x)
-    x = Softmax(axis=channel_axis)(x)
+    x = Softmax(axis=channel_axis, name='semantic')(x)
 
     return x
 
@@ -285,8 +296,7 @@ def __create_semantic_head(pyramid_dict,
         The semantic segmentation head
     """
     # Get pyramid names and features into list form
-    pyramid_names = list(pyramid_dict.keys())
-    pyramid_names.sort(key=lambda x: int(x[1:]))
+    pyramid_names = get_sorted_keys(pyramid_dict)
     pyramid_features = [pyramid_dict[name] for name in pyramid_names]
 
     # Reverse pyramid names and features
@@ -383,14 +393,6 @@ def FPNet(backbone,
 
     levels = [int(re.findall(r'\d+', N)[0]) for N in pyramid_dict.keys()]
     target_level = min(levels)
-    # x = fpn_features[0]
-    # x = UpsampleLike()([x, inputs])
-    # x = TensorProduct(n_classes)(x)
-    # x = Softmax(axis=-1)(x)
-
-    # Construct semantic head
-    # fpn_names = fpn_names[0:-1]
-    # fpn_features = fpn_features[0:-1]
 
     x = __create_semantic_head(pyramid_dict, n_classes=n_classes,
                                input_target=inputs, target_level=target_level)

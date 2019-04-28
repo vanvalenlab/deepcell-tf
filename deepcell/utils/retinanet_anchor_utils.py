@@ -68,6 +68,14 @@ AnchorParameters.default = AnchorParameters(
     scales=np.array([2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)], K.floatx()),
 )
 
+def generate_anchor_params(pyramid_levels, anchor_size_dict, 
+                                ratios=AnchorParameters.default.ratios,
+                                scales=AnchorParameters.default.scales)):
+    sizes = [anchor_size_dict[level] for level in pyramid_levels]
+    strides = [2 ** int(level[1:]) for level in pyramid_levels]
+    anchor_parameters = AnchorParameters(sizes, strides, ratios, scales)
+
+    return anchor_parameters
 
 def anchor_targets_bbox(anchors,
                         image_group,

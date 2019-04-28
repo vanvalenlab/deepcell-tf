@@ -42,9 +42,9 @@ from deepcell.layers import TensorProduct
 from deepcell.layers import FilterDetections
 from deepcell.layers import ImageNormalization2D
 from deepcell.layers import Anchors, UpsampleLike, RegressBoxes, ClipBoxes
-from deepcell.utils.retinanet_anchor_utils import AnchorParameters
+from deepcell.utils.retinanet_anchor_utils import AnchorParameters, generate_anchor_params
 from deepcell.utils.misc_utils import get_backbone
-
+from deepcell.utils.fpn_utils import __create_pyramid_features, __create_semantic_head
 
 def default_classification_model(num_classes,
                                  num_anchors,
@@ -155,45 +155,6 @@ def default_regression_model(num_values,
 
     return Model(inputs=inputs, outputs=outputs, name=name)
 
-
-def __create_pyramid_features(C3, C4, C5, feature_size=256):
-    """Creates the FPN layers on top of the backbone features.
-
-    Args:
-        C3: Feature stage C3 from the backbone.
-        C4: Feature stage C4 from the backbone.
-        C5: Feature stage C5 from the backbone.
-        feature_size: The feature size to use for the resulting feature levels.
-
-    Returns:
-        A list of feature levels [P3, P4, P5, P6, P7].
-    """
-    # upsample C5 to get P5 from the FPN paper
-    P5 = Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C5_reduced')(C5)
-    P5_upsampled = UpsampleLike(name='P5_upsampled')([P5, C4])
-    P5 = Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P5')(P5)
-
-    # add P5 elementwise to C4
-    P4 = Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C4_reduced')(C4)
-    P4 = Add(name='P4_merged')([P5_upsampled, P4])
-    P4_upsampled = UpsampleLike(name='P4_upsampled')([P4, C3])
-    P4 = Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P4')(P4)
-
-    # add P4 elementwise to C3
-    P3 = Conv2D(feature_size, kernel_size=1, strides=1, padding='same', name='C3_reduced')(C3)
-    P3 = Add(name='P3_merged')([P4_upsampled, P3])
-    P3 = Conv2D(feature_size, kernel_size=3, strides=1, padding='same', name='P3')(P3)
-
-    # "P6 is obtained via a 3x3 stride-2 conv on C5"
-    P6 = Conv2D(feature_size, kernel_size=3, strides=2, padding='same', name='P6')(C5)
-
-    # "P7 is computed by applying ReLU followed by a 3x3 stride-2 conv on P6"
-    P7 = Activation('relu', name='C6_relu')(P6)
-    P7 = Conv2D(feature_size, kernel_size=3, strides=2, padding='same', name='P7')(P7)
-
-    return [P3, P4, P5, P6, P7]
-
-
 def default_submodels(num_classes, num_anchors):
     """Create a list of default submodels used for object detection.
 
@@ -242,7 +203,6 @@ def __build_pyramid(models, features):
     """
     return [__build_model_pyramid(n, m, features) for n, m in models]
 
-
 def __build_anchors(anchor_parameters, features):
     """Builds anchors for the shape of the features from FPN.
 
@@ -272,10 +232,15 @@ def __build_anchors(anchor_parameters, features):
 
 
 def retinanet(inputs,
-              backbone_layers,
+              backbone_dict,
               num_classes,
+              backbone_levels=['C3', 'C4', 'C5'],
+              pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7']
               num_anchors=None,
               create_pyramid_features=__create_pyramid_features,
+              create_symantic_head=__create_semantic_head,
+              panoptic=False,
+              num_semantic_classes=3,
               submodels=None,
               name='retinanet'):
     """Construct a RetinaNet model on top of a backbone.
@@ -285,9 +250,20 @@ def retinanet(inputs,
 
     Args:
         inputs: The inputs to the network.
+        backbone_dict: A dictionary with the backbone layers
+        backbone_levels: A list with the backbone levels to be used
+            to create the feature pyramid. Defaults to ['C3', 'C4', 'C5']
+        pyramid_levels: A list of the pyramid levels to attach regression and
+            classification heads to. Defaults to ['P3', 'P4', 'P5', 'P6', 'P7']
         num_classes: Number of classes to classify.
         num_anchors: Number of base anchors.
-        create_pyramid_features: Functor for creating pyramid features.
+        create_pyramid_features: Function for creating pyramid features.
+        create_symantic_head: Function for creating a semantic head, which can 
+            be used for panoptic segmentation tasks
+        panoptic: Flag for adding the semantic head for panoptic segmentation 
+            tasks. Defaults to false.
+        num_semantic_classes: The number of classes for the semantic segmentation
+            part of panoptic segmentation tasks. Defaults to 3.
         submodels: Submodels to run on each feature map (default is regression
             and classification submodels).
         name: Name of the model.
@@ -303,26 +279,42 @@ def retinanet(inputs,
         ]
         ```
     """
-
     if num_anchors is None:
         num_anchors = AnchorParameters.default.num_anchors()
 
     if submodels is None:
         submodels = default_submodels(num_classes, num_anchors)
 
-    C3, C4, C5 = backbone_layers
-
     # compute pyramid features as per https://arxiv.org/abs/1708.02002
-    features = create_pyramid_features(C3, C4, C5)
 
-    # for all pyramid levels, run available submodels
-    pyramids = __build_pyramid(submodels, features)
+    # Use only the desired backbone levels to create the feature pyramid
+    backbone_dict_reduced = {key: value for key, value in backbone_dict.items() 
+                                if k in backbone_levels}
+    pyramid_dict = create_pyramid_features(backbone_dict_reduced)
 
-    return Model(inputs=inputs, outputs=pyramids, name=name)
+    # for the desired pyramid levels, run available submodels
+    features = [pyramid_dict[key] if key in pyramid_levels]
+    object_head = __build_pyramid(submodels, features)
+
+    if panoptic:
+        semantic_levels = [int(re.findall(r'\d+', N)[0]) for N in pyramid_dict.keys()]
+        target_level = min(semantic_levels)
+
+        semantic_head = __create_semantic_head(pyramid_dict, n_classes=num_semantic_classes,
+                               input_target=inputs, target_level=target_level)
+
+        outputs = object_head + [semantic_head]
+    else:
+        outputs = object_head
+
+    return Model(inputs=inputs, outputs=outputs, name=name)
 
 
 def retinanet_bbox(model=None,
                    nms=True,
+                   backbone_levels=['C3', 'C4', 'C5'],
+                   pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
+                   panoptic=False,
                    class_specific_filter=True,
                    name='retinanet-bbox',
                    anchor_params=None,
@@ -338,12 +330,14 @@ def retinanet_bbox(model=None,
         model: RetinaNet model to append bbox layers to.
             If None, it will create a RetinaNet model using **kwargs.
         nms: Whether to use non-maximum suppression for the filtering step.
+        backbone_levels: Backbone levels to use for constructing retinanet.
+        pyramid_levels: Pyramid levels to attach the object detection heads to.
         class_specific_filter: Whether to use class specific filtering or
             filter for the best scoring class only.
         name: Name of the model.
         anchor_params: Struct containing anchor parameters.
             If None, default values are used.
-        *kwargs: Additional kwargs to pass to the minimal retinanet model.
+        **kwargs: Additional kwargs to pass to the minimal retinanet model.
 
     Returns:
         A Model which takes an image as input and
@@ -362,7 +356,10 @@ def retinanet_bbox(model=None,
 
     # create RetinaNet model
     if model is None:
-        model = retinanet(num_anchors=anchor_params.num_anchors(), **kwargs)
+        model = retinanet(num_anchors=anchor_params.num_anchors(), 
+                            backbone_levels=backbone_levels,
+                            pyramid_levels=pyramid_levels, 
+                            **kwargs)
     else:
         names = ('regression', 'classification')
         if not all(output in model.output_names for output in names):
@@ -371,8 +368,7 @@ def retinanet_bbox(model=None,
                              'outputs are: {}).'.format(model.output_names))
 
     # compute the anchors
-    p_names = ['P3', 'P4', 'P5', 'P6', 'P7']
-    features = [model.get_layer(p_name).output for p_name in p_names]
+    features = [model.get_layer(level).output for level in pyramid_levels]
     anchors = __build_anchors(anchor_params, features)
 
     # we expect the anchors, regression and classification values as first output
@@ -393,15 +389,21 @@ def retinanet_bbox(model=None,
         name='filtered_detections'
     )([boxes, classification] + other)
 
+    # add the semantic head's output if needed
+    if panoptic:
+        outputs = [detections, model.layer(name='semantic').output]
+    else:
+        outputs = [detections]
+
     # construct the model
-    return Model(inputs=model.inputs, outputs=detections, name=name)
+    return Model(inputs=model.inputs, outputs=outputs, name=name)
 
 
 def RetinaNet(backbone,
               num_classes,
               input_shape,
               norm_method='whole_image',
-              weights=None,
+              use_imagenet=False,
               pooling=None,
               required_channels=3,
               **kwargs):
@@ -438,10 +440,10 @@ def RetinaNet(backbone,
     model_kwargs = {
         'include_top': False,
         'input_tensor': fixed_inputs,
-        'weights': weights,
+        'weights': None,
         'pooling': pooling
     }
-    layer_outputs = get_pyramid_layer_outputs(backbone, inputs, **model_kwargs)
+    backbone_dict = get_backbone(backbone, fixed_inputs, **model_kwargs)
 
     # create the full model
     return retinanet(
