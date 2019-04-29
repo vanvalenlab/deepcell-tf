@@ -349,6 +349,7 @@ def _shift(shape, stride, anchors):
 
     return all_anchors
 
+
 def generate_anchors(base_size=16, ratios=None, scales=None):
     """Generate anchor (reference) windows by enumerating aspect ratios X
     scales w.r.t. a reference window.
