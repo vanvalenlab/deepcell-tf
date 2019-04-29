@@ -165,28 +165,27 @@ class UpsampleLike3D(Layer):
             output = tf.transpose(output, (0, 3, 1, 2))
             return output
 
-
-        #transformer source en 4D tensor
+        # Reshape source as a 4D tensor
         reshaped = tf.reshape(source, [tf.shape(source)[0],  source.get_shape()[1], source.get_shape()[2], source.get_shape()[3] * source.get_shape()[4]])
 
-        #resize les deux premières size de ce tenseur 4D
+        # Resize the first two dimensions of the tensor
         new_size = tf.constant([int(target.get_shape()[1]), int(target.get_shape()[2])])
         resized = tf.image.resize_images(reshaped, new_size)
 
-        #undo la tansformation
+        # Undo the reshape
         undo_reshape = tf.reshape(resized,  [tf.shape(source)[0],  target.get_shape()[1], target.get_shape()[2], source.get_shape()[3], source.get_shape()[4]])
 
-        #transpose les deux dernières sizes au milieu
+        # Switch the two first dimension with the two last one
         transposed = tf.transpose(undo_reshape, [0, 3, 4, 1, 2])
 
-        #Transformer en tenseur 4D
+        # Reshape as a 4D tensor
         reshaped2 = tf.reshape(transposed, [tf.shape(transposed)[0],  transposed.get_shape()[1], transposed.get_shape()[2], transposed.get_shape()[3] * transposed.get_shape()[4]])
 
-        #Resize les deux premieres size de ce tenseur
+        # Resize the new two first dimension
         new_size2 = tf.constant([int(target.get_shape()[3]), int(source.get_shape()[4])])
         resized2 = tf.image.resize_images(reshaped2, new_size2)
 
-        #Undo la transformation en 4D
+        # Undo reshape
         undo_reshape2 = tf.reshape(resized2,  [tf.shape(source)[0],  target.get_shape()[3], source.get_shape()[4], target.get_shape()[1], target.get_shape()[2]])
 
         #Undo transpose
