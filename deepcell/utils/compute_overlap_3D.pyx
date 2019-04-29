@@ -35,26 +35,26 @@ def compute_overlap(
             (query_boxes[k, 5] - query_boxes[k, 2] + 1)
         )
         for n in range(N):
-            iw = (
+            id = (
                 min(boxes[n, 3], query_boxes[k, 3]) -
                 max(boxes[n, 0], query_boxes[k, 0]) + 1
             )
-            if iw > 0:
-                ih = (
+            if id > 0:
+                iw = (
                     min(boxes[n, 4], query_boxes[k, 4]) -
                     max(boxes[n, 1], query_boxes[k, 1]) + 1
                 )
-                if ih > 0:
-                    id = (
+                if iw > 0:
+                    ih = (
                         min(boxes[n, 5], query_boxes[k, 5]) - 
                         max(boxes[n, 2], query_boxes[k, 2]) + 1
                     )
-                    if id > 0:
-                    ua = np.float64(
-                        (boxes[n, 3] - boxes[n, 0] + 1) *
-                        (boxes[n, 4] - boxes[n, 1] + 1) *
-                        (boxes[n, 5] - boxes[n, 2] + 1) +
-                        box_volume - iw * ih * id
-                    )
-                    overlaps[n, k] = iw * ih * id / ua
+                    if ih > 0:
+                        ua = np.float64(
+                            (boxes[n, 3] - boxes[n, 0] + 1) *
+                            (boxes[n, 4] - boxes[n, 1] + 1) *
+                            (boxes[n, 5] - boxes[n, 2] + 1) +
+                            box_volume - iw * ih * id
+                        )
+                        overlaps[n, k] = iw * ih * id / ua
     return overlaps

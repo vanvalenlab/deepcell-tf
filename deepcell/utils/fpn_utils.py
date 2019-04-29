@@ -33,13 +33,12 @@ import re
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D
-from tensorflow.python.keras.layers import MaxPool2D
+from tensorflow.python.keras.layers import Conv2D, Conv3D
 from tensorflow.python.keras.layers import Softmax
 from tensorflow.python.keras.layers import Input, Concatenate, Add
 from tensorflow.python.keras.layers import Reshape
 from tensorflow.python.keras.layers import Activation
-from tensorflow.python.keras.layers import UpSampling2D
+from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
 from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras import applications
 
@@ -63,7 +62,8 @@ def get_sorted_keys(dict_to_sory):
 def create_pyramid_level(backbone_input,
                          upsamplelike_input=None,
                          addition_input=None,
-                         level=5,
+                         level=5, 
+                         ndim= 2,
                          feature_size=256):
     """Create a pyramid layer from a particular backbone input layer
     Args:
@@ -72,9 +72,14 @@ def create_pyramid_level(backbone_input,
         addition_input (layer, optional): Defaults to None. Layer to add to pyramid layer after conv and upsample
         level (int, optional): Defaults to 5. Level to use in layer names
         feature_size (int, optional): Defaults to 256. Number of filters for convolutional layer
+        ndim: The spatial dimensions of the input data. Default is 2, but it also works with 3
     Returns:
         (pyramid final, pyramid upsample): Pyramid layer after processing, upsampled pyramid layer
     """
+
+    acceptable_ndims = [2, 3]
+    if ndim not in acceptable_ndims:
+        raise ValueError('Only 2 and 3 dimensional networks are supported')
 
     reduced_name = 'C' + str(level) + '_reduced'
     upsample_name = 'P' + str(level) + '_upsampled'
@@ -82,8 +87,12 @@ def create_pyramid_level(backbone_input,
     final_name = 'P' + str(level)
 
     # Apply 1x1 conv to backbone layer
-    pyramid = Conv2D(feature_size, (1, 1), strides=(
-        1, 1), padding='same', name=reduced_name)(backbone_input)
+    if ndim == 2:
+        pyramid = Conv2D(feature_size, (1, 1), strides=(1, 1), 
+            padding='same', name=reduced_name)(backbone_input)
+    else:
+        pyramid = Conv3D(feature_size, (1, 1, 1), strides=(1, 1, 1), 
+            padding='same', name=reduced_name)(backbone_input)
 
     # Upsample pyramid input
     if upsamplelike_input is not None:
@@ -95,25 +104,35 @@ def create_pyramid_level(backbone_input,
     if addition_input is not None:
         pyramid = Add(name=addition_name)([pyramid, addition_input])
 
-    pyramid_final = Conv2D(feature_size, (3, 3), strides=(
-        1, 1), padding='same', name=final_name)(pyramid)
+    if ndim == 2:
+        pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1), 
+            padding='same', name=final_name)(pyramid)
+    else:
+        pyramid_final = Conv3D(feature_size, (3, 3, 3), strides=(1, 1, 1), 
+            padding='same', name=final_name)(pyramid)
+
 
     return pyramid_final, pyramid_upsample
 
 
-def __create_pyramid_features(backbone_dict, feature_size=256, include_final_layers=True):
+def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256, include_final_layers=True):
     """Creates the FPN layers on top of the backbone features.
     Args:
         backbone_dict (dictionary): A dictionary of the backbone layers, with the names as keys, 
             e.g. {'C0': C0, 'C1': C1, 'C2': C2, ...}
         feature_size (int, optional): Defaults to 256. The feature size to use for the resulting feature levels.
         include_final_layers: Defaults to True. Option to add two coarser pyramid levels
+        ndim: The spatial dimensions of the input data. Default is 2, but it also works with 3
     Returns:
         A dictionary with the feature pyramid names and levels,
             e.g. {'P3': P3, 'P4': P4, ...} 
         Each backbone layer gets a pyramid level, and two additional levels are added, 
         e.g. [C3, C4, C5] --> [P3, P4, P5, P6, P7]
     """
+
+    acceptable_ndims = [2, 3]
+    if ndim not in acceptable_ndims:
+        raise ValueError('Only 2 and 3 dimensional networks are supported')
 
     # Get names of the backbone levels and place in ascending order
     backbone_names = get_sorted_keys(backbone_dict)
@@ -163,8 +182,12 @@ def __create_pyramid_features(backbone_dict, feature_size=256, include_final_lay
         F = backbone_features[0]
         level = int(re.findall(r'\d+', N)[0]) + 1
         P_minus_2_name = 'P' + str(level)
-        P_minus_2 = Conv2D(feature_size, kernel_size=3, strides=2,
-                           padding='same', name=P_minus_2_name)(F)
+        if ndim == 2:
+            P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
+                               padding='same', name=P_minus_2_name)(F)
+       else:
+            P_minus_2 = Conv3D(feature_size, kernel_size=(3, 3, 3), strides=(2, 2, 2),
+                               padding='same', name=P_minus_2_name)(F)
         pyramid_names.insert(0, P_minus_2_name)
         pyramid_finals.insert(0, P_minus_2)
 
@@ -172,7 +195,11 @@ def __create_pyramid_features(backbone_dict, feature_size=256, include_final_lay
         level = int(re.findall(r'\d+', N)[0]) + 2
         P_minus_1_name = 'P' + str(level)
         P_minus_1 = Activation('relu', name=N+'_relu')(P_minus_2)
-        P_minus_1 = Conv2D(feature_size, kernel_size=3, strides=2,
+        if ndim == 2:
+            P_minus_1 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
+                           padding='same', name=P_minus_1_name)(P_minus_1)
+       else:
+            P_minus_1 = Conv3D(feature_size, kernel_size=(3, 3, 3), strides=(2, 2, 2),
                            padding='same', name=P_minus_1_name)(P_minus_1)
         pyramid_names.insert(0, P_minus_1_name)
         pyramid_finals.insert(0, P_minus_1)
@@ -190,7 +217,7 @@ def __create_pyramid_features(backbone_dict, feature_size=256, include_final_lay
 
     return pyramid_dict
 
-def semantic_upsample(x, n_upsample, n_filters=256, target=None):
+def semantic_upsample(x, n_upsample, n_filters=256, ndim=2, target=None):
     """
     Performs iterative rounds of 2x upsampling and
     convolutions with a 3x3 filter to remove aliasing effects
@@ -199,23 +226,42 @@ def semantic_upsample(x, n_upsample, n_filters=256, target=None):
         n_upsample (int): The number of 2x upsamplings
         n_filters (int, optional): Defaults to 256. The number of filters for the 3x3 convolution
         target (tensor, optional): Defaults to None. A tensor with the target shape. If included,
-            then the final upsampling layer will reshape to the target
-            tensor's size
+            then the final upsampling layer will reshape to the target tensor's size
+        ndim: The spatial dimensions of the input data. Default is 2, but it also works with 3
+
     Returns:
         The upsampled tensor
     """
-    for i in range(n_upsample):
-        x = Conv2D(n_filters, (3, 3), strides=(1, 1),
-                   padding='same', data_format='channels_last')(x)
 
-        if i == n_upsample-1 and target is not None:
-            x = UpsampleLike()([x, target])
+    acceptable_ndims = [2, 3]
+    if ndim not in acceptable_ndims:
+        raise ValueError('Only 2 and 3 dimensional networks are supported')
+
+    for i in range(n_upsample):
+        if ndim == 2:
+            x = Conv2D(n_filters, (3, 3), strides=(1, 1),
+                       padding='same', data_format='channels_last')(x)
+
+            if i == n_upsample-1 and target is not None:
+                x = UpsampleLike()([x, target])
+            else:
+                x = UpSampling2D(size=(2, 2))(x)
         else:
-            x = UpSampling2D(size=(2, 2))(x)
+            x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1),
+                       padding='same', data_format='channels_last')(x)
+
+            if i == n_upsample-1 and target is not None:
+                x = UpsampleLike()([x, target])
+            else:
+                x = UpSampling3D(size=(2, 2, 2))(x)
 
     if n_upsample == 0:
-        x = Conv2D(n_filters, (3, 3), strides=(1, 1),
-                   padding='same', data_format='channels_last')(x)
+        if ndim == 2:
+            x = Conv2D(n_filters, (3, 3), strides=(1, 1),
+                       padding='same', data_format='channels_last')(x)
+        else:
+            x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1),
+                       padding='same', data_format='channels_last')(x)
 
         if target is not None:
             x = UpsampleLike()([x, target])
@@ -228,6 +274,7 @@ def semantic_prediction(semantic_names,
                         input_target=None,
                         n_filters=256,
                         n_dense=256,
+                        ndim=2,
                         n_classes=3):
     """
     Creates the prediction head from a list of semantic features
@@ -244,6 +291,11 @@ def semantic_prediction(semantic_names,
     Returns:
         The softmax prediction for the semantic segmentation head
     """
+
+    acceptable_ndims = [2, 3]
+    if ndim not in acceptable_ndims:
+        raise ValueError('Only 2 and 3 dimensional networks are supported')
+        
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
     else:
@@ -260,8 +312,14 @@ def semantic_prediction(semantic_names,
     x = semantic_upsample(semantic_sum, n_upsample, target=input_target)
 
     # Reshape to match input size
-    x = Reshape(target_shape=(input_target.shape[1].value,
+    if ndim == 2:
+        x = Reshape(target_shape=(input_target.shape[1].value,
                               input_target.shape[2].value,
+                              x.shape[-1]))(x)
+    else:
+        x = Reshape(target_shape=(input_target.shape[1].value,
+                              input_target.shape[2].value,
+                              input_target.shape[3].value,
                               x.shape[-1]))(x)
 
     # First tensor product

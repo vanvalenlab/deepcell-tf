@@ -49,27 +49,59 @@ class UpsampleLike(Layer):
         super(UpsampleLike, self).__init__(**kwargs)
         self.data_format = conv_utils.normalize_data_format(data_format)
 
+    def _resize_drop_axis(image, size, axis):
+        unstack_list = tf.unstack(image, axis=axis)
+        resize_list = []
+        for i in unstack_list:
+            resize_list.append(tf.image.resize_images(i, size, 
+                    method=tf.image.ResizeMethod.NEAREST_NEIGHBOR))
+        resized_image = tf.stack(resized_list, axis=axis)
+        return resized_image
+
+    def resize_volumes(volume, size):
+        if self.data_format == 'channels_first':
+            volume = tf.transpose(volume, (0, 2, 3, 4, 1))
+            new_size = (size[2], size[3], size[4])
+        else:
+            new_size = (size[1], size[2], size[3])
+
+        new_shape_0 = (new_size[1], new_size[2])
+        new_shape_1 = (new_size[0], new_size[1])
+
+        resized_volume = self._resize_drop_axis(resized_volume, new_shape_0, axis=1)
+        resized_volume = self._resize_drop_axis(resized_volume, new_shape_1, axis=3)
+        
+        if self.data_format == 'channels_first':
+            resized_volume = tf.transpose(resized_volume, (0, 4, 1, 2, 3))
+
+        return resized_volume
+
     def call(self, inputs, **kwargs):
         source, target = inputs
         target_shape = K.shape(target)
-        if self.data_format == 'channels_first':
-            source = tf.transpose(source, (0, 2, 3, 1))
-            new_shape = (target_shape[2], target_shape[3])
-            output = tf.image.resize_images(
-                source, new_shape,
-                method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-            output = tf.transpose(output, (0, 3, 1, 2))
+        if source.get_shape().ndims == 4:
+            if self.data_format == 'channels_first':
+                source = tf.transpose(source, (0, 2, 3, 1))
+                new_shape = (target_shape[2], target_shape[3])
+                output = tf.image.resize_images(
+                    source, new_shape,
+                    method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+                output = tf.transpose(output, (0, 3, 1, 2))
+                return output
+            new_shape = (target_shape[1], target_shape[2])
+            return tf.image.resize_images(
+                source, new_shape, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+
+        if source.get_shape().ndims == 5:
+            output = self.resize_volumes(source, target_shape)
             return output
-        new_shape = (target_shape[1], target_shape[2])
-        return tf.image.resize_images(
-            source, new_shape, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
     def compute_output_shape(self, input_shape):
         in_0 = tensor_shape.TensorShape(input_shape[0]).as_list()
         in_1 = tensor_shape.TensorShape(input_shape[1]).as_list()
         if self.data_format == 'channels_first':
-            return tensor_shape.TensorShape(([in_0[0], in_0[1]] + in_1[2:4]))
-        return tensor_shape.TensorShape(([in_0[0]] + in_1[1:3] + [in_0[-1]]))
+            return tensor_shape.TensorShape(([in_0[0], in_0[1]] + in_1[2:]))
+        return tensor_shape.TensorShape(([in_0[0]] + in_1[1:-1] + [in_0[-1]]))
 
     def get_config(self):
         config = {'data_format': self.data_format}

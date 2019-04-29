@@ -349,7 +349,6 @@ def _shift(shape, stride, anchors):
 
     return all_anchors
 
-
 def generate_anchors(base_size=16, ratios=None, scales=None):
     """Generate anchor (reference) windows by enumerating aspect ratios X
     scales w.r.t. a reference window.
@@ -605,6 +604,8 @@ def _get_detections(generator,
 
         # run network
         results = model.predict_on_batch(np.expand_dims(image, axis=0))
+        if generator.panoptic:
+            raise ValueError('Panoptic segmentation for _get_detections not implemented yet')
         if generator.include_masks:
             boxes = results[-4]
             scores = results[-3]
