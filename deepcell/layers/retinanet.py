@@ -308,13 +308,25 @@ class RoiAlign(Layer):
                     (x2 / image_shape[2] * fpn_shape[1] - 1) / (fpn_shape[1] - 1),
                 ], axis=1)
 
-                # append the rois to the list of rois
-                rois.append(tf.image.crop_and_resize(
-                    K.expand_dims(fpn[i], axis=0),
-                    level_boxes,
-                    tf.zeros((K.shape(level_boxes)[0],), dtype='int32'),
-                    self.crop_size
-                ))
+                if(len(fpn[i].get_shape()) >=4):
+                    unstack = tf.unstack(fpn[i], axis=3)
+                    temp_stack=[]
+                    for j in unstack:
+                        temp = tf.image.crop_and_resize(
+                            K.expand_dims(j, axis=3),
+                            level_boxes,
+                            tf.zeros((K.shape(level_boxes)[0],), dtype='int32'),
+                            (self.crop_size[0], self.crop_size[1]))
+                        temp_stack.append(temp)
+                    rois.append(temp_stack)
+                else:
+                    rois.append(tf.image.crop_and_resize(
+                        K.expand_dims(fpn[i], axis=0),
+                        level_boxes,
+                        tf.zeros((K.shape(level_boxes)[0],), dtype='int32'),
+                        self.crop_size
+                    ))
+
 
             # concatenate rois to one blob
             rois = K.concatenate(rois, axis=0)

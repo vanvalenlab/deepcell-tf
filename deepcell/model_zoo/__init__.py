@@ -39,7 +39,9 @@ from deepcell.model_zoo.retinanet import retinanet
 from deepcell.model_zoo.retinanet import retinanet_bbox
 
 from deepcell.model_zoo.maskrcnn import MaskRCNN
+from deepcell.model_zoo.maskrcnn_3D import MaskRCNN_3D
 from deepcell.model_zoo.maskrcnn import retinanet_mask
+from deepcell.model_zoo.maskrcnn_3D import retinanet_mask_3D
 
 del absolute_import
 del division
