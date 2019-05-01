@@ -33,7 +33,8 @@ import re
 import copy
 
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import applications
+from tensorflow.python.keras import applications 
+from tensorflow.python.keras import utils as keras_utils
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
@@ -83,7 +84,7 @@ def featurenet_3D_block(x, n_filters):
     x = BatchNormalization(axis=-1)(x)
     x = Activation('relu')(x)
     # conv set 2
-    x = Conv3D(n_filters, (3, 3), strides=(1, 1, 1), padding='same', data_format=K.image_data_format())(x)
+    x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1), padding='same', data_format=K.image_data_format())(x)
     x = BatchNormalization(axis=-1)(x)
     x = Activation('relu')(x)
     # Final max pooling stage
@@ -121,7 +122,12 @@ def featurenet_backbone(input_tensor=None, input_shape=None, weights=None, inclu
     for name, feature in zip(backbone_names, backbone_features):
         output_dict[name] = feature
 
-    model = Model(inputs=img_input, outputs = backbone_features)
+    if input_tensor is not None:
+        inputs = keras_utils.get_source_inputs(input_tensor)
+    else:
+        inputs = img_input
+
+    model = Model(inputs=inputs, outputs=backbone_features)
     return model, output_dict
 
 def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None, include_top=False, pooling=None, n_filters=32, n_dense=128, n_classes=3):
@@ -154,7 +160,12 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None, in
     for name, feature in zip(backbone_names, backbone_features):
         output_dict[name] = feature
 
-    model = Model(inputs=img_input, outputs = backbone_features)
+    if input_tensor is not None:
+        inputs = keras_utils.get_source_inputs(input_tensor)
+    else:
+        inputs = img_input
+
+    model = Model(inputs=inputs, outputs=backbone_features)
     return model, output_dict
 
 """
@@ -177,7 +188,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     """
     _backbone = str(backbone).lower()
 
-    featurenet_backbones = ['featurenet', 'featurenet3D', 'featurenet_3D']
+    featurenet_backbones = ['featurenet', 'featurenet3d', 'featurenet_3d']
     vgg_backbones = ['vgg16', 'vgg19']
     densenet_backbones = ['densenet121', 'densenet169', 'densenet201']
     mobilenet_backbones = ['mobilenet', 'mobilenetv2', 'mobilenet_v2']
@@ -195,7 +206,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         if use_imagenet:
             raise ValueError('A featurenet backbone that is pre-trained on imagenet does not exist')    
         
-        if '3D' in _backbone:
+        if '3d' in _backbone:
             model, output_dict = featurenet_3D_backbone(input_tensor=input_tensor, **kwargs)
         else:
             model, output_dict = featurenet_backbone(input_tensor=input_tensor, **kwargs)

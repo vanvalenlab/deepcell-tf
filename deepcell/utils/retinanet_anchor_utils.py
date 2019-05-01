@@ -70,7 +70,7 @@ AnchorParameters.default = AnchorParameters(
 
 def generate_anchor_params(pyramid_levels, anchor_size_dict, 
                                 ratios=AnchorParameters.default.ratios,
-                                scales=AnchorParameters.default.scales)):
+                                scales=AnchorParameters.default.scales):
     sizes = [anchor_size_dict[level] for level in pyramid_levels]
     strides = [2 ** int(level[1:]) for level in pyramid_levels]
     anchor_parameters = AnchorParameters(sizes, strides, ratios, scales)

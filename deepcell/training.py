@@ -543,15 +543,18 @@ def train_model_retinanet(model,
         prediction_model = model
     else:
         prediction_model = retinanet_bbox(
-            model, nms=True, class_specific_filter=False)
+            model, nms=True, class_specific_filter=False)   
+    retinanet_losses = losses.retinanet(sigma=sigma, 
+                                        alpha=alpha, 
+                                        gamma=gamma)
 
     loss = {
-        'regression': losses.retinanet.regress_loss,
-        'classification': losses.retinanet.classification_loss
+        'regression': retinanet_losses.regress_loss,
+        'classification': retinanet_losses.classification_loss
     }
 
     if include_masks:
-        loss['masks'] = losses.retinanet.mask_loss
+        loss['masks'] = retinanet_losses.mask_loss
 
     if panoptic:
         def semantic_loss(y_pred, y_true):

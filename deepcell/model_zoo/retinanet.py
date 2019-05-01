@@ -235,7 +235,7 @@ def retinanet(inputs,
               backbone_dict,
               num_classes,
               backbone_levels=['C3', 'C4', 'C5'],
-              pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7']
+              pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
               num_anchors=None,
               create_pyramid_features=__create_pyramid_features,
               create_symantic_head=__create_semantic_head,
@@ -289,11 +289,11 @@ def retinanet(inputs,
 
     # Use only the desired backbone levels to create the feature pyramid
     backbone_dict_reduced = {key: value for key, value in backbone_dict.items() 
-                                if k in backbone_levels}
+                                if key in backbone_levels}
     pyramid_dict = create_pyramid_features(backbone_dict_reduced)
 
     # for the desired pyramid levels, run available submodels
-    features = [pyramid_dict[key] if key in pyramid_levels]
+    features = [pyramid_dict[key] for key in pyramid_levels]
     object_head = __build_pyramid(submodels, features)
 
     if panoptic:
@@ -396,9 +396,9 @@ def retinanet_bbox(model=None,
 
     # add the semantic head's output if needed
     if panoptic:
-        outputs = [detections, model.get_layer(name='semantic').output]
+        outputs = detections + [model.get_layer(name='semantic')]
     else:
-        outputs = [detections]
+        outputs = detections
 
     # construct the model
     return Model(inputs=model.inputs, outputs=outputs, name=name)
@@ -447,13 +447,20 @@ def RetinaNet(backbone,
     # force the channel size for backbone input to be `required_channels`
     norm = ImageNormalization2D(norm_method=norm_method)(inputs)
     fixed_inputs = TensorProduct(required_channels)(norm)
+
+    # force the input shape 
+    fixed_input_shape = list(input_shape)
+    fixed_input_shape[-1] = required_channels
+    fixed_input_shape = tuple(fixed_input_shape)
+
     model_kwargs = {
         'include_top': False,
-        'input_tensor': fixed_inputs,
         'weights': None,
+        'input_shape': fixed_input_shape,
         'pooling': pooling
     }
-    backbone_dict = get_backbone(backbone, fixed_inputs, **model_kwargs)
+
+    backbone_dict = get_backbone(backbone, fixed_inputs, use_imagenet=use_imagenet, **model_kwargs)
 
     # create the full model
     return retinanet(

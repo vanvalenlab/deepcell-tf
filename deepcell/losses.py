@@ -305,9 +305,13 @@ def focal(y_true, y_pred, alpha=0.25, gamma=2.0, axis=None):
 Retinanet losses
 """
 class retinanet:
-    def __init__(self):
+    def __init__(self, sigma=3.0, alpha=0.25, gamma=2.0):
+        self.sigma = sigma
+        self.alpha = alpha
+        self.gamma = gamma
+        return None
 
-    def regress_loss(y_true, y_pred):
+    def regress_loss(self, y_true, y_pred):
         # separate target and state
         regression = y_pred
         regression_target = y_true[..., :-1]
@@ -319,7 +323,7 @@ class retinanet:
         regression_target = tf.gather_nd(regression_target, indices)
 
         # compute the loss
-        loss = smooth_l1(regression_target, regression, sigma=sigma)
+        loss = smooth_l1(regression_target, regression, sigma=self.sigma)
 
         # compute the normalizer: the number of positive anchors
         normalizer = K.maximum(1, K.shape(indices)[0])
@@ -327,7 +331,7 @@ class retinanet:
 
         return K.sum(loss) / normalizer
 
-    def classification_loss(y_true, y_pred):
+    def classification_loss(self, y_true, y_pred):
         # TODO: try weighted_categorical_crossentropy
         labels = y_true[..., :-1]
         # -1 for ignore, 0 for background, 1 for object
@@ -340,7 +344,7 @@ class retinanet:
         classification = tf.gather_nd(classification, indices)
 
         # compute the loss
-        loss = losses.focal(labels, classification, alpha=alpha, gamma=gamma)
+        loss = focal(labels, classification, alpha=self.alpha, gamma=self.gamma)
 
         # compute the normalizer: the number of positive anchors
         normalizer = tf.where(K.equal(anchor_state, 1))
@@ -349,7 +353,7 @@ class retinanet:
 
         return K.sum(loss) / normalizer
 
-    def mask_loss(y_true, y_pred):
+    def mask_loss(self, y_true, y_pred):
 
         def _mask(y_true, y_pred, iou_threshold=0.5, mask_size=(28, 28)):
             # split up the different predicted blobs

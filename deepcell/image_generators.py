@@ -2428,6 +2428,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
              num_classes=1,
              clear_borders=False,
              include_masks=False,
+             panoptic=False,
              batch_size=32,
              shuffle=False,
              seed=None,
@@ -2465,6 +2466,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             num_classes=num_classes,
             clear_borders=clear_borders,
             include_masks=include_masks,
+            panoptic=False,
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
@@ -2689,7 +2691,9 @@ class RetinaNetIterator(Iterator):
             x = self.image_data_generator.standardize(x)
 
             batch_x[i] = x
-            batch_y_semantic[i] = y_semantic
+
+            if self.panoptic:
+                batch_y_semantic[i] = y_semantic
 
         anchors = anchors_for_shape(
             batch_x.shape[1:],
@@ -2743,7 +2747,7 @@ class RetinaNetIterator(Iterator):
         if self.panoptic:
             batch_outputs.append(batch_y_semantic)
 
-        return batch_outputs 
+        return batch_x, batch_outputs 
 
     def next(self):
         """For python 2.x. Returns the next batch.

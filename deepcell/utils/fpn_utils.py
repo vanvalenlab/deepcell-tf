@@ -46,7 +46,7 @@ from deepcell.layers import UpsampleLike
 from deepcell.layers import TensorProduct, ImageNormalization2D
 from deepcell.utils.misc_utils import get_backbone
 
-def get_sorted_keys(dict_to_sory):
+def get_sorted_keys(dict_to_sort):
     """Gets the keys from a dict and sorts them.
     Assumes keys are of the form Ni, where N is a 
     letter and i is an integer. Sorts in ascending 
@@ -185,7 +185,7 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256, include_f
         if ndim == 2:
             P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
                                padding='same', name=P_minus_2_name)(F)
-       else:
+        else:
             P_minus_2 = Conv3D(feature_size, kernel_size=(3, 3, 3), strides=(2, 2, 2),
                                padding='same', name=P_minus_2_name)(F)
         pyramid_names.insert(0, P_minus_2_name)
@@ -198,7 +198,7 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256, include_f
         if ndim == 2:
             P_minus_1 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
                            padding='same', name=P_minus_1_name)(P_minus_1)
-       else:
+        else:
             P_minus_1 = Conv3D(feature_size, kernel_size=(3, 3, 3), strides=(2, 2, 2),
                            padding='same', name=P_minus_1_name)(P_minus_1)
         pyramid_names.insert(0, P_minus_1_name)
