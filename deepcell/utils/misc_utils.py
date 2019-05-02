@@ -261,8 +261,8 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
                 model_with_weights = applications.DenseNet169(**kwargs_with_weights) 
             elif _backbone == 'densenet201':
                 model_with_weights = applications.DenseNet201(**kwargs_with_weights)
-            for layer in model_with_weights.layers[1:]:
-                model.get_layer(name=layer.name).set_weights(layer.get_weights())
+            model_with_weights.save_weights('model_weights.h5')
+            model.load_weights('model_weights.h5', by_name=True)
                 
         layer_names = ['conv1/relu'] + ['conv{}_block{}_concat'.format(idx + 2, block_num) 
                                         for idx, block_num in enumerate(blocks)]

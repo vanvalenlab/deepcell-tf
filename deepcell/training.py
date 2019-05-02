@@ -482,6 +482,8 @@ def train_model_retinanet(model,
                           include_masks=False,
                           panoptic=False,
                           panoptic_weight=1,
+                          anchor_params=None,
+                          pyramid_levels=['P3','P4','P5','P6','P7'],
                           mask_size=(28, 28),
                           optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
                           log_dir='/data/tensorboard_logs',
@@ -506,6 +508,8 @@ def train_model_retinanet(model,
         https://github.com/fizyr/keras-retinanet &
         https://github.com/fizyr/keras-maskrcnn
     """
+
+    print(pyramid_levels)
     is_channels_first = K.image_data_format() == 'channels_first'
 
     if model_name is None:
@@ -542,8 +546,10 @@ def train_model_retinanet(model,
     if include_masks:
         prediction_model = model
     else:
-        prediction_model = retinanet_bbox(
-            model, nms=True, class_specific_filter=False)   
+        prediction_model = retinanet_bbox(model, 
+                                    nms=True, 
+                                    anchor_params=anchor_params, 
+                                    class_specific_filter=False)   
     retinanet_losses = losses.retinanet(sigma=sigma, 
                                         alpha=alpha, 
                                         gamma=gamma)
@@ -605,6 +611,8 @@ def train_model_retinanet(model,
         train_dict,
         include_masks=include_masks,
         panoptic=panoptic,
+        pyramid_levels=pyramid_levels,
+        anchor_params=anchor_params,
         compute_shapes=compute_shapes,
         batch_size=batch_size)
 
@@ -612,6 +620,8 @@ def train_model_retinanet(model,
         test_dict,
         include_masks=include_masks,
         panoptic=panoptic,
+        pyramid_levels=pyramid_levels,
+        anchor_params=anchor_params,
         compute_shapes=compute_shapes,
         batch_size=batch_size)
 

@@ -2429,6 +2429,8 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
              clear_borders=False,
              include_masks=False,
              panoptic=False,
+             anchor_params=None,
+             pyramid_levels=['P3','P4','P5','P6','P7'],
              batch_size=32,
              shuffle=False,
              seed=None,
@@ -2467,6 +2469,8 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             clear_borders=clear_borders,
             include_masks=include_masks,
             panoptic=False,
+            anchor_params=None,
+            pyramid_levels=pyramid_levels,
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
@@ -2509,6 +2513,7 @@ class RetinaNetIterator(Iterator):
                  image_data_generator,
                  compute_shapes=guess_shapes,
                  anchor_params=None,
+                 pyramid_levels=['P3','P4','P5','P6','P7'],
                  min_objects=3,
                  num_classes=1,
                  clear_borders=False,
@@ -2541,6 +2546,7 @@ class RetinaNetIterator(Iterator):
         # `compute_shapes` changes based on the model backbone.
         self.compute_shapes = compute_shapes
         self.anchor_params = anchor_params
+        self.pyramid_levels = [int(l[1:]) for l in pyramid_levels]
         self.min_objects = min_objects
         self.num_classes = num_classes
         self.include_masks = include_masks
@@ -2697,6 +2703,7 @@ class RetinaNetIterator(Iterator):
 
         anchors = anchors_for_shape(
             batch_x.shape[1:],
+            pyramid_levels=self.pyramid_levels,
             anchor_params=self.anchor_params,
             shapes_callback=self.compute_shapes)
 

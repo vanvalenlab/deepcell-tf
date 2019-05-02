@@ -307,13 +307,15 @@ def retinanet(inputs,
     else:
         outputs = object_head
 
-    return Model(inputs=inputs, outputs=outputs, name=name)
+    model = Model(inputs=inputs, outputs=outputs, name=name)
+    model.backbone_levels = backbone_levels
+    model.pyramid_levels = pyramid_levels
+
+    return model
 
 
 def retinanet_bbox(model=None,
                    nms=True,
-                   backbone_levels=['C3', 'C4', 'C5'],
-                   pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
                    panoptic=False,
                    class_specific_filter=True,
                    name='retinanet-bbox',
@@ -356,10 +358,7 @@ def retinanet_bbox(model=None,
 
     # create RetinaNet model
     if model is None:
-        model = retinanet(num_anchors=anchor_params.num_anchors(), 
-                            backbone_levels=backbone_levels,
-                            pyramid_levels=pyramid_levels, 
-                            **kwargs)
+        model = retinanet(num_anchors=anchor_params.num_anchors(), **kwargs)
     else:
         names = ('regression', 'classification')
         if not all(output in model.output_names for output in names):
@@ -368,7 +367,7 @@ def retinanet_bbox(model=None,
                              'outputs are: {}).'.format(model.output_names))
 
     # compute the anchors
-    features = [model.get_layer(level).output for level in pyramid_levels]
+    features = [model.get_layer(level).output for level in model.pyramid_levels]
     anchors = __build_anchors(anchor_params, features)
 
     # we expect the anchors, regression and classification values as first output
