@@ -32,7 +32,6 @@ from __future__ import division
 import os
 
 import numpy as np
-
 from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.segmentation import clear_border
@@ -2468,8 +2467,8 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             num_classes=num_classes,
             clear_borders=clear_borders,
             include_masks=include_masks,
-            panoptic=False,
-            anchor_params=None,
+            panoptic=panoptic,
+            anchor_params=anchor_params,
             pyramid_levels=pyramid_levels,
             batch_size=batch_size,
             shuffle=shuffle,
@@ -2519,7 +2518,7 @@ class RetinaNetIterator(Iterator):
                  clear_borders=False,
                  include_masks=False,
                  panoptic=False,
-                 transform=None,
+                 transform='watershed',
                  transform_kwargs={},
                  batch_size=32,
                  shuffle=False,
@@ -2567,7 +2566,6 @@ class RetinaNetIterator(Iterator):
                 y_semantic = y
                 y_semantic = _transform_masks(y_semantic, transform, data_format=data_format, **transform_kwargs)
             self.y_semantic = np.asarray(y_semantic, dtype='int32')
-
 
         invalid_batches = []
         # Remove images with small numbers of cells

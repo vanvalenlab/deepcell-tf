@@ -29,6 +29,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import re
+
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D
@@ -379,6 +381,7 @@ def retinanet_bbox(model=None,
         # The last output is the panoptic output, which should not be
         # sent to filter detections
         other = model.outputs[2:-1]
+        semantic = model.outputs[-1]
     else:
         other = model.outputs[2:]
 
@@ -395,7 +398,7 @@ def retinanet_bbox(model=None,
 
     # add the semantic head's output if needed
     if panoptic:
-        outputs = detections + [model.get_layer(name='semantic')]
+        outputs = detections + [semantic]
     else:
         outputs = detections
 

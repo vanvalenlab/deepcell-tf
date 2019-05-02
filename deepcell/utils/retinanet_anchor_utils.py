@@ -605,15 +605,15 @@ def _get_detections(generator,
 
         # run network
         results = model.predict_on_batch(np.expand_dims(image, axis=0))
+        boxes, scores, labels = results[0:3]
+
         if generator.panoptic:
-            raise ValueError('Panoptic segmentation for _get_detections not implemented yet')
-        if generator.include_masks:
-            boxes = results[-4]
-            scores = results[-3]
-            labels = results[-2]
+            semantic = results[-1]
+            if generator.include_masks:
+                masks = results[-2]
+        elif generator.include_masks:
             masks = results[-1]
-        else:
-            boxes, scores, labels = results[:3]
+
 
         # correct boxes for image scale
         # boxes = boxes / scale

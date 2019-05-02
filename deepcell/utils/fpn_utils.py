@@ -217,7 +217,7 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256, include_f
 
     return pyramid_dict
 
-def semantic_upsample(x, n_upsample, n_filters=256, ndim=2, target=None):
+def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
     """
     Performs iterative rounds of 2x upsampling and
     convolutions with a 3x3 filter to remove aliasing effects
@@ -272,8 +272,8 @@ def semantic_prediction(semantic_names,
                         semantic_features,
                         target_level=0,
                         input_target=None,
-                        n_filters=256,
-                        n_dense=256,
+                        n_filters=64,
+                        n_dense=64,
                         ndim=2,
                         n_classes=3):
     """

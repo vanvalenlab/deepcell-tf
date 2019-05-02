@@ -509,7 +509,6 @@ def train_model_retinanet(model,
         https://github.com/fizyr/keras-maskrcnn
     """
 
-    print(pyramid_levels)
     is_channels_first = K.image_data_format() == 'channels_first'
 
     if model_name is None:
@@ -564,7 +563,7 @@ def train_model_retinanet(model,
 
     if panoptic:
         def semantic_loss(y_pred, y_true):
-            return panoptic_weight*weighted_categorical_crossentropy(y_pred, y_true, 
+            return panoptic_weight*losses.weighted_categorical_crossentropy(y_pred, y_true, 
                         n_classes=n_semantic_classes)
         loss['semantic'] = semantic_loss
 
