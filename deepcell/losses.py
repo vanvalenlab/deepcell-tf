@@ -32,6 +32,8 @@ from __future__ import division
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 
+from deepcell.utils.retinanet_anchor_utils import overlap
+
 
 def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
@@ -301,15 +303,20 @@ def focal(y_true, y_pred, alpha=0.25, gamma=2.0, axis=None):
 
     return K.sum(cls_loss, axis=axis)
 
+
 """
 Retinanet losses
 """
-class retinanet:
-    def __init__(self, sigma=3.0, alpha=0.25, gamma=2.0):
+
+
+class RetinaNetLosses(object):
+    def __init__(self, sigma=3.0, alpha=0.25, gamma=2.0,
+                 iou_threshold=0.5, mask_size=(28, 28)):
         self.sigma = sigma
         self.alpha = alpha
         self.gamma = gamma
-        return None
+        self.iou_threshold = iou_threshold
+        self.mask_size = mask_size
 
     def regress_loss(self, y_true, y_pred):
         # separate target and state
@@ -430,6 +437,5 @@ class retinanet:
             K.any(K.equal(K.shape(y_true), 0)),
             lambda: K.cast_to_floatx(0.0),
             lambda: _mask(y_true, y_pred,
-                          iou_threshold=iou_threshold,
-                          mask_size=mask_size)
-        )
+                          iou_threshold=self.iou_threshold,
+                          mask_size=self.mask_size))
