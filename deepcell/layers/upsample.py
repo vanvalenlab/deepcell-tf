@@ -49,16 +49,16 @@ class UpsampleLike(Layer):
         super(UpsampleLike, self).__init__(**kwargs)
         self.data_format = conv_utils.normalize_data_format(data_format)
 
-    def _resize_drop_axis(image, size, axis):
+    def _resize_drop_axis(self, image, size, axis):
         unstack_list = tf.unstack(image, axis=axis)
         resize_list = []
         for i in unstack_list:
-            resize_list.append(tf.image.resize_images(i, size, 
-                    method=tf.image.ResizeMethod.NEAREST_NEIGHBOR))
-        resized_image = tf.stack(resized_list, axis=axis)
+            resize_list.append(tf.image.resize_images(i, size,
+                               method=tf.image.ResizeMethod.NEAREST_NEIGHBOR))
+        resized_image = tf.stack(resize_list, axis=axis)
         return resized_image
 
-    def resize_volumes(volume, size):
+    def resize_volumes(self, volume, size):
         if self.data_format == 'channels_first':
             volume = tf.transpose(volume, (0, 2, 3, 4, 1))
             new_size = (size[2], size[3], size[4])
@@ -68,9 +68,9 @@ class UpsampleLike(Layer):
         new_shape_0 = (new_size[1], new_size[2])
         new_shape_1 = (new_size[0], new_size[1])
 
-        resized_volume = self._resize_drop_axis(resized_volume, new_shape_0, axis=1)
+        resized_volume = self._resize_drop_axis(volume, new_shape_0, axis=1)
         resized_volume = self._resize_drop_axis(resized_volume, new_shape_1, axis=3)
-        
+
         if self.data_format == 'channels_first':
             resized_volume = tf.transpose(resized_volume, (0, 4, 1, 2, 3))
 
