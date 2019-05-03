@@ -43,7 +43,7 @@ from tensorflow.python.keras.layers import BatchNormalization
 
 from deepcell.layers import UpsampleLike
 from deepcell.layers import TensorProduct, ImageNormalization2D
-from deepcell.utils.misc_utils import get_backbone
+from deepcell.utils.backbone_utils import get_backbone
 from deepcell.utils.misc_utils import get_sorted_keys
 
 

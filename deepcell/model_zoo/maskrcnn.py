@@ -44,7 +44,7 @@ from deepcell.layers import ClipBoxes, RegressBoxes, FilterDetections
 from deepcell.layers import TensorProduct, ImageNormalization2D
 from deepcell.model_zoo.retinanet import retinanet, __build_anchors
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
-from deepcell.utils.misc_utils import get_backbone
+from deepcell.utils.backbone_utils import get_backbone
 
 
 def default_mask_model(num_classes,
