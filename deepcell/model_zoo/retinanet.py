@@ -34,7 +34,7 @@ import re
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D
-from tensorflow.python.keras.layers import Input, Concatenate, Add
+from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import Permute, Reshape
 from tensorflow.python.keras.layers import Activation
 from tensorflow.python.keras.initializers import RandomNormal
@@ -42,11 +42,12 @@ from tensorflow.python.keras.initializers import RandomNormal
 from deepcell.initializers import PriorProbability
 from deepcell.layers import TensorProduct
 from deepcell.layers import FilterDetections
-from deepcell.layers import ImageNormalization2D
-from deepcell.layers import Anchors, UpsampleLike, RegressBoxes, ClipBoxes
-from deepcell.utils.retinanet_anchor_utils import AnchorParameters, generate_anchor_params
-from deepcell.utils.misc_utils import get_backbone
-from deepcell.utils.fpn_utils import __create_pyramid_features, __create_semantic_head
+from deepcell.layers import ImageNormalization2D, Location2D
+from deepcell.layers import Anchors, RegressBoxes, ClipBoxes
+from deepcell.utils.retinanet_anchor_utils import AnchorParameters
+from deepcell.model_zoo.fpn import __create_pyramid_features, __create_semantic_head
+from deepcell.utils.backbone_utils import get_backbone
+
 
 def default_classification_model(num_classes,
                                  num_anchors,
@@ -157,6 +158,7 @@ def default_regression_model(num_values,
 
     return Model(inputs=inputs, outputs=outputs, name=name)
 
+
 def default_submodels(num_classes, num_anchors):
     """Create a list of default submodels used for object detection.
 
@@ -204,6 +206,7 @@ def __build_pyramid(models, features):
         A list of tensors, one for each submodel.
     """
     return [__build_model_pyramid(n, m, features) for n, m in models]
+
 
 def __build_anchors(anchor_parameters, features):
     """Builds anchors for the shape of the features from FPN.
@@ -260,9 +263,9 @@ def retinanet(inputs,
         num_classes: Number of classes to classify.
         num_anchors: Number of base anchors.
         create_pyramid_features: Function for creating pyramid features.
-        create_symantic_head: Function for creating a semantic head, which can 
+        create_symantic_head: Function for creating a semantic head, which can
             be used for panoptic segmentation tasks
-        panoptic: Flag for adding the semantic head for panoptic segmentation 
+        panoptic: Flag for adding the semantic head for panoptic segmentation
             tasks. Defaults to false.
         num_semantic_classes: The number of classes for the semantic segmentation
             part of panoptic segmentation tasks. Defaults to 3.
@@ -290,8 +293,8 @@ def retinanet(inputs,
     # compute pyramid features as per https://arxiv.org/abs/1708.02002
 
     # Use only the desired backbone levels to create the feature pyramid
-    backbone_dict_reduced = {key: value for key, value in backbone_dict.items() 
-                                if key in backbone_levels}
+    backbone_dict_reduced = {k: backbone_dict[k] for k in backbone_dict
+                             if k in backbone_levels}
     pyramid_dict = create_pyramid_features(backbone_dict_reduced)
 
     # for the desired pyramid levels, run available submodels
@@ -302,8 +305,9 @@ def retinanet(inputs,
         semantic_levels = [int(re.findall(r'\d+', N)[0]) for N in pyramid_dict.keys()]
         target_level = min(semantic_levels)
 
-        semantic_head = __create_semantic_head(pyramid_dict, n_classes=num_semantic_classes,
-                               input_target=inputs, target_level=target_level)
+        semantic_head = __create_semantic_head(
+            pyramid_dict, n_classes=num_semantic_classes,
+            input_target=inputs, target_level=target_level)
 
         outputs = object_head + [semantic_head]
     else:
@@ -442,6 +446,7 @@ def RetinaNet(backbone,
         RetinaNet model with a backbone.
     """
     inputs = Input(shape=input_shape)
+    channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     if location:
         location = Location2D(in_shape=input_shape)(inputs)
         inputs = Concatenate(axis=channel_axis)([inputs, location])
@@ -450,7 +455,7 @@ def RetinaNet(backbone,
     norm = ImageNormalization2D(norm_method=norm_method)(inputs)
     fixed_inputs = TensorProduct(required_channels)(norm)
 
-    # force the input shape 
+    # force the input shape
     fixed_input_shape = list(input_shape)
     fixed_input_shape[-1] = required_channels
     fixed_input_shape = tuple(fixed_input_shape)
