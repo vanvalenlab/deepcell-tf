@@ -30,10 +30,10 @@ from __future__ import division
 
 import numpy as np
 import tensorflow as tf
-# from cv2 import resize
-from skimage.transform import resize
 from tensorflow.python.keras import backend as K
 from tensorflow.python.framework import tensor_shape
+# from cv2 import resize
+from skimage.transform import resize
 
 try:
     from deepcell.utils.compute_overlap import compute_overlap
@@ -68,14 +68,15 @@ AnchorParameters.default = AnchorParameters(
     scales=np.array([2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)], K.floatx()),
 )
 
-def generate_anchor_params(pyramid_levels, anchor_size_dict, 
-                                ratios=AnchorParameters.default.ratios,
-                                scales=AnchorParameters.default.scales):
+
+def generate_anchor_params(pyramid_levels, anchor_size_dict,
+                           ratios=AnchorParameters.default.ratios,
+                           scales=AnchorParameters.default.scales):
     sizes = [anchor_size_dict[level] for level in pyramid_levels]
     strides = [2 ** int(level[1:]) for level in pyramid_levels]
     anchor_parameters = AnchorParameters(sizes, strides, ratios, scales)
-
     return anchor_parameters
+
 
 def anchor_targets_bbox(anchors,
                         image_group,
@@ -613,7 +614,6 @@ def _get_detections(generator,
                 masks = results[-2]
         elif generator.include_masks:
             masks = results[-1]
-
 
         # correct boxes for image scale
         # boxes = boxes / scale
