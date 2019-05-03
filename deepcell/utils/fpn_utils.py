@@ -45,19 +45,8 @@ from tensorflow.python.keras import applications
 from deepcell.layers import UpsampleLike
 from deepcell.layers import TensorProduct, ImageNormalization2D
 from deepcell.utils.misc_utils import get_backbone
+from deepcell.utils.misc_utils import get_sorted_keys
 
-def get_sorted_keys(dict_to_sort):
-    """Gets the keys from a dict and sorts them.
-    Assumes keys are of the form Ni, where N is a 
-    letter and i is an integer. Sorts in ascending 
-    order.
-    Args:
-        dict_to_sort: dict whose keys need sorting
-    """
-    sorted_keys= list(dict_to_sort.keys())
-    sorted_keys.sort(key=lambda x: int(x[1:]))
-
-    return sorted_keys
 
 def create_pyramid_level(backbone_input,
                          upsamplelike_input=None,

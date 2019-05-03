@@ -33,16 +33,30 @@ import re
 import copy
 
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import applications 
+from tensorflow.python.keras import applications
 from tensorflow.python.keras import utils as keras_utils
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
 
+
 def sorted_nicely(l):
     convert = lambda text: int(text) if text.isdigit() else text
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
     return sorted(l, key=alphanum_key)
+
+
+def get_sorted_keys(dict_to_sort):
+    """Gets the keys from a dict and sorts them in ascending order.
+    Assumes keys are of the form Ni, where N is a letter and i is an integer.
+
+    Args:
+        dict_to_sort: dict whose keys need sorting
+    """
+    sorted_keys = list(dict_to_sort.keys())
+    sorted_keys.sort(key=lambda x: int(x[1:]))
+    return sorted_keys
+
 
 """
 Featurenet-like backbone for feature pyramid networks
@@ -107,7 +121,7 @@ def featurenet_backbone(input_tensor=None, input_shape=None, weights=None, inclu
         if not K.is_keras_tensor(input_tensor):
             img_input = Input(tensor=input_tensor, shape=input_shape)
         else:
-            img_input = input_tensor        
+            img_input = input_tensor
 
     # Build out backbone
     c1 = featurenet_block(img_input, n_filters)  # 1/2 64x64
@@ -145,7 +159,7 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None, in
         if not K.is_keras_tensor(input_tensor):
             img_input = Input(tensor=input_tensor, shape=input_shape)
         else:
-            img_input = input_tensor        
+            img_input = input_tensor
 
     # Build out backbone
     c1 = featurenet_3D_block(img_input, n_filters)  # 1/2 64x64
@@ -176,7 +190,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     """Retrieve backbones - helper function for the construction of feature pyramid networks
         backbone: Name of the backbone to be retrieved. Options include featurenets, resnets
             densenets, mobilenets, and nasnets
-        input_tensor: The tensor to be used as the input for the backbone. Should have channel 
+        input_tensor: The tensor to be used as the input for the backbone. Should have channel
             dimension of size 3
         use_imagenet: Defaults to False. Whether to load pre-trained weights for the backbone
         return_dict: Defaults to True. Whether to return a dictionary of backbone layers,
@@ -194,46 +208,46 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     mobilenet_backbones = ['mobilenet', 'mobilenetv2', 'mobilenet_v2']
     resnet_backbones = ['resnet50']
     nasnet_backbones = ['nasnet_large', 'nasnet_mobile']
-    
+
     # FUTURE WORK: Check and make sure **kwargs is in the right format. 'weights' flag should be None,
     # and 'input_shape' must have size 3 on the channel axis
 
     if use_imagenet:
         kwargs_with_weights = copy.copy(kwargs)
         kwargs_with_weights['weights'] = 'imagenet'
-        
+
     if _backbone in featurenet_backbones:
         if use_imagenet:
-            raise ValueError('A featurenet backbone that is pre-trained on imagenet does not exist')    
-        
+            raise ValueError('A featurenet backbone that is pre-trained on imagenet does not exist')
+
         if '3d' in _backbone:
             model, output_dict = featurenet_3D_backbone(input_tensor=input_tensor, **kwargs)
         else:
             model, output_dict = featurenet_backbone(input_tensor=input_tensor, **kwargs)
-       
+
         if return_dict:
             return output_dict
         else:
             return model
-            
-    if _backbone in vgg_backbones:            
+
+    if _backbone in vgg_backbones:
         if _backbone == 'vgg16':
             model = applications.VGG16(input_tensor=input_tensor, **kwargs)
         else:
             model = applications.VGG19(input_tensor=input_tensor, **kwargs)
-            
+
         # Set the weights of the model if requested
         if use_imagenet:
             if _backbone == 'vgg16':
                 model_with_weights = applications.VGG16(**kwargs_with_weights)
             else:
-                model_with_weights = applications.VGG19(**kwargs_with_weights)    
+                model_with_weights = applications.VGG19(**kwargs_with_weights)
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
-                
+
         layer_names = ['block1_pool', 'block2_pool', 'block3_pool', 'block4_pool', 'block5_pool']
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
-        
+
         output_dict = {}
         for i, j in enumerate(layer_names):
             output_dict['C' + str(i+1)] = layer_outputs[i]
@@ -252,22 +266,22 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         elif _backbone == 'densenet201':
             model = applications.DenseNet201(input_tensor=input_tensor, **kwargs)
             blocks = [6, 12, 48, 32]
-            
+
         # Set the weights of the model if requested
         if use_imagenet:
             if _backbone == 'densenet121':
                 model_with_weights = applications.DenseNet121(**kwargs_with_weights)
             elif _backbone == 'densenet169':
-                model_with_weights = applications.DenseNet169(**kwargs_with_weights) 
+                model_with_weights = applications.DenseNet169(**kwargs_with_weights)
             elif _backbone == 'densenet201':
                 model_with_weights = applications.DenseNet201(**kwargs_with_weights)
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
-                
-        layer_names = ['conv1/relu'] + ['conv{}_block{}_concat'.format(idx + 2, block_num) 
+
+        layer_names = ['conv1/relu'] + ['conv{}_block{}_concat'.format(idx + 2, block_num)
                                         for idx, block_num in enumerate(blocks)]
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
-        
+
         output_dict = {}
         for i, j in enumerate(layer_names):
             output_dict['C' + str(i+1)] = layer_outputs[i]
@@ -276,18 +290,18 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         else:
             return model
 
-    elif _backbone in resnet_backbones:            
+    elif _backbone in resnet_backbones:
         model = applications.ResNet50(input_tensor=input_tensor, **kwargs)
-        
+
         # Set the weights of the model if requested
         if use_imagenet:
             model_with_weights = applications.ResNet50( **kwargs_with_weights)
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
-                
+
         layer_names = ['bn_conv1', 'res2c_branch2c', 'res3d_branch2c', 'res4f_branch2c', 'res5c_branch2c']
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
-        
+
         output_dict = {}
         for i, j in enumerate(layer_names):
             output_dict['C' + str(i+1)] = layer_outputs[i]
@@ -306,7 +320,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             model = applications.MobileNet(alpha=alpha, input_tensor=input_tensor, **kwargs)
             block_ids = (1, 3, 5, 11, 13)
             layer_names = ['conv_pw_%s_relu' % i for i in block_ids]
-        
+
         # Set the weights of the model if requested
         if use_imagnet:
             if _backbone.endswith('v2'):
@@ -315,9 +329,9 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
                 model_with_weights = applications.MobileNet(alpha=alpha, **kwargs_with_weights)
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
-            
+
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
-        
+
         output_dict = {}
         for i, j in enumerate(layer_names):
             output_dict['C' + str(i+1)] = layer_outputs[i]
@@ -333,7 +347,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         else:
             model = applications.NASNetMobile(input_tensor=input_tensor, **kwargs)
             block_ids = [3, 8, 12]
-            
+
         # Set the weights of the model if requested
         if use_imagenet:
             if _backbone.endswith('large'):
@@ -342,11 +356,11 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
                 model_with_weights = applications.NASNetMobile(**kwargs_with_weights)
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
-        
+
         layer_names = ['stem_bn1', 'reduction_concat_stem_1']
         layer_names += ['normal_concat_%s' % i for i in block_ids]
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
-        
+
         output_dict = {}
         for i, j in enumerate(layer_names):
             output_dict['C' + str(i+1)] = layer_outputs[i]
@@ -359,4 +373,3 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         backbones = list(featurenet_backbones + densenet_backbones + resnet_backbones + vgg_backbones + nasnet_backbones)
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
                          ', '.join(backbones))
-
