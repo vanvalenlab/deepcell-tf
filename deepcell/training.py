@@ -551,9 +551,10 @@ def train_model_retinanet(model,
                                     nms=True,
                                     anchor_params=anchor_params,
                                     class_specific_filter=False)
-    retinanet_losses = losses.retinanet(sigma=sigma,
-                                        alpha=alpha,
-                                        gamma=gamma)
+
+    retinanet_losses = losses.RetinaNetLosses(sigma=sigma,
+                                              alpha=alpha,
+                                              gamma=gamma)
 
     loss = {
         'regression': retinanet_losses.regress_loss,
