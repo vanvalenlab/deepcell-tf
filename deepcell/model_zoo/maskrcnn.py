@@ -297,7 +297,7 @@ def MaskRCNN(backbone,
         'weights': weights,
         'pooling': pooling
     }
-    layer_outputs = get_pyramid_layer_outputs(backbone, inputs, **model_kwargs)
+    layer_outputs = get_backbone(backbone, inputs, **model_kwargs)
 
     kwargs['backbone_layers'] = layer_outputs
 
