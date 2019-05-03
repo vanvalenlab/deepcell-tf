@@ -515,6 +515,7 @@ def train_model_retinanet(model,
         todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
         data_name = os.path.splitext(os.path.basename(dataset))[0]
         model_name = '{}_{}_{}'.format(todays_date, data_name, expt)
+
     model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
     loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
@@ -547,14 +548,20 @@ def train_model_retinanet(model,
     if include_masks:
         prediction_model = model
     else:
-        prediction_model = retinanet_bbox(model,
-                                    nms=True,
-                                    anchor_params=anchor_params,
-                                    class_specific_filter=False)
+        prediction_model = retinanet_bbox(
+            model,
+            nms=True,
+            anchor_params=anchor_params,
+            panoptic=panoptic,
+            class_specific_filter=False)
 
-    retinanet_losses = losses.RetinaNetLosses(sigma=sigma,
-                                              alpha=alpha,
-                                              gamma=gamma)
+    retinanet_losses = losses.RetinaNetLosses(sigma=sigma, alpha=alpha, gamma=gamma,
+                                              iou_threshold=iou_threshold,
+                                              mask_size=mask_size)
+
+    def semantic_loss(y_pred, y_true):
+        return panoptic_weight * losses.weighted_categorical_crossentropy(
+            y_pred, y_true, n_classes=n_semantic_classes)
 
     loss = {
         'regression': retinanet_losses.regress_loss,
@@ -565,9 +572,6 @@ def train_model_retinanet(model,
         loss['masks'] = retinanet_losses.mask_loss
 
     if panoptic:
-        def semantic_loss(y_pred, y_true):
-            return panoptic_weight*losses.weighted_categorical_crossentropy(y_pred, y_true,
-                        n_classes=n_semantic_classes)
         loss['semantic'] = semantic_loss
 
     model.compile(loss=loss, optimizer=optimizer)
