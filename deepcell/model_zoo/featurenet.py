@@ -562,6 +562,3 @@ def siamese_model(input_shape=None,
     model = Model(inputs=inputs, outputs=final_layer)
 
     return model
-
-
-

@@ -471,6 +471,7 @@ def train_model_siamese_daughter(model,
 
     return model
 
+
 def train_model_retinanet(model,
                           dataset,
                           backbone,
@@ -545,12 +546,12 @@ def train_model_retinanet(model,
     if include_masks:
         prediction_model = model
     else:
-        prediction_model = retinanet_bbox(model, 
-                                    nms=True, 
-                                    anchor_params=anchor_params, 
-                                    class_specific_filter=False)   
-    retinanet_losses = losses.retinanet(sigma=sigma, 
-                                        alpha=alpha, 
+        prediction_model = retinanet_bbox(model,
+                                    nms=True,
+                                    anchor_params=anchor_params,
+                                    class_specific_filter=False)
+    retinanet_losses = losses.retinanet(sigma=sigma,
+                                        alpha=alpha,
                                         gamma=gamma)
 
     loss = {
@@ -563,7 +564,7 @@ def train_model_retinanet(model,
 
     if panoptic:
         def semantic_loss(y_pred, y_true):
-            return panoptic_weight*losses.weighted_categorical_crossentropy(y_pred, y_true, 
+            return panoptic_weight*losses.weighted_categorical_crossentropy(y_pred, y_true,
                         n_classes=n_semantic_classes)
         loss['semantic'] = semantic_loss
 
