@@ -484,7 +484,7 @@ def train_model_retinanet(model,
                           panoptic=False,
                           panoptic_weight=1,
                           anchor_params=None,
-                          pyramid_levels=['P3','P4','P5','P6','P7'],
+                          pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
                           mask_size=(28, 28),
                           optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
                           log_dir='/data/tensorboard_logs',
@@ -521,9 +521,11 @@ def train_model_retinanet(model,
 
     train_dict, test_dict = get_data(dataset, mode='conv', test_size=test_size)
 
-    n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
+    channel_axis = 1 if is_channels_first else -1
+    n_classes = model.layers[-1].output_shape[channel_axis]
+
     if panoptic:
-        n_semantic_classes = model.get_layer(name='semantic').output_shape[1 if is_channels_first else -1]
+        n_semantic_classes = model.get_layer(name='semantic').output_shape[channel_axis]
 
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
