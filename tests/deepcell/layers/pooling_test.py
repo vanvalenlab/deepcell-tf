@@ -43,23 +43,26 @@ class DilatedMaxPoolingTest(test.TestCase):
         custom_objects = {'DilatedMaxPool2D': layers.DilatedMaxPool2D}
         for strides in [(1, 1), (2, 2), None]:
             for dilation_rate in [1, 2]:
-                with self.test_session(use_gpu=True):
-                    testing_utils.layer_test(
-                        layers.DilatedMaxPool2D,
-                        kwargs={'strides': strides,
-                                'pool_size': pool_size,
-                                'dilation_rate': dilation_rate,
-                                'data_format': 'channels_last'},
-                        custom_objects=custom_objects,
-                        input_shape=(3, 5, 6, 4))
-                    testing_utils.layer_test(
-                        layers.DilatedMaxPool2D,
-                        kwargs={'strides': strides,
-                                'pool_size': pool_size,
-                                'dilation_rate': dilation_rate,
-                                'data_format': 'channels_first'},
-                        custom_objects=custom_objects,
-                        input_shape=(3, 4, 5, 6))
+                for padding in ['valid', 'same']:
+                    with self.test_session(use_gpu=True):
+                        testing_utils.layer_test(
+                            layers.DilatedMaxPool2D,
+                            kwargs={'strides': strides,
+                                    'pool_size': pool_size,
+                                    'padding': padding,
+                                    'dilation_rate': dilation_rate,
+                                    'data_format': 'channels_last'},
+                            custom_objects=custom_objects,
+                            input_shape=(3, 5, 6, 4))
+                        testing_utils.layer_test(
+                            layers.DilatedMaxPool2D,
+                            kwargs={'strides': strides,
+                                    'pool_size': pool_size,
+                                    'padding': padding,
+                                    'dilation_rate': dilation_rate,
+                                    'data_format': 'channels_first'},
+                            custom_objects=custom_objects,
+                            input_shape=(3, 4, 5, 6))
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_dilated_max_pool_3d(self):
@@ -67,19 +70,22 @@ class DilatedMaxPoolingTest(test.TestCase):
         pool_size = (3, 3, 3)
         for strides in [1, 2, None]:
             for dilation_rate in [1, 2]:
-                with self.test_session(use_gpu=True):
-                    testing_utils.layer_test(
-                        layers.DilatedMaxPool3D,
-                        kwargs={'strides': strides,
-                                'dilation_rate': dilation_rate,
-                                'pool_size': pool_size},
-                        custom_objects=custom_objects,
-                        input_shape=(3, 11, 12, 10, 4))
-                    testing_utils.layer_test(
-                        layers.DilatedMaxPool3D,
-                        kwargs={'strides': strides,
-                                'dilation_rate': dilation_rate,
-                                'data_format': 'channels_first',
-                                'pool_size': pool_size},
-                        custom_objects=custom_objects,
-                        input_shape=(3, 4, 11, 12, 10))
+                for padding in ['valid', 'same']:
+                    with self.test_session(use_gpu=True):
+                        testing_utils.layer_test(
+                            layers.DilatedMaxPool3D,
+                            kwargs={'strides': strides,
+                                    'padding': padding,
+                                    'dilation_rate': dilation_rate,
+                                    'pool_size': pool_size},
+                            custom_objects=custom_objects,
+                            input_shape=(3, 11, 12, 10, 4))
+                        testing_utils.layer_test(
+                            layers.DilatedMaxPool3D,
+                            kwargs={'strides': strides,
+                                    'padding': padding,
+                                    'dilation_rate': dilation_rate,
+                                    'data_format': 'channels_first',
+                                    'pool_size': pool_size},
+                            custom_objects=custom_objects,
+                            input_shape=(3, 4, 11, 12, 10))

@@ -42,7 +42,6 @@ from deepcell import losses
 from deepcell import image_generators
 from deepcell.callbacks import RedirectModel, Evaluate
 from deepcell.model_zoo import retinanet_bbox
-from deepcell.utils.retinanet_anchor_utils import overlap
 from deepcell.utils.retinanet_anchor_utils import make_shapes_callback
 from deepcell.utils.retinanet_anchor_utils import guess_shapes
 from deepcell.utils.retinanet_anchor_utils import evaluate
@@ -481,6 +480,10 @@ def train_model_retinanet(model,
                           batch_size=1,
                           num_gpus=None,
                           include_masks=False,
+                          panoptic=False,
+                          panoptic_weight=1,
+                          anchor_params=None,
+                          pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
                           mask_size=(28, 28),
                           optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
                           log_dir='/data/tensorboard_logs',
@@ -505,18 +508,25 @@ def train_model_retinanet(model,
         https://github.com/fizyr/keras-retinanet &
         https://github.com/fizyr/keras-maskrcnn
     """
+
     is_channels_first = K.image_data_format() == 'channels_first'
 
     if model_name is None:
         todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
         data_name = os.path.splitext(os.path.basename(dataset))[0]
         model_name = '{}_{}_{}'.format(todays_date, data_name, expt)
+
     model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
     loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
     train_dict, test_dict = get_data(dataset, mode='conv', test_size=test_size)
 
-    n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
+    channel_axis = 1 if is_channels_first else -1
+    n_classes = model.layers[-1].output_shape[channel_axis]
+
+    if panoptic:
+        n_semantic_classes = model.get_layer(name='semantic').output_shape[channel_axis]
+
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
     print('y_train shape:', train_dict['y'].shape)
@@ -534,143 +544,35 @@ def train_model_retinanet(model,
 
     print('Training on {} GPUs'.format(num_gpus))
 
-    def regress_loss(y_true, y_pred):
-        # separate target and state
-        regression = y_pred
-        regression_target = y_true[..., :-1]
-        anchor_state = y_true[..., -1]
-
-        # filter out "ignore" anchors
-        indices = tf.where(K.equal(anchor_state, 1))
-        regression = tf.gather_nd(regression, indices)
-        regression_target = tf.gather_nd(regression_target, indices)
-
-        # compute the loss
-        loss = losses.smooth_l1(regression_target, regression, sigma=sigma)
-
-        # compute the normalizer: the number of positive anchors
-        normalizer = K.maximum(1, K.shape(indices)[0])
-        normalizer = K.cast(normalizer, dtype=K.floatx())
-
-        return K.sum(loss) / normalizer
-
-    def classification_loss(y_true, y_pred):
-        # TODO: try weighted_categorical_crossentropy
-        labels = y_true[..., :-1]
-        # -1 for ignore, 0 for background, 1 for object
-        anchor_state = y_true[..., -1]
-
-        classification = y_pred
-        # filter out "ignore" anchors
-        indices = tf.where(K.not_equal(anchor_state, -1))
-        labels = tf.gather_nd(labels, indices)
-        classification = tf.gather_nd(classification, indices)
-
-        # compute the loss
-        loss = losses.focal(labels, classification, alpha=alpha, gamma=gamma)
-
-        # compute the normalizer: the number of positive anchors
-        normalizer = tf.where(K.equal(anchor_state, 1))
-        normalizer = K.cast(K.shape(normalizer)[0], K.floatx())
-        normalizer = K.maximum(K.cast_to_floatx(1.0), normalizer)
-
-        return K.sum(loss) / normalizer
-
-    def mask_loss(y_true, y_pred):
-
-        def _mask(y_true, y_pred, iou_threshold=0.5, mask_size=(28, 28)):
-            # split up the different predicted blobs
-            boxes = y_pred[:, :, :4]
-            masks = y_pred[:, :, 4:]
-
-            # split up the different blobs
-            annotations = y_true[:, :, :5]
-            width = K.cast(y_true[0, 0, 5], dtype='int32')
-            height = K.cast(y_true[0, 0, 6], dtype='int32')
-            masks_target = y_true[:, :, 7:]
-
-            # reshape the masks back to their original size
-            masks_target = K.reshape(masks_target,
-                                     (K.shape(masks_target)[0] * K.shape(masks_target)[1],
-                                      height, width))
-            masks = K.reshape(masks, (K.shape(masks)[0] * K.shape(masks)[1],
-                                      mask_size[0], mask_size[1], -1))
-
-            # batch size > 1 fix
-            boxes = K.reshape(boxes, (-1, K.shape(boxes)[2]))
-            annotations = K.reshape(annotations, (-1, K.shape(annotations)[2]))
-
-            # compute overlap of boxes with annotations
-            iou = overlap(boxes, annotations)
-            argmax_overlaps_inds = K.argmax(iou, axis=1)
-            max_iou = K.max(iou, axis=1)
-
-            # filter those with IoU > 0.5
-            indices = tf.where(K.greater_equal(max_iou, iou_threshold))
-            boxes = tf.gather_nd(boxes, indices)
-            masks = tf.gather_nd(masks, indices)
-            argmax_overlaps_inds = tf.gather_nd(argmax_overlaps_inds, indices)
-            argmax_overlaps_inds = K.cast(argmax_overlaps_inds, 'int32')
-            labels = K.gather(annotations[:, 4], argmax_overlaps_inds)
-            labels = K.cast(labels, 'int32')
-
-            # make normalized boxes
-            x1 = boxes[:, 0]
-            y1 = boxes[:, 1]
-            x2 = boxes[:, 2]
-            y2 = boxes[:, 3]
-            boxes = K.stack([
-                y1 / (K.cast(height, dtype=K.floatx()) - 1),
-                x1 / (K.cast(width, dtype=K.floatx()) - 1),
-                (y2 - 1) / (K.cast(height, dtype=K.floatx()) - 1),
-                (x2 - 1) / (K.cast(width, dtype=K.floatx()) - 1),
-            ], axis=1)
-
-            # crop and resize masks_target
-            # append a fake channel dimension
-            masks_target = K.expand_dims(masks_target, axis=3)
-            masks_target = tf.image.crop_and_resize(
-                masks_target, boxes, argmax_overlaps_inds, mask_size)
-
-            # remove fake channel dimension
-            masks_target = masks_target[:, :, :, 0]
-
-            # gather the predicted masks using the annotation label
-            masks = tf.transpose(masks, (0, 3, 1, 2))
-            label_indices = K.stack([tf.range(K.shape(labels)[0]), labels], axis=1)
-            masks = tf.gather_nd(masks, label_indices)
-
-            # compute mask loss
-            mask_loss = K.binary_crossentropy(masks_target, masks)
-            normalizer = K.shape(masks)[0] * K.shape(masks)[1] * K.shape(masks)[2]
-            normalizer = K.maximum(K.cast(normalizer, K.floatx()), 1)
-            mask_loss = K.sum(mask_loss) / normalizer
-
-            return mask_loss
-
-        # if there are no masks annotations, return 0; else, compute the masks loss
-        return tf.cond(
-            K.any(K.equal(K.shape(y_true), 0)),
-            lambda: K.cast_to_floatx(0.0),
-            lambda: _mask(y_true, y_pred,
-                          iou_threshold=iou_threshold,
-                          mask_size=mask_size)
-        )
-
     # evaluation of model is done on `retinanet_bbox`
     if include_masks:
         prediction_model = model
     else:
         prediction_model = retinanet_bbox(
-            model, nms=True, class_specific_filter=False)
+            model,
+            nms=True,
+            anchor_params=anchor_params,
+            panoptic=panoptic,
+            class_specific_filter=False)
+
+    retinanet_losses = losses.RetinaNetLosses(sigma=sigma, alpha=alpha, gamma=gamma,
+                                              iou_threshold=iou_threshold,
+                                              mask_size=mask_size)
+
+    def semantic_loss(y_pred, y_true):
+        return panoptic_weight * losses.weighted_categorical_crossentropy(
+            y_pred, y_true, n_classes=n_semantic_classes)
 
     loss = {
-        'regression': regress_loss,
-        'classification': classification_loss
+        'regression': retinanet_losses.regress_loss,
+        'classification': retinanet_losses.classification_loss
     }
 
     if include_masks:
-        loss['masks'] = mask_loss
+        loss['masks'] = retinanet_losses.mask_loss
+
+    if panoptic:
+        loss['semantic'] = semantic_loss
 
     model.compile(loss=loss, optimizer=optimizer)
 
@@ -714,12 +616,18 @@ def train_model_retinanet(model,
     train_data = datagen.flow(
         train_dict,
         include_masks=include_masks,
+        panoptic=panoptic,
+        pyramid_levels=pyramid_levels,
+        anchor_params=anchor_params,
         compute_shapes=compute_shapes,
         batch_size=batch_size)
 
     val_data = datagen_val.flow(
         test_dict,
         include_masks=include_masks,
+        panoptic=panoptic,
+        pyramid_levels=pyramid_levels,
+        anchor_params=anchor_params,
         compute_shapes=compute_shapes,
         batch_size=batch_size)
 
