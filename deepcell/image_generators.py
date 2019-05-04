@@ -698,9 +698,9 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         """Applies a random transformation to an image.
 
         Args:
-            x: 3D tensor or list of 3D tensors, 
+            x: 3D tensor or list of 3D tensors,
                 single image.
-            y: 3D tensor or list of 3D tensors, 
+            y: 3D tensor or list of 3D tensors,
                 label mask(s) for `x`, optional.
             seed: Random seed.
 
@@ -709,7 +709,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             If `y` is passed, it is transformed if necessary and returned.
         """
         params = self.get_random_transform(x.shape, seed)
-        
+
         if isinstance(x, list):
             x = [self.apply_transform(x_i, params) for x_i in x]
         else:
@@ -725,7 +725,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         self.interpolation_order = 0
 
         if isinstance(y, list):
-            y = [self.apply_transform(y_i,params) for y_i in y]
+            y = [self.apply_transform(y_i, params) for y_i in y]
         else:
             y = self.apply_transform(y, params)
 
@@ -2429,7 +2429,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
              include_masks=False,
              panoptic=False,
              anchor_params=None,
-             pyramid_levels=['P3','P4','P5','P6','P7'],
+             pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
              batch_size=32,
              shuffle=False,
              seed=None,
@@ -2512,7 +2512,7 @@ class RetinaNetIterator(Iterator):
                  image_data_generator,
                  compute_shapes=guess_shapes,
                  anchor_params=None,
-                 pyramid_levels=['P3','P4','P5','P6','P7'],
+                 pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
                  min_objects=3,
                  num_classes=1,
                  clear_borders=False,
@@ -2528,7 +2528,7 @@ class RetinaNetIterator(Iterator):
                  save_prefix='',
                  save_format='png'):
         X, y = train_dict['X'], train_dict['y']
-       
+
         if X.shape[0] != y.shape[0]:
             raise ValueError('Training batches and labels should have the same'
                              'length. Found X.shape: {} y.shape: {}'.format(
@@ -2560,11 +2560,13 @@ class RetinaNetIterator(Iterator):
         # Add semantic segmentation targets if panoptic segmentation
         # flag is True
         if panoptic:
-            if 'y_semantic' in train_dict.keys():
+            if 'y_semantic' in train_dict:
                 y_semantic = train_dict['y_semantic']
             else:
-                y_semantic = y
-                y_semantic = _transform_masks(y_semantic, transform, data_format=data_format, **transform_kwargs)
+                y_semantic = _transform_masks(y, transform,
+                                              data_format=data_format,
+                                              **transform_kwargs)
+
             self.y_semantic = np.asarray(y_semantic, dtype='int32')
 
         invalid_batches = []
@@ -2658,8 +2660,8 @@ class RetinaNetIterator(Iterator):
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
         if self.panoptic:
-            batch_y_semantic = np.zeros(tuple([len(index_array)] 
-                                    + list(self.y_semantic.shape[1:])))
+            batch_y_semantic = np.zeros(tuple(
+                [len(index_array)] + list(self.y_semantic.shape[1:])))
 
         annotations_list = []
 
@@ -2752,7 +2754,7 @@ class RetinaNetIterator(Iterator):
         if self.panoptic:
             batch_outputs.append(batch_y_semantic)
 
-        return batch_x, batch_outputs 
+        return batch_x, batch_outputs
 
     def next(self):
         """For python 2.x. Returns the next batch.

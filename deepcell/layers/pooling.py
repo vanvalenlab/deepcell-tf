@@ -105,7 +105,6 @@ class DilatedMaxPool2D(Layer):
                                  data_format='NHWC')
 
         elif self.padding == 'same':
-            # Figure out how much to pad
             input_shape = K.int_shape(inputs)
             rows = input_shape[1]
             cols = input_shape[2]
@@ -231,7 +230,6 @@ class DilatedMaxPool3D(Layer):
                                  strides=self.strides,
                                  data_format='NDHWC')
         elif self.padding == 'same':
-             # Figure out how much to pad
             input_shape = K.int_shape(inputs)
             times = input_shape[1]
             rows = input_shape[2]

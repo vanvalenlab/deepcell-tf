@@ -106,7 +106,6 @@ def create_pyramid_level(backbone_input,
         pyramid_final = Conv3D(feature_size, (3, 3, 3), strides=(1, 1, 1),
                                padding='same', name=final_name)(pyramid)
 
-
     return pyramid_final, pyramid_upsample
 
 
@@ -157,17 +156,17 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
 
         # Don't add for the bottom of the pyramid
         if i == 0:
-            upsamplelike_input = backbone_features[i+1]
+            upsamplelike_input = backbone_features[i + 1]
             addition_input = None
 
         # Don't upsample for the top of the pyramid
-        elif i == len(backbone_names)-1:
+        elif i == len(backbone_names) - 1:
             upsamplelike_input = None
             addition_input = pyramid_upsamples[-1]
 
         # Otherwise, add and upsample
         else:
-            upsamplelike_input = backbone_features[i+1]
+            upsamplelike_input = backbone_features[i + 1]
             addition_input = pyramid_upsamples[-1]
 
         pf, pu = create_pyramid_level(backbone_input,
@@ -201,7 +200,7 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
         # followed by a 3x3 stride-2 conv on second to last layer"
         level = int(re.findall(r'\d+', N)[0]) + 2
         P_minus_1_name = 'P' + str(level)
-        P_minus_1 = Activation('relu', name=N+'_relu')(P_minus_2)
+        P_minus_1 = Activation('relu', name=N + '_relu')(P_minus_2)
 
         if ndim == 2:
             P_minus_1 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
@@ -257,7 +256,7 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
             x = Conv2D(n_filters, (3, 3), strides=(1, 1),
                        padding='same', data_format='channels_last')(x)
 
-            if i == n_upsample-1 and target is not None:
+            if i == n_upsample - 1 and target is not None:
                 x = UpsampleLike()([x, target])
             else:
                 x = UpSampling2D(size=(2, 2))(x)
@@ -265,7 +264,7 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
             x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1),
                        padding='same', data_format='channels_last')(x)
 
-            if i == n_upsample-1 and target is not None:
+            if i == n_upsample - 1 and target is not None:
                 x = UpsampleLike()([x, target])
             else:
                 x = UpSampling3D(size=(2, 2, 2))(x)
@@ -324,7 +323,7 @@ def semantic_prediction(semantic_names,
 
     # Final upsampling
     min_level = int(re.findall(r'\d+', semantic_names[-1])[0])
-    n_upsample = min_level-target_level
+    n_upsample = min_level - target_level
     x = semantic_upsample(semantic_sum, n_upsample, target=input_target)
 
     # Reshape to match input size
@@ -387,7 +386,7 @@ def __create_semantic_head(pyramid_dict,
         # Get level and determine how much to upsample
         level = int(re.findall(r'\d+', N)[0])
 
-        n_upsample = level-target_level
+        n_upsample = level - target_level
         target = semantic_features[-1] if len(semantic_features) > 0 else None
 
         # Use semantic upsample to get semantic map

@@ -70,30 +70,35 @@ def featurenet_3D_block(x, n_filters):
     Returns:
         layer: Keras layer object
     """
-
+    df = K.image_data_format()
     # conv set 1
-    x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1), padding='same', data_format=K.image_data_format())(x)
+    x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1), padding='same', data_format=df)(x)
     x = BatchNormalization(axis=-1)(x)
     x = Activation('relu')(x)
     # conv set 2
-    x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1), padding='same', data_format=K.image_data_format())(x)
+    x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1), padding='same', data_format=df)(x)
     x = BatchNormalization(axis=-1)(x)
     x = Activation('relu')(x)
     # Final max pooling stage
-    x = MaxPool3D(pool_size=(2, 2, 2), data_format=K.image_data_format())(x)
+    x = MaxPool3D(pool_size=(2, 2, 2), data_format=df)(x)
 
     return x
 
 
-def featurenet_backbone(input_tensor=None, input_shape=None, weights=None, include_top=False, pooling=None, n_filters=32, n_dense=128, n_classes=3):
+def featurenet_backbone(input_tensor=None, input_shape=None, weights=None,
+                        include_top=False, pooling=None, n_filters=32,
+                        n_dense=128, n_classes=3):
     """Construct the deepcell backbone with five convolutional units
+
+    Args:
         input_tensor (tensor): Input tensor to specify input size
-        n_filters (int, optional): Defaults to 32. Number of filters for convolutionaal layers
+        n_filters (int, optional): Defaults to 32. Number of filters for
+            convolutional layers
+
     Returns:
-        (backbone_names, backbone_features): List of backbone layers, list of backbone names
+        (backbone_names, backbone_features): List of backbone layers,
+            list of backbone names
     """
-
-
     if input_tensor is None:
         img_input = Input(shape=input_shape)
     else:
@@ -124,15 +129,15 @@ def featurenet_backbone(input_tensor=None, input_shape=None, weights=None, inclu
     return model, output_dict
 
 
-def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None, include_top=False, pooling=None, n_filters=32, n_dense=128, n_classes=3):
+def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None,
+                           include_top=False, pooling=None, n_filters=32,
+                           n_dense=128, n_classes=3):
     """Construct the deepcell backbone with five convolutional units
         input_tensor (tensor): Input tensor to specify input size
         n_filters (int, optional): Defaults to 32. Number of filters for convolutionaal layers
     Returns:
         (backbone_names, backbone_features): List of backbone layers, list of backbone names
     """
-
-
     if input_tensor is None:
         img_input = Input(shape=input_shape)
     else:
@@ -196,7 +201,8 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
     if _backbone in featurenet_backbones:
         if use_imagenet:
-            raise ValueError('A featurenet backbone that is pre-trained on imagenet does not exist')
+            raise ValueError('A featurenet backbone that is pre-trained on '
+                             'imagenet does not exist')
 
         if '3d' in _backbone:
             model, output_dict = featurenet_3D_backbone(input_tensor=input_tensor, **kwargs)
@@ -277,12 +283,14 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
 
-        layer_names = ['bn_conv1', 'res2c_branch2c', 'res3d_branch2c', 'res4f_branch2c', 'res5c_branch2c']
+        layer_names = ['bn_conv1', 'res2c_branch2c', 'res3d_branch2c',
+                       'res4f_branch2c', 'res5c_branch2c']
+
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
 
         output_dict = {}
         for i, j in enumerate(layer_names):
-            output_dict['C' + str(i+1)] = layer_outputs[i]
+            output_dict['C' + str(i + 1)] = layer_outputs[i]
         if return_dict:
             return output_dict
         else:
@@ -293,7 +301,10 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         if _backbone.endswith('v2'):
             model = applications.MobileNetV2(alpha=alpha, input_tensor=input_tensor, **kwargs)
             block_ids = (2, 5, 12)
-            layer_names = ['expanded_conv_project_BN'] + ['block_%s_add' % i for i in block_ids] + ['block_16_project_BN']
+            layer_names = ['expanded_conv_project_BN'] + \
+                          ['block_%s_add' % i for i in block_ids] + \
+                          ['block_16_project_BN']
+
         else:
             model = applications.MobileNet(alpha=alpha, input_tensor=input_tensor, **kwargs)
             block_ids = (1, 3, 5, 11, 13)
@@ -312,7 +323,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
         output_dict = {}
         for i, j in enumerate(layer_names):
-            output_dict['C' + str(i+1)] = layer_outputs[i]
+            output_dict['C' + str(i + 1)] = layer_outputs[i]
         if return_dict:
             return output_dict
         else:
@@ -341,7 +352,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
         output_dict = {}
         for i, j in enumerate(layer_names):
-            output_dict['C' + str(i+1)] = layer_outputs[i]
+            output_dict['C' + str(i + 1)] = layer_outputs[i]
         if return_dict:
             return output_dict
         else:
