@@ -12,7 +12,7 @@ def main():
 
     optimizer = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     lr_sched = rate_scheduler(lr=0.01, decay=0.99)
-    in_shape = (14, 14, 1)
+    in_shape = (32, 32, 1)
     model = the_model(input_shape=in_shape)#, n_features=1, reg=1e-5)
 
     train_model_siamese(model=model,

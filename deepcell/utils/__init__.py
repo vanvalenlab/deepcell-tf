@@ -29,15 +29,25 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import warnings
+
+from deepcell.utils import backbone_utils
 from deepcell.utils import data_utils
 from deepcell.utils import export_utils
 from deepcell.utils import io_utils
 from deepcell.utils import misc_utils
 from deepcell.utils import plot_utils
 from deepcell.utils import testing_utils
+from deepcell.utils import tracking_utils
 from deepcell.utils import train_utils
 from deepcell.utils import transform_utils
 from deepcell.utils import retinanet_anchor_utils
+
+try:
+    from deepcell.utils import compute_overlap
+except ImportError:
+    warnings.warn('To use `compute_overlap`, the C extensions must be built '
+                  'using `python setup.py build_ext --inplace`')
 
 # Globally-importable utils.
 from deepcell.utils.data_utils import get_data
@@ -53,6 +63,8 @@ from deepcell.utils.train_utils import rate_scheduler
 from deepcell.utils.transform_utils import distance_transform_2d
 from deepcell.utils.transform_utils import distance_transform_3d
 from deepcell.utils.transform_utils import deepcell_transform
+
+del warnings
 
 del absolute_import
 del division

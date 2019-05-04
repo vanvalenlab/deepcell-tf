@@ -1,425 +1,89 @@
-"""
-metrics.py
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# All rights reserved.
+#
+# Licensed under a modified Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
+#
+# The Work provided may be used for non-commercial academic purposes only.
+# For any other use of the Work, including commercial use, please contact:
+# vanvalenlab@gmail.com
+#
+# Neither the name of Caltech nor the names of its contributors may be used
+# to endorse or promote products derived from this software without specific
+# prior written permission.
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+"""Custom metrics for pixel-based and object-based classification accuracy.
 
-Custom error metrics
+The schema for this analysis was adopted from the description of object-based
+statistics in Caicedo et al. (2018) Evaluation of Deep Learning Strategies for
+Nucleus Segmentation in Fluorescence Images. BioRxiv 335216.
 
-@author: cpavelchek, msschwartz21
+The SEG metric was adapted from Maška et al. (2014). A benchmark for comparison
+of cell tracking algorithms. Bioinformatics 30, 1609–1617.
+
+The linear classification schema used to match objects in truth and prediction
+frames was adapted from Jaqaman et al. (2008). Robust single-particle tracking
+in live-cell time-lapse sequences. Nature Methods 5, 695–702.
 """
-import datetime
+
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+
 import os
 import json
-
+import datetime
 import operator
 
 import numpy as np
+import pandas as pd
+import networkx as nx
+
 from scipy.optimize import linear_sum_assignment
 
 import skimage.io
 import skimage.measure
 from sklearn.metrics import confusion_matrix
 
-import pandas as pd
-import networkx as nx
-
 from tensorflow.python.platform import tf_logging as logging
 
 
-# def im_prep(mask, prediction, win_size):
-#     """Reads images into ndarrays, and trims them to fit each other"""
-#     # if trimming not needed, return
-#     if win_size == 0 or prediction.shape == mask.shape:
-#         return mask, prediction
+def stats_pixelbased(y_true, y_pred):
+    """Calculates pixel-based statistics
+    (Dice, Jaccard, Precision, Recall, F-measure)
 
-#     # otherwise, pad prediction to imsize and zero out the outer layer of mask
-#     mask = mask[win_size:-win_size, win_size:-win_size]
-#     mask = np.pad(mask, (win_size, win_size), 'constant')
-#     prediction = np.pad(prediction, (win_size, win_size), 'constant')
-#     return mask, prediction
-
-
-def calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix):
-    """
-    DEPRECATED Identifies cell objects within a cropped roi that have an IOU above `threshold`
-    which results in them being marked as a hit
+    Takes in raw prediction and truth data in order to calculate accuracy
+    metrics for pixel based classfication. Statistics were chosen according
+    to the guidelines presented in Caicedo et al. (2018) Evaluation of Deep
+    Learning Strategies for Nucleus Segmentation in Fluorescence Images.
+    BioRxiv 335216.
 
     Args:
-        crop_truth (2D np.array): Cropped numpy array of labeled truth mask
-        crop_pred (2D np.array): Cropped numpy array of labeled prediction mask
-        threshold (float): Threshold for accepting IOU score as a hit
-        iou_matrix (2D np.array): Array for recording hits between predicted and truth objects
+        y_true (3D np.array): Binary ground truth annotations for a single
+            feature, (batch,x,y)
+        y_pred (3D np.array): Binary predictions for a single feature,
+            (batch,x,y)
 
     Returns:
-        iou_matrix: after updating with any hits found in this crop region
-    """
-    # for each unique cellID in the given mask...
-    for n in np.unique(crop_truth):
-        if n == 0:
-            continue  # excluding background
-
-        # for each unique cellID in the given prediction...
-        for m in np.unique(crop_pred):
-            if m == 0:
-                continue  # excluding background
-
-            # calculate the intersection over union for pixels in each object
-            intersection = np.logical_and(crop_pred == m, crop_truth == n)
-            union = np.logical_or(crop_pred == m, crop_truth == n)
-            iou = np.sum(intersection) / np.sum(union)
-
-            if iou > threshold:
-                iou_matrix[n - 1][m - 1] = 1
-
-    return iou_matrix
-
-
-def calc_object_ious_fast(y_true, y_pred):
-    """
-    DEPRECATED Identifies cell objects within a cropped roi that have an IOU above `threshold`
-    which results in them being marked as a hit
-
-    Args:
-        crop_truth (2D np.array): Cropped numpy array of labeled truth mask
-        crop_pred (2D np.array): Cropped numpy array of labeled prediction mask
-
-    Returns:
-        iou_matrix: after updating with any hits found in this crop region
-
-    Warning:
-        Currently does not handle cases in which more than 1 truth and 1 predicted cell ids are
-        found in an intersection
-    """
-    # def _joint_or(arr, L):
-    #     """Calculate overlap of an arr with a list of values"""
-    #     out = arr == L[0]
-    #     for i in L[1:]:
-    #         out = (out) | (arr == i)
-    #     return out
-
-    # Initialize iou matrix
-    # Add third dimension to seperate merges
-    iou_matrix = np.zeros((y_true.max(), y_pred.max()))
-
-    # Find an intersection mask of all regions of intersection
-    mask = np.logical_or(y_true != 0, y_pred != 0)
-    mask_lbl = skimage.measure.label(mask, connectivity=2)
-
-    # Loop over each region of intersection
-    for i in np.unique(mask_lbl):
-        if i == 0:
-            continue  # exclude background
-
-        # Extract cell ids from y_pred and y_true
-        tid = np.unique(y_true[mask_lbl == i])
-        pid = np.unique(y_pred[mask_lbl == i])
-
-        # First handle cases when there are only two cell ids
-        if (len(tid) == 1) & (len(pid) == 1):
-            intersection = np.logical_and(y_true == tid[0], y_pred == pid[0])
-            union = np.logical_or(y_true == tid[0], y_pred == pid[0])
-            iou = np.sum(intersection) / np.sum(union)
-
-            iou_matrix[tid - 1, pid - 1] = iou
-
-        else:
-
-            # intersection = np.logical_and(
-            #     _joint_or(y_true, tid), _joint_or(y_pred, pid))
-            # union = np.logical_or(_joint_or(y_true, tid),
-            #                       _joint_or(y_pred, pid))
-            # iou = np.sum(intersection) / np.sum(union)
-
-            for t in tid:
-                for p in pid:
-                    intersection = np.logical_and(y_true == t, y_pred == p)
-                    union = np.logical_or(y_true == t, y_pred == p)
-                    iou = np.sum(intersection) / np.sum(union)
-                    iou_matrix[t - 1, p - 1] = iou
-
-    return iou_matrix
-
-
-# def get_iou_matrix_quick(y_true, y_pred, crop_size, threshold=0.5):
-#     """DEPRECATED Calculate Intersection-Over-Union Matrix for ground truth and predictions
-#     based on object labels
-
-#     Intended to work on 2D arrays,
-#     but placing this function in a loop could extend to 3D or higher
-
-#     Arguments:
-#         pred (2D np.array): predicted, labeled mask
-#         truth (2D np.array): ground truth, labeled mask
-#         crop_size (int): Cropping images is faster to calculate but less accurate
-#         threshold (:obj:`float`, optional): If IOU is above threshold,
-#            cells are considered overlapping, default 0.5
-
-#     Returns:
-#         iou_matrix: 1 indicates an object pair with an IOU score above threshold
-
-#     Warning:
-#         Currently non-functional because cropping functionality needs to be restored.
-#     """
-
-#     # Setup empty iou matrix based on number of true and predicted cells
-#     iou_matrix = np.zeros((y_true.max(), y_pred.max()))
-#     print(iou_matrix.shape)
-#     print('true', y_true.max(), 'pred', y_pred.max())
-
-#     # Get image size parameters, assumes 2D inputs
-#     x_size = y_true.shape[0]
-#     y_size = y_true.shape[1]
-
-#     # Crop input images and calculate the iou's for the cells present
-#     # Updates iou_matrix value during each loop
-#     # Consider using np.split as a potentially faster alternative
-#     for x in range(0, x_size, crop_size):
-#         for y in range(0, y_size, crop_size):
-#             crop_pred = y_pred[x:x + crop_size, y:y + crop_size]
-#             crop_truth = y_true[x:x + crop_size, y:y + crop_size]
-#             # iou_matrix = calc_cropped_ious(crop_truth, crop_pred, threshold, iou_matrix)
-#             iou_matrix = calc_object_ious_fast(
-#                 crop_truth, crop_pred, threshold)
-
-#     return iou_matrix
-
-
-def get_dice_jaccard(iou_matrix):
-    """DEPRECATED Caclulates DICE score for object based metrics
-    # Arguments:
-        iou_matrix: Matrix of Intersection over Union
-    # Returns
-        dice: DICE score for object based
-        jaccard: Jaccard score for object based
-    """
-    iou_sum = np.sum(iou_matrix)
-    pred_max = iou_matrix.shape[1] - 1
-    truth_max = iou_matrix.shape[0] - 1
-
-    dice = 2 * iou_sum / (2 * iou_sum + pred_max -
-                          iou_sum + truth_max - iou_sum)
-    jaccard = dice / (2 - dice)
-
-    return dice, jaccard
-
-
-def reshape_padded_tiled_2d(arr):
-    """DEPRECATED Takes in a 3 or 4d stack and reshapes
-    so that arrays from the zeroth axis are tiled in 2D
-
-    Args:
-        arr (np.array): 3 or 4D array to be reshaped with reshape axis as zeroth axis
-
-    Returns:
-        np.array: Output array should be two dimensional except for a possible channel dimension
-
-    Raises:
-        ValueError: Only accepts 3 or 4D input arrays
-    """
-    # Check if input is 3 or 4 dimensions for padding
-    # Add border of zeros around input arr
-    if len(arr.shape) == 4:
-        pad = np.zeros((arr.shape[0],
-                        arr.shape[1] + 2,
-                        arr.shape[2] + 2,
-                        arr.shape[3]))
-    elif len(arr.shape) == 3:
-        pad = np.zeros((arr.shape[0],
-                        arr.shape[1] + 2,
-                        arr.shape[2] + 2))
-    else:
-        raise ValueError('Only supports input of dimensions 3 or 4. '
-                         'Array of dimension {} received as input'.format(
-                             len(arr.shape)))
-
-    # Add data into padded array
-    pad[:, 1:-1, 1:-1] = arr
-
-    # Split array into list of as many arrays as are in zeroth dimension
-    splitlist = np.split(pad, pad.shape[0], axis=0)
-
-    # Concatenate into single 2D array
-    out = np.concatenate(splitlist, axis=2)
-
-    return out
-
-
-def stats_objectbased(y_true,
-                      y_pred,
-                      object_threshold=0.5,
-                      ndigits=4,
-                      crop_size=None):
-    """
-    DEPRECATED Calculate summary statistics (DICE/Jaccard index and confusion matrix)
-    for a labeled images on a per-object basis
-
-    Args:
-        y_true (3D np.array): Labled ground truth annotations (batch,x,y)
-        y_pred (3D np.array): Labeled predictions (batch,x,y)
-        object_threshold (:obj:`float`, optional): Sets criteria for jaccard index
-            to declare object overlap
-        ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
-        crop_size (:obj:`int`, optional): Enables cropping for object calculations, default None
-
-    Returns:
-        iou_matrix: np.array containing iou scores
-
-    Raises:
-        ValueError: If y_true and y_pred are not the same shape
-        ValueError: If cropping specified, because cropping not currently available
-    """
-
-    def _round(x):
-        return round(x, ndigits)
-
-    if y_pred.shape != y_true.shape:
-        raise ValueError('Shape of inputs need to match. Shape of prediction '
-                         'is: {}.  Shape of y_true is: {}'.format(
-                             y_pred.shape, y_true.shape))
-
-    # Reshape to be tiled 2D image
-    y_true = reshape_padded_tiled_2d(y_true[:, :, :])
-    y_pred = reshape_padded_tiled_2d(y_pred[:, :, :])
-
-    # Calculate labels using skimage so labels unique across entire tile
-    y_true = skimage.measure.label(y_true, connectivity=2)
-    y_pred = skimage.measure.label(y_pred, connectivity=2)
-
-    # Calculate iou matrix on reshaped, masked arrays
-    if crop_size is not None:
-        raise ValueError('Cropping functionality is not currently available.')
-        # iou_matrix = get_iou_matrix_quick(
-        #     y_true, y_pred, crop_size, threshold=object_threshold)
-    else:
-        iou_matrix = calc_object_ious_fast(y_true, y_pred)
-
-    # Get performance stats
-    stats = calc_2d_object_stats((iou_matrix > object_threshold).astype('int'))
-
-    if stats['false_pos'] == 0:
-        false_pos_perc_err = 0
-    else:
-        false_pos_perc_err = stats['false_pos'] / \
-            (stats['false_pos'] + stats['false_neg'])
-
-    if stats['false_neg'] == 0:
-        false_neg_perc_err = 0
-    else:
-        false_neg_perc_err = stats['false_neg'] / \
-            (stats['false_pos'] + stats['false_neg'])
-
-    if stats['pred_cells'] == 0:
-        false_pos_perc_pred = 0
-    else:
-        false_pos_perc_pred = stats['false_pos'] / stats['pred_cells']
-
-    if stats['true_cells'] == 0:
-        false_neg_perc_truth = 0
-        perc_merged = 0
-        perc_divided = 0
-        acc = 0
-    else:
-        false_neg_perc_truth = stats['false_neg'] / stats['true_cells']
-        perc_merged = stats['merge'] / stats['true_cells']
-        perc_divided = stats['split'] / stats['true_cells']
-        acc = (stats['pred_cells'] - stats['false_pos']) / stats['true_cells']
-
-    print('\n____________________Object-based statistics____________________\n')
-    print('Intersection over Union thresholded at {} for object detection'.format(
-        object_threshold))
-    print('Dice/F1 index: {}\nJaccard index: {}'.format(
-        _round(stats['dice']), _round(stats['jaccard'])))
-    print('Number of cells predicted:', stats['pred_cells'])
-    print('Number of cells present in ground truth:', stats['true_cells'])
-    print('Accuracy: {}%\n'.format(_round(acc * 100)))
-
-    print('#true positives: {}'.format(_round(stats['true_pos'])))
-
-    print('#false positives: {}\t% of total error: {}\t% of predicted incorrect: {}'.format(
-        _round(stats['false_pos']),
-        _round(false_pos_perc_err * 100),
-        _round(false_pos_perc_pred * 100)))
-
-    print('#false negatives: {}\t% of total error: {}\t% of ground truth missed: {}'.format(
-        _round(stats['false_neg']),
-        _round(false_neg_perc_err * 100),
-        _round(false_neg_perc_truth * 100)))
-
-    print('#incorrect merges: {}\t% of ground truth merged: {}'.format(
-        stats['merge'], _round(perc_merged * 100)))
-    print('#incorrect divisions: {}\t% of ground truth divided: {}'.format(
-        stats['split'], _round(perc_divided * 100)))
-
-    return iou_matrix
-
-
-def calc_2d_object_stats(iou_matrix):
-    """DEPRECATED Calculates basic statistics to evaluate classification accuracy for a 2d image
-
-    Args:
-        iou_matrix (np.array): 2D array with dimensions (#true_cells,#predicted_cells)
-
-    Returns:
-        dict: Dictionary containing all statistics computed by function
-    """
-    true_cells = iou_matrix.shape[0]
-    pred_cells = iou_matrix.shape[1]
-
-    # Calculate values based on projecting along prediction axis
-    pred_proj = iou_matrix.sum(axis=1)
-    # Zeros (aka absence of hits) correspond to true cells missed by prediction
-    false_neg = np.count_nonzero(pred_proj == 0)
-    # More than 2 hits corresponds to true cells hit twice by prediction, aka split
-    split = np.count_nonzero(pred_proj >= 2)
-
-    # Calculate values based on projecting along truth axis
-    truth_proj = iou_matrix.sum(axis=0)
-    # Empty hits indicate predicted cells that do not exist in true cells
-    false_pos = np.count_nonzero(truth_proj == 0)
-    # More than 2 hits indicates more than 2 true cells corresponding to 1 predicted cell
-    merge = np.count_nonzero(truth_proj >= 2)
-
-    # Ones are true positives excluding merge errors
-    true_pos = np.count_nonzero(pred_proj == 1) - \
-        (truth_proj[truth_proj >= 2].sum())
-
-    # Calc dice jaccard stats for objects
-    dice, jaccard = get_dice_jaccard(iou_matrix)
-
-    return {
-        'true_cells': true_cells,
-        'pred_cells': pred_cells,
-        'false_neg': false_neg,
-        'split': split,
-        'true_pos': true_pos,
-        'false_pos': false_pos,
-        'merge': merge,
-        'dice': dice,
-        'jaccard': jaccard
-    }
-
-
-def stats_pixelbased(y_true, y_pred, ndigits=4):
-    """Calculates pixel-based statistics (Dice, Jaccard, Precision, Recall, F-measure)
-
-    Takes in raw prediction and truth data. Applies labeling to prediction
-        before calculating statistics.
-
-    Args:
-        y_true (3D np.array): Binary ground truth annotations for a single feature, (batch,x,y)
-        y_pred (3D np.array): Binary predictions for a single feature, (batch,x,y)
-        ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
-
-    Returns:
-        dictionary: optionally returns a dictionary of statistics
+        dictionary: Containing a set of calculated statistics
 
     Raises:
         ValueError: Shapes of `y_true` and `y_pred` do not match.
 
     Warning:
-        Comparing labeled to unlabeled data will produce very low accuracy scores.
+        Comparing labeled to unlabeled data will produce low accuracy scores.
         Make sure to input the same type of data for `y_true` and `y_pred`
-
-    Todo:
-        Should `y_true` be transformed to match `y_pred` or vice versa
     """
 
     if y_pred.shape != y_true.shape:
@@ -454,29 +118,50 @@ def stats_pixelbased(y_true, y_pred, ndigits=4):
     }
 
 
-class ObjectAccuracy:
-    """Classifies errors in object predictions as true positive,
-        false positive/negative, merge or split
+class ObjectAccuracy(object):
+    """Classifies object prediction errors as TP, FP, FN, merge or split
+
+    The schema for this analysis was adopted from the description of
+    object-based statistics in Caicedo et al. (2018) Evaluation of Deep
+    Learning Strategies for Nucleus Segmentation in Fluorescence Images.
+    BioRxiv 335216.
+    The SEG metric was adapted from Maška et al. (2014). A benchmark for
+    comparison of cell tracking algorithms.
+    Bioinformatics 30, 1609–1617.
+    The linear classification schema used to match objects in truth and
+    prediction frames was adapted from Jaqaman et al. (2008).
+    Robust single-particle tracking in live-cell time-lapse sequences.
+    Nature Methods 5, 695–702.
 
     Args:
         y_true (2D np.array): Labeled ground truth annotation
         y_pred (2D np.array): Labled object prediction, same size as y_true
         cutoff1 (:obj:`float`, optional): Threshold for overlap in cost matrix,
             smaller values are more conservative, default 0.4
-        cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned cells,
-            smaller values are better, default 0.1
-        test (:obj:`bool`, optional): Utility variable to control running analysis during testing
-        seg (:obj:`bool`, optional): Calculates SEG score for cell tracking competition
+        cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned
+            cells, smaller values are better, default 0.1
+        test (:obj:`bool`, optional): Utility variable to control running
+            analysis during testing
+        seg (:obj:`bool`, optional): Calculates SEG score for cell tracking
+            competition
 
     Raises:
         ValueError: If y_true and y_pred are not the same shape
 
     Warning:
         Position indicies are not currently collected appropriately
+
+    Todo:
+        Implement recording of object indices for each error group
     """
 
-    def __init__(self, y_true, y_pred, cutoff1=0.4, cutoff2=0.1, test=False, seg=False):
-
+    def __init__(self,
+                 y_true,
+                 y_pred,
+                 cutoff1=0.4,
+                 cutoff2=0.1,
+                 test=False,
+                 seg=False):
         self.y_true = y_true
         self.y_pred = y_pred
         self.cutoff1 = cutoff1
@@ -484,7 +169,7 @@ class ObjectAccuracy:
         self.seg = seg
 
         if y_pred.shape != y_true.shape:
-            raise ValueError('Shape of inputs need to match. Shape of prediction '
+            raise ValueError('Input shapes must match. Shape of prediction '
                              'is: {}.  Shape of y_true is: {}'.format(
                                  y_pred.shape, y_true.shape))
 
@@ -531,8 +216,9 @@ class ObjectAccuracy:
             self.empty_frame = False
 
     def _calc_iou(self):
-        """Calculates intersection of union matrix for each pairwise
-        comparison between true and predicted
+        """Calculates IoU matrix for each pairwise comparison between true and
+        predicted. Additionally, if `seg`==True, records a 1 for each pair of
+        objects where $|T\bigcap P| > 0.5 * |T|$
         """
 
         self.iou = np.zeros((self.n_true, self.n_pred))
@@ -547,11 +233,18 @@ class ObjectAccuracy:
                 union = np.logical_or(self.y_true == t, self.y_pred == p)
                 # Subtract 1 from index to account for skipping 0
                 self.iou[t - 1, p - 1] = intersection.sum() / union.sum()
-                if (self.seg is True) & (intersection.sum() > 0.5 * np.sum(self.y_true == t)):
+                if (self.seg is True) & \
+                   (intersection.sum() > 0.5 * np.sum(self.y_true == t)):
                     self.seg_thresh[t - 1, p - 1] = 1
 
     def _make_matrix(self):
         """Assembles cost matrix using the iou matrix and cutoff1
+
+        The previously calculated iou matrix is cast into the top left and
+        transposed for the bottom right corner. The diagonals of the two
+        remaining corners are populated according to `cutoff1`. The lower the
+        value of `cutoff1` the more likely it is for the linear sum assignment
+        to pick unmatched assignments for objects.
         """
 
         self.cm = np.ones((self.n_obj, self.n_obj))
@@ -574,7 +267,11 @@ class ObjectAccuracy:
 
     def _linear_assignment(self):
         """Runs linear sun assignment on cost matrix, identifies true positives
-        and unassigned true and predicted cells
+        and unassigned true and predicted cells.
+
+        True positives correspond to assignments in the top left or bottom
+        right corner. There are two possible unassigned positions: true cell
+        unassigned in bottom left or predicted cell unassigned in top right.
         """
 
         self.results = linear_sum_assignment(self.cm)
@@ -592,7 +289,8 @@ class ObjectAccuracy:
         if self.seg is True:
             iou_mask = self.iou.copy()
             iou_mask[self.seg_thresh == 0] = np.nan
-            self.seg_score = np.nanmean(iou_mask[self.true_pos_ind[0], self.true_pos_ind[1]])
+            self.seg_score = np.nanmean(iou_mask[self.true_pos_ind[0],
+                                        self.true_pos_ind[1]])
 
         # Collect unassigned cells
         self.loners_pred, _ = np.where(
@@ -618,6 +316,11 @@ class ObjectAccuracy:
 
     def _array_to_graph(self):
         """Transform matrix for unassigned cells into a graph object
+
+        In order to cast the iou matrix into a graph form, we treat each
+        unassigned cell as a node. The iou values for each pair of cells is
+        treated as an edge between nodes/cells. Any iou values equal to 0 are
+        dropped because they indicate no overlap between cells.
         """
 
         # Use meshgrid to get true and predicted cell index for each val
@@ -646,6 +349,15 @@ class ObjectAccuracy:
 
     def _classify_graph(self):
         """Assign each node in graph to an error type
+
+        Nodes with a degree (connectivity) of 0 correspond to either false
+        positives or false negatives depending on the origin of the node from
+        either the predicted objects (false positive) or true objects
+        (false negative). Any nodes with a connectivity of 1 are considered to
+        be true positives that were missed during linear assignment.
+        Finally any nodes with degree >= 2 are indicative of a merge or split
+        error. If the top level node is a predicted cell, this indicates a merge
+        event. If the top level node is a true cell, this indicates a split event.
         """
 
         # Find subgraphs, e.g. merge/split
@@ -716,22 +428,25 @@ class ObjectAccuracy:
         return df
 
 
-class Metrics:
-    """
-    Class to facilitate calculating and saving various classification metrics
+class Metrics(object):
+    """Class to calculate and save various classification metrics
 
     Args:
         model_name (str): Name of the model which determines output file names
         outdir (:obj:`str`, optional): Directory to save json file, default ''
         cutoff1 (:obj:`float`, optional): Threshold for overlap in cost matrix,
             smaller values are more conservative, default 0.4
-        cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned cells,
-            smaller values are better, default 0.1
-        pixel_threshold (:obj:`float`, optional): Threshold for converting predictions to binary
-        ndigits (:obj:`int`, optional): Sets number of digits for rounding, default 4
-        feature_key (:obj:`list`, optional): List of strings to use as feature names
-        json_notes (:obj:`str`, optional): Str providing any additional information about the model
-        seg (:obj:`bool`, optional): Calculates SEG score for cell tracking competition
+        cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned
+            cells, smaller values are better, default 0.1
+        pixel_threshold (:obj:`float`, optional): Threshold for converting
+            predictions to binary
+        ndigits (:obj:`int`, optional): Sets number of digits for rounding,
+            default 4
+        feature_key (:obj:`list`, optional): List of strings, feature names
+        json_notes (:obj:`str`, optional): Str providing any additional
+            information about the model
+        seg (:obj:`bool`, optional): Calculates SEG score for
+            cell tracking competition
 
     Examples:
         >>> from deepcell import metrics
@@ -777,10 +492,12 @@ class Metrics:
     def all_pixel_stats(self, y_true, y_pred):
         """Collect pixel statistics for each feature.
 
-        y_true should have the appropriate transform applied to match y_pred
+        y_true should have the appropriate transform applied to match y_pred.
+        Each channel is converted to binary using the threshold
+        `pixel_threshold` prior to calculation of accuracy metrics.
 
         Args:
-            y_true (4D np.array): Ground truth annotations after application of transform
+            y_true (4D np.array): Ground truth annotations after transform
             y_pred (4D np.array): Model predictions without labeling
 
         Raises:
@@ -788,7 +505,7 @@ class Metrics:
         """
 
         if y_pred.shape != y_true.shape:
-            raise ValueError('Shape of inputs need to match. Shape of prediction '
+            raise ValueError('Input shapes need to match. Shape of prediction '
                              'is: {}.  Shape of y_true is: {}'.format(
                                  y_pred.shape, y_true.shape))
 
@@ -804,7 +521,7 @@ class Metrics:
         for i, k in enumerate(self.feature_key):
             yt = y_true[:, :, :, i] > self.pixel_threshold
             yp = y_pred[:, :, :, i] > self.pixel_threshold
-            stats = stats_pixelbased(yt, yp, ndigits=self.ndigits)
+            stats = stats_pixelbased(yt, yp)
             self.pixel_df = self.pixel_df.append(
                 pd.DataFrame(stats, index=[k]))
 
@@ -860,7 +577,8 @@ class Metrics:
         """Calculate confusion matrix for pixel classification data.
 
         Args:
-            y_true (4D np.array): Ground truth annotations after any necessary transformations
+            y_true (4D np.array): Ground truth annotations after any
+                necessary transformations
             y_pred (4D np.array): Prediction array
 
         Returns:
@@ -887,7 +605,8 @@ class Metrics:
         """Calculate object statistics and save to output
 
         Loops over each frame in the zeroth dimension, which should pass in
-        a series of 2D arrays for analysis
+        a series of 2D arrays for analysis. `metrics.split_stack` can be
+        used to appropriately reshape the input array if necessary
 
         Args:
             y_true (3D np.array): Labeled ground truth annotations
@@ -944,7 +663,7 @@ class Metrics:
               int(self.stats['false_pos'].sum()),
               100 * round(self.stats['false_pos'].sum() / total_err, 4)))
         print('False negatives: {}\tPerc Error: {}%'.format(
-              int(self.stats['true_pos'].sum()),
+              int(self.stats['false_neg'].sum()),
               100 * round(self.stats['false_neg'].sum() / total_err, 4)))
         print('Merges:\t\t {}\tPerc Error: {}%'.format(
               int(self.stats['merge'].sum()),
@@ -964,11 +683,13 @@ class Metrics:
         """Runs pixel and object base statistics and ouputs to file
 
         Args:
-            y_true_lbl (3D np.array): Labeled ground truth annotation, (sample,x,y)
-            y_pred_lbl (3D np.array): Labeled prediction mask, (sample,x,y)
-            y_true_unlbl (4D np.array): Ground truth annotation after necessary transforms,
-                (sample,x,y,feature)
-            y_pred_unlbl (4D np.array): Predictions, (sample,x,y,feature)
+            y_true_lbl (3D np.array): Labeled ground truth annotation,
+                (sample, x, y)
+            y_pred_lbl (3D np.array): Labeled prediction mask,
+                (sample, x, y)
+            y_true_unlbl (4D np.array): Ground truth annotation after necessary
+                transforms, (sample, x, y, feature)
+            y_pred_unlbl (4D np.array): Predictions, (sample, x, y, feature)
         """
 
         logging.info('Starting pixel based statistics')
@@ -1015,7 +736,8 @@ def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
 
     Args:
         arr (np.array): Array to be split with at least 2 dimensions
-        batch (bool): True if the zeroth dimension of arr is a batch or frame dimension
+        batch (bool): True if the zeroth dimension of arr is a batch or
+            frame dimension
         n_split1 (int): Number of sections to produce from the first split axis
             Must be able to divide arr.shape[axis1] evenly by n_split1
         axis1 (int): Axis on which to perform first split
@@ -1029,6 +751,18 @@ def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
     Raises:
         ValueError: arr.shape[axis] must be evenly divisible by n_split
             for both the first and second split
+
+    Examples:
+        >>> from deepcell import metrics
+        >>> from numpy import np
+        >>> arr = np.ones((10, 100, 100, 1))
+        >>> out = metrics.test_split_stack(arr, True, 10, 1, 10, 2)
+        >>> out.shape
+        (1000, 10, 10, 1)
+        >>> arr = np.ones((100, 100, 1))
+        >>> out = metrics.test_split_stack(arr, False, 10, 1, 10, 2)
+        >>> out.shape
+        (100, 10, 10, 1)
     """
     # Check that n_split will divide equally
     if ((arr.shape[axis1] % n_split1) != 0) | ((arr.shape[axis2] % n_split2) != 0):

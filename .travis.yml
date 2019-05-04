@@ -19,18 +19,26 @@ env:
 cache: pip
 
 install:
-  - pip install matplotlib nbformat scipy numpy pandas scikit-learn scikit-image
-  # install fizyr packages for retinanet and maskrcnn
-  - pip install keras-retinanet opencv-python
-  - pip install git+git://github.com/fizyr/keras-maskrcnn.git@fa3d7f8e81d0ffb036fde5e134dcdbf35c206fc1
+  - pip install cython
+  - pip install matplotlib
+  - pip install nbformat
+  - pip install scipy
+  - pip install numpy
+  - pip install pandas
+  - pip install networkx
+  - pip install scikit-learn
+  - pip install scikit-image
+  - pip install opencv-python
+  - pip install keras_preprocessing>=1.0.6
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
   # install testing requirements
   - pip install pytest pytest-cov==2.5.1 pytest-pep8 coveralls
-  # install deepcell with setup.py
-  - python setup.py install
   # Install sphinx to check documentation build
   - pip install sphinx m2r
+  # install deepcell with setup.py
+  # - python setup.py install
+  - python setup.py build_ext --inplace
 
 script:
   - python -m pytest --cov=deepcell --pep8 deepcell tests

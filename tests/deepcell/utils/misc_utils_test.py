@@ -44,5 +44,10 @@ class MiscUtilsTest(test.TestCase):
         unsorted = ['test_1_1', 'test_0_0', 'test_1_0']
         self.assertListEqual(expected, misc_utils.sorted_nicely(unsorted))
 
+    def test_get_sorted_keys(self):
+        d = {'C1': 1, 'C3': 2, 'C2': 3}
+        self.assertListEqual(misc_utils.get_sorted_keys(d), ['C1', 'C2', 'C3'])
+
+
 if __name__ == '__main__':
     test.main()
