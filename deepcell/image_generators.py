@@ -2428,6 +2428,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
              clear_borders=False,
              include_masks=False,
              panoptic=False,
+             transform='watershed',
              anchor_params=None,
              pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
              batch_size=32,
@@ -2468,6 +2469,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             clear_borders=clear_borders,
             include_masks=include_masks,
             panoptic=panoptic,
+            transform=transform,
             anchor_params=anchor_params,
             pyramid_levels=pyramid_levels,
             batch_size=batch_size,
@@ -2567,7 +2569,13 @@ class RetinaNetIterator(Iterator):
                                               data_format=data_format,
                                               **transform_kwargs)
 
+                # inner_most = [label(y_semantic[i,:,:,-1]) for i in range(y_semantic.shape[0])]
+
+                # self.y = np.expand_dims(np.stack(inner_most, axis=0), axis=-1)
+
             self.y_semantic = np.asarray(y_semantic, dtype='int32')
+
+            print(self.y.shape, self.y_semantic.shape)
 
         invalid_batches = []
         # Remove images with small numbers of cells

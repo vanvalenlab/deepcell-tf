@@ -310,7 +310,7 @@ Retinanet losses
 
 
 class RetinaNetLosses(object):
-    def __init__(self, sigma=3.0, alpha=0.25, gamma=2.0,
+    def __init__(self, sigma=3.0, alpha=0.5, gamma=2.0,
                  iou_threshold=0.5, mask_size=(28, 28)):
         self.sigma = sigma
         self.alpha = alpha
@@ -351,6 +351,7 @@ class RetinaNetLosses(object):
         classification = tf.gather_nd(classification, indices)
 
         # compute the loss
+        # loss = focal(labels, classification, alpha=self.alpha, gamma=self.gamma)
         loss = focal(labels, classification, alpha=self.alpha, gamma=self.gamma)
 
         # compute the normalizer: the number of positive anchors

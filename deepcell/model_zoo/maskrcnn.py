@@ -149,7 +149,10 @@ def default_roi_submodels(num_classes,
 
 
 def retinanet_mask(inputs,
+                   backbone_dict,
                    num_classes,
+                   backbone_levels=['C3', 'C4', 'C5'],
+                   pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
                    retinanet_model=None,
                    anchor_params=None,
                    nms=True,
@@ -203,7 +206,10 @@ def retinanet_mask(inputs,
     if retinanet_model is None:
         retinanet_model = retinanet(
             inputs=image,
+            backbone_dict=backbone_dict,
             num_classes=num_classes,
+            backbone_levels=backbone_levels,
+            pyramid_levels=pyramid_levels,
             num_anchors=anchor_params.num_anchors(),
             **kwargs
         )
@@ -213,7 +219,7 @@ def retinanet_mask(inputs,
     classification = retinanet_model.outputs[1]
     other = retinanet_model.outputs[2:]
     features = [retinanet_model.get_layer(name).output
-                for name in ['P3', 'P4', 'P5', 'P6', 'P7']]
+                for name in pyramid_levels]
 
     # build boxes
     anchors = __build_anchors(anchor_params, features)
@@ -248,15 +254,22 @@ def retinanet_mask(inputs,
     outputs = [regression, classification] + other + trainable_outputs + \
         detections + maskrcnn_outputs
 
-    return Model(inputs=inputs, outputs=outputs, name=name)
+    model = Model(inputs=inputs, outputs=outputs, name=name)
+    model.backbone_levels = backbone_levels
+    model.pyramid_levels = pyramid_levels
+
+    return model
 
 
 def MaskRCNN(backbone,
              num_classes,
              input_shape,
+             backbone_levels=['C3', 'C4', 'C5'],
+             pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
              norm_method='whole_image',
+             location=False,
+             use_imagenet=False,
              crop_size=(14, 14),
-             weights=None,
              pooling=None,
              mask_dtype=K.floatx(),
              required_channels=3,
@@ -288,24 +301,37 @@ def MaskRCNN(backbone,
         RetinaNet model with a backbone.
     """
     inputs = Input(shape=input_shape)
+    channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+    if location:
+        location = Location2D(in_shape=input_shape)(inputs)
+        inputs = Concatenate(axis=channel_axis)([inputs, location])
+
     # force the channel size for backbone input to be `required_channels`
     norm = ImageNormalization2D(norm_method=norm_method)(inputs)
     fixed_inputs = TensorProduct(required_channels)(norm)
+
+    # force the input shape
+    fixed_input_shape = list(input_shape)
+    fixed_input_shape[-1] = required_channels
+    fixed_input_shape = tuple(fixed_input_shape)
+
     model_kwargs = {
         'include_top': False,
-        'input_tensor': fixed_inputs,
-        'weights': weights,
+        'weights': None,
+        'input_shape': fixed_input_shape,
         'pooling': pooling
     }
-    layer_outputs = get_backbone(backbone, inputs, **model_kwargs)
 
-    kwargs['backbone_layers'] = layer_outputs
+    backbone_dict = get_backbone(backbone, fixed_inputs, use_imagenet=use_imagenet, **model_kwargs)
 
     # create the full model
     return retinanet_mask(
         inputs=inputs,
         num_classes=num_classes,
+        backbone_dict=backbone_dict,
         crop_size=crop_size,
+        backbone_levels=backbone_levels,
+        pyramid_levels=pyramid_levels,
         name='{}_retinanet_mask'.format(backbone),
         mask_dtype=mask_dtype,
         **kwargs)

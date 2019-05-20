@@ -36,7 +36,7 @@ from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D
 from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import Permute, Reshape
-from tensorflow.python.keras.layers import Activation
+from tensorflow.python.keras.layers import Activation, Lambda
 from tensorflow.python.keras.initializers import RandomNormal
 
 from deepcell.initializers import PriorProbability
@@ -190,8 +190,12 @@ def __build_model_pyramid(name, model, features):
     Returns:
         A tensor containing the response from the submodel on the FPN features.
     """
-    concat = Concatenate(axis=1, name=name)
-    return concat([model(f) for f in features])
+    if len(features) == 1:
+        identity = Lambda(lambda x: x, name=name)
+        return identity(model(features[0]))
+    else:
+        concat = Concatenate(axis=1, name=name)
+        return concat([model(f) for f in features])
 
 
 def __build_pyramid(models, features):
@@ -223,17 +227,26 @@ def __build_anchors(anchor_parameters, features):
         (batch_size, num_anchors, 4)
         ```
     """
-    anchors = [
-        Anchors(
-            size=anchor_parameters.sizes[i],
-            stride=anchor_parameters.strides[i],
-            ratios=anchor_parameters.ratios,
-            scales=anchor_parameters.scales,
-            name='anchors_{}'.format(i)
-        )(f) for i, f in enumerate(features)
-    ]
 
-    return Concatenate(axis=1, name='anchors')(anchors)
+    if len(features) == 1:
+        anchors = Anchors(
+                size=anchor_parameters.sizes[0],
+                stride=anchor_parameters.strides[0],
+                ratios=anchor_parameters.ratios,
+                scales=anchor_parameters.scales,
+                name='anchors')(features[0]) 
+        return anchors
+    else:
+        anchors = [
+            Anchors(
+                size=anchor_parameters.sizes[i],
+                stride=anchor_parameters.strides[i],
+                ratios=anchor_parameters.ratios,
+                scales=anchor_parameters.scales,
+                name='anchors_{}'.format(i)
+            )(f) for i, f in enumerate(features)
+        ]
+        return Concatenate(axis=1, name='anchors')(anchors)
 
 
 def retinanet(inputs,
