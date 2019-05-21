@@ -75,7 +75,7 @@ def deepcell_transform_old(mask, dilation_radius=None, data_format=None):
     edges = (mask - interiors > 0).astype('int')
     interiors = (interiors > 0).astype('int')
     background = (mask[i] == 0).astype('int')
-
+    print("Dilation raidus is set to {}".format(dilation_radius))
     if dilation_radius:
         dil_strel = ball(dilation_radius) if mask.ndim > 3 else disk(dilation_radius)
         # Thicken cell edges to be more pronounced
