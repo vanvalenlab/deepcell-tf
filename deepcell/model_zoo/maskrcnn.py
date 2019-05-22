@@ -156,6 +156,7 @@ def retinanet_mask(inputs,
                    retinanet_model=None,
                    anchor_params=None,
                    nms=True,
+                   panoptic=False,
                    class_specific_filter=True,
                    crop_size=(14, 14),
                    mask_size=(28, 28),
@@ -210,6 +211,7 @@ def retinanet_mask(inputs,
             num_classes=num_classes,
             backbone_levels=backbone_levels,
             pyramid_levels=pyramid_levels,
+            panoptic=panoptic,
             num_anchors=anchor_params.num_anchors(),
             **kwargs
         )
@@ -217,7 +219,15 @@ def retinanet_mask(inputs,
     # parse outputs
     regression = retinanet_model.outputs[0]
     classification = retinanet_model.outputs[1]
-    other = retinanet_model.outputs[2:]
+
+    if panoptic:
+        # The last output is the panoptic output, which should not be
+        # sent to filter detections
+        other = retinanet_model.outputs[2:-1]
+        semantic = retinanet_model.outputs[-1]
+    else:
+        other = retinanet_model.outputs[2:]
+
     features = [retinanet_model.get_layer(name).output
                 for name in pyramid_levels]
 
@@ -253,6 +263,10 @@ def retinanet_mask(inputs,
     # reconstruct the new output
     outputs = [regression, classification] + other + trainable_outputs + \
         detections + maskrcnn_outputs
+
+    if panoptic:
+        outputs += [semantic]
+
 
     model = Model(inputs=inputs, outputs=outputs, name=name)
     model.backbone_levels = backbone_levels

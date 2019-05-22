@@ -426,6 +426,7 @@ def retinanet_bbox(model=None,
 def RetinaNet(backbone,
               num_classes,
               input_shape,
+              inputs=None,
               norm_method='whole_image',
               location=False,
               use_imagenet=False,
@@ -458,7 +459,9 @@ def RetinaNet(backbone,
     Returns:
         RetinaNet model with a backbone.
     """
-    inputs = Input(shape=input_shape)
+    if inputs is None:
+        inputs = Input(shape=input_shape)
+        
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     if location:
         location = Location2D(in_shape=input_shape)(inputs)

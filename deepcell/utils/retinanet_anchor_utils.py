@@ -611,8 +611,15 @@ def _get_detections(generator,
         if generator.panoptic:
             semantic = results[-1]
             if generator.include_masks:
+                boxes = results[-5]
+                scores = results[-4]
+                labels = results[-3]
                 masks = results[-2]
+                semantic = results[-1]
         elif generator.include_masks:
+            boxes = results[-4]
+            scores = results[-3]
+            labels = results[-2]
             masks = results[-1]
 
         # correct boxes for image scale
@@ -837,7 +844,10 @@ def evaluate_mask(generator, model,
 
                 # resize to fit the box
                 # mask = cv2.resize(mask, (box[2] - box[0], box[3] - box[1]))
-                mask = resize(mask, (box[3] - box[1], box[2] - box[0]))
+                box_x = box[3] - box[1]
+                box_y = box[2] - box[0]
+
+                mask = resize(mask, (box_x, box_y))
 
                 # binarize the mask
                 mask = (mask > binarize_threshold).astype('uint8')
