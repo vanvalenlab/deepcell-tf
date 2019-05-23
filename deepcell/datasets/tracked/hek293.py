@@ -61,7 +61,7 @@ def load_tracked_data(path='HEK293.trks', test_size=.2, seed=0):
 
     path = get_file(path,
                     origin='https://deepcell-data.s3.amazonaws.com/tracked/HEK293.trks',
-                    file_hash='d19e0fe144633a08d41cf6695e11f72b')
+                    file_hash='d5c563ab5866403836f2dcbe249c640f')
 
     train_dict, test_dict = get_data(path, mode='siamese_daughters',
                                      test_size=test_size, seed=seed)
