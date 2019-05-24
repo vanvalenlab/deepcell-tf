@@ -511,7 +511,7 @@ def compute_iou(a, b):
     intersection = np.zeros((a.shape[0], b.shape[0]))
     union = np.zeros((a.shape[0], b.shape[0]))
     for index, mask in enumerate(a):
-        intersection[index, :] = np.sum(np.count_nonzero(b == mask, axis=1), axis=1)
+        intersection[index, :] = np.sum(np.count_nonzero(np.logical_and(b, mask), axis=1), axis=1)
         union[index, :] = np.sum(np.count_nonzero(b + mask, axis=1), axis=1)
 
     return intersection / union
@@ -606,9 +606,11 @@ def _get_detections(generator,
 
         # run network
         results = model.predict_on_batch(np.expand_dims(image, axis=0))
-        boxes, scores, labels = results[0:3]
 
         if generator.panoptic:
+            boxes = results[-4]
+            scores = results[-3] 
+            labels = results[-2]
             semantic = results[-1]
             if generator.include_masks:
                 boxes = results[-5]

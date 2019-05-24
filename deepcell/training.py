@@ -502,6 +502,7 @@ def train_model_retinanet(model,
                           flip=True,
                           shear=0,
                           zoom_range=0,
+                          compute_map=True,
                           **kwargs):
     """Train a RetinaNet model from the given backbone
 
@@ -668,28 +669,29 @@ def train_model_retinanet(model,
     model.save_weights(model_path)
     np.savez(loss_path, loss_history=loss_history.history)
 
-    average_precisions = evaluate(
-        val_data,
-        prediction_model,
-        iou_threshold=iou_threshold,
-        score_threshold=score_threshold,
-        max_detections=max_detections,
-    )
+    if compute_map:
+        average_precisions = evaluate(
+            val_data,
+            prediction_model,
+            iou_threshold=iou_threshold,
+            score_threshold=score_threshold,
+            max_detections=max_detections,
+        )
 
-    # print evaluation
-    total_instances = []
-    precisions = []
-    for label, (average_precision, num_annotations) in average_precisions.items():
-        print('{:.0f} instances of class'.format(num_annotations),
-              label, 'with average precision: {:.4f}'.format(average_precision))
-        total_instances.append(num_annotations)
-        precisions.append(average_precision)
+        # print evaluation
+        total_instances = []
+        precisions = []
+        for label, (average_precision, num_annotations) in average_precisions.items():
+            print('{:.0f} instances of class'.format(num_annotations),
+                  label, 'with average precision: {:.4f}'.format(average_precision))
+            total_instances.append(num_annotations)
+            precisions.append(average_precision)
 
-    if sum(total_instances) == 0:
-        print('No test instances found.')
-    else:
-        print('mAP using the weighted average of precisions among classes: {:.4f}'.format(
-            sum([a * b for a, b in zip(total_instances, precisions)]) / sum(total_instances)))
-        print('mAP: {:.4f}'.format(sum(precisions) / sum(x > 0 for x in total_instances)))
+        if sum(total_instances) == 0:
+            print('No test instances found.')
+        else:
+            print('mAP using the weighted average of precisions among classes: {:.4f}'.format(
+                sum([a * b for a, b in zip(total_instances, precisions)]) / sum(total_instances)))
+            print('mAP: {:.4f}'.format(sum(precisions) / sum(x > 0 for x in total_instances)))
 
     return model
