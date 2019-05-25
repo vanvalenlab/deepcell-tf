@@ -623,6 +623,8 @@ def _get_detections(generator,
             scores = results[-3]
             labels = results[-2]
             masks = results[-1]
+        else:
+            boxes, scores, labels = results[0:3]
 
         # correct boxes for image scale
         # boxes = boxes / scale
