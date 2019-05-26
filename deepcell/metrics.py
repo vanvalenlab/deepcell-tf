@@ -174,8 +174,8 @@ class ObjectAccuracy(object):
                                  y_pred.shape, y_true.shape))
 
         # Relabel y_true and y_pred so the labels are consecutive
-        y_true,_,_ = relabel_sequential(y_true)
-        y_pred,_,_ = relabel_sequential(y_pred)
+        y_true, _, _ = relabel_sequential(y_true)
+        y_pred, _, _ = relabel_sequential(y_pred)
 
         self.y_true = y_true
         self.y_pred = y_pred
@@ -435,7 +435,8 @@ class ObjectAccuracy(object):
                     if 'pred' in node_type:
                         self.merge += 1
                         self.missed_det_from_merge += len(nodes) - 2
-                        merge_indices = [int(node.split('_')[-1]) for node in nodes if 'true' in node]
+                        merge_indices = [int(node.split('_')[-1])
+                                         for node in nodes if 'true' in node]
                         self.merge_indices['y_true'] += merge_indices
                     # Check for splits
                     elif 'true' in node_type:
@@ -464,7 +465,7 @@ class ObjectAccuracy(object):
 
             missed_label_image = np.zeros_like(self.y_true)
             for l in self.missed_indices['y_true']:
-                missed_label_image[self.y_true==l] = l
+                missed_label_image[self.y_true == l] = l
             self.missed_props = skimage.measure.regionprops(missed_label_image)
 
             merge_label_image = np.zeros_like(self.y_true)
@@ -511,14 +512,14 @@ class ObjectAccuracy(object):
 
         # Change appropriate columns to int dtype
         col = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'gained_detections',
-                   'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
-                   'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe']
+               'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
+               'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe']
         df[col] = df[col].astype('int')
 
         return df
 
 
-def to_precision(x,p):
+def to_precision(x, p):
     """
     returns a string representation of x formatted with a precision of p
 
@@ -529,7 +530,7 @@ def to_precision(x,p):
     x = float(x)
 
     if x == 0.:
-        return "0." + "0"*(p-1)
+        return "0." + "0" * (p - 1)
 
     out = []
 
@@ -539,17 +540,17 @@ def to_precision(x,p):
 
     e = int(math.log10(x))
     tens = math.pow(10, e - p + 1)
-    n = math.floor(x/tens)
+    n = math.floor(x / tens)
 
     if n < math.pow(10, p - 1):
-        e = e -1
-        tens = math.pow(10, e - p+1)
+        e = e - 1
+        tens = math.pow(10, e - p + 1)
         n = math.floor(x / tens)
 
-    if abs((n + 1.) * tens - x) <= abs(n * tens -x):
+    if abs((n + 1.) * tens - x) <= abs(n * tens - x):
         n = n + 1
 
-    if n >= math.pow(10,p):
+    if n >= math.pow(10, p):
         n = n / 10.
         e = e + 1
 
@@ -564,19 +565,20 @@ def to_precision(x,p):
         if e > 0:
             out.append("+")
         out.append(str(e))
-    elif e == (p -1):
+    elif e == (p - 1):
         out.append(m)
     elif e >= 0:
-        out.append(m[:e+1])
-        if e+1 < len(m):
+        out.append(m[:e + 1])
+        if e + 1 < len(m):
             out.append(".")
-            out.extend(m[e+1:])
+            out.extend(m[e + 1:])
     else:
         out.append("0.")
-        out.extend(["0"]*-(e+1))
+        out.extend(["0"] * -(e + 1))
         out.append(m)
 
     return "".join(out)
+
 
 class Metrics(object):
     """Class to calculate and save various classification metrics
@@ -803,16 +805,18 @@ class Metrics(object):
 
         print('\nCorrect detections:  {}\tRecall: {}%'.format(
             int(self.stats['correct_detections'].sum()),
-            to_precision(100 * self.stats['correct_detections'].sum() / self.stats['n_true'].sum(), self.ndigits)))
+            to_precision(100 * self.stats['correct_detections'].sum() / self.stats['n_true'].sum(),
+                         self.ndigits)))
         print('Incorrect detections: {}\tPrecision: {}%'.format(
-            int(self.stats['n_pred'].sum()-self.stats['correct_detections'].sum()),
-            to_precision(100 * self.stats['correct_detections'].sum() / self.stats['n_pred'].sum(), self.ndigits)))
+            int(self.stats['n_pred'].sum() - self.stats['correct_detections'].sum()),
+            to_precision(100 * self.stats['correct_detections'].sum() / self.stats['n_pred'].sum(),
+                         self.ndigits)))
 
         total_err = (self.stats['gained_detections'].sum()
-                        + self.stats['missed_detections'].sum()
-                        + self.stats['split'].sum()
-                        + self.stats['merge'].sum()
-                        + self.stats['catastrophe'].sum())
+                     + self.stats['missed_detections'].sum()
+                     + self.stats['split'].sum()
+                     + self.stats['merge'].sum()
+                     + self.stats['catastrophe'].sum())
 
         print('\nGained detections: {}\tPerc Error: {}%'.format(
               int(self.stats['gained_detections'].sum()),

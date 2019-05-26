@@ -446,16 +446,16 @@ class TestObjectAccuracy(test.TestCase):
         df = o.save_to_dataframe()
         self.assertIsInstance(df, pd.DataFrame)
 
-        columns = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'gained_detections',
+        columns = ['n_pred', 'n_true', 'correct_detections', 'missed_detections',
                    'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
-                   'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe']
+                   'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe', 'gained_detections']
         self.assertItemsEqual(columns, list(df.columns))
 
         # Check seg True case
         o = metrics.ObjectAccuracy(y_true, y_pred, seg=True)
         o.print_report()
         df = o.save_to_dataframe()
-        columns = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'gained_detections',
+        columns = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'seg',
                    'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
-                   'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe', 'seg']
+                   'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe', 'gained_detections']
         self.assertItemsEqual(columns, list(df.columns))
