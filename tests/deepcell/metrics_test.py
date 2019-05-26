@@ -335,8 +335,8 @@ class TestObjectAccuracy(test.TestCase):
         o = metrics.ObjectAccuracy(y_true, y_true, test=True)
 
         # Check that object numbers are integers
-        self.assertIsInstance(o.n_true, np.int64)
-        self.assertIsInstance(o.n_pred, np.int64)
+        self.assertIsInstance(o.n_true, int)
+        self.assertIsInstance(o.n_pred, int)
 
         self.assertEqual(o.empty_frame, False)
 
@@ -395,7 +395,11 @@ class TestObjectAccuracy(test.TestCase):
 
         o._linear_assignment()
 
-        for obj in ['results', 'cm_res', 'true_pos_ind', 'loners_pred', 'loners_true']:
+        cols = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'gained_detections',
+                'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
+                'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe']
+
+        for obj in cols:
             self.assertTrue(hasattr(o, obj))
 
         # Test condition where seg = True
@@ -404,8 +408,7 @@ class TestObjectAccuracy(test.TestCase):
         o._make_matrix()
         o._linear_assignment()
 
-        for obj in ['results', 'cm_res', 'true_pos_ind',
-                    'loners_pred', 'loners_true', 'seg_score']:
+        for obj in ['results', 'cm_res', 'seg_score']:
             self.assertTrue(hasattr(o, obj))
 
     def test_assign_loners(self):
@@ -443,15 +446,16 @@ class TestObjectAccuracy(test.TestCase):
         df = o.save_to_dataframe()
         self.assertIsInstance(df, pd.DataFrame)
 
-        columns = ['n_pred', 'n_true', 'true_pos',
-                   'false_pos', 'false_neg', 'merge', 'split']
+        columns = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'gained_detections',
+                   'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
+                   'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe']
         self.assertItemsEqual(columns, list(df.columns))
 
         # Check seg True case
         o = metrics.ObjectAccuracy(y_true, y_pred, seg=True)
         o.print_report()
         df = o.save_to_dataframe()
-        columns = ['n_pred', 'n_true', 'true_pos',
-                   'false_pos', 'false_neg', 'merge', 'split',
-                   'seg']
+        columns = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'gained_detections',
+                   'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
+                   'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe', 'seg']
         self.assertItemsEqual(columns, list(df.columns))
