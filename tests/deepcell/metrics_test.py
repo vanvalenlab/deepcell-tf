@@ -446,7 +446,7 @@ class TestObjectAccuracy(test.TestCase):
         df = o.save_to_dataframe()
         self.assertIsInstance(df, pd.DataFrame)
 
-        columns = ['n_pred', 'n_true', 'correct_detections', 'missed_detections',
+        columns = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'jaccard',
                    'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
                    'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe', 'gained_detections']
         self.assertItemsEqual(columns, list(df.columns))
@@ -455,7 +455,7 @@ class TestObjectAccuracy(test.TestCase):
         o = metrics.ObjectAccuracy(y_true, y_pred, seg=True)
         o.print_report()
         df = o.save_to_dataframe()
-        columns = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'seg',
+        columns = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'seg', 'jaccard',
                    'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
                    'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe', 'gained_detections']
         self.assertItemsEqual(columns, list(df.columns))

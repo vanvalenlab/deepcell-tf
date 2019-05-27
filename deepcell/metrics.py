@@ -508,6 +508,10 @@ class ObjectAccuracy(object):
         if self.seg is True:
             D['seg'] = self.seg_score
 
+        # Calculate jaccard index for pixel classification
+        pixel_stats = stats_pixelbased(self.y_true != 0, self.y_pred != 0)
+        D['jaccard'] = pixel_stats['jaccard']
+
         df = pd.DataFrame(D, index=[0], dtype='float64')
 
         # Change appropriate columns to int dtype
@@ -773,7 +777,7 @@ class Metrics(object):
                                cutoff2=self.cutoff2,
                                seg=self.seg)
             self.stats = self.stats.append(o.save_to_dataframe())
-            if i % 200 == 0:
+            if i % 500 == 0:
                 logging.info('{} samples processed'.format(i))
 
         # Write out summed statistics
@@ -841,10 +845,13 @@ class Metrics(object):
         print('True detections involved in catastrophes: {}'.format(
               int(self.stats['true_det_in_catastrophe'].sum())))
         print('Predicted detections involved in catastrophes: {}'.format(
-              int(self.stats['pred_det_in_catastrophe'].sum())))
+              int(self.stats['pred_det_in_catastrophe'].sum())), '\n')
 
         if self.seg is True:
-            print('\nSEG:', to_precision(self.stats['seg'].mean(), self.ndigits), '\n')
+            print('SEG:', to_precision(self.stats['seg'].mean(), self.ndigits), '\n')
+
+        print('Average Pixel IOU (Jaccard Index):',
+              to_precision(self.stats['jaccard'].mean(), self.ndigits), '\n')
 
     def run_all(self,
                 y_true_lbl,
