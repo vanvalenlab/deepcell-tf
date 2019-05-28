@@ -175,6 +175,51 @@ def _sample3(w, h, imw, imh):
     return true.astype('int'), pred.astype('int')
 
 
+def _sample4_loner(w, h, imw, imh, pred):
+
+    x = np.random.randint(0, imw - w * 2)
+    y = np.random.randint(0, imh - h * 2)
+
+    im = np.zeros((imw, imh))
+    im[0:2, 0:2] = 1
+    im[x:x + w, y:y + h] = 2
+
+    if pred:
+        # Return loner in pred
+        true = im.copy()
+        true[true == 2] = 0
+        return true.astype('int'), im.astype('int')
+    else:
+        # Return loner in true
+        pred = im.copy()
+        pred[pred == 2] = 0
+        return im.astype('int'), pred.astype('int')
+
+
+def _sample_catastrophe(w, h, imw, imh):
+
+    x1 = np.random.randint(0, imw - w * 2)
+    y1 = np.random.randint(0, imh - h * 2)
+
+    x2 = x1 + int(0.4 * w)
+    x3 = x1 + int(0.6 * w)
+    x4 = x1 + w
+    y2 = y1 + int(0.1 * h)
+    y3 = y1 + int(0.9 * h)
+    y4 = y1 + h
+
+    true = np.zeros((imw, imh))
+    true[x1:x2, y1:y4] = 1
+    true[x3:x4, y1:y4] = 2
+    true[x1+int(0.2*w):x3+int(0.2*w), y2:y3] = 3
+
+    pred = np.zeros((imw, imh))
+    pred[x1:x1+int(w/2), y1:y4] = 1
+    pred[x1+int(w/2):x4, y1:y4] = 2
+
+    return true.astype('int'), pred.astype('int')
+
+
 class MetricFunctionsTest(test.TestCase):
 
     def test_pixelstats_output(self):
@@ -435,6 +480,20 @@ class TestObjectAccuracy(test.TestCase):
     def test_classify_graph(self):
         y_true, y_pred = _sample1(10, 10, 30, 30, True)
         # Test that complete run through is succesful
+        _ = metrics.ObjectAccuracy(y_true, y_pred)
+
+        # Test for 0 degree graph
+        y_true, y_pred = _sample4_loner(10, 10, 30, 30, True)
+        _ = metrics.ObjectAccuracy(y_true, y_pred)
+        y_true, y_pred = _sample4_loner(10, 10, 30, 30, False)
+        _ = metrics.ObjectAccuracy(y_true, y_pred)
+
+        # Test for splits in 1 degree graph
+        y_true, y_pred = _sample1(10, 10, 30, 30, False)
+        _ = metrics.ObjectAccuracy(y_true, y_pred)
+
+        # Test for catastrophic errors
+        y_true, y_pred = _sample_catastrophe(10, 10, 30, 30)
         _ = metrics.ObjectAccuracy(y_true, y_pred)
 
     def test_optional_outputs(self):
