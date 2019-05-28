@@ -211,11 +211,11 @@ def _sample_catastrophe(w, h, imw, imh):
     true = np.zeros((imw, imh))
     true[x1:x2, y1:y4] = 1
     true[x3:x4, y1:y4] = 2
-    true[x1+int(0.2*w):x3+int(0.2*w), y2:y3] = 3
+    true[x1 + int(0.2 * w):x3 + int(0.2 * w), y2:y3] = 3
 
     pred = np.zeros((imw, imh))
-    pred[x1:x1+int(w/2), y1:y4] = 1
-    pred[x1+int(w/2):x4, y1:y4] = 2
+    pred[x1:x1 + int(w / 2), y1:y4] = 1
+    pred[x1 + int(w / 2):x4, y1:y4] = 2
 
     return true.astype('int'), pred.astype('int')
 
