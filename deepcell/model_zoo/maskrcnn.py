@@ -162,6 +162,7 @@ def retinanet_mask(inputs,
                    mask_size=(28, 28),
                    name='retinanet-mask',
                    roi_submodels=None,
+                   max_detections=100,
                    mask_dtype=K.floatx(),
                    **kwargs):
     """Construct a RetinaNet mask model on top of a retinanet bbox model.
@@ -240,7 +241,7 @@ def retinanet_mask(inputs,
     detections = FilterDetections(
         nms=nms,
         class_specific_filter=class_specific_filter,
-        max_detections=100,
+        max_detections=max_detections,
         name='filtered_detections'
     )([boxes, classification] + other)
 

@@ -156,7 +156,10 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
 
         # Don't add for the bottom of the pyramid
         if i == 0:
-            upsamplelike_input = backbone_features[i + 1]
+            if len(backbone_features) > 1:
+                upsamplelike_input = backbone_features[i + 1]
+            else:
+                upsamplelike_input = None
             addition_input = None
 
         # Don't upsample for the top of the pyramid
@@ -325,17 +328,6 @@ def semantic_prediction(semantic_names,
     min_level = int(re.findall(r'\d+', semantic_names[-1])[0])
     n_upsample = min_level - target_level
     x = semantic_upsample(semantic_sum, n_upsample, target=input_target)
-
-    # Reshape to match input size
-    if ndim == 2:
-        x = Reshape(target_shape=(input_target.shape[1].value,
-                                  input_target.shape[2].value,
-                                  x.shape[-1]))(x)
-    else:
-        x = Reshape(target_shape=(input_target.shape[1].value,
-                                  input_target.shape[2].value,
-                                  input_target.shape[3].value,
-                                  x.shape[-1]))(x)
 
     # First tensor product
     x = TensorProduct(n_dense)(x)
