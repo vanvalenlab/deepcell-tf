@@ -145,7 +145,6 @@ def deepcell_transform(mask, dilation_radius=None, data_format=None):
     background_edges = (edges - dilated_background > 0).astype('int')
     # edges that are not background-edges are interior-edges
     interior_edges = (edges - background_edges > 0).astype('int')
-    print("There are {} interior edges and {} background edges".format(np.sum(interior_edges), np.sum(background_edges)))
     if dilation_radius:
         dil_strel = ball(dilation_radius) if mask.ndim > 3 else disk(dilation_radius)
         # Thicken cell edges to be more pronounced

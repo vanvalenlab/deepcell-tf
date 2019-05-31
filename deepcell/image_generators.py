@@ -282,23 +282,31 @@ class ImageSampleArrayIterator(Iterator):
 
         if max_class_samples is not None:
             max_class_samples = int(max_class_samples // len(unique_b))
-
+        
+        print("the max_class_samples per image is {}".format(max_class_samples))
+        
         for b in unique_b:
+            print("analyzing image {}".format(b))
             batch_y = self.y[self.batch == b]
             unique, counts = np.unique(batch_y, return_counts=True)
             min_index = np.argmin(counts)
             n_samples = counts[min_index]
-
+            
+            print("the least represented class has {} examples".format(n_samples))
             if max_class_samples is not None and max_class_samples < n_samples:
+                print("max_class_samples is less than the smalleset class, downsampling all classes")
                 n_samples = max_class_samples
 
             for class_label in unique:
                 non_rand_ind = ((self.batch == b) & (self.y == class_label)).nonzero()[0]
-
+                
+                print("analyzing class {}".format(class_label))
                 if downsample:
                     size = n_samples
+                    print("downsampling from {} examples per class".format(len(non_rand_ind)))
                 elif max_class_samples:
                     size = min(max_class_samples, len(non_rand_ind))
+                    print("thresholding from {} to max_class_samples".format(len(non_rand_ind)))
                 else:
                     size = len(non_rand_ind)
 
