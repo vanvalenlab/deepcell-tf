@@ -608,16 +608,17 @@ def _get_detections(generator,
         results = model.predict_on_batch(np.expand_dims(image, axis=0))
 
         if generator.panoptic:
-            boxes = results[-4]
-            scores = results[-3] 
-            labels = results[-2]
-            semantic = results[-1]
+            num_semantic_outputs = len(generator.y_semantic_list)
+            boxes = results[-num_semantic_outputs-3]
+            scores = results[-num_semantic_outputs-2] 
+            labels = results[-num_semantic_outputs-1]
+            semantic = results[-num_semantic_outputs:]
             if generator.include_masks:
-                boxes = results[-5]
-                scores = results[-4]
-                labels = results[-3]
-                masks = results[-2]
-                semantic = results[-1]
+                boxes = results[-num_semantic_outputs-4]
+                scores = results[-num_semantic_outputs-3]
+                labels = results[-num_semantic_outputs-2]
+                masks = results[-num_semantic_outputs-1]
+                semantic = results[-num_semantic_outputs]
         elif generator.include_masks:
             boxes = results[-4]
             scores = results[-3]

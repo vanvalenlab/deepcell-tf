@@ -2428,7 +2428,9 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
              clear_borders=False,
              include_masks=False,
              panoptic=False,
-             transform='watershed',
+             include_mask_transforms=True,
+             transforms=['watershed'],
+             transforms_kwargs_dict = {},
              anchor_params=None,
              pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
              batch_size=32,
@@ -2469,7 +2471,9 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             clear_borders=clear_borders,
             include_masks=include_masks,
             panoptic=panoptic,
-            transform=transform,
+            include_mask_transforms=include_mask_transforms,
+            transforms=transforms,
+            transforms_kwargs_dict=transforms_kwargs_dict,
             anchor_params=anchor_params,
             pyramid_levels=pyramid_levels,
             batch_size=batch_size,
@@ -2522,7 +2526,7 @@ class RetinaNetIterator(Iterator):
                  panoptic=False,
                  include_mask_transforms=True,
                  transforms=['watershed'],
-                 transform_kwargs_dict = {},
+                 transforms_kwargs_dict = {},
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -2555,7 +2559,7 @@ class RetinaNetIterator(Iterator):
         self.panoptic = panoptic
         self.include_mask_transforms = include_mask_transforms
         self.transforms = transforms
-        self.transform_kwargs_dict = transform_kwargs_dict
+        self.transforms_kwargs_dict = transforms_kwargs_dict
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
         self.data_format = data_format
@@ -2577,12 +2581,12 @@ class RetinaNetIterator(Iterator):
             if include_mask_transforms:
                 # Check whether transform_kwargs_dict has an entry
                 for transform in transforms:
-                    if transform not in transform_kwargs_dict.keys():
-                        transform_kwargs_dict[transform] = {}
+                    if transform not in transforms_kwargs_dict.keys():
+                        transforms_kwargs_dict[transform] = {}
 
                 # Add transformed masks
                 for transform in transforms:
-                    transform_kwargs = transform_kwargs_dict[transform]
+                    transform_kwargs = transforms_kwargs_dict[transform]
                     y_transform = _transform_masks(y, transform,
                                                     data_format=data_format,
                                                     **transform_kwargs)
@@ -2702,7 +2706,7 @@ class RetinaNetIterator(Iterator):
 
             # Apply transformation
             if self.panoptic:
-                x, y_list = self.image_data_generator.random_transform(x, [y] + y_semantic_list])
+                x, y_list = self.image_data_generator.random_transform(x, [y] + y_semantic_list)
                 y = y_list[0]
                 y_semantic_list = y_list[1:]
             else:

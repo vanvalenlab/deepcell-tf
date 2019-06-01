@@ -293,7 +293,8 @@ def semantic_prediction(semantic_names,
                         n_filters=64,
                         n_dense=64,
                         ndim=2,
-                        n_classes=3):
+                        n_classes=3,
+                        semantic_id=0):
     """
     Creates the prediction head from a list of semantic features
     Args:
@@ -304,8 +305,10 @@ def semantic_prediction(semantic_names,
         target_level (int, optional): Defaults to 0. The level we need to reach.
             Performs 2x upsampling until we're at the target level
         input_target (tensor, optional): Defaults to None. Tensor with the input image.
-        n_dense (int, optional): Defaults to 256. The number of filters for dense layers
-        n_classes (int, optional): Defaults to 3.  The number of classes to be predicted
+        n_dense (int, optional): Defaults to 256. The number of filters for dense layers.
+        n_classes (int, optional): Defaults to 3.  The number of classes to be predicted.
+        semantic_id (int): Defaults to 0. An number to name the final layer. Allows for multiple
+            semantic heads.
     Returns:
         The softmax prediction for the semantic segmentation head
     """
@@ -336,7 +339,7 @@ def semantic_prediction(semantic_names,
 
     # Apply tensor product and softmax layer
     x = TensorProduct(n_classes)(x)
-    x = Softmax(axis=channel_axis, name='semantic')(x)
+    x = Softmax(axis=channel_axis, name='semantic_' + str(semantic_id))(x)
 
     return x
 
@@ -345,7 +348,8 @@ def __create_semantic_head(pyramid_dict,
                            input_target=None,
                            target_level=2,
                            n_classes=3,
-                           n_filters=128):
+                           n_filters=128,
+                           semantic_id=0):
     """
     Creates a semantic head from a feature pyramid network
     Args:
@@ -388,7 +392,8 @@ def __create_semantic_head(pyramid_dict,
 
     # Combine all of the semantic features
     x = semantic_prediction(semantic_names, semantic_features,
-                            n_classes=n_classes, input_target=input_target)
+                            n_classes=n_classes, input_target=input_target,
+                            semantic_id=semantic_id)
 
     return x
 

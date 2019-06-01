@@ -222,10 +222,12 @@ def retinanet_mask(inputs,
     classification = retinanet_model.outputs[1]
 
     if panoptic:
-        # The last output is the panoptic output, which should not be
-        # sent to filter detections
-        other = retinanet_model.outputs[2:-1]
-        semantic = retinanet_model.outputs[-1]
+        # Determine the number of semantic heads
+        n_semantic_heads = len([1 for layer in retinanet_model.layers if 'semantic' in layer.name])
+
+        # The  panoptic output should not be sent to filter detections
+        other = retinanet_model.outputs[2:-n_semantic_heads]
+        semantic = retinanet_model.outputs[-n_semantic_heads:]
     else:
         other = retinanet_model.outputs[2:]
 
@@ -266,7 +268,7 @@ def retinanet_mask(inputs,
         detections + maskrcnn_outputs
 
     if panoptic:
-        outputs += [semantic]
+        outputs += list(semantic)
 
 
     model = Model(inputs=inputs, outputs=outputs, name=name)
