@@ -420,7 +420,7 @@ def retinanet_bbox(model=None,
 
     # add the semantic head's output if needed
     if panoptic:
-        outputs = detections + [semantic]
+        outputs = detections + list(semantic)
     else:
         outputs = detections
 
