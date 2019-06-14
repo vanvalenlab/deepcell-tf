@@ -617,10 +617,7 @@ def train_model_retinanet(model,
         horizontal_flip=0,
         vertical_flip=0)
 
-    if 'vgg' in backbone or 'densenet' in backbone:
-        compute_shapes = make_shapes_callback(model)
-    else:
-        compute_shapes = guess_shapes
+    compute_shapes = guess_shapes
 
     train_data = datagen.flow(
         train_dict,

@@ -149,13 +149,13 @@ class Evaluate(Callback):
         else:
             mean_ap = sum(precisions) / sum(x > 0 for x in instances)
 
-        if self.tensorboard is not None and self.tensorboard.writer is not None:
-            import tensorflow as tf
-            summary = tf.Summary()
-            summary_value = summary.value.add()
-            summary_value.simple_value = mean_ap
-            summary_value.tag = 'mAP'
-            self.tensorboard.writer.add_summary(summary, epoch)
+        # if self.tensorboard is not None and self.tensorboard.writer is not None:
+        #     import tensorflow as tf
+        #     summary = tf.Summary()
+        #     summary_value = summary.value.add()
+        #     summary_value.simple_value = mean_ap
+        #     summary_value.tag = 'mAP'
+        #     self.tensorboard.writer.add_summary(summary, epoch)
 
         logs['mAP'] = mean_ap
 
