@@ -256,7 +256,7 @@ def retinanet(inputs,
               pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
               num_anchors=None,
               create_pyramid_features=__create_pyramid_features,
-              create_symantic_head=__create_semantic_head,
+              create_semantic_head=__create_semantic_head,
               panoptic=False,
               num_semantic_heads=1,
               num_semantic_classes_list = [3],
@@ -321,7 +321,7 @@ def retinanet(inputs,
 
         semantic_head_list = []
         for i in range(num_semantic_heads):
-            semantic_head_list.append(__create_semantic_head(
+            semantic_head_list.append(create_semantic_head(
                 pyramid_dict, n_classes=num_semantic_classes_list[i],
                 input_target=inputs, target_level=target_level,
                 semantic_id=i))
