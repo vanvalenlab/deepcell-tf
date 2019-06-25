@@ -259,7 +259,7 @@ def retinanet(inputs,
               create_semantic_head=__create_semantic_head,
               panoptic=False,
               num_semantic_heads=1,
-              num_semantic_classes_list=[3],
+              num_semantic_classes=[3],
               submodels=None,
               name='retinanet'):
     """Construct a RetinaNet model on top of a backbone.
@@ -304,6 +304,9 @@ def retinanet(inputs,
     if submodels is None:
         submodels = default_submodels(num_classes, num_anchors)
 
+    if not isinstance(num_semantic_classes, list):
+        num_semantic_classes = list(num_semantic_classes)
+
     # compute pyramid features as per https://arxiv.org/abs/1708.02002
 
     # Use only the desired backbone levels to create the feature pyramid
@@ -322,7 +325,7 @@ def retinanet(inputs,
         semantic_head_list = []
         for i in range(num_semantic_heads):
             semantic_head_list.append(create_semantic_head(
-                pyramid_dict, n_classes=num_semantic_classes_list[i],
+                pyramid_dict, n_classes=num_semantic_classes[i],
                 input_target=inputs, target_level=target_level,
                 semantic_id=i))
 
