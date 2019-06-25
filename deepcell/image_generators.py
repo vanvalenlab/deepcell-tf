@@ -111,7 +111,9 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
     if transform == 'deepcell':
         dilation_radius = kwargs.pop('dilation_radius', None)
-        y_transform = deepcell_transform(y, dilation_radius, data_format=data_format)
+        separate_edge_classes = kwargs.pop('separate_edge_classes', False)
+        y_transform = deepcell_transform(y, dilation_radius, data_format=data_format,
+                                         separate_edge_classes=separate_edge_classes)
 
     elif transform == 'watershed':
         distance_bins = kwargs.pop('distance_bins', 4)
