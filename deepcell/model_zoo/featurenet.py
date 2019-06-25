@@ -68,6 +68,7 @@ def bn_feature_net_2D(receptive_field=61,
                       padding_mode='reflect',
                       multires=False,
                       include_top=True):
+
     # Create layers list (x) to store all of the layers.
     # We need to use the functional API to enable the multiresolution mode
     x = []
@@ -92,14 +93,14 @@ def bn_feature_net_2D(receptive_field=61,
         if not dilated:
             input_shape = (receptive_field, receptive_field, n_channels)
 
-            if inputs is not None:
-                if not K.is_keras_tensor(inputs):
-                    img_input = Input(tensor=inputs, shape=input_shape)
-                else:
-                    img_input = inputs
-                x.append(img_input)
-            else:
-                x.append(Input(shape=input_shape))
+    if inputs is not None:
+        if not K.is_keras_tensor(inputs):
+            img_input = Input(tensor=inputs, shape=input_shape)
+        else:
+            img_input = inputs
+        x.append(img_input)
+    else:
+        x.append(Input(shape=input_shape))
 
     x.append(ImageNormalization2D(norm_method=norm_method, filter_size=receptive_field)(x[-1]))
 
@@ -183,7 +184,7 @@ def bn_feature_net_2D(receptive_field=61,
         if not dilated:
             x.append(Flatten()(x[-1]))
 
-        x.append(Softmax(axis=channel_axis)(x[-1]))
+        x.append((x[-1]))  # TODO
 
     if inputs is not None:
         real_inputs = keras_utils.get_source_inputs(x[0])

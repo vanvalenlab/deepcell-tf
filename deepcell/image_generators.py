@@ -2571,7 +2571,7 @@ class RetinaNetIterator(Iterator):
 
         # Add semantic segmentation targets if panoptic segmentation
         # flag is True
-        if self.panoptic:
+        if panoptic:
             # Create a list of all the semantic targets. We need to be able
             # to have multiple semantic heads
             y_semantic_list = []
