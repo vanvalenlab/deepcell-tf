@@ -565,6 +565,7 @@ def train_model_retinanet(model,
             model,
             nms=True,
             anchor_params=anchor_params,
+            num_semantic_heads=len(n_semantic_classes),
             panoptic=panoptic,
             class_specific_filter=False)
 
