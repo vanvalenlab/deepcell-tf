@@ -78,7 +78,7 @@ from deepcell.utils.retinanet_anchor_utils import guess_shapes
 def _transform_masks(y, transform, data_format=None, **kwargs):
     """Based on the transform key, apply a transform function to the masks.
 
-    More detailed description. Caution for unknown transorm keys.
+    More detailed description. Caution for unknown transform keys.
 
     Args:
         y: `labels` of ndim 4 or 5
@@ -2430,7 +2430,9 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
              clear_borders=False,
              include_masks=False,
              panoptic=False,
-             transform='watershed',
+             include_mask_transforms=True,
+             transforms=['watershed'],
+             transforms_kwargs={},
              anchor_params=None,
              pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
              batch_size=32,
@@ -2471,7 +2473,9 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             clear_borders=clear_borders,
             include_masks=include_masks,
             panoptic=panoptic,
-            transform=transform,
+            include_mask_transforms=include_mask_transforms,
+            transforms=transforms,
+            transforms_kwargs=transforms_kwargs,
             anchor_params=anchor_params,
             pyramid_levels=pyramid_levels,
             batch_size=batch_size,
@@ -2522,8 +2526,9 @@ class RetinaNetIterator(Iterator):
                  clear_borders=False,
                  include_masks=False,
                  panoptic=False,
-                 transform='watershed',
-                 transform_kwargs={},
+                 include_mask_transforms=True,
+                 transforms=['watershed'],
+                 transforms_kwargs={},
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -2554,6 +2559,9 @@ class RetinaNetIterator(Iterator):
         self.num_classes = num_classes
         self.include_masks = include_masks
         self.panoptic = panoptic
+        self.include_mask_transforms = include_mask_transforms
+        self.transforms = transforms
+        self.transforms_kwargs = transforms_kwargs
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
         self.data_format = data_format
@@ -2563,18 +2571,31 @@ class RetinaNetIterator(Iterator):
 
         # Add semantic segmentation targets if panoptic segmentation
         # flag is True
-        if panoptic:
-            if 'y_semantic' in train_dict:
-                y_semantic = train_dict['y_semantic']
-            else:
-                y_semantic = _transform_masks(y, transform,
-                                              data_format=data_format,
-                                              **transform_kwargs)
+        if self.panoptic:
+            # Create a list of all the semantic targets. We need to be able
+            # to have multiple semantic heads
+            y_semantic_list = []
+            # Add all the keys that contain y_semantic
+            for key in train_dict.keys():
+                if 'y_semantic' in key:
+                    y_semantic_list.append(train_dict['y_semantic'])
 
-                # inner_most = [label(y_semantic[i, ..., -1]) for i in range(y_semantic.shape[0])]
-                # self.y = np.expand_dims(np.stack(inner_most, axis=0), axis=-1)
+            if include_mask_transforms:
+                # Check whether transform_kwargs_dict has an entry
+                for transform in transforms:
+                    if transform not in transforms_kwargs_dict.keys():
+                        transforms_kwargs_dict[transform] = {}
 
-            self.y_semantic = np.asarray(y_semantic, dtype='int32')
+                # Add transformed masks
+                for transform in transforms:
+                    transform_kwargs = transforms_kwargs_dict[transform]
+                    y_transform = _transform_masks(y, transform,
+                                                   data_format=data_format,
+                                                   **transform_kwargs)
+                    y_semantic_list.append(y_transform)
+
+            self.y_semantic_list = [np.asarray(y_semantic, dtype='int32')
+                                    for y_semantic in y_semantic_list]
 
         invalid_batches = []
         # Remove images with small numbers of cells
@@ -2597,8 +2618,10 @@ class RetinaNetIterator(Iterator):
 
         self.y = np.delete(self.y, invalid_batches, axis=0)
         self.x = np.delete(self.x, invalid_batches, axis=0)
+
         if self.panoptic:
-            self.y_semantic = np.delete(self.y_semantic, invalid_batches, axis=0)
+            self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
+                                    for y in self.y_semantic_list]
 
         super(RetinaNetIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
@@ -2667,8 +2690,8 @@ class RetinaNetIterator(Iterator):
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
         if self.panoptic:
-            batch_y_semantic = np.zeros(tuple(
-                [len(index_array)] + list(self.y_semantic.shape[1:])))
+            batch_y_semantic_list = [np.zeros(tuple([len(index_array)] + list(ys.shape[1:])))
+                                     for ys in self.y_semantic_list]
 
         annotations_list = []
 
@@ -2679,13 +2702,13 @@ class RetinaNetIterator(Iterator):
             y = self.y[j]
 
             if self.panoptic:
-                y_semantic = self.y_semantic[j]
+                y_semantic_list = [y_semantic[j] for y_semantic in self.y_semantic_list]
 
             # Apply transformation
             if self.panoptic:
-                x, y_list = self.image_data_generator.random_transform(x, [y, y_semantic])
+                x, y_list = self.image_data_generator.random_transform(x, [y] + y_semantic_list)
                 y = y_list[0]
-                y_semantic = y_list[1]
+                y_semantic_list = y_list[1:]
             else:
                 x, y = self.image_data_generator.random_transform(x, y)
 
@@ -2706,7 +2729,8 @@ class RetinaNetIterator(Iterator):
             batch_x[i] = x
 
             if self.panoptic:
-                batch_y_semantic[i] = y_semantic
+                for k in range(len(y_semantic_list)):
+                    batch_y_semantic_list[k][i] = y_semantic_list[k]
 
         anchors = anchors_for_shape(
             batch_x.shape[1:],
@@ -2759,7 +2783,7 @@ class RetinaNetIterator(Iterator):
         if self.include_masks:
             batch_outputs.append(masks_batch)
         if self.panoptic:
-            batch_outputs.append(batch_y_semantic)
+            batch_outputs.extend(batch_y_semantic_list)
 
         return batch_x, batch_outputs
 
