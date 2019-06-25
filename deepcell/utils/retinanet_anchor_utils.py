@@ -609,7 +609,7 @@ def _get_detections(generator,
 
         if generator.panoptic:
             boxes = results[-4]
-            scores = results[-3] 
+            scores = results[-3]
             labels = results[-2]
             semantic = results[-1]
             if generator.include_masks:

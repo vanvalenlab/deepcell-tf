@@ -230,11 +230,11 @@ def __build_anchors(anchor_parameters, features):
 
     if len(features) == 1:
         anchors = Anchors(
-                size=anchor_parameters.sizes[0],
-                stride=anchor_parameters.strides[0],
-                ratios=anchor_parameters.ratios,
-                scales=anchor_parameters.scales,
-                name='anchors')(features[0]) 
+            size=anchor_parameters.sizes[0],
+            stride=anchor_parameters.strides[0],
+            ratios=anchor_parameters.ratios,
+            scales=anchor_parameters.scales,
+            name='anchors')(features[0])
         return anchors
     else:
         anchors = [
@@ -461,7 +461,7 @@ def RetinaNet(backbone,
     """
     if inputs is None:
         inputs = Input(shape=input_shape)
-        
+
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     if location:
         location = Location2D(in_shape=input_shape)(inputs)

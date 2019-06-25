@@ -2569,13 +2569,10 @@ class RetinaNetIterator(Iterator):
                                               data_format=data_format,
                                               **transform_kwargs)
 
-                # inner_most = [label(y_semantic[i,:,:,-1]) for i in range(y_semantic.shape[0])]
-
+                # inner_most = [label(y_semantic[i, ..., -1]) for i in range(y_semantic.shape[0])]
                 # self.y = np.expand_dims(np.stack(inner_most, axis=0), axis=-1)
 
             self.y_semantic = np.asarray(y_semantic, dtype='int32')
-
-            print(self.y.shape, self.y_semantic.shape)
 
         invalid_batches = []
         # Remove images with small numbers of cells

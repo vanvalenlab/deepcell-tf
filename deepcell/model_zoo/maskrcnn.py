@@ -267,7 +267,6 @@ def retinanet_mask(inputs,
     if panoptic:
         outputs += [semantic]
 
-
     model = Model(inputs=inputs, outputs=outputs, name=name)
     model.backbone_levels = backbone_levels
     model.pyramid_levels = pyramid_levels

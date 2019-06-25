@@ -122,7 +122,7 @@ class Evaluate(Callback):
         logs = logs or {}
 
         E = evaluate
-        #E = evaluate_mask if self.generator.include_masks else evaluate
+        # E = evaluate_mask if self.generator.include_masks else evaluate
 
         # run evaluation
         avg_precisions = E(
