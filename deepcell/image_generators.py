@@ -2583,12 +2583,12 @@ class RetinaNetIterator(Iterator):
             if include_mask_transforms:
                 # Check whether transform_kwargs_dict has an entry
                 for transform in transforms:
-                    if transform not in transforms_kwargs_dict.keys():
-                        transforms_kwargs_dict[transform] = {}
+                    if transform not in transforms_kwargs.keys():
+                        transforms_kwargs[transform] = {}
 
                 # Add transformed masks
                 for transform in transforms:
-                    transform_kwargs = transforms_kwargs_dict[transform]
+                    transform_kwargs = transforms_kwargs[transform]
                     y_transform = _transform_masks(y, transform,
                                                    data_format=data_format,
                                                    **transform_kwargs)
