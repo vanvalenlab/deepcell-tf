@@ -54,11 +54,29 @@ def _generate_test_masks():
 
 class TransformUtilsTest(test.TestCase):
     def test_deepcell_transform_2d(self):
+        # test single edge class
         maskstack = np.array([label(i) for i in _generate_test_masks()])
         dc_maskstack = transform_utils.deepcell_transform(
-            maskstack, data_format=None)
+            maskstack, data_format=None, separate_edge_classes=False)
         dc_maskstack_dil = transform_utils.deepcell_transform(
-            maskstack, dilation_radius=1, data_format='channels_last')
+            maskstack, dilation_radius=1,
+            data_format='channels_last',
+            separate_edge_classes=False)
+
+        self.assertEqual(dc_maskstack.shape[-1], 3)
+        self.assertEqual(dc_maskstack_dil.shape[-1], 3)
+        self.assertGreater(
+            dc_maskstack_dil[..., 0].sum() + dc_maskstack_dil[..., 1].sum(),
+            dc_maskstack[..., 0].sum() + dc_maskstack[..., 1].sum())
+
+        # test separate edge classes
+        maskstack = np.array([label(i) for i in _generate_test_masks()])
+        dc_maskstack = transform_utils.deepcell_transform(
+            maskstack, data_format=None, separate_edge_classes=True)
+        dc_maskstack_dil = transform_utils.deepcell_transform(
+            maskstack, dilation_radius=1,
+            data_format='channels_last',
+            separate_edge_classes=True)
 
         self.assertEqual(dc_maskstack.shape[-1], 4)
         self.assertEqual(dc_maskstack_dil.shape[-1], 4)
@@ -76,14 +94,34 @@ class TransformUtilsTest(test.TestCase):
             img_stack = np.array(frame_list)
             img_list.append(img_stack)
 
+        # test single edge class
         maskstack = np.vstack(img_list)
         batch_count = maskstack.shape[0] // frames
         new_shape = (batch_count, frames, *maskstack.shape[1:])
         maskstack = np.reshape(maskstack, new_shape)
         dc_maskstack = transform_utils.deepcell_transform(
-            maskstack, data_format=None)
+            maskstack, data_format=None, separate_edge_classes=False)
         dc_maskstack_dil = transform_utils.deepcell_transform(
-            maskstack, dilation_radius=2, data_format='channels_last')
+            maskstack, dilation_radius=2,
+            data_format='channels_last',
+            separate_edge_classes=False)
+        self.assertEqual(dc_maskstack.shape[-1], 3)
+        self.assertEqual(dc_maskstack_dil.shape[-1], 3)
+        self.assertGreater(
+            dc_maskstack_dil[..., 0].sum() + dc_maskstack_dil[..., 1].sum(),
+            dc_maskstack[..., 0].sum() + dc_maskstack[..., 1].sum())
+
+        # test separate edge classes
+        maskstack = np.vstack(img_list)
+        batch_count = maskstack.shape[0] // frames
+        new_shape = (batch_count, frames, *maskstack.shape[1:])
+        maskstack = np.reshape(maskstack, new_shape)
+        dc_maskstack = transform_utils.deepcell_transform(
+            maskstack, data_format=None, separate_edge_classes=True)
+        dc_maskstack_dil = transform_utils.deepcell_transform(
+            maskstack, dilation_radius=2,
+            data_format='channels_last',
+            separate_edge_classes=True)
         self.assertEqual(dc_maskstack.shape[-1], 4)
         self.assertEqual(dc_maskstack_dil.shape[-1], 4)
         self.assertGreater(

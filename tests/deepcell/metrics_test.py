@@ -175,6 +175,51 @@ def _sample3(w, h, imw, imh):
     return true.astype('int'), pred.astype('int')
 
 
+def _sample4_loner(w, h, imw, imh, pred):
+
+    x = np.random.randint(0, imw - w * 2)
+    y = np.random.randint(0, imh - h * 2)
+
+    im = np.zeros((imw, imh))
+    im[0:2, 0:2] = 1
+    im[x:x + w, y:y + h] = 2
+
+    if pred:
+        # Return loner in pred
+        true = im.copy()
+        true[true == 2] = 0
+        return true.astype('int'), im.astype('int')
+    else:
+        # Return loner in true
+        pred = im.copy()
+        pred[pred == 2] = 0
+        return im.astype('int'), pred.astype('int')
+
+
+def _sample_catastrophe(w, h, imw, imh):
+
+    x1 = np.random.randint(0, imw - w * 2)
+    y1 = np.random.randint(0, imh - h * 2)
+
+    x2 = x1 + int(0.4 * w)
+    x3 = x1 + int(0.6 * w)
+    x4 = x1 + w
+    y2 = y1 + int(0.1 * h)
+    y3 = y1 + int(0.9 * h)
+    y4 = y1 + h
+
+    true = np.zeros((imw, imh))
+    true[x1:x2, y1:y4] = 1
+    true[x3:x4, y1:y4] = 2
+    true[x1 + int(0.2 * w):x3 + int(0.2 * w), y2:y3] = 3
+
+    pred = np.zeros((imw, imh))
+    pred[x1:x1 + int(w / 2), y1:y4] = 1
+    pred[x1 + int(w / 2):x4, y1:y4] = 2
+
+    return true.astype('int'), pred.astype('int')
+
+
 class MetricFunctionsTest(test.TestCase):
 
     def test_pixelstats_output(self):
@@ -335,8 +380,8 @@ class TestObjectAccuracy(test.TestCase):
         o = metrics.ObjectAccuracy(y_true, y_true, test=True)
 
         # Check that object numbers are integers
-        self.assertIsInstance(o.n_true, np.int64)
-        self.assertIsInstance(o.n_pred, np.int64)
+        self.assertIsInstance(o.n_true, int)
+        self.assertIsInstance(o.n_pred, int)
 
         self.assertEqual(o.empty_frame, False)
 
@@ -395,7 +440,11 @@ class TestObjectAccuracy(test.TestCase):
 
         o._linear_assignment()
 
-        for obj in ['results', 'cm_res', 'true_pos_ind', 'loners_pred', 'loners_true']:
+        cols = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'gained_detections',
+                'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
+                'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe']
+
+        for obj in cols:
             self.assertTrue(hasattr(o, obj))
 
         # Test condition where seg = True
@@ -404,8 +453,7 @@ class TestObjectAccuracy(test.TestCase):
         o._make_matrix()
         o._linear_assignment()
 
-        for obj in ['results', 'cm_res', 'true_pos_ind',
-                    'loners_pred', 'loners_true', 'seg_score']:
+        for obj in ['results', 'cm_res', 'seg_score']:
             self.assertTrue(hasattr(o, obj))
 
     def test_assign_loners(self):
@@ -434,6 +482,20 @@ class TestObjectAccuracy(test.TestCase):
         # Test that complete run through is succesful
         _ = metrics.ObjectAccuracy(y_true, y_pred)
 
+        # Test for 0 degree graph
+        y_true, y_pred = _sample4_loner(10, 10, 30, 30, True)
+        _ = metrics.ObjectAccuracy(y_true, y_pred)
+        y_true, y_pred = _sample4_loner(10, 10, 30, 30, False)
+        _ = metrics.ObjectAccuracy(y_true, y_pred)
+
+        # Test for splits in 1 degree graph
+        y_true, y_pred = _sample1(10, 10, 30, 30, False)
+        _ = metrics.ObjectAccuracy(y_true, y_pred)
+
+        # Test for catastrophic errors
+        y_true, y_pred = _sample_catastrophe(10, 10, 30, 30)
+        _ = metrics.ObjectAccuracy(y_true, y_pred)
+
     def test_optional_outputs(self):
         y_true, y_pred = _sample1(10, 10, 30, 30, True)
         o = metrics.ObjectAccuracy(y_true, y_pred)
@@ -443,15 +505,16 @@ class TestObjectAccuracy(test.TestCase):
         df = o.save_to_dataframe()
         self.assertIsInstance(df, pd.DataFrame)
 
-        columns = ['n_pred', 'n_true', 'true_pos',
-                   'false_pos', 'false_neg', 'merge', 'split']
+        columns = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'jaccard',
+                   'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
+                   'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe', 'gained_detections']
         self.assertItemsEqual(columns, list(df.columns))
 
         # Check seg True case
         o = metrics.ObjectAccuracy(y_true, y_pred, seg=True)
         o.print_report()
         df = o.save_to_dataframe()
-        columns = ['n_pred', 'n_true', 'true_pos',
-                   'false_pos', 'false_neg', 'merge', 'split',
-                   'seg']
+        columns = ['n_pred', 'n_true', 'correct_detections', 'missed_detections', 'seg', 'jaccard',
+                   'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
+                   'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe', 'gained_detections']
         self.assertItemsEqual(columns, list(df.columns))
