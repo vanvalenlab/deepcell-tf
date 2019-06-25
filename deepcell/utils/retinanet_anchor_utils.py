@@ -28,6 +28,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import itertools
+
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
@@ -202,6 +204,17 @@ def compute_gt_annotations(anchors,
     return positive_indices, ignore_indices, argmax_overlaps_inds
 
 
+def flatten_list(data):
+    results = []
+    for rec in data:
+        if isinstance(rec, list):
+            results.extend(rec)
+            results = flatten_list(results)
+        else:
+            results.append(rec)
+    return results
+
+
 def layer_shapes(image_shape, model):
     """Compute layer shapes given input image shape and the model.
 
@@ -221,7 +234,7 @@ def layer_shapes(image_shape, model):
     for layer in model.layers[1:]:
         nodes = layer._inbound_nodes
         for node in nodes:
-            inputs = [shape[lr.name] for lr in node.inbound_layers]
+            inputs = [shape[lr.name] for lr in flatten_list([node.inbound_layers])]
             if not inputs:
                 continue
             i = inputs[0] if len(inputs) == 1 else inputs
@@ -608,16 +621,17 @@ def _get_detections(generator,
         results = model.predict_on_batch(np.expand_dims(image, axis=0))
 
         if generator.panoptic:
-            boxes = results[-4]
-            scores = results[-3]
-            labels = results[-2]
-            semantic = results[-1]
+            num_semantic_outputs = len(generator.y_semantic_list)
+            boxes = results[-num_semantic_outputs - 3]
+            scores = results[-num_semantic_outputs - 2]
+            labels = results[-num_semantic_outputs - 1]
+            semantic = results[-num_semantic_outputs:]
             if generator.include_masks:
-                boxes = results[-5]
-                scores = results[-4]
-                labels = results[-3]
-                masks = results[-2]
-                semantic = results[-1]
+                boxes = results[-num_semantic_outputs - 4]
+                scores = results[-num_semantic_outputs - 3]
+                labels = results[-num_semantic_outputs - 2]
+                masks = results[-num_semantic_outputs - 1]
+                semantic = results[-num_semantic_outputs]
         elif generator.include_masks:
             boxes = results[-4]
             scores = results[-3]

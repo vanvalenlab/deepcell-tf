@@ -256,9 +256,10 @@ def retinanet(inputs,
               pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
               num_anchors=None,
               create_pyramid_features=__create_pyramid_features,
-              create_symantic_head=__create_semantic_head,
+              create_semantic_head=__create_semantic_head,
               panoptic=False,
-              num_semantic_classes=3,
+              num_semantic_heads=1,
+              num_semantic_classes_list=[3],
               submodels=None,
               name='retinanet'):
     """Construct a RetinaNet model on top of a backbone.
@@ -318,11 +319,14 @@ def retinanet(inputs,
         semantic_levels = [int(re.findall(r'\d+', N)[0]) for N in pyramid_dict.keys()]
         target_level = min(semantic_levels)
 
-        semantic_head = __create_semantic_head(
-            pyramid_dict, n_classes=num_semantic_classes,
-            input_target=inputs, target_level=target_level)
+        semantic_head_list = []
+        for i in range(num_semantic_heads):
+            semantic_head_list.append(create_semantic_head(
+                pyramid_dict, n_classes=num_semantic_classes_list[i],
+                input_target=inputs, target_level=target_level,
+                semantic_id=i))
 
-        outputs = object_head + [semantic_head]
+        outputs = object_head + semantic_head_list
     else:
         outputs = object_head
 
@@ -336,6 +340,7 @@ def retinanet(inputs,
 def retinanet_bbox(model=None,
                    nms=True,
                    panoptic=False,
+                   num_semantic_heads=1,
                    class_specific_filter=True,
                    name='retinanet-bbox',
                    anchor_params=None,
@@ -397,8 +402,8 @@ def retinanet_bbox(model=None,
     if panoptic:
         # The last output is the panoptic output, which should not be
         # sent to filter detections
-        other = model.outputs[2:-1]
-        semantic = model.outputs[-1]
+        other = model.outputs[2:-num_semantic_heads]
+        semantic = model.outputs[-num_semantic_heads:]
     else:
         other = model.outputs[2:]
 
@@ -415,7 +420,7 @@ def retinanet_bbox(model=None,
 
     # add the semantic head's output if needed
     if panoptic:
-        outputs = detections + [semantic]
+        outputs = detections + list(semantic)
     else:
         outputs = detections
 

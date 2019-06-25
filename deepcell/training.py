@@ -489,8 +489,9 @@ def train_model_retinanet(model,
                           num_gpus=None,
                           include_masks=False,
                           panoptic=False,
-                          panoptic_weight=1,
-                          transform='watershed',
+                          panoptic_weight=0.1,
+                          transforms=['watershed'],
+                          transforms_kwargs={},
                           anchor_params=None,
                           pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
                           mask_size=(28, 28),
@@ -536,7 +537,8 @@ def train_model_retinanet(model,
     n_classes = model.layers[-1].output_shape[channel_axis]
 
     if panoptic:
-        n_semantic_classes = model.get_layer(name='semantic').output_shape[channel_axis]
+        n_semantic_classes = [layer.output_shape[channel_axis]
+                              for layer in model.layers if 'semantic' in layer.name]
 
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
@@ -570,9 +572,11 @@ def train_model_retinanet(model,
                                               iou_threshold=iou_threshold,
                                               mask_size=mask_size)
 
-    def semantic_loss(y_pred, y_true):
-        return panoptic_weight * losses.weighted_categorical_crossentropy(
-            y_pred, y_true, n_classes=n_semantic_classes)
+    def semantic_loss(n_classes):
+        def _semantic_loss(y_pred, y_true):
+            return panoptic_weight * losses.weighted_categorical_crossentropy(
+                y_pred, y_true, n_classes=n_classes)
+        return _semantic_loss
 
     loss = {
         'regression': retinanet_losses.regress_loss,
@@ -583,7 +587,11 @@ def train_model_retinanet(model,
         loss['masks'] = retinanet_losses.mask_loss
 
     if panoptic:
-        loss['semantic'] = semantic_loss
+        # Give losses for all of the semantic heads
+        for layer in model.layers:
+            if 'semantic' in layer.name:
+                n_classes = layer.output_shape[channel_axis]
+                loss[layer.name] = semantic_loss(n_classes)
 
     model.compile(loss=loss, optimizer=optimizer)
 
@@ -619,17 +627,20 @@ def train_model_retinanet(model,
         horizontal_flip=0,
         vertical_flip=0)
 
-    if 'vgg' in backbone or 'densenet' in backbone:
-        compute_shapes = make_shapes_callback(model)
-    else:
-        compute_shapes = guess_shapes
+    # if 'vgg' in backbone or 'densenet' in backbone:
+    #     compute_shapes = make_shapes_callback(model)
+    # else:
+    #     compute_shapes = guess_shapes
+
+    compute_shapes = guess_shapes
 
     train_data = datagen.flow(
         train_dict,
         seed=seed,
         include_masks=include_masks,
         panoptic=panoptic,
-        transform=transform,
+        transforms=transforms,
+        transforms_kwargs=transforms_kwargs,
         pyramid_levels=pyramid_levels,
         anchor_params=anchor_params,
         compute_shapes=compute_shapes,
@@ -640,7 +651,8 @@ def train_model_retinanet(model,
         seed=seed,
         include_masks=include_masks,
         panoptic=panoptic,
-        transform=transform,
+        transforms=transforms,
+        transforms_kwargs=transforms_kwargs,
         pyramid_levels=pyramid_levels,
         anchor_params=anchor_params,
         compute_shapes=compute_shapes,

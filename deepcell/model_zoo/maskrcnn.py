@@ -162,10 +162,12 @@ def retinanet_mask(inputs,
                    mask_size=(28, 28),
                    name='retinanet-mask',
                    roi_submodels=None,
+                   max_detections=100,
                    mask_dtype=K.floatx(),
                    **kwargs):
     """Construct a RetinaNet mask model on top of a retinanet bbox model.
     Uses the retinanet bbox model and appends layers to compute masks.
+
     Args:
         inputs: List of tensorflow.keras.layers.Input.
             The first input is the image, the second input the blob of masks.
@@ -179,6 +181,7 @@ def retinanet_mask(inputs,
         mask_dtype: Data type of the masks, can be different from the main one.
         name: Name of the model.
         **kwargs: Additional kwargs to pass to the retinanet bbox model.
+
     Returns:
         Model with inputs as input and as output the output of each submodel
         for each pyramid level and the detections. The order is as defined in
@@ -221,10 +224,12 @@ def retinanet_mask(inputs,
     classification = retinanet_model.outputs[1]
 
     if panoptic:
-        # The last output is the panoptic output, which should not be
-        # sent to filter detections
-        other = retinanet_model.outputs[2:-1]
-        semantic = retinanet_model.outputs[-1]
+        # Determine the number of semantic heads
+        n_semantic_heads = len([1 for layer in retinanet_model.layers if 'semantic' in layer.name])
+
+        # The  panoptic output should not be sent to filter detections
+        other = retinanet_model.outputs[2:-n_semantic_heads]
+        semantic = retinanet_model.outputs[-n_semantic_heads:]
     else:
         other = retinanet_model.outputs[2:]
 
@@ -240,7 +245,7 @@ def retinanet_mask(inputs,
     detections = FilterDetections(
         nms=nms,
         class_specific_filter=class_specific_filter,
-        max_detections=100,
+        max_detections=max_detections,
         name='filtered_detections'
     )([boxes, classification] + other)
 
@@ -265,7 +270,7 @@ def retinanet_mask(inputs,
         detections + maskrcnn_outputs
 
     if panoptic:
-        outputs += [semantic]
+        outputs += list(semantic)
 
     model = Model(inputs=inputs, outputs=outputs, name=name)
     model.backbone_levels = backbone_levels
