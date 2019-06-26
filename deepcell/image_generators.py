@@ -1949,7 +1949,11 @@ class SiameseIterator(Iterator):
             appearance, centroid, neighborhood, regionprop, future_area = self._get_features(
                 X, y, frames, labels)
 
-            all_appearances[track] = appearance
+            if self.data_format == 'channels_first':
+                all_appearances[track, :, np.array(frames), :, :] = appearance
+            if self.data_format == 'channels_last':
+                all_appearances[track, np.array(frames), :, :, :] = appearance
+            
             all_centroids[track, np.array(frames), :] = centroid
             all_neighborhoods[track, np.array(frames), :, :] = neighborhood
 
@@ -2230,6 +2234,7 @@ class SiameseIterator(Iterator):
             # Determine what class the track will be - different (0), same (1), division (2)
             division = False
             type_cell = np.random.choice([0, 1, 2], p=[1 / 3, 1 / 3, 1 / 3])
+#            type_cell = np.random.choice([0, 1, 2], p=[3 / 10, 3 / 10, 4 / 10]) # Oversample division case to improve division accuracy
 
             # Dealing with edge cases
             # If class is division, check if the first cell divides. If not, change tracks

@@ -31,11 +31,15 @@ import pathlib
 import tarfile
 import tempfile
 
+import pandas as pd
+import networkx as nx
+
 import numpy as np
 from tensorflow.python.keras import backend as K
 from scipy.optimize import linear_sum_assignment
 from skimage.measure import regionprops
 from skimage.transform import resize
+from skimage.external.tifffile import TiffFile
 from pandas import DataFrame
 
 from deepcell.image_generators import MovieDataGenerator
@@ -755,8 +759,70 @@ class cell_tracker():
 
         return dataframe
 
+
+    def postprocess(self, filename=None):
+        """Use graph postprocessing to eliminate false positive division errors
+        using a graph-based detection method. False positive errors are when a 
+        cell is noted as a daughter of itself before the actual division occurs.
+        If a filename is passed, save the state of the cell tracker to a .trk 
+        ('track') file. 
+        """
+
+        # Load data
+        track_review_dict = self._track_review_dict()
+
+        # Prep data 
+        tracked = track_review_dict['y_tracked'].astype('uint16')
+        lineage = track_review_dict['tracks']
+        
+        # Identify false positives (FPs)
+        G = self._track_to_graph(lineage)
+        FPs = self._flag_false_pos(G)
+        FPs_sorted = sorted(FPs.items(), key=lambda v: int(v[0].split('_')[1]))
+
+        # If FPs exist, use the results to correct
+        while len(FPs_sorted) != 0:
+            
+            lineage, tracked = self._remove_false_pos(lineage, tracked, FPs_sorted[0])
+            G = self._track_to_graph(lineage)
+            FPs = self._flag_false_pos(G)
+            FPs_sorted = sorted(FPs.items(), key=lambda v: int(v[0].split('_')[1]))
+
+        # Make sure the assignment is correct
+        track_review_dict['y_tracked'] = tracked
+        track_review_dict['tracks'] = lineage
+
+        # Save information to a track file file if requested
+        if filename != None:
+            # Prep filepath
+            filename = pathlib.Path(filename)
+            if filename.suffix != '.trk':
+                filename = filename.with_suffix('.trk')
+
+            filename = str(filename)
+
+            # Save
+            with tarfile.open(filename, 'w') as trks:
+                with tempfile.NamedTemporaryFile('w') as lineage_file:
+                    json.dump(track_review_dict['tracks'], lineage_file, indent=1)
+                    lineage_file.flush()
+                    trks.add(lineage_file.name, 'lineage.json')
+
+                with tempfile.NamedTemporaryFile() as raw_file:
+                    np.save(raw_file, track_review_dict['X'])
+                    raw_file.flush()
+                    trks.add(raw_file.name, 'raw.npy')
+
+                with tempfile.NamedTemporaryFile() as tracked_file:
+                    np.save(tracked_file, track_review_dict['y_tracked'])
+                    tracked_file.flush()
+                    trks.add(tracked_file.name, 'tracked.npy')
+        
+        return track_review_dict
+
+
     def dump(self, filename):
-        """Writes the state of the cell tracker to a .trk ("track") file.
+        """Writes the state of the cell tracker to a .trk ('track') file.
         Includes raw & tracked images, and a lineage.json for parent/daughter
         information.
         """
@@ -783,3 +849,149 @@ class cell_tracker():
                 np.save(tracked_file, track_review_dict['y_tracked'])
                 tracked_file.flush()
                 trks.add(tracked_file.name, 'tracked.npy')
+
+
+
+    def _track_to_graph(self, tracks):
+        '''Create a graph from the lineage information'''
+        Dattr = {}
+        edges = pd.DataFrame()
+        
+        for L in tracks.values():
+            # Calculate node ids 
+            cellid = ['{cellid}_{frame}'.format(cellid=L['label'],frame=f) \
+                       for f in L['frames']]
+            # Add edges from cell ids
+            edges = edges.append(pd.DataFrame({'source':cellid[0:-1],
+                                              'target':cellid[1:]}))
+            
+            # Collect any division attributes
+            if L['frame_div'] != None:
+                Dattr['{cellid}_{frame}'.format(cellid=L['label'],frame=L['frame_div']-1)] = {'division':True}
+                
+            # Create any daughter-parent edges
+            if L['parent'] != None:
+                source = '{cellid}_{frame}'.format(cellid=L['parent'],frame=min(L['frames'])-1)
+                target = '{cellid}_{frame}'.format(cellid=L['label'],frame=min(L['frames']))
+                edges = edges.append(pd.DataFrame({'source':[source],
+                                                  'target':[target]}))
+                
+        G = nx.from_pandas_edgelist(edges,source='source',target='target')
+        nx.set_node_attributes(G, Dattr)
+        return G
+
+    def _flag_false_pos(self, G):
+        '''Examine graph for false positive nodes
+        '''
+
+        # TODO: Incorporate a temporal exclusion element (FPs only exist if 2 degree 2 nodes exist within 
+        #       a certain number of frames)
+        # TODO: Current implementation may eliminate some divisions at the edge of the frame - 
+        #       Further research needed
+        
+        # Identify false positive nodes
+        node_fix = []
+        for g in nx.connected_component_subgraphs(G):
+            div_nodes = [node for node,d in g.node.data() if d.get('division',False) == True]
+            if len(div_nodes)>1:
+                for nd in div_nodes:
+                    if g.degree(nd)==2:
+                        # TODO: Check for temporal exclusion here
+                        node_fix.append(nd)
+                        
+        # Add supplementary information for each false positive
+        D = {}
+        for node in node_fix:
+            D[node] = {'false positive':node,
+                      'neighbors':list(G.neighbors(node)),
+                      'connected lineages':set([int(node.split('_')[0]) for node in nx.node_connected_component(G,node)])}
+            
+        return D
+
+    def _remove_false_pos(self, lineage, tracked, FP_info):
+        ''' Remove nodes that have been identified as false positive divisions.
+        '''
+        print(FP_info)
+
+        node = FP_info[0]
+        node_info = FP_info[1]
+
+        fp_label = int(node.split('_')[0])
+        fp_frame = int(node.split('_')[1])
+
+        neighbors = [] # structure of this list will be [(neighbor1, frame), (neighbor2,frame)]
+        for neighbor in node_info['neighbors']:              
+            neighbor_label = int(neighbor.split('_')[0])
+            neighbor_frame = int(neighbor.split('_')[1])
+            neighbors.append((neighbor_label,neighbor_frame))
+
+        # Verify that the FP node only 2 neighbors - 1 before it and one after it
+        if len(neighbors) == 2:
+            # order the neighbors such that the time (frame order) is respected
+            if neighbors[0][1] > neighbors[1][1]:
+                temp = neighbors[0]
+                neighbors[0] = neighbors[1]
+                neighbors[1] = temp
+
+            # Decide which labels to extend and which to remove
+
+            # Neighbor_1 has same label as fp - the actual division hasnt occurred yet
+            if fp_label == neighbors[0][0]:
+                # The model mistakenly identified a division before the actual division occurred
+                label_to_remove = neighbors[1][0]
+                label_to_extend = neighbors[0][0]
+
+                # Give all of the errant divisions information to the correct track
+                lineage[label_to_extend]['frames'].extend(lineage[label_to_remove]['frames'])
+                lineage[label_to_extend]['daughters'] = lineage[label_to_remove]['daughters']
+                lineage[label_to_extend]['frame_div'] = lineage[label_to_remove]['frame_div']
+
+                # Adjust the parent information for the actual daughters
+                daughter_labels = lineage[label_to_remove]['daughters']
+                for daughter in daughter_labels:
+                    lineage[daughter]['parent'] = lineage[label_to_remove]['parent']
+
+                # Remove the errant node from the annotated images
+                channel = 0 # These images should only have one channel
+                for frame in lineage[label_to_remove]['frames']:
+                    label_loc = np.where(tracked[frame,:,:,channel] == label_to_remove)
+                    tracked[frame,:,:,channel][label_loc] = label_to_extend
+
+                # Remove the errant node from the lineage
+                del lineage[label_to_remove]
+
+            # Neighbor_2 has same label as fp - the actual division ocurred & the model mistakenly allowed another
+            #elif fp_label == neighbors[1][0]:
+                 # The model mistakenly identified a division after the actual division occurred
+                 #label_to_remove = fp_label
+
+            # Neither neighbor has same label as fp - the actual division ocurred & the model mistakenly allowed another
+            else:
+                # The model mistakenly identified a division after the actual division occurred
+                label_to_remove = fp_label
+                label_to_extend = neighbors[1][0]
+
+                # Give all of the errant divisions information to the correct track
+                lineage[label_to_extend]['frames'] = lineage[fp_label]['frames'] + lineage[label_to_extend]['frames']
+                lineage[label_to_extend]['parent'] = lineage[fp_label]['parent']
+
+                # Adjust the parent information for the actual daughter
+                parent_label = lineage[fp_label]['parent']
+                for d_idx, daughter in enumerate(lineage[parent_label]['daughters']):
+                    if daughter == fp_label:
+                        lineage[parent_label]['daughters'][d_idx] = label_to_extend
+
+                # Remove the errant node from the annotated images
+                channel = 0 # These images should only have one channel
+                for frame in lineage[label_to_remove]['frames']:
+                    label_loc = np.where(tracked[frame,:,:,channel] == label_to_remove)
+                    tracked[frame,:,:,channel][label_loc] = label_to_extend
+
+                # Remove the errant node
+                del lineage[label_to_remove]           
+
+        else:
+            print('Error: More than 2 neighbor nodes')
+
+        return lineage, tracked
+      
