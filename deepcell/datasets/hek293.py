@@ -61,7 +61,7 @@ def load_data(path='HEK293.npz', test_size=.2, seed=0):
 
     path = get_file(path,
                     origin='https://deepcell-data.s3.amazonaws.com/nuclei/HEK293.npz',
-                    file_hash='c0bbfba54b90e63a2010133a198e6e63')
+                    file_hash='6221fa459350cd1e45ce6c9145264329')
 
     train_dict, test_dict = get_data(path, test_size=test_size, seed=seed)
 

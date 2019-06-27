@@ -167,6 +167,7 @@ def train_model_sample(model,
 
     train_data = datagen.flow(
         train_dict,
+        seed=seed,
         batch_size=batch_size,
         transform=transform,
         transform_kwargs=kwargs,
@@ -177,6 +178,7 @@ def train_model_sample(model,
     if val_monitor:
         val_data = datagen_val.flow(
             test_dict,
+            seed=seed,
             batch_size=batch_size,
             transform=transform,
             transform_kwargs=kwargs,
@@ -197,7 +199,7 @@ def train_model_sample(model,
                 callbacks.LearningRateScheduler(lr_sched),
                 callbacks.ModelCheckpoint(
                     model_path, monitor='val_loss', verbose=1,
-                    save_best_only=True, save_weights_only=num_gpus >= 2),
+                    save_best_only=True, save_weights_only=num_gpus >= 2, period=save_period),
                 callbacks.TensorBoard(log_dir=os.path.join(log_dir, model_name))
             ])
     else:
@@ -328,6 +330,7 @@ def train_model_conv(model,
         train_data = datagen_val.flow(
             train_dict,
             skip=skip,
+            seed=seed,
             batch_size=batch_size,
             transform=transform,
             transform_kwargs=kwargs,
@@ -336,6 +339,7 @@ def train_model_conv(model,
         val_data = datagen_val.flow(
             test_dict,
             skip=skip,
+            seed=seed,
             batch_size=batch_size,
             transform=transform,
             transform_kwargs=kwargs,
@@ -344,6 +348,7 @@ def train_model_conv(model,
         train_data = datagen.flow(
             train_dict,
             skip=skip,
+            seed=seed,
             batch_size=batch_size,
             transform=transform,
             transform_kwargs=kwargs)
@@ -351,6 +356,7 @@ def train_model_conv(model,
         val_data = datagen_val.flow(
             test_dict,
             skip=skip,
+            seed=seed,
             batch_size=batch_size,
             transform=transform,
             transform_kwargs=kwargs)
@@ -470,6 +476,7 @@ def train_model_siamese_daughter(model,
 
     train_data = datagen.flow(
         train_dict,
+        seed=seed,
         crop_dim=crop_dim,
         batch_size=batch_size,
         min_track_length=min_track_length,
@@ -478,6 +485,7 @@ def train_model_siamese_daughter(model,
 
     val_data = datagen_val.flow(
         val_dict,
+        seed=seed,
         crop_dim=crop_dim,
         batch_size=batch_size,
         min_track_length=min_track_length,
@@ -540,6 +548,7 @@ def train_model_retinanet(model,
                           flip=True,
                           shear=0,
                           zoom_range=0,
+                          seed=None,
                           **kwargs):
     """Train a RetinaNet model from the given backbone
 
@@ -558,7 +567,7 @@ def train_model_retinanet(model,
     model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
     loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
-    train_dict, test_dict = get_data(dataset, mode='conv', test_size=test_size)
+    train_dict, test_dict = get_data(dataset, seed=seed, test_size=test_size)
 
     channel_axis = 1 if is_channels_first else -1
     n_classes = model.layers[-1].output_shape[channel_axis]
@@ -654,6 +663,7 @@ def train_model_retinanet(model,
 
     train_data = datagen.flow(
         train_dict,
+        seed=seed,
         include_masks=include_masks,
         panoptic=panoptic,
         pyramid_levels=pyramid_levels,
@@ -663,6 +673,7 @@ def train_model_retinanet(model,
 
     val_data = datagen_val.flow(
         test_dict,
+        seed=seed,
         include_masks=include_masks,
         panoptic=panoptic,
         pyramid_levels=pyramid_levels,
