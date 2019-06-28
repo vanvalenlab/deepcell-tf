@@ -121,8 +121,9 @@ class Evaluate(Callback):
     def on_epoch_end(self, epoch, logs=None):
         logs = logs or {}
 
-        E = evaluate
-        # E = evaluate_mask if self.generator.include_masks else evaluate
+        mask = self.generator.include_masks and not self.generator.panoptic
+
+        E = evaluate_mask if mask else evaluate
 
         # run evaluation
         avg_precisions = E(
