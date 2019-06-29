@@ -30,7 +30,7 @@ from __future__ import print_function
 from __future__ import division
 
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.layers import Input
+from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import TimeDistributed, Conv2D
 from tensorflow.python.keras.models import Model
 try:
@@ -41,7 +41,7 @@ except ImportError:  # tf 1.8.0 uses keras._impl directory
 from deepcell.layers import Cast, Shape
 from deepcell.layers import Upsample, RoiAlign, ConcatenateBoxes
 from deepcell.layers import ClipBoxes, RegressBoxes, FilterDetections
-from deepcell.layers import TensorProduct, ImageNormalization2D
+from deepcell.layers import TensorProduct, ImageNormalization2D, Location2D
 from deepcell.model_zoo.retinanet import retinanet, __build_anchors
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
 from deepcell.utils.backbone_utils import get_backbone
