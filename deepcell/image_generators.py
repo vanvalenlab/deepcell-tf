@@ -2576,14 +2576,14 @@ class RetinaNetIterator(Iterator):
             # to have multiple semantic heads
             y_semantic_list = []
             # Add all the keys that contain y_semantic
-            for key in train_dict.keys():
+            for key in train_dict:
                 if 'y_semantic' in key:
                     y_semantic_list.append(train_dict['y_semantic'])
 
             if include_mask_transforms:
                 # Check whether transform_kwargs_dict has an entry
                 for transform in transforms:
-                    if transform not in transforms_kwargs.keys():
+                    if transform not in transforms_kwargs:
                         transforms_kwargs[transform] = {}
 
                 # Add transformed masks
