@@ -204,15 +204,6 @@ def compute_gt_annotations(anchors,
 
     return positive_indices, ignore_indices, argmax_overlaps_inds
 
-def flattenList(data):
-    results = []
-    for rec in data:
-        if isinstance(rec, list):
-            results.extend(rec)
-            results = flattenList(results)
-        else:
-            results.append(rec)
-    return results
 
 def flatten_list(data):
     results = []
