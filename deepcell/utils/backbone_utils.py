@@ -268,7 +268,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
         output_dict = {}
         for i, j in enumerate(layer_names):
-            output_dict['C%' + str(i + 1)] = layer_outputs[i]
+            output_dict['C' + str(i + 1)] = layer_outputs[i]
         if return_dict:
             return output_dict
         else:

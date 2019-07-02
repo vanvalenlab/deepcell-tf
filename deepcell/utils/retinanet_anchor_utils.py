@@ -28,8 +28,11 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import itertools
+
 import numpy as np
 import tensorflow as tf
+import itertools
 from tensorflow.python.keras import backend as K
 from tensorflow.python.framework import tensor_shape
 # from cv2 import resize
@@ -202,6 +205,17 @@ def compute_gt_annotations(anchors,
     return positive_indices, ignore_indices, argmax_overlaps_inds
 
 
+def flatten_list(data):
+    results = []
+    for rec in data:
+        if isinstance(rec, list):
+            results.extend(rec)
+            results = flatten_list(results)
+        else:
+            results.append(rec)
+    return results
+
+
 def layer_shapes(image_shape, model):
     """Compute layer shapes given input image shape and the model.
 
@@ -221,7 +235,7 @@ def layer_shapes(image_shape, model):
     for layer in model.layers[1:]:
         nodes = layer._inbound_nodes
         for node in nodes:
-            inputs = [shape[lr.name] for lr in node.inbound_layers]
+            inputs = [shape[lr.name] for lr in flatten_list([node.inbound_layers])]
             if not inputs:
                 continue
             i = inputs[0] if len(inputs) == 1 else inputs
@@ -511,7 +525,7 @@ def compute_iou(a, b):
     intersection = np.zeros((a.shape[0], b.shape[0]))
     union = np.zeros((a.shape[0], b.shape[0]))
     for index, mask in enumerate(a):
-        intersection[index, :] = np.sum(np.count_nonzero(b == mask, axis=1), axis=1)
+        intersection[index, :] = np.sum(np.count_nonzero(np.logical_and(b, mask), axis=1), axis=1)
         union[index, :] = np.sum(np.count_nonzero(b + mask, axis=1), axis=1)
 
     return intersection / union
@@ -606,14 +620,26 @@ def _get_detections(generator,
 
         # run network
         results = model.predict_on_batch(np.expand_dims(image, axis=0))
-        boxes, scores, labels = results[0:3]
 
         if generator.panoptic:
-            semantic = results[-1]
+            num_semantic_outputs = len(generator.y_semantic_list)
+            boxes = results[-num_semantic_outputs - 3]
+            scores = results[-num_semantic_outputs - 2]
+            labels = results[-num_semantic_outputs - 1]
+            semantic = results[-num_semantic_outputs:]
             if generator.include_masks:
-                masks = results[-2]
+                boxes = results[-num_semantic_outputs - 4]
+                scores = results[-num_semantic_outputs - 3]
+                labels = results[-num_semantic_outputs - 2]
+                masks = results[-num_semantic_outputs - 1]
+                semantic = results[-num_semantic_outputs]
         elif generator.include_masks:
+            boxes = results[-4]
+            scores = results[-3]
+            labels = results[-2]
             masks = results[-1]
+        else:
+            boxes, scores, labels = results[0:3]
 
         # correct boxes for image scale
         # boxes = boxes / scale
@@ -837,7 +863,10 @@ def evaluate_mask(generator, model,
 
                 # resize to fit the box
                 # mask = cv2.resize(mask, (box[2] - box[0], box[3] - box[1]))
-                mask = resize(mask, (box[3] - box[1], box[2] - box[0]))
+                box_x = box[3] - box[1]
+                box_y = box[2] - box[0]
+
+                mask = resize(mask, (box_x, box_y))
 
                 # binarize the mask
                 mask = (mask > binarize_threshold).astype('uint8')
