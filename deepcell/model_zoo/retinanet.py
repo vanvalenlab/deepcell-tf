@@ -36,7 +36,7 @@ from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D
 from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import Permute, Reshape
-from tensorflow.python.keras.layers import Activation
+from tensorflow.python.keras.layers import Activation, Lambda
 from tensorflow.python.keras.initializers import RandomNormal
 
 from deepcell.initializers import PriorProbability
@@ -190,8 +190,12 @@ def __build_model_pyramid(name, model, features):
     Returns:
         A tensor containing the response from the submodel on the FPN features.
     """
-    concat = Concatenate(axis=1, name=name)
-    return concat([model(f) for f in features])
+    if len(features) == 1:
+        identity = Lambda(lambda x: x, name=name)
+        return identity(model(features[0]))
+    else:
+        concat = Concatenate(axis=1, name=name)
+        return concat([model(f) for f in features])
 
 
 def __build_pyramid(models, features):
@@ -223,17 +227,26 @@ def __build_anchors(anchor_parameters, features):
         (batch_size, num_anchors, 4)
         ```
     """
-    anchors = [
-        Anchors(
-            size=anchor_parameters.sizes[i],
-            stride=anchor_parameters.strides[i],
+
+    if len(features) == 1:
+        anchors = Anchors(
+            size=anchor_parameters.sizes[0],
+            stride=anchor_parameters.strides[0],
             ratios=anchor_parameters.ratios,
             scales=anchor_parameters.scales,
-            name='anchors_{}'.format(i)
-        )(f) for i, f in enumerate(features)
-    ]
-
-    return Concatenate(axis=1, name='anchors')(anchors)
+            name='anchors')(features[0])
+        return anchors
+    else:
+        anchors = [
+            Anchors(
+                size=anchor_parameters.sizes[i],
+                stride=anchor_parameters.strides[i],
+                ratios=anchor_parameters.ratios,
+                scales=anchor_parameters.scales,
+                name='anchors_{}'.format(i)
+            )(f) for i, f in enumerate(features)
+        ]
+        return Concatenate(axis=1, name='anchors')(anchors)
 
 
 def retinanet(inputs,
@@ -243,9 +256,10 @@ def retinanet(inputs,
               pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
               num_anchors=None,
               create_pyramid_features=__create_pyramid_features,
-              create_symantic_head=__create_semantic_head,
+              create_semantic_head=__create_semantic_head,
               panoptic=False,
-              num_semantic_classes=3,
+              num_semantic_heads=1,
+              num_semantic_classes=[3],
               submodels=None,
               name='retinanet'):
     """Construct a RetinaNet model on top of a backbone.
@@ -290,6 +304,9 @@ def retinanet(inputs,
     if submodels is None:
         submodels = default_submodels(num_classes, num_anchors)
 
+    if not isinstance(num_semantic_classes, list):
+        num_semantic_classes = list(num_semantic_classes)
+
     # compute pyramid features as per https://arxiv.org/abs/1708.02002
 
     # Use only the desired backbone levels to create the feature pyramid
@@ -305,11 +322,14 @@ def retinanet(inputs,
         semantic_levels = [int(re.findall(r'\d+', N)[0]) for N in pyramid_dict.keys()]
         target_level = min(semantic_levels)
 
-        semantic_head = __create_semantic_head(
-            pyramid_dict, n_classes=num_semantic_classes,
-            input_target=inputs, target_level=target_level)
+        semantic_head_list = []
+        for i in range(num_semantic_heads):
+            semantic_head_list.append(create_semantic_head(
+                pyramid_dict, n_classes=num_semantic_classes[i],
+                input_target=inputs, target_level=target_level,
+                semantic_id=i))
 
-        outputs = object_head + [semantic_head]
+        outputs = object_head + semantic_head_list
     else:
         outputs = object_head
 
@@ -323,6 +343,7 @@ def retinanet(inputs,
 def retinanet_bbox(model=None,
                    nms=True,
                    panoptic=False,
+                   num_semantic_heads=1,
                    class_specific_filter=True,
                    name='retinanet-bbox',
                    anchor_params=None,
@@ -384,8 +405,8 @@ def retinanet_bbox(model=None,
     if panoptic:
         # The last output is the panoptic output, which should not be
         # sent to filter detections
-        other = model.outputs[2:-1]
-        semantic = model.outputs[-1]
+        other = model.outputs[2:-num_semantic_heads]
+        semantic = model.outputs[-num_semantic_heads:]
     else:
         other = model.outputs[2:]
 
@@ -402,7 +423,7 @@ def retinanet_bbox(model=None,
 
     # add the semantic head's output if needed
     if panoptic:
-        outputs = detections + [semantic]
+        outputs = detections + list(semantic)
     else:
         outputs = detections
 
@@ -413,6 +434,7 @@ def retinanet_bbox(model=None,
 def RetinaNet(backbone,
               num_classes,
               input_shape,
+              inputs=None,
               norm_method='whole_image',
               location=False,
               use_imagenet=False,
@@ -445,7 +467,9 @@ def RetinaNet(backbone,
     Returns:
         RetinaNet model with a backbone.
     """
-    inputs = Input(shape=input_shape)
+    if inputs is None:
+        inputs = Input(shape=input_shape)
+
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     if location:
         location = Location2D(in_shape=input_shape)(inputs)
