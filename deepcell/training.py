@@ -539,6 +539,8 @@ def train_model_retinanet(model,
     if panoptic:
         n_semantic_classes = [layer.output_shape[channel_axis]
                               for layer in model.layers if 'semantic' in layer.name]
+    else:
+        n_semantic_classes = []
 
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
