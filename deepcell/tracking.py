@@ -911,8 +911,6 @@ class cell_tracker():
     def _remove_false_pos(self, lineage, tracked, FP_info):
         ''' Remove nodes that have been identified as false positive divisions.
         '''
-        print(FP_info)
-
         node = FP_info[0]
         node_info = FP_info[1]
 
