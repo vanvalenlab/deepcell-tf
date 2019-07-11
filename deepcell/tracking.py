@@ -778,7 +778,8 @@ class cell_tracker():
         # Identify false positives (FPs)
         G = self._track_to_graph(lineage)
         FPs = self._flag_false_pos(G)
-        FPs_sorted = sorted(FPs.items(), key=lambda v: int(v[0].split('_')[1]))
+        FPs_candidates = sorted(FPs.items(), key=lambda v: int(v[0].split('_')[1]))
+        FPs_sorted = self._review_candidate_nodes(FPs_candidates)
 
         # If FPs exist, use the results to correct
         while len(FPs_sorted) != 0:
@@ -786,7 +787,8 @@ class cell_tracker():
             lineage, tracked = self._remove_false_pos(lineage, tracked, FPs_sorted[0])
             G = self._track_to_graph(lineage)
             FPs = self._flag_false_pos(G)
-            FPs_sorted = sorted(FPs.items(), key=lambda v: int(v[0].split('_')[1]))
+            FPs_candidates = sorted(FPs.items(), key=lambda v: int(v[0].split('_')[1]))
+            FPs_sorted = self._review_candidate_nodes(FPs_candidates)
 
         # Make sure the assignment is correct
         track_review_dict['y_tracked'] = tracked
@@ -907,6 +909,32 @@ class cell_tracker():
                       'connected lineages':set([int(node.split('_')[0]) for node in nx.node_connected_component(G,node)])}
             
         return D
+
+    def _review_candidate_nodes(self, FPs_candidates):
+        ''' review candidate false positive nodes and remove any errant degree 2 nodes.
+        '''
+        FPs_presort = {}
+        # review candidate false positive nodes and remove any errant degree 2 nodes
+        for candidate_node in FPs_candidates:
+            node = candidate_node[0]
+            node_info = candidate_node[1]
+            fp_label = int(node.split('_')[0])
+            fp_frame = int(node.split('_')[1])
+            
+            neighbors = [] # structure of this list will be [(neighbor1, frame), (neighbor2,frame)]
+            for neighbor in node_info['neighbors']:              
+                neighbor_label = int(neighbor.split('_')[0])
+                neighbor_frame = int(neighbor.split('_')[1])
+                neighbors.append((neighbor_label,neighbor_frame))
+            
+            # if this cell only exists in one frame (and then it divides) but its 2 neighbors
+            # both exist in the same frame it will be a degree 2 node but not be a false positive
+            if neighbors[0][1] != neighbors[1][1]:
+                FPs_presort[node] = node_info
+
+        FPs_sorted = sorted(FPs_presort.items(), key=lambda v: int(v[0].split('_')[1]))
+        
+        return FPs_sorted
 
     def _remove_false_pos(self, lineage, tracked, FP_info):
         ''' Remove nodes that have been identified as false positive divisions.
