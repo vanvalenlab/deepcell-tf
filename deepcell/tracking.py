@@ -760,12 +760,13 @@ class cell_tracker():
         return dataframe
 
 
-    def postprocess(self, filename=None):
+    def postprocess(self, filename=None, time_excl=9):
         """Use graph postprocessing to eliminate false positive division errors
         using a graph-based detection method. False positive errors are when a 
         cell is noted as a daughter of itself before the actual division occurs.
         If a filename is passed, save the state of the cell tracker to a .trk 
-        ('track') file. 
+        ('track') file. time_excl is the minimum number of frames expected to 
+        exist between legitimate divisions
         """
 
         # Load data
@@ -777,7 +778,7 @@ class cell_tracker():
         
         # Identify false positives (FPs)
         G = self._track_to_graph(lineage)
-        FPs = self._flag_false_pos(G)
+        FPs = self._flag_false_pos(G, time_excl)
         FPs_candidates = sorted(FPs.items(), key=lambda v: int(v[0].split('_')[1]))
         FPs_sorted = self._review_candidate_nodes(FPs_candidates)
 
@@ -786,7 +787,7 @@ class cell_tracker():
             
             lineage, tracked = self._remove_false_pos(lineage, tracked, FPs_sorted[0])
             G = self._track_to_graph(lineage)
-            FPs = self._flag_false_pos(G)
+            FPs = self._flag_false_pos(G, time_excl)
             FPs_candidates = sorted(FPs.items(), key=lambda v: int(v[0].split('_')[1]))
             FPs_sorted = self._review_candidate_nodes(FPs_candidates)
 
@@ -882,12 +883,10 @@ class cell_tracker():
         nx.set_node_attributes(G, Dattr)
         return G
 
-    def _flag_false_pos(self, G):
+    def _flag_false_pos(self, G, time_excl):
         '''Examine graph for false positive nodes
         '''
 
-        # TODO: Incorporate a temporal exclusion element (FPs only exist if 2 degree 2 nodes exist within 
-        #       a certain number of frames)
         # TODO: Current implementation may eliminate some divisions at the edge of the frame - 
         #       Further research needed
         
@@ -898,8 +897,19 @@ class cell_tracker():
             if len(div_nodes)>1:
                 for nd in div_nodes:
                     if g.degree(nd)==2:
-                        # TODO: Check for temporal exclusion here
-                        node_fix.append(nd)
+                        # Check how close suspected FP is to other known divisions
+                        neighbors = list(G.neighbors(nd))
+                        
+                        keep_div = True
+                        for div_nd in div_nodes:
+                            if div_nd != nd:
+                                time_spacing = abs(int(nd.split('_')[1]) - int(div_nd.split('_')[1]))
+                                # If division is sufficiently far away we should exclude it from FP list
+                                if time_spacing > time_excl:
+                                    keep_div = False
+
+                        if keep_div == True:
+                            node_fix.append(nd)
                         
         # Add supplementary information for each false positive
         D = {}
