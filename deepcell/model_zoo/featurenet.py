@@ -184,7 +184,7 @@ def bn_feature_net_2D(receptive_field=61,
         if not dilated:
             x.append(Flatten()(x[-1]))
 
-        x.append((x[-1]))  # TODO
+        x.append(Softmax(axis=channel_axis)(x[-1]))
 
     if inputs is not None:
         real_inputs = keras_utils.get_source_inputs(x[0])
