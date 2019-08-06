@@ -32,11 +32,18 @@ from __future__ import division
 import copy
 
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import applications
 from tensorflow.python.keras import utils as keras_utils
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
+
+import keras_applications as applications
+
+from tensorflow.python.keras import backend
+from tensorflow.python.keras import layers
+from tensorflow.python.keras import models
+from tensorflow.python.keras import utils
+
 
 
 def featurenet_block(x, n_filters):
@@ -183,13 +190,19 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             'input_shape', and 'pooling'
 
     """
+
+    kwargs['backend'] = backend
+    kwargs['layers'] = layers
+    kwargs['models'] = models
+    kwargs['utils'] = utils
+
     _backbone = str(backbone).lower()
 
     featurenet_backbones = ['featurenet', 'featurenet3d', 'featurenet_3d']
     vgg_backbones = ['vgg16', 'vgg19']
     densenet_backbones = ['densenet121', 'densenet169', 'densenet201']
     mobilenet_backbones = ['mobilenet', 'mobilenetv2', 'mobilenet_v2']
-    resnet_backbones = ['resnet50']
+    resnet_backbones = ['resnet50', 'resnet101']
     nasnet_backbones = ['nasnet_large', 'nasnet_mobile']
 
     # TODO: Check and make sure **kwargs is in the right format.
@@ -216,16 +229,16 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
     if _backbone in vgg_backbones:
         if _backbone == 'vgg16':
-            model = applications.VGG16(input_tensor=input_tensor, **kwargs)
+            model = applications.vgg16.VGG16(input_tensor=input_tensor, **kwargs)
         else:
-            model = applications.VGG19(input_tensor=input_tensor, **kwargs)
+            model = applications.vgg19.VGG19(input_tensor=input_tensor, **kwargs)
 
         # Set the weights of the model if requested
         if use_imagenet:
             if _backbone == 'vgg16':
-                model_with_weights = applications.VGG16(**kwargs_with_weights)
+                model_with_weights = applications.vgg16.VGG16(**kwargs_with_weights)
             else:
-                model_with_weights = applications.VGG19(**kwargs_with_weights)
+                model_with_weights = applications.vgg19.VGG19(**kwargs_with_weights)
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
 
@@ -242,23 +255,23 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
     elif _backbone in densenet_backbones:
         if _backbone == 'densenet121':
-            model = applications.DenseNet121(input_tensor=input_tensor, **kwargs)
+            model = applications.densenet.DenseNet121(input_tensor=input_tensor, **kwargs)
             blocks = [6, 12, 24, 16]
         elif _backbone == 'densenet169':
-            model = applications.DenseNet169(input_tensor=input_tensor, **kwargs)
+            model = applications.densenet.DenseNet169(input_tensor=input_tensor, **kwargs)
             blocks = [6, 12, 32, 32]
         elif _backbone == 'densenet201':
-            model = applications.DenseNet201(input_tensor=input_tensor, **kwargs)
+            model = applications.densenet.DenseNet201(input_tensor=input_tensor, **kwargs)
             blocks = [6, 12, 48, 32]
 
         # Set the weights of the model if requested
         if use_imagenet:
             if _backbone == 'densenet121':
-                model_with_weights = applications.DenseNet121(**kwargs_with_weights)
+                model_with_weights = applications.densenet.DenseNet121(**kwargs_with_weights)
             elif _backbone == 'densenet169':
-                model_with_weights = applications.DenseNet169(**kwargs_with_weights)
+                model_with_weights = applications.densenet.DenseNet169(**kwargs_with_weights)
             elif _backbone == 'densenet201':
-                model_with_weights = applications.DenseNet201(**kwargs_with_weights)
+                model_with_weights = applications.densenet.DenseNet201(**kwargs_with_weights)
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
 
@@ -275,16 +288,26 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             return model
 
     elif _backbone in resnet_backbones:
-        model = applications.ResNet50(input_tensor=input_tensor, **kwargs)
+        if _backbone == 'resnet50':
+            model = applications.resnet.ResNet50(input_tensor=input_tensor, **kwargs)
+        elif _backbone == 'resnet101':
+            model = applications.resnet.ResNet101(input_tensor=input_tensor, **kwargs)
 
         # Set the weights of the model if requested
         if use_imagenet:
-            model_with_weights = applications.ResNet50(**kwargs_with_weights)
+            if _backbone == 'resnet50':
+                model_with_weights = applications.resnet.ResNet50(**kwargs_with_weights)
+            elif _backbone == 'resnet101':
+                model_with_weights = applications.resnet.ResNet101(**kwargs_with_weights)
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
 
-        layer_names = ['bn_conv1', 'res2c_branch2c', 'res3d_branch2c',
-                       'res4f_branch2c', 'res5c_branch2c']
+        if _backbone == 'resnet50':
+            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+                       'conv4_block6_out', 'conv5_block3_out']
+        elif _backbone == 'resnet101':
+            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+                       'conv4_block23_out', 'conv5_block3_out']
 
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
 
@@ -299,23 +322,23 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     elif _backbone in mobilenet_backbones:
         alpha = kwargs.get('alpha', 1.0)
         if _backbone.endswith('v2'):
-            model = applications.MobileNetV2(alpha=alpha, input_tensor=input_tensor, **kwargs)
+            model = applications.mobilenet_v2.MobileNetV2(alpha=alpha, input_tensor=input_tensor, **kwargs)
             block_ids = (2, 5, 12)
             layer_names = ['expanded_conv_project_BN'] + \
                           ['block_%s_add' % i for i in block_ids] + \
                           ['block_16_project_BN']
 
         else:
-            model = applications.MobileNet(alpha=alpha, input_tensor=input_tensor, **kwargs)
+            model = applications.mobilenet.MobileNet(alpha=alpha, input_tensor=input_tensor, **kwargs)
             block_ids = (1, 3, 5, 11, 13)
             layer_names = ['conv_pw_%s_relu' % i for i in block_ids]
 
         # Set the weights of the model if requested
         if use_imagenet:
             if _backbone.endswith('v2'):
-                model_with_weights = applications.MobileNetV2(alpha=alpha, **kwargs_with_weights)
+                model_with_weights = applications.mobilenet_v2.MobileNetV2(alpha=alpha, **kwargs_with_weights)
             else:
-                model_with_weights = applications.MobileNet(alpha=alpha, **kwargs_with_weights)
+                model_with_weights = applications.mobilenet.MobileNet(alpha=alpha, **kwargs_with_weights)
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
 
@@ -331,18 +354,18 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
     elif _backbone in nasnet_backbones:
         if _backbone.endswith('large'):
-            model = applications.NASNetLarge(input_tensor=input_tensor, **kwargs)
+            model = applications.nasnet.NASNetLarge(input_tensor=input_tensor, **kwargs)
             block_ids = [5, 12, 18]
         else:
-            model = applications.NASNetMobile(input_tensor=input_tensor, **kwargs)
+            model = applications.nasnet.NASNetMobile(input_tensor=input_tensor, **kwargs)
             block_ids = [3, 8, 12]
 
         # Set the weights of the model if requested
         if use_imagenet:
             if _backbone.endswith('large'):
-                model_with_weights = applications.NASNetLarge(**kwargs_with_weights)
+                model_with_weights = applications.nasnet.NASNetLarge(**kwargs_with_weights)
             else:
-                model_with_weights = applications.NASNetMobile(**kwargs_with_weights)
+                model_with_weights = applications.nasnet.NASNetMobile(**kwargs_with_weights)
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
 
