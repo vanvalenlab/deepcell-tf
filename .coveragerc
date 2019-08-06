@@ -13,7 +13,6 @@ fail_under = 50
 show_missing = True
 
 omit =
-    deepcell/settings.py
     **/*_test.py
     deepcell/utils/testing_utils.py
     deepcell/model_zoo/*
