@@ -68,13 +68,13 @@ def export_model(keras_model, export_path, model_version=0, weights_path=None):
     if weights_path is not None:
         keras_model.load_weights(weights_path)
 
-    if type(keras_model.input) is list:
+    if isinstance(keras_model.output, list):
         output = keras_model.output[-1]
     else:
         output = keras_model.output
 
     # Define prediction signature
-    if type(keras_model.input) is list:
+    if isinstance(keras_model.input, list):
         input_map = {"input{}".format(i): input_tensor
                      for i, input_tensor in enumerate(keras_model.input)}
         output_map = {"prediction": output}
