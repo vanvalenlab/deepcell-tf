@@ -61,7 +61,7 @@ def load_data(path='3T3_NIH.npz', test_size=.2, seed=0):
 
     path = get_file(path,
                     origin='https://deepcell-data.s3.amazonaws.com/nuclei/3T3_NIH.npz',
-                    file_hash='954b6f4ad6a71435b84c40726837e4ba')
+                    file_hash='f6520df218847fa56be2de0d3552c8a2')
 
     train_dict, test_dict = get_data(path, test_size=test_size, seed=seed)
 

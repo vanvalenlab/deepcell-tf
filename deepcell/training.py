@@ -144,6 +144,7 @@ def train_model_sample(model,
 
     train_data = datagen.flow(
         train_dict,
+        seed=seed,
         batch_size=batch_size,
         transform=transform,
         transform_kwargs=kwargs,
@@ -153,6 +154,7 @@ def train_model_sample(model,
 
     val_data = datagen_val.flow(
         test_dict,
+        seed=seed,
         batch_size=batch_size,
         transform=transform,
         transform_kwargs=kwargs,
@@ -289,6 +291,7 @@ def train_model_conv(model,
         train_data = datagen_val.flow(
             train_dict,
             skip=skip,
+            seed=seed,
             batch_size=batch_size,
             transform=transform,
             transform_kwargs=kwargs,
@@ -297,6 +300,7 @@ def train_model_conv(model,
         val_data = datagen_val.flow(
             test_dict,
             skip=skip,
+            seed=seed,
             batch_size=batch_size,
             transform=transform,
             transform_kwargs=kwargs,
@@ -305,6 +309,7 @@ def train_model_conv(model,
         train_data = datagen.flow(
             train_dict,
             skip=skip,
+            seed=seed,
             batch_size=batch_size,
             transform=transform,
             transform_kwargs=kwargs)
@@ -312,6 +317,7 @@ def train_model_conv(model,
         val_data = datagen_val.flow(
             test_dict,
             skip=skip,
+            seed=seed,
             batch_size=batch_size,
             transform=transform,
             transform_kwargs=kwargs)
@@ -431,6 +437,7 @@ def train_model_siamese_daughter(model,
 
     train_data = datagen.flow(
         train_dict,
+        seed=seed,
         crop_dim=crop_dim,
         batch_size=batch_size,
         min_track_length=min_track_length,
@@ -439,6 +446,7 @@ def train_model_siamese_daughter(model,
 
     val_data = datagen_val.flow(
         val_dict,
+        seed=seed,
         crop_dim=crop_dim,
         batch_size=batch_size,
         min_track_length=min_track_length,
@@ -481,7 +489,9 @@ def train_model_retinanet(model,
                           num_gpus=None,
                           include_masks=False,
                           panoptic=False,
-                          panoptic_weight=1,
+                          panoptic_weight=0.1,
+                          transforms=['watershed'],
+                          transforms_kwargs={},
                           anchor_params=None,
                           pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
                           mask_size=(28, 28),
@@ -501,6 +511,8 @@ def train_model_retinanet(model,
                           flip=True,
                           shear=0,
                           zoom_range=0,
+                          compute_map=True,
+                          seed=None,
                           **kwargs):
     """Train a RetinaNet model from the given backbone
 
@@ -519,13 +531,16 @@ def train_model_retinanet(model,
     model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
     loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
 
-    train_dict, test_dict = get_data(dataset, mode='conv', test_size=test_size)
+    train_dict, test_dict = get_data(dataset, seed=seed, test_size=test_size)
 
     channel_axis = 1 if is_channels_first else -1
     n_classes = model.layers[-1].output_shape[channel_axis]
 
     if panoptic:
-        n_semantic_classes = model.get_layer(name='semantic').output_shape[channel_axis]
+        n_semantic_classes = [layer.output_shape[channel_axis]
+                              for layer in model.layers if 'semantic' in layer.name]
+    else:
+        n_semantic_classes = []
 
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
@@ -552,6 +567,7 @@ def train_model_retinanet(model,
             model,
             nms=True,
             anchor_params=anchor_params,
+            num_semantic_heads=len(n_semantic_classes),
             panoptic=panoptic,
             class_specific_filter=False)
 
@@ -559,9 +575,11 @@ def train_model_retinanet(model,
                                               iou_threshold=iou_threshold,
                                               mask_size=mask_size)
 
-    def semantic_loss(y_pred, y_true):
-        return panoptic_weight * losses.weighted_categorical_crossentropy(
-            y_pred, y_true, n_classes=n_semantic_classes)
+    def semantic_loss(n_classes):
+        def _semantic_loss(y_pred, y_true):
+            return panoptic_weight * losses.weighted_categorical_crossentropy(
+                y_pred, y_true, n_classes=n_classes)
+        return _semantic_loss
 
     loss = {
         'regression': retinanet_losses.regress_loss,
@@ -572,7 +590,11 @@ def train_model_retinanet(model,
         loss['masks'] = retinanet_losses.mask_loss
 
     if panoptic:
-        loss['semantic'] = semantic_loss
+        # Give losses for all of the semantic heads
+        for layer in model.layers:
+            if 'semantic' in layer.name:
+                n_classes = layer.output_shape[channel_axis]
+                loss[layer.name] = semantic_loss(n_classes)
 
     model.compile(loss=loss, optimizer=optimizer)
 
@@ -608,15 +630,21 @@ def train_model_retinanet(model,
         horizontal_flip=0,
         vertical_flip=0)
 
-    if 'vgg' in backbone or 'densenet' in backbone:
-        compute_shapes = make_shapes_callback(model)
-    else:
-        compute_shapes = guess_shapes
+    # if 'vgg' in backbone or 'densenet' in backbone:
+    #     compute_shapes = make_shapes_callback(model)
+    # else:
+    #     compute_shapes = guess_shapes
+
+    compute_shapes = guess_shapes
 
     train_data = datagen.flow(
         train_dict,
+        seed=seed,
+        include_mask_transforms=len(transforms) > 0,
         include_masks=include_masks,
         panoptic=panoptic,
+        transforms=transforms,
+        transforms_kwargs=transforms_kwargs,
         pyramid_levels=pyramid_levels,
         anchor_params=anchor_params,
         compute_shapes=compute_shapes,
@@ -624,8 +652,12 @@ def train_model_retinanet(model,
 
     val_data = datagen_val.flow(
         test_dict,
+        seed=seed,
+        include_mask_transforms=len(transforms) > 0,
         include_masks=include_masks,
         panoptic=panoptic,
+        transforms=transforms,
+        transforms_kwargs=transforms_kwargs,
         pyramid_levels=pyramid_levels,
         anchor_params=anchor_params,
         compute_shapes=compute_shapes,
@@ -665,28 +697,29 @@ def train_model_retinanet(model,
     model.save_weights(model_path)
     np.savez(loss_path, loss_history=loss_history.history)
 
-    average_precisions = evaluate(
-        val_data,
-        prediction_model,
-        iou_threshold=iou_threshold,
-        score_threshold=score_threshold,
-        max_detections=max_detections,
-    )
+    if compute_map:
+        average_precisions = evaluate(
+            val_data,
+            prediction_model,
+            iou_threshold=iou_threshold,
+            score_threshold=score_threshold,
+            max_detections=max_detections,
+        )
 
-    # print evaluation
-    total_instances = []
-    precisions = []
-    for label, (average_precision, num_annotations) in average_precisions.items():
-        print('{:.0f} instances of class'.format(num_annotations),
-              label, 'with average precision: {:.4f}'.format(average_precision))
-        total_instances.append(num_annotations)
-        precisions.append(average_precision)
+        # print evaluation
+        total_instances = []
+        precisions = []
+        for label, (average_precision, num_annotations) in average_precisions.items():
+            print('{:.0f} instances of class'.format(num_annotations),
+                  label, 'with average precision: {:.4f}'.format(average_precision))
+            total_instances.append(num_annotations)
+            precisions.append(average_precision)
 
-    if sum(total_instances) == 0:
-        print('No test instances found.')
-    else:
-        print('mAP using the weighted average of precisions among classes: {:.4f}'.format(
-            sum([a * b for a, b in zip(total_instances, precisions)]) / sum(total_instances)))
-        print('mAP: {:.4f}'.format(sum(precisions) / sum(x > 0 for x in total_instances)))
+        if sum(total_instances) == 0:
+            print('No test instances found.')
+        else:
+            print('mAP using the weighted average of precisions among classes: {:.4f}'.format(
+                sum([a * b for a, b in zip(total_instances, precisions)]) / sum(total_instances)))
+            print('mAP: {:.4f}'.format(sum(precisions) / sum(x > 0 for x in total_instances)))
 
     return model

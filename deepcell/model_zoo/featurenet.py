@@ -42,6 +42,7 @@ from tensorflow.python.keras.layers import Activation, Softmax
 from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.layers import ZeroPadding2D, ZeroPadding3D
 from tensorflow.python.keras.regularizers import l2
+from tensorflow.python.keras import utils as keras_utils
 
 from deepcell.layers import DilatedMaxPool2D, DilatedMaxPool3D
 from deepcell.layers import ImageNormalization2D, ImageNormalization3D
@@ -52,6 +53,7 @@ from deepcell.layers import TensorProduct
 
 def bn_feature_net_2D(receptive_field=61,
                       input_shape=(256, 256, 1),
+                      inputs=None,
                       n_features=3,
                       n_channels=1,
                       reg=1e-5,
@@ -66,6 +68,7 @@ def bn_feature_net_2D(receptive_field=61,
                       padding_mode='reflect',
                       multires=False,
                       include_top=True):
+
     # Create layers list (x) to store all of the layers.
     # We need to use the functional API to enable the multiresolution mode
     x = []
@@ -90,7 +93,15 @@ def bn_feature_net_2D(receptive_field=61,
         if not dilated:
             input_shape = (receptive_field, receptive_field, n_channels)
 
-    x.append(Input(shape=input_shape))
+    if inputs is not None:
+        if not K.is_keras_tensor(inputs):
+            img_input = Input(tensor=inputs, shape=input_shape)
+        else:
+            img_input = inputs
+        x.append(img_input)
+    else:
+        x.append(Input(shape=input_shape))
+
     x.append(ImageNormalization2D(norm_method=norm_method, filter_size=receptive_field)(x[-1]))
 
     if padding:
@@ -155,31 +166,39 @@ def bn_feature_net_2D(receptive_field=61,
             cropping = (row_crop, col_crop)
 
             c.append(Cropping2D(cropping=cropping)(x[l]))
-        x.append(Concatenate(axis=channel_axis)(c))
+
+        if multires:
+            x.append(Concatenate(axis=channel_axis)(c))
 
     x.append(Conv2D(n_dense_filters, (rf_counter, rf_counter), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
-    x.append(TensorProduct(n_dense_filters, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
-    x.append(BatchNormalization(axis=channel_axis)(x[-1]))
-    x.append(Activation('relu')(x[-1]))
-
-    x.append(TensorProduct(n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
-
-    if not dilated:
-        x.append(Flatten()(x[-1]))
-
     if include_top:
+        x.append(TensorProduct(n_dense_filters, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
+        x.append(BatchNormalization(axis=channel_axis)(x[-1]))
+        x.append(Activation('relu')(x[-1]))
+
+        x.append(TensorProduct(n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
+
+        if not dilated:
+            x.append(Flatten()(x[-1]))
+
         x.append(Softmax(axis=channel_axis)(x[-1]))
 
-    model = Model(inputs=x[0], outputs=x[-1])
+    if inputs is not None:
+        real_inputs = keras_utils.get_source_inputs(x[0])
+    else:
+        real_inputs = x[0]
+
+    model = Model(inputs=real_inputs, outputs=x[-1])
 
     return model
 
 
 def bn_feature_net_skip_2D(receptive_field=61,
                            input_shape=(256, 256, 1),
+                           inputs=None,
                            fgbg_model=None,
                            n_skips=2,
                            last_only=True,
