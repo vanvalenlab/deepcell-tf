@@ -202,7 +202,9 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     vgg_backbones = ['vgg16', 'vgg19']
     densenet_backbones = ['densenet121', 'densenet169', 'densenet201']
     mobilenet_backbones = ['mobilenet', 'mobilenetv2', 'mobilenet_v2']
-    resnet_backbones = ['resnet50', 'resnet101']
+    resnet_backbones = ['resnet50', 'resnet101', 'resnet151']
+    resnet_v2_backbones = ['resnet50v2', 'resnet101v2', 'resnet151v2']
+    resnext_backbones = ['resnext50', 'resnext101']
     nasnet_backbones = ['nasnet_large', 'nasnet_mobile']
 
     # TODO: Check and make sure **kwargs is in the right format.
@@ -292,6 +294,8 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             model = applications.resnet.ResNet50(input_tensor=input_tensor, **kwargs)
         elif _backbone == 'resnet101':
             model = applications.resnet.ResNet101(input_tensor=input_tensor, **kwargs)
+        elif _backbone == 'resnet151':
+            model = applications.resnet.ResNet151(input_tensor=input_tensor, **kwargs)
 
         # Set the weights of the model if requested
         if use_imagenet:
@@ -299,6 +303,8 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
                 model_with_weights = applications.resnet.ResNet50(**kwargs_with_weights)
             elif _backbone == 'resnet101':
                 model_with_weights = applications.resnet.ResNet101(**kwargs_with_weights)
+            elif _backbone == 'resnet151':
+                model_with_weights = applications.resnet.ResNet151(**kwargs_with_weights)
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
 
@@ -306,6 +312,81 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
                        'conv4_block6_out', 'conv5_block3_out']
         elif _backbone == 'resnet101':
+            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+                       'conv4_block23_out', 'conv5_block3_out']
+        elif _backbone == 'resnet151':
+            layer_names  = ['conv1_relu', 'conv2_block3_out', 'conv3_block8_out',
+                       'conv4_block36_out', 'conv5_block3_out']
+
+        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
+
+        output_dict = {}
+        for i, j in enumerate(layer_names):
+            output_dict['C' + str(i + 1)] = layer_outputs[i]
+        if return_dict:
+            return output_dict
+        else:
+            return model
+
+    elif _backbone in resnet_backbones:
+        if _backbone == 'resnet50v2':
+            model = applications.resnet_v2.ResNet50V2(input_tensor=input_tensor, **kwargs)
+        elif _backbone == 'resnet101v2':
+            model = applications.resnet_v2.ResNet101V2(input_tensor=input_tensor, **kwargs)
+        elif _backbone == 'resnet151v2':
+            model = applications.resnet_v2.ResNet151V2(input_tensor=input_tensor, **kwargs)
+
+        # Set the weights of the model if requested
+        if use_imagenet:
+            if _backbone == 'resnet50v2':
+                model_with_weights = applications.resnet_v2.ResNet50V2(**kwargs_with_weights)
+            elif _backbone == 'resnet101v2':
+                model_with_weights = applications.resnet_v2.ResNet101V2(**kwargs_with_weights)
+            elif _backbone == 'resnet151v2':
+                model_with_weights = applications.resnet_v2.ResNet151V2(**kwargs_with_weights)
+            model_with_weights.save_weights('model_weights.h5')
+            model.load_weights('model_weights.h5', by_name=True)
+
+        if _backbone == 'resnet50v2':
+            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+                       'conv4_block6_out', 'conv5_block3_out']
+        elif _backbone == 'resnet101v2':
+            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+                       'conv4_block23_out', 'conv5_block3_out']
+        elif _backbone == 'resnet151v2':
+            layer_names  = ['conv1_relu', 'conv2_block3_out', 'conv3_block8_out',
+                       'conv4_block36_out', 'conv5_block3_out']
+
+        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
+
+        output_dict = {}
+        for i, j in enumerate(layer_names):
+            output_dict['C' + str(i + 1)] = layer_outputs[i]
+        if return_dict:
+            return output_dict
+        else:
+            return model
+
+    elif _backbone in resnext_backbones:
+        if _backbone == 'resnext50':
+            model = applications.resnext.ResNeXt50(input_tensor=input_tensor, **kwargs)
+        elif _backbone == 'resnext101':
+            model = applications.resnext.ResNeXt101(input_tensor=input_tensor, **kwargs)
+
+        # Set the weights of the model if requested
+        if use_imagenet:
+            if _backbone == 'resnext50':
+                model_with_weights = applications.resnext.ResNeXt50(**kwargs_with_weights)
+            elif _backbone == 'resnext101':
+                model_with_weights = applications.resnext.ResNeXt101(**kwargs_with_weights)
+
+            model_with_weights.save_weights('model_weights.h5')
+            model.load_weights('model_weights.h5', by_name=True)
+
+        if _backbone == 'resnext50':
+            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+                       'conv4_block6_out', 'conv5_block3_out']
+        elif _backbone == 'resnext101':
             layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
                        'conv4_block23_out', 'conv5_block3_out']
 
