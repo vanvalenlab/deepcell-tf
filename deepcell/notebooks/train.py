@@ -321,7 +321,7 @@ def make_notebook(data,
     # Set up training parameters
     training_kwargs = {
         'model': 'model',
-        'dataset': 'DATA_FILE',
+        'dataset': 'os.path.join(DATA_DIR, DATA_FILE + ".npz")',
         'expt': '"{}"'.format(train_type + ('_' + transform if transform else '')),
         'optimizer': 'optimizer',
         'batch_size': 'batch_size',
