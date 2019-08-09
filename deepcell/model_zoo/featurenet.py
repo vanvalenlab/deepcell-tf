@@ -295,7 +295,7 @@ def bn_feature_net_3D(receptive_field=61,
         if padding_mode == 'reflect':
             x.append(ReflectionPadding3D(padding=(win_z, win, win))(x[-1]))
         elif padding_mode == 'zero':
-            x.append(ZeroPadding3D(padding=(win_z, win, win))([-1]))
+            x.append(ZeroPadding3D(padding=(win_z, win, win))(x[-1]))
 
     if location:
         x.append(Location3D(in_shape=tuple(x[-1].shape.as_list()[1:]))(x[-1]))
