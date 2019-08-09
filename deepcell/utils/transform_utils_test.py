@@ -97,7 +97,7 @@ class TransformUtilsTest(test.TestCase):
         # test single edge class
         maskstack = np.vstack(img_list)
         batch_count = maskstack.shape[0] // frames
-        new_shape = (batch_count, frames, *maskstack.shape[1:])
+        new_shape = tuple([batch_count, frames] + list(maskstack.shape[1:]))
         maskstack = np.reshape(maskstack, new_shape)
         dc_maskstack = transform_utils.deepcell_transform(
             maskstack, data_format=None, separate_edge_classes=False)
@@ -114,7 +114,7 @@ class TransformUtilsTest(test.TestCase):
         # test separate edge classes
         maskstack = np.vstack(img_list)
         batch_count = maskstack.shape[0] // frames
-        new_shape = (batch_count, frames, *maskstack.shape[1:])
+        new_shape = tuple([batch_count, frames] + list(maskstack.shape[1:]))
         maskstack = np.reshape(maskstack, new_shape)
         dc_maskstack = transform_utils.deepcell_transform(
             maskstack, data_format=None, separate_edge_classes=True)

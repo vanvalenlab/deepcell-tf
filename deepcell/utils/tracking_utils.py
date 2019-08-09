@@ -32,7 +32,6 @@ from __future__ import division
 import os
 import json
 import tarfile
-import pathlib
 import tempfile
 from io import BytesIO
 

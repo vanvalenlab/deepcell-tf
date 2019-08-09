@@ -197,7 +197,7 @@ class TestIOUtils(test.TestCase):
                                        channel=features + 1)
 
         # test no output directory
-        with self.assertRaises(FileNotFoundError):
+        with self.assertRaises(IOError):
             bad_dir = os.path.join(temp_dir, 'test')
             io_utils.save_model_output(output, bad_dir, 'test', channel=None)
 

@@ -120,7 +120,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         erosion = kwargs.pop('erosion_width', 0)
 
         if data_format == 'channels_first':
-            y_transform = np.zeros((y.shape[0], *y.shape[2:]))
+            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
         else:
             y_transform = np.zeros(y.shape[0:-1])
 
