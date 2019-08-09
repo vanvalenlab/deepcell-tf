@@ -114,8 +114,7 @@ def bn_feature_net_2D(receptive_field=61,
         x.append(Location2D(in_shape=tuple(x[-1].shape.as_list()[1:]))(x[-1]))
         x.append(Concatenate(axis=channel_axis)([x[-2], x[-1]]))
 
-    if multires:
-        layers_to_concat = []
+    layers_to_concat = []
 
     rf_counter = receptive_field
     block_counter = 0
@@ -302,8 +301,7 @@ def bn_feature_net_3D(receptive_field=61,
         x.append(Location3D(in_shape=tuple(x[-1].shape.as_list()[1:]))(x[-1]))
         x.append(Concatenate(axis=channel_axis)([x[-2], x[-1]]))
 
-    if multires:
-        layers_to_concat = []
+    layers_to_concat = []
 
     rf_counter = receptive_field
     block_counter = 0
