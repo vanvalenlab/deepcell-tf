@@ -526,10 +526,10 @@ def siamese_model(input_shape=None,
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
-        input_shape = (input_shape[0], None, *input_shape[1:])
+        input_shape = tuple([input_shape[0], None] + list(input_shape[1:]))
     else:
         channel_axis = -1
-        input_shape = (None, *input_shape)
+        input_shape = tuple([None] + list(input_shape))
 
     features = sorted(features)
 

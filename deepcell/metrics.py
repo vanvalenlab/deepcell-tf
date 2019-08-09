@@ -29,12 +29,12 @@ The schema for this analysis was adopted from the description of object-based
 statistics in Caicedo et al. (2018) Evaluation of Deep Learning Strategies for
 Nucleus Segmentation in Fluorescence Images. BioRxiv 335216.
 
-The SEG metric was adapted from Maška et al. (2014). A benchmark for comparison
-of cell tracking algorithms. Bioinformatics 30, 1609–1617.
+The SEG metric was adapted from Maska et al. (2014). A benchmark for comparison
+of cell tracking algorithms. Bioinformatics 30, 1609-1617.
 
 The linear classification schema used to match objects in truth and prediction
 frames was adapted from Jaqaman et al. (2008). Robust single-particle tracking
-in live-cell time-lapse sequences. Nature Methods 5, 695–702.
+in live-cell time-lapse sequences. Nature Methods 5, 695-702.
 """
 
 from __future__ import absolute_import
@@ -128,13 +128,13 @@ class ObjectAccuracy(object):
     object-based statistics in Caicedo et al. (2018) Evaluation of Deep
     Learning Strategies for Nucleus Segmentation in Fluorescence Images.
     BioRxiv 335216.
-    The SEG metric was adapted from Maška et al. (2014). A benchmark for
+    The SEG metric was adapted from Maska et al. (2014). A benchmark for
     comparison of cell tracking algorithms.
-    Bioinformatics 30, 1609–1617.
+    Bioinformatics 30, 1609-1617.
     The linear classification schema used to match objects in truth and
     prediction frames was adapted from Jaqaman et al. (2008).
     Robust single-particle tracking in live-cell time-lapse sequences.
-    Nature Methods 5, 695–702.
+    Nature Methods 5, 695-702.
 
     Args:
         y_true (2D np.array): Labeled ground truth annotation

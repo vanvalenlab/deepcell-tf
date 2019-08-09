@@ -192,7 +192,7 @@ def save_model_output(output,
                          'channels. Got ', channel)
 
     if not os.path.isdir(output_dir):
-        raise FileNotFoundError('{} is not a valid output_dir'.format(
+        raise IOError('{} is not a valid output_dir'.format(
             output_dir))
 
     for b in range(output.shape[0]):

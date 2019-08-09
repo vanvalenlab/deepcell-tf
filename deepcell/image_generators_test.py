@@ -283,7 +283,8 @@ class TestSampleDataGenerator(test.TestCase):
             # Fit
             generator.fit(images, augment=True, seed=1)
             train_dict['X'] = images
-            train_dict['y'] = np.random.randint(2, size=(*images.shape[:-1], 1))
+            test_shape = tuple(list(images.shape[:-1]) + [1])
+            train_dict['y'] = np.random.randint(2, size=test_shape)
             for x, _ in generator.flow(
                     train_dict,
                     save_to_dir=temp_dir,
@@ -339,7 +340,7 @@ class TestSampleDataGenerator(test.TestCase):
             # Fit
             generator.fit(images, augment=True, seed=1)
             train_dict['X'] = images
-            test_shape = (images.shape[0], 1, *images.shape[2:])
+            test_shape = tuple([images.shape[0], 1] + list(images.shape[2:]))
             train_dict['y'] = np.random.randint(2, size=test_shape)
             for x, _ in generator.flow(
                     train_dict,
@@ -413,7 +414,8 @@ class TestSampleMovieDataGenerator(test.TestCase):
 
             images = np.vstack(img_list)
             batch_count = images.shape[0] // frames
-            images = np.reshape(images, (batch_count, frames, *images.shape[1:]))
+            images = np.reshape(images, tuple([batch_count, frames] +
+                                              list(images.shape[1:])))
             generator = image_generators.SampleMovieDataGenerator(
                 featurewise_center=True,
                 samplewise_center=True,
@@ -451,7 +453,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
             assert generator.random_transform(images[0]).shape == images[0].shape
             generator.fit(images, augment=True, seed=1)
             train_dict['X'] = images
-            test_shape = (images.shape[0], *images.shape[1:-1], 1)
+            test_shape = tuple([images.shape[0]] + list(images.shape[1:-1]) + [1])
             train_dict['y'] = np.random.randint(2, size=test_shape)
             for x, _ in generator.flow(
                     train_dict,
@@ -477,7 +479,8 @@ class TestSampleMovieDataGenerator(test.TestCase):
 
             images = np.vstack(img_list)
             batch_count = images.shape[0] // frames
-            images = np.reshape(images, (batch_count, frames, *images.shape[1:]))
+            images = np.reshape(images, tuple([batch_count, frames] +
+                                              list(images.shape[1:])))
             images = np.rollaxis(images, -1, 1)
             generator = image_generators.SampleMovieDataGenerator(
                 featurewise_center=True,
@@ -518,7 +521,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
             generator.fit(images, augment=True, seed=1)
 
             train_dict['X'] = images
-            test_shape = (images.shape[0], 1, *images.shape[2:])
+            test_shape = tuple([images.shape[0], 1] + list(images.shape[2:]))
             train_dict['y'] = np.random.randint(2, size=test_shape)
             for x, _ in generator.flow(
                     train_dict,
@@ -804,7 +807,8 @@ class TestMovieDataGenerator(test.TestCase):
 
             images = np.vstack(img_list)
             batches = images.shape[0] // frames
-            images = np.reshape(images, (batches, frames, *images.shape[1:]))
+            images = np.reshape(images, tuple([batches, frames] +
+                                              list(images.shape[1:])))
             generator = image_generators.MovieDataGenerator(
                 featurewise_center=True,
                 samplewise_center=True,
@@ -845,8 +849,8 @@ class TestMovieDataGenerator(test.TestCase):
                     save_to_dir=temp_dir,
                     skip=1,
                     frames_per_batch=frames_per_batch):
-                batch_x_shape = (frames_per_batch, *images.shape[2:])
-                batch_y_shape = (frames_per_batch, *y_shape[2:])
+                batch_x_shape = tuple([frames_per_batch] + list(images.shape[2:]))
+                batch_y_shape = tuple([frames_per_batch] + list(y_shape[2:]))
                 self.assertEqual(x.shape[1:], batch_x_shape)
                 self.assertEqual(len(y), 2)
                 self.assertEqual(y[0].shape[1:], batch_y_shape)
@@ -866,7 +870,8 @@ class TestMovieDataGenerator(test.TestCase):
 
             images = np.vstack(img_list)
             batch_count = images.shape[0] // frames
-            images = np.reshape(images, (batch_count, frames, *images.shape[1:]))
+            images = np.reshape(images, tuple([batch_count, frames] +
+                                              list(images.shape[1:])))
             images = np.rollaxis(images, 4, 1)
             generator = image_generators.MovieDataGenerator(
                 featurewise_center=True,
@@ -910,8 +915,10 @@ class TestMovieDataGenerator(test.TestCase):
                     skip=1,
                     save_to_dir=temp_dir,
                     frames_per_batch=frames_per_batch):
-                batch_x_shape = (images.shape[1], frames_per_batch, *images.shape[3:])
-                batch_y_shape = (y_shape[1], frames_per_batch, *y_shape[3:])
+                batch_x_shape = tuple([images.shape[1], frames_per_batch] +
+                                      list(images.shape[3:]))
+                batch_y_shape = tuple([y_shape[1], frames_per_batch] +
+                                      list(y_shape[3:]))
                 self.assertEqual(x.shape[1:], batch_x_shape)
                 self.assertEqual(len(y), 2)
                 self.assertEqual(y[0].shape[1:], batch_y_shape)
@@ -1011,7 +1018,8 @@ class TestMovieDataGenerator(test.TestCase):
 
             images = np.vstack(img_list)
             batches = images.shape[0] // frames
-            images = np.reshape(images, (batches, frames, *images.shape[1:]))
+            images = np.reshape(images, tuple([batches, frames] +
+                                              list(images.shape[1:])))
             generator = image_generators.MovieDataGenerator(
                 featurewise_center=True,
                 samplewise_center=True,
@@ -1055,7 +1063,8 @@ class TestSiamsesDataGenerator(test.TestCase):
 
             images = np.vstack(img_list)
             batches = images.shape[0] // frames
-            images = np.reshape(images, (batches, frames, *images.shape[1:]))
+            images = np.reshape(images, tuple([batches, frames] +
+                                              list(images.shape[1:])))
             generator = image_generators.SiameseDataGenerator(
                 featurewise_center=True,
                 samplewise_center=True,
@@ -1116,7 +1125,8 @@ class TestSiamsesDataGenerator(test.TestCase):
 
             images = np.vstack(img_list)
             batch_count = images.shape[0] // frames
-            images = np.reshape(images, (batch_count, frames, *images.shape[1:]))
+            images = np.reshape(images, tuple([batch_count, frames] +
+                                              list(images.shape[1:])))
             images = np.rollaxis(images, 4, 1)
             generator = image_generators.SiameseDataGenerator(
                 featurewise_center=True,
