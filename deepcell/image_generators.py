@@ -2426,6 +2426,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
     def flow(self,
              train_dict,
              compute_shapes=guess_shapes,
+             min_objects=3,
              num_classes=1,
              clear_borders=False,
              include_masks=False,
@@ -2446,6 +2447,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
         Args:
             train_dict: dictionary of X and y tensors. Both should be rank 4.
             compute_shapes: function to determine the shapes of the anchors
+            min_classes: images with fewer than 'min_objects' are ignored
             num_classes: number of classes to predict
             clear_borders: boolean, whether to use `clear_border` on `y`.
             include_masks: boolean, train on mask data (MaskRCNN).
@@ -2469,6 +2471,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             train_dict,
             self,
             compute_shapes=compute_shapes,
+            min_objects=min_objects,
             num_classes=num_classes,
             clear_borders=clear_borders,
             include_masks=include_masks,
