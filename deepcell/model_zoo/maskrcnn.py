@@ -320,9 +320,12 @@ def MaskRCNN(backbone,
     """
     inputs = Input(shape=input_shape)
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+
     if location:
         location = Location2D(in_shape=input_shape)(inputs)
-        inputs = Concatenate(axis=channel_axis)([inputs, location])
+        concat = Concatenate(axis=channel_axis)([inputs, location])
+    else:
+        concat = inputs
 
     # force the channel size for backbone input to be `required_channels`
     norm = ImageNormalization2D(norm_method=norm_method)(inputs)
