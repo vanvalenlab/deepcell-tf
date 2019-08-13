@@ -78,11 +78,11 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
         }
     ])
-    @tf_test_util.run_in_graph_and_eager_modes()
+    # @tf_test_util.run_in_graph_and_eager_modes()
     def test_retinanet(self, pooling, panoptic, location, pyramid_levels):
         num_classes = 3
         norm_method = None
-        backbone = 'mobilenet'
+        backbone = 'featurenet'
 
         # TODO: RetinaNet fails with channels_first
         for data_format in ('channels_last',):  # 'channels_first'):
@@ -90,10 +90,10 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
                 K.set_image_data_format(data_format)
                 if data_format == 'channels_first':
                     axis = 1
-                    input_shape = (1, 32, 32)
+                    input_shape = (1, 256, 256)
                 else:
                     axis = -1
-                    input_shape = (32, 32, 1)
+                    input_shape = (256, 256, 1)
 
                 num_semantic_classes = [3, 4]
                 model = RetinaNet(
