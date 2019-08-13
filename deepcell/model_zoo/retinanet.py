@@ -281,8 +281,8 @@ def retinanet(inputs,
             be used for panoptic segmentation tasks
         panoptic: Flag for adding the semantic head for panoptic segmentation
             tasks. Defaults to false.
-        num_semantic_classes: The number of classes for the semantic segmentation
-            part of panoptic segmentation tasks. Defaults to 3.
+        num_semantic_classes: The number of classes for the semantic
+            segmentation part of panoptic segmentation tasks. Defaults to 3.
         submodels: Submodels to run on each feature map (default is regression
             and classification submodels).
         name: Name of the model.
@@ -351,9 +351,9 @@ def retinanet_bbox(model=None,
     """Construct a RetinaNet model on top of a backbone and adds convenience
     functions to output boxes directly.
 
-    This model uses the minimum retinanet model and appends a few layers to
-    compute boxes within the graph. These layers include applying the regression
-    values to the anchors and performing NMS.
+    This model uses the minimum retinanet model and appends a few layers
+    to compute boxes within the graph. These layers include applying the
+    regression values to the anchors and performing NMS.
 
     Args:
         model: RetinaNet model to append bbox layers to.
@@ -394,14 +394,14 @@ def retinanet_bbox(model=None,
                              'outputs are: {}).'.format(model.output_names))
 
     # compute the anchors
-    features = [model.get_layer(level).output for level in model.pyramid_levels]
+    features = [model.get_layer(l).output for l in model.pyramid_levels]
     anchors = __build_anchors(anchor_params, features)
 
-    # we expect the anchors, regression and classification values as first output
+    # we expect anchors, regression. and classification values as first output
     regression = model.outputs[0]
     classification = model.outputs[1]
 
-    # "other" can be any additional output from custom submodels, by default this will be []
+    # "other" can be any additional output from custom submodels, by default []
     if panoptic:
         # The last output is the panoptic output, which should not be
         # sent to filter detections
@@ -495,7 +495,8 @@ def RetinaNet(backbone,
         'pooling': pooling
     }
 
-    backbone_dict = get_backbone(backbone, fixed_inputs, use_imagenet=use_imagenet, **model_kwargs)
+    backbone_dict = get_backbone(backbone, fixed_inputs,
+                                 use_imagenet=use_imagenet, **model_kwargs)
 
     # create the full model
     return retinanet(
