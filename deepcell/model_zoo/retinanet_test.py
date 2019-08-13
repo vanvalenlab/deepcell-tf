@@ -81,18 +81,22 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_retinanet(self, pooling, panoptic, location, pyramid_levels):
         num_classes = 3
-        input_shape = (32, 32, 1)
         norm_method = None
+        backbone = 'mobilenet'
 
-        # TODO(willgraf): RetinaNet fails with channels_first
-        for data_format in ('channels_last',):  # 'channels_first'):
+        for data_format in ('channels_last', 'channels_first'):
             with self.test_session(use_gpu=True):
                 K.set_image_data_format(data_format)
-                axis = 1 if data_format == 'channels_first' else -1
+                if data_format == 'channels_first':
+                    axis = 1
+                    input_shape = (1, 32, 32)
+                else:
+                    axis = -1
+                    input_shape = (32, 32, 1)
 
                 num_semantic_classes = [3, 4]
                 model = RetinaNet(
-                    backbone='mobilenet',
+                    backbone=backbone,
                     num_classes=num_classes,
                     input_shape=input_shape,
                     norm_method=norm_method,
@@ -109,8 +113,8 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
                 self.assertIsInstance(model.output_shape, list)
                 self.assertEqual(len(model.output_shape), expected_size)
 
-                self.assertEqual(model.output_shape[0][axis], 4)
-                self.assertEqual(model.output_shape[1][axis], num_classes)
+                self.assertEqual(model.output_shape[0][-1], 4)
+                self.assertEqual(model.output_shape[1][-1], num_classes)
 
                 if panoptic:
                     for i, n in enumerate(num_semantic_classes):
