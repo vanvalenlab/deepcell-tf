@@ -100,7 +100,7 @@ class MaskRCNNTest(test.TestCase, parameterized.TestCase):
         max_detections = 10
         norm_method = None
 
-        # TODO(willgraf): MaskRCNN fails with channels_first
+        # TODO: MaskRCNN fails with channels_first
         for data_format in ('channels_last',):  # 'channels_first'):
             with self.test_session(use_gpu=True):
                 K.set_image_data_format(data_format)
