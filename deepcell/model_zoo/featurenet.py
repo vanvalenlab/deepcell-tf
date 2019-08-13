@@ -33,8 +33,8 @@ import numpy as np
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Sequential, Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D, ConvLSTM2D, LSTM
-from tensorflow.python.keras.layers import Add, Input, Concatenate, Lambda, InputLayer
+from tensorflow.python.keras.layers import Conv2D, Conv3D, LSTM
+from tensorflow.python.keras.layers import Input, Concatenate, InputLayer
 from tensorflow.python.keras.layers import Flatten, Dense, Reshape
 from tensorflow.python.keras.layers import MaxPool2D, MaxPool3D
 from tensorflow.python.keras.layers import Cropping2D, Cropping3D
@@ -102,7 +102,8 @@ def bn_feature_net_2D(receptive_field=61,
     else:
         x.append(Input(shape=input_shape))
 
-    x.append(ImageNormalization2D(norm_method=norm_method, filter_size=receptive_field)(x[-1]))
+    x.append(ImageNormalization2D(norm_method=norm_method,
+                                  filter_size=receptive_field)(x[-1]))
 
     if padding:
         if padding_mode == 'reflect':
@@ -122,7 +123,9 @@ def bn_feature_net_2D(receptive_field=61,
 
     while rf_counter > 4:
         filter_size = 3 if rf_counter % 2 == 0 else 4
-        x.append(Conv2D(n_conv_filters, (filter_size, filter_size), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+        x.append(Conv2D(n_conv_filters, filter_size, dilation_rate=d,
+                        kernel_initializer=init, padding='valid',
+                        kernel_regularizer=l2(reg))(x[-1]))
         x.append(BatchNormalization(axis=channel_axis)(x[-1]))
         x.append(Activation('relu')(x[-1]))
 
@@ -169,16 +172,20 @@ def bn_feature_net_2D(receptive_field=61,
         if multires:
             x.append(Concatenate(axis=channel_axis)(c))
 
-    x.append(Conv2D(n_dense_filters, (rf_counter, rf_counter), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+    x.append(Conv2D(n_dense_filters, (rf_counter, rf_counter), dilation_rate=d,
+                    kernel_initializer=init, padding='valid',
+                    kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
     if include_top:
-        x.append(TensorProduct(n_dense_filters, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
+        x.append(TensorProduct(n_dense_filters, kernel_initializer=init,
+                               kernel_regularizer=l2(reg))(x[-1]))
         x.append(BatchNormalization(axis=channel_axis)(x[-1]))
         x.append(Activation('relu')(x[-1]))
 
-        x.append(TensorProduct(n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
+        x.append(TensorProduct(n_features, kernel_initializer=init,
+                               kernel_regularizer=l2(reg))(x[-1]))
 
         if not dilated:
             x.append(Flatten()(x[-1]))
@@ -210,7 +217,8 @@ def bn_feature_net_skip_2D(receptive_field=61,
         channel_axis = -1
 
     inputs = Input(shape=input_shape)
-    img = ImageNormalization2D(norm_method=norm_method, filter_size=receptive_field)(inputs)
+    img = ImageNormalization2D(norm_method=norm_method,
+                               filter_size=receptive_field)(inputs)
 
     models = []
     model_outputs = []
@@ -232,16 +240,21 @@ def bn_feature_net_skip_2D(receptive_field=61,
             model_input = img
 
         new_input_shape = model_input.get_shape().as_list()[1:]
-        models.append(bn_feature_net_2D(receptive_field=receptive_field, input_shape=new_input_shape, norm_method=None, dilated=True, padding=True, padding_mode=padding_mode, **kwargs))
+        models.append(bn_feature_net_2D(receptive_field=receptive_field,
+                                        input_shape=new_input_shape,
+                                        norm_method=None,
+                                        dilated=True,
+                                        padding=True,
+                                        padding_mode=padding_mode,
+                                        **kwargs))
         model_outputs.append(models[-1](model_input))
 
     if last_only:
         model = Model(inputs=inputs, outputs=model_outputs[-1])
+    elif fgbg_model is None:
+        model = Model(inputs=inputs, outputs=model_outputs)
     else:
-        if fgbg_model is None:
-            model = Model(inputs=inputs, outputs=model_outputs)
-        else:
-            model = Model(inputs=inputs, outputs=model_outputs[1:])
+        model = Model(inputs=inputs, outputs=model_outputs[1:])
 
     return model
 
@@ -289,7 +302,8 @@ def bn_feature_net_3D(receptive_field=61,
             input_shape = (n_frames, receptive_field, receptive_field, n_channels)
 
     x.append(Input(shape=input_shape))
-    x.append(ImageNormalization3D(norm_method=norm_method, filter_size=receptive_field)(x[-1]))
+    x.append(ImageNormalization3D(norm_method=norm_method,
+                                  filter_size=receptive_field)(x[-1]))
 
     if padding:
         if padding_mode == 'reflect':
@@ -309,7 +323,9 @@ def bn_feature_net_3D(receptive_field=61,
 
     while rf_counter > 4:
         filter_size = 3 if rf_counter % 2 == 0 else 4
-        x.append(Conv3D(n_conv_filters, (1, filter_size, filter_size), dilation_rate=(1, d, d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+        x.append(Conv3D(n_conv_filters, (1, filter_size, filter_size),
+                        dilation_rate=(1, d, d), kernel_initializer=init,
+                        padding='valid', kernel_regularizer=l2(reg))(x[-1]))
         x.append(BatchNormalization(axis=channel_axis)(x[-1]))
         x.append(Activation('relu')(x[-1]))
 
@@ -318,7 +334,8 @@ def bn_feature_net_3D(receptive_field=61,
 
         if block_counter % 2 == 0:
             if dilated:
-                x.append(DilatedMaxPool3D(dilation_rate=(1, d, d), pool_size=(1, 2, 2))(x[-1]))
+                x.append(DilatedMaxPool3D(dilation_rate=(1, d, d),
+                                          pool_size=(1, 2, 2))(x[-1]))
                 d *= 2
             else:
                 x.append(MaxPool3D(pool_size=(1, 2, 2))(x[-1]))
@@ -357,19 +374,25 @@ def bn_feature_net_3D(receptive_field=61,
             c.append(Cropping3D(cropping=cropping)(x[l]))
         x.append(Concatenate(axis=channel_axis)(c))
 
-    x.append(Conv3D(n_dense_filters, (1, rf_counter, rf_counter), dilation_rate=(1, d, d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+    x.append(Conv3D(n_dense_filters, (1, rf_counter, rf_counter),
+                    dilation_rate=(1, d, d), kernel_initializer=init,
+                    padding='valid', kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
-    x.append(Conv3D(n_dense_filters, (n_frames, 1, 1), dilation_rate=(1, d, d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+    x.append(Conv3D(n_dense_filters, (n_frames, 1, 1), dilation_rate=(1, d, d),
+                    kernel_initializer=init, padding='valid',
+                    kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
-    x.append(TensorProduct(n_dense_filters, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
+    x.append(TensorProduct(n_dense_filters, kernel_initializer=init,
+                           kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
-    x.append(TensorProduct(n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
+    x.append(TensorProduct(n_features, kernel_initializer=init,
+                           kernel_regularizer=l2(reg))(x[-1]))
 
     if not dilated:
         x.append(Flatten()(x[-1]))
@@ -396,7 +419,8 @@ def bn_feature_net_skip_3D(receptive_field=61,
         channel_axis = -1
 
     inputs = Input(shape=input_shape)
-    img = ImageNormalization3D(norm_method=norm_method, filter_size=receptive_field)(inputs)
+    img = ImageNormalization3D(norm_method=norm_method,
+                               filter_size=receptive_field)(inputs)
 
     models = []
     model_outputs = []
@@ -415,17 +439,23 @@ def bn_feature_net_skip_3D(receptive_field=61,
             model_input = Concatenate(axis=channel_axis)([img, model_outputs[-1]])
         else:
             model_input = img
+
         new_input_shape = model_input.get_shape().as_list()[1:]
-        models.append(bn_feature_net_3D(receptive_field=receptive_field, input_shape=new_input_shape, norm_method=None, dilated=True, padding=True, padding_mode=padding_mode, **kwargs))
+        models.append(bn_feature_net_3D(receptive_field=receptive_field,
+                                        input_shape=new_input_shape,
+                                        norm_method=None,
+                                        dilated=True,
+                                        padding=True,
+                                        padding_mode=padding_mode,
+                                        **kwargs))
         model_outputs.append(models[-1](model_input))
 
     if last_only:
         model = Model(inputs=inputs, outputs=model_outputs[-1])
+    elif fgbg_model is None:
+        model = Model(inputs=inputs, outputs=model_outputs)
     else:
-        if fgbg_model is None:
-            model = Model(inputs=inputs, outputs=model_outputs)
-        else:
-            model = Model(inputs=inputs, outputs=model_outputs[1:])
+        model = Model(inputs=inputs, outputs=model_outputs[1:])
 
     return model
 
