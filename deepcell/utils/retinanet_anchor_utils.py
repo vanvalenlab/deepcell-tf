@@ -32,7 +32,6 @@ import itertools
 
 import numpy as np
 import tensorflow as tf
-import itertools
 from tensorflow.python.keras import backend as K
 from tensorflow.python.framework import tensor_shape
 # from cv2 import resize
