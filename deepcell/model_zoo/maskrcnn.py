@@ -328,7 +328,7 @@ def MaskRCNN(backbone,
         concat = inputs
 
     # force the channel size for backbone input to be `required_channels`
-    norm = ImageNormalization2D(norm_method=norm_method)(inputs)
+    norm = ImageNormalization2D(norm_method=norm_method)(concat)
     fixed_inputs = TensorProduct(required_channels)(norm)
 
     # force the input shape
