@@ -82,10 +82,9 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
     def test_retinanet(self, pooling, panoptic, location, pyramid_levels):
         num_classes = 3
         norm_method = None
-        backbone = 'featurenet'
+        backbone = 'featurenet'  # not all backbones work with channels_first
 
-        # TODO: RetinaNet fails with channels_first
-        for data_format in ('channels_last',):  # 'channels_first'):
+        for data_format in ('channels_last', 'channels_first'):
             with self.test_session(use_gpu=True):
                 K.set_image_data_format(data_format)
                 if data_format == 'channels_first':

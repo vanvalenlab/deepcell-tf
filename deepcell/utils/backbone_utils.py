@@ -52,17 +52,17 @@ def featurenet_block(x, n_filters):
     Returns:
         layer: Keras layer object
     """
-
+    df = K.image_data_format()
     # conv set 1
-    x = Conv2D(n_filters, (3, 3), strides=(1, 1), padding='same', data_format='channels_last')(x)
+    x = Conv2D(n_filters, (3, 3), strides=(1, 1), padding='same', data_format=df)(x)
     x = BatchNormalization(axis=-1)(x)
     x = Activation('relu')(x)
     # conv set 2
-    x = Conv2D(n_filters, (3, 3), strides=(1, 1), padding='same', data_format='channels_last')(x)
+    x = Conv2D(n_filters, (3, 3), strides=(1, 1), padding='same', data_format=df)(x)
     x = BatchNormalization(axis=-1)(x)
     x = Activation('relu')(x)
     # Final max pooling stage
-    x = MaxPool2D(pool_size=(2, 2), data_format='channels_last')(x)
+    x = MaxPool2D(pool_size=(2, 2), data_format=df)(x)
 
     return x
 
