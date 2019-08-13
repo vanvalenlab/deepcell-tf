@@ -332,15 +332,8 @@ def semantic_prediction(semantic_names,
     x = semantic_upsample(semantic_sum, n_upsample, target=input_target)
 
     # Reshape to match input size
-    if ndim == 2:
-        x = Reshape(target_shape=(input_target.shape[1].value,
-                                  input_target.shape[2].value,
-                                  x.shape[-1]))(x)
-    else:
-        x = Reshape(target_shape=(input_target.shape[1].value,
-                                  input_target.shape[2].value,
-                                  input_target.shape[3].value,
-                                  x.shape[-1]))(x)
+    new_shape = tuple(list(input_target.shape[1:ndim + 1]) + [x.shape[-1]])
+    x = Reshape(target_shape=new_shape)(x)
 
     # First tensor product
     x = TensorProduct(n_dense)(x)
