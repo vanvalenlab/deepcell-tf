@@ -334,7 +334,7 @@ def semantic_prediction(semantic_names,
 
     # First tensor product
     x = TensorProduct(n_dense)(x)
-    x = BatchNormalization(axis=-1)(x)
+    x = BatchNormalization(axis=channel_axis)(x)
     x = Activation('relu')(x)
 
     # Apply tensor product and softmax layer

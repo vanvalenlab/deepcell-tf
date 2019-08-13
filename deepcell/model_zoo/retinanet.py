@@ -483,8 +483,9 @@ def RetinaNet(backbone,
     fixed_inputs = TensorProduct(required_channels)(norm)
 
     # force the input shape
+    axis = 0 if K.image_data_format() == 'channels_first' else -1
     fixed_input_shape = list(input_shape)
-    fixed_input_shape[-1] = required_channels
+    fixed_input_shape[axis] = required_channels
     fixed_input_shape = tuple(fixed_input_shape)
 
     model_kwargs = {
