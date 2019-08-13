@@ -480,7 +480,8 @@ def siamese_model(input_shape=None,
         elif feature == 'distance':
             return (None, 2)
         elif feature == 'neighborhood':
-            return (None, 2 * neighborhood_scale_size + 1, 2 * neighborhood_scale_size + 1, 1)
+            return (None, 2 * neighborhood_scale_size + 1,
+                    2 * neighborhood_scale_size + 1, 1)
         elif feature == 'regionprop':
             return (None, 3)
         else:
@@ -507,7 +508,7 @@ def siamese_model(input_shape=None,
             N_layers = np.int(np.floor(np.log2(input_shape[1])))
             feature_extractor = Sequential()
             feature_extractor.add(InputLayer(input_shape=shape))
-            # feature_extractor.add(ImageNormalization2D(norm_method='std', filter_size=32))
+            # feature_extractor.add(ImageNormalization2D('std', filter_size=32))
             for layer in range(N_layers):
                 feature_extractor.add(Conv3D(64, (1, 3, 3),
                                              kernel_initializer=init,
