@@ -38,6 +38,11 @@ from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
 
+try:
+    from tensorflow.python.keras.backend import is_keras_tensor
+except ImportError:
+    from tensorflow.python.keras._impl.keras.backend import is_keras_tensor
+
 
 def featurenet_block(x, n_filters):
     """Add a set of layers that make up one unit of the featurenet backbone
@@ -102,7 +107,7 @@ def featurenet_backbone(input_tensor=None, input_shape=None, weights=None,
     if input_tensor is None:
         img_input = Input(shape=input_shape)
     else:
-        if not K.is_keras_tensor(input_tensor):
+        if not is_keras_tensor(input_tensor):
             img_input = Input(tensor=input_tensor, shape=input_shape)
         else:
             img_input = input_tensor
@@ -141,7 +146,7 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None,
     if input_tensor is None:
         img_input = Input(shape=input_shape)
     else:
-        if not K.is_keras_tensor(input_tensor):
+        if not is_keras_tensor(input_tensor):
             img_input = Input(tensor=input_tensor, shape=input_shape)
         else:
             img_input = input_tensor
