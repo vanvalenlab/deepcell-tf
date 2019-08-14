@@ -90,7 +90,8 @@ class UpsampleLike(Layer):
                 return output
             new_shape = (target_shape[1], target_shape[2])
             return tf.image.resize_images(
-                source, new_shape, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+                source, new_shape,
+                method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
         if source.get_shape().ndims == 5:
             output = self.resize_volumes(source, target_shape)
