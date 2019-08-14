@@ -191,6 +191,7 @@ def __build_model_pyramid(name, model, features):
         A tensor containing the response from the submodel on the FPN features.
     """
     if len(features) == 1:
+        # TODO: Lambda layer has no compute_output_shape in eager mode
         identity = Lambda(lambda x: x, name=name)
         return identity(model(features[0]))
     else:
@@ -281,8 +282,8 @@ def retinanet(inputs,
             be used for panoptic segmentation tasks
         panoptic: Flag for adding the semantic head for panoptic segmentation
             tasks. Defaults to false.
-        num_semantic_classes: The number of classes for the semantic segmentation
-            part of panoptic segmentation tasks. Defaults to 3.
+        num_semantic_classes: The number of classes for the semantic
+            segmentation part of panoptic segmentation tasks. Defaults to 3.
         submodels: Submodels to run on each feature map (default is regression
             and classification submodels).
         name: Name of the model.
@@ -319,7 +320,7 @@ def retinanet(inputs,
     object_head = __build_pyramid(submodels, features)
 
     if panoptic:
-        semantic_levels = [int(re.findall(r'\d+', N)[0]) for N in pyramid_dict.keys()]
+        semantic_levels = [int(re.findall(r'\d+', k)[0]) for k in pyramid_dict]
         target_level = min(semantic_levels)
 
         semantic_head_list = []
@@ -351,9 +352,9 @@ def retinanet_bbox(model=None,
     """Construct a RetinaNet model on top of a backbone and adds convenience
     functions to output boxes directly.
 
-    This model uses the minimum retinanet model and appends a few layers to
-    compute boxes within the graph. These layers include applying the regression
-    values to the anchors and performing NMS.
+    This model uses the minimum retinanet model and appends a few layers
+    to compute boxes within the graph. These layers include applying the
+    regression values to the anchors and performing NMS.
 
     Args:
         model: RetinaNet model to append bbox layers to.
@@ -394,14 +395,14 @@ def retinanet_bbox(model=None,
                              'outputs are: {}).'.format(model.output_names))
 
     # compute the anchors
-    features = [model.get_layer(level).output for level in model.pyramid_levels]
+    features = [model.get_layer(l).output for l in model.pyramid_levels]
     anchors = __build_anchors(anchor_params, features)
 
-    # we expect the anchors, regression and classification values as first output
+    # we expect anchors, regression. and classification values as first output
     regression = model.outputs[0]
     classification = model.outputs[1]
 
-    # "other" can be any additional output from custom submodels, by default this will be []
+    # "other" can be any additional output from custom submodels, by default []
     if panoptic:
         # The last output is the panoptic output, which should not be
         # sent to filter detections
@@ -471,17 +472,21 @@ def RetinaNet(backbone,
         inputs = Input(shape=input_shape)
 
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+
     if location:
         location = Location2D(in_shape=input_shape)(inputs)
-        inputs = Concatenate(axis=channel_axis)([inputs, location])
+        concat = Concatenate(axis=channel_axis)([inputs, location])
+    else:
+        concat = inputs
 
     # force the channel size for backbone input to be `required_channels`
-    norm = ImageNormalization2D(norm_method=norm_method)(inputs)
+    norm = ImageNormalization2D(norm_method=norm_method)(concat)
     fixed_inputs = TensorProduct(required_channels)(norm)
 
     # force the input shape
+    axis = 0 if K.image_data_format() == 'channels_first' else -1
     fixed_input_shape = list(input_shape)
-    fixed_input_shape[-1] = required_channels
+    fixed_input_shape[axis] = required_channels
     fixed_input_shape = tuple(fixed_input_shape)
 
     model_kwargs = {
@@ -491,7 +496,8 @@ def RetinaNet(backbone,
         'pooling': pooling
     }
 
-    backbone_dict = get_backbone(backbone, fixed_inputs, use_imagenet=use_imagenet, **model_kwargs)
+    backbone_dict = get_backbone(backbone, fixed_inputs,
+                                 use_imagenet=use_imagenet, **model_kwargs)
 
     # create the full model
     return retinanet(

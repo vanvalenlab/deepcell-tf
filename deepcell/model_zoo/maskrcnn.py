@@ -320,17 +320,21 @@ def MaskRCNN(backbone,
     """
     inputs = Input(shape=input_shape)
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+
     if location:
         location = Location2D(in_shape=input_shape)(inputs)
-        inputs = Concatenate(axis=channel_axis)([inputs, location])
+        concat = Concatenate(axis=channel_axis)([inputs, location])
+    else:
+        concat = inputs
 
     # force the channel size for backbone input to be `required_channels`
-    norm = ImageNormalization2D(norm_method=norm_method)(inputs)
+    norm = ImageNormalization2D(norm_method=norm_method)(concat)
     fixed_inputs = TensorProduct(required_channels)(norm)
 
     # force the input shape
+    axis = 0 if K.image_data_format() == 'channels_first' else -1
     fixed_input_shape = list(input_shape)
-    fixed_input_shape[-1] = required_channels
+    fixed_input_shape[axis] = required_channels
     fixed_input_shape = tuple(fixed_input_shape)
 
     model_kwargs = {
