@@ -39,7 +39,7 @@ from tensorflow.python.platform import test
 try:
     from tensorflow.python.keras import testing_utils
 except ImportError:
-    from tensorflow.python.keras._impl.keras.utils import testing_utils
+    from tensorflow.python.keras._impl.keras import testing_utils
 
 from deepcell.callbacks import RedirectModel
 
