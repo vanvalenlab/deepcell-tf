@@ -320,7 +320,7 @@ def retinanet(inputs,
     object_head = __build_pyramid(submodels, features)
 
     if panoptic:
-        semantic_levels = [int(re.findall(r'\d+', N)[0]) for N in pyramid_dict.keys()]
+        semantic_levels = [int(re.findall(r'\d+', k)[0]) for k in pyramid_dict]
         target_level = min(semantic_levels)
 
         semantic_head_list = []
