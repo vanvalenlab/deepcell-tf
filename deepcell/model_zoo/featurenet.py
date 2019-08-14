@@ -211,10 +211,7 @@ def bn_feature_net_skip_2D(receptive_field=61,
                            norm_method='std',
                            padding_mode='reflect',
                            **kwargs):
-    if K.image_data_format() == 'channels_first':
-        channel_axis = 1
-    else:
-        channel_axis = -1
+    channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
 
     inputs = Input(shape=input_shape)
     img = ImageNormalization2D(norm_method=norm_method,
@@ -413,10 +410,7 @@ def bn_feature_net_skip_3D(receptive_field=61,
                            norm_method='std',
                            padding_mode='reflect',
                            **kwargs):
-    if K.image_data_format() == 'channels_first':
-        channel_axis = 1
-    else:
-        channel_axis = -1
+    channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
 
     inputs = Input(shape=input_shape)
     img = ImageNormalization3D(norm_method=norm_method,
