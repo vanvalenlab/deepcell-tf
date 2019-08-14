@@ -74,10 +74,10 @@ def create_pyramid_level(backbone_input,
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
 
-    reduced_name = 'C%s_reduced' % level
-    upsample_name = 'P%s_upsampled' % level
-    addition_name = 'P%s_merged' % level
-    final_name = 'P%s' % level
+    reduced_name = 'C{}_reduced'.format(level)
+    upsample_name = 'P{}_upsampled'.format(level)
+    addition_name = 'P{}_merged'.format(level)
+    final_name = 'P{}'.format(level)
 
     # Apply 1x1 conv to backbone layer
     if ndim == 2:
@@ -185,7 +185,7 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
         N = backbone_names[0]
         F = backbone_features[0]
         level = int(re.findall(r'\d+', N)[0]) + 1
-        P_minus_2_name = 'P%s' % level
+        P_minus_2_name = 'P{}'.format(level)
 
         if ndim == 2:
             P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
