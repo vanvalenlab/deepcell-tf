@@ -30,17 +30,16 @@ from __future__ import print_function
 from __future__ import division
 
 import copy
-import os
-import shutil
-import tempfile
 
 import numpy as np
 
-from tensorflow.core.framework import summary_pb2
 from tensorflow.python import keras
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.keras import testing_utils
 from tensorflow.python.platform import test
+
+try:
+    from tensorflow.python.keras import testing_utils
+except ImportError:
+    from tensorflow.python.keras._impl.keras.utils import testing_utils
 
 from deepcell.callbacks import RedirectModel
 
@@ -55,7 +54,6 @@ BATCH_SIZE = 5
 
 class CallbacksTest(test.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_RedirectModel(self):
         with self.test_session():
             np.random.seed(123)
