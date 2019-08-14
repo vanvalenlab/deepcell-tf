@@ -45,7 +45,10 @@ except ImportError:
 try:
     from tensorflow.python.keras.utils.layer_utils import get_source_inputs
 except ImportError:
-    from tensorflow.python.keras.engine.network import get_source_inputs
+    try:
+        from tensorflow.python.keras.engine.network import get_source_inputs
+    except ImportError:  # tf1.8 uses the _impl directory
+        from tensorflow.python.keras._impl.keras.engine.network import get_source_inputs
 
 
 def featurenet_block(x, n_filters):
