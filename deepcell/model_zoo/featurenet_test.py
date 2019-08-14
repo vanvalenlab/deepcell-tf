@@ -138,7 +138,7 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             axis = 1 if data_format == 'channels_first' else -1
             self.assertEqual(model.output_shape[axis], output)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
+    # @tf_test_util.run_in_graph_and_eager_modes()
     def test_bn_feature_net_2D_skip(self):
         receptive_field = 61
         n_features = 3
@@ -267,7 +267,7 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             channel_axis = 1 if data_format == 'channels_first' else -1
             self.assertEqual(model.output_shape[channel_axis], n_features)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
+    # @tf_test_util.run_in_graph_and_eager_modes()
     def test_bn_feature_net_3D_skip(self):
         receptive_field = 61
         n_features = 3
