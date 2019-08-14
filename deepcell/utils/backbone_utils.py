@@ -106,11 +106,10 @@ def featurenet_backbone(input_tensor=None, input_shape=None, weights=None,
     """
     if input_tensor is None:
         img_input = Input(shape=input_shape)
+    elif not is_keras_tensor(input_tensor):
+        img_input = Input(tensor=input_tensor, shape=input_shape)
     else:
-        if not is_keras_tensor(input_tensor):
-            img_input = Input(tensor=input_tensor, shape=input_shape)
-        else:
-            img_input = input_tensor
+        img_input = input_tensor
 
     # Build out backbone
     c1 = featurenet_block(img_input, n_filters)  # 1/2 64x64
@@ -145,11 +144,10 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None,
     """
     if input_tensor is None:
         img_input = Input(shape=input_shape)
+    elif not is_keras_tensor(input_tensor):
+        img_input = Input(tensor=input_tensor, shape=input_shape)
     else:
-        if not is_keras_tensor(input_tensor):
-            img_input = Input(tensor=input_tensor, shape=input_shape)
-        else:
-            img_input = input_tensor
+        img_input = input_tensor
 
     # Build out backbone
     c1 = featurenet_3D_block(img_input, n_filters)  # 1/2 64x64
