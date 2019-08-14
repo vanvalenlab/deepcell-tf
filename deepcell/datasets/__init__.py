@@ -32,6 +32,7 @@ from __future__ import print_function
 from deepcell.datasets import tracked
 from deepcell.datasets import hek293
 from deepcell.datasets import hela_s3
+from deepcell.datasets import mibi
 from deepcell.datasets import mousebrain
 from deepcell.datasets import nih_3t3
 
