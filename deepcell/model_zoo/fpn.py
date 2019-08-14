@@ -36,7 +36,6 @@ from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D, Conv3D
 from tensorflow.python.keras.layers import Softmax
 from tensorflow.python.keras.layers import Input, Add
-from tensorflow.python.keras.layers import Reshape
 from tensorflow.python.keras.layers import Activation
 from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
 from tensorflow.python.keras.layers import BatchNormalization
