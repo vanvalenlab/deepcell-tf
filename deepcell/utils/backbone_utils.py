@@ -33,10 +33,22 @@ import copy
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import applications
-from tensorflow.python.keras import utils as keras_utils
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
+
+try:
+    from tensorflow.python.keras.backend import is_keras_tensor
+except ImportError:
+    from tensorflow.python.keras._impl.keras.backend import is_keras_tensor
+
+try:
+    from tensorflow.python.keras.utils.layer_utils import get_source_inputs
+except ImportError:
+    try:
+        from tensorflow.python.keras.engine.network import get_source_inputs
+    except ImportError:  # tf1.8 uses the _impl directory
+        from tensorflow.python.keras._impl.keras.engine.network import get_source_inputs
 
 
 def featurenet_block(x, n_filters):
@@ -47,17 +59,17 @@ def featurenet_block(x, n_filters):
     Returns:
         layer: Keras layer object
     """
-
+    df = K.image_data_format()
     # conv set 1
-    x = Conv2D(n_filters, (3, 3), strides=(1, 1), padding='same', data_format='channels_last')(x)
+    x = Conv2D(n_filters, (3, 3), strides=(1, 1), padding='same', data_format=df)(x)
     x = BatchNormalization(axis=-1)(x)
     x = Activation('relu')(x)
     # conv set 2
-    x = Conv2D(n_filters, (3, 3), strides=(1, 1), padding='same', data_format='channels_last')(x)
+    x = Conv2D(n_filters, (3, 3), strides=(1, 1), padding='same', data_format=df)(x)
     x = BatchNormalization(axis=-1)(x)
     x = Activation('relu')(x)
     # Final max pooling stage
-    x = MaxPool2D(pool_size=(2, 2), data_format='channels_last')(x)
+    x = MaxPool2D(pool_size=(2, 2), data_format=df)(x)
 
     return x
 
@@ -101,11 +113,10 @@ def featurenet_backbone(input_tensor=None, input_shape=None, weights=None,
     """
     if input_tensor is None:
         img_input = Input(shape=input_shape)
+    elif not is_keras_tensor(input_tensor):
+        img_input = Input(tensor=input_tensor, shape=input_shape)
     else:
-        if not K.is_keras_tensor(input_tensor):
-            img_input = Input(tensor=input_tensor, shape=input_shape)
-        else:
-            img_input = input_tensor
+        img_input = input_tensor
 
     # Build out backbone
     c1 = featurenet_block(img_input, n_filters)  # 1/2 64x64
@@ -121,7 +132,7 @@ def featurenet_backbone(input_tensor=None, input_shape=None, weights=None,
         output_dict[name] = feature
 
     if input_tensor is not None:
-        inputs = keras_utils.get_source_inputs(input_tensor)
+        inputs = get_source_inputs(input_tensor)
     else:
         inputs = img_input
 
@@ -140,11 +151,10 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None,
     """
     if input_tensor is None:
         img_input = Input(shape=input_shape)
+    elif not is_keras_tensor(input_tensor):
+        img_input = Input(tensor=input_tensor, shape=input_shape)
     else:
-        if not K.is_keras_tensor(input_tensor):
-            img_input = Input(tensor=input_tensor, shape=input_shape)
-        else:
-            img_input = input_tensor
+        img_input = input_tensor
 
     # Build out backbone
     c1 = featurenet_3D_block(img_input, n_filters)  # 1/2 64x64
@@ -160,7 +170,7 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None,
         output_dict[name] = feature
 
     if input_tensor is not None:
-        inputs = keras_utils.get_source_inputs(input_tensor)
+        inputs = get_source_inputs(input_tensor)
     else:
         inputs = img_input
 

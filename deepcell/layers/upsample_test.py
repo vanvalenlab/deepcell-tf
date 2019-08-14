@@ -33,7 +33,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.platform import test
 
-# from deepcell.utils import testing_utils
+from deepcell.utils import testing_utils
 from deepcell import layers
 
 
@@ -103,3 +103,20 @@ class TestUpsampleLike(test.TestCase):
             actual = K.get_value(actual)
 
             self.assertAllEqual(actual, expected)
+
+
+class TestUpsample(test.TestCase):
+    @tf_test_util.run_in_graph_and_eager_modes()
+    def test_simple(self):
+        with self.test_session():
+            testing_utils.layer_test(
+                layers.Upsample,
+                kwargs={'target_size': (2, 2)},
+                custom_objects={'Upsample': layers.Upsample},
+                input_shape=(3, 5, 6, 4))
+            testing_utils.layer_test(
+                layers.Upsample,
+                kwargs={'target_size': (2, 2),
+                        'data_format': 'channels_first'},
+                custom_objects={'Upsample': layers.Upsample},
+                input_shape=(3, 4, 5, 6))
