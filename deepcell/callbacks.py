@@ -99,13 +99,15 @@ class Evaluate(Callback):
         Args:
             generator: The generator that represents the dataset to evaluate.
             iou_threshold: The threshold used to consider
-                           when a detection is positive or negative.
-            score_threshold: The score confidence threshold to use for detections.
+                when a detection is positive or negative.
+            score_threshold: The score confidence threshold to use for
+                detections.
             max_detections: The maximum number of detections to use per image.
             save_path: The path to save images with visualized detections to.
-            tensorboard: Instance of keras.callbacks.TensorBoard used to log the mAP value.
+            tensorboard: Instance of keras.callbacks.TensorBoard used to log
+                the mAP value.
             weighted_average: Compute the mAP using the weighted average of
-                              precisions among classes.
+                precisions among classes.
             verbose: Set the verbosity level, by default this is set to 1.
         """
         self.generator = generator
@@ -152,7 +154,7 @@ class Evaluate(Callback):
         if self.tensorboard is not None and self.tensorboard.writer is not None:
             import tensorflow as tf
             summary = tf.Summary()
-            summary_value = summary.value.add()
+            summary_value = summary.value.add()  # pylint: disable=E1101
             summary_value.simple_value = mean_ap
             summary_value.tag = 'mAP'
             self.tensorboard.writer.add_summary(summary, epoch)
