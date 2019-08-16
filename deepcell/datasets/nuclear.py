@@ -23,16 +23,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Builtin Datasets"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from deepcell.utils.data_utils import Dataset
 
-from deepcell.datasets.tracked import nih_3t3
-from deepcell.datasets.tracked import hela_s3
-from deepcell.datasets.tracked import hek293
 
-del absolute_import
-del division
-del print_function
+class hek293(Dataset):
+
+    def __init__(self, path='HEK293.npz'):
+        url = 'https://deepcell-data.s3.amazonaws.com/nuclei/3T3_NIH.npz'
+        file_hash = 'f6520df218847fa56be2de0d3552c8a2'
+        metadata = {}
+
+        super(Dataset, self).__init__(
+            path, url, file_hash, metadata)
+
+
+class nih_3t3(Dataset):
+
+    def __init__(self, path='3T3_NIH.npz'):
+        url = 'https://deepcell-data.s3.amazonaws.com/nuclei/3T3_NIH.npz'
+        file_hash = 'f6520df218847fa56be2de0d3552c8a2'
+        metadata = {}
+
+        super(Dataset, self).__init__(
+            path, url, file_hash, metadata)
+
+
+class hela_s3(Dataset):
+
+    def __init__(self, path='HeLa_S3.npz'):
+        url = 'https://deepcell-data.s3.amazonaws.com/nuclei/HeLa_S3.npz'
+        file_hash = '759d28d87936fd59b250dea3b126b647'
+        metadata = {}
+
+        super(Dataset, self).__init__(
+            path, url, file_hash, metadata)

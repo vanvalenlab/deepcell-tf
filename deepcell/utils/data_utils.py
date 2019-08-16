@@ -882,3 +882,48 @@ def make_training_data(direc_name,
                                   'dimensionality {}'.format(dimensionality))
 
     return None
+
+class Dataset:
+    def __init__(self,
+                 path,
+                 url,
+                 file_hash,
+                 metadata):
+        """
+        Args:
+        path: path where to cache the dataset locally
+        (relative to ~/.keras/datasets).
+        """
+
+        self.path = path
+        self.url = url
+        self.hash = file_hash
+        self.metadata
+
+    def load_data(test_size=0.2, seed=0):
+        """Loads dataset.
+
+        Args:
+        test_size: fraction of data to reserve as test data
+        seed: the seed for randomly shuffling the dataset
+
+        Returns:
+        Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
+        """
+        basepath = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
+        prefix = path.split(os.path.sep)[:-1]
+        data_dir = os.path.join(basepath, *prefix) if prefix else basepath
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        elif not os.path.isdir(data_dir):
+            raise IOError('{} exists but is not a directory'.format(data_dir))
+
+        path = get_file(self.path,
+                        origin=self.url,
+                        file_hash=self.file_hash)
+
+        train_dict, test_dict = get_data(path, test_size=test_size, seed=seed)
+
+        x_train, y_train = train_dict['X'], train_dict['y']
+        x_test, y_test = test_dict['X'], test_dict['y']
+        return (x_train, y_train), (x_test, y_test)
