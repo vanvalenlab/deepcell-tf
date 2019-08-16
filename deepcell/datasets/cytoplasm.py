@@ -34,11 +34,17 @@ from deepcell.datasets import Dataset
 
 # pylint: disable=line-too-long
 
+methods = {
+    'Cell culture': 'For our cytoplasmic data, NIH3t3 and Raw263.7 cell lines were cultured in DMEM media supplemented with 10% FBS and 1x penicillin-streptomycin antibiotic. Cells were incubated at 37°C in a humidified 5% CO2 atmosphere.  When 70-80% confluent, cells were passaged and seeded onto fibronectin coated glass bottom 96-well plates at 10,000-20,000 cells/well. The seeded cells were then incubated for 1-2 hours to allow for cell adhesion to the bottom of the well plate before imaging.',
+    'Nuclear and Cytoplasmic Fluorescent Labeling': 'To stain cell cytoplasm, each well was triturated 5-10 times and then washed with serum free DMEM to remove dead or nonadherent cells. 100µL of Cell Tracker CMFDA diluted to 2µM with serum free DMEM was added to each well and then incubated for 15 minutes at 37°C. Cell Tracker was the aspirated and cells were then resuspended in 100µL of Hoescht 33342 diluted to 20µM using phenol-free DMEM supplemented with 10% FBS and 1x penicillin-streptomycin. The cells were then incubated at 37°C for 5 minutes. The cells were then washed 2 times with phenol-free complete media and then resuspended in 200µL of phenol-free complete media. ',
+    'Imaging': 'Cells were imaged on a Nikon Eclipse Ti-2 fluorescence microscope at 20x and 40x for NIH3t3 and Raw293.6 cells respectively. The well plate was placed in a Nikon incubated stage with an Oko labs environment controller set to 37°C and 5% CO2. Cytoplasm labeled with Cell Tracker CMFDA was visualized using the Nikon Sola LED light source and a Semrock GFP-4050B filter cube. Nuclei labeled with Hoescht 33342 were visualized with the same light source and a Semrock DAPI-3060 filter cube. Each data set was generated using the Nikon jobs function to image all fluorophores and phase as well as a z-stack of phase images.'
+}
+
 nih_3t3 = Dataset(
     path='nih_3t3-cytoplasm.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_3T3_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
     file_hash='6d3278cff6a82178dc40984e86f71ffd39c465b196e3d0b4b933949cc260adc9',
-    metadata={}
+    metadata={'methods': methods}
 )
 
 
@@ -46,7 +52,7 @@ A549 = Dataset(
     path='A549-cytoplasm.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_A549_s0_fluorescent_cyto_medium_stitched_2D.npz',
     file_hash='33741ff643b1c8c017269663978ab8d52f833bfb65156fb66defa325e5316e74',
-    metadata={}
+    metadata={'methods': methods}
 )
 
 
@@ -54,7 +60,7 @@ CHO = Dataset(
     path='CHO-cytoplasm.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_CHO_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
     file_hash='d56029039a94c3c5ffaf926796108b87d2f12792b30010af52136ef4281dbbff',
-    metadata={}
+    metadata={'methods': methods}
 )
 
 
@@ -62,7 +68,7 @@ hela_s3 = Dataset(
     path='hela_s3-cytoplasm.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_HeLa-S3_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
     file_hash='1ed6c47db02687e64a34d305a30677ad0a286106227c6d8992e23ca27ce6e098',
-    metadata={}
+    metadata={'methods': methods}
 )
 
 
@@ -70,7 +76,7 @@ hela = Dataset(
     path='hela-cytoplasm.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_HeLa_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
     file_hash='8dc76a2d4a5f384727e31daa9f25b6d861e64bd1775aec7ee42bea2cdf2b0527',
-    metadata={}
+    metadata={'methods': methods}
 )
 
 
@@ -78,5 +84,5 @@ pc3 = Dataset(
     path='pc3-cytoplasm.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_PC3_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
     file_hash='194016feb25e97bdf0b1e335acab3c217d14ae2679a7ac7d3f6204ce4a864560',
-    metadata={}
+    metadata={'methods': methods}
 )
