@@ -36,24 +36,36 @@ del print_function
 from deepcell.utils.data_utils import Dataset
 
 
-class hek293(Dataset):
+class nih_3t3(Dataset):
 
     def __init__(self):
-        path = 'HEK293.npz'
-        url = 'https://deepcell-data.s3.amazonaws.com/nuclei/3T3_NIH.npz'
-        file_hash = 'f6520df218847fa56be2de0d3552c8a2'
+        path = 'nih_3t3-cytoplasm.npz'
+        url = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_3T3_s0_fluorescent_cyto_medium_stitched_2D_512.npz'
+        file_hash = '6d3278cff6a82178dc40984e86f71ffd39c465b196e3d0b4b933949cc260adc9'
         metadata = {}
 
         super(Dataset, self).__init__(
             path, url, file_hash, metadata)
 
 
-class nih_3t3(Dataset):
+class A549(Dataset):
 
     def __init__(self):
-        path = '3T3_NIH.npz'
-        url = 'https://deepcell-data.s3.amazonaws.com/nuclei/3T3_NIH.npz'
-        file_hash = 'f6520df218847fa56be2de0d3552c8a2'
+        path = 'A549-cytoplasm.npz'
+        url = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_A549_s0_fluorescent_cyto_medium_stitched_2D.npz'
+        file_hash = '33741ff643b1c8c017269663978ab8d52f833bfb65156fb66defa325e5316e74'
+        metadata = {}
+
+        super(Dataset, self).__init__(
+            path, url, file_hash, metadata)
+
+
+class CHO(Dataset):
+
+    def __init__(self):
+        path = 'CHO-cytoplasm.npz'
+        url = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_CHO_s0_fluorescent_cyto_medium_stitched_2D_512.npz'
+        file_hash = 'd56029039a94c3c5ffaf926796108b87d2f12792b30010af52136ef4281dbbff'
         metadata = {}
 
         super(Dataset, self).__init__(
@@ -63,33 +75,33 @@ class nih_3t3(Dataset):
 class hela_s3(Dataset):
 
     def __init__(self):
-        path = 'HeLa_S3.npz'
-        url = 'https://deepcell-data.s3.amazonaws.com/nuclei/HeLa_S3.npz'
-        file_hash = '759d28d87936fd59b250dea3b126b647'
+        path = 'hela_s3-cytoplasm.npz'
+        url = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_HeLa-S3_s0_fluorescent_cyto_medium_stitched_2D_512.npz'
+        file_hash = '1ed6c47db02687e64a34d305a30677ad0a286106227c6d8992e23ca27ce6e098'
         metadata = {}
 
         super(Dataset, self).__init__(
             path, url, file_hash, metadata)
 
 
-class mibi(Dataset):
+class hela(Dataset):
 
     def __init__(self):
-        path = 'mibi_original.npz'
-        url = 'https://deepcell-data.s3.amazonaws.com/mibi/mibi_original.npz'
-        file_hash = '8b09a6bb143deb1912ada65742dfc847'
+        path = 'hela-cytoplasm.npz'
+        url = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_HeLa_s0_fluorescent_cyto_medium_stitched_2D_512.npz'
+        file_hash = '8dc76a2d4a5f384727e31daa9f25b6d861e64bd1775aec7ee42bea2cdf2b0527'
         metadata = {}
 
         super(Dataset, self).__init__(
             path, url, file_hash, metadata)
 
 
-class mousebrain(Dataset):
+class pc3(Dataset):
 
     def __init__(self):
-        path = 'mousebrain.npz'
-        url = 'https://deepcell-data.s3.amazonaws.com/nuclei/mousebrain.npz'
-        file_hash = '9c91304f7da7cc5559f46b2c5fc2eace'
+        path = 'pc3-cytoplasm.npz'
+        url = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_PC3_s0_fluorescent_cyto_medium_stitched_2D_512.npz'
+        file_hash = '194016feb25e97bdf0b1e335acab3c217d14ae2679a7ac7d3f6204ce4a864560'
         metadata = {}
 
         super(Dataset, self).__init__(
