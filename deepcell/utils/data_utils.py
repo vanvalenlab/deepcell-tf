@@ -43,11 +43,6 @@ try:
 except ImportError:
     from tensorflow.python.keras._impl.keras.utils import conv_utils
 
-try:
-    from tensorflow.python.keras.utils.data_utils import get_file
-except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
-    from tensorflow.python.keras._impl.keras.utils.data_utils import get_file
-
 from deepcell.utils.io_utils import get_image
 from deepcell.utils.io_utils import get_image_sizes
 from deepcell.utils.io_utils import nikon_getfiles
@@ -887,58 +882,3 @@ def make_training_data(direc_name,
                                   'dimensionality {}'.format(dimensionality))
 
     return None
-
-
-class Dataset:
-    def __init__(self,
-                 path,
-                 url,
-                 file_hash,
-                 metadata):
-        """
-        Args:
-        path: path where to cache the dataset locally
-        (relative to ~/.keras/datasets).
-        """
-        self.path = path
-        self.url = url
-        self.file_hash = file_hash
-        self.metadata = metadata
-
-    def _load_data(self, path, mode, test_size=0.2, seed=0):
-        """Loads dataset.
-
-        Args:
-        test_size: fraction of data to reserve as test data
-        seed: the seed for randomly shuffling the dataset
-
-        Returns:
-        Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
-        """
-        basepath = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
-        prefix = path.split(os.path.sep)[:-1]
-        data_dir = os.path.join(basepath, *prefix) if prefix else basepath
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
-        elif not os.path.isdir(data_dir):
-            raise IOError('{} exists but is not a directory'.format(data_dir))
-
-        path = get_file(path,
-                        origin=self.url,
-                        file_hash=self.file_hash)
-
-        train_dict, test_dict = get_data(path, mode=mode, test_size=test_size, seed=seed)
-
-        x_train, y_train = train_dict['X'], train_dict['y']
-        x_test, y_test = test_dict['X'], test_dict['y']
-        return (x_train, y_train), (x_test, y_test)
-
-    def load_data(self, path=None, test_size=0.2, seed=0):
-        if path is None:
-            path = self.path
-        return self._load_data(path, 'sample', test_size=test_size, seed=seed)
-
-    def load_tracked_data(self, path=None, test_size=0.2, seed=0):
-        if path is None:
-            path = self.path
-        return self._load_data(path, 'siamese_daughters', test_size=test_size, seed=seed)

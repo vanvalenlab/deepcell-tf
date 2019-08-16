@@ -29,44 +29,30 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-del absolute_import
-del division
-del print_function
-
-from deepcell.utils.data_utils import Dataset
+from deepcell.datasets import Dataset
 
 
-class hek293(Dataset):
+# pylint: disable=line-too-long
 
-    def __init__(self):
-        path = 'hek293.trks'
-        url = 'https://deepcell-data.s3.amazonaws.com/tracked/HEK293.trks'
-        file_hash = 'd5c563ab5866403836f2dcbe249c640f'
-        metadata = {}
-
-        super(Dataset, self).__init__(
-            path, url, file_hash, metadata)
+hek293 = Dataset(
+    path='hek293.trks',
+    url='https://deepcell-data.s3.amazonaws.com/tracked/HEK293.trks',
+    file_hash='d5c563ab5866403836f2dcbe249c640f',
+    metadata={}
+)
 
 
-class hela_s3(Dataset):
-
-    def __init__(self):
-        path = 'HeLa_S3.trks'
-        url = 'https://deepcell-data.s3.amazonaws.com/tracked/HeLa_S3.trks'
-        file_hash = '590ee37d3c703cfe029a2e60c9dc777b'
-        metadata = {}
-
-        super(Dataset, self).__init__(
-            path, url, file_hash, metadata)
+hela_s3 = Dataset(
+    path='HeLa_S3.trks',
+    url='https://deepcell-data.s3.amazonaws.com/tracked/HeLa_S3.trks',
+    file_hash='590ee37d3c703cfe029a2e60c9dc777b',
+    metadata={}
+)
 
 
-class nih_3t3(Dataset):
-
-    def __init__(self):
-        path = '3T3_NIH.trks'
-        url = 'https://deepcell-data.s3.amazonaws.com/tracked/3T3_NIH.trks'
-        file_hash = '0d90ad370e1cb9655727065ada3ded65'
-        metadata = {}
-
-        super(Dataset, self).__init__(
-            path, url, file_hash, metadata)
+nih_3t3 = Dataset(
+    path='3T3_NIH.trks',
+    url='https://deepcell-data.s3.amazonaws.com/tracked/3T3_NIH.trks',
+    file_hash='0d90ad370e1cb9655727065ada3ded65',
+    metadata={}
+)

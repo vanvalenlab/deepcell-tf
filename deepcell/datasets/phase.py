@@ -29,80 +29,54 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-del absolute_import
-del division
-del print_function
-
-from deepcell.utils.data_utils import Dataset
+from deepcell.datasets import Dataset
 
 
-class nih_3t3(Dataset):
+# pylint: disable=line-too-long
 
-    def __init__(self):
-        path = 'nih_3t3-phase.npz'
-        url = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_3T3_s0_phase_medium_stitched_2D_512.np'
-        file_hash = 'b0dc7fa28d6ec4dec25150187b9629330689372da40f730042f8e0824df4da2e'
-        metadata = {}
-
-        super(Dataset, self).__init__(
-            path, url, file_hash, metadata)
+nih_3t3 = Dataset(
+    path='nih_3t3-phase.npz',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_3T3_s0_phase_medium_stitched_2D_512.np',
+    file_hash='b0dc7fa28d6ec4dec25150187b9629330689372da40f730042f8e0824df4da2e',
+    metadata={}
+)
 
 
-class A549(Dataset):
-
-    def __init__(self):
-        path = 'A549-phase.npz'
-        url = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_A549_s0_phase_medium_stitched_2D_512.npz'
-        file_hash = '4e2a17ed2083ffa7e9b64824c27591bf776257bae2b07639226aa2b9900fbb33'
-        metadata = {}
-
-        super(Dataset, self).__init__(
-            path, url, file_hash, metadata)
+A549 = Dataset(
+    path='A549-phase.npz',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_A549_s0_phase_medium_stitched_2D_512.npz',
+    file_hash='4e2a17ed2083ffa7e9b64824c27591bf776257bae2b07639226aa2b9900fbb33',
+    metadata={}
+)
 
 
-class CHO(Dataset):
-
-    def __init__(self):
-        path = 'CHO-phase.npz'
-        url = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_CHO_s0_phase_medium_stitched_2D_512.npz'
-        file_hash = '39aad99486825a856da14d87b48ac9b00dd176b7e54c9fc928489ee464828bcd'
-        metadata = {}
-
-        super(Dataset, self).__init__(
-            path, url, file_hash, metadata)
+CHO = Dataset(
+    path='CHO-phase.npz',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_CHO_s0_phase_medium_stitched_2D_512.npz',
+    file_hash='39aad99486825a856da14d87b48ac9b00dd176b7e54c9fc928489ee464828bcd',
+    metadata={}
+)
 
 
-class HeLa_S3(Dataset):
-
-    def __init__(self):
-        path = 'HeLa_S3-phase.npz'
-        url = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_HeLa-S3_s0_phase_medium_stitched_2D_512.npz'
-        file_hash = '505c42d89005186d0eb4d76740bb829c13220b6a96b0bfdc3980eaf95a359293'
-        metadata = {}
-
-        super(Dataset, self).__init__(
-            path, url, file_hash, metadata)
+HeLa_S3 = Dataset(
+    path='HeLa_S3-phase.npz',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_HeLa-S3_s0_phase_medium_stitched_2D_512.npz',
+    file_hash='505c42d89005186d0eb4d76740bb829c13220b6a96b0bfdc3980eaf95a359293',
+    metadata={}
+)
 
 
-class HeLa(Dataset):
-
-    def __init__(self):
-        path = 'HeLa-phase.npz'
-        url = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_HeLa_s0_phase_medium_stitched_2D_512.npz'
-        file_hash = 'e4e92e2611cd4bf087d8489db6fed35c893566f0d3fe859e366511f087a3f64c'
-        metadata = {}
-
-        super(Dataset, self).__init__(
-            path, url, file_hash, metadata)
+HeLa = Dataset(
+    path='HeLa-phase.npz',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_HeLa_s0_phase_medium_stitched_2D_512.npz',
+    file_hash='e4e92e2611cd4bf087d8489db6fed35c893566f0d3fe859e366511f087a3f64c',
+    metadata={}
+)
 
 
-class PC3(Dataset):
-
-    def __init__(self):
-        path = 'PC3-phase.npz'
-        url = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_PC3_s0_phase_medium_stitched_2D_512.npz'
-        file_hash = '3d2d5106e1d1437e4874c6c49c773dbacc2437d5556212f7c2d532a820e5a03e'
-        metadata = {}
-
-        super(Dataset, self).__init__(
-            path, url, file_hash, metadata)
+PC3 = Dataset(
+    path='PC3-phase.npz',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_PC3_s0_phase_medium_stitched_2D_512.npz',
+    file_hash='3d2d5106e1d1437e4874c6c49c773dbacc2437d5556212f7c2d532a820e5a03e',
+    metadata={}
+)
