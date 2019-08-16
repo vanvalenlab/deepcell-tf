@@ -35,8 +35,22 @@ from deepcell.datasets import Dataset
 # pylint: disable=line-too-long
 
 methods = {
-    'Cell culture': 'For our cytoplasmic data, NIH3t3 and Raw263.7 cell lines were cultured in DMEM media supplemented with 10% FBS and 1x penicillin-streptomycin antibiotic. Cells were incubated at 37°C in a humidified 5% CO2 atmosphere.  When 70-80% confluent, cells were passaged and seeded onto fibronectin coated glass bottom 96-well plates at 10,000-20,000 cells/well. The seeded cells were then incubated for 1-2 hours to allow for cell adhesion to the bottom of the well plate before imaging.',
-    'Imaging': 'Cells were imaged on a Nikon Eclipse Ti-2 fluorescence microscope at 20x and 40x for NIH3t3 and Raw293.6 cells respectively. The well plate was placed in a Nikon incubated stage with an Oko labs environment controller set to 37°C and 5% CO2. Each data set was generated using the Nikon jobs function to collect a z-stack of phase images.'
+    'Cell culture':
+        'For our cytoplasmic data, NIH3t3 and Raw263.7 cell lines were '
+        'cultured in DMEM media supplemented with 10% FBS and 1x '
+        'penicillin-streptomycin antibiotic. Cells were incubated at 37C in a '
+        'humidified 5% CO2 atmosphere.  When 70-80% confluent, cells were '
+        'passaged and seeded onto fibronectin coated glass bottom 96-well '
+        'plates at 10,000-20,000 cells/well. The seeded cells were then '
+        'incubated for 1-2 hours to allow for cell adhesion to the bottom of '
+        'the well plate before imaging.',
+    'Imaging':
+        'Cells were imaged on a Nikon Eclipse Ti-2 fluorescence microscope at '
+        '20x and 40x for NIH3t3 and Raw293.6 cells respectively. The well '
+        'plate was placed in a Nikon incubated stage with an Oko labs '
+        'environment controller set to 37C and 5% CO2. Each data set was '
+        'generated using the Nikon jobs function to collect a z-stack of phase '
+        'images.'
 }
 
 nih_3t3 = Dataset(
