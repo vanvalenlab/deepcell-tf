@@ -72,7 +72,7 @@ def export_model(keras_model, export_path, model_version=0, weights_path=None):
     if isinstance(keras_model.input, list):
         input_map = {"input{}".format(i): input_tensor
                      for i, input_tensor in enumerate(keras_model.input)}
-        output_map = {'output': keras_model.output[-1]}
+        output_map = {'output': keras_model.output}
     # Export for panoptic
     elif isinstance(keras_model.output, list):
         input_map = {'image': keras_model.input}
