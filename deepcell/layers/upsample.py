@@ -53,8 +53,8 @@ class UpsampleLike(Layer):
         unstack_list = tf.unstack(image, axis=axis)
         resize_list = []
         for i in unstack_list:
-            resize_list.append(tf.image.resize_images(i, size,
-                               method=tf.image.ResizeMethod.NEAREST_NEIGHBOR))
+            resize_list.append(tf.image.resize_images(
+                i, size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR))
         resized_image = tf.stack(resize_list, axis=axis)
         return resized_image
 
@@ -90,7 +90,8 @@ class UpsampleLike(Layer):
                 return output
             new_shape = (target_shape[1], target_shape[2])
             return tf.image.resize_images(
-                source, new_shape, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+                source, new_shape,
+                method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
         if source.get_shape().ndims == 5:
             output = self.resize_volumes(source, target_shape)
@@ -119,16 +120,27 @@ class Upsample(Layer):
 
     def call(self, inputs, **kwargs):
         new_shape = (self.target_size[0], self.target_size[1])
-        return tf.image.resize_images(
-            inputs, new_shape,
-            method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        if self.data_format == 'channels_first':
+            inputs = tf.transpose(inputs, (0, 2, 3, 1))
+        outputs = tf.image.resize_images(
+            inputs, new_shape, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        if self.data_format == 'channels_first':
+            outputs = tf.transpose(outputs, (0, 3, 1, 2))
+        return outputs
 
     def compute_output_shape(self, input_shape):
-        output_shape = tuple([
-            input_shape[0],
-            self.target_size[0],
-            self.target_size[1],
-            input_shape[-1]])
+        if self.data_format == 'channels_first':
+            output_shape = (
+                input_shape[0],
+                input_shape[1],
+                self.target_size[0],
+                self.target_size[1])
+        else:
+            output_shape = (
+                input_shape[0],
+                self.target_size[0],
+                self.target_size[1],
+                input_shape[-1])
         return tensor_shape.TensorShape(output_shape)
 
     def get_config(self):

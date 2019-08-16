@@ -42,7 +42,7 @@ class DilatedMaxPoolingTest(test.TestCase):
         pool_size = (3, 3)
         custom_objects = {'DilatedMaxPool2D': layers.DilatedMaxPool2D}
         for strides in [(1, 1), (2, 2), None]:
-            for dilation_rate in [1, 2]:
+            for dilation_rate in [1, 2, (1, 2)]:
                 for padding in ['valid', 'same']:
                     with self.test_session(use_gpu=True):
                         testing_utils.layer_test(
@@ -69,7 +69,7 @@ class DilatedMaxPoolingTest(test.TestCase):
         custom_objects = {'DilatedMaxPool3D': layers.DilatedMaxPool3D}
         pool_size = (3, 3, 3)
         for strides in [1, 2, None]:
-            for dilation_rate in [1, 2]:
+            for dilation_rate in [1, 2, (1, 2, 2)]:
                 for padding in ['valid', 'same']:
                     with self.test_session(use_gpu=True):
                         testing_utils.layer_test(
