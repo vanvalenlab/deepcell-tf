@@ -135,7 +135,7 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding=
     # instantiate matrix for model output
     model_output_shape = tuple(list(model.layers[-1].output_shape)[1:])
     if channel_axis == 1:
-        output = np.zeros(tuple([images.shape[0], model_output_shape[1]] +
+        output = np.zeros(tuple([images.shape[0], model_output_shape[0]] +
                                 list(images.shape[2:])))
     else:
         output = np.zeros(tuple(list(images.shape[0:-1]) +
