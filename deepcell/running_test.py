@@ -180,10 +180,9 @@ class RunningTests(test.TestCase, parameterized.TestCase):
                 self.assertEqual(output.shape, expected_shape)
 
         with self.assertRaises(ValueError):
-
-            model = keras.models.Sequential()
-            model.add(keras.layers.Input(shape=(3, 4, 5)))
-            model.add(keras.layers.Dense(features))
+            inputs = keras.layers.Input(shape=(3, 4, 5))
+            outputs = layers.TensorProduct(features)(inputs)
+            model = keras.models.Model(inputs=inputs, outputs=outputs)
 
             output = running.process_whole_image(
                 model, images,
@@ -192,10 +191,9 @@ class RunningTests(test.TestCase, parameterized.TestCase):
                 padding='reflect')
 
         with self.assertRaises(ValueError):
-
-            model = keras.models.Sequential()
-            model.add(keras.layers.Input(shape=input_shape))
-            model.add(keras.layers.Dense(features))
+            inputs = keras.layers.Input(shape=input_shape)
+            outputs = layers.TensorProduct(features)(inputs)
+            model = keras.models.Model(inputs=inputs, outputs=outputs)
 
             output = running.process_whole_image(
                 model, images,
