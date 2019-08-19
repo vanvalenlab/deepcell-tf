@@ -62,8 +62,6 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
     else:
         channel_axis = len(mask.shape) - 1
 
-    print(mask.shape)
-    print(data_format)
     mask = np.squeeze(mask, axis=channel_axis)
 
     # Detect the edges and interiors
