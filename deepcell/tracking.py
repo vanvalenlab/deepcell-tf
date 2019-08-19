@@ -25,6 +25,9 @@
 # ==============================================================================
 """A cell tracking class capable of extending labels across sequential frames."""
 
+import time
+import timeit
+
 import copy
 import json
 import pathlib
@@ -39,6 +42,7 @@ from tensorflow.python.keras import backend as K
 from scipy.optimize import linear_sum_assignment
 from skimage.measure import regionprops
 from skimage.transform import resize
+import cv2
 from skimage.external.tifffile import TiffFile
 from pandas import DataFrame
 
@@ -181,6 +185,7 @@ class cell_tracker():
             # Make sure the distances are all less than max distance
             for j in range(distances.shape[0]):
                 dist = distances[j, :]
+#                print('distance: ', np.linalg.norm(dist))  #### TODEL
                 # TODO(enricozb): Finish the distance-based optimizations
                 if np.linalg.norm(dist) > self.max_distance:
                     ok = False
@@ -234,9 +239,12 @@ class cell_tracker():
             for feature_name in self.features:
                 frame_features[feature_name][cell_idx] = cell_features[feature_name]
 
+
         # Call model.predict only on inputs that are near each other
         inputs = {feature_name: ([], []) for feature_name in self.features}
         input_pairs = []
+
+        t = timeit.default_timer()   #### TODEL
 
         # Compute assignment matrix - Initialize and get model inputs
         # Fill the input matrices
@@ -244,36 +252,91 @@ class cell_tracker():
             for cell in range(number_of_cells):
                 feature_ok = True
                 feature_vals = {}
-                for feature_name in self.features:
+
+
+
+                
+
+
+                # If distance is a feature it is used to exclude impossible pairings from the get_feature call
+                if 'distance' in self.features:
                     track_feature, frame_feature, ok = self._compute_feature(
                         feature_name,
                         track_features[feature_name][track],
                         frame_features[feature_name][cell])
 
-                    # this condition changes `frame_feature`
-                    if feature_name == 'neighborhood':
-                        # we need to get the future frame for the track we are comparing to
-                        track_label = self.tracks[track]['label']
-                        try:
-                            track_frame_features = self._get_features(
-                                self.x, self.y_tracked, [frame - 1], [track_label])
-                            frame_feature = track_frame_features['~future area']
-                        except:
-                            # `track_label` might not exist in `frame - 1`
-                            # if this happens, default to the cell's neighborhood
-                            pass
-
                     if ok:
-                        feature_vals[feature_name] = (track_feature, frame_feature)
+                        # The cell is within range so we should add all the information for all features
+                        for feature_name in self.features:                                             
+
+                            track_feature, frame_feature, ok = self._compute_feature(
+                                feature_name,
+                                track_features[feature_name][track],
+                                frame_features[feature_name][cell])
+
+                            # this condition changes `frame_feature`
+                            if feature_name == 'neighborhood':                                       #### This segment of the loop should not be run if the disance check fails
+                                # we need to get the future frame for the track we are comparing to
+                                track_label = self.tracks[track]['label']
+                                try:
+                                    track_frame_features = self._get_features(
+                                        self.x, self.y_tracked, [frame - 1], [track_label])
+                                    frame_feature = track_frame_features['~future area']
+                                except:
+                                    # `track_label` might not exist in `frame - 1`
+                                    # if this happens, default to the cell's neighborhood
+                                    pass
+
+                            feature_vals[feature_name] = (track_feature, frame_feature)
+
                     else:
                         feature_ok = False
                         assignment_matrix[track, cell] = 1
 
-                if feature_ok:
-                    input_pairs.append((track, cell))
-                    for feature_name, (track_feature, frame_feature) in feature_vals.items():
-                        inputs[feature_name][0].append(track_feature)
-                        inputs[feature_name][1].append(frame_feature)
+                    if feature_ok:
+                        input_pairs.append((track, cell))
+                        for feature_name, (track_feature, frame_feature) in feature_vals.items():
+                            inputs[feature_name][0].append(track_feature)
+                            inputs[feature_name][1].append(frame_feature)
+
+                # If distance is not a feature then every get_feature call is made
+                else:
+
+                    for feature_name in self.features:                                            #### The first feature should be distance, if ok false we shouldnt call get_features 
+
+                        track_feature, frame_feature, ok = self._compute_feature(
+                            feature_name,
+                            track_features[feature_name][track],
+                            frame_features[feature_name][cell])
+
+                        # this condition changes `frame_feature`
+                        if feature_name == 'neighborhood':                                       #### This segment of the loop should not be run if the disance check fails
+                            # we need to get the future frame for the track we are comparing to
+                            track_label = self.tracks[track]['label']
+                            try:
+                                track_frame_features = self._get_features(
+                                    self.x, self.y_tracked, [frame - 1], [track_label])
+                                frame_feature = track_frame_features['~future area']
+                            except:
+                                # `track_label` might not exist in `frame - 1`
+                                # if this happens, default to the cell's neighborhood
+                                pass
+
+                        if ok:
+                            feature_vals[feature_name] = (track_feature, frame_feature)
+                        else:
+                            feature_ok = False
+                            assignment_matrix[track, cell] = 1
+
+                    if feature_ok:
+                        input_pairs.append((track, cell))
+                        for feature_name, (track_feature, frame_feature) in feature_vals.items():
+                            inputs[feature_name][0].append(track_feature)
+                            inputs[feature_name][1].append(frame_feature)
+
+
+
+        print('Time to compute and get features: ', timeit.default_timer() - t, 's') 
 
         if input_pairs == []:
             # if the frame is empty
@@ -603,8 +666,12 @@ class cell_tracker():
         resize_shape = (2 * self.neighborhood_scale_size + 1,
                         2 * self.neighborhood_scale_size + 1,
                         num_channels)
-        X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
+        resize_shape = (2 * self.neighborhood_scale_size + 1,
+                        2 * self.neighborhood_scale_size + 1)
+        #X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
+        X_reduced = cv2.resize(np.squeeze(X_reduced), resize_shape)
         # X_reduced /= np.amax(X_reduced)
+        X_reduced = np.expand_dims(X_reduced, axis = -1)
 
         return X_reduced
 
@@ -668,8 +735,11 @@ class cell_tracker():
                 resize_shape = (self.crop_dim, self.crop_dim, X.shape[channel_axis])
 
             # Resize images from bounding box
-            appearance = resize(appearance, resize_shape, mode="constant", preserve_range=True)
+#            appearance = resize(appearance, resize_shape, mode="constant", preserve_range=True)
+            resize_shape = (self.crop_dim, self.crop_dim)
+            appearance = cv2.resize(np.squeeze(appearance), resize_shape)
             # appearance /= np.amax(appearance)
+            appearance = np.expand_dims(appearance, axis=-1)
 
             if self.data_format == 'channels_first':
                 appearances[:, counter] = appearance
@@ -704,9 +774,25 @@ class cell_tracker():
         """
         for frame in range(1, self.x.shape[0]):
             print('Tracking frame ' + str(frame))
+
+            t_whole = timeit.default_timer() #### TODEL
+            t = timeit.default_timer()  #### TODEL
+
             cost_matrix, predictions = self._get_cost_matrix(frame)
+
+            print('Time to get_cost_matrix: ', timeit.default_timer() - t)  #### TODEL
+            t = timeit.default_timer()  #### TODEL
+
             assignments = self._run_lap(cost_matrix)
+
+            print('Time to run lap: ', timeit.default_timer() - t)  #### TODEL
+            t = timeit.default_timer()  #### TODEL
+
             self._update_tracks(assignments, frame, predictions)
+
+            print('Time to update tracks: ', timeit.default_timer() - t)  #### TODEL
+            print('Time to track one frame: ', timeit.default_timer() - t_whole)  #### TODEL
+
 
     def _track_review_dict(self):
         def process(key, track_item):

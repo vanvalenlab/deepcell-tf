@@ -30,3 +30,19 @@ COPY scripts/ /notebooks/
 
 # Change matplotlibrc file to use the Agg backend
 RUN echo "backend : Agg" > /usr/local/lib/python3.5/dist-packages/matplotlib/mpl-data/matplotlibrc
+
+# Install the latest version of scipy
+RUN apt-get update && apt-get install -y \
+    libatlas-base-dev \
+    liblapack-dev \
+    libblas-dev
+
+RUN pip install pybind11
+
+WORKDIR /opt
+RUN git clone https://github.com/scipy/scipy.git
+WORKDIR /opt/scipy
+RUN git clean -xdf
+RUN python setup.py install --user
+
+WORKDIR /notebooks

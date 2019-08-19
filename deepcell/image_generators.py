@@ -1491,7 +1491,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
 
 
 """
-Custom siamese generators
+Custom tracking generators
 """
 
 
