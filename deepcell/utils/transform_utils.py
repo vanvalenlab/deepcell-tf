@@ -99,8 +99,7 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
             background
         ]
 
-        pixelwise_stacks = np.stack(all_stacks, axis=channel_axis)
-        return pixelwise_stacks
+        return np.stack(all_stacks, axis=channel_axis)
 
     # dilate the background masks and subtract from all edges for background-edges
     dilated_background = np.zeros(mask.shape)
@@ -134,8 +133,7 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
         background
     ]
 
-    pixelwise_stacks = np.stack(all_stacks, axis=channel_axis)
-    return pixelwise_stacks
+    return np.stack(all_stacks, axis=channel_axis)
 
 
 def erode_edges(mask, erosion_width):
