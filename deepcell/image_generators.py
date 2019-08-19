@@ -67,7 +67,7 @@ if not hasattr(ImageDataGenerator, 'apply_transform'):
 
 from deepcell.utils.data_utils import sample_label_movie
 from deepcell.utils.data_utils import sample_label_matrix
-from deepcell.utils.transform_utils import deepcell_transform
+from deepcell.utils.transform_utils import pixelwise_transform
 from deepcell.utils.transform_utils import distance_transform_2d
 from deepcell.utils.transform_utils import distance_transform_3d
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
