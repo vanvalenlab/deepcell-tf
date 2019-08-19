@@ -279,19 +279,19 @@ def retinanet_mask(inputs,
     return model
 
 
-def MaskRCNN(backbone,
-             num_classes,
-             input_shape,
-             backbone_levels=['C3', 'C4', 'C5'],
-             pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
-             norm_method='whole_image',
-             location=False,
-             use_imagenet=False,
-             crop_size=(14, 14),
-             pooling=None,
-             mask_dtype=K.floatx(),
-             required_channels=3,
-             **kwargs):
+def RetinaMask(backbone,
+               num_classes,
+               input_shape,
+               backbone_levels=['C3', 'C4', 'C5'],
+               pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
+               norm_method='whole_image',
+               location=False,
+               use_imagenet=False,
+               crop_size=(14, 14),
+               pooling=None,
+               mask_dtype=K.floatx(),
+               required_channels=3,
+               **kwargs):
     """Constructs a mrcnn model using a backbone from keras-applications.
 
     Args:
