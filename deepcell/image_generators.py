@@ -118,7 +118,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         if transform not in valid_transforms:
             raise ValueError('`{}` is not a valid transform'.format(transform))
 
-    if transform  == 'pixelwise':
+    if transform == 'pixelwise':
         dilation_radius = kwargs.pop('dilation_radius', None)
         separate_edge_classes = kwargs.pop('separate_edge_classes', False)
         y_transform = pixelwise_transform(y, dilation_radius, data_format=data_format,
