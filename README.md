@@ -29,6 +29,13 @@ nvidia-docker run -it --rm -p 8888:8888 vanvalenlab/deepcell-tf:latest
 
 This will start a jupyter session, with several example notebooks detailing various training methods:
 
+#### PanOptic Segmentation using RetinaMask
+
+* [RetinaNet Object Detection.ipynb](scripts/feature_pyramids/RetinaNet.ipynb)
+
+* [RetinaMask Instance Segmentation.ipynb](scripts/feature_pyramids/RetinaMask.ipynb)
+
+* [PanOptic Segmentation.ipynb](scripts/feature_pyramids/PanOpticFPN.ipynb)
 
 #### Pixel-Wise Segmentation
 
