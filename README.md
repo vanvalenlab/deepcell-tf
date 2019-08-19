@@ -11,12 +11,14 @@ Read the documentation at [deepcell.readthedocs.io](https://deepcell.readthedocs
 
 For more information on deploying DeepCell in the cloud [refer to the DeepCell Kiosk documentation](https://deepcell-kiosk.readthedocs.io)
 
+
 ## Examples
 
 Raw Image                  |  Segmented and Tracked
 :-------------------------:|:-------------------------:
 ![](/docs/images/raw.gif)  |  ![](/docs/images/tracked.gif)  
-  
+
+
 ## Getting Started
 
 The fastest way to get started with DeepCell is to run the latest docker image:
@@ -27,17 +29,18 @@ nvidia-docker run -it --rm -p 8888:8888 vanvalenlab/deepcell-tf:latest
 
 This will start a jupyter session, with several example notebooks detailing various training methods:
 
-### Cell Edge and Cell Interior Segmentation
 
-* [2D DeepCell Transform - Fully Convolutional.ipynb](scripts/deepcell/Interior-Edge%20Segmentation%202D%20Fully%20Convolutional.ipynb)
+#### Pixel-Wise Segmentation
 
-* [2D DeepCell Transform - Sample Based.ipynb](scripts/deepcell/Interior-Edge%20Segmentation%202D%20Sample%20Based.ipynb)
+* [2D Pixel-Wise Transform - Fully Convolutional.ipynb](scripts/pixelwise/Interior-Edge%20Segmentation%202D%20Fully%20Convolutional.ipynb)
 
-* [3D DeepCell Transform - Fully Convolutional.ipynb](scripts/deepcell/Interior-Edge%20Segmentation%203D%20Fully%20Convolutional.ipynb)
+* [2D Pixel-Wise Transform - Sample Based.ipynb](scripts/pixelwise/Interior-Edge%20Segmentation%202D%20Sample%20Based.ipynb)
 
-* [3D DeepCell Transform - Sample Based.ipynb](scripts/deepcell/Interior-Edge%20Segmentation%203D%20Sample%20Based.ipynb)
+* [3D Pixel-Wise Transform - Fully Convolutional.ipynb](scripts/pixelwise/Interior-Edge%20Segmentation%203D%20Fully%20Convolutional.ipynb)
 
-### Deep Watershed Instance Segmentation
+* [3D Pixel-Wise Transform - Sample Based.ipynb](scripts/pixelwise/Interior-Edge%20Segmentation%203D%20Sample%20Based.ipynb)
+
+#### Deep Watershed Instance Segmentation
 
 * [2D Watershed - Fully Convolutional.ipynb](scripts/watershed/Watershed%20Transform%202D%20Fully%20Convolutional.ipynb)
 
@@ -47,9 +50,10 @@ This will start a jupyter session, with several example notebooks detailing vari
 
 * [3D Watershed - Sample Based.ipynb](scripts/watershed/Watershed%20Transform%203D%20Sample%20Based.ipynb)
 
-### Cell Tracking in Live Cell Imaging
+#### Cell Tracking in Live Cell Imaging
 
 * [Tracking Example.ipynb](scripts/tracking/Tracking%20Example.ipynb)
+
 
 ## DeepCell for Developers
 
@@ -94,22 +98,26 @@ NV_GPU='0' nvidia-docker run -it \
   $USER/deepcell-tf:latest
 ```
 
+
 ## Copyright
 
 Copyright © 2016-2019 [The Van Valen Lab](http://www.vanvalen.caltech.edu/) at the California Institute of Technology (Caltech), with support from the Paul Allen Family Foundation, Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.  
 All rights reserved.
 
+
 ## License
 
 This software is licensed under a modified [APACHE2](LICENSE).
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 See [LICENSE](LICENSE) for full details.
+
 
 ## Trademarks
 
 All other trademarks referenced herein are the property of their respective owners.
+
 
 ## Credits
 

@@ -90,7 +90,13 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     Raises:
         IOError: An error occurred
     """
-    valid_transforms = {'deepcell', 'disc', 'watershed', 'centroid', 'fgbg'}
+    valid_transforms = {
+        'pixelwise',
+        'disc',
+        'watershed',
+        'centroid',
+        'fgbg'
+    }
 
     if data_format is None:
         data_format = K.image_data_format()
@@ -106,14 +112,17 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
     if isinstance(transform, str):
         transform = transform.lower()
+        if transform == 'deepcell':
+            raise ValueError('`deepcell` transform has been replaced with the '
+                             '`pixelwise` transform.')
         if transform not in valid_transforms:
             raise ValueError('`{}` is not a valid transform'.format(transform))
 
-    if transform == 'deepcell':
+    if transform  == 'pixelwise':
         dilation_radius = kwargs.pop('dilation_radius', None)
         separate_edge_classes = kwargs.pop('separate_edge_classes', False)
-        y_transform = deepcell_transform(y, dilation_radius, data_format=data_format,
-                                         separate_edge_classes=separate_edge_classes)
+        y_transform = pixelwise_transform(y, dilation_radius, data_format=data_format,
+                                          separate_edge_classes=separate_edge_classes)
 
     elif transform == 'watershed':
         distance_bins = kwargs.pop('distance_bins', 4)

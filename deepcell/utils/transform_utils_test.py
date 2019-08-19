@@ -53,12 +53,12 @@ def _generate_test_masks():
 
 
 class TransformUtilsTest(test.TestCase):
-    def test_deepcell_transform_2d(self):
+    def test_pixelwise_transform_2d(self):
         # test single edge class
         maskstack = np.array([label(i) for i in _generate_test_masks()])
-        dc_maskstack = transform_utils.deepcell_transform(
+        dc_maskstack = transform_utils.pixelwise_transform(
             maskstack, data_format=None, separate_edge_classes=False)
-        dc_maskstack_dil = transform_utils.deepcell_transform(
+        dc_maskstack_dil = transform_utils.pixelwise_transform(
             maskstack, dilation_radius=1,
             data_format='channels_last',
             separate_edge_classes=False)
@@ -71,9 +71,9 @@ class TransformUtilsTest(test.TestCase):
 
         # test separate edge classes
         maskstack = np.array([label(i) for i in _generate_test_masks()])
-        dc_maskstack = transform_utils.deepcell_transform(
+        dc_maskstack = transform_utils.pixelwise_transform(
             maskstack, data_format=None, separate_edge_classes=True)
-        dc_maskstack_dil = transform_utils.deepcell_transform(
+        dc_maskstack_dil = transform_utils.pixelwise_transform(
             maskstack, dilation_radius=1,
             data_format='channels_last',
             separate_edge_classes=True)
@@ -84,7 +84,7 @@ class TransformUtilsTest(test.TestCase):
             dc_maskstack_dil[..., 0].sum() + dc_maskstack_dil[..., 1].sum(),
             dc_maskstack[..., 0].sum() + dc_maskstack[..., 1].sum())
 
-    def test_deepcell_transform_3d(self):
+    def test_pixelwise_transform_3d(self):
         frames = 10
         img_list = []
         for im in _generate_test_masks():
@@ -99,9 +99,9 @@ class TransformUtilsTest(test.TestCase):
         batch_count = maskstack.shape[0] // frames
         new_shape = tuple([batch_count, frames] + list(maskstack.shape[1:]))
         maskstack = np.reshape(maskstack, new_shape)
-        dc_maskstack = transform_utils.deepcell_transform(
+        dc_maskstack = transform_utils.pixelwise_transform(
             maskstack, data_format=None, separate_edge_classes=False)
-        dc_maskstack_dil = transform_utils.deepcell_transform(
+        dc_maskstack_dil = transform_utils.pixelwise_transform(
             maskstack, dilation_radius=2,
             data_format='channels_last',
             separate_edge_classes=False)
@@ -116,9 +116,9 @@ class TransformUtilsTest(test.TestCase):
         batch_count = maskstack.shape[0] // frames
         new_shape = tuple([batch_count, frames] + list(maskstack.shape[1:]))
         maskstack = np.reshape(maskstack, new_shape)
-        dc_maskstack = transform_utils.deepcell_transform(
+        dc_maskstack = transform_utils.pixelwise_transform(
             maskstack, data_format=None, separate_edge_classes=True)
-        dc_maskstack_dil = transform_utils.deepcell_transform(
+        dc_maskstack_dil = transform_utils.pixelwise_transform(
             maskstack, dilation_radius=2,
             data_format='channels_last',
             separate_edge_classes=True)

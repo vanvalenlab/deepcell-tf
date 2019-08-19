@@ -38,8 +38,8 @@ from skimage.morphology import binary_erosion, binary_dilation
 from tensorflow.python.keras import backend as K
 
 
-def deepcell_transform(mask, dilation_radius=None, data_format=None,
-                       separate_edge_classes=False):
+def pixelwise_transform(mask, dilation_radius=None, data_format=None,
+                        separate_edge_classes=False):
     """Transforms a label mask for a z stack edge, interior, and background
 
     Args:
@@ -99,8 +99,8 @@ def deepcell_transform(mask, dilation_radius=None, data_format=None,
             background
         ]
 
-        deepcell_stacks = np.stack(all_stacks, axis=channel_axis)
-        return deepcell_stacks
+        pixelwise_stacks = np.stack(all_stacks, axis=channel_axis)
+        return pixelwise_stacks
 
     # dilate the background masks and subtract from all edges for background-edges
     dilated_background = np.zeros(mask.shape)
@@ -134,8 +134,8 @@ def deepcell_transform(mask, dilation_radius=None, data_format=None,
         background
     ]
 
-    deepcell_stacks = np.stack(all_stacks, axis=channel_axis)
-    return deepcell_stacks
+    pixelwise_stacks = np.stack(all_stacks, axis=channel_axis)
+    return pixelwise_stacks
 
 
 def erode_edges(mask, erosion_width):
