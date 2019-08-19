@@ -214,6 +214,7 @@ def retinanet_mask(inputs,
             num_classes=num_classes,
             backbone_levels=backbone_levels,
             pyramid_levels=pyramid_levels,
+            fully_chained=True,
             panoptic=panoptic,
             num_anchors=anchor_params.num_anchors(),
             **kwargs

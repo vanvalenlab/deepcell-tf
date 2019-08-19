@@ -31,12 +31,14 @@ from __future__ import print_function
 
 import re
 
+from tensorflow import reduce_sum
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D
 from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import Permute, Reshape
 from tensorflow.python.keras.layers import Activation, Lambda
+from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.initializers import RandomNormal
 
 from deepcell.initializers import PriorProbability
@@ -45,7 +47,7 @@ from deepcell.layers import FilterDetections
 from deepcell.layers import ImageNormalization2D, Location2D
 from deepcell.layers import Anchors, RegressBoxes, ClipBoxes
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
-from deepcell.model_zoo.fpn import __create_pyramid_features, __create_semantic_head
+from deepcell.model_zoo.fpn import __create_pyramid_features, __create_semantic_head, __create_pyramid_features_am
 from deepcell.utils.backbone_utils import get_backbone
 
 
@@ -159,6 +161,57 @@ def default_regression_model(num_values,
     return Model(inputs=inputs, outputs=outputs, name=name)
 
 
+def default_feature_model(pyramid_feature_size=256, n_filters=16, name='feature_head_model'):
+    """Default model for feature extraction.
+    Args:
+        pyramid_feature_size: Number of filters from pyramid feature levels.
+        n_filters: Number of filters to use within the model
+
+    Returns:
+        A keras Model that predicts a 2D feature map from a 3D feature map.
+    """
+    options = {
+        'kernel_size': 3,
+        'strides': 1,
+        'padding': 'same',
+        'kernel_initializer': RandomNormal(mean=0.0, stddev=0.01, seed=None),
+        'bias_initializer': 'zeros'
+    }
+
+    if K.image_data_format() == 'channels_first':
+        inputs = Input(shape=(pyramid_feature_size, None, None))
+    else:
+        inputs = Input(shape=(None, None, None, pyramid_feature_size), name='reg_input')
+    outputs = inputs
+    for i in range(1):
+        outputs = Conv3D(
+            filters=n_filters,
+            activation='relu',
+            name='pyramid_head_conv_{}'.format(i),
+            **options
+        )(outputs)
+
+    if K.image_data_format() == 'channels_first':
+        outputs = Permute((2, 3, 1), name='pyramid_regression_permute')(outputs)
+#     outputs = Conv2DTranspose(n_filters, (2, 2), strides=(2, 2), 
+#                               kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None),
+#                               bias_initializer='zeros', use_bias=False, name='pyramid_head_upsample',
+#                               activation='relu')(outputs)
+
+    outputs = (Conv3D(n_filters, (5, 1, 1), kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None), 
+                    padding='valid')(outputs))
+    outputs = BatchNormalization(axis=4)(outputs)
+    outputs = Activation('relu')(outputs)
+    
+    outputs = (Conv3D(1, (5, 1, 1), kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None), 
+                    padding='valid')(outputs))
+    
+    outputs = Lambda(lambda x: reduce_sum(x, axis=1))(outputs)    
+        
+    model = Model(inputs=inputs, outputs=outputs, name=name)
+    return model
+
+
 def default_submodels(num_classes, num_anchors):
     """Create a list of default submodels used for object detection.
 
@@ -256,6 +309,7 @@ def retinanet(inputs,
               pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
               num_anchors=None,
               create_pyramid_features=__create_pyramid_features,
+              feature_size=256,
               create_semantic_head=__create_semantic_head,
               panoptic=False,
               num_semantic_heads=1,
@@ -312,7 +366,8 @@ def retinanet(inputs,
     # Use only the desired backbone levels to create the feature pyramid
     backbone_dict_reduced = {k: backbone_dict[k] for k in backbone_dict
                              if k in backbone_levels}
-    pyramid_dict = create_pyramid_features(backbone_dict_reduced)
+    pyramid_dict = create_pyramid_features(backbone_dict_reduced, 
+        feature_size=feature_size)
 
     # for the desired pyramid levels, run available submodels
     features = [pyramid_dict[key] for key in pyramid_levels]
@@ -336,9 +391,114 @@ def retinanet(inputs,
     model = Model(inputs=inputs, outputs=outputs, name=name)
     model.backbone_levels = backbone_levels
     model.pyramid_levels = pyramid_levels
+    model.summary()
+    return model
+
+def retinanet_feature_extractor(inputs,
+              backbone_dict,
+              backbone_levels=['C1', 'C2', 'C3', 'C4', 'C5'],
+              pyramid_levels=['P0'],
+              fully_chained=True,
+              merge=None,
+              feature_size=256,
+              upsample='learned', 
+              add_base=False,
+              fine_backbone_feature=None,
+              create_pyramid_features=__create_pyramid_features_am,
+              submodels=None,
+              summary=False,
+              name='retinanet'):
+    """Construct a RetinaNet model on top of a backbone, intended for extracting
+    a rich feature map from an image for augmented microscopy prediction. 
+
+    Args:
+        inputs: The inputs to the network.
+        backbone_dict: A dictionary with the backbone layers
+        backbone_levels: A list with the backbone levels to be used
+            to create the feature pyramid. 
+        pyramid_levels: A list of the pyramid levels to attach regression and
+            classification heads to. 
+        fully_chained: Whether each pyramid feature contains information from
+        all lower resolution pyramid features.
+        merge: The function to merge a pyramid feature with a backbone
+        feature. If None, defaults to Add()
+        upsample: The method of upsampling pyramid features. If 'default',
+        UpsampleLike is used. If 'learned', transposed convolution is used.
+        create_pyramid_features: Function for creating pyramid features.
+        submodels: Submodels to run on each feature map.
+        name: Name of the model.
+
+    Returns:
+        A Model which takes an image as input and outputs a feature map.
+    """
+    if num_anchors is None:
+        num_anchors = AnchorParameters.default.num_anchors()
+
+    if submodels is None:
+        submodels = default_feature_model(pyramid_feature_size=feature_size)
+
+    if not isinstance(num_semantic_classes, list):
+        num_semantic_classes = list(num_semantic_classes)
+
+    # compute pyramid features as per https://arxiv.org/abs/1708.02002
+
+    # Use only the desired backbone levels to create the feature pyramid
+    backbone_dict_reduced = {k: backbone_dict[k] for k in backbone_dict
+                             if k in backbone_levels}
+
+    ndim = len(list(inputs.shape)) - 2
+    pyramid_dict = create_pyramid_features(backbone_dict_reduced, ndim=ndim, 
+        fully_chained=fully_chained, merge=merge, add_base=add_base, 
+        fine_backbone_feature=fine_backbone_feature, upsample=upsample,
+        feature_size=feature_size)
+
+    # for the desired pyramid levels, run available submodels
+    features = [pyramid_dict[key] for key in pyramid_levels]
+    object_head = __build_pyramid(submodels, features)
+
+    outputs = object_head
+
+    model = Model(inputs=inputs, outputs=outputs, name=name)
+    model.backbone_levels = backbone_levels
+    model.pyramid_levels = pyramid_levels
+
+    if summary:
+        model.summary()
 
     return model
 
+
+def am_model(input_shape, 
+             backbone_levels,
+             pyramid_levels,
+             add_base=False,
+             fully_chained=True,
+             upsample='learned',
+             merge=None,
+             feature_size=256,
+             num_classes=1,
+             norm_method='whole_image',
+             ):
+    inputs = Input(shape=input_shape)
+    
+    norm = ImageNormalization3D(norm_method=norm_method)(inputs)
+
+    _, backbone_dict, fine_backbone_feature = featurenet_3D_backbone(norm)
+    
+    submodel = head_model(pyramid_feature_size=feature_size)
+    
+    return retinanet_am(inputs=inputs, 
+                        backbone_dict=backbone_dict, 
+                        submodels=[('am_head', submodel)], 
+                        backbone_levels=backbone_levels,
+                        add_base=add_base,
+                        merge=merge,
+                        upsample=upsample,
+                        feature_size=feature_size,
+                        fine_backbone_feature=fine_backbone_feature,
+                        pyramid_levels=pyramid_levels,
+                        fully_chained=fully_chained,
+                        num_classes=num_classes)
 
 def retinanet_bbox(model=None,
                    nms=True,

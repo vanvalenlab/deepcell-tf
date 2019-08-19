@@ -263,18 +263,20 @@ class ImageNormalization3D(Layer):
             depth = int(input_shape[1])
         kernel_shape = (depth, self.filter_size, self.filter_size, input_dim, 1)
 
-        self.kernel = self.add_weight(
-            'kernel',
-            shape=kernel_shape,
-            initializer=self.kernel_initializer,
-            regularizer=self.kernel_regularizer,
-            constraint=self.kernel_constraint,
-            trainable=False,
-            dtype=self.dtype)
+        # self.kernel = self.add_weight(
+        #     'kernel',
+        #     shape=kernel_shape,
+        #     initializer=self.kernel_initializer,
+        #     regularizer=self.kernel_regularizer,
+        #     constraint=self.kernel_constraint,
+        #     trainable=False,
+        #     dtype=self.dtype)
 
         W = np.ones(kernel_shape)
         W = W / W.size
-        self.set_weights([W])
+        # self.set_weights([W])
+
+        self.kernel = K.constant(W, shape=kernel_shape, name='kernel', dtype=self.dtype)
 
         if self.use_bias:
             self.bias = self.add_weight(

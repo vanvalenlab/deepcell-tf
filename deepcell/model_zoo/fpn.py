@@ -33,9 +33,9 @@ import re
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D
+from tensorflow.python.keras.layers import Conv2D, Conv3D, Conv3DTranspose
 from tensorflow.python.keras.layers import Softmax
-from tensorflow.python.keras.layers import Input, Add
+from tensorflow.python.keras.layers import Input, Add, Concatenate
 from tensorflow.python.keras.layers import Reshape
 from tensorflow.python.keras.layers import Activation
 from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
@@ -46,12 +46,15 @@ from deepcell.layers import TensorProduct, ImageNormalization2D
 from deepcell.utils.backbone_utils import get_backbone
 from deepcell.utils.misc_utils import get_sorted_keys
 
-
-def create_pyramid_level(backbone_input,
+def create_pyramid_level_am(backbone_input,
                          upsamplelike_input=None,
                          addition_input=None,
+                         fully_chained=True,
+                         merge=None,
+                         upsample='default',
                          level=5,
                          ndim=2,
+                         add_base=False,
                          feature_size=256):
     """Create a pyramid layer from a particular backbone input layer.
 
@@ -88,6 +91,251 @@ def create_pyramid_level(backbone_input,
         pyramid = Conv3D(feature_size, (1, 1, 1), strides=(1, 1, 1),
                          padding='same', name=reduced_name)(backbone_input)
 
+    if merge is None:
+        merge = Add(name=addition_name)
+
+    if upsample == 'default':
+        upsample_func = UpsampleLike(name=upsample_name)
+    elif upsample == 'learned':
+        def upsamplef(inputs):
+            first, target = inputs
+            output = Conv3DTranspose(feature_size, (2, 2, 2), strides=(2, 2, 2), 
+                                  kernel_initializer='he_normal',
+                                  use_bias=False, name=upsample_name + '_conv',
+                                  activation='relu')(first)
+            return UpsampleLike(name=upsample_name + '_shapefix')([output, target])
+        upsample_func = upsamplef
+
+    if fully_chained:
+        if addition_input is not None:
+            pyramid = merge([pyramid, addition_input])
+
+        # Upsample pyramid input
+        if upsamplelike_input is not None:
+            pyramid_upsample = upsample_func(
+                [pyramid, upsamplelike_input])
+        else:
+            pyramid_upsample = None
+            if add_base:
+                pyramid_upsample = Conv3DTranspose(feature_size, (1, 2, 2), strides=(1, 2, 2), 
+                                  kernel_initializer='he_normal',
+                                  use_bias=False, name='base_upsample',
+                                  activation='relu')(pyramid)
+
+        if ndim == 2:
+            pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
+                                   padding='same', name=final_name)(pyramid)
+        else:
+            pyramid_final = Conv3D(feature_size, (3, 3, 3), strides=(1, 1, 1),
+                                   padding='same', name=final_name)(pyramid)
+
+        return pyramid_final, pyramid_upsample
+
+    # Upsample pyramid input
+    if upsamplelike_input is not None:
+        pyramid_upsample = upsample_func(name=upsample_name)(
+            [pyramid, upsamplelike_input])
+    else:
+        pyramid_upsample = None
+        if add_base:
+            pyramid_upsample = Conv3DTranspose(feature_size, (1, 2, 2), strides=(1, 2, 2), 
+                              kernel_initializer='he_normal',
+                              use_bias=False, name='base_upsample',
+                              activation='relu')(pyramid)
+
+    # Add and then 3x3 conv
+    if addition_input is not None:
+        pyramid = merge([pyramid, addition_input])
+
+    if ndim == 2:
+        pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
+                               padding='same', name=final_name)(pyramid)
+    else:
+        pyramid_final = Conv3D(feature_size, (3, 3, 3), strides=(1, 1, 1),
+                               padding='same', name=final_name)(pyramid)
+
+    return pyramid_final, pyramid_upsample
+
+
+def __create_pyramid_features_am(backbone_dict, fully_chained=True, ndim=2, feature_size=256,
+                              merge=None, add_base=False, fine_backbone_feature=None, 
+                              include_final_layers=True, upsample='default'):
+    """Creates the FPN layers on top of the backbone features.
+
+    Args:
+        backbone_dict (dictionary): A dictionary of the backbone layers, with
+            the names as keys, e.g. {'C0': C0, 'C1': C1, 'C2': C2, ...}
+        feature_size (int, optional): Defaults to 256. The feature size to use
+            for the resulting feature levels.
+        include_final_layers: Defaults to True. Option to add two coarser
+            pyramid levels
+        ndim: The spatial dimensions of the input data. Default is 2, but it
+            also works with 3
+    Returns:
+        A dictionary with the feature pyramid names and levels,
+            e.g. {'P3': P3, 'P4': P4, ...}
+        Each backbone layer gets a pyramid level, and two additional levels are
+            added, e.g. [C3, C4, C5] --> [P3, P4, P5, P6, P7]
+    """
+
+    acceptable_ndims = [2, 3]
+    if ndim not in acceptable_ndims:
+        raise ValueError('Only 2 and 3 dimensional networks are supported')
+
+    # Get names of the backbone levels and place in ascending order
+    backbone_names = get_sorted_keys(backbone_dict)
+    backbone_features = [backbone_dict[name] for name in backbone_names]
+
+    pyramid_names = []
+    pyramid_finals = []
+    pyramid_upsamples = []
+
+    # Reverse lists
+    backbone_names.reverse()
+    backbone_features.reverse()
+
+    for i in range(len(backbone_names)):
+
+        N = backbone_names[i]
+        level = int(re.findall(r'\d+', N)[0])
+        p_name = 'P' + str(level)
+        pyramid_names.append(p_name)
+
+        backbone_input = backbone_features[i]
+
+        # Don't add for the bottom of the pyramid
+        if i == 0:
+            if len(backbone_features) > 1:
+                upsamplelike_input = backbone_features[i + 1]
+            else:
+                upsamplelike_input = None
+            addition_input = None
+
+        # Don't upsample for the top of the pyramid
+        elif i == len(backbone_names) - 1:
+            upsamplelike_input = None
+            addition_input = pyramid_upsamples[-1]
+
+        # Otherwise, add and upsample
+        else:
+            upsamplelike_input = backbone_features[i + 1]
+            addition_input = pyramid_upsamples[-1]
+
+        pf, pu = create_pyramid_level_am(backbone_input,
+                                      upsamplelike_input=upsamplelike_input,
+                                      addition_input=addition_input,
+                                      merge=merge,
+                                      add_base=add_base,
+                                      fully_chained=fully_chained,
+                                      level=level,
+                                      feature_size=feature_size,
+                                      upsample=upsample,
+                                      ndim=ndim)
+        pyramid_finals.append(pf)
+        pyramid_upsamples.append(pu)
+
+    if add_base:
+        if fine_backbone_feature is None:
+            raise ValueError
+        if merge is None:
+            merge = Add(name='base_merge')
+        pyramid = Conv3D(feature_size, (1, 1, 1), strides=(1, 1, 1),
+                         padding='same', name='base_reduce')(fine_backbone_feature)
+        pyramid = merge([pyramid_upsamples[-1], pyramid])#Concatenate(axis=4)([pyramid_upsamples[-1], pyramid])
+        pyramid = Conv3D(feature_size, (3, 3, 3), padding='same', kernel_initializer='he_normal', name='base_final_conv')(pyramid)
+        pyramid_names.append('P0')
+        pyramid_finals.append(pyramid)
+
+    # Add the final two pyramid layers
+    if include_final_layers:
+        # "Second to last pyramid layer is obtained via a
+        # 3x3 stride-2 conv on the coarsest backbone"
+        N = backbone_names[0]
+        F = backbone_features[0]
+        level = int(re.findall(r'\d+', N)[0]) + 1
+        P_minus_2_name = 'P%s' % level
+
+        if ndim == 2:
+            P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
+                               padding='same', name=P_minus_2_name)(F)
+        else:
+            P_minus_2 = Conv3D(feature_size, kernel_size=(3, 3, 3),
+                               strides=(2, 2, 2), padding='same',
+                               name=P_minus_2_name)(F)
+
+        pyramid_names.insert(0, P_minus_2_name)
+        pyramid_finals.insert(0, P_minus_2)
+
+        # "Last pyramid layer is computed by applying ReLU
+        # followed by a 3x3 stride-2 conv on second to last layer"
+        level = int(re.findall(r'\d+', N)[0]) + 2
+        P_minus_1_name = 'P' + str(level)
+        P_minus_1 = Activation('relu', name=N + '_relu')(P_minus_2)
+
+        if ndim == 2:
+            P_minus_1 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
+                               padding='same', name=P_minus_1_name)(P_minus_1)
+        else:
+            P_minus_1 = Conv3D(feature_size, kernel_size=(3, 3, 3),
+                               strides=(2, 2, 2), padding='same',
+                               name=P_minus_1_name)(P_minus_1)
+
+        pyramid_names.insert(0, P_minus_1_name)
+        pyramid_finals.insert(0, P_minus_1)
+
+    pyramid_names.reverse()
+    pyramid_finals.reverse()
+
+    # Reverse lists
+    backbone_names.reverse()
+    backbone_features.reverse()
+
+    pyramid_dict = {}
+    for name, feature in zip(pyramid_names, pyramid_finals):
+        pyramid_dict[name] = feature
+
+    return pyramid_dict
+
+def create_pyramid_level(backbone_input,
+                         upsamplelike_input=None,
+                         addition_input=None,
+                         level=5,
+                         ndim=2,
+                         feature_size=256):
+    """Create a pyramid layer from a particular backbone input layer.
+    Args:
+        backbone_input (layer): Backbone layer to use to create they pyramid layer
+        upsamplelike_input ([type], optional): Defaults to None. Input to use
+            as a template for shape to upsample to
+        addition_input (layer, optional): Defaults to None. Layer to add to
+            pyramid layer after conv and upsample
+        level (int, optional): Defaults to 5. Level to use in layer names
+        feature_size (int, optional): Defaults to 256. Number of filters for
+            convolutional layer
+        ndim: The spatial dimensions of the input data. Default is 2,
+            but it also works with 3
+    Returns:
+        (pyramid final, pyramid upsample): Pyramid layer after processing,
+            upsampled pyramid layer
+    """
+
+    acceptable_ndims = {2, 3}
+    if ndim not in acceptable_ndims:
+        raise ValueError('Only 2 and 3 dimensional networks are supported')
+
+    reduced_name = 'C{}_reduced'.format(level)
+    upsample_name = 'P{}_upsampled'.format(level)
+    addition_name = 'P{}_merged'.format(level)
+    final_name = 'P{}'.format(level)
+
+    # Apply 1x1 conv to backbone layer
+    if ndim == 2:
+        pyramid = Conv2D(feature_size, (1, 1), strides=(1, 1),
+                         padding='same', name=reduced_name)(backbone_input)
+    else:
+        pyramid = Conv3D(feature_size, (1, 1, 1), strides=(1, 1, 1),
+                         padding='same', name=reduced_name)(backbone_input)
+
     # Upsample pyramid input
     if upsamplelike_input is not None:
         pyramid_upsample = UpsampleLike(name=upsample_name)(
@@ -108,11 +356,9 @@ def create_pyramid_level(backbone_input,
 
     return pyramid_final, pyramid_upsample
 
-
 def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
                               include_final_layers=True):
     """Creates the FPN layers on top of the backbone features.
-
     Args:
         backbone_dict (dictionary): A dictionary of the backbone layers, with
             the names as keys, e.g. {'C0': C0, 'C1': C1, 'C2': C2, ...}
@@ -186,7 +432,7 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
         N = backbone_names[0]
         F = backbone_features[0]
         level = int(re.findall(r'\d+', N)[0]) + 1
-        P_minus_2_name = 'P%s' % level
+        P_minus_2_name = 'P{}'.format(level)
 
         if ndim == 2:
             P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
@@ -228,7 +474,6 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
         pyramid_dict[name] = feature
 
     return pyramid_dict
-
 
 def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
     """
@@ -284,7 +529,6 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
             x = UpsampleLike()([x, target])
 
     return x
-
 
 def semantic_prediction(semantic_names,
                         semantic_features,

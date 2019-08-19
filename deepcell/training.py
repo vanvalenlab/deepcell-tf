@@ -36,10 +36,12 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import callbacks
+from tensorflow.python.keras.losses import mean_squared_error
 from tensorflow.python.keras.optimizers import SGD
 
 from deepcell import losses
 from deepcell import image_generators
+from deepcell import stack_generator
 from deepcell.callbacks import RedirectModel, Evaluate
 from deepcell.model_zoo import retinanet_bbox
 from deepcell.utils.retinanet_anchor_utils import make_shapes_callback
@@ -724,5 +726,171 @@ def train_model_retinanet(model,
             print('mAP using the weighted average of precisions among classes: {:.4f}'.format(
                 sum([a * b for a, b in zip(total_instances, precisions)]) / sum(total_instances)))
             print('mAP: {:.4f}'.format(sum(precisions) / sum(x > 0 for x in total_instances)))
+
+    return model
+
+def train_model_am(model,
+                     #dataset,
+                     train_dict,
+                     test_dict,
+                     expt='',
+                     test_size=.1,
+                     n_epoch=10,
+                     batch_size=1,
+                     num_gpus=None,
+                     frames_per_batch=5,
+                     transform=None,
+                     optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
+                     log_dir='/data/tensorboard_logs',
+                     model_dir='/data/models',
+                     model_name=None,
+                     focal=False,
+                     gamma=0.5,
+                     lr_sched=rate_scheduler(lr=0.01, decay=0.95),
+                     rotation_range=0,
+                     flip=True,
+                     shear=0,
+                     zoom_range=0,
+                     seed=None,
+                     **kwargs):
+    is_channels_first = K.image_data_format() == 'channels_first'
+
+    if model_name is None:
+        todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        data_name = os.path.splitext(os.path.basename(dataset))[0]
+        model_name = '{}_{}_{}'.format(todays_date, data_name, expt)
+    model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
+    loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
+    
+    # train_dict, test_dict = get_data(dataset, mode='conv', test_size=test_size)
+
+    n_classes = model.layers[-1].output_shape[1 if is_channels_first else -1]
+    # the data, shuffled and split between train and test sets
+    print('X_train shape:', train_dict['X'].shape)
+    print('y_train shape:', train_dict['y'].shape)
+    print('X_test shape:', test_dict['X'].shape)
+    print('y_test shape:', test_dict['y'].shape)
+    print('Output Shape:', model.layers[-1].output_shape)
+    print('Number of Classes:', n_classes)
+
+#     def loss_function(y_true, y_pred):
+#         if isinstance(transform, str) and transform.lower() == 'disc':
+#             return losses.discriminative_instance_loss(y_tru,e, y_pred)
+#         if focal:
+#             return losses.weighted_focal_loss(
+#                 y_true, y_pred, gamma=gamma, n_classes=n_classes)
+#         return losses.weighted_categorical_crossentropy(
+#             y_true, y_pred, n_classes=n_classes, from_logits=False)
+
+    if num_gpus is None:
+        num_gpus = train_utils.count_gpus()
+
+    if num_gpus >= 2:
+        batch_size = batch_size * num_gpus
+        model = train_utils.MultiGpuModel(model, num_gpus)
+
+    print('Training on {} GPUs'.format(num_gpus))
+
+    # model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
+    
+    run_options = tf.RunOptions(report_tensor_allocations_upon_oom = True)
+    model.compile(loss=mean_squared_error, optimizer=optimizer, metrics=['accuracy'])
+
+    if isinstance(model.output_shape, list):
+        skip = len(model.output_shape) - 1
+    else:
+        skip = None
+
+    if train_dict['X'].ndim == 4:
+        DataGenerator = image_generators.ImageFullyConvDataGenerator
+    elif train_dict['X'].ndim == 5:
+        DataGenerator = stack_generator.StackDataGenerator
+    else:
+        raise ValueError('Expected `X` to have ndim 4 or 5. Got',
+                         train_dict['X'].ndim)
+
+    if num_gpus >= 2:
+        # Each GPU must have at least one validation example
+        if test_dict['y'].shape[0] < num_gpus:
+            raise ValueError('Not enough validation data for {} GPUs. '
+                             'Received {} validation sample.'.format(
+                                 test_dict['y'].shape[0], num_gpus))
+
+        # When using multiple GPUs and skip_connections,
+        # the training data must be evenly distributed across all GPUs
+        num_train = train_dict['y'].shape[0]
+        nb_samples = num_train - num_train % batch_size
+        if nb_samples:
+            train_dict['y'] = train_dict['y'][:nb_samples]
+            train_dict['X'] = train_dict['X'][:nb_samples]
+
+    # this will do preprocessing and realtime data augmentation
+    datagen = DataGenerator(
+        rotation_range=rotation_range,
+        shear_range=shear,
+        zoom_range=zoom_range,
+        horizontal_flip=flip,
+        vertical_flip=flip)
+
+    datagen_val = DataGenerator(
+        rotation_range=0,
+        shear_range=0,
+        zoom_range=0,
+        horizontal_flip=0,
+        vertical_flip=0)
+
+    if train_dict['X'].ndim == 5:
+        train_data = datagen_val.flow(
+            train_dict,
+            skip=skip,
+            batch_size=batch_size,
+            transform=transform,
+            transform_kwargs=kwargs,
+            frames_per_batch=frames_per_batch)
+
+        val_data = datagen_val.flow(
+            test_dict,
+            skip=skip,
+            batch_size=batch_size,
+            transform=transform,
+            transform_kwargs=kwargs,
+            frames_per_batch=frames_per_batch)
+    else:
+        train_data = datagen.flow(
+            train_dict,
+            skip=skip,
+            batch_size=batch_size,
+            transform=transform,
+            transform_kwargs=kwargs)
+
+        val_data = datagen_val.flow(
+            test_dict,
+            skip=skip,
+            batch_size=batch_size,
+            transform=transform,
+            transform_kwargs=kwargs)
+        
+    # Check memory leaks
+#     all_objects = muppy.get_objects()
+#     sum1 = summary.summarize(all_objects)
+#     summary.print_(sum1)
+
+    # fit the model on the batches generated by datagen.flow()
+    loss_history = model.fit_generator(
+        train_data,
+        steps_per_epoch=train_data.y.shape[0] // batch_size,
+        epochs=n_epoch,
+        validation_data=val_data,
+        validation_steps=val_data.y.shape[0] // batch_size,
+        callbacks=[
+            callbacks.LearningRateScheduler(lr_sched),
+            callbacks.ModelCheckpoint(
+                model_path, monitor='val_loss', verbose=1,
+                save_best_only=True, save_weights_only=num_gpus >= 2),
+            callbacks.TensorBoard(log_dir=os.path.join(log_dir, model_name))
+        ])
+
+    model.save_weights(model_path)
+    np.savez(loss_path, loss_history=loss_history.history)
 
     return model
