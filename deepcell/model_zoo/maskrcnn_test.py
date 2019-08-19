@@ -38,10 +38,10 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.platform import test
 
-from deepcell.model_zoo import MaskRCNN
+from deepcell.model_zoo import RetinaMask
 
 
-# class MaskRCNNTest(test.TestCase, parameterized.TestCase):
+# class RetinaMaskTest(test.TestCase, parameterized.TestCase):
 #
 #     @parameterized.named_parameters([
 #         {
@@ -101,7 +101,7 @@ from deepcell.model_zoo import MaskRCNN
 #         norm_method = None
 #         backbone = 'featurenet'  # not all backbones work with channels_first
 #
-#         # TODO: MaskRCNN fails with channels_first
+#         # TODO: RetinaMask fails with channels_first
 #         for data_format in ('channels_last',):  # 'channels_first'):
 #             with self.test_session(use_gpu=True):
 #                 K.set_image_data_format(data_format)
@@ -113,7 +113,7 @@ from deepcell.model_zoo import MaskRCNN
 #                     input_shape = (32, 32, 1)
 #
 #                 num_semantic_classes = [3, 4]
-#                 model = MaskRCNN(
+#                 model = RetinaMask(
 #                     backbone=backbone,
 #                     num_classes=num_classes,
 #                     input_shape=input_shape,
