@@ -939,7 +939,7 @@ class cell_tracker():
 
 
     def _track_to_graph(self, tracks):
-        '''Create a graph from the lineage information'''
+        """Create a graph from the lineage information"""
         Dattr = {}
         edges = pd.DataFrame()
         
@@ -967,8 +967,8 @@ class cell_tracker():
         return G
 
     def _flag_false_pos(self, G, time_excl):
-        '''Examine graph for false positive nodes
-        '''
+        """Examine graph for false positive nodes
+        """
 
         # TODO: Current implementation may eliminate some divisions at the edge of the frame - 
         #       Further research needed
@@ -1004,8 +1004,8 @@ class cell_tracker():
         return D
 
     def _review_candidate_nodes(self, FPs_candidates):
-        ''' review candidate false positive nodes and remove any errant degree 2 nodes.
-        '''
+        """ review candidate false positive nodes and remove any errant degree 2 nodes.
+        """
         FPs_presort = {}
         # review candidate false positive nodes and remove any errant degree 2 nodes
         for candidate_node in FPs_candidates:
@@ -1030,8 +1030,8 @@ class cell_tracker():
         return FPs_sorted
 
     def _remove_false_pos(self, lineage, tracked, FP_info):
-        ''' Remove nodes that have been identified as false positive divisions.
-        '''
+        """ Remove nodes that have been identified as false positive divisions.
+        """
         node = FP_info[0]
         node_info = FP_info[1]
 
