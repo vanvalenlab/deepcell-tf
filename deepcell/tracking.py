@@ -229,8 +229,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         mordor_matrix = np.zeros((number_of_cells, number_of_tracks), dtype=K.floatx())
 
         # Grab the features for the entire track
-        track_features = {feature_name: self._fetch_track_feature(feature_name)
-                          for feature_name in self.features}
+        track_features = {f: self._fetch_track_feature(f) for f in self.features}
 
         # Grab the features for this frame
         # Fill frame_features with zero matrices
