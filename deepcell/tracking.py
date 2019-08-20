@@ -656,34 +656,35 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         return track_neighborhoods
 
     def _sub_area(self, X_frame, y_frame, cell_label, num_channels):
-        shape = (2 * self.neighborhood_scale_size + 1,
-                 2 * self.neighborhood_scale_size + 1,
-                 1)
-        neighborhood = np.zeros(shape, dtype=K.floatx())
-
-        pads = ((self.neighborhood_true_size, self.neighborhood_true_size),
-                (self.neighborhood_true_size, self.neighborhood_true_size),
+        true_size = self.neighborhood_true_size
+        pads = ((true_size, true_size),
+                (true_size, true_size),
                 (0, 0))
+
         X_padded = np.pad(X_frame, pads, mode='constant', constant_values=0)
         y_padded = np.pad(y_frame, pads, mode='constant', constant_values=0)
+
         props = regionprops(np.squeeze(np.int32(y_padded == cell_label)))
+
         center_x, center_y = props[0].centroid
         center_x, center_y = np.int(center_x), np.int(center_y)
-        X_reduced = X_padded[
-            center_x - self.neighborhood_true_size:center_x + self.neighborhood_true_size,
-            center_y - self.neighborhood_true_size:center_y + self.neighborhood_true_size, :]
 
-        # resize to neighborhood_scale_size
-        resize_shape = (2 * self.neighborhood_scale_size + 1,
-                        2 * self.neighborhood_scale_size + 1,
-                        num_channels)
+        X_reduced = X_padded[center_x - true_size:center_x + true_size,
+                             center_y - true_size:center_y + true_size]
+
+        # resize to neighborhood_scale_size with skimage
+        # resize_shape = (2 * self.neighborhood_scale_size + 1,
+        #                 2 * self.neighborhood_scale_size + 1,
+        #                 num_channels)
+        # X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
+
+        # resize to neighborhood_scale_size with cv2
         resize_shape = (2 * self.neighborhood_scale_size + 1,
                         2 * self.neighborhood_scale_size + 1)
-        #X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
         X_reduced = cv2.resize(np.squeeze(X_reduced), resize_shape)
+
         # X_reduced /= np.amax(X_reduced)
         X_reduced = np.expand_dims(X_reduced, axis=self.channel_axis)
-
         return X_reduced
 
     def _get_features(self, X, y, frames, labels):
