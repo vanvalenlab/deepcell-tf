@@ -25,28 +25,27 @@
 # ==============================================================================
 """A cell tracking class capable of extending labels across sequential frames."""
 
-import time
-import timeit
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import copy
 import json
 import pathlib
 import tarfile
 import tempfile
+import timeit
 
 import pandas as pd
 import networkx as nx
 
+import cv2
 import numpy as np
 from tensorflow.python.keras import backend as K
 from scipy.optimize import linear_sum_assignment
 from skimage.measure import regionprops
 from skimage.transform import resize
-import cv2
-from skimage.external.tifffile import TiffFile
 from pandas import DataFrame
-
-from deepcell.image_generators import MovieDataGenerator
 
 
 class cell_tracker():
@@ -127,7 +126,6 @@ class cell_tracker():
         """
         This function creates new tracks
         """
-        import traceback
 
         new_track = len(self.tracks.keys())
         new_label = new_track + 1
