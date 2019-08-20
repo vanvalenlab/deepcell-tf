@@ -193,7 +193,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
             # Make sure the distances are all less than max distance
             for j in range(distances.shape[0]):
                 dist = distances[j, :]
-                # print('distance: ', np.linalg.norm(dist))  #### TODEL
+                # print('distance: ', np.linalg.norm(dist))  # TODEL
                 # TODO(enricozb): Finish the distance-based optimizations
                 if np.linalg.norm(dist) > self.max_distance:
                     ok = False
@@ -246,12 +246,11 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
             for feature_name in self.features:
                 frame_features[feature_name][cell_idx] = cell_features[feature_name]
 
-
         # Call model.predict only on inputs that are near each other
         inputs = {feature_name: ([], []) for feature_name in self.features}
         input_pairs = []
 
-        t = timeit.default_timer()   #### TODEL
+        t = timeit.default_timer()  # TODEL
 
         # Compute assignment matrix - Initialize and get model inputs
         # Fill the input matrices
@@ -786,23 +785,23 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         for frame in range(1, self.x.shape[0]):
             print('Tracking frame ' + str(frame))
 
-            t_whole = timeit.default_timer() #### TODEL
-            t = timeit.default_timer()  #### TODEL
+            t_whole = timeit.default_timer()  # TODEL
+            t = timeit.default_timer()  # TODEL
 
             cost_matrix, predictions = self._get_cost_matrix(frame)
 
-            print('Time to get_cost_matrix: ', timeit.default_timer() - t)  #### TODEL
-            t = timeit.default_timer()  #### TODEL
+            print('Time to get_cost_matrix: ', timeit.default_timer() - t)  # TODEL
+            t = timeit.default_timer()  # TODEL
 
             assignments = self._run_lap(cost_matrix)
 
-            print('Time to run lap: ', timeit.default_timer() - t)  #### TODEL
-            t = timeit.default_timer()  #### TODEL
+            print('Time to run lap: ', timeit.default_timer() - t)  # TODEL
+            t = timeit.default_timer()  # TODEL
 
             self._update_tracks(assignments, frame, predictions)
 
-            print('Time to update tracks: ', timeit.default_timer() - t)  #### TODEL
-            print('Time to track one frame: ', timeit.default_timer() - t_whole)  #### TODEL
+            print('Time to update tracks: ', timeit.default_timer() - t)  # TODEL
+            print('Time to track one frame: ', timeit.default_timer() - t_whole)  # TODEL
 
     def _track_review_dict(self):
         def process(key, track_item):
@@ -847,7 +846,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         data = []
         for cell_id, track in self.tracks.items():
             data.append(extra_column_vals + [track[c] for c in track_columns])
-        dataframe = pd.DataFrame(data, columns=extra_columns+track_columns)
+        dataframe = pd.DataFrame(data, columns=extra_columns + track_columns)
 
         # daughters contains track_id not labels
         dataframe['daughters'] = dataframe['daughters'].apply(
@@ -984,7 +983,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         # Identify false positive nodes
         node_fix = []
         for g in nx.connected_component_subgraphs(G):
-            div_nodes = [node for node,d in g.node.data() if d.get('division', False) == True]
+            div_nodes = [node for node, d in g.node.data() if d.get('division', False) is True]
             if len(div_nodes) > 1:
                 for nd in div_nodes:
                     if g.degree(nd) == 2:
@@ -1010,7 +1009,8 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
             D[node] = {
                 'false positive': node,
                 'neighbors': list(G.neighbors(node)),
-                'connected lineages': set([int(node.split('_')[0]) for node in nx.node_connected_component(G, node)])
+                'connected lineages': set([int(n.split('_')[0])
+                                          for n in nx.node_connected_component(G, n)])
             }
 
         return D
@@ -1026,7 +1026,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
             fp_label = int(node.split('_')[0])
             fp_frame = int(node.split('_')[1])
 
-            neighbors = [] # structure of this list will be [(neighbor1, frame), (neighbor2,frame)]
+            neighbors = []  # structure will be [(neighbor1, frame), (neighbor2,frame)]
             for neighbor in node_info['neighbors']:
                 neighbor_label = int(neighbor.split('_')[0])
                 neighbor_frame = int(neighbor.split('_')[1])
@@ -1050,7 +1050,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         fp_label = int(node.split('_')[0])
         fp_frame = int(node.split('_')[1])
 
-        neighbors = [] # structure of this list will be [(neighbor1, frame), (neighbor2,frame)]
+        neighbors = []  # structure will be [(neighbor1, frame), (neighbor2,frame)]
         for neighbor in node_info['neighbors']:
             neighbor_label = int(neighbor.split('_')[0])
             neighbor_frame = int(neighbor.split('_')[1])
@@ -1083,7 +1083,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
                     lineage[daughter]['parent'] = lineage[label_to_remove]['parent']
 
                 # Remove the errant node from the annotated images
-                channel = 0 # These images should only have one channel
+                channel = 0  # These images should only have one channel
                 for frame in lineage[label_to_remove]['frames']:
                     label_loc = np.where(tracked[frame, :, :, channel] == label_to_remove)
                     tracked[frame, :, :, channel][label_loc] = label_to_extend
@@ -1094,9 +1094,9 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
             # Neighbor_2 has same label as fp - the actual division ocurred &
             # the model mistakenly allowed another
             # elif fp_label == neighbors[1][0]:
-                 # The model mistakenly identified a division after
-                 # the actual division occurred
-                 # label_to_remove = fp_label
+                # The model mistakenly identified a division after
+                # the actual division occurred
+                # label_to_remove = fp_label
 
             # Neither neighbor has same label as fp - the actual division
             # ocurred & the model mistakenly allowed another
@@ -1116,7 +1116,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
                         lineage[parent_label]['daughters'][d_idx] = label_to_extend
 
                 # Remove the errant node from the annotated images
-                channel = 0 # These images should only have one channel
+                channel = 0  # These images should only have one channel
                 for frame in lineage[label_to_remove]['frames']:
                     label_loc = np.where(tracked[frame, :, :, channel] == label_to_remove)
                     tracked[frame, :, :, channel][label_loc] = label_to_extend
