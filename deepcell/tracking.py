@@ -47,7 +47,8 @@ from skimage.measure import regionprops
 from skimage.transform import resize
 
 
-class cell_tracker():
+class cell_tracker(object):  # pylint: disable=useless-object-inheritance
+
     def __init__(self,
                  movie,
                  annotation,
