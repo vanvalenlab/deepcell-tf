@@ -792,7 +792,6 @@ class cell_tracker():
             print('Time to update tracks: ', timeit.default_timer() - t)  #### TODEL
             print('Time to track one frame: ', timeit.default_timer() - t_whole)  #### TODEL
 
-
     def _track_review_dict(self):
         def process(key, track_item):
             if track_item is None:
@@ -843,7 +842,6 @@ class cell_tracker():
             lambda d: [self.tracks[x]['label'] for x in d])
 
         return dataframe
-
 
     def postprocess(self, filename=None, time_excl=9):
         """Use graph postprocessing to eliminate false positive division errors
@@ -908,7 +906,6 @@ class cell_tracker():
 
         return track_review_dict
 
-
     def dump(self, filename):
         """Writes the state of the cell tracker to a .trk ('track') file.
         Includes raw & tracked images, and a lineage.json for parent/daughter
@@ -937,8 +934,6 @@ class cell_tracker():
                 np.save(tracked_file, track_review_dict['y_tracked'])
                 tracked_file.flush()
                 trks.add(tracked_file.name, 'tracked.npy')
-
-
 
     def _track_to_graph(self, tracks):
         """Create a graph from the lineage information"""
