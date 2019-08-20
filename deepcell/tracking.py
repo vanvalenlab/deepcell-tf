@@ -881,7 +881,7 @@ class cell_tracker():
         track_review_dict['tracks'] = lineage
 
         # Save information to a track file file if requested
-        if filename != None:
+        if filename is not None:
             # Prep filepath
             filename = pathlib.Path(filename)
             if filename.suffix != '.trk':
@@ -953,10 +953,11 @@ class cell_tracker():
                                                'target': cellid[1:]}))
 
             # Collect any division attributes
-            if L['frame_div'] != None:
+            if L['frame_div'] is not None:
                 Dattr['{}_{}'.format(L['label'], ['frame_div'] - 1)] = {'division': True}
+
             # Create any daughter-parent edges
-            if L['parent'] != None:
+            if L['parent'] is not None:
                 source = '{}_{}'.format(L['parent'], min(L['frames']) - 1)
                 target = '{}_{}'.format(L['label'], min(L['frames']))
                 edges = edges.append(pd.DataFrame({'source': [source],
@@ -993,7 +994,7 @@ class cell_tracker():
                                 if time_spacing > time_excl:
                                     keep_div = False
 
-                        if keep_div == True:
+                        if keep_div is True:
                             node_fix.append(nd)
 
         # Add supplementary information for each false positive
