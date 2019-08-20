@@ -672,7 +672,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         #X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
         X_reduced = cv2.resize(np.squeeze(X_reduced), resize_shape)
         # X_reduced /= np.amax(X_reduced)
-        X_reduced = np.expand_dims(X_reduced, axis = -1)
+        X_reduced = np.expand_dims(X_reduced, axis=self.channel_axis)
 
         return X_reduced
 
