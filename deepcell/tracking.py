@@ -749,7 +749,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
             resize_shape = (self.crop_dim, self.crop_dim)
             appearance = cv2.resize(np.squeeze(appearance), resize_shape)
             # appearance /= np.amax(appearance)
-            appearance = np.expand_dims(appearance, axis=-1)
+            appearance = np.expand_dims(appearance, axis=self.channel_axis)
 
             if self.data_format == 'channels_first':
                 appearances[:, counter] = appearance
@@ -845,7 +845,6 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         # fill the dataframe
         data = []
         for cell_id, track in self.tracks.items():
-            data.append([*extra_column_vals, *[track[c] for c in track_columns]])
         dataframe = pd.DataFrame(data, columns=[*extra_columns, *track_columns])
 
         # daughters contains track_id not labels
