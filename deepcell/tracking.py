@@ -182,7 +182,7 @@ class cell_tracker():
             # Make sure the distances are all less than max distance
             for j in range(distances.shape[0]):
                 dist = distances[j, :]
-#                print('distance: ', np.linalg.norm(dist))  #### TODEL
+                # print('distance: ', np.linalg.norm(dist))  #### TODEL
                 # TODO(enricozb): Finish the distance-based optimizations
                 if np.linalg.norm(dist) > self.max_distance:
                     ok = False
@@ -734,7 +734,7 @@ class cell_tracker():
                 resize_shape = (self.crop_dim, self.crop_dim, X.shape[channel_axis])
 
             # Resize images from bounding box
-#            appearance = resize(appearance, resize_shape, mode="constant", preserve_range=True)
+            # appearance = resize(appearance, resize_shape, mode="constant", preserve_range=True)
             resize_shape = (self.crop_dim, self.crop_dim)
             appearance = cv2.resize(np.squeeze(appearance), resize_shape)
             # appearance /= np.amax(appearance)
