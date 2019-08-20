@@ -45,7 +45,6 @@ from tensorflow.python.keras import backend as K
 from scipy.optimize import linear_sum_assignment
 from skimage.measure import regionprops
 from skimage.transform import resize
-from pandas import DataFrame
 
 
 class cell_tracker():
@@ -835,7 +834,7 @@ class cell_tracker():
         data = []
         for cell_id, track in self.tracks.items():
             data.append([*extra_column_vals, *[track[c] for c in track_columns]])
-        dataframe = DataFrame(data, columns=[*extra_columns, *track_columns])
+        dataframe = pd.DataFrame(data, columns=[*extra_columns, *track_columns])
 
         # daughters contains track_id not labels
         dataframe['daughters'] = dataframe['daughters'].apply(
