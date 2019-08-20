@@ -64,6 +64,16 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
                  neighborhood_true_size=100,
                  data_format=None):
 
+        if not len(movie.shape) == 4 or not len(annotation.shape) == 4:
+            raise ValueError('Input data and labels but be rank 4 '
+                             '(frames, x, y, channels).  Got {} and {}.'.format(
+                                 len(movie.shape), len(annotation.shape)))
+
+        if not movie.shape[:-1] == annotation.shape[:-1]:
+            raise ValueError('Input data and labels should have the same shape'
+                             ' except for the channel dimension.  Got {} and '
+                             '{}'.format(movie.shape, annotation.shape))
+
         if data_format is None:
             data_format = K.image_data_format()
 
