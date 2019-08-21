@@ -44,17 +44,19 @@ def make_notebook(model_output,
     deep learning model.
 
     Args:
-        model_output: output of a deep learning model to visualize
-        output_dir: directory to save the notebook
+        model_output (str): output of a deep learning model to visualize
+        output_dir (str): directory to save the notebook
 
     Returns:
-        path to the generated notebook
+        str: path to the generated notebook
+
+    Raises:
+        IOError: model_output is invalid file path
     """
     # validate inputs
     if not os.path.isfile(model_output):
-        raise FileNotFoundError('{} does not exist.  '
-                                '`model_output` must be a file.'.format(
-                                    model_output))
+        raise IOError('{} does not exist. `model_output` '
+                      'must be a file.'.format(model_output))
     # create output_dir if it does not already exist
     try:
         os.makedirs(output_dir)
