@@ -44,11 +44,11 @@ class Dataset(object):  # pylint: disable=useless-object-inheritance
     """General class for downloading datasets from S3.
 
     Args:
-        path: (str) path where to cache the dataset locally
+        path (str): path where to cache the dataset locally
             (relative to ~/.keras/datasets).
-        url: URL of dataset in S3.
-        file_hash: (str) md5hash for checking validity of cached file.
-        metadata: (dict) miscellaneous other data for dataset
+        url (str): URL of dataset in S3.
+        file_hash (str): md5hash for checking validity of cached file.
+        metadata (dict): miscellaneous other data for dataset
     """
 
     def __init__(self,
@@ -65,11 +65,11 @@ class Dataset(object):  # pylint: disable=useless-object-inheritance
         """Loads dataset.
 
         Args:
-        test_size: fraction of data to reserve as test data
-        seed: the seed for randomly shuffling the dataset
+            test_size (float): fraction of data to reserve as test data
+            seed (int): the seed for randomly shuffling the dataset
 
         Returns:
-        Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
+            tuple: `(x_train, y_train), (x_test, y_test)`.
         """
         basepath = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
         prefix = path.split(os.path.sep)[:-1]
@@ -94,10 +94,30 @@ class Dataset(object):  # pylint: disable=useless-object-inheritance
         return (x_train, y_train), (x_test, y_test)
 
     def load_data(self, path=None, test_size=0.2, seed=0):
+        """Loads dataset.
+
+        Args:
+            path (str): filepath to save the data locally.
+            test_size (float): fraction of data to reserve as test data
+            seed (int): the seed for randomly shuffling the dataset
+
+        Returns:
+            tuple: `(x_train, y_train), (x_test, y_test)`.
+        """
         path = path if path else self.path
         return self._load_data(path, 'sample', test_size=test_size, seed=seed)
 
     def load_tracked_data(self, path=None, test_size=0.2, seed=0):
+        """Loads dataset using `siamese_daughters` mode.
+
+        Args:
+            path (str): filepath to save the data locally.
+            test_size (float): fraction of data to reserve as test data
+            seed (int): the seed for randomly shuffling the dataset
+
+        Returns:
+            tuple: `(x_train, y_train), (x_test, y_test)`.
+        """
         path = path if path else self.path
         return self._load_data(path, 'siamese_daughters', test_size=test_size, seed=seed)
 
