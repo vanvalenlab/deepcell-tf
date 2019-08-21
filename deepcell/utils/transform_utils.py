@@ -43,14 +43,15 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
     """Transforms a label mask for a z stack edge, interior, and background
 
     Args:
-        mask: tensor of labels
-        dilation_radius:  width to enlarge the edge feature of each instance
-        data_format: `channels_first` or `channels_last`
-        separate_edge_classes: boolean, whether to separate the cell edge class
+        mask (tensor): tensor of labels
+        dilation_radius (int):  width to enlarge the edge feature of
+            each instance
+        data_format (str): `channels_first` or `channels_last`
+        separate_edge_classes (bool): Whether to separate the cell edge class
             into 2 distinct cell-cell edge and cell-background edge classes.
 
     Returns:
-        one-hot encoded tensor of masks:
+        np.array: one-hot encoded tensor of masks:
             if not separate_edge_classes: [cell_edge, cell_interior, background]
             otherwise: [bg_cell_edge, cell_cell_edge, cell_interior, background]
     """
@@ -140,11 +141,14 @@ def erode_edges(mask, erosion_width):
     """Erode edge of objects to prevent them from touching
 
     Args:
-        mask: uniquely labeled instance mask
-        erosion_width: integer value for pixel width to erode edges
+        mask (np.array): uniquely labeled instance mask
+        erosion_width (int): integer value for pixel width to erode edges
 
     Returns:
-        mask where each instance has had the edges eroded
+        np.array: mask where each instance has had the edges eroded
+
+    Raises:
+        ValueError: mask.ndim is not 2 or 3
     """
     if erosion_width:
         new_mask = np.zeros(mask.shape)
@@ -168,13 +172,13 @@ def distance_transform_2d(mask, bins=16, erosion_width=None):
     """Transform a label mask into distance classes.
 
     Args:
-        mask: a label mask (y data)
-        bins: the number of transformed distance classes
-        erosion_width: number of pixels to erode edges of each labels
+        mask (np.array): a label mask (y data)
+        bins (int): the number of transformed distance classes
+        erosion_width (int): number of pixels to erode edges of each labels
 
     Returns:
-        distance: a mask of same shape as input mask,
-                  with each label being a distance class from 1 to bins
+        np.array: a mask of same shape as input mask,
+            with each label being a distance class from 1 to bins
     """
     mask = np.squeeze(mask)  # squeeze the channels
     mask = erode_edges(mask, erosion_width)
@@ -203,12 +207,12 @@ def distance_transform_3d(maskstack, bins=4, erosion_width=None):
     Uses scipy's distance_transform_edt
 
     Args:
-        maskstack: a z-stack of label masks (y data)
-        bins: the number of transformed distance classes
-        erosion_width: number of pixels to erode edges of each labels
+        maskstack (np.array): a z-stack of label masks (y data)
+        bins (int): the number of transformed distance classes
+        erosion_width (int): number of pixels to erode edges of each labels
 
     Returns:
-        distance: 3D Euclidiean Distance Transform
+        np.array: 3D Euclidiean Distance Transform
     """
     maskstack = np.squeeze(maskstack)  # squeeze the channels
     maskstack = erode_edges(maskstack, erosion_width)
@@ -233,12 +237,12 @@ def centroid_weighted_distance_transform_2d(mask):
     """Transform a label mask into 2 distance masks weighted by the centroid.
 
     Args:
-        mask: a label mask (y data)
+        mask (np.array): a label mask (y data)
 
     Returns:
-        distance: two masks of the same shape as input mask, with each label
-                  being a distance class scaled by the labels centroid
-                  (one image by the centroid's x-component and another by the y)
+        np.array: two masks of the same shape as input mask, with each label
+            being a distance class scaled by the labels centroid
+            (one image by the centroid's x-component and another by the y)
     """
     mask = mask.astype('int32')
     distance = ndimage.distance_transform_edt(mask)
@@ -268,10 +272,26 @@ def centroid_weighted_distance_transform_2d(mask):
 
 
 def rotate_array_0(arr):
+    """Rotate array 0 degrees
+
+    Args:
+        arr (np.array): input array
+
+    Returns:
+        np.array: rotated array
+    """
     return arr
 
 
 def rotate_array_90(arr):
+    """Rotate array 90 degrees
+
+    Args:
+        arr (np.array): input array
+
+    Returns:
+        np.array: rotated array
+    """
     axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
     slices = [slice(None) for _ in range(arr.ndim - 2)] + \
              [slice(None), slice(None, None, -1)]
@@ -279,12 +299,28 @@ def rotate_array_90(arr):
 
 
 def rotate_array_180(arr):
+    """Rotate array 180 degrees
+
+    Args:
+        arr (np.array): input array
+
+    Returns:
+        np.array: rotated array
+    """
     slices = [slice(None) for _ in range(arr.ndim - 2)] + \
              [slice(None, None, -1), slice(None, None, -1)]
     return arr[tuple(slices)]
 
 
 def rotate_array_270(arr):
+    """Rotate array 270 degrees
+
+    Args:
+        arr (np.array): input array
+
+    Returns:
+        np.array: rotated array
+    """
     axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
     slices = [slice(None) for _ in range(arr.ndim - 2)] + \
              [slice(None, None, -1), slice(None)]
@@ -296,12 +332,12 @@ def to_categorical(y, num_classes=None):
     E.g. for use with categorical_crossentropy.
 
     Args:
-        y: class vector to be converted into a matrix
-        (integers from 0 to num_classes).
-        num_classes: total number of classes.
+        y (np.array): class vector to be converted into a matrix
+            (integers from 0 to num_classes).
+        num_classes (int): total number of classes.
 
     Returns:
-        A binary matrix representation of the input.
+        np.array: A binary matrix representation of the input.
     """
     y = np.array(y, dtype='int').ravel()
     if not num_classes:

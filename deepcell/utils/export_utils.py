@@ -42,10 +42,10 @@ def export_model(keras_model, export_path, model_version=0, weights_path=None):
     """Export a model for use with tensorflow-serving.
 
     Args:
-        keras_model: instantiated Keras model to export
-        export_path: destination to save the exported model files
-        model_version: integer version of the model
-        weights_path: path to a .h5 or .tf weights file for the model to load
+        keras_model (keras.Model): instantiated Keras model to export
+        export_path (str): destination to save the exported model files
+        model_version (int): integer version of the model
+        weights_path (str): path to a .h5 or .tf weights file
     """
     # Start the tensorflow session
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8, allow_growth=False)

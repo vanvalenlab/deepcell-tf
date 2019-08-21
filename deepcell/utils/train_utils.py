@@ -39,11 +39,12 @@ def rate_scheduler(lr=.001, decay=0.95):
     """Schedule the learning rate based on the epoch.
 
     Args:
-        lr: initial learning rate
-        decay: rate of decay of the learning rate
+        lr (float): initial learning rate
+        decay (float): rate of decay of the learning rate
 
     Returns:
-        A function that takes in the epoch and returns a learning rate.
+        callable: A function that takes in the epoch
+            and returns a learning rate.
     """
     def output_fn(epoch):
         epoch = np.int(epoch)
@@ -56,7 +57,7 @@ def count_gpus():
     """Get the number of available GPUs.
 
     Returns:
-        count of GPUs as integer
+        int: count of GPUs as integer
     """
     devices = device_lib.list_local_devices()
     gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
@@ -64,15 +65,22 @@ def count_gpus():
 
 
 class MultiGpuModel(Model):
-    """Wrapper Model class to enable multi-gpu saving/loading"""
+    """Wrapper Model class to enable multi-gpu saving/loading
+
+    Args:
+        ser_model (keras.Model): serial-model that runs on a single GPU.
+        gpus (int): number of GPUs to train on.
+    """
     def __init__(self, ser_model, gpus):
         pmodel = multi_gpu_model(ser_model, gpus)
         self.__dict__.update(pmodel.__dict__)
         self._smodel = ser_model
 
     def __getattribute__(self, attrname):
-        """Override load and save methods to be used from the serial-model. The
-        serial-model holds references to the weights in the multi-gpu model."""
+        """Override load and save methods to be used from the serial-model.
+
+        The serial-model holds references to the weights in the multi-gpu model
+        """
         # return Model.__getattribute__(self, attrname)
         if 'load' in attrname or 'save' in attrname:
             return getattr(self._smodel, attrname)
