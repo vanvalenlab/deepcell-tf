@@ -121,7 +121,7 @@ def stats_pixelbased(y_true, y_pred):
     }
 
 
-class ObjectAccuracy(object):
+class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
     """Classifies object prediction errors as TP, FP, FN, merge or split
 
     The schema for this analysis was adopted from the description of
@@ -154,7 +154,7 @@ class ObjectAccuracy(object):
     Warning:
         Position indicies are not currently collected appropriately
 
-    Todo:
+    TODO:
         Implement recording of object indices for each error group
     """
 
@@ -775,29 +775,29 @@ class Metrics(object):
                      + self.stats['catastrophe'].sum())
 
         print('\nGained detections: {}\tPerc Error: {}%'.format(
-              int(self.stats['gained_detections'].sum()),
-              to_precision(100 * self.stats['gained_detections'].sum() / total_err, self.ndigits)))
+            int(self.stats['gained_detections'].sum()),
+            to_precision(100 * self.stats['gained_detections'].sum() / total_err, self.ndigits)))
         print('Missed detections: {}\tPerc Error: {}%'.format(
-              int(self.stats['missed_detections'].sum()),
-              to_precision(100 * self.stats['missed_detections'].sum() / total_err, self.ndigits)))
+            int(self.stats['missed_detections'].sum()),
+            to_precision(100 * self.stats['missed_detections'].sum() / total_err, self.ndigits)))
         print('Merges: {}\t\tPerc Error: {}%'.format(
-              int(self.stats['merge'].sum()),
-              to_precision(100 * self.stats['merge'].sum() / total_err, self.ndigits)))
+            int(self.stats['merge'].sum()),
+            to_precision(100 * self.stats['merge'].sum() / total_err, self.ndigits)))
         print('Splits: {}\t\tPerc Error: {}%'.format(
-              int(self.stats['split'].sum()),
-              to_precision(100 * self.stats['split'].sum() / total_err, self.ndigits)))
+            int(self.stats['split'].sum()),
+            to_precision(100 * self.stats['split'].sum() / total_err, self.ndigits)))
         print('Catastrophes: {}\t\tPerc Error: {}%\n'.format(
-              int(self.stats['catastrophe'].sum()),
-              to_precision(100 * self.stats['catastrophe'].sum() / total_err, self.ndigits)))
+            int(self.stats['catastrophe'].sum()),
+            to_precision(100 * self.stats['catastrophe'].sum() / total_err, self.ndigits)))
 
         print('Gained detections from splits: {}'.format(
-              int(self.stats['gained_det_from_split'].sum())))
+            int(self.stats['gained_det_from_split'].sum())))
         print('Missed detections from merges: {}'.format(
-              int(self.stats['missed_det_from_merge'].sum())))
+            int(self.stats['missed_det_from_merge'].sum())))
         print('True detections involved in catastrophes: {}'.format(
-              int(self.stats['true_det_in_catastrophe'].sum())))
+            int(self.stats['true_det_in_catastrophe'].sum())))
         print('Predicted detections involved in catastrophes: {}'.format(
-              int(self.stats['pred_det_in_catastrophe'].sum())), '\n')
+            int(self.stats['pred_det_in_catastrophe'].sum())), '\n')
 
         if self.seg is True:
             print('SEG:', to_precision(self.stats['seg'].mean(), self.ndigits), '\n')
