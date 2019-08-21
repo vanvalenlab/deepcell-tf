@@ -215,16 +215,16 @@ def trks_stats(trks_file_name):
           len(training_data['lineages']))
 
     # Calculate cell density
-    frame_area = X.shape[2]*X.shape[3]
+    frame_area = X.shape[2] * X.shape[3]
 
     avg_cells_in_frame = []
     for batch in range(y.shape[0]):
         num_cells_in_frame = []
         for frame in y[batch]:
-            cells_in_frame = len(np.unique(frame))-1 # unique returns 0 (BKGD)
-            num_cells_in_frame.append(cells_in_frame) 
+            cells_in_frame = len(np.unique(frame)) - 1  # unique returns 0 (BKGD)
+            num_cells_in_frame.append(cells_in_frame)
         avg_cells_in_frame.append(np.average(num_cells_in_frame))
-    avg_cells_per_sq_pixel = np.average(avg_cells_in_frame)/frame_area
+    avg_cells_per_sq_pixel = np.average(avg_cells_in_frame) / frame_area
 
     # Calculate division information
     total_tracks = 0
@@ -248,5 +248,5 @@ def trks_stats(trks_file_name):
 
     print('Total number of unique tracks (cells)      - ', total_tracks)
     print('Total number of divisions                  - ', total_divisions)
-    print('Average cell density (cells/100 sq pixels) - ', avg_cells_per_sq_pixel*100)
+    print('Average cell density (cells/100 sq pixels) - ', avg_cells_per_sq_pixel * 100)
     print('Average number of frames per track         - ', int(avg_num_frames_per_track))

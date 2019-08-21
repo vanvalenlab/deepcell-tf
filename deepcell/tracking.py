@@ -1106,7 +1106,8 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
                 label_to_extend = neighbors[1][0]
 
                 # Give all of the errant divisions information to the correct track
-                lineage[label_to_extend]['frames'] = lineage[fp_label]['frames'] + lineage[label_to_extend]['frames']
+                lineage[label_to_extend]['frames'] = \
+                    lineage[fp_label]['frames'] + lineage[label_to_extend]['frames']
                 lineage[label_to_extend]['parent'] = lineage[fp_label]['parent']
 
                 # Adjust the parent information for the actual daughter
