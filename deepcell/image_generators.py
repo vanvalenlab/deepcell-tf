@@ -2029,11 +2029,10 @@ class SiameseIterator(Iterator):
 
         if division:
             # sanity check
-            if (self.x.shape[self.time_axis] - 1) in all_frames:
-                logging.warning('Track %s is annotated incorrectly. '
-                                'No parent cell should be in the last frame of'
-                                ' any movie.', track_id)
-                raise Exception('Parent cell should not be in last frame of movie')
+            if self.x.shape[self.time_axis] - 1 in all_frames:
+                raise ValueError('Track {} is annotated incorrectly. '
+                                 'No parent cell should be in the last frame '
+                                 'of any movie.'.format(track_id))
 
             candidate_interval = all_frames[-self.min_track_length:]
         else:
