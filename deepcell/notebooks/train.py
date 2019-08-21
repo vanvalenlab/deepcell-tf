@@ -41,7 +41,7 @@ def make_notebook(data,
                   train_type='conv',
                   field_size=61,
                   ndim=2,
-                  transform='deepcell',
+                  transform='pixelwise',
                   epochs=10,
                   optimizer='sgd',
                   skips=0,
@@ -101,7 +101,7 @@ def make_notebook(data,
         if not transform:
             transform = None
 
-    if transform not in {'deepcell', 'watershed', None}:
+    if transform not in {'pixelwise', 'watershed', None}:
         raise ValueError('`transform` got unexpected value', transform)
 
     if normalization is not None:
@@ -290,7 +290,7 @@ def make_notebook(data,
     cells.append(nbf.v4.new_code_cell('\n'.join(load_data)))
 
     # Set up model parameters
-    if transform == 'deepcell':
+    if transform == 'pixelwise':
         n_features = 4
     elif transform == 'watershed':
         n_features = kwargs.get('distance_bins', 4)
@@ -401,7 +401,7 @@ def make_notebook(data,
 
     if transform is not None:
         training_kwargs['transform'] = '"{}"'.format(transform)
-    if transform == 'deepcell':
+    if transform == 'pixelwise':
         training_kwargs['dilation_radius'] = kwargs.get('dilation_radius', 1)
     elif transform == 'watershed':
         training_kwargs['distance_bins'] = kwargs.get('distance_bins', 4)

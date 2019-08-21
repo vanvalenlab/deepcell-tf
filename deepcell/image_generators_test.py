@@ -23,9 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for custom image data generators
-@author: David Van Valen
-"""
+"""Tests for custom image data generators"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -107,31 +105,31 @@ class TestTransformMasks(test.TestCase):
             mask, transform='fgbg', data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, num_classes, 10, 30, 30))
 
-    def test_deepcell_transform(self):
+    def test_pixelwise_transform(self):
         num_classes = 3
         # test 2D masks
         mask = np.random.randint(3, size=(5, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
-            mask, transform='deepcell', data_format='channels_last',
+            mask, transform='pixelwise', data_format='channels_last',
             separate_edge_classes=True)
         self.assertEqual(mask_transform.shape, (5, 30, 30, 4))
 
         mask = np.random.randint(3, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
-            mask, transform='deepcell', data_format='channels_first',
+            mask, transform='pixelwise', data_format='channels_first',
             separate_edge_classes=False)
         self.assertEqual(mask_transform.shape, (5, 3, 30, 30))
 
         # test 3D masks
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
-            mask, transform='deepcell', data_format='channels_last',
+            mask, transform='pixelwise', data_format='channels_last',
             separate_edge_classes=False)
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, 3))
 
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
-            mask, transform='deepcell', data_format='channels_first',
+            mask, transform='pixelwise', data_format='channels_first',
             separate_edge_classes=True)
         self.assertEqual(mask_transform.shape, (5, 4, 10, 30, 30))
 
@@ -212,6 +210,11 @@ class TestTransformMasks(test.TestCase):
         self.assertEqual(mask_transform.shape, (5, classes, 10, 30, 30))
 
     def test_bad_mask(self):
+        # test deprecated `deepcell` transform
+        with self.assertRaises(ValueError):
+            mask = np.random.randint(3, size=(5, 30, 30, 1))
+            image_generators._transform_masks(mask, transform='deepcell')
+
         # test bad transform
         with self.assertRaises(ValueError):
             mask = np.random.randint(3, size=(5, 30, 30, 1))
