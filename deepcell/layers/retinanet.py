@@ -79,14 +79,14 @@ class Anchors(Layer):
         self.ratios = ratios
         self.scales = scales
 
-        if ratios is None:
+        if self.ratios is None:
             self.ratios = retinanet_anchor_utils.AnchorParameters.default.ratios
-        elif isinstance(ratios, list):
-            self.ratios = np.array(ratios)
-        if scales is None:
+        if isinstance(self.ratios, list):
+            self.ratios = np.array(self.ratios)
+        if self.scales is None:
             self.scales = retinanet_anchor_utils.AnchorParameters.default.scales
-        elif isinstance(scales, list):
-            self.scales = np.array(scales)
+        if isinstance(self.scales, list):
+            self.scales = np.array(self.scales)
 
         self.num_anchors = len(self.ratios) * len(self.scales)
         self.anchors = K.variable(retinanet_anchor_utils.generate_anchors(
@@ -117,8 +117,7 @@ class Anchors(Layer):
             total = K.get_value(total)
 
             return tensor_shape.TensorShape((input_shape[0], total, 4))
-        else:
-            return tensor_shape.TensorShape((input_shape[0], None, 4))
+        return tensor_shape.TensorShape((input_shape[0], None, 4))
 
     def get_config(self):
         config = {

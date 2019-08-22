@@ -73,8 +73,8 @@ class AnchorParameters:
 AnchorParameters.default = AnchorParameters(
     sizes=[32, 64, 128, 256, 512],
     strides=[8, 16, 32, 64, 128],
-    ratios=np.array([0.5, 1, 2], K.floatx()),
-    scales=np.array([2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)], K.floatx()),
+    ratios=[0.5, 1.0, 2.0],
+    scales=[2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)],
 )
 
 
@@ -416,6 +416,9 @@ def generate_anchors(base_size=16, ratios=None, scales=None):
 
     if scales is None:
         scales = AnchorParameters.default.scales
+
+    ratios = np.array(ratios, dtype=K.floatx())
+    scales = np.array(scales, dtype=K.floatx())
 
     num_anchors = len(ratios) * len(scales)
 
