@@ -616,6 +616,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         return track_neighborhoods
 
     def _sub_area(self, X_frame, y_frame, cell_label, num_channels):
+        t = timeit.default_timer()
         true_size = self.neighborhood_true_size
         pads = ((true_size, true_size),
                 (true_size, true_size),
@@ -645,6 +646,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
 
         # X_reduced /= np.amax(X_reduced)
         X_reduced = np.expand_dims(X_reduced, axis=self.channel_axis)
+        print('_sub_area finished in {}s'.format(timeit.default_timer() - t))
         return X_reduced
 
     def _get_features(self, X, y, frames, labels):
@@ -684,6 +686,9 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         neighborhoods = np.zeros(neighborhood_shape, dtype=K.floatx())
         future_areas = np.zeros(future_area_shape, dtype=K.floatx())
         for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
+            print('Start _get_features for frame {} and label {}'.format(
+                frame, cell_label))
+            t = timeit.default_timer()
             # Get the bounding box
             X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
@@ -696,6 +701,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
                 props[0].perimeter,
                 props[0].eccentricity
             ])
+            print('Got regionprops data in {}s'.format(timeit.default_timer() - t))
 
             # Extract images from bounding boxes
             if self.data_format == 'channels_first':
@@ -706,6 +712,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
                 resize_shape = (self.crop_dim, self.crop_dim, X.shape[channel_axis])
 
             # Resize images from bounding box
+            t = timeit.default_timer()
             # appearance = resize(appearance, resize_shape, mode="constant", preserve_range=True)
             resize_shape = (self.crop_dim, self.crop_dim)
             appearance = cv2.resize(np.squeeze(appearance), resize_shape)
@@ -716,6 +723,8 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
                 appearances[:, counter] = appearance
             else:
                 appearances[counter] = appearance
+
+            print('Reshaped appearance in {}s'.format(timeit.default_timer() - t))
 
             # Get the neighborhood
             neighborhoods[counter] = self._sub_area(
