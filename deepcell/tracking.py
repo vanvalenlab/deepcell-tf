@@ -930,7 +930,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
 
             # Collect any division attributes
             if L['frame_div'] is not None:
-                Dattr['{}_{}'.format(L['label'], ['frame_div'] - 1)] = {'division': True}
+                Dattr['{}_{}'.format(L['label'], L['frame_div'] - 1)] = {'division': True}
 
             # Create any daughter-parent edges
             if L['parent'] is not None:
