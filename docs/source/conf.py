@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'DeepCell'
-copyright = '2016-2019, Van Valen Lab at the California Institute of Technology (Caltech)'
+copyright = '2016-2018, Van Valen Lab at the California Institute of Technology (Caltech)'
 author = 'Van Valen Lab at Caltech'
 
 # The short X.Y version
@@ -184,12 +184,16 @@ epub_exclude_files = ['search.html']
 # -- Extension configuration -------------------------------------------------
 autodoc_mock_imports = [
     'tensorflow',
+    'scipy',
     'sklearn',
     'skimage',
+    'pandas',
+    'networkx',
     'nbformat',
     'cv2',
-    'keras_retinanet',
-    'keras_maskrcnn']
+    'cython',
+    'keras-preprocessing',
+]
 
 # -- Options for intersphinx extension ---------------------------------------
 
