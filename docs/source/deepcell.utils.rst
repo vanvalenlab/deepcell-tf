@@ -4,6 +4,14 @@ deepcell.utils package
 Submodules
 ----------
 
+deepcell.utils.backbone\_utils module
+--------------------------------------
+
+.. automodule:: deepcell.utils.backbone_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 deepcell.utils.data\_utils module
 ---------------------------------
 
@@ -48,6 +56,14 @@ deepcell.utils.retinanet\_anchor\_utils module
 ----------------------------------------------
 
 .. automodule:: deepcell.utils.retinanet_anchor_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+deepcell.utils.tracking\_utils module
+----------------------------------
+
+.. automodule:: deepcell.utils.tracking_utils
     :members:
     :undoc-members:
     :show-inheritance:
