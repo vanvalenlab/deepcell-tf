@@ -300,7 +300,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
 
                     feature_vals[feature_name] = (track_feature, frame_feature)
 
-                input_pairs.append(tuple(track, cell))
+                input_pairs.append((track, cell))
                 for feature_name, (track_feature, frame_feature) in feature_vals.items():
                     inputs[feature_name][0].append(track_feature)
                     inputs[feature_name][1].append(frame_feature)
