@@ -250,100 +250,60 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         inputs = {feature_name: ([], []) for feature_name in self.features}
         input_pairs = []
 
-        t = timeit.default_timer()  # TODEL
-
         # Compute assignment matrix - Initialize and get model inputs
         # Fill the input matrices
         for track in range(number_of_tracks):
+
+            # we need to get the future frame for the track we are comparing to
+            try:
+                track_label = self.tracks[track]['label']
+                track_frame_features = self._get_features(
+                    self.x, self.y_tracked, [frame - 1], [track_label])
+            except:
+                # `track_label` might not exist in `frame - 1`
+                # if this happens, default to the cell's neighborhood
+                track_frame_features = dict()
+
             for cell in range(number_of_cells):
-                feature_ok = True
                 feature_vals = {}
 
                 # If distance is a feature it is used to exclude
                 # impossible pairings from the get_feature call
                 if 'distance' in self.features:
-                    track_feature, frame_feature, ok = self._compute_feature(
+                    _, _, is_cell_in_range = self._compute_feature(
+                        'distance',
+                        track_features['distance'][track],
+                        frame_features['distance'][cell])
+                else:
+                    # not worried about distance, just calculate features
+                    is_cell_in_range = True
+
+                if not is_cell_in_range:
+                    # Cell is outside of range, set cost to max and move on
+                    assignment_matrix[track, cell] = 1
+                    continue
+
+                # The cell is within range so we should add
+                # all the information for all features
+                for feature_name in self.features:
+
+                    track_feature, frame_feature, _ = self._compute_feature(
                         feature_name,
                         track_features[feature_name][track],
                         frame_features[feature_name][cell])
 
-                    if ok:
-                        # The cell is within range so we should add
-                        # all the information for all features
-                        for feature_name in self.features:
+                    # this condition changes `frame_feature`
+                    if feature_name == 'neighborhood':
+                        # This segment of the loop should not be run
+                        # if the disance check fails
+                        frame_feature = track_frame_features.get('~future area', frame_feature)
 
-                            track_feature, frame_feature, ok = self._compute_feature(
-                                feature_name,
-                                track_features[feature_name][track],
-                                frame_features[feature_name][cell])
+                    feature_vals[feature_name] = (track_feature, frame_feature)
 
-                            # this condition changes `frame_feature`
-                            if feature_name == 'neighborhood':
-                                # This segment of the loop should not be run
-                                # if the disance check fails
-
-                                # we need to get the future frame for the track we are comparing to
-                                track_label = self.tracks[track]['label']
-                                try:
-                                    track_frame_features = self._get_features(
-                                        self.x, self.y_tracked, [frame - 1], [track_label])
-                                    frame_feature = track_frame_features['~future area']
-                                except:
-                                    # `track_label` might not exist in `frame - 1`
-                                    # if this happens, default to the cell's neighborhood
-                                    pass
-
-                            feature_vals[feature_name] = (track_feature, frame_feature)
-
-                    else:
-                        feature_ok = False
-                        assignment_matrix[track, cell] = 1
-
-                    if feature_ok:
-                        input_pairs.append((track, cell))
-                        for feature_name, (track_feature, frame_feature) in feature_vals.items():
-                            inputs[feature_name][0].append(track_feature)
-                            inputs[feature_name][1].append(frame_feature)
-
-                # If distance is not a feature then every get_feature call is made
-                else:
-
-                    # The first feature should be distance,
-                    # if ok false we shouldnt call get_features
-                    for feature_name in self.features:
-
-                        track_feature, frame_feature, ok = self._compute_feature(
-                            feature_name,
-                            track_features[feature_name][track],
-                            frame_features[feature_name][cell])
-
-                        # this condition changes `frame_feature`
-                        if feature_name == 'neighborhood':
-                            # This segment of the loop should not be run
-                            # if the disance check fails
-
-                            # we need to get the future frame for the track we are comparing to
-                            track_label = self.tracks[track]['label']
-                            try:
-                                track_frame_features = self._get_features(
-                                    self.x, self.y_tracked, [frame - 1], [track_label])
-                                frame_feature = track_frame_features['~future area']
-                            except:
-                                # `track_label` might not exist in `frame - 1`
-                                # if this happens, default to the cell's neighborhood
-                                pass
-
-                        if ok:
-                            feature_vals[feature_name] = (track_feature, frame_feature)
-                        else:
-                            feature_ok = False
-                            assignment_matrix[track, cell] = 1
-
-                    if feature_ok:
-                        input_pairs.append((track, cell))
-                        for feature_name, (track_feature, frame_feature) in feature_vals.items():
-                            inputs[feature_name][0].append(track_feature)
-                            inputs[feature_name][1].append(frame_feature)
+                input_pairs.append(tuple(track, cell))
+                for feature_name, (track_feature, frame_feature) in feature_vals.items():
+                    inputs[feature_name][0].append(track_feature)
+                    inputs[feature_name][1].append(frame_feature)
 
         print('Got features in {}s'.format(timeit.default_timer()))
 
