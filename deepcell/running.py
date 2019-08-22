@@ -46,6 +46,8 @@ def get_cropped_input_shape(images,
         images (np.array): numpy array of original data
         num_crops (int): number of slices for the x and y axis
             to create sub-images
+        receptive_field (int): the receptive field of the neural network.
+        data_format (str): `channels_first` or `channels_last`
 
     Returns:
         input_shape: new input_shape for model to process sub-images.
@@ -86,7 +88,7 @@ def get_padding_layers(model):
         model (keras.Model): Keras model
 
     Returns:
-        str[]: list of names of padding layers inside model
+        list: list of names of padding layers inside model
     """
     padding_layers = []
     for layer in model.layers:
