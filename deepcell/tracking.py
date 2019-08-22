@@ -212,6 +212,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         """Uses the model to create the cost matrix for
         assigning the cells in frame to existing tracks.
         """
+        t = timeit.default_timer()
         # Initialize matrices
         number_of_tracks = np.int(len(self.tracks.keys()))
 
@@ -305,7 +306,7 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
                     inputs[feature_name][0].append(track_feature)
                     inputs[feature_name][1].append(frame_feature)
 
-        print('Got features in {}s'.format(timeit.default_timer()))
+        print('Got features in {}s'.format(timeit.default_timer() - t))
 
         if input_pairs == []:
             # if the frame is empty
