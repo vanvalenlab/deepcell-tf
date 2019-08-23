@@ -68,19 +68,20 @@ def export_model(keras_model, export_path, model_version=0, weights_path=None):
     if weights_path is not None:
         keras_model.load_weights(weights_path)
 
-    if type(keras_model.input) is list:
-        output = keras_model.output[-1]
-    else:
-        output = keras_model.output
-
-    # Define prediction signature
-    if type(keras_model.input) is list:
+    # Export for tracking
+    if isinstance(keras_model.input, list):
         input_map = {"input{}".format(i): input_tensor
                      for i, input_tensor in enumerate(keras_model.input)}
-        output_map = {"prediction": output}
+        output_map = {'output': keras_model.output}
+    # Export for panoptic
+    elif isinstance(keras_model.output, list):
+        input_map = {'image': keras_model.input}
+        output_map = {'prediction{}'.format(i): tensor
+                      for i, tensor in enumerate(keras_model.output)}
+    # Export for normal model architectures
     else:
-        input_map = {"input": keras_model.input}
-        output_map = {"prediction": output}
+        input_map = {"image": keras_model.input}
+        output_map = {"prediction": keras_model.output}
 
     prediction_signature = tf.saved_model.signature_def_utils.predict_signature_def(
         input_map,
