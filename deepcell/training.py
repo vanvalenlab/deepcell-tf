@@ -33,7 +33,6 @@ import datetime
 import os
 
 import numpy as np
-import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import callbacks
 from tensorflow.python.keras.optimizers import SGD
@@ -75,6 +74,39 @@ def train_model_sample(model,
                        zoom_range=0,
                        seed=None,
                        **kwargs):
+    """Train a model using sample mode.
+
+    Args:
+        model (tensorflow.keras.Model): The model to train.
+        dataset (str): Path to a dataset to train the model with.
+        expt (str): Experiment, substring to include in model name.
+        test_size (float): Percent of data to leave as test data.
+        n_epoch (int): Number of training epochs.
+        batch_size (int): Number of batches per training step.
+        num_gpus (int): The number of GPUs to train on.
+        transform (str): Defines the transformation of the training data.
+            One of 'watershed', 'fgbg', 'pixelwise'.
+        window_size (tuple(int, int)): Size of sampling window
+        balance_classes (bool): Whether to perform class-balancing on data
+        max_class_samples (int): Maximum number of examples per class to sample
+        log_dir (str): Filepath to save tensorboard logs. If None, disables
+            the tensorboard callback.
+        model_dir (str): Directory to save the model file.
+        model_name (str): Name of the model (and name of output file).
+        focal (bool): If true, uses focal loss.
+        gamma (float): Parameter for focal loss
+        optimizer (object): Pre-initialized optimizer object (SGD, Adam, etc.)
+        lr_sched (function): Learning rate schedular function
+        rotation_range (int): Maximum rotation range for image augmentation
+        flip (bool): Enables horizontal and vertical flipping for augmentation
+        shear (int): Maximum rotation range for image augmentation
+        zoom_range (tuple): Minimum and maximum zoom values (0.8, 1.2)
+        seed (int): Random seed
+        kwargs (dict): Other parameters to pass to _transform_masks
+
+    Returns:
+        tensorflow.keras.Model: The trained model
+    """
     is_channels_first = K.image_data_format() == 'channels_first'
 
     if model_name is None:
@@ -204,6 +236,37 @@ def train_model_conv(model,
                      zoom_range=0,
                      seed=None,
                      **kwargs):
+    """Train a model using fully convolutional mode.
+
+    Args:
+        model (tensorflow.keras.Model): The model to train.
+        dataset (str): Path to a dataset to train the model with.
+        expt (str): Experiment, substring to include in model name.
+        test_size (float): Percent of data to leave as test data.
+        n_epoch (int): Number of training epochs.
+        batch_size (int): Number of batches per training step.
+        num_gpus (int): The number of GPUs to train on.
+        frames_per_batch (int): Number of training frames if training 3D data.
+        transform (str): Defines the transformation of the training data.
+            One of 'watershed', 'fgbg', 'pixelwise'.
+        log_dir (str): Filepath to save tensorboard logs. If None, disables
+            the tensorboard callback.
+        model_dir (str): Directory to save the model file.
+        model_name (str): Name of the model (and name of output file).
+        focal (bool): If true, uses focal loss.
+        gamma (float): Parameter for focal loss
+        optimizer (object): Pre-initialized optimizer object (SGD, Adam, etc.)
+        lr_sched (function): Learning rate schedular function
+        rotation_range (int): Maximum rotation range for image augmentation
+        flip (bool): Enables horizontal and vertical flipping for augmentation
+        shear (int): Maximum rotation range for image augmentation
+        zoom_range (tuple): Minimum and maximum zoom values (0.8, 1.2)
+        seed (int): Random seed
+        kwargs (dict): Other parameters to pass to _transform_masks
+
+    Returns:
+        tensorflow.keras.Model: The trained model
+    """
     is_channels_first = K.image_data_format() == 'channels_first'
 
     if model_name is None:
@@ -481,7 +544,6 @@ def train_model_siamese_daughter(model,
 
 def train_model_retinanet(model,
                           dataset,
-                          backbone,
                           expt='',
                           test_size=.1,
                           n_epoch=10,
@@ -515,11 +577,59 @@ def train_model_retinanet(model,
                           compute_map=True,
                           seed=None,
                           **kwargs):
-    """Train a RetinaNet model from the given backbone
+    """Train a RetinaNet model from the given backbone.
 
     Adapted from:
         https://github.com/fizyr/keras-retinanet &
         https://github.com/fizyr/keras-maskrcnn
+
+    Args:
+        model (tensorflow.keras.Model): The model to train.
+        dataset (str): Path to a dataset to train the model with.
+        expt (str): Experiment, substring to include in model name.
+        test_size (float): Percent of data to leave as test data.
+        n_epoch (int): Number of training epochs.
+        batch_size (int): Number of batches per training step.
+        num_gpus (int): The number of GPUs to train on.
+        include_masks (bool): Whether to generate masks using MaskRCNN.
+        panoptic (bool): Whether to include semantic segmentation heads.
+        panoptic_weight (float): Weight applied to the semantic loss.
+        transforms (list): List of transform names as strings. Each transform
+            will have its own semantic segmentation head.
+        transforms_kwargs (list): List of dicts of optional values for each
+            transform in transforms.
+        anchor_params (AnchorParameters): Struct containing anchor parameters.
+            If None, default values are used.
+        pyramid_levels (list): Pyramid levels to attach
+            the object detection heads to.
+        min_objects (int): If a training image has fewer than min_objects
+            objects, the image will not be used for training.
+        mask_size (tuple): The size of the masks.
+        log_dir (str): Filepath to save tensorboard logs. If None, disables
+            the tensorboard callback.
+        model_dir (str): Directory to save the model file.
+        model_name (str): Name of the model (and name of output file).
+        sigma (float): The point where the loss changes from L2 to L1.
+        alpha (float): Scale the focal weight with alpha.
+        gamma (float): Take the power of the focal weight with gamma.
+        iou_threshold (float): The threshold used to consider when a detection
+            is positive or negative.
+        score_threshold (float): The score confidence threshold
+            to use for detections.
+        max_detections (int): The maximum number of detections to use per image
+        weighted_average (bool): Use a weighted average in evaluation.
+        optimizer (object): Pre-initialized optimizer object (SGD, Adam, etc.)
+        lr_sched (function): Learning rate schedular function
+        rotation_range (int): Maximum rotation range for image augmentation
+        flip (bool): Enables horizontal and vertical flipping for augmentation
+        shear (int): Maximum rotation range for image augmentation
+        zoom_range (tuple): Minimum and maximum zoom values (0.8, 1.2)
+        seed (int): Random seed
+        compute_map (bool): Whether to compute mAP at end of training.
+        kwargs (dict): Other parameters to pass to _transform_masks
+
+    Returns:
+        tensorflow.keras.Model: The trained model
     """
 
     is_channels_first = K.image_data_format() == 'channels_first'

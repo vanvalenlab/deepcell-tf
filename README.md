@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/vanvalenlab/deepcell-tf.svg?branch=master)](https://travis-ci.org/vanvalenlab/deepcell-tf)
 [![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master)
 
-DeepCell is neural network library for single cell analysis, written in Python and built using [TensorFlow](https://github.com/tensorflow/tensorflow) and [Keras](https://github.com/keras-team/keras).  
+DeepCell is neural network library for single cell analysis, written in Python and built using [TensorFlow](https://github.com/tensorflow/tensorflow) and [Keras](https://www.tensorflow.org/guide/keras).
 
 DeepCell aids in biological analysis by automatically segmenting and classifying cells in optical microscopy images.  The framework processes raw images and uniquely annotates each cell in the image.  These annotations can be used to quantify a variety of cellular properties.
 
@@ -64,7 +64,7 @@ This will start a jupyter session, with several example notebooks detailing vari
 
 ## DeepCell for Developers
 
-DeepCell uses `nvidia-docker` and `tensorflow` to enable GPU processing.  
+DeepCell uses `nvidia-docker` and `tensorflow` to enable GPU processing.
 
 ### Build a local docker container
 
@@ -72,7 +72,6 @@ DeepCell uses `nvidia-docker` and `tensorflow` to enable GPU processing.
 git clone https://github.com/vanvalenlab/deepcell-tf.git
 cd deepcell-tf
 docker build -t $USER/deepcell-tf .
-
 ```
 
 The tensorflow version can be overridden with the build-arg `TF_VERSION`.
@@ -105,10 +104,13 @@ NV_GPU='0' nvidia-docker run -it \
   $USER/deepcell-tf:latest
 ```
 
+## How to Cite
+- [The original DeepCell paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005177)
+- [DeepCell 2.0: Automated cloud deployment of deep learning models for large-scale cellular image analysis](https://www.biorxiv.org/content/early/2018/12/22/505032.article-metrics)
 
 ## Copyright
 
-Copyright © 2016-2019 [The Van Valen Lab](http://www.vanvalen.caltech.edu/) at the California Institute of Technology (Caltech), with support from the Paul Allen Family Foundation, Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.  
+Copyright © 2016-2019 [The Van Valen Lab](http://www.vanvalen.caltech.edu/) at the California Institute of Technology (Caltech), with support from the Paul Allen Family Foundation, Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 All rights reserved.
 
 
