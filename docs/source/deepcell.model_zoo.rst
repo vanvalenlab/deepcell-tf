@@ -5,7 +5,7 @@ Submodules
 ----------
 
 deepcell.model_zoo.featurenet module
--------------------------------
+------------------------------------
 
 .. automodule:: deepcell.model_zoo.featurenet
     :members:
@@ -13,7 +13,7 @@ deepcell.model_zoo.featurenet module
     :show-inheritance:
 
 deepcell.model_zoo.maskrcnn module
------------------------------------
+----------------------------------
 
 .. automodule:: deepcell.model_zoo.maskrcnn
     :members:

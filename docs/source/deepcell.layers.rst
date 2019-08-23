@@ -5,7 +5,7 @@ Submodules
 ----------
 
 deepcell.layers.filter_detections module
--------------------------------
+----------------------------------------
 
 .. automodule:: deepcell.layers.filter_detections
     :members:
@@ -53,7 +53,7 @@ deepcell.layers.resize module
     :show-inheritance:
 
 deepcell.layers.retinanet module
--------------------------------
+--------------------------------
 
 .. automodule:: deepcell.layers.retinanet
     :members:

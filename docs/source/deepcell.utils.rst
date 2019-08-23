@@ -5,7 +5,7 @@ Submodules
 ----------
 
 deepcell.utils.backbone\_utils module
---------------------------------------
+-------------------------------------
 
 .. automodule:: deepcell.utils.backbone_utils
     :members:
@@ -61,7 +61,7 @@ deepcell.utils.retinanet\_anchor\_utils module
     :show-inheritance:
 
 deepcell.utils.tracking\_utils module
-----------------------------------
+-------------------------------------
 
 .. automodule:: deepcell.utils.tracking_utils
     :members:

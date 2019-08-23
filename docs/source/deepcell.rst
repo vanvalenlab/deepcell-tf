@@ -24,7 +24,7 @@ deepcell.image\_generators module
     :show-inheritance:
 
 deepcell.metrics module
-------------------------
+-----------------------
 
 .. automodule:: deepcell.metrics
     :members:
