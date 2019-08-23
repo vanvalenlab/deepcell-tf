@@ -39,15 +39,15 @@ def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from
     """Categorical crossentropy between an output tensor and a target tensor.
 
     Args:
-        y_true: A tensor of the same shape as `output`.
+        y_true: A tensor of the same shape as output.
         y_pred: A tensor resulting from a softmax
-        (unless `from_logits` is True, in which
-        case `y_pred` is expected to be the logits).
-        from_logits: Boolean, whether `y_pred` is the
-        result of a softmax, or is a tensor of logits.
+            (unless from_logits is True, in which
+            case y_pred is expected to be the logits).
+        from_logits: Boolean, whether y_pred is the
+            result of a softmax, or is a tensor of logits.
 
     Returns:
-        Output tensor.
+        tensor: Output tensor.
     """
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
@@ -73,15 +73,15 @@ def weighted_categorical_crossentropy(y_true, y_pred,
     them to weight the cross entropy
 
     Args:
-        y_true: A tensor of the same shape as `y_pred`.
+        y_true: A tensor of the same shape as y_pred.
         y_pred: A tensor resulting from a softmax
-        (unless `from_logits` is True, in which
-        case `y_pred` is expected to be the logits).
-        from_logits: Boolean, whether `y_pred` is the
-        result of a softmax, or is a tensor of logits.
+            (unless from_logits is True, in which
+            case y_pred is expected to be the logits).
+        from_logits: Boolean, whether y_pred is the
+            result of a softmax, or is a tensor of logits.
 
     Returns:
-        Output tensor.
+        tensor: Output tensor.
     """
     if from_logits:
         raise Exception('weighted_categorical_crossentropy cannot take logits')
@@ -110,15 +110,15 @@ def sample_categorical_crossentropy(y_true,
     cross entropy.
 
     Args:
-        y_true: A tensor of the same shape as `y_pred`.
+        y_true: A tensor of the same shape as y_pred.
         y_pred: A tensor resulting from a softmax
-        (unless `from_logits` is True, in which
-        case `y_pred` is expected to be the logits).
-        from_logits: Boolean, whether `y_pred` is the
-        result of a softmax, or is a tensor of logits.
+            (unless from_logits is True, in which
+            case y_pred is expected to be the logits).
+        from_logits: Boolean, whether y_pred is the
+            result of a softmax, or is a tensor of logits.
 
     Returns:
-        Output tensor.
+        tensor: Output tensor.
     """
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
@@ -144,11 +144,11 @@ def dice_loss(y_true, y_pred, smooth=1):
     """Dice coefficient loss between an output tensor and a target tensor.
 
     Args:
-        y_true: A tensor of the same shape as `y_pred`.
+        y_true: A tensor of the same shape as y_pred.
         y_pred: A tensor resulting from a softmax
 
     Returns:
-        Output tensor.
+        tensor: Output tensor.
     """
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
@@ -163,11 +163,11 @@ def discriminative_instance_loss(y_true, y_pred,
     """Discriminative loss between an output tensor and a target tensor.
 
     Args:
-        y_true: A tensor of the same shape as `y_pred`.
+        y_true: A tensor of the same shape as y_pred.
         y_pred: A tensor of the vector embedding
 
     Returns:
-        Output tensor.
+        tensor: Output tensor.
     """
 
     def temp_norm(ten, axis=None):
@@ -217,15 +217,15 @@ def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_l
     them to weight the cross entropy
 
     Args:
-        y_true: A tensor of the same shape as `y_pred`.
+        y_true: A tensor of the same shape as y_pred.
         y_pred: A tensor resulting from a softmax
-        (unless `from_logits` is True, in which
-        case `y_pred` is expected to be the logits).
-        from_logits: Boolean, whether `y_pred` is the
-        result of a softmax, or is a tensor of logits.
+            (unless from_logits is True, in which
+            case y_pred is expected to be the logits).
+        from_logits: Boolean, whether y_pred is the
+            result of a softmax, or is a tensor of logits.
 
     Returns:
-        Output tensor.
+        tensor: Output tensor.
     """
     if from_logits:
         raise Exception('weighted_focal_loss cannot take logits')

@@ -36,15 +36,21 @@ from tensorflow.python.keras.models import Model
 from deepcell.utils.data_utils import trim_padding
 
 
-def get_cropped_input_shape(images, num_crops=4, receptive_field=61, data_format=None):
+def get_cropped_input_shape(images,
+                            num_crops=4,
+                            receptive_field=61,
+                            data_format=None):
     """Calculate the input_shape for models to process cropped sub-images.
 
     Args:
-        images: numpy array of original data
-        num_crops: number of slices for the x and y axis to create sub-images
+        images (numpy.array): numpy array of original data
+        num_crops (int): number of slices for the x and y axis
+            to create sub-images
+        receptive_field (int): the receptive field of the neural network.
+        data_format (str): "channels_first" or "channels_last"
 
     Returns:
-        input_shape: new input_shape for model to process sub-images.
+        tuple: new input_shape for model to process sub-images.
     """
     if data_format is None:
         data_format = K.image_data_format()
@@ -79,10 +85,10 @@ def get_padding_layers(model):
     """Get all names of padding layers in a model
 
     Args:
-        model: Keras model
+        model (tensorflow.keras.Model): Keras model
 
     Returns:
-        padding_layers: list of names of padding layers inside model
+        list: list of names of padding layers inside model
     """
     padding_layers = []
     for layer in model.layers:
@@ -98,14 +104,21 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding=
     process each small image.
 
     Args:
-        model: model that will process each small image
-        images: numpy array that is too big for model.predict(images)
-        num_crops: number of slices for the x and y axis to create sub-images
-        receptive_field: receptive field used by model, required to pad images
-        padding: type of padding for input images, one of {'reflect', 'zero'}
+        model (tensorflow.keras.Model): model that will process each small image
+        images (numpy.array): numpy array that is too big for model.predict
+        num_crops (int): number of slices for the x and y axis
+            to create sub-images
+        receptive_field (int): receptive field used by model,
+            required to pad images
+        padding (str): type of padding for input images,
+            one of {'reflect', 'zero'}.
 
     Returns:
-        model_output: numpy array containing model outputs for each sub-image
+        numpy.array: model outputs for each sub-image
+
+    Raises:
+        ValueError: invalid padding value
+        ValueError: model input shape is different than expected_input_shape
     """
     if K.image_data_format() == 'channels_first':
         channel_axis = 1

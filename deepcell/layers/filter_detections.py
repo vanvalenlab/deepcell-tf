@@ -225,7 +225,7 @@ class FilterDetections(Layer):
                 [boxes, classification, other[0], other[1], ...].
 
         Returns:
-            List of tuples representing the output shapes:
+            list: List of tuples representing the output shapes:
                 [filtered_boxes.shape, filtered_scores.shape,
                  filtered_labels.shape, filtered_other[0].shape,
                  filtered_other[1].shape, ...]
