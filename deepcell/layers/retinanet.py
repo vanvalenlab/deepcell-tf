@@ -53,14 +53,14 @@ class Anchors(Layer):
         scales: The scales of the anchors to generate,
             defaults to AnchorParameters.default.scales.
         data_format: A string,
-            one of `channels_last` (default) or `channels_first`.
+            one of "channels_last" (default) or "channels_first".
             The ordering of the dimensions in the inputs.
-            `channels_last` corresponds to inputs with shape
-            `(batch, height, width, channels)` while `channels_first`
+            "channels_last" corresponds to inputs with shape
+            (batch, height, width, channels) while "channels_first"
             corresponds to inputs with shape
-            `(batch, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-            Keras config file at `~/.keras/keras.json`.
+            (batch, channels, height, width).
+            It defaults to the image_data_format value found in your
+            Keras config file at "~/.keras/keras.json".
             If you never set it, then it will be "channels_last".
     """
 
@@ -79,14 +79,14 @@ class Anchors(Layer):
         self.ratios = ratios
         self.scales = scales
 
-        if ratios is None:
+        if self.ratios is None:
             self.ratios = retinanet_anchor_utils.AnchorParameters.default.ratios
-        elif isinstance(ratios, list):
-            self.ratios = np.array(ratios)
-        if scales is None:
+        if isinstance(self.ratios, list):
+            self.ratios = np.array(self.ratios)
+        if self.scales is None:
             self.scales = retinanet_anchor_utils.AnchorParameters.default.scales
-        elif isinstance(scales, list):
-            self.scales = np.array(scales)
+        if isinstance(self.scales, list):
+            self.scales = np.array(self.scales)
 
         self.num_anchors = len(self.ratios) * len(self.scales)
         self.anchors = K.variable(retinanet_anchor_utils.generate_anchors(
@@ -98,7 +98,7 @@ class Anchors(Layer):
         features_shape = K.shape(inputs)
 
         # generate proposals from bbox deltas and shifted anchors
-        row_axis = 2 if self.data_format == 'channels_first' else 1
+        row_axis = 2 if self.data_format == "channels_first" else 1
         anchors = retinanet_anchor_utils.shift(
             features_shape[row_axis:row_axis + 2], self.stride, self.anchors)
 
@@ -110,15 +110,14 @@ class Anchors(Layer):
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if None not in input_shape[1:]:
-            if self.data_format == 'channels_first':
+            if self.data_format == "channels_first":
                 total = K.prod(input_shape[2:4]) * self.num_anchors
             else:
                 total = K.prod(input_shape[1:3]) * self.num_anchors
             total = K.get_value(total)
 
             return tensor_shape.TensorShape((input_shape[0], total, 4))
-        else:
-            return tensor_shape.TensorShape((input_shape[0], None, 4))
+        return tensor_shape.TensorShape((input_shape[0], None, 4))
 
     def get_config(self):
         config = {
@@ -133,27 +132,26 @@ class Anchors(Layer):
 
 
 class RegressBoxes(Layer):
-    """Keras layer for applying regression values to boxes."""
+    """Layer for applying regression values to boxes.
+
+    Args:
+        mean: The mean value of the regression values
+            which was used for normalization.
+        std:  The standard value of the regression values
+            which was used for normalization.
+        data_format: A string,
+            one of "channels_last" (default) or "channels_first".
+            The ordering of the dimensions in the inputs.
+            "channels_last" corresponds to inputs with shape
+            (batch, height, width, channels) while "channels_first"
+            corresponds to inputs with shape
+            (batch, channels, height, width).
+            It defaults to the image_data_format value found in your
+            Keras config file at "~/.keras/keras.json".
+            If you never set it, then it will be "channels_last".
+    """
 
     def __init__(self, mean=None, std=None, data_format=None, *args, **kwargs):
-        """Initializer for the RegressBoxes layer.
-
-        Args:
-            mean: The mean value of the regression values
-                which was used for normalization.
-            std:  The standard value of the regression values
-                which was used for normalization.
-            data_format: A string,
-                one of `channels_last` (default) or `channels_first`.
-                The ordering of the dimensions in the inputs.
-                `channels_last` corresponds to inputs with shape
-                `(batch, height, width, channels)` while `channels_first`
-                corresponds to inputs with shape
-                `(batch, channels, height, width)`.
-                It defaults to the `image_data_format` value found in your
-                Keras config file at `~/.keras/keras.json`.
-                If you never set it, then it will be "channels_last".
-        """
         super(RegressBoxes, self).__init__(*args, **kwargs)
         self.data_format = conv_utils.normalize_data_format(data_format)
 
@@ -206,7 +204,7 @@ class ClipBoxes(Layer):
     def call(self, inputs, **kwargs):
         image, boxes = inputs
         shape = K.cast(K.shape(image), K.floatx())
-        if self.data_format == 'channels_first':
+        if self.data_format == "channels_first":
             height = shape[2]
             width = shape[3]
         else:

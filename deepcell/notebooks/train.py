@@ -41,7 +41,7 @@ def make_notebook(data,
                   train_type='conv',
                   field_size=61,
                   ndim=2,
-                  transform='deepcell',
+                  transform='pixelwise',
                   epochs=10,
                   optimizer='sgd',
                   skips=0,
@@ -56,22 +56,29 @@ def make_notebook(data,
     process from making an npz file to creating and training a model.
 
     Args:
-        data: zipfile of data to load into npz and train on
-        train_type: training method to use, either "sample" or "conv"
-        field_size: receptive field of the model, a positive integer
-        ndim: dimensionality of the data, either 2 or 3
-        transform: transformation to apply to the data
-        epochs: number of training epochs
-        optimizer: training optimizer (`sgd` or `adam`)
-        skips: number of skip connections to use
-        n_frames: number of frames to process for 3D data
-        normalization: normalization method for ImageNormalization layer
-        log_dir: directory to write tensorboard logs
-        export_dir: directory to export the model after training
-        output_dir: local directory to save the notebook
+        data (str): zipfile of data to load into npz and train on
+        train_type (str): training method to use, either "sample" or "conv"
+        field_size (int): receptive field of the model, a positive integer
+        ndim (int): dimensionality of the data, either 2 or 3
+        transform (str): transformation to apply to the data
+        epochs (int): number of training epochs
+        optimizer (str): training optimizer ('sgd' or 'adam')
+        skips (int): number of skip connections to use
+        n_frames (int): number of frames to process for 3D data
+        normalization (str): normalization method for ImageNormalization layer
+        log_dir (str): directory to write tensorboard logs
+        export_dir (str): directory to export the model after training
+        output_dir (str): local directory to save the notebook
 
     Returns:
-        notebook_path: path to generated notebook
+        str: path to generated notebook
+
+    Raises:
+        ValueError: data is invalid path
+        ValueError: field_size is not a positive integer
+        ValueError: ndim is not 2 or 3
+        ValueError: transform is invalid
+        ValueError: norm_method is invalid
     """
     if not data:
         raise ValueError('`data` should be a path to the training data.')
@@ -101,7 +108,7 @@ def make_notebook(data,
         if not transform:
             transform = None
 
-    if transform not in {'deepcell', 'watershed', None}:
+    if transform not in {'pixelwise', 'watershed', None}:
         raise ValueError('`transform` got unexpected value', transform)
 
     if normalization is not None:
@@ -290,7 +297,7 @@ def make_notebook(data,
     cells.append(nbf.v4.new_code_cell('\n'.join(load_data)))
 
     # Set up model parameters
-    if transform == 'deepcell':
+    if transform == 'pixelwise':
         n_features = 4
     elif transform == 'watershed':
         n_features = kwargs.get('distance_bins', 4)
@@ -401,7 +408,7 @@ def make_notebook(data,
 
     if transform is not None:
         training_kwargs['transform'] = '"{}"'.format(transform)
-    if transform == 'deepcell':
+    if transform == 'pixelwise':
         training_kwargs['dilation_radius'] = kwargs.get('dilation_radius', 1)
     elif transform == 'watershed':
         training_kwargs['distance_bins'] = kwargs.get('distance_bins', 4)

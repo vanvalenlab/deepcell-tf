@@ -29,10 +29,30 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.datasets.tracked import nih_3t3
-from deepcell.datasets.tracked import hela_s3
-from deepcell.datasets.tracked import hek293
+from deepcell.datasets import Dataset
 
-del absolute_import
-del division
-del print_function
+
+# pylint: disable=line-too-long
+
+hek293 = Dataset(
+    path='hek293.trks',
+    url='https://deepcell-data.s3.amazonaws.com/tracked/HEK293.trks',
+    file_hash='d5c563ab5866403836f2dcbe249c640f',
+    metadata={}
+)
+
+
+hela_s3 = Dataset(
+    path='HeLa_S3.trks',
+    url='https://deepcell-data.s3.amazonaws.com/tracked/HeLa_S3.trks',
+    file_hash='590ee37d3c703cfe029a2e60c9dc777b',
+    metadata={}
+)
+
+
+nih_3t3 = Dataset(
+    path='3T3_NIH.trks',
+    url='https://deepcell-data.s3.amazonaws.com/tracked/3T3_NIH.trks',
+    file_hash='0d90ad370e1cb9655727065ada3ded65',
+    metadata={}
+)

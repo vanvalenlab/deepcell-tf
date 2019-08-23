@@ -39,7 +39,7 @@ class PriorProbability(Initializer):
     Adapted from https://github.com/fizyr/keras-retinanet.
 
     Args:
-        probability: The prior probability to apply to the weights
+        probability (float): The prior probability to apply to the weights.
     """
 
     def __init__(self, probability=0.01):

@@ -56,15 +56,14 @@ def get_data(file_name, mode='sample', test_size=.1, seed=None):
     """Load data from NPZ file and split into train and test sets
 
     Args:
-        file_name: path to NPZ file to load
-        mode: if 'siamese_daughters', returns lineage information from .trk file
-              otherwise, returns the same data that was loaded
-        test_size: percent of data to leave as testing holdout
-        seed: seed number for random train/test split repeatability
+        file_name (str): path to NPZ file to load
+        mode (str): if 'siamese_daughters', returns lineage information from
+            .trk file otherwise, returns the same data that was loaded.
+        test_size (float): percent of data to leave as testing holdout
+        seed (int): seed number for random train/test split repeatability
 
     Returns:
-        dict of training data, and a dict of testing data:
-        train_dict, test_dict
+        (dict, dict): dict of training data, and a dict of testing data
     """
     # siamese_daughters mode is used to import lineage data
     # and associate it with the appropriate batch
@@ -129,13 +128,14 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='vali
     of samples for to be used. This will be used to balance class sampling.
 
     Args:
-        y: mask to indicate which pixels belong to which class
-        edge_feature: [1, 0, 0], the 1 indicates the feature is the cell edge
-        output_mode:  'sample' or 'conv'
-        padding:  'valid' or 'same'
+        y (numpy.array): mask to indicate which pixels belong to which class
+        edge_feature (list): [1, 0, 0], the 1 indicates the feature
+            is the cell edge
+        output_mode (str):  'sample' or 'conv'
+        padding (str): 'valid' or 'same'
 
     Returns:
-        list_of_max_sample_numbers: list of maximum sample size for all classes
+        list: list of maximum sample size for all classes
     """
     list_of_max_sample_numbers = []
 
@@ -161,17 +161,17 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='vali
 
 def sample_label_matrix(y, window_size=(30, 30), padding='valid',
                         max_training_examples=1e7, data_format=None):
-    """Sample a 4D Tensor, creating many small images of shape `window_size`.
+    """Sample a 4D Tensor, creating many small images of shape window_size.
 
     Args:
-        y: label masks with the same shape as `X` data
-        window_size: size of window around each pixel to sample
-        padding: padding type `valid` or `same`
-        max_training_examples: max number of samples per class
-        data_format: `channels_first` or `channels_last`
+        y (numpy.array): label masks with the same shape as X data
+        window_size (tuple): size of window around each pixel to sample
+        padding (str): padding type 'valid' or 'same'
+        max_training_examples (int): max number of samples per class
+        data_format (str): 'channels_first' or 'channels_last'
 
     Returns:
-        4 arrays of coordinates of each sampled pixel
+        tuple: 4 arrays of coordinates of each sampled pixel
     """
     data_format = conv_utils.normalize_data_format(data_format)
     is_channels_first = data_format == 'channels_first'
@@ -233,17 +233,17 @@ def sample_label_matrix(y, window_size=(30, 30), padding='valid',
 
 def sample_label_movie(y, window_size=(30, 30, 5), padding='valid',
                        max_training_examples=1e7, data_format=None):
-    """Sample a 5D Tensor, creating many small voxels of shape `window_size`.
+    """Sample a 5D Tensor, creating many small voxels of shape window_size.
 
     Args:
-        y: label masks with the same shape as `X` data
-        window_size: size of window around each pixel to sample
-        padding: padding type `valid` or `same`
-        max_training_examples: max number of samples per class
-        data_format: `channels_first` or `channels_last`
+        y (numpy.array): label masks with the same shape as X data
+        window_size (tuple): size of window around each pixel to sample
+        padding (str): padding type 'valid' or 'same'
+        max_training_examples (int): max number of samples per class
+        data_format (str): 'channels_first' or 'channels_last'
 
     Returns:
-        5 arrays of coordinates of each sampled pixel
+        tuple: 5 arrays of coordinates of each sampled pixel
     """
     data_format = conv_utils.normalize_data_format(data_format)
     is_channels_first = data_format == 'channels_first'
@@ -312,12 +312,17 @@ def trim_padding(nparr, win_x, win_y, win_z=None):
     window of size (win_x, win_y) to not slide over regions without pixel data
 
     Args:
-        nparr: numpy array to trim
-        win_x: number of row pixels to ignore on either side
-        win_y: number of column pixels to ignore on either side
+        nparr (numpy.array): numpy array to trim
+        win_x (int): number of row pixels to ignore on either side
+        win_y (int): number of column pixels to ignore on either side
+        win_y (int): number of column pixels to ignore on either side
 
     Returns:
-        trimmed numpy array of size x - 2 * win_x - 1, y - 2 * win_y - 1
+        numpy.array: trimmed numpy array of size
+            x - 2 * win_x - 1, y - 2 * win_y - 1
+
+    Raises:
+        ValueError: nparr.ndim is not 4 or 5
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     if nparr.ndim == 4:
@@ -351,12 +356,17 @@ def reshape_matrix(X, y, reshape_size=256):
     E.g. reshape_size of 256 yields (1, 1024, 1024, 1) -> (16, 256, 256, 1)
 
     Args:
-        X: raw 4D image tensor
-        y: label mask of 4D image data
-        reshape_size: size of the square output tensor
+        X (numpy.array): raw 4D image tensor
+        y (numpy.array): label mask of 4D image data
+        reshape_size (int): size of the square output tensor
 
     Returns:
-        reshaped `X` and `y` tensors in shape (`reshape_size`, `reshape_size`)
+        numpy.array: reshaped X and y tensors in shape
+            (reshape_size, reshape_size)
+
+    Raises:
+        ValueError: X.ndim is not 4
+        ValueError: y.ndim is not 4
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     if X.ndim != 4:
@@ -410,10 +420,10 @@ def relabel_movie(y):
     """Relabels unique instance IDs to be from 1 to N
 
     Args:
-        y: tensor of integer labels
+        y (numpy.array): tensor of integer labels
 
     Returns:
-        relabeled tensor with sequential labels
+        numpy.array: relabeled tensor with sequential labels
     """
     new_y = np.zeros(y.shape)
     unique_cells = np.unique(y)  # get all unique values of y
@@ -432,12 +442,17 @@ def reshape_movie(X, y, reshape_size=256):
     E.g. reshape_size of 256 yields (1, 5, 1024, 1024, 1) -> (16, 5, 256, 256, 1)
 
     Args:
-        X: raw 5D image tensor
-        y: label mask of 5D image tensor
-        reshape_size: size of the square output tensor
+        X (numpy.array): raw 5D image tensor
+        y (numpy.array): label mask of 5D image tensor
+        reshape_size (int): size of the square output tensor
 
     Returns:
-        reshaped `X` and `y` tensors in shape (`reshape_size`, `reshape_size`)
+        numpy.array: reshaped X and y tensors in shape
+            (reshape_size, reshape_size)
+
+    Raises:
+        ValueError: X.ndim is not 5
+        ValueError: y.ndim is not 5
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     if X.ndim != 5:
@@ -495,14 +510,17 @@ def load_training_images_2d(direc_name,
     """Load each image in the training_direcs into a numpy array.
 
     Args:
-        direc_name: directory containing folders of training data
-        training_direcs: list of directories of images inside direc_name.
-        raw_image_direc: directory name inside each training dir with raw images
-        channel_names: Loads all raw images with a channel_name in the filename
-        image_size: size of each image as tuple (x, y)
+        direc_name (str): directory containing folders of training data
+        training_direcs (str[]): list of directories of images
+            inside direc_name.
+        raw_image_direc (str): directory name inside each training dir
+            with raw images
+        channel_names (str[]): Loads all raw images
+            with a channel_name in the filename
+        image_size (tuple): size of each image as tuple (x, y)
 
     Returns:
-        4D tensor of image data
+        numpy.array: 4D tensor of image data
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     # Unpack size tuples
@@ -546,14 +564,17 @@ def load_annotated_images_2d(direc_name,
     """Load each annotated image in the training_direcs into a numpy array.
 
     Args:
-        direc_name: directory containing folders of training data
-        training_direcs: list of directories of images inside direc_name.
-        annotation_direc: directory name inside each training dir with masks
-        annotation_name: Loads all masks with annotation_name in the filename
-        image_size: size of each image as tuple (x, y)
+        direc_name (str): directory containing folders of training data
+        training_direcs (str[]): list of directories of images
+            inside direc_name.
+        annotation_direc (str): directory name inside each
+            training dir with masks
+        annotation_name (str): Loads all masks with
+            annotation_name in the filename
+        image_size (tuple): size of each image as tuple (x, y)
 
     Returns:
-        4D tensor of label masks
+        numpy.array: 4D tensor of label masks
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     # Unpack size tuple
@@ -601,15 +622,20 @@ def make_training_data_2d(direc_name,
     """Read all images in training directories and save as npz file.
 
     Args:
-        direc_name: directory containing folders of training data
-        file_name_save: full filepath for npz file where the data will be saved
-        training_direcs: directories of images located inside direc_name.
-                         If None, all directories in direc_name are used.
-        raw_image_direc: directory name inside each training dir with raw images
-        annotation_direc: directory name inside each training dir with masks
-        channel_names: Loads all raw images with a channel_name in the filename
-        annotation_name: Loads all masks with annotation_name in the filename
-        reshape_size: If provided, will reshape the images to the given size
+        direc_name (str): directory containing folders of training data
+        file_name_save (str): full filepath for npz file
+            where the data will be saved
+        training_direcs (str[]): directories of images located inside
+            direc_name. If None, all directories in direc_name are used.
+        raw_image_direc (str): directory name inside each training dir
+            with raw images
+        annotation_direc (str): directory name inside each training dir
+            with masks
+        channel_names (str[]): Loads all raw images with
+            a channel_name in the filename
+        annotation_name (str): Loads all masks with
+            annotation_name in the filename
+        reshape_size (int): If provided, reshapes the images to the given size
     """
     # Load one file to get image sizes (assumes all images same size)
     image_path = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
@@ -642,16 +668,21 @@ def load_training_images_3d(direc_name,
     """Load each image in the training_direcs into a numpy array.
 
     Args:
-        direc_name: directory containing folders of training data
-        training_direcs: list of directories of images inside direc_name.
-        raw_image_direc: directory name inside each training dir with raw images
-        channel_names: Loads all raw images with a channel_name in the filename
-        image_size: size of each image as tuple (x, y)
-        num_frames: number of frames to load from each training directory
-        montage_mode: load masks from "montaged" subdirs inside annotation_direc
+        direc_name (str): directory containing folders of training data
+        training_direcs (str[]): list of directories of images
+            inside direc_name.
+        raw_image_direc (str): directory name inside each training dir
+            with raw images
+        channel_names (str[]): Loads all raw images with
+            a channel_name in the filename
+        image_size (tuple): size of each image as tuple (x, y)
+        num_frames (int): number of frames to load from each
+            training directory
+        montage_mode (bool): load masks from "montaged" subdirs
+            inside annotation_direc
 
     Returns:
-        5D tensor of raw image data
+        numpy.array: 5D tensor of raw image data
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     image_size_x, image_size_y = image_size
@@ -707,16 +738,20 @@ def load_annotated_images_3d(direc_name,
     """Load each annotated image in the training_direcs into a numpy array.
 
     Args:
-        direc_name: directory containing folders of training data
-        training_direcs: list of directories of images inside direc_name.
-        annotation_direc: directory name inside each training dir with masks
-        annotation_name: Loads all masks with annotation_name in the filename
-        image_size: size of each image as tuple (x, y)
-        num_frames: number of frames to load from each training directory
-        montage_mode: load masks from "montaged" subdirs inside annotation_direc
+        direc_name (str): directory containing folders of training data
+        training_direcs (str[]): list of directories of images
+            inside direc_name.
+        annotation_direc (str): directory name inside each
+            training dir with masks
+        annotation_name (str): Loads all masks with
+            annotation_name in the filename
+        image_size (tuple): size of each image as tuple (x, y)
+        num_frames (int): number of frames to load from each training directory
+        montage_mode (bool): load masks from "montaged" subdirs
+            inside annotation_direc
 
     Returns:
-        5D tensor of image label masks
+        numpy.array: 5D tensor of image label masks
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     image_size_x, image_size_y = image_size
@@ -778,16 +813,23 @@ def make_training_data_3d(direc_name,
     annotated montage.
 
     Args:
-        direc_name: directory containing folders of training data
-        file_name_save: full filepath for npz file where the data will be saved
-        training_direcs: directories of images located inside direc_name
-                         If None, all directories in direc_name are used.
-        channel_names: Loads all raw images with a channel_name in the filename
-        raw_image_direc: directory name inside each training dir with raw images
-        annotation_direc: directory name inside each training dir with masks
-        reshape_size: If provided, will reshape the images to the given size.
-        num_frames: number of frames to load from each training directory
-        montage_mode: load masks from "montaged" subdirs inside annotation_direc
+        direc_name (str): directory containing folders of training data
+        file_name_save (str): full filepath for npz file where the
+            data will be saved
+        training_direcs (str[]): directories of images located inside
+            direc_name. If None, all directories in direc_name are used.
+        annotation_name (str): Loads all masks with
+            annotation_name in the filename
+        channel_names (str[]): Loads all raw images with
+            a channel_name in the filename
+        raw_image_direc (str): directory name inside each
+            training dir with raw images
+        annotation_direc (str): directory name inside each
+            training dir with masks
+        reshape_size (int): If provided, reshapes the images to the given size.
+        num_frames (int): number of frames to load from each training directory
+        montage_mode (bool): load masks from "montaged" subdirs
+            inside annotation_direc
     """
     # Load one file to get image sizes
     rand_train_dir = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)
@@ -828,8 +870,6 @@ def make_training_data_3d(direc_name,
         X, y = reshape_movie(X, y, reshape_size=reshape_size)
 
     np.savez(file_name_save, X=X, y=y)
-
-    return None
 
 
 def make_training_data(direc_name,
@@ -880,5 +920,3 @@ def make_training_data(direc_name,
     else:
         raise NotImplementedError('make_training_data is not implemented for '
                                   'dimensionality {}'.format(dimensionality))
-
-    return None

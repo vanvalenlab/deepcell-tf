@@ -37,12 +37,15 @@ install:
   - pip install tensorflow==$TF_VERSION
   # install testing requirements
   - pip install pytest pytest-cov==2.5.1 pytest-pep8 coveralls
+  # Install sphinx to check documentation build
+  - pip install sphinx m2r
   # install deepcell with setup.py
   # - python setup.py install
   - python setup.py build_ext --inplace
 
 script:
   - pytest --cov=deepcell --pep8
+  - sphinx-build -nT -b dummy ./docs/source build/html
 
 jobs:
   include:
