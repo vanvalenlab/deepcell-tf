@@ -153,11 +153,8 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
 
     Warning:
         Position indicies are not currently collected appropriately
-
-    TODO:
-        Implement recording of object indices for each error group
     """
-
+    # TODO: Implement recording of object indices for each error group
     def __init__(self,
                  y_true,
                  y_pred,
