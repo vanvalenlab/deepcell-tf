@@ -55,11 +55,12 @@ def featurenet_block(x, n_filters):
     """Add a set of layers that make up one unit of the featurenet backbone
 
     Args:
-        x (layer): Keras layer object to pass to backbone unit
+        x (tensorflow.keras.layers.Layer): Keras layer object to pass to
+            backbone unit
         n_filters (int): Number of filters to use for convolutional layers
 
     Returns:
-        layer: Keras layer object
+        tensorflow.keras.layers.Layer: Keras layer object
     """
     df = K.image_data_format()
     # conv set 1
@@ -80,11 +81,12 @@ def featurenet_3D_block(x, n_filters):
     """Add a set of layers that make up one unit of the featurenet 3D backbone
 
     Args:
-        x (layer): Keras layer object to pass to backbone unit
+        x (tensorflow.keras.layers.Layer): Keras layer object to pass to
+            backbone unit
         n_filters (int): Number of filters to use for convolutional layers
 
     Returns:
-        layer: Keras layer object
+        tensorflow.keras.layers.Layer: Keras layer object
     """
     df = K.image_data_format()
     # conv set 1
@@ -108,7 +110,7 @@ def featurenet_backbone(input_tensor=None, input_shape=None, weights=None,
 
     Args:
         input_tensor (tensor): Input tensor to specify input size
-        n_filters (int, optional): Defaults to 32. Number of filters for
+        n_filters (int): Defaults to 32. Number of filters for
             convolutional layers
 
     Returns:
@@ -150,7 +152,7 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None,
 
     Args:
         input_tensor (tensor): Input tensor to specify input size
-        n_filters (int, optional): Number of filters for convolutional layers
+        n_filters (int): Number of filters for convolutional layers
 
     Returns:
         tuple: List of backbone layers, list of backbone names
@@ -200,7 +202,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             'input_shape', and 'pooling'
 
     Returns:
-        keras.Model: An instantiated backbone
+        tensorflow.keras.Model: An instantiated backbone
 
     Raises:
         ValueError: bad backbone name

@@ -47,51 +47,51 @@ except ImportError:
 class TensorProduct(Layer):
     """Just your regular densely-connected NN layer.
 
-    `Dense` implements the operation:
-    `output = activation(dot(input, kernel) + bias)`
-    where `activation` is the element-wise activation function
-    passed as the `activation` argument, `kernel` is a weights matrix
-    created by the layer, and `bias` is a bias vector created by the layer
-    (only applicable if `use_bias` is `True`).
+    Dense implements the operation:
+    output = activation(dot(input, kernel) + bias)
+    where 'activation' is the element-wise activation function
+    passed as the activation argument, 'kernel' is a weights matrix
+    created by the layer, and 'bias' is a bias vector created by the layer
+    (only applicable if use_bias is True).
     Note: if the input to the layer has a rank greater than 2, then
-    it is flattened prior to the initial dot product with `kernel`.
+    it is flattened prior to the initial dot product with 'kernel'.
 
     Args:
         output_dim: Positive integer, dimensionality of the output space.
         data_format: A string,
-            one of `channels_last` (default) or `channels_first`.
+            one of 'channels_last' (default) or 'channels_first'.
             The ordering of the dimensions in the inputs.
-            `channels_last` corresponds to inputs with shape
-            `(batch, height, width, channels)` while `channels_first`
+            'channels_last' corresponds to inputs with shape
+            (batch, height, width, channels) while 'channels_first'
             corresponds to inputs with shape
-            `(batch, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-            Keras config file at `~/.keras/keras.json`.
+            (batch, channels, height, width).
+            It defaults to the image_data_format value found in your
+            Keras config file at "~/.keras/keras.json".
             If you never set it, then it will be "channels_last".
         activation: Activation function to use.
             If you don't specify anything, no activation is applied
-            (ie. "linear" activation: `a(x) = x`).
+            (ie. "linear" activation: a(x) = x).
         use_bias: Boolean, whether the layer uses a bias vector.
-        kernel_initializer: Initializer for the `kernel` weights matrix.
+        kernel_initializer: Initializer for the kernel weights matrix.
         bias_initializer: Initializer for the bias vector.
         kernel_regularizer: Regularizer function applied to
-            the `kernel` weights matrix.
+            the 'kernel' weights matrix.
         bias_regularizer: Regularizer function applied to the bias vector.
         activity_regularizer: Regularizer function applied to
             the output of the layer (its "activation")..
         kernel_constraint: Constraint function applied to
-            the `kernel` weights matrix.
+            the 'kernel' weights matrix.
         bias_constraint: Constraint function applied to the bias vector.
 
     Input shape:
-        nD tensor with shape: `(batch_size, ..., input_dim)`.
+        nD tensor with shape: (batch_size, ..., input_dim).
         The most common situation would be
-        a 2D input with shape `(batch_size, input_dim)`.
+        a 2D input with shape (batch_size, input_dim).
 
     Output shape:
-        nD tensor with shape: `(batch_size, ..., output_dim)`.
-        For instance, for a 2D input with shape `(batch_size, input_dim)`,
-        the output would have shape `(batch_size, output_dim)`.
+        nD tensor with shape: (batch_size, ..., output_dim).
+        For instance, for a 2D input with shape (batch_size, input_dim),
+        the output would have shape (batch_size, output_dim).
     """
 
     def __init__(self,

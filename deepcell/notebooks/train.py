@@ -62,7 +62,7 @@ def make_notebook(data,
         ndim (int): dimensionality of the data, either 2 or 3
         transform (str): transformation to apply to the data
         epochs (int): number of training epochs
-        optimizer (str): training optimizer (`sgd` or `adam`)
+        optimizer (str): training optimizer ('sgd' or 'adam')
         skips (int): number of skip connections to use
         n_frames (int): number of frames to process for 3D data
         normalization (str): normalization method for ImageNormalization layer

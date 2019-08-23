@@ -46,7 +46,7 @@ class RedirectModel(Callback):
     ```
 
     Args:
-        callback (callable): callback to wrap.
+        callback (function): callback to wrap.
         model (keras.Model): model to use when executing callbacks.
     """
 

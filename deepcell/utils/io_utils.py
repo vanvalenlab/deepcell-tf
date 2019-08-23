@@ -86,7 +86,7 @@ def get_image(file_name):
         file_name (str): path to image file
 
     Returns:
-        np.array: numpy array of image data
+        numpy.array: numpy array of image data
     """
     ext = os.path.splitext(file_name.lower())[-1]
     if ext == '.tif' or ext == '.tiff':
@@ -95,15 +95,15 @@ def get_image(file_name):
 
 
 def nikon_getfiles(direc_name, channel_name):
-    """Return a sorted list of files inside `direc_name`
-    with `channel_name` in the filename.
+    """Return a sorted list of files inside direc_name
+    with channel_name in the filename.
 
     Args:
         direc_name (str): directory to find image files
         channel_name (str): wildcard filter for filenames
 
     Returns:
-        list: sorted list of files inside `direc_name`.
+        list: sorted list of files inside direc_name.
     """
     imglist = os.listdir(direc_name)
     imgfiles = [i for i in imglist if channel_name in i]
@@ -119,7 +119,7 @@ def get_image_sizes(data_location, channel_names):
         channel_names (str[]): list of wildcards to filter filenames
 
     Returns:
-        int: size of random image inside the `data_location`
+        int: size of random image inside the data_location.
     """
     img_list_channels = []
     for channel in channel_names:
@@ -136,7 +136,7 @@ def get_images_from_directory(data_location, channel_names):
         channel_names (str[]): list of wildcards to select filenames
 
     Returns:
-        np.array: numpy array of each image in the directory
+        numpy.array: numpy array of each image in the directory
     """
     data_format = K.image_data_format()
     img_list_channels = []
@@ -177,7 +177,7 @@ def save_model_output(output,
     """Save model output as tiff images in the provided directory
 
     Args:
-        output (np.array): output of model. Expects channel to have its own axis
+        output (numpy.array): output of model. Expects channel to have its own axis
         output_dir (str): directory to save the model output images
         feature_name (str): optional description to start each output image filename
         channel (int): if given, only saves this channel

@@ -108,12 +108,12 @@ def anchor_targets_bbox(anchors,
     """Generate anchor targets for bbox detection.
 
     Args:
-        anchors (np.array): annotations of shape (N, 4) for (x1, y1, x2, y2).
+        anchors (numpy.array): annotations of shape (N, 4) for (x1, y1, x2, y2).
         image_group (list): List of BGR images.
         annotations_group (list): List of annotations
             (np.array of shape (N, 5) for (x1, y1, x2, y2, label)).
         num_classes (int): Number of classes to predict.
-        mask_shape (np.array): If the image is padded with zeros, mask_shape
+        mask_shape (numpy.array): If the image is padded with zeros, mask_shape
             can be used to mark the relevant part of the image.
         negative_overlap (float): IoU overlap for negative anchors
             (all anchors with overlap < negative_overlap are negative).
@@ -197,8 +197,8 @@ def compute_gt_annotations(anchors,
     """Obtain indices of gt annotations with the greatest overlap.
 
     Args:
-        anchors (np.array): annotations of shape (N, 4) for (x1, y1, x2, y2).
-        annotations (np.array): shape (N, 5) for (x1, y1, x2, y2, label).
+        anchors (numpy.array): annotations of shape (N, 4) for (x1, y1, x2, y2).
+        annotations (numpy.array): shape (N, 5) for (x1, y1, x2, y2, label).
         negative_overlap (float): IoU overlap for negative anchors
             (all anchors with overlap < negative_overlap are negative).
         positive_overlap (float): IoU overlap or positive anchors
@@ -249,7 +249,7 @@ def layer_shapes(image_shape, model):
 
     Args:
         image_shape (tuple): The shape of the image.
-        model (keras.Model): The model to use for computing how the image
+        model (tensorflow.keras.Model): The model to use for computing how the image
             shape is transformed in the pyramid.
 
     Returns:
@@ -279,10 +279,10 @@ def make_shapes_callback(model):
     """Make a function for getting the shape of the pyramid levels.
 
     Args:
-        model (keras.Model): model to get shapes of pyramid levels
+        model (tensorflow.keras.Model): model to get shapes of pyramid levels
 
     Returns:
-        callable: function that returns shapes
+        function: function that returns shapes
     """
     def get_shapes(image_shape, pyramid_levels):
         shape = layer_shapes(image_shape, model)
@@ -328,11 +328,11 @@ def anchors_for_shape(image_shape,
             (defaults to [3, 4, 5, 6, 7]).
         anchor_params (AnchorParameters): Struct containing anchor parameters.
             If None, default values are used.
-        shapes_callback (callable): Function to call for getting the shape of
+        shapes_callback (function): Function to call for getting the shape of
             the image at different pyramid levels.
 
     Returns:
-        np.array: (N, 4) containing the (x1, y1, x2, y2) anchor coordinates.
+        numpy.array: (N, 4) containing the (x1, y1, x2, y2) anchor coordinates.
     """
 
     if pyramid_levels is None:
@@ -368,10 +368,10 @@ def _shift(shape, stride, anchors):
     Args:
         shape (tuple): Shape to shift the anchors over.
         stride (int): Stride to shift the anchors with over the shape.
-        anchors (np.array): The anchors to apply at each location.
+        anchors (numpy.array): The anchors to apply at each location.
 
     Returns:
-        np.array: shifted anchors
+        numpy.array: shifted anchors
     """
 
     # create a grid starting from half stride from the top left corner
@@ -408,7 +408,7 @@ def generate_anchors(base_size=16, ratios=None, scales=None):
         scales (float[]): list of scales
 
     Returns:
-        np.array: generated anchors
+        numpy.array: generated anchors
     """
 
     if ratios is None:
@@ -446,10 +446,10 @@ def bbox_transform(anchors, gt_boxes, mean=None, std=None):
     """Compute bounding-box regression targets for an image.
 
     Args:
-        anchors (np.array): locations of anchors
-        gt_boxes (np.array): coordinates of bounding boxes
-        mean (np.array): arithmetic mean
-        std (np.array): standard deviation
+        anchors (numpy.array): locations of anchors
+        gt_boxes (numpy.array): coordinates of bounding boxes
+        mean (numpy.array): arithmetic mean
+        std (numpy.array): standard deviation
 
     Raises:
         ValueError: mean is not a np.array
@@ -498,17 +498,17 @@ def bbox_transform_inv(boxes, deltas, mean=None, std=None):
     They are unnormalized in this function and then applied to the boxes.
 
     Args:
-        boxes (np.array): shape (B, N, 4), where B is the batch size,
+        boxes (numpy.array): shape (B, N, 4), where B is the batch size,
             N the number of boxes and 4 values for (x1, y1, x2, y2).
-        deltas (np.array): same shape as boxes. These deltas
+        deltas (numpy.array): same shape as boxes. These deltas
             (d_x1, d_y1, d_x2, d_y2) are a factor of the width/height.
-        mean (np.array): The mean value used when computing deltas
+        mean (numpy.array): The mean value used when computing deltas
             (defaults to [0, 0, 0, 0]).
-        std (np.array): The standard deviation used when computing deltas
+        std (numpy.array): The standard deviation used when computing deltas
             (defaults to [0.2, 0.2, 0.2, 0.2]).
 
     Returns:
-        np.array: same shape as boxes with deltas applied to each box.
+        numpy.array: same shape as boxes with deltas applied to each box.
             The mean and std are used during training to normalize the
             regression values (networks love normalization).
     """
@@ -536,10 +536,10 @@ def shift(shape, stride, anchors):
     Args:
         shape (tuple): Shape to shift the anchors over.
         stride (int): Stride to shift the anchors with over the shape.
-        anchors (np.array): The anchors to apply at each location.
+        anchors (numpy.array): The anchors to apply at each location.
 
     Returns:
-        np.array: shifted anchors
+        numpy.array: shifted anchors
     """
     shift_x = (K.arange(0, shape[1], dtype=K.floatx()) +
                K.constant(0.5, dtype=K.floatx())) * stride
@@ -572,10 +572,10 @@ def shift(shape, stride, anchors):
 def compute_iou(a, b):
     """Computes the IoU overlap of boxes in a and b.
     Args:
-        a (np.array): (N, H, W) ndarray of float
-        b (np.array): (K, H, W) ndarray of float
+        a (numpy.array): (N, H, W) ndarray of float
+        b (numpy.array): (K, H, W) ndarray of float
     Returns
-        np.array: (N, K) ndarray of overlap between boxes and query_boxes
+        numpy.array: (N, K) ndarray of overlap between boxes and query_boxes
     """
     intersection = np.zeros((a.shape[0], b.shape[0]))
     union = np.zeros((a.shape[0], b.shape[0]))
@@ -590,11 +590,11 @@ def overlap(a, b):
     """Computes the IoU overlap of boxes in a and b.
 
     Args:
-        a (np.array): np.array of shape (N, 4) of boxes.
-        b (np.array): np.array of shape (K, 4) of boxes.
+        a (numpy.array): np.array of shape (N, 4) of boxes.
+        b (numpy.array): np.array of shape (K, 4) of boxes.
 
     Returns:
-        np.array: shape (N, K) of overlap between boxes from a and b.
+        numpy.array: shape (N, K) of overlap between boxes from a and b.
     """
     area = (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
 
@@ -621,11 +621,11 @@ def _compute_ap(recall, precision):
     Code originally from https://github.com/rbgirshick/py-faster-rcnn.
 
     Args:
-        recall (np.array): The recall curve (list).
-        precision (np.array): The precision curve (list).
+        recall (numpy.array): The recall curve (list).
+        precision (numpy.array): The precision curve (list).
 
     Returns:
-        np.array: The average precision as computed in py-faster-rcnn.
+        numpy.array: The average precision as computed in py-faster-rcnn.
     """
     # correct AP calculation
     # first append sentinel values at the end
@@ -655,9 +655,8 @@ def _get_detections(generator,
         all_detections[num_images][num_classes] = detections[num_detections, 4 + num_classes]
 
     Args:
-        generator (RetinaNetDataGenerator): The generator used to run images
-            through the model.
-        model (keras.Model): The model to run on the images.
+        generator: The generator used to run images through the model.
+        model (tensorflow.keras.Model): The model to run on the images.
         score_threshold (float): The score confidence threshold to use.
         max_detections (int): The maximum number of detections to use per image.
 
@@ -743,8 +742,7 @@ def _get_annotations(generator):
         all_detections[num_images][num_classes] = annotations[num_detections, 5]
 
     Args:
-        generator (RetinaNetDataGenerator): The generator used to retrieve
-            ground truth annotations.
+        generator: The generator used to retrieve ground truth annotations.
     Returns:
         list: The annotations for each image in the generator.
     """
@@ -779,9 +777,8 @@ def evaluate(generator, model,
     """Evaluate a given dataset using a given model.
 
     Args:
-        generator (RetinaNetDataGenerator): The generator that represents the
-            dataset to evaluate.
-        model (keras.Model): The model to evaluate.
+        generator: The generator that represents the dataset to evaluate.
+        model (tensorflow.keras.Model): The model to evaluate.
         iou_threshold (float): The threshold used to consider when a detection
             is positive or negative.
         score_threshold (float): The score confidence threshold
@@ -873,9 +870,8 @@ def evaluate_mask(generator, model,
     """Evaluate a given dataset using a given model.
 
     Args:
-        generator (RetinaNetDataGenerator): The generator that represents the
-            dataset to evaluate.
-        model (keras.Model): The model to evaluate.
+        generator: The generator that represents the dataset to evaluate.
+        model (tensorflow.keras.Model): The model to evaluate.
         iou_threshold (float): The threshold used to consider when a detection
             is positive or negative.
         score_threshold (float): The score confidence threshold

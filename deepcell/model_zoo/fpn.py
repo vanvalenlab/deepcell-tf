@@ -420,19 +420,19 @@ def FPNet(backbone,
         input_shape (tuple): Shape of the input image
         input (keras layer, optional): Defaults to None. Method to pass in preexisting layers
         norm_method (str, optional): Defaults to 'whole_image'. Normalization method
-        weights (str, optional): Defaults to None. one of `None` (random initialization),
+        weights (str, optional): Defaults to None. one of None (random initialization),
             'imagenet' (pre-training on ImageNet),
             or the path to the weights file to be loaded.
         pooling (str, optional): Defaults to None. optional pooling mode for feature extraction
-            when `include_top` is `False`.
-            - `None` means that the output of the model will be
+            when include_top is False.
+            - None means that the output of the model will be
                 the 4D tensor output of the
                 last convolutional layer.
-            - `avg` means that global average pooling
+            - 'avg' means that global average pooling
                 will be applied to the output of the
                 last convolutional layer, and thus
                 the output of the model will be a 2D tensor.
-            - `max` means that global max pooling will
+            - 'max' means that global max pooling will
                 be applied.
         required_channels (int, optional): Defaults to 3. The required number of channels of the
             backbone.  3 is the default for all current backbones.
@@ -447,7 +447,7 @@ def FPNet(backbone,
     if inputs is None:
         inputs = Input(shape=input_shape)
 
-    # force the channel size for backbone input to be `required_channels`
+    # force the channel size for backbone input to be required_channels
     norm = ImageNormalization2D(norm_method=norm_method)(inputs)
     fixed_inputs = TensorProduct(required_channels)(norm)
 

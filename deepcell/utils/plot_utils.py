@@ -42,7 +42,7 @@ def get_js_video(images, batch=0, channel=0, cmap='jet', vmin=0, vmax=30):
     """Create a JavaScript video as HTML for visualizing 3D data as a movie
 
     Args:
-        images (np.array): images to display as video
+        images (numpy.array): images to display as video
         batch (int): batch number of images to plot
         channel (int): channel index to plot
         vmin (int): first frame value
@@ -79,7 +79,7 @@ def draw_box(image, box, color, thickness=2):
     Adapted from https://github.com/fizyr/keras-retinanet.
 
     Args:
-        image (np.array): The image to draw on.
+        image (numpy.array): The image to draw on.
         box (int[]): A list of 4 elements (x1, y1, x2, y2).
         color (int[]): The color of the box.
         thickness (int): The thickness of the lines to draw a box with.
@@ -94,7 +94,7 @@ def draw_caption(image, box, caption):
     Adapted from https://github.com/fizyr/keras-retinanet.
 
     Args:
-        image (np.array): The image to draw on.
+        image (numpy.array): The image to draw on.
         box (int[]): A list of 4 elements (x1, y1, x2, y2).
         caption (str): String containing the text to draw.
     """
@@ -113,10 +113,10 @@ def draw_mask(image,
     """Draws a mask in a given box.
 
     Args:
-        image (np.array): Three dimensional image to draw on.
+        image (numpy.array): Three dimensional image to draw on.
         box (int[]): Vector of at least 4 values (x1, y1, x2, y2)
             representing a box in the image.
-        mask (np.array): A 2D float mask which will be reshaped to the size
+        mask (numpy.array): A 2D float mask which will be reshaped to the size
             of the box, binarized and drawn over the image.
         color (int[]): Color to draw the mask with. If the box has 5 values,
             the last value is assumed to be the label and used to
@@ -162,12 +162,12 @@ def draw_masks(image, boxes, scores, masks,
     """Draws a list of masks given a list of boxes.
 
     Args:
-        image (np.array): Three dimensional image to draw on.
+        image (numpy.array): Three dimensional image to draw on.
         boxes (int[]): Matrix of shape (N, >=4)
             (at least 4 values: (x1, y1, x2, y2)) representing boxes
             in the image.
         scores (float[]): A list of N classification scores.
-        masks (np.array): Matrix of shape (N, H, W) of N masks of shape (H, W)
+        masks (numpy.array): Matrix of shape (N, H, W) of N masks of shape (H, W)
             which will be reshaped to the size of the corresponding box,
             binarized and drawn over the image.
         color (int[]): Color or to draw the masks with.
@@ -195,12 +195,12 @@ def draw_detections(image,
     Adapted from https://github.com/fizyr/keras-retinanet.
 
     Args:
-        image (np.array): The image to draw on.
+        image (numpy.array): The image to draw on.
         boxes (int[]): A [N, 4] matrix (x1, y1, x2, y2).
         scores (float[]): A list of N classification scores.
         labels (str[]): A list of N labels.
         color (int[]): The color of the boxes.
-        label_to_name (callable): (optional) Functor for mapping a
+        label_to_name (function): (optional) Functor for mapping a
             label to a name.
         score_threshold (float): Threshold used for determining
             the detections to draw.
@@ -225,12 +225,12 @@ def draw_annotations(image,
     Adapted from https://github.com/fizyr/keras-retinanet.
 
     Args:
-        image (np.array): The image to draw on.
-        annotations (np.array): A [N, 5] matrix (x1, y1, x2, y2, label) or
+        image (numpy.array): The image to draw on.
+        annotations (numpy.array): A [N, 5] matrix (x1, y1, x2, y2, label) or
             dictionary containing bboxes (shaped [N, 4])
             and labels (shaped [N]).
         color (int[]): The color of the boxes.
-        label_to_name (callable): (optional) Functor for mapping a
+        label_to_name (function): (optional) Functor for mapping a
             label to a name.
     """
     if isinstance(annotations, np.ndarray):
@@ -253,7 +253,7 @@ def cf(x_coord, y_coord, sample_image):
     Args:
         x_coord (int): X coordinate
         y_coord (int): y coordinate
-        sample_image (np.array): Sample image for numpy arrays
+        sample_image (numpy.array): Sample image for numpy arrays
 
     Returns:
         str: formatted coordinates (x, y, and z).
@@ -300,8 +300,8 @@ def plot_training_data_3d(X, y, num_image_stacks, frames_to_display=5):
     """Plot 3D training data
 
     Args:
-        X (np.array): Raw 3D data
-        y (np.array): Labels for 3D data
+        X (numpy.array): Raw 3D data
+        y (numpy.array): Labels for 3D data
         num_image_stacks (int): number of independent 3D examples to plot
         frames_to_display (int): number of frames of X and y to display
     """

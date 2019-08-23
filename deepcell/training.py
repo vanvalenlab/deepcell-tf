@@ -77,7 +77,7 @@ def train_model_sample(model,
     """Train a model using sample mode.
 
     Args:
-        model (keras.models.Model): The model to train.
+        model (tensorflow.keras.Model): The model to train.
         dataset (str): Path to a dataset to train the model with.
         expt (str): Experiment, substring to include in model name.
         test_size (float): Percent of data to leave as test data.
@@ -85,7 +85,7 @@ def train_model_sample(model,
         batch_size (int): Number of batches per training step.
         num_gpus (int): The number of GPUs to train on.
         transform (str): Defines the transformation of the training data.
-            One of `watershed`, `fgbg`, `pixelwise`
+            One of 'watershed', 'fgbg', 'pixelwise'.
         window_size (tuple(int, int)): Size of sampling window
         balance_classes (bool): Whether to perform class-balancing on data
         max_class_samples (int): Maximum number of examples per class to sample
@@ -105,7 +105,7 @@ def train_model_sample(model,
         kwargs (dict): Other parameters to pass to _transform_masks
 
     Returns:
-        keras.models.Model: The trained model
+        tensorflow.keras.Model: The trained model
     """
     is_channels_first = K.image_data_format() == 'channels_first'
 
@@ -239,7 +239,7 @@ def train_model_conv(model,
     """Train a model using fully convolutional mode.
 
     Args:
-        model (keras.models.Model): The model to train.
+        model (tensorflow.keras.Model): The model to train.
         dataset (str): Path to a dataset to train the model with.
         expt (str): Experiment, substring to include in model name.
         test_size (float): Percent of data to leave as test data.
@@ -248,7 +248,7 @@ def train_model_conv(model,
         num_gpus (int): The number of GPUs to train on.
         frames_per_batch (int): Number of training frames if training 3D data.
         transform (str): Defines the transformation of the training data.
-            One of `watershed`, `fgbg`, `pixelwise`
+            One of 'watershed', 'fgbg', 'pixelwise'.
         log_dir (str): Filepath to save tensorboard logs. If None, disables
             the tensorboard callback.
         model_dir (str): Directory to save the model file.
@@ -265,7 +265,7 @@ def train_model_conv(model,
         kwargs (dict): Other parameters to pass to _transform_masks
 
     Returns:
-        keras.models.Model: The trained model
+        tensorflow.keras.Model: The trained model
     """
     is_channels_first = K.image_data_format() == 'channels_first'
 
@@ -584,7 +584,7 @@ def train_model_retinanet(model,
         https://github.com/fizyr/keras-maskrcnn
 
     Args:
-        model (keras.models.Model): The model to train.
+        model (tensorflow.keras.Model): The model to train.
         dataset (str): Path to a dataset to train the model with.
         expt (str): Experiment, substring to include in model name.
         test_size (float): Percent of data to leave as test data.
@@ -629,7 +629,7 @@ def train_model_retinanet(model,
         kwargs (dict): Other parameters to pass to _transform_masks
 
     Returns:
-        keras.models.Model: The trained model
+        tensorflow.keras.Model: The trained model
     """
 
     is_channels_first = K.image_data_format() == 'channels_first'

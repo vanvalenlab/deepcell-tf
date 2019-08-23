@@ -42,7 +42,7 @@ def export_model(keras_model, export_path, model_version=0, weights_path=None):
     """Export a model for use with tensorflow-serving.
 
     Args:
-        keras_model (keras.Model): instantiated Keras model to export
+        keras_model (tensorflow.keras.Model): instantiated Keras model to export
         export_path (str): destination to save the exported model files
         model_version (int): integer version of the model
         weights_path (str): path to a .h5 or .tf weights file

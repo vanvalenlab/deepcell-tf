@@ -70,7 +70,8 @@ def default_mask_model(num_classes,
         name (str): The name of the submodel.
 
     Returns:
-        keras.models.Model: a Model that predicts classes for each anchor.
+        tensorflow.keras.Model: a Model that predicts classes for
+            each anchor.
     """
     options = {
         'kernel_size': 3,
@@ -175,8 +176,8 @@ def retinanet_mask(inputs,
         inputs (tensor): List of tensorflow.keras.layers.Input.
             The first input is the image, the second input the blob of masks.
         num_classes (int): Integer, number of classes to classify.
-        retinanet_model (keras.Model): RetinaNet model that predicts regression
-            and classification values.
+        retinanet_model (tensorflow.keras.Model): RetinaNet model that predicts
+            regression and classification values.
         anchor_params (AnchorParameters): Struct containing anchor parameters.
         nms (bool): Whether to use NMS.
         class_specific_filter (bool): Use class specific filtering.
@@ -186,15 +187,17 @@ def retinanet_mask(inputs,
         kwargs (dict): Additional kwargs to pass to the retinanet bbox model.
 
     Returns:
-        keras.Model: Model with inputs as input and as output the output of
-            each submodel for each pyramid level and the detections. The order
-            is as defined in submodels.
+        tensorflow.keras.Model: Model with inputs as input and as output
+            the output of each submodel for each pyramid level and the
+            detections. The order is as defined in submodels.
+
             ```
             [
                 regression, classification, other[0], ...,
                 boxes_masks, boxes, scores, labels, masks, other[0], ...
             ]
             ```
+
     """
     if anchor_params is None:
         anchor_params = AnchorParameters.default
@@ -301,25 +304,25 @@ def RetinaMask(backbone,
         backbone (str): Name of backbone to use.
         num_classes (int): Number of classes to classify.
         input_shape (tuple): The shape of the input data.
-        weights (str): one of `None` (random initialization),
+        weights (str): one of None (random initialization),
             'imagenet' (pre-training on ImageNet),
             or the path to the weights file to be loaded.
         pooling (str): optional pooling mode for feature extraction
-            when `include_top` is `False`.
-            - `None` means that the output of the model will be
+            when include_top is False.
+            - None means that the output of the model will be
                 the 4D tensor output of the
                 last convolutional layer.
-            - `avg` means that global average pooling
+            - 'avg' means that global average pooling
                 will be applied to the output of the
                 last convolutional layer, and thus
                 the output of the model will be a 2D tensor.
-            - `max` means that global max pooling will
+            - 'max' means that global max pooling will
                 be applied.
         required_channels (int): The required number of channels of the
             backbone.  3 is the default for all current backbones.
 
     Returns:
-        keras.Model: RetinaNet model with a backbone.
+        tensorflow.keras.Model: RetinaNet model with a backbone.
     """
     inputs = Input(shape=input_shape)
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1

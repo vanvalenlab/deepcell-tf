@@ -43,14 +43,14 @@ def get_cropped_input_shape(images,
     """Calculate the input_shape for models to process cropped sub-images.
 
     Args:
-        images (np.array): numpy array of original data
+        images (numpy.array): numpy array of original data
         num_crops (int): number of slices for the x and y axis
             to create sub-images
         receptive_field (int): the receptive field of the neural network.
-        data_format (str): `channels_first` or `channels_last`
+        data_format (str): "channels_first" or "channels_last"
 
     Returns:
-        input_shape: new input_shape for model to process sub-images.
+        tuple: new input_shape for model to process sub-images.
     """
     if data_format is None:
         data_format = K.image_data_format()
@@ -85,7 +85,7 @@ def get_padding_layers(model):
     """Get all names of padding layers in a model
 
     Args:
-        model (keras.Model): Keras model
+        model (tensorflow.keras.Model): Keras model
 
     Returns:
         list: list of names of padding layers inside model
@@ -104,8 +104,8 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding=
     process each small image.
 
     Args:
-        model (keras.Model): model that will process each small image
-        images (np.array): numpy array that is too big for model.predict
+        model (tensorflow.keras.Model): model that will process each small image
+        images (numpy.array): numpy array that is too big for model.predict
         num_crops (int): number of slices for the x and y axis
             to create sub-images
         receptive_field (int): receptive field used by model,
@@ -114,7 +114,7 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding=
             one of {'reflect', 'zero'}.
 
     Returns:
-        np.array: model outputs for each sub-image
+        numpy.array: model outputs for each sub-image
 
     Raises:
         ValueError: invalid padding value

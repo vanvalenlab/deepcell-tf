@@ -46,12 +46,12 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
         mask (tensor): tensor of labels
         dilation_radius (int):  width to enlarge the edge feature of
             each instance
-        data_format (str): `channels_first` or `channels_last`
+        data_format (str): 'channels_first' or 'channels_last'
         separate_edge_classes (bool): Whether to separate the cell edge class
             into 2 distinct cell-cell edge and cell-background edge classes.
 
     Returns:
-        np.array: one-hot encoded tensor of masks:
+        numpy.array: one-hot encoded tensor of masks:
             if not separate_edge_classes: [cell_edge, cell_interior, background]
             otherwise: [bg_cell_edge, cell_cell_edge, cell_interior, background]
     """
@@ -141,11 +141,11 @@ def erode_edges(mask, erosion_width):
     """Erode edge of objects to prevent them from touching
 
     Args:
-        mask (np.array): uniquely labeled instance mask
+        mask (numpy.array): uniquely labeled instance mask
         erosion_width (int): integer value for pixel width to erode edges
 
     Returns:
-        np.array: mask where each instance has had the edges eroded
+        numpy.array: mask where each instance has had the edges eroded
 
     Raises:
         ValueError: mask.ndim is not 2 or 3
@@ -172,12 +172,12 @@ def distance_transform_2d(mask, bins=16, erosion_width=None):
     """Transform a label mask into distance classes.
 
     Args:
-        mask (np.array): a label mask (y data)
+        mask (numpy.array): a label mask (y data)
         bins (int): the number of transformed distance classes
         erosion_width (int): number of pixels to erode edges of each labels
 
     Returns:
-        np.array: a mask of same shape as input mask,
+        numpy.array: a mask of same shape as input mask,
             with each label being a distance class from 1 to bins
     """
     mask = np.squeeze(mask)  # squeeze the channels
@@ -207,12 +207,12 @@ def distance_transform_3d(maskstack, bins=4, erosion_width=None):
     Uses scipy's distance_transform_edt
 
     Args:
-        maskstack (np.array): a z-stack of label masks (y data)
+        maskstack (numpy.array): a z-stack of label masks (y data)
         bins (int): the number of transformed distance classes
         erosion_width (int): number of pixels to erode edges of each labels
 
     Returns:
-        np.array: 3D Euclidiean Distance Transform
+        numpy.array: 3D Euclidiean Distance Transform
     """
     maskstack = np.squeeze(maskstack)  # squeeze the channels
     maskstack = erode_edges(maskstack, erosion_width)
@@ -237,10 +237,10 @@ def centroid_weighted_distance_transform_2d(mask):
     """Transform a label mask into 2 distance masks weighted by the centroid.
 
     Args:
-        mask (np.array): a label mask (y data)
+        mask (numpy.array): a label mask (y data)
 
     Returns:
-        np.array: two masks of the same shape as input mask, with each label
+        numpy.array: two masks of the same shape as input mask, with each label
             being a distance class scaled by the labels centroid
             (one image by the centroid's x-component and another by the y)
     """
@@ -275,10 +275,10 @@ def rotate_array_0(arr):
     """Rotate array 0 degrees
 
     Args:
-        arr (np.array): input array
+        arr (numpy.array): input array
 
     Returns:
-        np.array: rotated array
+        numpy.array: rotated array
     """
     return arr
 
@@ -287,10 +287,10 @@ def rotate_array_90(arr):
     """Rotate array 90 degrees
 
     Args:
-        arr (np.array): input array
+        arr (numpy.array): input array
 
     Returns:
-        np.array: rotated array
+        numpy.array: rotated array
     """
     axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
     slices = [slice(None) for _ in range(arr.ndim - 2)] + \
@@ -302,10 +302,10 @@ def rotate_array_180(arr):
     """Rotate array 180 degrees
 
     Args:
-        arr (np.array): input array
+        arr (numpy.array): input array
 
     Returns:
-        np.array: rotated array
+        numpy.array: rotated array
     """
     slices = [slice(None) for _ in range(arr.ndim - 2)] + \
              [slice(None, None, -1), slice(None, None, -1)]
@@ -316,10 +316,10 @@ def rotate_array_270(arr):
     """Rotate array 270 degrees
 
     Args:
-        arr (np.array): input array
+        arr (numpy.array): input array
 
     Returns:
-        np.array: rotated array
+        numpy.array: rotated array
     """
     axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
     slices = [slice(None) for _ in range(arr.ndim - 2)] + \
@@ -332,12 +332,12 @@ def to_categorical(y, num_classes=None):
     E.g. for use with categorical_crossentropy.
 
     Args:
-        y (np.array): class vector to be converted into a matrix
+        y (numpy.array): class vector to be converted into a matrix
             (integers from 0 to num_classes).
         num_classes (int): total number of classes.
 
     Returns:
-        np.array: A binary matrix representation of the input.
+        numpy.array: A binary matrix representation of the input.
     """
     y = np.array(y, dtype='int').ravel()
     if not num_classes:

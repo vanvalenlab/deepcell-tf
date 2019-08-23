@@ -69,7 +69,7 @@ class Dataset(object):  # pylint: disable=useless-object-inheritance
             seed (int): the seed for randomly shuffling the dataset
 
         Returns:
-            tuple: `(x_train, y_train), (x_test, y_test)`.
+            tuple: (x_train, y_train), (x_test, y_test).
         """
         basepath = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
         prefix = path.split(os.path.sep)[:-1]
@@ -102,13 +102,13 @@ class Dataset(object):  # pylint: disable=useless-object-inheritance
             seed (int): the seed for randomly shuffling the dataset
 
         Returns:
-            tuple: `(x_train, y_train), (x_test, y_test)`.
+            tuple: (x_train, y_train), (x_test, y_test).
         """
         path = path if path else self.path
         return self._load_data(path, 'sample', test_size=test_size, seed=seed)
 
     def load_tracked_data(self, path=None, test_size=0.2, seed=0):
-        """Loads dataset using `siamese_daughters` mode.
+        """Loads dataset using "siamese_daughters" mode.
 
         Args:
             path (str): filepath to save the data locally.
@@ -116,7 +116,7 @@ class Dataset(object):  # pylint: disable=useless-object-inheritance
             seed (int): the seed for randomly shuffling the dataset
 
         Returns:
-            tuple: `(x_train, y_train), (x_test, y_test)`.
+            tuple: (x_train, y_train), (x_test, y_test).
         """
         path = path if path else self.path
         return self._load_data(path, 'siamese_daughters', test_size=test_size, seed=seed)

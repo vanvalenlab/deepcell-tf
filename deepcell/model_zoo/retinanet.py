@@ -70,7 +70,8 @@ def default_classification_model(num_classes,
         name (str): The name of the submodel.
 
     Returns:
-        keras.models.Model: A model that predicts classes for each anchor.
+        tensorflow.keras.Model: A model that predicts classes for
+            each anchor.
     """
     options = {
         'kernel_size': 3,
@@ -127,7 +128,7 @@ def default_regression_model(num_values,
         name (str): The name of the submodel.
 
     Returns:
-        keras.models.Model: A model that predicts regression values
+        tensorflow.keras.Model: A model that predicts regression values
             for each anchor.
     """
     # All new conv layers except the final one in the
@@ -280,8 +281,8 @@ def retinanet(inputs,
             classification heads to. Defaults to ['P3', 'P4', 'P5', 'P6', 'P7']
         num_classes (int): Number of classes to classify.
         num_anchors (int): Number of base anchors.
-        create_pyramid_features (callable): Function to create pyramid features.
-        create_symantic_head (callable): Function for creating a semantic head,
+        create_pyramid_features (function): Function to create pyramid features.
+        create_symantic_head (function): Function for creating a semantic head,
             which can be used for panoptic segmentation tasks
         panoptic (bool): Flag for adding the semantic head for panoptic
             segmentation tasks. Defaults to false.
@@ -292,11 +293,12 @@ def retinanet(inputs,
         name (str): Name of the model.
 
     Returns:
-        keras.models.Model: A Model which takes an image as input and outputs
-            generated anchors and the result from each submodel on every
-            pyramid level.
+        tensorflow.keras.Model: A Model which takes an image as input
+            and outputs generated anchors and the result from each submodel on
+            every pyramid level.
 
             The order of the outputs is as defined in submodels:
+
             ```
             [
                 regression, classification, other[0], other[1], ...
@@ -361,8 +363,8 @@ def retinanet_bbox(model=None,
     regression values to the anchors and performing NMS.
 
     Args:
-        model (keras.models.Model): RetinaNet model to append bbox layers to.
-            If None, it will create a RetinaNet model using **kwargs.
+        model (tensorflow.keras.Model): RetinaNet model to append bbox
+            layers to. If None, it will create a RetinaNet model using kwargs.
         nms (bool): Whether to use non-maximum suppression
             for the filtering step.
         backbone_levels (list): Backbone levels to use for
@@ -377,15 +379,17 @@ def retinanet_bbox(model=None,
         kwargs (dict): Additional kwargs to pass to the minimal retinanet model.
 
     Returns:
-        keras.models.Model: A Model which takes an image as input and
+        tensorflow.keras.Model: A Model which takes an image as input and
             outputs the detections on the image.
 
             The order is defined as follows:
+
             ```
             [
                 boxes, scores, labels, other[0], other[1], ...
             ]
             ```
+
     Raises:
         ValueError: the given model does not have a regression or
             classification submodel.
@@ -459,25 +463,25 @@ def RetinaNet(backbone,
         backbone (str): Name of backbone to use.
         num_classes (int): Number of classes to classify.
         input_shape (tuple): The shape of the input data.
-        weights (str): one of `None` (random initialization),
+        weights (str): one of None (random initialization),
             'imagenet' (pre-training on ImageNet),
             or the path to the weights file to be loaded.
         pooling (str): optional pooling mode for feature extraction
-            when `include_top` is `False`.
-            - `None` means that the output of the model will be
+            when 'include_top' is False.
+            - None means that the output of the model will be
                 the 4D tensor output of the
                 last convolutional layer.
-            - `avg` means that global average pooling
+            - 'avg' means that global average pooling
                 will be applied to the output of the
                 last convolutional layer, and thus
                 the output of the model will be a 2D tensor.
-            - `max` means that global max pooling will
+            - 'max' means that global max pooling will
                 be applied.
         required_channels (int): The required number of channels of the
             backbone.  3 is the default for all current backbones.
 
     Returns:
-        keras.model.Model: RetinaNet model with a backbone.
+        tensorflow.keras.Model: RetinaNet model with a backbone.
     """
     if inputs is None:
         inputs = Input(shape=input_shape)

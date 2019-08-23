@@ -45,7 +45,7 @@ def count_pairs(y, same_probability=0.5, data_format=None):
     """Compute number of training samples needed to observe all cell pairs.
 
     Args:
-        y (np.array): 5D tensor of cell labels
+        y (numpy.array): 5D tensor of cell labels
         same_probability (float): liklihood that 2 cells are the same
 
     Returns:
@@ -162,8 +162,8 @@ def save_trks(filename, lineages, raw, tracked):
     Args:
         filename (str): full path to the final trk files
         lineages (dict[]): a list of dictionaries saved as a json
-        raw (np.array): raw images data
-        tracked (np.array): annotated image data
+        raw (numpy.array): raw images data
+        tracked (numpy.array): annotated image data
     """
     if not str(filename).lower().endswith('.trks'):
         raise ValueError('filename must end with `.trks`. Found %s' % filename)

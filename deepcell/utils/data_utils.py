@@ -128,7 +128,7 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='vali
     of samples for to be used. This will be used to balance class sampling.
 
     Args:
-        y (np.array): mask to indicate which pixels belong to which class
+        y (numpy.array): mask to indicate which pixels belong to which class
         edge_feature (list): [1, 0, 0], the 1 indicates the feature
             is the cell edge
         output_mode (str):  'sample' or 'conv'
@@ -161,14 +161,14 @@ def get_max_sample_num_list(y, edge_feature, output_mode='sample', padding='vali
 
 def sample_label_matrix(y, window_size=(30, 30), padding='valid',
                         max_training_examples=1e7, data_format=None):
-    """Sample a 4D Tensor, creating many small images of shape `window_size`.
+    """Sample a 4D Tensor, creating many small images of shape window_size.
 
     Args:
-        y (np.array): label masks with the same shape as `X` data
+        y (numpy.array): label masks with the same shape as X data
         window_size (tuple): size of window around each pixel to sample
-        padding (str): padding type `valid` or `same`
+        padding (str): padding type 'valid' or 'same'
         max_training_examples (int): max number of samples per class
-        data_format (str): `channels_first` or `channels_last`
+        data_format (str): 'channels_first' or 'channels_last'
 
     Returns:
         tuple: 4 arrays of coordinates of each sampled pixel
@@ -233,14 +233,14 @@ def sample_label_matrix(y, window_size=(30, 30), padding='valid',
 
 def sample_label_movie(y, window_size=(30, 30, 5), padding='valid',
                        max_training_examples=1e7, data_format=None):
-    """Sample a 5D Tensor, creating many small voxels of shape `window_size`.
+    """Sample a 5D Tensor, creating many small voxels of shape window_size.
 
     Args:
-        y (np.array): label masks with the same shape as `X` data
+        y (numpy.array): label masks with the same shape as X data
         window_size (tuple): size of window around each pixel to sample
-        padding (str): padding type `valid` or `same`
+        padding (str): padding type 'valid' or 'same'
         max_training_examples (int): max number of samples per class
-        data_format (str): `channels_first` or `channels_last`
+        data_format (str): 'channels_first' or 'channels_last'
 
     Returns:
         tuple: 5 arrays of coordinates of each sampled pixel
@@ -312,13 +312,13 @@ def trim_padding(nparr, win_x, win_y, win_z=None):
     window of size (win_x, win_y) to not slide over regions without pixel data
 
     Args:
-        nparr (np.array): numpy array to trim
+        nparr (numpy.array): numpy array to trim
         win_x (int): number of row pixels to ignore on either side
         win_y (int): number of column pixels to ignore on either side
         win_y (int): number of column pixels to ignore on either side
 
     Returns:
-        np.array: trimmed numpy array of size
+        numpy.array: trimmed numpy array of size
             x - 2 * win_x - 1, y - 2 * win_y - 1
 
     Raises:
@@ -356,13 +356,13 @@ def reshape_matrix(X, y, reshape_size=256):
     E.g. reshape_size of 256 yields (1, 1024, 1024, 1) -> (16, 256, 256, 1)
 
     Args:
-        X (np.array): raw 4D image tensor
-        y (np.array): label mask of 4D image data
+        X (numpy.array): raw 4D image tensor
+        y (numpy.array): label mask of 4D image data
         reshape_size (int): size of the square output tensor
 
     Returns:
-        np.array: reshaped `X` and `y` tensors in shape
-            (`reshape_size`, `reshape_size`)
+        numpy.array: reshaped X and y tensors in shape
+            (reshape_size, reshape_size)
 
     Raises:
         ValueError: X.ndim is not 4
@@ -420,10 +420,10 @@ def relabel_movie(y):
     """Relabels unique instance IDs to be from 1 to N
 
     Args:
-        y (np.array): tensor of integer labels
+        y (numpy.array): tensor of integer labels
 
     Returns:
-        np.array: relabeled tensor with sequential labels
+        numpy.array: relabeled tensor with sequential labels
     """
     new_y = np.zeros(y.shape)
     unique_cells = np.unique(y)  # get all unique values of y
@@ -442,13 +442,13 @@ def reshape_movie(X, y, reshape_size=256):
     E.g. reshape_size of 256 yields (1, 5, 1024, 1024, 1) -> (16, 5, 256, 256, 1)
 
     Args:
-        X (np.array): raw 5D image tensor
-        y (np.array): label mask of 5D image tensor
+        X (numpy.array): raw 5D image tensor
+        y (numpy.array): label mask of 5D image tensor
         reshape_size (int): size of the square output tensor
 
     Returns:
-        np.array: reshaped `X` and `y` tensors in shape
-            (`reshape_size`, `reshape_size`)
+        numpy.array: reshaped X and y tensors in shape
+            (reshape_size, reshape_size)
 
     Raises:
         ValueError: X.ndim is not 5
@@ -520,7 +520,7 @@ def load_training_images_2d(direc_name,
         image_size (tuple): size of each image as tuple (x, y)
 
     Returns:
-        np.array: 4D tensor of image data
+        numpy.array: 4D tensor of image data
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     # Unpack size tuples
@@ -574,7 +574,7 @@ def load_annotated_images_2d(direc_name,
         image_size (tuple): size of each image as tuple (x, y)
 
     Returns:
-        np.array: 4D tensor of label masks
+        numpy.array: 4D tensor of label masks
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     # Unpack size tuple
@@ -682,7 +682,7 @@ def load_training_images_3d(direc_name,
             inside annotation_direc
 
     Returns:
-        np.array: 5D tensor of raw image data
+        numpy.array: 5D tensor of raw image data
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     image_size_x, image_size_y = image_size
@@ -751,7 +751,7 @@ def load_annotated_images_3d(direc_name,
             inside annotation_direc
 
     Returns:
-        np.array: 5D tensor of image label masks
+        numpy.array: 5D tensor of image label masks
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     image_size_x, image_size_y = image_size

@@ -31,7 +31,7 @@ from __future__ import division
 
 import numpy as np
 from tensorflow.python.keras.utils import multi_gpu_model
-from tensorflow.python.keras.models import Model
+from tensorflow.python.keras import Model
 from tensorflow.python.client import device_lib
 
 
@@ -43,7 +43,7 @@ def rate_scheduler(lr=.001, decay=0.95):
         decay (float): rate of decay of the learning rate
 
     Returns:
-        callable: A function that takes in the epoch
+        function: A function that takes in the epoch
             and returns a learning rate.
     """
     def output_fn(epoch):
@@ -68,7 +68,7 @@ class MultiGpuModel(Model):
     """Wrapper Model class to enable multi-gpu saving/loading
 
     Args:
-        ser_model (keras.Model): serial-model that runs on a single GPU.
+        ser_model (tensorflow.keras.Model): serial-model for multiple GPUs.
         gpus (int): number of GPUs to train on.
     """
     def __init__(self, ser_model, gpus):
