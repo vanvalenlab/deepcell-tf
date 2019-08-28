@@ -55,7 +55,7 @@ methods = {
 
 nih_3t3 = Dataset(
     path='nih_3t3-phase.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_3T3_s0_phase_medium_stitched_2D_512.np',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_3T3_s0_phase_medium_stitched_2D_512.npz',
     file_hash='b0dc7fa28d6ec4dec25150187b9629330689372da40f730042f8e0824df4da2e',
     metadata={'methods': methods}
 )
