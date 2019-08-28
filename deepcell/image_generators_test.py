@@ -1337,14 +1337,13 @@ class TestRetinaNetDataGenerator(test.TestCase):
                     save_to_dir=temp_dir,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], images.shape[1:])
-                self.assertEqual(x.shape[1:], images.shape[1:])
                 self.assertEqual(r.shape[:-1], l.shape[:-1])
                 self.assertEqual(r.shape[-1], 5)
                 self.assertEqual(l.shape[-1], num_classes + 1)
                 break
 
     def test_retinanet_data_generator_invalid_data(self):
-        generator = image_generators.ImageFullyConvDataGenerator(
+        generator = image_generators.RetinaNetGenerator(
             featurewise_center=True,
             samplewise_center=True,
             featurewise_std_normalization=True,
@@ -1376,11 +1375,12 @@ class TestRetinaNetDataGenerator(test.TestCase):
         generator.fit(np.random.random((8, 10, 10, 5)))
 
         with self.assertRaises(ValueError):
-            generator = image_generators.ImageFullyConvDataGenerator(
+            generator = image_generators.RetinaNetGenerator(
                 data_format='unknown')
 
-        generator = image_generators.ImageFullyConvDataGenerator(
+        generator = image_generators.RetinaNetGenerator(
             zoom_range=(2, 2))
         with self.assertRaises(ValueError):
-            generator = image_generators.ImageFullyConvDataGenerator(
+            generator = image_generators.RetinaNetGenerator(
+                zoom_range=(2, 2, 2))
                 zoom_range=(2, 2, 2))
