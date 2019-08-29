@@ -49,25 +49,25 @@ class TestScaleDetectionModel(test.TestCase):
         X = np.random.random(batch_shape)
 
         for backbone in valid_backbones:
-            inputs = Input(shape=input_shape)
-            model = ScaleDetectionModel(
-                inputs=inputs,
-                backbone=backbone,
-                use_pretrained_weights=False,  # don't download the weights
-            )
+            with self.test_session(use_gpu=True):
+                inputs = Input(shape=input_shape)
+                model = ScaleDetectionModel(
+                    inputs=inputs,
+                    backbone=backbone,
+                    use_pretrained_weights=False)
 
-            y = model.predict(X)
+                y = model.predict(X)
 
-            assert y.shape[0] == X.shape[0]
-            assert len(y.shape) == 2
+                assert y.shape[0] == X.shape[0]
+                assert len(y.shape) == 2
 
-            model = ScaleDetectionModel(
-                input_shape=input_shape,
-                backbone=backbone,
-                use_pretrained_weights=False,  # don't download the weights
-            )
+            with self.test_session(use_gpu=True):
+                model = ScaleDetectionModel(
+                    input_shape=input_shape,
+                    backbone=backbone,
+                    use_pretrained_weights=False)
 
-            y = model.predict(X)
+                y = model.predict(X)
 
-            assert y.shape[0] == X.shape[0]
-            assert len(y.shape) == 2
+                assert y.shape[0] == X.shape[0]
+                assert len(y.shape) == 2
