@@ -58,12 +58,17 @@ def LabelDetectionModel(input_shape=(None, None, 1),
     if inputs is None:
         inputs = keras.layers.Input(shape=input_shape)
 
+    if keras.backend.image_data_format() == 'channels_first':
+        channel_axis = 0
+    else:
+        channel_axis = -1
+
     norm = ImageNormalization2D(norm_method='whole_image')(inputs)
     fixed_inputs = TensorProduct(required_channels)(norm)
 
     # force the input shape
     fixed_input_shape = list(input_shape)
-    fixed_input_shape[-1] = required_channels
+    fixed_input_shape[channel_axis] = required_channels
     fixed_input_shape = tuple(fixed_input_shape)
 
     backbone_model = get_backbone(
@@ -94,6 +99,7 @@ def LabelDetectionModel(input_shape=(None, None, 1),
         else:
             raise ValueError('Backbone %s does not have a weights file.' %
                              backbone)
+
         model.load_weights(weights_path)
 
     return model
