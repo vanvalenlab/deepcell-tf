@@ -72,7 +72,7 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
     fixed_input_shape[channel_axis] = required_channels
     fixed_input_shape = tuple(fixed_input_shape)
 
-    backbone = get_backbone(
+    backbone_model = get_backbone(
         backbone,
         fixed_inputs,
         use_imagenet=False,
@@ -82,13 +82,13 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
         input_shape=fixed_input_shape,
         pooling=pooling)
 
-    x = keras.layers.AveragePooling2D(4)(backbone.outputs[0])
+    x = keras.layers.AveragePooling2D(4)(backbone_model.outputs[0])
     x = TensorProduct(256)(x)
     x = TensorProduct(1)(x)
     x = keras.layers.Flatten()(x)
     outputs = keras.layers.Activation('relu')(x)
 
-    model = keras.Model(inputs=backbone.inputs, outputs=outputs)
+    model = keras.Model(inputs=backbone_model.inputs, outputs=outputs)
 
     if use_pretrained_weights:
         if backbone.upper() == 'VGG16':

@@ -67,7 +67,7 @@ def LabelDetectionModel(input_shape=(None, None, 1),
     fixed_input_shape[-1] = required_channels
     fixed_input_shape = tuple(fixed_input_shape)
 
-    backbone = get_backbone(
+    backbone_model = get_backbone(
         backbone,
         fixed_inputs,
         use_imagenet=False,
@@ -77,13 +77,13 @@ def LabelDetectionModel(input_shape=(None, None, 1),
         input_shape=fixed_input_shape,
         pooling=pooling)
 
-    x = keras.layers.AveragePooling2D(4)(backbone.outputs[0])
+    x = keras.layers.AveragePooling2D(4)(backbone_model.outputs[0])
     x = TensorProduct(256)(x)
     x = TensorProduct(3)(x)
     x = keras.layers.Flatten()(x)
     outputs = keras.layers.Activation('softmax')(x)
 
-    model = keras.Model(inputs=backbone.inputs, outputs=outputs)
+    model = keras.Model(inputs=backbone_model.inputs, outputs=outputs)
 
     if use_pretrained_weights:
         if backbone.upper() == 'VGG16':
