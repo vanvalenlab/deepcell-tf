@@ -41,7 +41,7 @@ from deepcell.utils.backbone_utils import get_backbone
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/ScaleDetectionModel.h5')
+                'model-weights/ScaleDetectionModel_VGG16.h5')
 
 
 def ScaleDetectionModel(input_shape=(None, None, 1),
@@ -91,11 +91,16 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
     model = keras.Model(inputs=backbone.inputs, outputs=outputs)
 
     if use_pretrained_weights:
-        weights_path = get_file(
-            'ScaleDetectionModel.h5',
-            WEIGHTS_PATH,
-            cache_subdir='models',
-            md5_hash='9ed5acbd281a7262c7016f84baa0f844')
+        if backbone == 'VGG16':
+            weights_path = get_file(
+                'ScaleDetectionModel_{}.h5'.format(backbone),
+                WEIGHTS_PATH,
+                cache_subdir='models',
+                md5_hash='ab23e35676ffcdf1c72d3804cc65ea1d')
+        else:
+            raise ValueError('Backbone %s does not have a weights file.' %
+                             backbone)
+
         model.load_weights(weights_path)
 
     return model

@@ -31,15 +31,24 @@ from __future__ import print_function
 
 from tensorflow.python import keras
 
+try:
+    from tensorflow.python.keras.utils.data_utils import get_file
+except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
+    from tensorflow.python.keras._impl.keras.utils.data_utils import get_file
+
 from deepcell.layers import ImageNormalization2D, TensorProduct
 from deepcell.utils.backbone_utils import get_backbone
+
+
+WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+                'model-weights/LabelDetectionModel_VGG16.h5')
 
 
 def LabelDetectionModel(input_shape=(None, None, 1),
                         inputs=None,
                         backbone='VGG16',
                         required_channels=3,
-                        weights=None,
+                        use_pretrained_weights=True,
                         norm_method='whole_image',
                         pooling=None):
     """Classify a microscopy image as Nuclear, Cytoplasm, or Phase.
@@ -64,7 +73,7 @@ def LabelDetectionModel(input_shape=(None, None, 1),
         use_imagenet=False,
         return_dict=False,
         include_top=False,
-        weights=weights,
+        weights=None,
         input_shape=fixed_input_shape,
         pooling=pooling)
 
@@ -74,4 +83,18 @@ def LabelDetectionModel(input_shape=(None, None, 1),
     x = keras.layers.Flatten()(x)
     outputs = keras.layers.Activation('softmax')(x)
 
-    return keras.Model(inputs=backbone.inputs, outputs=outputs)
+    model = keras.Model(inputs=backbone.inputs, outputs=outputs)
+
+    if use_pretrained_weights:
+        if backbone == 'VGG16':
+            weights_path = get_file(
+                'LabelDetectionModel_{}.h5'.format(backbone),
+                WEIGHTS_PATH,
+                cache_subdir='models',
+                md5_hash='090a0de7a33dceff7ad690b3c9852938')
+        else:
+            raise ValueError('Backbone %s does not have a weights file.' %
+                             backbone)
+        model.load_weights(weights_path)
+
+    return model
