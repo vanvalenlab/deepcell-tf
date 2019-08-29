@@ -52,7 +52,7 @@ from deepcell.utils.misc_utils import sorted_nicely
 from deepcell.utils.tracking_utils import load_trks
 
 
-def get_data(file_name, mode='sample', test_size=.1, seed=None):
+def get_data(file_name, mode='sample', test_size=.2, seed=0):
     """Load data from NPZ file and split into train and test sets
 
     Args:
