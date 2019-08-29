@@ -91,7 +91,7 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
     model = keras.Model(inputs=backbone.inputs, outputs=outputs)
 
     if use_pretrained_weights:
-        if backbone == 'VGG16':
+        if backbone.upper() == 'VGG16':
             weights_path = get_file(
                 'ScaleDetectionModel_{}.h5'.format(backbone),
                 WEIGHTS_PATH,
