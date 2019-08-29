@@ -47,19 +47,18 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 def LabelDetectionModel(input_shape=(None, None, 1),
                         inputs=None,
                         backbone='VGG16',
-                        required_channels=3,
-                        use_pretrained_weights=True,
-                        norm_method='whole_image',
-                        pooling=None):
+                        use_pretrained_weights=True):
     """Classify a microscopy image as Nuclear, Cytoplasm, or Phase.
 
     This can be helpful in determining the type of data (nuclear, cytoplasm,
     etc.) so that this data can be forwared to the correct segmenation model.
     """
+    required_channels = 3  # required for most backbones
+
     if inputs is None:
         inputs = keras.layers.Input(shape=input_shape)
 
-    norm = ImageNormalization2D(norm_method=norm_method)(inputs)
+    norm = ImageNormalization2D(norm_method='whole_image')(inputs)
     fixed_inputs = TensorProduct(required_channels)(norm)
 
     # force the input shape
@@ -75,7 +74,7 @@ def LabelDetectionModel(input_shape=(None, None, 1),
         include_top=False,
         weights=None,
         input_shape=fixed_input_shape,
-        pooling=pooling)
+        pooling=None)
 
     x = keras.layers.AveragePooling2D(4)(backbone_model.outputs[0])
     x = TensorProduct(256)(x)
