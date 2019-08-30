@@ -25,23 +25,30 @@
 # ==============================================================================
 """A cell tracking class capable of extending labels across sequential frames."""
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import copy
 import json
 import pathlib
 import tarfile
 import tempfile
+import timeit
 
+import pandas as pd
+import networkx as nx
+
+import cv2
 import numpy as np
 from tensorflow.python.keras import backend as K
 from scipy.optimize import linear_sum_assignment
 from skimage.measure import regionprops
 from skimage.transform import resize
-from pandas import DataFrame
-
-from deepcell.image_generators import MovieDataGenerator
 
 
-class cell_tracker():
+class cell_tracker(object):  # pylint: disable=useless-object-inheritance
+
     def __init__(self,
                  movie,
                  annotation,
@@ -56,6 +63,16 @@ class cell_tracker():
                  neighborhood_scale_size=10,
                  neighborhood_true_size=100,
                  data_format=None):
+
+        if not len(movie.shape) == 4 or not len(annotation.shape) == 4:
+            raise ValueError('Input data and labels but be rank 4 '
+                             '(frames, x, y, channels).  Got {} and {}.'.format(
+                                 len(movie.shape), len(annotation.shape)))
+
+        if not movie.shape[:-1] == annotation.shape[:-1]:
+            raise ValueError('Input data and labels should have the same shape'
+                             ' except for the channel dimension.  Got {} and '
+                             '{}'.format(movie.shape, annotation.shape))
 
         if data_format is None:
             data_format = K.image_data_format()
@@ -119,7 +136,6 @@ class cell_tracker():
         """
         This function creates new tracks
         """
-        import traceback
 
         new_track = len(self.tracks.keys())
         new_label = new_track + 1
@@ -195,6 +211,7 @@ class cell_tracker():
         """Uses the model to create the cost matrix for
         assigning the cells in frame to existing tracks.
         """
+        t = timeit.default_timer()
         # Initialize matrices
         number_of_tracks = np.int(len(self.tracks.keys()))
 
@@ -212,8 +229,7 @@ class cell_tracker():
         mordor_matrix = np.zeros((number_of_cells, number_of_tracks), dtype=K.floatx())
 
         # Grab the features for the entire track
-        track_features = {feature_name: self._fetch_track_feature(feature_name)
-                          for feature_name in self.features}
+        track_features = {f: self._fetch_track_feature(f) for f in self.features}
 
         # Grab the features for this frame
         # Fill frame_features with zero matrices
@@ -222,8 +238,8 @@ class cell_tracker():
             feature_shape = self.feature_shape[feature_name]
             # TODO(enricozb): why are there extra (1,)'s in the image shapes
             additional = (1,) if feature_name in {'appearance', 'neighborhood'} else ()
-            frame_features[feature_name] = np.zeros((number_of_cells, *additional, *feature_shape),
-                                                    dtype=K.floatx())
+            shape = tuple([number_of_cells] + list(additional) + list(feature_shape))
+            frame_features[feature_name] = np.zeros(shape, dtype=K.floatx())
         # Fill frame_features with the proper values
         for cell_idx, cell_id in enumerate(cells_in_frame):
             cell_features = self._get_features(self.x, self.y, [frame], [cell_id])
@@ -237,39 +253,59 @@ class cell_tracker():
         # Compute assignment matrix - Initialize and get model inputs
         # Fill the input matrices
         for track in range(number_of_tracks):
+
+            # we need to get the future frame for the track we are comparing to
+            try:
+                track_label = self.tracks[track]['label']
+                track_frame_features = self._get_features(
+                    self.x, self.y_tracked, [frame - 1], [track_label])
+            except:
+                # `track_label` might not exist in `frame - 1`
+                # if this happens, default to the cell's neighborhood
+                track_frame_features = dict()
+
             for cell in range(number_of_cells):
-                feature_ok = True
                 feature_vals = {}
+
+                # If distance is a feature it is used to exclude
+                # impossible pairings from the get_feature call
+                if 'distance' in self.features:
+                    _, _, is_cell_in_range = self._compute_feature(
+                        'distance',
+                        track_features['distance'][track],
+                        frame_features['distance'][cell])
+                else:
+                    # not worried about distance, just calculate features
+                    is_cell_in_range = True
+
+                if not is_cell_in_range:
+                    # Cell is outside of range, set cost to max and move on
+                    assignment_matrix[track, cell] = 1
+                    continue
+
+                # The cell is within range so we should add
+                # all the information for all features
                 for feature_name in self.features:
-                    track_feature, frame_feature, ok = self._compute_feature(
+
+                    track_feature, frame_feature, _ = self._compute_feature(
                         feature_name,
                         track_features[feature_name][track],
                         frame_features[feature_name][cell])
 
                     # this condition changes `frame_feature`
                     if feature_name == 'neighborhood':
-                        # we need to get the future frame for the track we are comparing to
-                        track_label = self.tracks[track]['label']
-                        try:
-                            track_frame_features = self._get_features(
-                                self.x, self.y_tracked, [frame - 1], [track_label])
-                            frame_feature = track_frame_features['~future area']
-                        except:
-                            # `track_label` might not exist in `frame - 1`
-                            # if this happens, default to the cell's neighborhood
-                            pass
+                        # This segment of the loop should not be run
+                        # if the disance check fails
+                        frame_feature = track_frame_features.get('~future area', frame_feature)
 
-                    if ok:
-                        feature_vals[feature_name] = (track_feature, frame_feature)
-                    else:
-                        feature_ok = False
-                        assignment_matrix[track, cell] = 1
+                    feature_vals[feature_name] = (track_feature, frame_feature)
 
-                if feature_ok:
-                    input_pairs.append((track, cell))
-                    for feature_name, (track_feature, frame_feature) in feature_vals.items():
-                        inputs[feature_name][0].append(track_feature)
-                        inputs[feature_name][1].append(frame_feature)
+                input_pairs.append((track, cell))
+                for feature_name, (track_feature, frame_feature) in feature_vals.items():
+                    inputs[feature_name][0].append(track_feature)
+                    inputs[feature_name][1].append(frame_feature)
+
+        print('Got features in {}s'.format(timeit.default_timer() - t))
 
         if input_pairs == []:
             # if the frame is empty
@@ -280,10 +316,11 @@ class cell_tracker():
             for feature_name in self.features:
                 in_1, in_2 = inputs[feature_name]
                 feature_shape = self.feature_shape[feature_name]
-                in_1 = np.reshape(np.stack(in_1), (len(input_pairs),
-                                  self.track_length, *feature_shape))
-                in_2 = np.reshape(np.stack(in_2), (len(input_pairs),
-                                  1, *feature_shape))
+                in_1 = np.reshape(np.stack(in_1),
+                                  tuple([len(input_pairs), self.track_length] +
+                                        list(feature_shape)))
+                in_2 = np.reshape(np.stack(in_2), tuple([len(input_pairs), 1] +
+                                                        list(feature_shape)))
                 model_input.extend([in_1, in_2])
 
             predictions = self.model.predict(model_input)
@@ -486,7 +523,7 @@ class cell_tracker():
             else:
                 num_missing = self.track_length - len(allowed_frames)
                 last_frame = allowed_frames[-1]
-                frames = [*allowed_frames, *([last_frame] * num_missing)]
+                frames = allowed_frames + [last_frame] * num_missing
 
             track_appearances[track_id] = app[[frame_dict[f] for f in frames]]
 
@@ -513,7 +550,7 @@ class cell_tracker():
             else:
                 num_missing = self.track_length - len(allowed_frames)
                 last_frame = allowed_frames[-1]
-                frames = [*allowed_frames, *([last_frame] * num_missing)]
+                frames = allowed_frames + [last_frame] * num_missing
 
             track_regionprops[track_id] = regionprop[[frame_dict[f] for f in frames]]
 
@@ -540,7 +577,7 @@ class cell_tracker():
             else:
                 num_missing = self.track_length - len(allowed_frames)
                 last_frame = allowed_frames[-1]
-                frames = [*allowed_frames, *([last_frame] * num_missing)]
+                frames = allowed_frames + [last_frame] * num_missing
 
             track_centroids[track_id] = centroids[[frame_dict[f] for f in frames]]
 
@@ -571,37 +608,42 @@ class cell_tracker():
             else:
                 num_missing = self.track_length - len(allowed_frames)
                 last_frame = allowed_frames[-1]
-                frames = [*allowed_frames, *([last_frame] * num_missing)]
+                frames = allowed_frames + [last_frame] * num_missing
 
             track_neighborhoods[track_id] = neighborhoods[[frame_dict[f] for f in frames]]
 
         return track_neighborhoods
 
     def _sub_area(self, X_frame, y_frame, cell_label, num_channels):
-        shape = (2 * self.neighborhood_scale_size + 1,
-                 2 * self.neighborhood_scale_size + 1,
-                 1)
-        neighborhood = np.zeros(shape, dtype=K.floatx())
-
-        pads = ((self.neighborhood_true_size, self.neighborhood_true_size),
-                (self.neighborhood_true_size, self.neighborhood_true_size),
+        true_size = self.neighborhood_true_size
+        pads = ((true_size, true_size),
+                (true_size, true_size),
                 (0, 0))
+
         X_padded = np.pad(X_frame, pads, mode='constant', constant_values=0)
         y_padded = np.pad(y_frame, pads, mode='constant', constant_values=0)
+
         props = regionprops(np.squeeze(np.int32(y_padded == cell_label)))
+
         center_x, center_y = props[0].centroid
         center_x, center_y = np.int(center_x), np.int(center_y)
-        X_reduced = X_padded[
-            center_x - self.neighborhood_true_size:center_x + self.neighborhood_true_size,
-            center_y - self.neighborhood_true_size:center_y + self.neighborhood_true_size, :]
 
-        # resize to neighborhood_scale_size
+        X_reduced = X_padded[center_x - true_size:center_x + true_size,
+                             center_y - true_size:center_y + true_size]
+
+        # resize to neighborhood_scale_size with skimage
+        # resize_shape = (2 * self.neighborhood_scale_size + 1,
+        #                 2 * self.neighborhood_scale_size + 1,
+        #                 num_channels)
+        # X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
+
+        # resize to neighborhood_scale_size with cv2
         resize_shape = (2 * self.neighborhood_scale_size + 1,
-                        2 * self.neighborhood_scale_size + 1,
-                        num_channels)
-        X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
-        # X_reduced /= np.amax(X_reduced)
+                        2 * self.neighborhood_scale_size + 1)
+        X_reduced = cv2.resize(np.squeeze(X_reduced), resize_shape)
 
+        # X_reduced /= np.amax(X_reduced)
+        X_reduced = np.expand_dims(X_reduced, axis=self.channel_axis)
         return X_reduced
 
     def _get_features(self, X, y, frames, labels):
@@ -640,8 +682,10 @@ class cell_tracker():
         rprops = np.zeros(regionprop_shape, dtype=K.floatx())
         neighborhoods = np.zeros(neighborhood_shape, dtype=K.floatx())
         future_areas = np.zeros(future_area_shape, dtype=K.floatx())
-
         for counter, (frame, cell_label) in enumerate(zip(frames, labels)):
+            print('Start _get_features for frame {} and label {}'.format(
+                frame, cell_label))
+            t = timeit.default_timer()
             # Get the bounding box
             X_frame = X[frame] if self.data_format == 'channels_last' else X[:, frame]
             y_frame = y[frame] if self.data_format == 'channels_last' else y[:, frame]
@@ -664,8 +708,12 @@ class cell_tracker():
                 resize_shape = (self.crop_dim, self.crop_dim, X.shape[channel_axis])
 
             # Resize images from bounding box
-            appearance = resize(appearance, resize_shape, mode="constant", preserve_range=True)
+            t = timeit.default_timer()
+            # appearance = resize(appearance, resize_shape, mode="constant", preserve_range=True)
+            resize_shape = (self.crop_dim, self.crop_dim)
+            appearance = cv2.resize(np.squeeze(appearance), resize_shape)
             # appearance /= np.amax(appearance)
+            appearance = np.expand_dims(appearance, axis=self.channel_axis)
 
             if self.data_format == 'channels_first':
                 appearances[:, counter] = appearance
@@ -699,10 +747,16 @@ class cell_tracker():
         """Tracks all of the cells in every frame.
         """
         for frame in range(1, self.x.shape[0]):
+            t = timeit.default_timer()
             print('Tracking frame ' + str(frame))
+
             cost_matrix, predictions = self._get_cost_matrix(frame)
+
             assignments = self._run_lap(cost_matrix)
+
             self._update_tracks(assignments, frame, predictions)
+            print('Tracked frame {} in {} seconds.'.format(
+                frame, timeit.default_timer() - t))
 
     def _track_review_dict(self):
         def process(key, track_item):
@@ -746,8 +800,8 @@ class cell_tracker():
         # fill the dataframe
         data = []
         for cell_id, track in self.tracks.items():
-            data.append([*extra_column_vals, *[track[c] for c in track_columns]])
-        dataframe = DataFrame(data, columns=[*extra_columns, *track_columns])
+            data.append(extra_column_vals + [track[c] for c in track_columns])
+        dataframe = pd.DataFrame(data, columns=extra_columns + track_columns)
 
         # daughters contains track_id not labels
         dataframe['daughters'] = dataframe['daughters'].apply(
@@ -755,8 +809,71 @@ class cell_tracker():
 
         return dataframe
 
+    def postprocess(self, filename=None, time_excl=9):
+        """Use graph postprocessing to eliminate false positive division errors
+        using a graph-based detection method. False positive errors are when a
+        cell is noted as a daughter of itself before the actual division occurs.
+        If a filename is passed, save the state of the cell tracker to a .trk
+        ('track') file. time_excl is the minimum number of frames expected to
+        exist between legitimate divisions
+        """
+
+        # Load data
+        track_review_dict = self._track_review_dict()
+
+        # Prep data
+        tracked = track_review_dict['y_tracked'].astype('uint16')
+        lineage = track_review_dict['tracks']
+
+        # Identify false positives (FPs)
+        G = self._track_to_graph(lineage)
+        FPs = self._flag_false_pos(G, time_excl)
+        FPs_candidates = sorted(FPs.items(), key=lambda v: int(v[0].split('_')[1]))
+        FPs_sorted = self._review_candidate_nodes(FPs_candidates)
+
+        # If FPs exist, use the results to correct
+        while len(FPs_sorted) != 0:
+
+            lineage, tracked = self._remove_false_pos(lineage, tracked, FPs_sorted[0])
+            G = self._track_to_graph(lineage)
+            FPs = self._flag_false_pos(G, time_excl)
+            FPs_candidates = sorted(FPs.items(), key=lambda v: int(v[0].split('_')[1]))
+            FPs_sorted = self._review_candidate_nodes(FPs_candidates)
+
+        # Make sure the assignment is correct
+        track_review_dict['y_tracked'] = tracked
+        track_review_dict['tracks'] = lineage
+
+        # Save information to a track file file if requested
+        if filename is not None:
+            # Prep filepath
+            filename = pathlib.Path(filename)
+            if filename.suffix != '.trk':
+                filename = filename.with_suffix('.trk')
+
+            filename = str(filename)
+
+            # Save
+            with tarfile.open(filename, 'w') as trks:
+                with tempfile.NamedTemporaryFile('w') as lineage_file:
+                    json.dump(track_review_dict['tracks'], lineage_file, indent=1)
+                    lineage_file.flush()
+                    trks.add(lineage_file.name, 'lineage.json')
+
+                with tempfile.NamedTemporaryFile() as raw_file:
+                    np.save(raw_file, track_review_dict['X'])
+                    raw_file.flush()
+                    trks.add(raw_file.name, 'raw.npy')
+
+                with tempfile.NamedTemporaryFile() as tracked_file:
+                    np.save(tracked_file, track_review_dict['y_tracked'])
+                    tracked_file.flush()
+                    trks.add(tracked_file.name, 'tracked.npy')
+
+        return track_review_dict
+
     def dump(self, filename):
-        """Writes the state of the cell tracker to a .trk ("track") file.
+        """Writes the state of the cell tracker to a .trk ('track') file.
         Includes raw & tracked images, and a lineage.json for parent/daughter
         information.
         """
@@ -783,3 +900,187 @@ class cell_tracker():
                 np.save(tracked_file, track_review_dict['y_tracked'])
                 tracked_file.flush()
                 trks.add(tracked_file.name, 'tracked.npy')
+
+    def _track_to_graph(self, tracks):
+        """Create a graph from the lineage information"""
+        Dattr = {}
+        edges = pd.DataFrame()
+
+        for L in tracks.values():
+            # Calculate node ids
+            cellid = ['{}_{}'.format(L['label'], f) for f in L['frames']]
+            # Add edges from cell ids
+            edges = edges.append(pd.DataFrame({'source': cellid[0:-1],
+                                               'target': cellid[1:]}))
+
+            # Collect any division attributes
+            if L['frame_div'] is not None:
+                Dattr['{}_{}'.format(L['label'], L['frame_div'] - 1)] = {'division': True}
+
+            # Create any daughter-parent edges
+            if L['parent'] is not None:
+                source = '{}_{}'.format(L['parent'], min(L['frames']) - 1)
+                target = '{}_{}'.format(L['label'], min(L['frames']))
+                edges = edges.append(pd.DataFrame({'source': [source],
+                                                   'target': [target]}))
+
+        G = nx.from_pandas_edgelist(edges, source='source', target='target')
+        nx.set_node_attributes(G, Dattr)
+        return G
+
+    def _flag_false_pos(self, G, time_excl):
+        """Examine graph for false positive nodes
+        """
+
+        # TODO: Current implementation may eliminate some divisions at the edge of the frame -
+        #       Further research needed
+
+        # Identify false positive nodes
+        node_fix = []
+        for g in nx.connected_component_subgraphs(G):
+            div_nodes = [node for node, d in g.node.data() if d.get('division', False) is True]
+            if len(div_nodes) > 1:
+                for nd in div_nodes:
+                    if g.degree(nd) == 2:
+                        # Check how close suspected FP is to other known divisions
+                        neighbors = list(G.neighbors(nd))
+
+                        keep_div = True
+                        for div_nd in div_nodes:
+                            if div_nd != nd:
+                                time_spacing = abs(int(nd.split('_')[1]) -
+                                                   int(div_nd.split('_')[1]))
+                                # If division is sufficiently far away
+                                # we should exclude it from FP list
+                                if time_spacing > time_excl:
+                                    keep_div = False
+
+                        if keep_div is True:
+                            node_fix.append(nd)
+
+        # Add supplementary information for each false positive
+        D = {}
+        for node in node_fix:
+            D[node] = {
+                'false positive': node,
+                'neighbors': list(G.neighbors(node)),
+                'connected lineages': set([int(n.split('_')[0])
+                                          for n in nx.node_connected_component(G, n)])
+            }
+
+        return D
+
+    def _review_candidate_nodes(self, FPs_candidates):
+        """ review candidate false positive nodes and remove any errant degree 2 nodes.
+        """
+        FPs_presort = {}
+        # review candidate false positive nodes and remove any errant degree 2 nodes
+        for candidate_node in FPs_candidates:
+            node = candidate_node[0]
+            node_info = candidate_node[1]
+            fp_label = int(node.split('_')[0])
+            fp_frame = int(node.split('_')[1])
+
+            neighbors = []  # structure will be [(neighbor1, frame), (neighbor2,frame)]
+            for neighbor in node_info['neighbors']:
+                neighbor_label = int(neighbor.split('_')[0])
+                neighbor_frame = int(neighbor.split('_')[1])
+                neighbors.append((neighbor_label, neighbor_frame))
+
+            # if this cell only exists in one frame (and then it divides) but its 2 neighbors
+            # both exist in the same frame it will be a degree 2 node but not be a false positive
+            if neighbors[0][1] != neighbors[1][1]:
+                FPs_presort[node] = node_info
+
+        FPs_sorted = sorted(FPs_presort.items(), key=lambda v: int(v[0].split('_')[1]))
+
+        return FPs_sorted
+
+    def _remove_false_pos(self, lineage, tracked, FP_info):
+        """ Remove nodes that have been identified as false positive divisions.
+        """
+        node = FP_info[0]
+        node_info = FP_info[1]
+
+        fp_label = int(node.split('_')[0])
+        fp_frame = int(node.split('_')[1])
+
+        neighbors = []  # structure will be [(neighbor1, frame), (neighbor2,frame)]
+        for neighbor in node_info['neighbors']:
+            neighbor_label = int(neighbor.split('_')[0])
+            neighbor_frame = int(neighbor.split('_')[1])
+            neighbors.append((neighbor_label, neighbor_frame))
+
+        # Verify that the FP node only 2 neighbors - 1 before it and one after it
+        if len(neighbors) == 2:
+            # order the neighbors such that the time (frame order) is respected
+            if neighbors[0][1] > neighbors[1][1]:
+                temp = neighbors[0]
+                neighbors[0] = neighbors[1]
+                neighbors[1] = temp
+
+            # Decide which labels to extend and which to remove
+
+            # Neighbor_1 has same label as fp - the actual division hasnt occurred yet
+            if fp_label == neighbors[0][0]:
+                # The model mistakenly identified a division before the actual division occurred
+                label_to_remove = neighbors[1][0]
+                label_to_extend = neighbors[0][0]
+
+                # Give all of the errant divisions information to the correct track
+                lineage[label_to_extend]['frames'].extend(lineage[label_to_remove]['frames'])
+                lineage[label_to_extend]['daughters'] = lineage[label_to_remove]['daughters']
+                lineage[label_to_extend]['frame_div'] = lineage[label_to_remove]['frame_div']
+
+                # Adjust the parent information for the actual daughters
+                daughter_labels = lineage[label_to_remove]['daughters']
+                for daughter in daughter_labels:
+                    lineage[daughter]['parent'] = lineage[label_to_remove]['parent']
+
+                # Remove the errant node from the annotated images
+                channel = 0  # These images should only have one channel
+                for frame in lineage[label_to_remove]['frames']:
+                    label_loc = np.where(tracked[frame, :, :, channel] == label_to_remove)
+                    tracked[frame, :, :, channel][label_loc] = label_to_extend
+
+                # Remove the errant node from the lineage
+                del lineage[label_to_remove]
+
+            # Neighbor_2 has same label as fp - the actual division ocurred &
+            # the model mistakenly allowed another
+            # elif fp_label == neighbors[1][0]:
+                # The model mistakenly identified a division after
+                # the actual division occurred
+                # label_to_remove = fp_label
+
+            # Neither neighbor has same label as fp - the actual division
+            # ocurred & the model mistakenly allowed another
+            else:
+                # The model mistakenly identified a division after the actual division occurred
+                label_to_remove = fp_label
+                label_to_extend = neighbors[1][0]
+
+                # Give all of the errant divisions information to the correct track
+                lineage[label_to_extend]['frames'] = \
+                    lineage[fp_label]['frames'] + lineage[label_to_extend]['frames']
+                lineage[label_to_extend]['parent'] = lineage[fp_label]['parent']
+
+                # Adjust the parent information for the actual daughter
+                parent_label = lineage[fp_label]['parent']
+                for d_idx, daughter in enumerate(lineage[parent_label]['daughters']):
+                    if daughter == fp_label:
+                        lineage[parent_label]['daughters'][d_idx] = label_to_extend
+
+                # Remove the errant node from the annotated images
+                channel = 0  # These images should only have one channel
+                for frame in lineage[label_to_remove]['frames']:
+                    label_loc = np.where(tracked[frame, :, :, channel] == label_to_remove)
+                    tracked[frame, :, :, channel][label_loc] = label_to_extend
+
+                # Remove the errant node
+                del lineage[label_to_remove]
+
+        else:
+            print('Error: More than 2 neighbor nodes')
+
+        return lineage, tracked
