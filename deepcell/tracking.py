@@ -193,7 +193,6 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
             # Make sure the distances are all less than max distance
             for j in range(distances.shape[0]):
                 dist = distances[j, :]
-                # print('distance: ', np.linalg.norm(dist))  # TODEL
                 # TODO(enricozb): Finish the distance-based optimizations
                 if np.linalg.norm(dist) > self.max_distance:
                     ok = False
@@ -616,7 +615,6 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         return track_neighborhoods
 
     def _sub_area(self, X_frame, y_frame, cell_label, num_channels):
-        t = timeit.default_timer()
         true_size = self.neighborhood_true_size
         pads = ((true_size, true_size),
                 (true_size, true_size),
@@ -646,7 +644,6 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
 
         # X_reduced /= np.amax(X_reduced)
         X_reduced = np.expand_dims(X_reduced, axis=self.channel_axis)
-        print('_sub_area finished in {}s'.format(timeit.default_timer() - t))
         return X_reduced
 
     def _get_features(self, X, y, frames, labels):
@@ -701,7 +698,6 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
                 props[0].perimeter,
                 props[0].eccentricity
             ])
-            print('Got regionprops data in {}s'.format(timeit.default_timer() - t))
 
             # Extract images from bounding boxes
             if self.data_format == 'channels_first':
@@ -723,8 +719,6 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
                 appearances[:, counter] = appearance
             else:
                 appearances[counter] = appearance
-
-            print('Reshaped appearance in {}s'.format(timeit.default_timer() - t))
 
             # Get the neighborhood
             neighborhoods[counter] = self._sub_area(
@@ -753,25 +747,16 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         """Tracks all of the cells in every frame.
         """
         for frame in range(1, self.x.shape[0]):
+            t = timeit.default_timer()
             print('Tracking frame ' + str(frame))
-
-            t_whole = timeit.default_timer()  # TODEL
-            t = timeit.default_timer()  # TODEL
 
             cost_matrix, predictions = self._get_cost_matrix(frame)
 
-            print('Time to get_cost_matrix: ', timeit.default_timer() - t)  # TODEL
-            t = timeit.default_timer()  # TODEL
-
             assignments = self._run_lap(cost_matrix)
 
-            print('Time to run lap: ', timeit.default_timer() - t)  # TODEL
-            t = timeit.default_timer()  # TODEL
-
             self._update_tracks(assignments, frame, predictions)
-
-            print('Time to update tracks: ', timeit.default_timer() - t)  # TODEL
-            print('Time to track one frame: ', timeit.default_timer() - t_whole)  # TODEL
+            print('Tracked frame {} in {} seconds.'.format(
+                frame, timeit.default_timer() - t))
 
     def _track_review_dict(self):
         def process(key, track_item):
