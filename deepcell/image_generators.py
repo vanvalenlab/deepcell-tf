@@ -2307,8 +2307,6 @@ class SiameseIterator(Iterator):
             # Determine what class the track will be - different (0), same (1), division (2)
             division = False
             type_cell = np.random.choice([0, 1, 2], p=[1 / 3, 1 / 3, 1 / 3])
-            # Oversample division case to improve division accuracy
-            # type_cell = np.random.choice([0, 1, 2], p=[3 / 10, 3 / 10, 4 / 10])
 
             # Dealing with edge cases
             # If class is division, check if the first cell divides. If not, change tracks
