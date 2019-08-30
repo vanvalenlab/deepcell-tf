@@ -29,9 +29,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from deepcell import applications
 from deepcell import datasets
 from deepcell import layers
 from deepcell import losses
+from deepcell import initializers
 from deepcell import image_generators
 from deepcell import model_zoo
 from deepcell import notebooks

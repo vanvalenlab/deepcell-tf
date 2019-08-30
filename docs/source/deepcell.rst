@@ -8,6 +8,7 @@ Subpackages
 
     deepcell.datasets
     deepcell.layers
+    deepcell.model_zoo
     deepcell.notebooks
     deepcell.utils
 
@@ -22,18 +23,18 @@ deepcell.image\_generators module
     :undoc-members:
     :show-inheritance:
 
-deepcell.losses module
-----------------------
+deepcell.metrics module
+-----------------------
 
-.. automodule:: deepcell.losses
+.. automodule:: deepcell.metrics
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.model\_zoo module
---------------------------
+deepcell.losses module
+----------------------
 
-.. automodule:: deepcell.model_zoo
+.. automodule:: deepcell.losses
     :members:
     :undoc-members:
     :show-inheritance:
@@ -46,14 +47,6 @@ deepcell.running module
     :undoc-members:
     :show-inheritance:
 
-deepcell.settings module
-------------------------
-
-.. automodule:: deepcell.settings
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 deepcell.training module
 ------------------------
 
@@ -62,6 +55,13 @@ deepcell.training module
     :undoc-members:
     :show-inheritance:
 
+deepcell.tracking module
+------------------------
+
+.. automodule:: deepcell.tracking
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Module contents
 ---------------

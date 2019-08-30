@@ -32,20 +32,22 @@ from __future__ import division
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 
+from deepcell.utils.retinanet_anchor_utils import overlap
+
 
 def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
 
     Args:
-        y_true: A tensor of the same shape as `output`.
+        y_true: A tensor of the same shape as output.
         y_pred: A tensor resulting from a softmax
-        (unless `from_logits` is True, in which
-        case `y_pred` is expected to be the logits).
-        from_logits: Boolean, whether `y_pred` is the
-        result of a softmax, or is a tensor of logits.
+            (unless from_logits is True, in which
+            case y_pred is expected to be the logits).
+        from_logits: Boolean, whether y_pred is the
+            result of a softmax, or is a tensor of logits.
 
     Returns:
-        Output tensor.
+        tensor: Output tensor.
     """
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
@@ -71,15 +73,15 @@ def weighted_categorical_crossentropy(y_true, y_pred,
     them to weight the cross entropy
 
     Args:
-        y_true: A tensor of the same shape as `y_pred`.
+        y_true: A tensor of the same shape as y_pred.
         y_pred: A tensor resulting from a softmax
-        (unless `from_logits` is True, in which
-        case `y_pred` is expected to be the logits).
-        from_logits: Boolean, whether `y_pred` is the
-        result of a softmax, or is a tensor of logits.
+            (unless from_logits is True, in which
+            case y_pred is expected to be the logits).
+        from_logits: Boolean, whether y_pred is the
+            result of a softmax, or is a tensor of logits.
 
     Returns:
-        Output tensor.
+        tensor: Output tensor.
     """
     if from_logits:
         raise Exception('weighted_categorical_crossentropy cannot take logits')
@@ -108,15 +110,15 @@ def sample_categorical_crossentropy(y_true,
     cross entropy.
 
     Args:
-        y_true: A tensor of the same shape as `y_pred`.
+        y_true: A tensor of the same shape as y_pred.
         y_pred: A tensor resulting from a softmax
-        (unless `from_logits` is True, in which
-        case `y_pred` is expected to be the logits).
-        from_logits: Boolean, whether `y_pred` is the
-        result of a softmax, or is a tensor of logits.
+            (unless from_logits is True, in which
+            case y_pred is expected to be the logits).
+        from_logits: Boolean, whether y_pred is the
+            result of a softmax, or is a tensor of logits.
 
     Returns:
-        Output tensor.
+        tensor: Output tensor.
     """
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
@@ -142,11 +144,11 @@ def dice_loss(y_true, y_pred, smooth=1):
     """Dice coefficient loss between an output tensor and a target tensor.
 
     Args:
-        y_true: A tensor of the same shape as `y_pred`.
+        y_true: A tensor of the same shape as y_pred.
         y_pred: A tensor resulting from a softmax
 
     Returns:
-        Output tensor.
+        tensor: Output tensor.
     """
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
@@ -161,11 +163,11 @@ def discriminative_instance_loss(y_true, y_pred,
     """Discriminative loss between an output tensor and a target tensor.
 
     Args:
-        y_true: A tensor of the same shape as `y_pred`.
+        y_true: A tensor of the same shape as y_pred.
         y_pred: A tensor of the vector embedding
 
     Returns:
-        Output tensor.
+        tensor: Output tensor.
     """
 
     def temp_norm(ten, axis=None):
@@ -215,15 +217,15 @@ def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_l
     them to weight the cross entropy
 
     Args:
-        y_true: A tensor of the same shape as `y_pred`.
+        y_true: A tensor of the same shape as y_pred.
         y_pred: A tensor resulting from a softmax
-        (unless `from_logits` is True, in which
-        case `y_pred` is expected to be the logits).
-        from_logits: Boolean, whether `y_pred` is the
-        result of a softmax, or is a tensor of logits.
+            (unless from_logits is True, in which
+            case y_pred is expected to be the logits).
+        from_logits: Boolean, whether y_pred is the
+            result of a softmax, or is a tensor of logits.
 
     Returns:
-        Output tensor.
+        tensor: Output tensor.
     """
     if from_logits:
         raise Exception('weighted_focal_loss cannot take logits')
@@ -242,3 +244,198 @@ def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_l
     temp_loss = (K.pow(1. - y_pred, gamma) * K.log(y_pred) * class_weights)
     focal_loss = - K.sum(y_true * temp_loss, axis=axis)
     return focal_loss
+
+
+def smooth_l1(y_true, y_pred, sigma=3.0, axis=None):
+    """Compute the smooth L1 loss of y_pred w.r.t. y_true.
+
+    Args:
+        y_true: Tensor from the generator of shape (B, N, 5).
+            The last value for each box is the state of the anchor
+            (ignore, negative, positive).
+        y_pred: Tensor from the network of shape (B, N, 4).
+        sigma: The point where the loss changes from L2 to L1.
+
+    Returns:
+        The smooth L1 loss of y_pred w.r.t. y_true.
+    """
+    if axis is None:
+        axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
+
+    sigma_squared = sigma ** 2
+
+    # compute smooth L1 loss
+    # f(x) = 0.5 * (sigma * x)^2          if |x| < 1 / sigma / sigma
+    #        |x| - 0.5 / sigma / sigma    otherwise
+    regression_diff = K.abs(y_true - y_pred)  # |y - f(x)|
+
+    regression_loss = tf.where(
+        K.less(regression_diff, 1.0 / sigma_squared),
+        0.5 * sigma_squared * K.pow(regression_diff, 2),
+        regression_diff - 0.5 / sigma_squared)
+    return K.sum(regression_loss, axis=axis)
+
+
+def focal(y_true, y_pred, alpha=0.25, gamma=2.0, axis=None):
+    """Compute the focal loss given the target tensor and the predicted tensor.
+
+    As defined in https://arxiv.org/abs/1708.02002
+
+    Args:
+        y_true: Tensor of target data with shape (B, N, num_classes).
+        y_pred: Tensor of predicted data with shape (B, N, num_classes).
+        alpha: Scale the focal weight with alpha.
+        gamma: Take the power of the focal weight with gamma.
+
+    Returns:
+        The focal loss of y_pred w.r.t. y_true.
+    """
+    if axis is None:
+        axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
+
+    # compute the focal loss
+    alpha_factor = K.ones_like(y_true) * alpha
+    alpha_factor = tf.where(K.equal(y_true, 1), alpha_factor, 1 - alpha_factor)
+    focal_weight = tf.where(K.equal(y_true, 1), 1 - y_pred, y_pred)
+    focal_weight = alpha_factor * focal_weight ** gamma
+
+    cls_loss = focal_weight * K.binary_crossentropy(y_true, y_pred)
+
+    return K.sum(cls_loss, axis=axis)
+
+
+"""
+Retinanet losses
+"""
+
+
+class RetinaNetLosses(object):
+    def __init__(self, sigma=3.0, alpha=0.25, gamma=2.0,
+                 iou_threshold=0.5, mask_size=(28, 28)):
+        self.sigma = sigma
+        self.alpha = alpha
+        self.gamma = gamma
+        self.iou_threshold = iou_threshold
+        self.mask_size = mask_size
+
+    def regress_loss(self, y_true, y_pred):
+        # separate target and state
+        regression = y_pred
+        regression_target = y_true[..., :-1]
+        anchor_state = y_true[..., -1]
+
+        # filter out "ignore" anchors
+        indices = tf.where(K.equal(anchor_state, 1))
+        regression = tf.gather_nd(regression, indices)
+        regression_target = tf.gather_nd(regression_target, indices)
+
+        # compute the loss
+        loss = smooth_l1(regression_target, regression, sigma=self.sigma)
+
+        # compute the normalizer: the number of positive anchors
+        normalizer = K.maximum(1, K.shape(indices)[0])
+        normalizer = K.cast(normalizer, dtype=K.floatx())
+
+        return K.sum(loss) / normalizer
+
+    def classification_loss(self, y_true, y_pred):
+        # TODO: try weighted_categorical_crossentropy
+        labels = y_true[..., :-1]
+        # -1 for ignore, 0 for background, 1 for object
+        anchor_state = y_true[..., -1]
+
+        classification = y_pred
+        # filter out "ignore" anchors
+        indices = tf.where(K.not_equal(anchor_state, -1))
+        labels = tf.gather_nd(labels, indices)
+        classification = tf.gather_nd(classification, indices)
+
+        # compute the loss
+        loss = focal(labels, classification, alpha=self.alpha, gamma=self.gamma)
+
+        # compute the normalizer: the number of positive anchors
+        normalizer = tf.where(K.equal(anchor_state, 1))
+        normalizer = K.cast(K.shape(normalizer)[0], K.floatx())
+        normalizer = K.maximum(K.cast_to_floatx(1.0), normalizer)
+
+        return K.sum(loss) / normalizer
+
+    def mask_loss(self, y_true, y_pred):
+
+        def _mask(y_true, y_pred, iou_threshold=0.5, mask_size=(28, 28)):
+            # split up the different predicted blobs
+            boxes = y_pred[:, :, :4]
+            masks = y_pred[:, :, 4:]
+
+            # split up the different blobs
+            annotations = y_true[:, :, :5]
+            width = K.cast(y_true[0, 0, 5], dtype='int32')
+            height = K.cast(y_true[0, 0, 6], dtype='int32')
+            masks_target = y_true[:, :, 7:]
+
+            # reshape the masks back to their original size
+            masks_target = K.reshape(masks_target,
+                                     (K.shape(masks_target)[0] * K.shape(masks_target)[1],
+                                      height, width))
+            masks = K.reshape(masks, (K.shape(masks)[0] * K.shape(masks)[1],
+                                      mask_size[0], mask_size[1], -1))
+
+            # batch size > 1 fix
+            boxes = K.reshape(boxes, (-1, K.shape(boxes)[2]))
+            annotations = K.reshape(annotations, (-1, K.shape(annotations)[2]))
+
+            # compute overlap of boxes with annotations
+            iou = overlap(boxes, annotations)
+            argmax_overlaps_inds = K.argmax(iou, axis=1)
+            max_iou = K.max(iou, axis=1)
+
+            # filter those with IoU > 0.5
+            indices = tf.where(K.greater_equal(max_iou, iou_threshold))
+            boxes = tf.gather_nd(boxes, indices)
+            masks = tf.gather_nd(masks, indices)
+            argmax_overlaps_inds = tf.gather_nd(argmax_overlaps_inds, indices)
+            argmax_overlaps_inds = K.cast(argmax_overlaps_inds, 'int32')
+            labels = K.gather(annotations[:, 4], argmax_overlaps_inds)
+            labels = K.cast(labels, 'int32')
+
+            # make normalized boxes
+            x1 = boxes[:, 0]
+            y1 = boxes[:, 1]
+            x2 = boxes[:, 2]
+            y2 = boxes[:, 3]
+            boxes = K.stack([
+                y1 / (K.cast(height, dtype=K.floatx()) - 1),
+                x1 / (K.cast(width, dtype=K.floatx()) - 1),
+                (y2 - 1) / (K.cast(height, dtype=K.floatx()) - 1),
+                (x2 - 1) / (K.cast(width, dtype=K.floatx()) - 1),
+            ], axis=1)
+
+            # crop and resize masks_target
+            # append a fake channel dimension
+            masks_target = K.expand_dims(masks_target, axis=3)
+            masks_target = tf.image.crop_and_resize(
+                masks_target, boxes, argmax_overlaps_inds, mask_size)
+
+            # remove fake channel dimension
+            masks_target = masks_target[:, :, :, 0]
+
+            # gather the predicted masks using the annotation label
+            masks = tf.transpose(masks, (0, 3, 1, 2))
+            label_indices = K.stack([tf.range(K.shape(labels)[0]), labels], axis=1)
+            masks = tf.gather_nd(masks, label_indices)
+
+            # compute mask loss
+            mask_loss = K.binary_crossentropy(masks_target, masks)
+            normalizer = K.shape(masks)[0] * K.shape(masks)[1] * K.shape(masks)[2]
+            normalizer = K.maximum(K.cast(normalizer, K.floatx()), 1)
+            mask_loss = K.sum(mask_loss) / normalizer
+
+            return mask_loss
+
+        # if there are no masks annotations, return 0; else, compute the masks loss
+        return tf.cond(
+            K.any(K.equal(K.shape(y_true), 0)),
+            lambda: K.cast_to_floatx(0.0),
+            lambda: _mask(y_true, y_pred,
+                          iou_threshold=self.iou_threshold,
+                          mask_size=self.mask_size))
