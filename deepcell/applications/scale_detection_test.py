@@ -23,33 +23,51 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Package for single cell image segmentation with convolutional neural networks"""
+"""Tests for ScaleDetectionModel"""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell import applications
-from deepcell import datasets
-from deepcell import layers
-from deepcell import losses
-from deepcell import initializers
-from deepcell import image_generators
-from deepcell import model_zoo
-from deepcell import notebooks
-from deepcell import running
-from deepcell import training
-from deepcell import utils
-from deepcell import metrics
+import numpy as np
 
-from deepcell.layers import *
-from deepcell.losses import *
-from deepcell.image_generators import *
-from deepcell.model_zoo import *
-from deepcell.running import *
-from deepcell.training import *
-from deepcell.utils import *
+from tensorflow.python.keras.layers import Input
+from tensorflow.python.platform import test
 
-del absolute_import
-del division
-del print_function
+from deepcell.applications import ScaleDetectionModel
+
+
+class TestScaleDetectionModel(test.TestCase):
+
+    def test_scale_detection_model(self):
+
+        valid_backbones = ['VGG16']
+        input_shape = (256, 256, 1)  # channels will be set to 3
+
+        batch_shape = tuple([8] + list(input_shape))
+
+        X = np.random.random(batch_shape)
+
+        for backbone in valid_backbones:
+            with self.test_session(use_gpu=True):
+                inputs = Input(shape=input_shape)
+                model = ScaleDetectionModel(
+                    inputs=inputs,
+                    backbone=backbone,
+                    use_pretrained_weights=False)
+
+                y = model.predict(X)
+
+                assert y.shape[0] == X.shape[0]
+                assert len(y.shape) == 2
+
+            with self.test_session(use_gpu=True):
+                model = ScaleDetectionModel(
+                    input_shape=input_shape,
+                    backbone=backbone,
+                    use_pretrained_weights=False)
+
+                y = model.predict(X)
+
+                assert y.shape[0] == X.shape[0]
+                assert len(y.shape) == 2

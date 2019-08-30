@@ -23,32 +23,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Package for single cell image segmentation with convolutional neural networks"""
+"""Deepcell Applications - Pre-trained models for specific functions"""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell import applications
-from deepcell import datasets
-from deepcell import layers
-from deepcell import losses
-from deepcell import initializers
-from deepcell import image_generators
-from deepcell import model_zoo
-from deepcell import notebooks
-from deepcell import running
-from deepcell import training
-from deepcell import utils
-from deepcell import metrics
-
-from deepcell.layers import *
-from deepcell.losses import *
-from deepcell.image_generators import *
-from deepcell.model_zoo import *
-from deepcell.running import *
-from deepcell.training import *
-from deepcell.utils import *
+from deepcell.applications.label_detection import LabelDetectionModel
+from deepcell.applications.scale_detection import ScaleDetectionModel
 
 del absolute_import
 del division
