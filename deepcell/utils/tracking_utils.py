@@ -81,7 +81,7 @@ def count_pairs(y, same_probability=0.5, data_format=None):
 
         # Multiply cell pairings by 2 since the
         # odds of getting a non-self pairing are 50%
-        cell_pairings = non_self_pairings / same_probability
+        cell_pairings = non_self_pairings // same_probability
         # Add this batch cell-pairings to the total count
         total_pairs += cell_pairings
     return total_pairs
@@ -199,10 +199,24 @@ def trks_stats(trks_file_name):
                   for cell, fields in tracks.items()}
                  for tracks in training_data['lineages']]
 
+    print('Dataset Statistics: ')
     print('Image data shape: ', X.shape)
     print('Number of lineages (should equal batch size): ',
           len(training_data['lineages']))
 
+    # Calculate cell density
+    frame_area = X.shape[2] * X.shape[3]
+
+    avg_cells_in_frame = []
+    for batch in range(y.shape[0]):
+        num_cells_in_frame = []
+        for frame in y[batch]:
+            cells_in_frame = len(np.unique(frame)) - 1  # unique returns 0 (BKGD)
+            num_cells_in_frame.append(cells_in_frame)
+        avg_cells_in_frame.append(np.average(num_cells_in_frame))
+    avg_cells_per_sq_pixel = np.average(avg_cells_in_frame) / frame_area
+
+    # Calculate division information
     total_tracks = 0
     total_divisions = 0
     avg_frame_counts_in_batches = []
@@ -222,7 +236,7 @@ def trks_stats(trks_file_name):
         avg_frame_counts_in_batches.append(np.average(frame_counts))
     avg_num_frames_per_track = np.average(avg_frame_counts_in_batches)
 
-    print('Dataset Statistics:')
-    print('Total number of unique tracks (cells) - ', total_tracks)
-    print('Total number of divisions             - ', total_divisions)
-    print('Average number of frames per track    - ', int(avg_num_frames_per_track))
+    print('Total number of unique tracks (cells)      - ', total_tracks)
+    print('Total number of divisions                  - ', total_divisions)
+    print('Average cell density (cells/100 sq pixels) - ', avg_cells_per_sq_pixel * 100)
+    print('Average number of frames per track         - ', int(avg_num_frames_per_track))

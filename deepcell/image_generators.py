@@ -1552,7 +1552,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
 
 
 """
-Custom siamese generators
+Custom tracking generators
 """
 
 
@@ -1773,8 +1773,13 @@ class SiameseIterator(Iterator):
             for cell in range(1, num_cells + 1):
                 # count number of pixels cell occupies in each frame
                 y_true = np.sum(y_batch == cell, axis=(self.row_axis - 1, self.col_axis - 1))
+
                 # get indices of frames where cell is present
-                y_index = np.where(y_true > 0)[0]
+                if self.channel_axis == 1:
+                    y_index = np.where(y_true > 0)[1]
+                else:
+                    y_index = np.where(y_true > 0)[0]
+
                 if y_index.size > 3:  # if cell is present at all
                     # Only include daughters if there are enough frames in their tracks
                     if self.daughters is not None:
@@ -1806,16 +1811,20 @@ class SiameseIterator(Iterator):
 
                 else:
                     y_batch[y_batch == cell] = 0
+
                     self.y[batch] = y_batch
 
-        # Add a field to the track_ids dict that locates all of the different cells
-        # in each frame
+        # Add a field to the track_ids dict that locates
+        # all of the different cells in each frame
         for track in track_ids:
             track_ids[track]['different'] = {}
             batch = track_ids[track]['batch']
             cell_label = track_ids[track]['label']
             for frame in track_ids[track]['frames']:
-                y_unique = np.unique(self.y[batch][frame])
+                if self.channel_axis == 1:
+                    y_unique = np.unique(self.y[batch, :, frame])
+                else:
+                    y_unique = np.unique(self.y[batch, frame])
                 y_unique = np.delete(y_unique, np.where(y_unique == 0))
                 y_unique = np.delete(y_unique, np.where(y_unique == cell_label))
                 track_ids[track]['different'][frame] = y_unique
@@ -2010,7 +2019,15 @@ class SiameseIterator(Iterator):
             appearance, centroid, neighborhood, regionprop, future_area = self._get_features(
                 X, y, frames, labels)
 
-            all_appearances[track] = appearance
+            if self.data_format == 'channels_first':
+                appearance = np.transpose(appearance, (1, 2, 3, 0))
+                all_appearances = np.transpose(all_appearances, (0, 2, 3, 4, 1))
+
+            all_appearances[track, np.array(frames), :, :, :] = appearance
+
+            if self.data_format == 'channels_first':
+                all_appearances = np.transpose(all_appearances, (0, 4, 1, 2, 3))
+
             all_centroids[track, np.array(frames), :] = centroid
             all_neighborhoods[track, np.array(frames), :, :] = neighborhood
 
@@ -2086,11 +2103,10 @@ class SiameseIterator(Iterator):
 
         if division:
             # sanity check
-            if (self.x.shape[self.time_axis] - 1) in all_frames:
-                logging.warning('Track %s is annotated incorrectly. '
-                                'No parent cell should be in the last frame of'
-                                ' any movie.', track_id)
-                raise Exception('Parent cell should not be in last frame of movie')
+            if self.x.shape[self.time_axis] - 1 in all_frames:
+                raise ValueError('Track {} is annotated incorrectly. '
+                                 'No parent cell should be in the last frame '
+                                 'of any movie.'.format(track_id))
 
             candidate_interval = all_frames[-self.min_track_length:]
         else:
