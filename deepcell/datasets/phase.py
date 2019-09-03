@@ -53,6 +53,13 @@ methods = {
         'images.'
 }
 
+all_cell = Dataset(
+    path='20190813_all_phase_512.npz',
+    url='https://deepcell-data.s3-us-west-1.amazonaws.com/cytoplasm/brightfield/20190813_all_phase_512.npz',
+    file_hash='1b10bb58175461bc45ccddeaa4dc8195cc25c0a7c0ba55e25541531830a75d91',
+    metadata={'methods': methods}
+)
+
 nih_3t3 = Dataset(
     path='nih_3t3-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_3T3_s0_phase_medium_stitched_2D_512.npz',
