@@ -67,6 +67,13 @@ methods = {
         'and phase as well as a z-stack of phase images.'
 }
 
+all_cells = Dataset(
+    path='20190813_all_fluorescent_cyto_512.npz',
+    url='https://deepcell-data.s3-us-west-1.amazonaws.com/cytoplasm/fluorescent/20190813_all_fluorescent_cyto_512.npz',
+    file_hash='20c454d0cd325ceee5553e20c3c271262eb0856c93f884f0c5507f26e8c34442',
+    metadata=''
+)
+
 nih_3t3 = Dataset(
     path='nih_3t3-cytoplasm.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_3T3_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
