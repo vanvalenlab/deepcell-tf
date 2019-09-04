@@ -2625,12 +2625,13 @@ class RetinaNetIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
+        self.y_semantic_list = []  # optional semantic segmentation targets
+
         # Add semantic segmentation targets if panoptic segmentation
         # flag is True
         if panoptic:
             # Create a list of all the semantic targets. We need to be able
             # to have multiple semantic heads
-            y_semantic_list = []
             # Add all the keys that contain y_semantic
             for key in train_dict:
                 if 'y_semantic' in key:
@@ -2647,10 +2648,8 @@ class RetinaNetIterator(Iterator):
                 y_transform = _transform_masks(y, transform,
                                                data_format=data_format,
                                                **transform_kwargs)
-                y_semantic_list.append(y_transform)
-
-            self.y_semantic_list = [np.asarray(y_semantic, dtype='int32')
-                                    for y_semantic in y_semantic_list]
+                y_transform = np.asarray(y_transform, dtype='int32')
+                self.y_semantic_list.append(y_transform)
 
         invalid_batches = []
         # Remove images with small numbers of cells
