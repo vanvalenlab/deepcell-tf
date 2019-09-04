@@ -2673,9 +2673,8 @@ class RetinaNetIterator(Iterator):
         self.y = np.delete(self.y, invalid_batches, axis=0)
         self.x = np.delete(self.x, invalid_batches, axis=0)
 
-        if self.panoptic:
-            self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
-                                    for y in self.y_semantic_list]
+        self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
+                                for y in self.y_semantic_list]
 
         super(RetinaNetIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
