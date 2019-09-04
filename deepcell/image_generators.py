@@ -2532,7 +2532,6 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             clear_borders=clear_borders,
             include_masks=include_masks,
             panoptic=panoptic,
-            include_mask_transforms=include_mask_transforms,
             transforms=transforms,
             transforms_kwargs=transforms_kwargs,
             anchor_params=anchor_params,
@@ -2585,7 +2584,6 @@ class RetinaNetIterator(Iterator):
                  clear_borders=False,
                  include_masks=False,
                  panoptic=False,
-                 include_mask_transforms=True,
                  transforms=['watershed'],
                  transforms_kwargs={},
                  batch_size=32,
@@ -2618,7 +2616,6 @@ class RetinaNetIterator(Iterator):
         self.num_classes = num_classes
         self.include_masks = include_masks
         self.panoptic = panoptic
-        self.include_mask_transforms = include_mask_transforms
         self.transforms = transforms
         self.transforms_kwargs = transforms_kwargs
         self.channel_axis = 3 if data_format == 'channels_last' else 1
@@ -2639,19 +2636,18 @@ class RetinaNetIterator(Iterator):
                 if 'y_semantic' in key:
                     y_semantic_list.append(train_dict['y_semantic'])
 
-            if include_mask_transforms:
-                # Check whether transform_kwargs_dict has an entry
-                for transform in transforms:
-                    if transform not in transforms_kwargs:
-                        transforms_kwargs[transform] = {}
+            # Check whether transform_kwargs_dict has an entry
+            for transform in transforms:
+                if transform not in transforms_kwargs:
+                    transforms_kwargs[transform] = {}
 
-                # Add transformed masks
-                for transform in transforms:
-                    transform_kwargs = transforms_kwargs[transform]
-                    y_transform = _transform_masks(y, transform,
-                                                   data_format=data_format,
-                                                   **transform_kwargs)
-                    y_semantic_list.append(y_transform)
+            # Add transformed masks
+            for transform in transforms:
+                transform_kwargs = transforms_kwargs[transform]
+                y_transform = _transform_masks(y, transform,
+                                               data_format=data_format,
+                                               **transform_kwargs)
+                y_semantic_list.append(y_transform)
 
             self.y_semantic_list = [np.asarray(y_semantic, dtype='int32')
                                     for y_semantic in y_semantic_list]
