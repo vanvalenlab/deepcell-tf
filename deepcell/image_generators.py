@@ -2756,16 +2756,14 @@ class RetinaNetIterator(Iterator):
             x = self.x[j]
             y = self.y[j]
 
-            if self.panoptic:
-                y_semantic_list = [y_semantic[j] for y_semantic in self.y_semantic_list]
+            y_semantic_list = [y_sem[j] for y_sem in self.y_semantic_list]
 
             # Apply transformation
-            if self.panoptic:
-                x, y_list = self.image_data_generator.random_transform(x, [y] + y_semantic_list)
-                y = y_list[0]
-                y_semantic_list = y_list[1:]
-            else:
-                x, y = self.image_data_generator.random_transform(x, y)
+            x, y_list = self.image_data_generator.random_transform(
+                x, [y] + y_semantic_list)
+
+            y = y_list[0]
+            y_semantic_list = y_list[1:]
 
             # Find max shape of image data.  Used for masking.
             if not max_shape:
@@ -2783,9 +2781,8 @@ class RetinaNetIterator(Iterator):
 
             batch_x[i] = x
 
-            if self.panoptic:
-                for k in range(len(y_semantic_list)):
-                    batch_y_semantic_list[k][i] = y_semantic_list[k]
+            for k, y_sem in enumerate(y_semantic_list):
+                batch_y_semantic_list[k][i] = y_sem
 
         anchors = anchors_for_shape(
             batch_x.shape[1:],
@@ -2835,10 +2832,11 @@ class RetinaNetIterator(Iterator):
                 img.save(os.path.join(self.save_to_dir, fname))
 
         batch_outputs = [regressions, labels]
+
         if self.include_masks:
             batch_outputs.append(masks_batch)
-        if self.panoptic:
-            batch_outputs.extend(batch_y_semantic_list)
+
+        batch_outputs.extend(batch_y_semantic_list)
 
         return batch_x, batch_outputs
 
