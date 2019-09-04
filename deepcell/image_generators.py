@@ -2635,7 +2635,7 @@ class RetinaNetIterator(Iterator):
             # Add all the keys that contain y_semantic
             for key in train_dict:
                 if 'y_semantic' in key:
-                    y_semantic_list.append(train_dict[key])
+                    self.y_semantic_list.append(train_dict[key])
 
             # Check whether transform_kwargs_dict has an entry
             for transform in transforms:
