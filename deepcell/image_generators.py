@@ -2637,14 +2637,9 @@ class RetinaNetIterator(Iterator):
                 if 'y_semantic' in key:
                     self.y_semantic_list.append(train_dict[key])
 
-            # Check whether transform_kwargs_dict has an entry
-            for transform in transforms:
-                if transform not in transforms_kwargs:
-                    transforms_kwargs[transform] = {}
-
             # Add transformed masks
             for transform in transforms:
-                transform_kwargs = transforms_kwargs[transform]
+                transform_kwargs = transforms_kwargs.get(transform, dict())
                 y_transform = _transform_masks(y, transform,
                                                data_format=data_format,
                                                **transform_kwargs)
