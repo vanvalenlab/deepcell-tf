@@ -2742,9 +2742,11 @@ class RetinaNetIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
-        if self.panoptic:
-            batch_y_semantic_list = [np.zeros(tuple([len(index_array)] + list(ys.shape[1:])))
-                                     for ys in self.y_semantic_list]
+
+        batch_y_semantic_list = []
+        for y_sem in self.y_semantic_list:
+            shape = tuple([len(index_array)] + list(y_sem.shape[1:]))
+            batch_y_semantic_list.append(np.zeros(shape, dtype=y_sem.dtype))
 
         annotations_list = []
 
