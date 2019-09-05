@@ -23,18 +23,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Deepcell Applications - Pre-trained models for specific functions"""
+"""Tests for PhaseSegmentationModel"""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.applications.cell_tracking import CellTrackingModel
-from deepcell.applications.label_detection import LabelDetectionModel
-from deepcell.applications.scale_detection import ScaleDetectionModel
-from deepcell.applications.phase_segmentation import PhaseSegmentationModel
-from deepcell.applications.fluorescent_cytoplasm_segmentation import FluorCytoplasmSegmentationModel
+import numpy as np
 
-del absolute_import
-del division
-del print_function
+from tensorflow.python.keras.layers import Input
+from tensorflow.python.platform import test
+
+from deepcell.applications import FluorCytoplasmSegmentationModel
+
+
+class TestFluorCytoplasmSegmentationModel(test.TestCase):
+
+    def test_cytoplasm_segmentation_model(self):
+
+        valid_backbones = ['resnet50']
+        input_shape = (512, 512, 1)
+
+        batch_shape = tuple([8] + list(input_shape))
+
+        X = np.random.random(batch_shape)
+
+        for backbone in valid_backbones:
+            with self.test_session(use_gpu=True):
+                model = PhaseSegmentationModel(
+                    input_shape=input_shape,
+                    backbone=backbone,
+                    use_pretrained_weights=False
+                )
+
+        y = model.predict(X)
+
+        assert y[0].shape[0] == X.shape[0]
+        assert isinstance(y, list)
