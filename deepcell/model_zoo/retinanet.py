@@ -34,7 +34,7 @@ import re
 from tensorflow import reduce_sum
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D
+from tensorflow.python.keras.layers import Conv2D, Conv3D
 from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import Permute, Reshape
 from tensorflow.python.keras.layers import Activation, Lambda
@@ -44,7 +44,7 @@ from tensorflow.python.keras.initializers import RandomNormal
 from deepcell.initializers import PriorProbability
 from deepcell.layers import TensorProduct
 from deepcell.layers import FilterDetections
-from deepcell.layers import ImageNormalization2D, Location2D
+from deepcell.layers import ImageNormalization2D, ImageNormalization3D, Location2D
 from deepcell.layers import Anchors, RegressBoxes, ClipBoxes
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
 from deepcell.model_zoo.fpn import __create_pyramid_features, __create_semantic_head, __create_pyramid_features_am
@@ -193,10 +193,6 @@ def default_feature_model(pyramid_feature_size=256, n_filters=16, name='feature_
 
     if K.image_data_format() == 'channels_first':
         outputs = Permute((2, 3, 1), name='pyramid_regression_permute')(outputs)
-#     outputs = Conv2DTranspose(n_filters, (2, 2), strides=(2, 2), 
-#                               kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None),
-#                               bias_initializer='zeros', use_bias=False, name='pyramid_head_upsample',
-#                               activation='relu')(outputs)
 
     outputs = (Conv3D(n_filters, (5, 1, 1), kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None), 
                     padding='valid')(outputs))
@@ -205,7 +201,7 @@ def default_feature_model(pyramid_feature_size=256, n_filters=16, name='feature_
     
     outputs = (Conv3D(1, (5, 1, 1), kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None), 
                     padding='valid')(outputs))
-    
+ 
     outputs = Lambda(lambda x: reduce_sum(x, axis=1))(outputs)    
         
     model = Model(inputs=inputs, outputs=outputs, name=name)
@@ -396,14 +392,12 @@ def retinanet(inputs,
 
 def retinanet_feature_extractor(inputs,
               backbone_dict,
-              backbone_levels=['C1', 'C2', 'C3', 'C4', 'C5'],
+              backbone_levels=['C0', 'C1', 'C2', 'C3', 'C4', 'C5'],
               pyramid_levels=['P0'],
               fully_chained=True,
               merge=None,
               feature_size=256,
-              upsample='learned', 
-              add_base=False,
-              fine_backbone_feature=None,
+              learned_upsampling=True, 
               create_pyramid_features=__create_pyramid_features_am,
               submodels=None,
               summary=False,
@@ -418,12 +412,12 @@ def retinanet_feature_extractor(inputs,
             to create the feature pyramid. 
         pyramid_levels: A list of the pyramid levels to attach regression and
             classification heads to. 
-        fully_chained: Whether each pyramid feature contains information from
-        all lower resolution pyramid features.
-        merge: The function to merge a pyramid feature with a backbone
-        feature. If None, defaults to Add()
-        upsample: The method of upsampling pyramid features. If 'default',
-        UpsampleLike is used. If 'learned', transposed convolution is used.
+        fully_chained (bool): whether each pyramid feature is created from all 
+        coarser resolution pyramid features, instead of just one above it
+        merge: a function to merge each backbone layer with the previous upsampled
+        pyramid feature. Defaults to None, which uses Add()
+        learned_upsampling: whether to have upsampling be a learned operation
+        ndim: The spatial dimensions of the input data. 
         create_pyramid_features: Function for creating pyramid features.
         submodels: Submodels to run on each feature map.
         name: Name of the model.
@@ -431,15 +425,9 @@ def retinanet_feature_extractor(inputs,
     Returns:
         A Model which takes an image as input and outputs a feature map.
     """
-    if num_anchors is None:
-        num_anchors = AnchorParameters.default.num_anchors()
-
     if submodels is None:
-        submodels = default_feature_model(pyramid_feature_size=feature_size)
-
-    if not isinstance(num_semantic_classes, list):
-        num_semantic_classes = list(num_semantic_classes)
-
+        submodels = [('feature_head', default_feature_model(pyramid_feature_size=feature_size))]
+        
     # compute pyramid features as per https://arxiv.org/abs/1708.02002
 
     # Use only the desired backbone levels to create the feature pyramid
@@ -448,8 +436,7 @@ def retinanet_feature_extractor(inputs,
 
     ndim = len(list(inputs.shape)) - 2
     pyramid_dict = create_pyramid_features(backbone_dict_reduced, ndim=ndim, 
-        fully_chained=fully_chained, merge=merge, add_base=add_base, 
-        fine_backbone_feature=fine_backbone_feature, upsample=upsample,
+        fully_chained=fully_chained, merge=merge, learned_upsampling=learned_upsampling,
         feature_size=feature_size)
 
     # for the desired pyramid levels, run available submodels
@@ -467,38 +454,30 @@ def retinanet_feature_extractor(inputs,
 
     return model
 
-
 def am_model(input_shape, 
              backbone_levels,
              pyramid_levels,
-             add_base=False,
-             fully_chained=True,
-             upsample='learned',
-             merge=None,
              feature_size=256,
-             num_classes=1,
              norm_method='whole_image',
              ):
     inputs = Input(shape=input_shape)
     
     norm = ImageNormalization3D(norm_method=norm_method)(inputs)
 
-    _, backbone_dict, fine_backbone_feature = featurenet_3D_backbone(norm)
+    backbone_dict = get_backbone('featurenet3d', norm, return_dict=True, include_fine=True)
     
-    submodel = head_model(pyramid_feature_size=feature_size)
+    submodel = default_feature_model(pyramid_feature_size=feature_size)
     
-    return retinanet_am(inputs=inputs, 
+    return retinanet_feature_extractor(inputs=inputs, 
                         backbone_dict=backbone_dict, 
-                        submodels=[('am_head', submodel)], 
+                        submodels=[('feature_head', submodel)], 
                         backbone_levels=backbone_levels,
-                        add_base=add_base,
-                        merge=merge,
-                        upsample=upsample,
+                        merge=None,
+                        learned_upsampling=True,
                         feature_size=feature_size,
-                        fine_backbone_feature=fine_backbone_feature,
                         pyramid_levels=pyramid_levels,
-                        fully_chained=fully_chained,
-                        num_classes=num_classes)
+                        fully_chained=True,
+                        summary=True)
 
 def retinanet_bbox(model=None,
                    nms=True,

@@ -62,11 +62,12 @@ def featurenet_block(x, n_filters):
     return x
 
 
-def featurenet_3D_block(x, n_filters):
+def featurenet_3D_block(x, n_filters, fine=False):
     """Add a set of layers that make up one unit of the featurenet 3D backbone
     Args:
         x (layer): Keras layer object to pass to backbone unit
         n_filters (int): Number of filters to use for convolutional layers
+        fine (bool): whether the current block is at full resolution 
     Returns:
         layer: Keras layer object
     """
@@ -79,8 +80,14 @@ def featurenet_3D_block(x, n_filters):
     x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1), padding='same', data_format=df)(x)
     x = BatchNormalization(axis=-1)(x)
     x = Activation('relu')(x)
+
+    if fine:
+        fine_feature = MaxPool3D(pool_size=(2, 1, 1), data_format=df)(x)
     # Final max pooling stage
     x = MaxPool3D(pool_size=(2, 2, 2), data_format=df)(x)
+
+    if fine:
+        return x, fine_feature 
 
     return x
 
@@ -131,10 +138,11 @@ def featurenet_backbone(input_tensor=None, input_shape=None, weights=None,
 
 def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None,
                            include_top=False, pooling=None, n_filters=32,
-                           n_dense=128, n_classes=3):
+                           n_dense=128, n_classes=3, include_fine=False):
     """Construct the deepcell backbone with five convolutional units
         input_tensor (tensor): Input tensor to specify input size
         n_filters (int, optional): Defaults to 32. Number of filters for convolutionaal layers
+        include_fine (bool): whether to include a full resolution fine layer in the backbone
     Returns:
         (backbone_names, backbone_features): List of backbone layers, list of backbone names
     """
@@ -147,14 +155,21 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None,
             img_input = input_tensor
 
     # Build out backbone
-    c1 = featurenet_3D_block(img_input, n_filters)  # 1/2 64x64
+    if include_fine:
+        c1, c0 = featurenet_3D_block(img_input, n_filters, fine=True)  # 1/2 64x64
+    else:
+        c1 = featurenet_3D_block(img_input, n_filters)
     c2 = featurenet_3D_block(c1, n_filters)  # 1/4 32x32
     c3 = featurenet_3D_block(c2, n_filters)  # 1/8 16x16
     c4 = featurenet_3D_block(c3, n_filters)  # 1/16 8x8
     c5 = featurenet_3D_block(c4, n_filters)  # 1/32 4x4
 
-    backbone_features = [c1, c2, c3, c4, c5]
-    backbone_names = ['C1', 'C2', 'C3', 'C4', 'C5']
+    if include_fine:
+        backbone_features = [c0, c1, c2, c3, c4, c5]
+        backbone_names = ['C0', 'C1', 'C2', 'C3', 'C4', 'C5']
+    else:
+        backbone_features = [c1, c2, c3, c4, c5]
+        backbone_names = ['C1', 'C2', 'C3', 'C4', 'C5']
     output_dict = {}
     for name, feature in zip(backbone_names, backbone_features):
         output_dict[name] = feature

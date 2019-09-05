@@ -31,6 +31,7 @@ from __future__ import division
 
 import os
 
+from math import ceil
 import numpy as np
 from skimage.measure import label
 from skimage.measure import regionprops
@@ -90,7 +91,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     Raises:
         IOError: An error occurred
     """
-    valid_transforms = {'deepcell', 'disc', 'watershed', 'centroid', 'fgbg'}
+    valid_transforms = {'deepcell', 'disc', 'watershed', 'centroid', 'fgbg', 'identity'}
 
     if data_format is None:
         data_format = K.image_data_format()

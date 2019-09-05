@@ -31,6 +31,7 @@ from __future__ import division
 
 import re
 
+import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D, Conv3D, Conv3DTranspose
@@ -38,6 +39,7 @@ from tensorflow.python.keras.layers import Softmax
 from tensorflow.python.keras.layers import Input, Add, Concatenate
 from tensorflow.python.keras.layers import Reshape
 from tensorflow.python.keras.layers import Activation
+from tensorflow.python.keras.layers import Lambda
 from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
 from tensorflow.python.keras.layers import BatchNormalization
 
@@ -51,10 +53,11 @@ def create_pyramid_level_am(backbone_input,
                          addition_input=None,
                          fully_chained=True,
                          merge=None,
-                         upsample='default',
+                         learned_upsampling=True,
                          level=5,
                          ndim=2,
-                         add_base=False,
+                         is_last=False,
+                         variable_input=False,
                          feature_size=256):
     """Create a pyramid layer from a particular backbone input layer.
 
@@ -69,97 +72,108 @@ def create_pyramid_level_am(backbone_input,
             convolutional layer
         ndim: The spatial dimensions of the input data. Default is 2,
             but it also works with 3
+        merge: a function to merge each backbone layer with the previous upsampled
+        pyramid feature. Defaults to None, which uses Add()
+        fully_chained (bool): whether each pyramid feature is created from all 
+        coarser resolution pyramid features, instead of just one above it
+        learned_upsampling: whether to have upsampling be a learned operation
+        variable_input: whether the input shape is dynamic 
+        is_last: whether the current level is the finest resolution
     Returns:
         (pyramid final, pyramid upsample): Pyramid layer after processing,
             upsampled pyramid layer
     """
 
-    acceptable_ndims = {2, 3}
+    acceptable_ndims = {3}
     if ndim not in acceptable_ndims:
-        raise ValueError('Only 2 and 3 dimensional networks are supported')
+        raise ValueError('Only 3 dimensional networks are supported')
 
     reduced_name = 'C%s_reduced' % level
     upsample_name = 'P%s_upsampled' % level
+    shapefix_name = 'P%s_shapefix' % level
     addition_name = 'P%s_merged' % level
     final_name = 'P%s' % level
 
     # Apply 1x1 conv to backbone layer
-    if ndim == 2:
-        pyramid = Conv2D(feature_size, (1, 1), strides=(1, 1),
-                         padding='same', name=reduced_name)(backbone_input)
-    else:
-        pyramid = Conv3D(feature_size, (1, 1, 1), strides=(1, 1, 1),
-                         padding='same', name=reduced_name)(backbone_input)
+    pyramid = Conv3D(feature_size, (1, 1, 1), strides=(1, 1, 1),
+                     padding='same', name=reduced_name)(backbone_input)
 
     if merge is None:
         merge = Add(name=addition_name)
 
-    if upsample == 'default':
-        upsample_func = UpsampleLike(name=upsample_name)
-    elif upsample == 'learned':
-        def upsamplef(inputs):
-            first, target = inputs
-            output = Conv3DTranspose(feature_size, (2, 2, 2), strides=(2, 2, 2), 
-                                  kernel_initializer='he_normal',
-                                  use_bias=False, name=upsample_name + '_conv',
-                                  activation='relu')(first)
-            return UpsampleLike(name=upsample_name + '_shapefix')([output, target])
-        upsample_func = upsamplef
+    if not learned_upsampling:
+        def upsample(inputs, **kwargs):
+            return UpsampleLike(name=upsample_name)(inputs)
+    else:
+        # Learned upsampling is a Conv3DTranspose. This assumes that each backbone
+        # layer is half the resolution of the previous backbone layer.
+        def upsample(inputs, is_last=False):
+            pyramid, target = inputs
+            if is_last:
+                zsize = 1
+            else:
+                zsize = 2
 
+            output = Conv3DTranspose(feature_size, (zsize, 2, 2), strides=(zsize, 2, 2), 
+                              kernel_initializer='he_normal',
+                              use_bias=False, name=upsample_name,
+                              activation='relu')(pyramid)
+
+            if variable_input:
+                # This function fixes off-by-one shape errors created by halving odd dimensional 
+                # shapes by adding reflection padding.
+                def shapefix(inputs):
+                    pyramid, target = inputs
+
+                    t = tf.shape(target)
+                    s = tf.shape(pyramid)
+                    padding = [[0, 0]] + [[0, t[i] - s[i]] for i in range(1, 4)] + [[0, 0]]
+
+                    return tf.pad(pyramid, padding, mode='REFLECT')
+                    
+                output = Lambda(shapefix, name=shapefix_name)([output, target])
+            else:
+                output = UpsampleLike(name=shapefix_name)([output, target])
+
+            return output
+
+    upsample_func = upsample
+
+    # The 'fully_chained' option makes it so that the upsampled feature is
+    # upsampled from the merged feature, so that each pyramid feature is carried
+    # down to all finer resolution features, as in the original FPN paper.
     if fully_chained:
+        # merge backbone layer with previous upsampled pyramid layer
         if addition_input is not None:
             pyramid = merge([pyramid, addition_input])
 
-        # Upsample pyramid input
+        # Upsample pyramid input for next pyramid layer
         if upsamplelike_input is not None:
             pyramid_upsample = upsample_func(
-                [pyramid, upsamplelike_input])
+                [pyramid, upsamplelike_input], is_last=is_last)
+        else:           
+            pyramid_upsample = None
+
+    else:
+        # Upsample pyramid input
+        if upsamplelike_input is not None:
+            pyramid_upsample = upsample_func(name=upsample_name)(
+                [pyramid, upsamplelike_input], is_last=is_last)
         else:
             pyramid_upsample = None
-            if add_base:
-                pyramid_upsample = Conv3DTranspose(feature_size, (1, 2, 2), strides=(1, 2, 2), 
-                                  kernel_initializer='he_normal',
-                                  use_bias=False, name='base_upsample',
-                                  activation='relu')(pyramid)
 
-        if ndim == 2:
-            pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
-                                   padding='same', name=final_name)(pyramid)
-        else:
-            pyramid_final = Conv3D(feature_size, (3, 3, 3), strides=(1, 1, 1),
-                                   padding='same', name=final_name)(pyramid)
+        # Add and then 3x3 conv
+        if addition_input is not None:
+            pyramid = merge([pyramid, addition_input])
 
-        return pyramid_final, pyramid_upsample
-
-    # Upsample pyramid input
-    if upsamplelike_input is not None:
-        pyramid_upsample = upsample_func(name=upsample_name)(
-            [pyramid, upsamplelike_input])
-    else:
-        pyramid_upsample = None
-        if add_base:
-            pyramid_upsample = Conv3DTranspose(feature_size, (1, 2, 2), strides=(1, 2, 2), 
-                              kernel_initializer='he_normal',
-                              use_bias=False, name='base_upsample',
-                              activation='relu')(pyramid)
-
-    # Add and then 3x3 conv
-    if addition_input is not None:
-        pyramid = merge([pyramid, addition_input])
-
-    if ndim == 2:
-        pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
-                               padding='same', name=final_name)(pyramid)
-    else:
-        pyramid_final = Conv3D(feature_size, (3, 3, 3), strides=(1, 1, 1),
-                               padding='same', name=final_name)(pyramid)
+    pyramid_final = Conv3D(feature_size, (3, 3, 3), strides=(1, 1, 1),
+                           padding='same', name=final_name)(pyramid)
 
     return pyramid_final, pyramid_upsample
 
 
-def __create_pyramid_features_am(backbone_dict, fully_chained=True, ndim=2, feature_size=256,
-                              merge=None, add_base=False, fine_backbone_feature=None, 
-                              include_final_layers=True, upsample='default'):
+def __create_pyramid_features_am(backbone_dict, fully_chained=True, ndim=3, feature_size=256,
+                              merge=None, learned_upsampling=True):
     """Creates the FPN layers on top of the backbone features.
 
     Args:
@@ -167,10 +181,13 @@ def __create_pyramid_features_am(backbone_dict, fully_chained=True, ndim=2, feat
             the names as keys, e.g. {'C0': C0, 'C1': C1, 'C2': C2, ...}
         feature_size (int, optional): Defaults to 256. The feature size to use
             for the resulting feature levels.
-        include_final_layers: Defaults to True. Option to add two coarser
-            pyramid levels
-        ndim: The spatial dimensions of the input data. Default is 2, but it
-            also works with 3
+        fully_chained (bool): whether each pyramid feature is created from all 
+        coarser resolution pyramid features, instead of just one above it
+        merge: a function to merge each backbone layer with the previous upsampled
+        pyramid feature. Defaults to None, which uses Add()
+        learned_upsampling: whether to have upsampling be a learned operation
+        ndim: The spatial dimensions of the input data. 
+
     Returns:
         A dictionary with the feature pyramid names and levels,
             e.g. {'P3': P3, 'P4': P4, ...}
@@ -178,9 +195,9 @@ def __create_pyramid_features_am(backbone_dict, fully_chained=True, ndim=2, feat
             added, e.g. [C3, C4, C5] --> [P3, P4, P5, P6, P7]
     """
 
-    acceptable_ndims = [2, 3]
+    acceptable_ndims = [3]
     if ndim not in acceptable_ndims:
-        raise ValueError('Only 2 and 3 dimensional networks are supported')
+        raise ValueError('Only 3 dimensional networks are supported')
 
     # Get names of the backbone levels and place in ascending order
     backbone_names = get_sorted_keys(backbone_dict)
@@ -221,67 +238,23 @@ def __create_pyramid_features_am(backbone_dict, fully_chained=True, ndim=2, feat
             upsamplelike_input = backbone_features[i + 1]
             addition_input = pyramid_upsamples[-1]
 
+        if i == len(backbone_names) - 2:
+            is_last = True
+        else:
+            is_last = False
+
         pf, pu = create_pyramid_level_am(backbone_input,
                                       upsamplelike_input=upsamplelike_input,
                                       addition_input=addition_input,
                                       merge=merge,
-                                      add_base=add_base,
+                                      is_last=is_last,
                                       fully_chained=fully_chained,
                                       level=level,
                                       feature_size=feature_size,
-                                      upsample=upsample,
+                                      learned_upsampling=learned_upsampling,
                                       ndim=ndim)
         pyramid_finals.append(pf)
         pyramid_upsamples.append(pu)
-
-    if add_base:
-        if fine_backbone_feature is None:
-            raise ValueError
-        if merge is None:
-            merge = Add(name='base_merge')
-        pyramid = Conv3D(feature_size, (1, 1, 1), strides=(1, 1, 1),
-                         padding='same', name='base_reduce')(fine_backbone_feature)
-        pyramid = merge([pyramid_upsamples[-1], pyramid])#Concatenate(axis=4)([pyramid_upsamples[-1], pyramid])
-        pyramid = Conv3D(feature_size, (3, 3, 3), padding='same', kernel_initializer='he_normal', name='base_final_conv')(pyramid)
-        pyramid_names.append('P0')
-        pyramid_finals.append(pyramid)
-
-    # Add the final two pyramid layers
-    if include_final_layers:
-        # "Second to last pyramid layer is obtained via a
-        # 3x3 stride-2 conv on the coarsest backbone"
-        N = backbone_names[0]
-        F = backbone_features[0]
-        level = int(re.findall(r'\d+', N)[0]) + 1
-        P_minus_2_name = 'P%s' % level
-
-        if ndim == 2:
-            P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
-                               padding='same', name=P_minus_2_name)(F)
-        else:
-            P_minus_2 = Conv3D(feature_size, kernel_size=(3, 3, 3),
-                               strides=(2, 2, 2), padding='same',
-                               name=P_minus_2_name)(F)
-
-        pyramid_names.insert(0, P_minus_2_name)
-        pyramid_finals.insert(0, P_minus_2)
-
-        # "Last pyramid layer is computed by applying ReLU
-        # followed by a 3x3 stride-2 conv on second to last layer"
-        level = int(re.findall(r'\d+', N)[0]) + 2
-        P_minus_1_name = 'P' + str(level)
-        P_minus_1 = Activation('relu', name=N + '_relu')(P_minus_2)
-
-        if ndim == 2:
-            P_minus_1 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
-                               padding='same', name=P_minus_1_name)(P_minus_1)
-        else:
-            P_minus_1 = Conv3D(feature_size, kernel_size=(3, 3, 3),
-                               strides=(2, 2, 2), padding='same',
-                               name=P_minus_1_name)(P_minus_1)
-
-        pyramid_names.insert(0, P_minus_1_name)
-        pyramid_finals.insert(0, P_minus_1)
 
     pyramid_names.reverse()
     pyramid_finals.reverse()

@@ -257,24 +257,10 @@ class ImageNormalization3D(Layer):
         input_dim = int(input_shape[channel_axis])
         self.input_spec = InputSpec(ndim=5, axes={channel_axis: input_dim})
 
-        if self.data_format == 'channels_first':
-            depth = int(input_shape[2])
-        else:
-            depth = int(input_shape[1])
-        kernel_shape = (depth, self.filter_size, self.filter_size, input_dim, 1)
-
-        # self.kernel = self.add_weight(
-        #     'kernel',
-        #     shape=kernel_shape,
-        #     initializer=self.kernel_initializer,
-        #     regularizer=self.kernel_regularizer,
-        #     constraint=self.kernel_constraint,
-        #     trainable=False,
-        #     dtype=self.dtype)
+        kernel_shape = (self.filter_size, self.filter_size, self.filter_size, input_dim, 1)
 
         W = np.ones(kernel_shape)
         W = W / W.size
-        # self.set_weights([W])
 
         self.kernel = K.constant(W, shape=kernel_shape, name='kernel', dtype=self.dtype)
 

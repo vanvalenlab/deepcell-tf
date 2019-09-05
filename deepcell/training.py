@@ -41,7 +41,6 @@ from tensorflow.python.keras.optimizers import SGD
 
 from deepcell import losses
 from deepcell import image_generators
-from deepcell import stack_generator
 from deepcell.callbacks import RedirectModel, Evaluate
 from deepcell.model_zoo import retinanet_bbox
 from deepcell.utils.retinanet_anchor_utils import make_shapes_callback
@@ -804,7 +803,7 @@ def train_model_am(model,
     if train_dict['X'].ndim == 4:
         DataGenerator = image_generators.ImageFullyConvDataGenerator
     elif train_dict['X'].ndim == 5:
-        DataGenerator = stack_generator.StackDataGenerator
+        DataGenerator = image_generators.StackDataGenerator
     else:
         raise ValueError('Expected `X` to have ndim 4 or 5. Got',
                          train_dict['X'].ndim)
