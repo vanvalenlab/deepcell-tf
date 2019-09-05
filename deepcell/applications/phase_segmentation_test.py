@@ -42,7 +42,7 @@ class TestPhaseSegmentationModel(test.TestCase):
     def test_phase_segmentation_model(self):
 
         valid_backbones = ['resnet50']
-        input_shape = (512, 512, 1)
+        input_shape = (256, 256, 1)  # channels will be set to 3
 
         batch_shape = tuple([8] + list(input_shape))
 
