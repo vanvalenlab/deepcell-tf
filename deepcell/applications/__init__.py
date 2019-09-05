@@ -33,7 +33,8 @@ from deepcell.applications.cell_tracking import CellTrackingModel
 from deepcell.applications.label_detection import LabelDetectionModel
 from deepcell.applications.scale_detection import ScaleDetectionModel
 from deepcell.applications.phase_segmentation import PhaseSegmentationModel
-from deepcell.applications.fluorescent_cytoplasm_segmentation import FluorCytoplasmSegmentationModel
+from deepcell.applications.fluorescent_cytoplasm_segmentation import \
+    FluorCytoplasmSegmentationModel
 
 del absolute_import
 del division
