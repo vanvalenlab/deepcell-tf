@@ -50,7 +50,7 @@ class TestFluorCytoplasmSegmentationModel(test.TestCase):
 
         for backbone in valid_backbones:
             with self.test_session(use_gpu=True):
-                model = PhaseSegmentationModel(
+                model = FluorCytoplasmSegmentationModel(
                     input_shape=input_shape,
                     backbone=backbone,
                     use_pretrained_weights=False
