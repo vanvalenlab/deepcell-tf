@@ -58,7 +58,7 @@ def FluorCytoplasmSegmentationModel(input_shape=(None, None, 1),
 
     model = model_zoo.RetinaMask(
         backbone=backbone,
-        use_imagenet=True,
+        use_imagenet=False,
         panoptic=False,
         num_semantic_heads=2,
         num_semantic_classes=[4, 4],
