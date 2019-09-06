@@ -31,7 +31,6 @@ from __future__ import print_function
 
 import numpy as np
 
-from tensorflow.python.keras.layers import Input
 from tensorflow.python.platform import test
 
 from deepcell.applications import PhaseSegmentationModel
@@ -56,7 +55,7 @@ class TestPhaseSegmentationModel(test.TestCase):
                     use_pretrained_weights=False
                 )
 
-        y = model.predict(X)
+                y = model.predict(X)
 
-        assert y[0].shape[0] == X.shape[0]
-        assert isinstance(y, list)
+                assert y[0].shape[0] == X.shape[0]
+                assert isinstance(y, list)
