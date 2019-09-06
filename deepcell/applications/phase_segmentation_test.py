@@ -30,6 +30,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+import tensorflow as tf
 
 from tensorflow.python.platform import test
 
@@ -41,7 +42,7 @@ class TestPhaseSegmentationModel(test.TestCase):
     def test_phase_segmentation_model(self):
 
         # TODO: resnet50 is trained but tests fail due to tf version
-        valid_backbones = ['VGG16']
+        valid_backbones = ['featurenet']
         input_shape = (256, 256, 1)  # channels will be set to 3
 
         batch_shape = tuple([8] + list(input_shape))
@@ -49,6 +50,10 @@ class TestPhaseSegmentationModel(test.TestCase):
         X = np.random.random(batch_shape)
 
         for backbone in valid_backbones:
+            if int(tf.VERSION.split('.')[1]) < 10:
+                # retinanet backbones do not work with versions < 1.10.0
+                continue
+
             with self.test_session(use_gpu=True):
                 model = PhaseSegmentationModel(
                     input_shape=input_shape,
