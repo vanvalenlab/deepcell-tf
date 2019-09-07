@@ -105,7 +105,7 @@ def create_pyramid_level(backbone_input,
         pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
                                padding='same', name=final_name)(pyramid)
     else:
-        pyramid_final = Conv3D(feature_size, (3, 3, 3), strides=(1, 1, 1),
+        pyramid_final = Conv3D(feature_size, (1, 3, 3), strides=(1, 1, 1),
                                padding='same', name=final_name)(pyramid)
 
     return pyramid_final, pyramid_upsample
@@ -180,7 +180,8 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
         pf, pu = create_pyramid_level(backbone_input,
                                       upsamplelike_input=upsamplelike_input,
                                       addition_input=addition_input,
-                                      level=level)
+                                      level=level,
+                                      ndim=ndim)
         pyramid_finals.append(pf)
         pyramid_upsamples.append(pu)
 
@@ -197,8 +198,8 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
             P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
                                padding='same', name=P_minus_2_name)(F)
         else:
-            P_minus_2 = Conv3D(feature_size, kernel_size=(3, 3, 3),
-                               strides=(2, 2, 2), padding='same',
+            P_minus_2 = Conv3D(feature_size, kernel_size=(1, 3, 3),
+                               strides=(1, 2, 2), padding='same',
                                name=P_minus_2_name)(F)
 
         pyramid_names.insert(0, P_minus_2_name)
@@ -214,8 +215,8 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
             P_minus_1 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
                                padding='same', name=P_minus_1_name)(P_minus_1)
         else:
-            P_minus_1 = Conv3D(feature_size, kernel_size=(3, 3, 3),
-                               strides=(2, 2, 2), padding='same',
+            P_minus_1 = Conv3D(feature_size, kernel_size=(1, 3, 3),
+                               strides=(1, 2, 2), padding='same',
                                name=P_minus_1_name)(P_minus_1)
 
         pyramid_names.insert(0, P_minus_1_name)

@@ -31,10 +31,13 @@ from __future__ import division
 
 import copy
 
+import tensorflow as tf
 from tensorflow.python.keras import backend as K
+from tensorflow.python.keras import utils as keras_utils
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
+from tensorflow.python.keras.layers import TimeDistributed, Lambda
 
 import keras_applications as applications
 
@@ -50,6 +53,12 @@ except ImportError:
         from tensorflow.python.keras.engine.network import get_source_inputs
     except ImportError:  # tf1.8 uses the _impl directory
         from tensorflow.python.keras._impl.keras.engine.network import get_source_inputs
+
+
+from tensorflow.python.keras import backend
+from tensorflow.python.keras import layers
+from tensorflow.python.keras import models
+from tensorflow.python.keras import utils
 
 from efficientnet import model as efn
 
@@ -72,7 +81,7 @@ def featurenet_block(x, n_filters):
     x = BatchNormalization(axis=-1)(x)
     x = Activation('relu')(x)
     # Final max pooling stage
-    x = MaxPool2D(pool_size=(2, 2), data_format='channels_last')(x)
+    x = MaxPool2D(pool_size=(2, 2), data_format='channels_last', padding='same')(x)
 
     return x
 
@@ -126,6 +135,8 @@ def featurenet_backbone(input_tensor=None, input_shape=None, weights=None,
     c3 = featurenet_block(c2, n_filters)  # 1/8 16x16
     c4 = featurenet_block(c3, n_filters)  # 1/16 8x8
     c5 = featurenet_block(c4, n_filters)  # 1/32 4x4
+    
+
 
     backbone_features = [c1, c2, c3, c4, c5]
     backbone_names = ['C1', 'C2', 'C3', 'C4', 'C5']
@@ -181,7 +192,9 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None,
     return model, output_dict
 
 
-def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, **kwargs):
+def get_backbone(backbone, input_tensor=None, input_shape=None, 
+                        use_imagenet=False, return_dict=True, 
+                        time_distribute=False, frames_per_batch=5, **kwargs):
     """Retrieve backbones - helper function for the construction of feature pyramid networks
         backbone: Name of the backbone to be retrieved. Options include featurenets, resnets
             densenets, mobilenets, and nasnets
@@ -203,7 +216,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
     _backbone = str(backbone).lower()
 
-    featurenet_backbones = ['featurenet', 'featurenet3d', 'featurenet_3d']
+    featurenet_backbones = ['featurenet']
     vgg_backbones = ['vgg16', 'vgg19']
     densenet_backbones = ['densenet121', 'densenet169', 'densenet201']
     mobilenet_backbones = ['mobilenet', 'mobilenetv2', 'mobilenet_v2']
@@ -215,33 +228,48 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
                             'efficientnetb3', 'efficientnetb4', 'efficientnetb6', 
                             'efficientnetb7']
 
+    all_backbones = featurenet_backbones + vgg_backbones + densenet_backbones + mobilenet_backbones + resnet_backbones + resnet_v2_backbones + resnext_backbones + nasnet_backbones + efficientnet_backbones
+
     # TODO: Check and make sure **kwargs is in the right format.
     # 'weights' flag should be None, and 'input_shape' must have size 3 on the channel axis
+
+    if time_distribute:
+        if input_shape:
+            img_input = Input(shape=input_shape)
+        else:
+            img_input = Input(shape=(None, None, 3))
+    else:
+        if input_tensor:
+            img_input = input_tensor
+        else:
+            if input_shape:
+                img_input = Input(shape=input_shape)
+            else:
+                img_input = Input(shape=(None, None, 3))
 
     if use_imagenet:
         kwargs_with_weights = copy.copy(kwargs)
         kwargs_with_weights['weights'] = 'imagenet'
 
+    """
+    Feature net backbone
+    """
     if _backbone in featurenet_backbones:
         if use_imagenet:
             raise ValueError('A featurenet backbone that is pre-trained on '
                              'imagenet does not exist')
 
-        if '3d' in _backbone:
-            model, output_dict = featurenet_3D_backbone(input_tensor=input_tensor, **kwargs)
-        else:
-            model, output_dict = featurenet_backbone(input_tensor=input_tensor, **kwargs)
+        model, output_dict = featurenet_backbone(input_tensor=img_input, **kwargs)
+        layer_outputs = [output_dict['C1'], output_dict['C2'], output_dict['C3'], output_dict['C4'], output_dict['C5']]
 
-        if return_dict:
-            return output_dict
-        else:
-            return model
-
+    """
+    VGG backbones
+    """
     if _backbone in vgg_backbones:
         if _backbone == 'vgg16':
-            model = applications.vgg16.VGG16(input_tensor=input_tensor, **kwargs)
+            model = applications.vgg16.VGG16(input_tensor=img_input, **kwargs)
         else:
-            model = applications.vgg19.VGG19(input_tensor=input_tensor, **kwargs)
+            model = applications.vgg19.VGG19(input_tensor=img_input, **kwargs)
 
         # Set the weights of the model if requested
         if use_imagenet:
@@ -255,23 +283,18 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         layer_names = ['block1_pool', 'block2_pool', 'block3_pool', 'block4_pool', 'block5_pool']
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
 
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
-
-    elif _backbone in densenet_backbones:
+    """
+    Densenet backbones
+    """
+    if _backbone in densenet_backbones:
         if _backbone == 'densenet121':
-            model = applications.densenet.DenseNet121(input_tensor=input_tensor, **kwargs)
+            model = applications.densenet.DenseNet121(input_tensor=img_input, **kwargs)
             blocks = [6, 12, 24, 16]
         elif _backbone == 'densenet169':
-            model = applications.densenet.DenseNet169(input_tensor=input_tensor, **kwargs)
+            model = applications.densenet.DenseNet169(input_tensor=img_input, **kwargs)
             blocks = [6, 12, 32, 32]
         elif _backbone == 'densenet201':
-            model = applications.densenet.DenseNet201(input_tensor=input_tensor, **kwargs)
+            model = applications.densenet.DenseNet201(input_tensor=img_input, **kwargs)
             blocks = [6, 12, 48, 32]
 
         # Set the weights of the model if requested
@@ -289,21 +312,16 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
                                         for idx, block_num in enumerate(blocks)]
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
 
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
-
-    elif _backbone in resnet_backbones:
+    """
+    Resnet backbones
+    """
+    if _backbone in resnet_backbones:
         if _backbone == 'resnet50':
-            model = applications.resnet.ResNet50(input_tensor=input_tensor, **kwargs)
+            model = applications.resnet.ResNet50(input_tensor=img_input, **kwargs)
         elif _backbone == 'resnet101':
-            model = applications.resnet.ResNet101(input_tensor=input_tensor, **kwargs)
+            model = applications.resnet.ResNet101(input_tensor=img_input, **kwargs)
         elif _backbone == 'resnet151':
-            model = applications.resnet.ResNet151(input_tensor=input_tensor, **kwargs)
+            model = applications.resnet.ResNet151(input_tensor=img_input, **kwargs)
 
         # Set the weights of the model if requested
         if use_imagenet:
@@ -328,21 +346,16 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
 
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
-
-    elif _backbone in resnet_v2_backbones:
+    """
+    ResnetV2 backbones
+    """
+    if _backbone in resnet_v2_backbones:
         if _backbone == 'resnet50v2':
-            model = applications.resnet_v2.ResNet50V2(input_tensor=input_tensor, **kwargs)
+            model = applications.resnet_v2.ResNet50V2(input_tensor=img_input, **kwargs)
         elif _backbone == 'resnet101v2':
-            model = applications.resnet_v2.ResNet101V2(input_tensor=input_tensor, **kwargs)
+            model = applications.resnet_v2.ResNet101V2(input_tensor=img_input, **kwargs)
         elif _backbone == 'resnet151v2':
-            model = applications.resnet_v2.ResNet151V2(input_tensor=input_tensor, **kwargs)
+            model = applications.resnet_v2.ResNet151V2(input_tensor=img_input, **kwargs)
 
         # Set the weights of the model if requested
         if use_imagenet:
@@ -367,19 +380,14 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
 
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
-
-    elif _backbone in resnext_backbones:
+    """
+    ResNeXt backbones
+    """
+    if _backbone in resnext_backbones:
         if _backbone == 'resnext50':
-            model = applications.resnext.ResNeXt50(input_tensor=input_tensor, **kwargs)
+            model = applications.resnext.ResNeXt50(input_tensor=img_input, **kwargs)
         elif _backbone == 'resnext101':
-            model = applications.resnext.ResNeXt101(input_tensor=input_tensor, **kwargs)
+            model = applications.resnext.ResNeXt101(input_tensor=img_input, **kwargs)
 
         # Set the weights of the model if requested
         if use_imagenet:
@@ -400,25 +408,20 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
 
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
-
-    elif _backbone in mobilenet_backbones:
+    """
+    MobileNet backbones
+    """
+    if _backbone in mobilenet_backbones:
         alpha = kwargs.get('alpha', 1.0)
         if _backbone.endswith('v2'):
-            model = applications.mobilenet_v2.MobileNetV2(alpha=alpha, input_tensor=input_tensor, **kwargs)
+            model = applications.mobilenet_v2.MobileNetV2(alpha=alpha, input_tensor=img_input, **kwargs)
             block_ids = (2, 5, 12)
             layer_names = ['expanded_conv_project_BN'] + \
                           ['block_%s_add' % i for i in block_ids] + \
                           ['block_16_project_BN']
 
         else:
-            model = applications.mobilenet.MobileNet(alpha=alpha, input_tensor=input_tensor, **kwargs)
+            model = applications.mobilenet.MobileNet(alpha=alpha, input_tensor=img_input, **kwargs)
             block_ids = (1, 3, 5, 11, 13)
             layer_names = ['conv_pw_%s_relu' % i for i in block_ids]
 
@@ -433,20 +436,15 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
 
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
-
-    elif _backbone in nasnet_backbones:
+    """
+    NasNet backbones
+    """
+    if _backbone in nasnet_backbones:
         if _backbone.endswith('large'):
-            model = applications.nasnet.NASNetLarge(input_tensor=input_tensor, **kwargs)
+            model = applications.nasnet.NASNetLarge(input_tensor=img_input, **kwargs)
             block_ids = [5, 12, 18]
         else:
-            model = applications.nasnet.NASNetMobile(input_tensor=input_tensor, **kwargs)
+            model = applications.nasnet.NASNetMobile(input_tensor=img_input, **kwargs)
             block_ids = [3, 8, 12]
 
         # Set the weights of the model if requested
@@ -462,31 +460,26 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         layer_names += ['normal_concat_%s' % i for i in block_ids]
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
 
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
-
-    elif _backbone in efficientnet_backbones:
+    """
+    EfficientNet backbones
+    """
+    if _backbone in efficientnet_backbones:
         if _backbone.endswith('b0'):
-            model = efn.EfficientNetB0(input_tensor=input_tensor, **kwargs)
+            model = efn.EfficientNetB0(input_tensor=img_input, **kwargs)
         elif _backbone.endswith('b1'):
-            model = efn.EfficientNetB1(input_tensor=input_tensor, **kwargs)
+            model = efn.EfficientNetB1(input_tensor=img_input, **kwargs)
         elif _backbone.endswith('b2'):
-            model = efn.EfficientNetB2(input_tensor=input_tensor, **kwargs)
+            model = efn.EfficientNetB2(input_tensor=img_input, **kwargs)
         elif _backbone.endswith('b3'):
-            model = efn.EfficientNetB3(input_tensor=input_tensor, **kwargs)
+            model = efn.EfficientNetB3(input_tensor=img_input, **kwargs)
         elif _backbone.endswith('b4'):
-            model = efn.EfficientNetB4(input_tensor=input_tensor, **kwargs)
+            model = efn.EfficientNetB4(input_tensor=img_input, **kwargs)
         elif _backbone.endswith('b5'):
-            model = efn.EfficientNetB5(input_tensor=input_tensor, **kwargs)
+            model = efn.EfficientNetB5(input_tensor=img_input, **kwargs)
         elif _backbone.endswith('b6'):
-            model = efn.EfficientNetB6(input_tensor=input_tensor, **kwargs)
+            model = efn.EfficientNetB6(input_tensor=img_input, **kwargs)
         elif _backbone.endswith('b7'):
-            model = efn.EfficientNetB7(input_tensor=input_tensor, **kwargs)
+            model = efn.EfficientNetB7(input_tensor=img_input, **kwargs)
 
         if use_imagenet:
             if _backbone.endswith('b0'):
@@ -512,18 +505,49 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
                             'block6a_expand_activation', 'top_activation']
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
 
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
 
-    else:
+    if _backbone not in all_backbones:
         backbones = list(featurenet_backbones + densenet_backbones +
                          resnet_backbones + resnext_backbones + resnet_v2_backbones + 
                          vgg_backbones + nasnet_backbones + mobilenet_backbones + 
                          efficientnet_backbones)
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
                          ', '.join(backbones))
+
+    if time_distribute:
+        ### Alternative method of coding this - time distributes the layer
+        ### manually. Not sure which is faster
+        
+        # Split = Lambda(lambda x: tf.split(x, frames_per_batch, axis=1))
+        # Squeeze = Lambda(lambda x: tf.squeeze(x, axis=1))
+        # Stack = Lambda(lambda x: K.stack(x, axis=1))
+
+        # split_inputs = Split(input_tensor)
+        # new_model = Model(model.input, layer_outputs)
+
+        # time_distributed_outputs = []
+        # for i in range(frames_per_batch):
+        #     split_input = Squeeze(split_inputs[i])
+        #     time_distributed_outputs.append(new_model(split_input))
+
+        # new_model_outputs = []
+        # for i, out in enumerate(new_model.outputs):
+        #     new_model_outputs.append(Stack([out[i] for out in time_distributed_outputs]))
+
+        # layer_outputs = new_model_outputs
+
+
+        time_distributed_outputs = []
+        for out in layer_outputs:
+            time_distributed_outputs.append(TimeDistributed(Model(model.input, out))(input_tensor))
+        
+        layer_outputs = time_distributed_outputs
+
+    output_dict = {}
+    for i, j in enumerate(layer_outputs):
+        output_dict['C' + str(i + 1)] = layer_outputs[i]
+
+    if return_dict:
+        return output_dict
+    else:
+        return model

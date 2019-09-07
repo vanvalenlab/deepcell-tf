@@ -29,6 +29,7 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
+import copy
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras import backend as K
@@ -50,13 +51,30 @@ class UpsampleLike(Layer):
         self.data_format = conv_utils.normalize_data_format(data_format)
 
     def _resize_drop_axis(self, image, size, axis):
-        unstack_list = tf.unstack(image, axis=axis)
-        resize_list = []
-        for i in unstack_list:
-            resize_list.append(tf.image.resize_images(
-                i, size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR))
-        resized_image = tf.stack(resize_list, axis=axis)
-        return resized_image
+        image_shape = tf.shape(image)
+
+        new_shape = []
+        axes_resized = list(set([0,1,2,3,4]) - set([0, 4, axis]))
+        for ax in range(len(image_shape)-1):
+            if ax != axis:
+                new_shape.append(image_shape[ax])
+            if ax == 3:
+                new_shape.append(image_shape[-1]*image_shape[axis])
+
+        new_shape_2 = []
+        for ax in range(len(image_shape)):
+            if ax == 0 or ax == 4 or ax == axis:
+                new_shape_2.append(image_shape[ax])
+            elif ax == axes_resized[0]:
+                new_shape_2.append(size[0])
+            elif ax == axes_resized[1]:
+                new_shape_2.append(size[1])
+
+        new_image = tf.reshape(image, new_shape)
+        new_image_resized = tf.image.resize_images(new_image, size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        new_image_2 = tf.reshape(new_image_resized, new_shape_2)
+
+        return new_image_2
 
     def resize_volumes(self, volume, size):
         if self.data_format == 'channels_first':
