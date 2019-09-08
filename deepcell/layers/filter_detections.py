@@ -190,6 +190,24 @@ class FilterDetections(Layer):
         classification = inputs[1]
         other = inputs[2:]
 
+        if K.ndim(boxes) == 4:
+            dynamic = True
+        else:
+            dynamic = False
+
+        if dynamic:
+            boxes_shape = tf.shape(boxes)
+            classification_shape = tf.shape(classification) #classification.get_shape()
+            other_shape = [tf.shape(o) for o in other]
+
+            new_boxes_shape = [-1] + [boxes_shape[i] for i in range(2, K.ndim(boxes))]
+            new_classification_shape = [-1] + [classification_shape[i] for i in range(2, K.ndim(classification)-1)] + [classification.get_shape()[-1]]
+            new_other_shape = [[-1] + [o_s[i] for i in range(2, K.ndim(o))] for o, o_s in zip(other, other_shape)]
+
+            boxes = tf.reshape(boxes, new_boxes_shape)
+            classification = tf.reshape(classification, new_classification_shape)
+            other = [tf.reshape(o, o_s) for o, o_s in zip(other, new_other_shape)]
+
         # wrap nms with our parameters
         def _filter_detections(args):
             boxes = args[0]
@@ -215,6 +233,24 @@ class FilterDetections(Layer):
             parallel_iterations=self.parallel_iterations
         )
 
+        if dynamic:
+            filtered_boxes = outputs[0]
+            filtered_scores = outputs[1]
+            filtered_labels = outputs[2]
+            filtered_other = outputs[3:]
+
+            final_boxes_shape = [boxes_shape[0], boxes_shape[1], self.max_detections, 4]
+            final_scores_shape = [classification_shape[0], classification_shape[1], self.max_detections]
+            final_labels_shape = [classification_shape[0], classification_shape[1], self.max_detections]
+            final_others_shape = [[o[0], o[1], self.max_detections] + [o[i] for i in range(3, K.ndim(o))] for o in other_shape]
+
+            filtered_boxes = tf.reshape(filtered_boxes, final_boxes_shape)
+            filtered_scores = tf.reshape(filtered_scores, final_scores_shape)
+            filtered_labels = tf.reshape(filtered_labels, final_labels_shape)
+            filtered_other = [tf.reshape(o, o_s) for o, o_s in zip(filtered_other, final_others_shape)]
+
+            outputs = [filtered_boxes, filtered_scores, filtered_labels] + filtered_other
+
         return outputs
 
     def compute_output_shape(self, input_shape):
@@ -232,15 +268,24 @@ class FilterDetections(Layer):
         """
         input_shape = [tensor_shape.TensorShape(insh) for insh in input_shape]
         # input_shape = tensor_shape.TensorShape(input_shape).as_list()
-
-        return [
-            (input_shape[0][0], self.max_detections, 4),
-            (input_shape[1][0], self.max_detections),
-            (input_shape[1][0], self.max_detections),
-        ] + [
-            tuple([input_shape[i][0], self.max_detections] +
-                  list(input_shape[i][2:])) for i in range(2, len(input_shape))
-        ]
+        if len(input_shape[0]) == 3:
+            return [
+                (input_shape[0][0], self.max_detections, 4),
+                (input_shape[1][0], self.max_detections),
+                (input_shape[1][0], self.max_detections),
+            ] + [
+                tuple([input_shape[i][0], self.max_detections] +
+                      list(input_shape[i][2:])) for i in range(2, len(input_shape))
+            ]
+        elif len(input_shape[0]) == 4:
+            return [
+                (input_shape[0][0], input_shape[0][1], self.max_detections, 4),
+                (input_shape[1][0], input_shape[1][1], self.max_detections),
+                (input_shape[1][0], input_shape[1][1], self.max_detections),
+            ] + [
+                tuple([input_shape[i][0], input_shape[i][1], self.max_detections] +
+                      list(input_shape[i][3:])) for i in range(2, len(input_shape))
+            ]
 
     def compute_mask(self, inputs, mask=None):
         """This is required in Keras when there is more than 1 output."""

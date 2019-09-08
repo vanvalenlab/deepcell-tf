@@ -2853,7 +2853,6 @@ class RetinaMovieIterator(Iterator):
         compute_shapes: functor for generating shapes, based on the model.
         min_objects: Integer, image with fewer than `min_objects` are ignored.
         num_classes: Integer, number of classes for classification.
-        frames_per_batch: Integer, number of frames to process at one time
         clear_borders: Boolean, whether to call `clear_border` on `y`.
         include_masks: Boolean, whether to yield mask data.
         batch_size: Integer, size of a batch.
@@ -3305,7 +3304,7 @@ class RetinaMovieDataGenerator(ImageDataGenerator):
              transforms=['watershed'],
              transforms_kwargs = {},
              anchor_params=None,
-             pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
+             pyramid_levels=['P2', 'P3', 'P4', 'P5', 'P6', 'P7'],
              shuffle=False,
              seed=None,
              save_to_dir=None,
