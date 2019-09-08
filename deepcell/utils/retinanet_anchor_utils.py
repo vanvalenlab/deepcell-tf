@@ -647,6 +647,7 @@ def _compute_ap(recall, precision):
 
 def _get_detections(generator,
                     model,
+                    frames_per_batch=5,
                     score_threshold=0.05,
                     max_detections=100):
     """Get the detections from the model using the generator.
@@ -669,73 +670,142 @@ def _get_detections(generator,
     all_masks = [[None for i in range(generator.num_classes)]
                  for j in range(generator.y.shape[0])]
 
-    for i in range(generator.y.shape[0]):
-        # raw_image = generator.load_image(i)
-        # image = generator.preprocess_image(raw_image.copy())
-        # image, scale = generator.resize_image(image)
-        image = generator.x[i]
+    if len(generator.x.shape) == 4:
+        for i in range(generator.y.shape[0]):
+            # raw_image = generator.load_image(i)
+            # image = generator.preprocess_image(raw_image.copy())
+            # image, scale = generator.resize_image(image)
+            image = generator.x[i]
 
-        # run network
-        results = model.predict_on_batch(np.expand_dims(image, axis=0))
+            # run network
+            results = model.predict_on_batch(np.expand_dims(image, axis=0))
 
-        if generator.panoptic:
-            num_semantic_outputs = len(generator.y_semantic_list)
-            boxes = results[-num_semantic_outputs - 3]
-            scores = results[-num_semantic_outputs - 2]
-            labels = results[-num_semantic_outputs - 1]
-            semantic = results[-num_semantic_outputs:]
-            if generator.include_masks:
-                boxes = results[-num_semantic_outputs - 4]
-                scores = results[-num_semantic_outputs - 3]
-                labels = results[-num_semantic_outputs - 2]
-                masks = results[-num_semantic_outputs - 1]
-                semantic = results[-num_semantic_outputs]
-        elif generator.include_masks:
-            boxes = results[-4]
-            scores = results[-3]
-            labels = results[-2]
-            masks = results[-1]
-        else:
-            boxes, scores, labels = results[0:3]
+            if generator.panoptic:
+                num_semantic_outputs = len(generator.y_semantic_list)
+                boxes = results[-num_semantic_outputs - 3]
+                scores = results[-num_semantic_outputs - 2]
+                labels = results[-num_semantic_outputs - 1]
+                semantic = results[-num_semantic_outputs:]
+                if generator.include_masks:
+                    boxes = results[-num_semantic_outputs - 4]
+                    scores = results[-num_semantic_outputs - 3]
+                    labels = results[-num_semantic_outputs - 2]
+                    masks = results[-num_semantic_outputs - 1]
+                    semantic = results[-num_semantic_outputs]
+            elif generator.include_masks:
+                boxes = results[-4]
+                scores = results[-3]
+                labels = results[-2]
+                masks = results[-1]
+            else:
+                boxes = results[-3]
+                scores = results[-2]
+                labels = results[-1]
 
-        # correct boxes for image scale
-        # boxes = boxes / scale
+            # select indices which have a score above the threshold
+            indices = np.where(scores[0, :] > score_threshold)[0]
 
-        # select indices which have a score above the threshold
-        indices = np.where(scores[0, :] > score_threshold)[0]
+            # select those scores
+            scores = scores[0][indices]
 
-        # select those scores
-        scores = scores[0][indices]
+            # find the order with which to sort the scores
+            scores_sort = np.argsort(-scores)[:max_detections]
 
-        # find the order with which to sort the scores
-        scores_sort = np.argsort(-scores)[:max_detections]
+            # select detections
+            image_boxes = boxes[0, indices[scores_sort], :]
+            image_scores = scores[scores_sort]
+            image_labels = labels[0, indices[scores_sort]]
 
-        # select detections
-        image_boxes = boxes[0, indices[scores_sort], :]
-        image_scores = scores[scores_sort]
-        image_labels = labels[0, indices[scores_sort]]
+            image_detections = np.concatenate([
+                image_boxes,
+                np.expand_dims(image_scores, axis=1),
+                np.expand_dims(image_labels, axis=1)
+            ], axis=1)
 
-        image_detections = np.concatenate([
-            image_boxes,
-            np.expand_dims(image_scores, axis=1),
-            np.expand_dims(image_labels, axis=1)
-        ], axis=1)
-
-        # copy detections to all_detections
-        for label in range(generator.num_classes):
-            imd = image_detections[image_detections[:, -1] == label, :-1]
-            all_detections[i][label] = imd
-
-        if generator.include_masks:
-            image_masks = masks[0, indices[scores_sort], :, :, image_labels]
+            # copy detections to all_detections
             for label in range(generator.num_classes):
-                imm = image_masks[image_detections[:, -1] == label, ...]
-                all_masks[i][label] = imm
+                imd = image_detections[image_detections[:, -1] == label, :-1]
+                all_detections[i][label] = imd
+
+            if generator.include_masks:
+                image_masks = masks[0, indices[scores_sort], :, :, image_labels]
+                for label in range(generator.num_classes):
+                    imm = image_masks[image_detections[:, -1] == label, ...]
+                    all_masks[i][label] = imm
+
+    if len(generator.x.shape) == 5:
+        boxes_list = []
+        scores_list = []
+        labels_list = []
+
+        for i in range(generator.y.shape[0]):
+            for j in range(0, generator.y.shape[1], frames_per_batch):
+                movie = generator.x[[i], j:j+frames_per_batch, ...]
+                results = model.predict_on_batch(movie)
+
+                if generator.panoptic:
+                    # Add logic for networks that have semantic heads
+                    pass
+                else:
+                    if generator.include_masks:
+                        boxes = results[-4]
+                        scores = results[-3]
+                        labels = results[-2]
+                        masks = results[-1]
+                    else:
+                        boxes, scores, labels = results[0:3]
+                        
+                    for k in range(frames_per_batch):
+                        boxes_list.append(boxes[0, k, ...])
+                        scores_list.append(scores[0, k, :])
+                        labels_list.append(labels[0, k, :])
+
+        batch_boxes = np.stack(boxes_list, axis=0)
+        batch_scores = np.stack(scores_list, axis=0)
+        batch_labels = np.stack(labels_list, axis=0)
+        
+        print(batch_boxes.shape, batch_scores.shape, batch_labels.shape)
+
+        all_detections = [[None for i in range(generator.num_classes)]
+                      for j in range(batch_boxes.shape[0])]
+
+        all_masks = None
+
+        for i in range(batch_boxes.shape[0]):
+            boxes = batch_boxes[[i]]
+            scores = batch_scores[[i]]
+            labels = batch_labels[[i]]
+
+             # select indices which have a score above the threshold
+            indices = np.where(scores[0, :] > score_threshold)[0]
+
+            # select those scores
+            scores = scores[0][indices]
+
+            # find the order with which to sort the scores
+            scores_sort = np.argsort(-scores)[:max_detections]
+
+            # select detections
+            image_boxes = boxes[0, indices[scores_sort], :]
+            image_scores = scores[scores_sort]
+            image_labels = labels[0, indices[scores_sort]]
+
+            image_detections = np.concatenate([
+                image_boxes,
+                np.expand_dims(image_scores, axis=1),
+                np.expand_dims(image_labels, axis=1)
+            ], axis=1)
+
+            # copy detections to all_detections
+            for label in range(generator.num_classes):
+                imd = image_detections[image_detections[:, -1] == label, :-1]
+                all_detections[i][label] = imd
 
     return all_detections, all_masks
 
 
-def _get_annotations(generator):
+def _get_annotations(generator,
+                    frames_per_batch=5):
     """Get the ground truth annotations from the generator.
 
     The result is a list of lists such that the size is:
@@ -746,26 +816,42 @@ def _get_annotations(generator):
     Returns:
         list: The annotations for each image in the generator.
     """
-    all_annotations = [[None for i in range(generator.num_classes)]
-                       for j in range(generator.y.shape[0])]
 
-    all_masks = [[None for i in range(generator.num_classes)]
-                 for j in range(generator.y.shape[0])]
+    if len(generator.x.shape) == 4:
+        all_annotations = [[None for i in range(generator.num_classes)]
+                           for j in range(generator.y.shape[0])]
 
-    for i in range(generator.y.shape[0]):
-        # load the annotations
-        annotations = generator.load_annotations(generator.y[i])
+        all_masks = [[None for i in range(generator.num_classes)]
+                     for j in range(generator.y.shape[0])]
 
-        if generator.include_masks:
-            annotations['masks'] = np.stack(annotations['masks'], axis=0)
+        for i in range(generator.y.shape[0]):
+            # load the annotations
+            annotations = generator.load_annotations(generator.y[i])
 
-        # copy detections to all_annotations
-        for label in range(generator.num_classes):
-            imb = annotations['bboxes'][annotations['labels'] == label, :].copy()
-            all_annotations[i][label] = imb
             if generator.include_masks:
-                imm = annotations['masks'][annotations['labels'] == label, ..., 0].copy()
-                all_masks[i][label] = imm
+                annotations['masks'] = np.stack(annotations['masks'], axis=0)
+
+            # copy detections to all_annotations
+            for label in range(generator.num_classes):
+                imb = annotations['bboxes'][annotations['labels'] == label, :].copy()
+                all_annotations[i][label] = imb
+                if generator.include_masks:
+                    imm = annotations['masks'][annotations['labels'] == label, ..., 0].copy()
+                    all_masks[i][label] = imm
+
+    if len(generator.x.shape) == 5:
+        all_annotations = []
+        all_masks = None
+        for i in range(generator.y.shape[0]):
+            for j in range(0, generator.y.shape[1], frames_per_batch):
+                label_movie = generator.y[i, j:j+frames_per_batch, ...]
+                for k in range(0, frames_per_batch):
+                    annotations = generator.load_annotations(label_movie[k])
+                    imb_list = [None for i in range(generator.num_classes)]
+                    for label in range(generator.num_classes):
+                        imb = annotations['bboxes'][annotations['labels'] == label, :].copy()
+                        imb_list[label] = imb
+                    all_annotations.append(imb_list.copy())
 
     return all_annotations, all_masks
 

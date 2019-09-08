@@ -191,11 +191,11 @@ class FilterDetections(Layer):
         other = inputs[2:]
 
         if K.ndim(boxes) == 4:
-            dynamic = True
+            time_distributed = True
         else:
-            dynamic = False
+            time_distributed = False
 
-        if dynamic:
+        if time_distributed:
             boxes_shape = tf.shape(boxes)
             classification_shape = tf.shape(classification) #classification.get_shape()
             other_shape = [tf.shape(o) for o in other]
@@ -233,7 +233,7 @@ class FilterDetections(Layer):
             parallel_iterations=self.parallel_iterations
         )
 
-        if dynamic:
+        if time_distributed:
             filtered_boxes = outputs[0]
             filtered_scores = outputs[1]
             filtered_labels = outputs[2]

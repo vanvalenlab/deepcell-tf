@@ -292,6 +292,26 @@ class RoiAlign(Layer):
         scores = K.stop_gradient(inputs[2])
         fpn = [K.stop_gradient(i) for i in inputs[3:]]
 
+        if K.dim(boxes) == 4:
+            time_distributed = True
+        else:
+            time_distributed = False
+
+        if time_distributed:
+            image_shape = image_shape[1:]
+
+            boxes_shape = tf.shape(boxes)
+            scores_shape = tf.shape(scores)
+            fpn_shape = [tf.shape(f) for f in fpn]
+
+            new_boxes_shape =  [-1] + [boxes_shape[i] for i in range(2, K.ndim(boxes))]
+            new_scores_shape = [-1] + [scores_shape[i] for i in range(2, K.ndim(scores))]
+            new_fpn_shape = [[-1] + [f_s[i] for i in range(2, K.ndim(f))] for f, f_s in zip(fpn, fpn_shape)]
+
+            boxes = tf.reshape(boxes, new_boxes_shape)
+            scores = tf.reshape(scores, new_scores_shape)
+            fpn = [tf.reshape(f, f_s) for f, f_s in zip(fpn, new_fpn_shape)]
+
         def _roi_align(args):
             boxes = args[0]
             scores = args[1]
@@ -346,17 +366,34 @@ class RoiAlign(Layer):
             parallel_iterations=self.parallel_iterations
         )
 
+        if time_distributed:
+            roi_shape = tf.shape(roi_batch)
+            new_roi_shape = [boxes_shape[0], boxes_shape[1]] + [roi_shape[i] for i in range(1, K.ndim(roi_batch))]
+            roi_batch = tf.reshape(roi_batch, new_roi_shape)
+
         return roi_batch
 
     def compute_output_shape(self, input_shape):
-        output_shape = [
-            input_shape[1][0],
-            None,
-            self.crop_size[0],
-            self.crop_size[1],
-            input_shape[3][-1]
-        ]
-        return tensor_shape.TensorShape(output_shape)
+        if len(input_shape[3]) == 4:
+            output_shape = [
+                input_shape[1][0],
+                None,
+                self.crop_size[0],
+                self.crop_size[1],
+                input_shape[3][-1]
+            ]
+            return tensor_shape.TensorShape(output_shape)
+        elif len(input_shape[3]) == 5:
+            output_shape = [
+                input_shape[1][0],
+                input_shape[3][1]
+                None,
+                self.crop_size[0],
+                self.crop_size[1],
+                input_shape[3][-1]
+            ]
+            return tensor_shape.TensorShape(output_shape)
+
 
     def get_config(self):
         config = {'crop_size': self.crop_size}
