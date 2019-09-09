@@ -23,20 +23,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Deepcell Applications - Pre-trained models for specific functions"""
+"""Tests for PhaseSegmentationModel"""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.applications.cell_tracking import CellTrackingModel
-from deepcell.applications.nuclear_segmentation import NuclearSegmentationModel
-from deepcell.applications.label_detection import LabelDetectionModel
-from deepcell.applications.scale_detection import ScaleDetectionModel
-from deepcell.applications.phase_segmentation import PhaseSegmentationModel
-from deepcell.applications.fluorescent_cytoplasm_segmentation import \
-    FluorCytoplasmSegmentationModel
+import numpy as np
+import tensorflow as tf
 
-del absolute_import
-del division
-del print_function
+from tensorflow.python.platform import test
+
+from deepcell.applications import NuclearSegmentationModel
+
+
+class TestNuclearSegmentationModel(test.TestCase):
+
+    def test_nuclear_segmentation_model(self):
+
+        # TODO: resnet50 is trained but tests fail due to tf version
+        valid_backbones = ['featurenet']
+        input_shape = (256, 256, 1)  # channels will be set to 3
+
+        batch_shape = tuple([8] + list(input_shape))
+
+        X = np.random.random(batch_shape)
+
+        for backbone in valid_backbones:
+            if int(tf.VERSION.split('.')[1]) < 10:
+                # retinanet backbones do not work with versions < 1.10.0
+                continue
+
+            with self.test_session(use_gpu=True):
+                model = NuclearSegmentationModel(
+                    input_shape=input_shape,
+                    backbone=backbone,
+                    use_pretrained_weights=False
+                )
+
+                y = model.predict(X)
+
+                assert y[0].shape[0] == X.shape[0]
+                assert isinstance(y, list)
