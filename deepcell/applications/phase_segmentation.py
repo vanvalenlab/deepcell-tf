@@ -29,8 +29,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.python import keras
-
 try:
     from tensorflow.python.keras.utils.data_utils import get_file
 except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
