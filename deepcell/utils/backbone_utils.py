@@ -31,6 +31,7 @@ from __future__ import division
 
 import copy
 
+import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
@@ -104,9 +105,8 @@ def featurenet_3D_block(x, n_filters):
     return x
 
 
-def featurenet_backbone(input_tensor=None, input_shape=None, weights=None,
-                        include_top=False, pooling=None, n_filters=32,
-                        n_dense=128, n_classes=3):
+def featurenet_backbone(input_tensor=None, input_shape=None,
+                        n_filters=32, **kwargs):
     """Construct the deepcell backbone with five convolutional units
 
     Args:
@@ -146,9 +146,8 @@ def featurenet_backbone(input_tensor=None, input_shape=None, weights=None,
     return model, output_dict
 
 
-def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None,
-                           include_top=False, pooling=None, n_filters=32,
-                           n_dense=128, n_classes=3):
+def featurenet_3D_backbone(input_tensor=None, input_shape=None,
+                           n_filters=32, **kwargs):
     """Construct the deepcell backbone with five convolutional units
 
     Args:
@@ -210,6 +209,11 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         ValueError: featurenet backbone with pre-trained imagenet
     """
     _backbone = str(backbone).lower()
+
+    kwargs['backend'] = K
+    kwargs['layers'] = tf.keras.layers
+    kwargs['models'] = tf.keras.models
+    kwargs['utils'] = tf.keras.utils
 
     featurenet_backbones = ['featurenet', 'featurenet3d', 'featurenet_3d']
     vgg_backbones = ['vgg16', 'vgg19']
