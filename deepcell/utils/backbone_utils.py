@@ -31,13 +31,13 @@ from __future__ import division
 
 import copy
 
+import keras_applications as applications
+
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
-
-import keras_applications as applications
 
 try:
     from tensorflow.python.keras.backend import is_keras_tensor
