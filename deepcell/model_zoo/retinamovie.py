@@ -433,10 +433,8 @@ def retinamovie_bbox(model=None,
 
     # apply predicted regression to anchors
     boxes = RegressBoxes(name='boxes')([anchors, regression])
-    print(boxes)
     boxes = ClipBoxes(name='clipped_boxes')([model.inputs[0], boxes])
-    print(boxes)
-    print(classification)
+
     # filter detections (apply NMS / score threshold / select top-k)
     detections = FilterDetections(
         nms=nms,
