@@ -351,7 +351,7 @@ def train_model_conv(model,
         vertical_flip=0)
 
     if train_dict['X'].ndim == 5:
-        train_data = datagen_val.flow(
+        train_data = datagen.flow(
             train_dict,
             skip=skip,
             seed=seed,
