@@ -31,8 +31,8 @@ from __future__ import division
 
 from absl.testing import parameterized
 
-from tensorflow.keras.layers import Input
-from tensorflow.keras.models import Model
+from tensorflow.python.keras.layers import Input
+from tensorflow.python.keras.models import Model
 from tensorflow.python.platform import test
 
 from deepcell.utils import backbone_utils
