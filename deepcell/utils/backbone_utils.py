@@ -220,15 +220,16 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     class Utils(object):  # pylint: disable=useless-object-inheritance
         pass
 
-    Utils.get_file = get_file
-    Utils.get_source_inputs = get_source_inputs
+    utils = Utils()
+    utils.get_file = get_file
+    utils.get_source_inputs = get_source_inputs
 
     K.is_keras_tensor = is_keras_tensor
 
     kwargs['backend'] = K
     kwargs['layers'] = tf.keras.layers
     kwargs['models'] = tf.keras.models
-    kwargs['utils'] = Utils()
+    kwargs['utils'] = utils
 
     featurenet_backbones = ['featurenet', 'featurenet3d', 'featurenet_3d']
     vgg_backbones = ['vgg16', 'vgg19']
