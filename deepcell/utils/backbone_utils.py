@@ -228,7 +228,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     kwargs['backend'] = K
     kwargs['layers'] = tf.keras.layers
     kwargs['models'] = tf.keras.models
-    kwargs['utils'] = Utils
+    kwargs['utils'] = Utils()
 
     featurenet_backbones = ['featurenet', 'featurenet3d', 'featurenet_3d']
     vgg_backbones = ['vgg16', 'vgg19']
