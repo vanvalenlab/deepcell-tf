@@ -292,7 +292,7 @@ class RoiAlign(Layer):
         scores = K.stop_gradient(inputs[2])
         fpn = [K.stop_gradient(i) for i in inputs[3:]]
 
-        if K.dim(boxes) == 4:
+        if K.ndim(boxes) == 4:
             time_distributed = True
         else:
             time_distributed = False
@@ -386,7 +386,7 @@ class RoiAlign(Layer):
         elif len(input_shape[3]) == 5:
             output_shape = [
                 input_shape[1][0],
-                input_shape[3][1]
+                input_shape[3][1],
                 None,
                 self.crop_size[0],
                 self.crop_size[1],

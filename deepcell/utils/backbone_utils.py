@@ -239,7 +239,7 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         else:
             img_input = Input(shape=(None, None, 3))
     else:
-        if input_tensor:
+        if input_tensor is not None:
             img_input = input_tensor
         else:
             if input_shape:
