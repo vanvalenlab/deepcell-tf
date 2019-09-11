@@ -341,13 +341,13 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             model.load_weights('model_weights.h5', by_name=True)
 
         if _backbone == 'resnet50v2':
-            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+            layer_names = ['post_relu', 'conv2_block3_out', 'conv3_block4_out',
                            'conv4_block6_out', 'conv5_block3_out']
         elif _backbone == 'resnet101v2':
-            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+            layer_names = ['post_relu', 'conv2_block3_out', 'conv3_block4_out',
                            'conv4_block23_out', 'conv5_block3_out']
         elif _backbone == 'resnet152v2':
-            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block8_out',
+            layer_names = ['post_relu', 'conv2_block3_out', 'conv3_block8_out',
                            'conv4_block36_out', 'conv5_block3_out']
 
         layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
