@@ -33,6 +33,7 @@ install:
   - pip install opencv-python
   - pip install pathlib
   - pip install keras_preprocessing>=1.0.6
+  - pip install keras_applications>=1.0.8
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
   # install testing requirements
