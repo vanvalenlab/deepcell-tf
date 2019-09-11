@@ -37,11 +37,12 @@ import tensorflow as tf
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
+from tensorflow.python.keras import backend as K
 
 try:
-    from tensorflow.python.keras import backend as K
+    from tensorflow.python.keras.backend import is_keras_tensor
 except ImportError:
-    from tensorflow.python.keras._impl.keras import backend as K
+    from tensorflow.python.keras._impl.keras.backend import is_keras_tensor
 
 try:
     from tensorflow.python.keras.utils.data_utils import get_file
@@ -221,6 +222,8 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
     Utils.get_file = get_file
     Utils.get_source_inputs = get_source_inputs
+
+    K.is_keras_tensor = is_keras_tensor
 
     kwargs['backend'] = K
     kwargs['layers'] = tf.keras.layers
