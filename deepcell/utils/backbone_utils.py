@@ -230,6 +230,8 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     if use_imagenet:
         kwargs_with_weights = copy.copy(kwargs)
         kwargs_with_weights['weights'] = 'imagenet'
+    else:
+        kwargs['weights'] = None
 
     if _backbone in featurenet_backbones:
         if use_imagenet:

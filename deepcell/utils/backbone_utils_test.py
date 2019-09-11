@@ -92,12 +92,12 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
     def test_get_backbone(self, backbone):
         inputs = Input(shape=(256, 256, 3))
         out = backbone_utils.get_backbone(
-            backbone, inputs, return_dict=True, weights=None)
+            backbone, inputs, return_dict=True)
         assert isinstance(out, dict)
         assert all(k.startswith('C') for k in out)
 
         out = backbone_utils.get_backbone(
-            backbone, inputs, return_dict=False, weights=None)
+            backbone, inputs, return_dict=False)
         assert isinstance(out, Model)
 
     def test_invalid_backbone(self):
