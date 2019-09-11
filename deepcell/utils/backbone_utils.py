@@ -241,12 +241,10 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         else:
             model, output_dict = featurenet_backbone(input_tensor=input_tensor, **kwargs)
 
-        if return_dict:
-            return output_dict
-        else:
-            return model
+        layer_outputs = [output_dict['C1'], output_dict['C2'], output_dict['C3'],
+                         output_dict['C4'], output_dict['C5']]
 
-    if _backbone in vgg_backbones:
+    elif _backbone in vgg_backbones:
         if _backbone == 'vgg16':
             model = applications.vgg16.VGG16(input_tensor=input_tensor, **kwargs)
         else:
@@ -262,15 +260,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             model.load_weights('model_weights.h5', by_name=True)
 
         layer_names = ['block1_pool', 'block2_pool', 'block3_pool', 'block4_pool', 'block5_pool']
-        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
-
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
+        layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     elif _backbone in densenet_backbones:
         if _backbone == 'densenet121':
@@ -296,15 +286,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
 
         layer_names = ['conv1/relu'] + ['conv{}_block{}_concat'.format(idx + 2, block_num)
                                         for idx, block_num in enumerate(blocks)]
-        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
-
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
+        layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     elif _backbone in resnet_backbones:
         if _backbone == 'resnet50':
@@ -335,16 +317,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block8_out',
                            'conv4_block36_out', 'conv5_block3_out']
 
-        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
-
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-
-        if return_dict:
-            return output_dict
-        else:
-            return model
+        layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     elif _backbone in resnet_v2_backbones:
         if _backbone == 'resnet50v2':
@@ -354,15 +327,31 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         elif _backbone == 'resnet152v2':
             model = applications.resnet_v2.ResNet152V2(input_tensor=input_tensor, **kwargs)
 
+        # Set the weights of the model if requested
+        if use_imagenet:
+            if _backbone == 'resnet50v2':
+                model_with_weights = applications.resnet_v2.ResNet50V2(**kwargs_with_weights)
+            elif _backbone == 'resnet101v2':
+                model_with_weights = applications.resnet_v2.ResNet101V2(**kwargs_with_weights)
+            elif _backbone == 'resnet152v2':
+                model_with_weights = applications.resnet_v2.ResNet152V2(**kwargs_with_weights)
+            model_with_weights.save_weights('model_weights.h5')
+            model.load_weights('model_weights.h5', by_name=True)
+
         if _backbone == 'resnet50v2':
-            model_with_weights = applications.resnet_v2.ResNet50V2(**kwargs_with_weights)
+            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+                           'conv4_block6_out', 'conv5_block3_out']
         elif _backbone == 'resnet101v2':
-            model_with_weights = applications.resnet_v2.ResNet101V2(**kwargs_with_weights)
-        elif _backbone == 'resnet152v2':
-            model_with_weights = applications.resnet_v2.ResNet152V2(**kwargs_with_weights)
+            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+                           'conv4_block23_out', 'conv5_block3_out']
+        elif _backbone == 'resnet151v2':
+            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block8_out',
+                           'conv4_block36_out', 'conv5_block3_out']
 
         model_with_weights.save_weights('model_weights.h5')
         model.load_weights('model_weights.h5', by_name=True)
+
+        layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     elif _backbone in resnext_backbones:
         if _backbone == 'resnext50':
@@ -387,15 +376,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
                            'conv4_block23_out', 'conv5_block3_out']
 
-        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
-
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
+        layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     elif _backbone in mobilenet_backbones:
         alpha = kwargs.get('alpha', 1.0)
@@ -424,15 +405,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
 
-        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
-
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
+        layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     elif _backbone in nasnet_backbones:
         if _backbone.endswith('large'):
@@ -452,16 +425,8 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             model.load_weights('model_weights.h5', by_name=True)
 
         layer_names = ['stem_bn1', 'reduction_concat_stem_1']
-        layer_names += ['normal_concat_%s' % i for i in block_ids]
-        layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
-
-        output_dict = {}
-        for i, j in enumerate(layer_names):
-            output_dict['C' + str(i + 1)] = layer_outputs[i]
-        if return_dict:
-            return output_dict
-        else:
-            return model
+        layer_names.extend(['normal_concat_%s' % i for i in block_ids])
+        layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     else:
         backbones = list(featurenet_backbones + densenet_backbones +
@@ -470,3 +435,6 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
                          nasnet_backbones + mobilenet_backbones)
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
                          ', '.join(backbones))
+
+    output_dict = {'C{}'.format(i + 1): j for i, j in enumerate(layer_outputs)}
+    return output_dict if return_dict else model
