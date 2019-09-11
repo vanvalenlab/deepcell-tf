@@ -348,9 +348,6 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
             layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block8_out',
                            'conv4_block36_out', 'conv5_block3_out']
 
-        model_with_weights.save_weights('model_weights.h5')
-        model.load_weights('model_weights.h5', by_name=True)
-
         layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     elif _backbone in resnext_backbones:
