@@ -313,7 +313,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         elif _backbone == 'resnet101':
             layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
                            'conv4_block23_out', 'conv5_block3_out']
-        elif _backbone == 'resnet151':
+        elif _backbone == 'resnet152':
             layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block8_out',
                            'conv4_block36_out', 'conv5_block3_out']
 
@@ -344,7 +344,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         elif _backbone == 'resnet101v2':
             layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
                            'conv4_block23_out', 'conv5_block3_out']
-        elif _backbone == 'resnet151v2':
+        elif _backbone == 'resnet152v2':
             layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block8_out',
                            'conv4_block36_out', 'conv5_block3_out']
 
