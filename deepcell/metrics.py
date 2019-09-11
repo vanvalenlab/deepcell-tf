@@ -29,12 +29,12 @@ The schema for this analysis was adopted from the description of object-based
 statistics in Caicedo et al. (2018) Evaluation of Deep Learning Strategies for
 Nucleus Segmentation in Fluorescence Images. BioRxiv 335216.
 
-The SEG metric was adapted from Maška et al. (2014). A benchmark for comparison
-of cell tracking algorithms. Bioinformatics 30, 1609–1617.
+The SEG metric was adapted from Maska et al. (2014). A benchmark for comparison
+of cell tracking algorithms. Bioinformatics 30, 1609-1617.
 
 The linear classification schema used to match objects in truth and prediction
 frames was adapted from Jaqaman et al. (2008). Robust single-particle tracking
-in live-cell time-lapse sequences. Nature Methods 5, 695–702.
+in live-cell time-lapse sequences. Nature Methods 5, 695-702.
 """
 
 from __future__ import absolute_import
@@ -73,20 +73,20 @@ def stats_pixelbased(y_true, y_pred):
     BioRxiv 335216.
 
     Args:
-        y_true (3D np.array): Binary ground truth annotations for a single
+        y_true (numpy.array): Binary ground truth annotations for a single
             feature, (batch,x,y)
-        y_pred (3D np.array): Binary predictions for a single feature,
+        y_pred (numpy.array): Binary predictions for a single feature,
             (batch,x,y)
 
     Returns:
-        dictionary: Containing a set of calculated statistics
+        dict: Containing a set of calculated statistics
 
     Raises:
-        ValueError: Shapes of `y_true` and `y_pred` do not match.
+        ValueError: Shapes of y_true and y_pred do not match.
 
     Warning:
         Comparing labeled to unlabeled data will produce low accuracy scores.
-        Make sure to input the same type of data for `y_true` and `y_pred`
+        Make sure to input the same type of data for y_true and y_pred
     """
 
     if y_pred.shape != y_true.shape:
@@ -121,24 +121,24 @@ def stats_pixelbased(y_true, y_pred):
     }
 
 
-class ObjectAccuracy(object):
+class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
     """Classifies object prediction errors as TP, FP, FN, merge or split
 
     The schema for this analysis was adopted from the description of
     object-based statistics in Caicedo et al. (2018) Evaluation of Deep
     Learning Strategies for Nucleus Segmentation in Fluorescence Images.
     BioRxiv 335216.
-    The SEG metric was adapted from Maška et al. (2014). A benchmark for
+    The SEG metric was adapted from Maska et al. (2014). A benchmark for
     comparison of cell tracking algorithms.
-    Bioinformatics 30, 1609–1617.
+    Bioinformatics 30, 1609-1617.
     The linear classification schema used to match objects in truth and
     prediction frames was adapted from Jaqaman et al. (2008).
     Robust single-particle tracking in live-cell time-lapse sequences.
-    Nature Methods 5, 695–702.
+    Nature Methods 5, 695-702.
 
     Args:
-        y_true (2D np.array): Labeled ground truth annotation
-        y_pred (2D np.array): Labled object prediction, same size as y_true
+        y_true (numpy.array): Labeled ground truth annotation
+        y_pred (numpy.array): Labled object prediction, same size as y_true
         cutoff1 (:obj:`float`, optional): Threshold for overlap in cost matrix,
             smaller values are more conservative, default 0.4
         cutoff2 (:obj:`float`, optional): Threshold for overlap in unassigned
@@ -153,11 +153,8 @@ class ObjectAccuracy(object):
 
     Warning:
         Position indicies are not currently collected appropriately
-
-    Todo:
-        Implement recording of object indices for each error group
     """
-
+    # TODO: Implement recording of object indices for each error group
     def __init__(self,
                  y_true,
                  y_pred,
@@ -248,7 +245,7 @@ class ObjectAccuracy(object):
 
     def _calc_iou(self):
         """Calculates IoU matrix for each pairwise comparison between true and
-        predicted. Additionally, if `seg`==True, records a 1 for each pair of
+        predicted. Additionally, if seg is True, records a 1 for each pair of
         objects where $|T\bigcap P| > 0.5 * |T|$
         """
 
@@ -272,8 +269,8 @@ class ObjectAccuracy(object):
 
         The previously calculated iou matrix is cast into the top left and
         transposed for the bottom right corner. The diagonals of the two
-        remaining corners are populated according to `cutoff1`. The lower the
-        value of `cutoff1` the more likely it is for the linear sum assignment
+        remaining corners are populated according to cutoff1. The lower the
+        value of cutoff1 the more likely it is for the linear sum assignment
         to pick unmatched assignments for objects.
         """
 
@@ -489,7 +486,7 @@ class ObjectAccuracy(object):
         """Save error results to a pandas dataframe
 
         Returns:
-            pd.DataFrame: Single row dataframe with error types as columns
+            pandas.DataFrame: Single row dataframe with error types as columns
         """
         D = {
             'n_pred': self.n_pred,
@@ -602,11 +599,11 @@ class Metrics(object):
 
         y_true should have the appropriate transform applied to match y_pred.
         Each channel is converted to binary using the threshold
-        `pixel_threshold` prior to calculation of accuracy metrics.
+        'pixel_threshold' prior to calculation of accuracy metrics.
 
         Args:
-            y_true (4D np.array): Ground truth annotations after transform
-            y_pred (4D np.array): Model predictions without labeling
+            y_true (numpy.array): Ground truth annotations after transform
+            y_pred (numpy.array): Model predictions without labeling
 
         Raises:
             ValueError: If y_true and y_pred are not the same shape
@@ -651,7 +648,7 @@ class Metrics(object):
         """Output pandas df as a list of dictionary objects
 
         Args:
-            df (pd.DataFrame): Dataframe of statistics for each channel
+            df (pandas.DataFrame): Dataframe of statistics for each channel
 
         Returns:
             list: List of dictionaries
@@ -685,12 +682,12 @@ class Metrics(object):
         """Calculate confusion matrix for pixel classification data.
 
         Args:
-            y_true (4D np.array): Ground truth annotations after any
+            y_true (numpy.array): Ground truth annotations after any
                 necessary transformations
-            y_pred (4D np.array): Prediction array
+            y_pred (numpy.array): Prediction array
 
         Returns:
-            confusion_matrix: nxn array determined by number of features
+            numpy.array: nxn confusion matrix determined by number of features.
         """
 
         # Argmax collapses on feature dimension to assign class to each pixel
@@ -713,12 +710,12 @@ class Metrics(object):
         """Calculate object statistics and save to output
 
         Loops over each frame in the zeroth dimension, which should pass in
-        a series of 2D arrays for analysis. `metrics.split_stack` can be
+        a series of 2D arrays for analysis. 'metrics.split_stack' can be
         used to appropriately reshape the input array if necessary
 
         Args:
-            y_true (3D np.array): Labeled ground truth annotations
-            y_pred (3D np.array): Labeled prediction mask
+            y_true (numpy.array): Labeled ground truth annotations
+            y_pred (numpy.array): Labeled prediction mask
         """
         self.stats = pd.DataFrame()
 
@@ -775,29 +772,29 @@ class Metrics(object):
                      + self.stats['catastrophe'].sum())
 
         print('\nGained detections: {}\tPerc Error: {}%'.format(
-              int(self.stats['gained_detections'].sum()),
-              to_precision(100 * self.stats['gained_detections'].sum() / total_err, self.ndigits)))
+            int(self.stats['gained_detections'].sum()),
+            to_precision(100 * self.stats['gained_detections'].sum() / total_err, self.ndigits)))
         print('Missed detections: {}\tPerc Error: {}%'.format(
-              int(self.stats['missed_detections'].sum()),
-              to_precision(100 * self.stats['missed_detections'].sum() / total_err, self.ndigits)))
+            int(self.stats['missed_detections'].sum()),
+            to_precision(100 * self.stats['missed_detections'].sum() / total_err, self.ndigits)))
         print('Merges: {}\t\tPerc Error: {}%'.format(
-              int(self.stats['merge'].sum()),
-              to_precision(100 * self.stats['merge'].sum() / total_err, self.ndigits)))
+            int(self.stats['merge'].sum()),
+            to_precision(100 * self.stats['merge'].sum() / total_err, self.ndigits)))
         print('Splits: {}\t\tPerc Error: {}%'.format(
-              int(self.stats['split'].sum()),
-              to_precision(100 * self.stats['split'].sum() / total_err, self.ndigits)))
+            int(self.stats['split'].sum()),
+            to_precision(100 * self.stats['split'].sum() / total_err, self.ndigits)))
         print('Catastrophes: {}\t\tPerc Error: {}%\n'.format(
-              int(self.stats['catastrophe'].sum()),
-              to_precision(100 * self.stats['catastrophe'].sum() / total_err, self.ndigits)))
+            int(self.stats['catastrophe'].sum()),
+            to_precision(100 * self.stats['catastrophe'].sum() / total_err, self.ndigits)))
 
         print('Gained detections from splits: {}'.format(
-              int(self.stats['gained_det_from_split'].sum())))
+            int(self.stats['gained_det_from_split'].sum())))
         print('Missed detections from merges: {}'.format(
-              int(self.stats['missed_det_from_merge'].sum())))
+            int(self.stats['missed_det_from_merge'].sum())))
         print('True detections involved in catastrophes: {}'.format(
-              int(self.stats['true_det_in_catastrophe'].sum())))
+            int(self.stats['true_det_in_catastrophe'].sum())))
         print('Predicted detections involved in catastrophes: {}'.format(
-              int(self.stats['pred_det_in_catastrophe'].sum())), '\n')
+            int(self.stats['pred_det_in_catastrophe'].sum())), '\n')
 
         if self.seg is True:
             print('SEG:', to_precision(self.stats['seg'].mean(), self.ndigits), '\n')
@@ -813,13 +810,13 @@ class Metrics(object):
         """Runs pixel and object base statistics and ouputs to file
 
         Args:
-            y_true_lbl (3D np.array): Labeled ground truth annotation,
+            y_true_lbl (numpy.array): Labeled ground truth annotation,
                 (sample, x, y)
-            y_pred_lbl (3D np.array): Labeled prediction mask,
+            y_pred_lbl (numpy.array): Labeled prediction mask,
                 (sample, x, y)
-            y_true_unlbl (4D np.array): Ground truth annotation after necessary
+            y_true_unlbl (numpy.array): Ground truth annotation after necessary
                 transforms, (sample, x, y, feature)
-            y_pred_unlbl (4D np.array): Predictions, (sample, x, y, feature)
+            y_pred_unlbl (numpy.array): Predictions, (sample, x, y, feature)
         """
 
         logging.info('Starting pixel based statistics')
@@ -865,7 +862,7 @@ def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
     a stack of smaller arrays
 
     Args:
-        arr (np.array): Array to be split with at least 2 dimensions
+        arr (numpy.array): Array to be split with at least 2 dimensions
         batch (bool): True if the zeroth dimension of arr is a batch or
             frame dimension
         n_split1 (int): Number of sections to produce from the first split axis
@@ -876,7 +873,7 @@ def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
         axis2 (int): Axis on which to perform first split
 
     Returns:
-        np.array: Array after dual splitting with frames in the zeroth dimension
+        numpy.array: Array after dual splitting with frames in the zeroth dimension
 
     Raises:
         ValueError: arr.shape[axis] must be evenly divisible by n_split

@@ -42,13 +42,18 @@ release = '2.0.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
     'm2r',
 ]
+
+napoleon_google_docstring = True
+
+default_role = 'py:obj'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -75,7 +80,7 @@ language = None
 exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = 'sphinx'
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -168,6 +173,9 @@ texinfo_documents = [
 
 # Bibliographic Dublin Core info.
 epub_title = project
+epub_author = author
+epub_publisher = author
+epub_copyright = copyright
 
 # The unique identifier of the text. This can be a ISBN number
 # or the project homepage.
@@ -184,19 +192,39 @@ epub_exclude_files = ['search.html']
 # -- Extension configuration -------------------------------------------------
 autodoc_mock_imports = [
     'tensorflow',
+    'scipy',
     'sklearn',
     'skimage',
+    'pandas',
+    'networkx',
     'nbformat',
     'cv2',
-    'keras_retinanet',
-    'keras_maskrcnn']
+    'cython',
+    'keras-preprocessing',
+]
 
 # -- Options for intersphinx extension ---------------------------------------
 
 intersphinx_mapping = {
     'kiosk': ('https://deepcell-kiosk.readthedocs.io/en/latest/', None),
+    'python': ('https://docs.python.org/3.7', None),
+    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
 }
 
 intersphinx_cache_limit = 0
 
 # -- Custom Additions --------------------------------------------------------
+nitpick_ignore = [
+    ('py:class', 'function'),  # TODO: set type for "function" properly
+    ('py:class', 'tensor'),  # TODO: set type for "tensor" properly
+    ('py:class', 'numpy.array'),
+    ('py:class', 'pandas.DataFrame'),
+    ('py:class', 'tensorflow.keras.Model'),
+    ('py:class', 'tensorflow.python.keras.Model'),
+    ('py:class', 'tensorflow.keras.layers.Layer'),
+    ('py:class', 'tensorflow.python.keras.layers.Layer'),
+    ('py:class', 'tensorflow.python.keras.layers.ZeroPadding2D'),
+    ('py:class', 'tensorflow.python.keras.layers.ZeroPadding3D'),
+    ('py:class', 'tensorflow.python.keras.preprocessing.image.Iterator'),
+    ('py:class', 'tensorflow.python.keras.preprocessing.image.ImageDataGenerator'),
+]

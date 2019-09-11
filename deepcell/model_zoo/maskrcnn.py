@@ -30,7 +30,7 @@ from __future__ import print_function
 from __future__ import division
 
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.layers import Input
+from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import TimeDistributed, Conv2D
 from tensorflow.python.keras.models import Model
 try:
@@ -41,7 +41,7 @@ except ImportError:  # tf 1.8.0 uses keras._impl directory
 from deepcell.layers import Cast, Shape
 from deepcell.layers import Upsample, RoiAlign, ConcatenateBoxes
 from deepcell.layers import ClipBoxes, RegressBoxes, FilterDetections
-from deepcell.layers import TensorProduct, ImageNormalization2D
+from deepcell.layers import TensorProduct, ImageNormalization2D, Location2D
 from deepcell.model_zoo.retinanet import retinanet, __build_anchors
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
 from deepcell.utils.backbone_utils import get_backbone
@@ -58,18 +58,20 @@ def default_mask_model(num_classes,
     """Creates the default mask submodel.
 
     Args:
-        num_classes: Number of classes to predict a score for at each feature level.
-        pyramid_feature_size: The number of filters to expect from the
+        num_classes (int): Number of classes to predict a score for at each
+            feature level.
+        pyramid_feature_size (int): The number of filters to expect from the
             feature pyramid levels.
-        mask_feature_size: The number of filters to expect from the masks.
-        roi_size: The number of filters to use in the Roi Layers.
-        mask_size: The size of the masks.
-        mask_dtype: Dtype to use for mask tensors.
-        retinanet_dtype: Dtype retinanet models expect.
-        name: The name of the submodel.
+        mask_feature_size (int): The number of filters to expect from the masks.
+        roi_size (tuple): The number of filters to use in the Roi Layers.
+        mask_size (tuple): The size of the masks.
+        mask_dtype (str): Dtype to use for mask tensors.
+        retinanet_dtype (str): Dtype retinanet models expect.
+        name (str): The name of the submodel.
 
     Returns:
-        A keras.models.Model that predicts classes for each anchor.
+        tensorflow.keras.Model: a Model that predicts classes for
+            each anchor.
     """
     options = {
         'kernel_size': 3,
@@ -131,13 +133,15 @@ def default_roi_submodels(num_classes,
     The default submodels contains a single mask model.
 
     Args:
-        num_classes: Number of classes to use.
-        mask_dtype: Dtype to use for mask tensors.
-        retinanet_dtype: Dtype retinanet models expect.
+        num_classes (int): Number of classes to use.
+        roi_size (tuple): The number of filters to use in the Roi Layers.
+        mask_size (tuple): The size of the masks.
+        mask_dtype (str): Dtype to use for mask tensors.
+        retinanet_dtype (str): Dtype retinanet models expect.
 
     Returns:
-        A list of tuple, where the first element is the name of the submodel
-        and the second element is the submodel itself.
+        list: A list of tuple, where the first element is the name of the
+            submodel and the second element is the submodel itself.
     """
     return [
         ('masks', default_mask_model(num_classes,
@@ -149,42 +153,51 @@ def default_roi_submodels(num_classes,
 
 
 def retinanet_mask(inputs,
+                   backbone_dict,
                    num_classes,
+                   backbone_levels=['C3', 'C4', 'C5'],
+                   pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
                    retinanet_model=None,
                    anchor_params=None,
                    nms=True,
+                   panoptic=False,
                    class_specific_filter=True,
                    crop_size=(14, 14),
                    mask_size=(28, 28),
                    name='retinanet-mask',
                    roi_submodels=None,
+                   max_detections=100,
                    mask_dtype=K.floatx(),
                    **kwargs):
     """Construct a RetinaNet mask model on top of a retinanet bbox model.
     Uses the retinanet bbox model and appends layers to compute masks.
+
     Args:
-        inputs: List of tensorflow.keras.layers.Input.
+        inputs (tensor): List of tensorflow.keras.layers.Input.
             The first input is the image, the second input the blob of masks.
-        num_classes: Integer, number of classes to classify.
-        retinanet_model: deepcell.model_zoo.retinanet.retinanet model,
-            returning regression and classification values.
-        anchor_params: Struct containing anchor parameters.
-        nms: Boolean, whether to use NMS.
-        class_specific_filter: Boolean, use class specific filtering.
-        roi_submodels: Submodels for processing ROIs.
-        mask_dtype: Data type of the masks, can be different from the main one.
-        name: Name of the model.
-        **kwargs: Additional kwargs to pass to the retinanet bbox model.
+        num_classes (int): Integer, number of classes to classify.
+        retinanet_model (tensorflow.keras.Model): RetinaNet model that predicts
+            regression and classification values.
+        anchor_params (AnchorParameters): Struct containing anchor parameters.
+        nms (bool): Whether to use NMS.
+        class_specific_filter (bool): Use class specific filtering.
+        roi_submodels (list): Submodels for processing ROIs.
+        name (str): Name of the model.
+        mask_dtype (str): Dtype to use for mask tensors.
+        kwargs (dict): Additional kwargs to pass to the retinanet bbox model.
+
     Returns:
-        Model with inputs as input and as output the output of each submodel
-        for each pyramid level and the detections. The order is as defined in
-        submodels.
-        ```
-        [
-            regression, classification, other[0], other[1], ...,
-            boxes_masks, boxes, scores, labels, masks, other[0], other[1], ...
-        ]
-        ```
+        tensorflow.keras.Model: Model with inputs as input and as output
+            the output of each submodel for each pyramid level and the
+            detections. The order is as defined in submodels.
+
+            ```
+            [
+                regression, classification, other[0], ...,
+                boxes_masks, boxes, scores, labels, masks, other[0], ...
+            ]
+            ```
+
     """
     if anchor_params is None:
         anchor_params = AnchorParameters.default
@@ -203,7 +216,11 @@ def retinanet_mask(inputs,
     if retinanet_model is None:
         retinanet_model = retinanet(
             inputs=image,
+            backbone_dict=backbone_dict,
             num_classes=num_classes,
+            backbone_levels=backbone_levels,
+            pyramid_levels=pyramid_levels,
+            panoptic=panoptic,
             num_anchors=anchor_params.num_anchors(),
             **kwargs
         )
@@ -211,9 +228,19 @@ def retinanet_mask(inputs,
     # parse outputs
     regression = retinanet_model.outputs[0]
     classification = retinanet_model.outputs[1]
-    other = retinanet_model.outputs[2:]
+
+    if panoptic:
+        # Determine the number of semantic heads
+        n_semantic_heads = len([1 for layer in retinanet_model.layers if 'semantic' in layer.name])
+
+        # The  panoptic output should not be sent to filter detections
+        other = retinanet_model.outputs[2:-n_semantic_heads]
+        semantic = retinanet_model.outputs[-n_semantic_heads:]
+    else:
+        other = retinanet_model.outputs[2:]
+
     features = [retinanet_model.get_layer(name).output
-                for name in ['P3', 'P4', 'P5', 'P6', 'P7']]
+                for name in pyramid_levels]
 
     # build boxes
     anchors = __build_anchors(anchor_params, features)
@@ -224,7 +251,7 @@ def retinanet_mask(inputs,
     detections = FilterDetections(
         nms=nms,
         class_specific_filter=class_specific_filter,
-        max_detections=100,
+        max_detections=max_detections,
         name='filtered_detections'
     )([boxes, classification] + other)
 
@@ -248,64 +275,91 @@ def retinanet_mask(inputs,
     outputs = [regression, classification] + other + trainable_outputs + \
         detections + maskrcnn_outputs
 
-    return Model(inputs=inputs, outputs=outputs, name=name)
+    if panoptic:
+        outputs += list(semantic)
+
+    model = Model(inputs=inputs, outputs=outputs, name=name)
+    model.backbone_levels = backbone_levels
+    model.pyramid_levels = pyramid_levels
+
+    return model
 
 
-def MaskRCNN(backbone,
-             num_classes,
-             input_shape,
-             norm_method='whole_image',
-             crop_size=(14, 14),
-             weights=None,
-             pooling=None,
-             mask_dtype=K.floatx(),
-             required_channels=3,
-             **kwargs):
+def RetinaMask(backbone,
+               num_classes,
+               input_shape,
+               backbone_levels=['C3', 'C4', 'C5'],
+               pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
+               norm_method='whole_image',
+               location=False,
+               use_imagenet=False,
+               crop_size=(14, 14),
+               pooling=None,
+               mask_dtype=K.floatx(),
+               required_channels=3,
+               **kwargs):
     """Constructs a mrcnn model using a backbone from keras-applications.
 
     Args:
-        backbone: string, name of backbone to use.
-        num_classes: Number of classes to classify.
-        input_shape: The shape of the input data.
-        weights: one of `None` (random initialization),
+        backbone (str): Name of backbone to use.
+        num_classes (int): Number of classes to classify.
+        input_shape (tuple): The shape of the input data.
+        weights (str): one of None (random initialization),
             'imagenet' (pre-training on ImageNet),
             or the path to the weights file to be loaded.
-        pooling: optional pooling mode for feature extraction
-            when `include_top` is `False`.
-            - `None` means that the output of the model will be
+        pooling (str): optional pooling mode for feature extraction
+            when include_top is False.
+            - None means that the output of the model will be
                 the 4D tensor output of the
                 last convolutional layer.
-            - `avg` means that global average pooling
+            - 'avg' means that global average pooling
                 will be applied to the output of the
                 last convolutional layer, and thus
                 the output of the model will be a 2D tensor.
-            - `max` means that global max pooling will
+            - 'max' means that global max pooling will
                 be applied.
-        required_channels: integer, the required number of channels of the
+        required_channels (int): The required number of channels of the
             backbone.  3 is the default for all current backbones.
 
     Returns:
-        RetinaNet model with a backbone.
+        tensorflow.keras.Model: RetinaNet model with a backbone.
     """
     inputs = Input(shape=input_shape)
+    channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+
+    if location:
+        location = Location2D(in_shape=input_shape)(inputs)
+        concat = Concatenate(axis=channel_axis)([inputs, location])
+    else:
+        concat = inputs
+
     # force the channel size for backbone input to be `required_channels`
-    norm = ImageNormalization2D(norm_method=norm_method)(inputs)
+    norm = ImageNormalization2D(norm_method=norm_method)(concat)
     fixed_inputs = TensorProduct(required_channels)(norm)
+
+    # force the input shape
+    axis = 0 if K.image_data_format() == 'channels_first' else -1
+    fixed_input_shape = list(input_shape)
+    fixed_input_shape[axis] = required_channels
+    fixed_input_shape = tuple(fixed_input_shape)
+
     model_kwargs = {
         'include_top': False,
-        'input_tensor': fixed_inputs,
-        'weights': weights,
+        'weights': None,
+        'input_shape': fixed_input_shape,
         'pooling': pooling
     }
-    layer_outputs = get_backbone(backbone, inputs, **model_kwargs)
 
-    kwargs['backbone_layers'] = layer_outputs
+    backbone_dict = get_backbone(backbone, fixed_inputs, use_imagenet=use_imagenet, **model_kwargs)
 
     # create the full model
     return retinanet_mask(
         inputs=inputs,
         num_classes=num_classes,
+        backbone_dict=backbone_dict,
         crop_size=crop_size,
+        backbone_levels=backbone_levels,
+        pyramid_levels=pyramid_levels,
         name='{}_retinanet_mask'.format(backbone),
         mask_dtype=mask_dtype,
         **kwargs)

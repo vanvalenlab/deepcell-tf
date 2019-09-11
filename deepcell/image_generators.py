@@ -67,8 +67,7 @@ if not hasattr(ImageDataGenerator, 'apply_transform'):
 
 from deepcell.utils.data_utils import sample_label_movie
 from deepcell.utils.data_utils import sample_label_matrix
-from deepcell.utils.transform_utils import deepcell_transform
-from deepcell.utils.transform_utils import deepcell_transform_old
+from deepcell.utils.transform_utils import pixelwise_transform
 from deepcell.utils.transform_utils import distance_transform_2d
 from deepcell.utils.transform_utils import distance_transform_3d
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
@@ -79,11 +78,11 @@ from deepcell.utils.retinanet_anchor_utils import guess_shapes
 def _transform_masks(y, transform, data_format=None, **kwargs):
     """Based on the transform key, apply a transform function to the masks.
 
-    More detailed description. Caution for unknown transorm keys.
+    More detailed description. Caution for unknown transform keys.
 
     Args:
-        y: `labels` of ndim 4 or 5
-        transform: one of {`deepcell`, `disc`, `watershed`, `centroid`, `None`}
+        y: labels of ndim 4 or 5
+        transform: one of {"deepcell", "disc", "watershed", "centroid", None}
 
     Returns:
         y_transform: the output of the given transform function on y
@@ -91,7 +90,17 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     Raises:
         IOError: An error occurred
     """
+<<<<<<< HEAD
     valid_transforms = {'deepcell', 'disc', 'watershed', 'centroid', 'fgbg', 'deepcell_old'}
+=======
+    valid_transforms = {
+        'pixelwise',
+        'disc',
+        'watershed',
+        'centroid',
+        'fgbg'
+    }
+>>>>>>> master
 
     if data_format is None:
         data_format = K.image_data_format()
@@ -107,21 +116,28 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
     if isinstance(transform, str):
         transform = transform.lower()
+        if transform == 'deepcell':
+            raise ValueError('`deepcell` transform has been replaced with the '
+                             '`pixelwise` transform.')
         if transform not in valid_transforms:
             raise ValueError('`{}` is not a valid transform'.format(transform))
 
+<<<<<<< HEAD
     if transform == 'deepcell': 
+=======
+    if transform == 'pixelwise':
+>>>>>>> master
         dilation_radius = kwargs.pop('dilation_radius', None)
         separate_edge_classes = kwargs.pop('separate_edge_classes', False)
-        y_transform = deepcell_transform(y, dilation_radius, data_format=data_format,
-                                         separate_edge_classes=separate_edge_classes)
+        y_transform = pixelwise_transform(y, dilation_radius, data_format=data_format,
+                                          separate_edge_classes=separate_edge_classes)
 
     elif transform == 'watershed':
         distance_bins = kwargs.pop('distance_bins', 4)
         erosion = kwargs.pop('erosion_width', 0)
 
         if data_format == 'channels_first':
-            y_transform = np.zeros((y.shape[0], *y.shape[2:]))
+            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
         else:
             y_transform = np.zeros(y.shape[0:-1])
 
@@ -172,11 +188,11 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
 class ImageSampleArrayIterator(Iterator):
     """Iterator yielding data from a sampled Numpy array.
-    Sampling will generate a `window_size` image classifying the center pixel,
+    Sampling will generate a window_size image classifying the center pixel,
 
     Args:
-        train_dict: dictionary consisting of numpy arrays for `X` and `y`.
-        image_data_generator: Instance of `ImageDataGenerator`
+        train_dict: dictionary consisting of numpy arrays for X and y.
+        image_data_generator: Instance of ImageDataGenerator
             to use for random transformations and normalization.
         batch_size: Integer, size of a batch.
         shuffle: Boolean, whether to shuffle the data between epochs.
@@ -184,15 +200,15 @@ class ImageSampleArrayIterator(Iterator):
         balance_classes: balance class representation when sampling
         max_class_samples: maximum number of samples per class.
         seed: Random seed for data shuffling.
-        data_format: String, one of `channels_first`, `channels_last`.
+        data_format: String, one of 'channels_first', 'channels_last'.
         save_to_dir: Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix: String prefix to use for saving sample
-            images (if `save_to_dir` is set).
+            images (if save_to_dir is set).
         save_format: Format to use for saving sample images
-            (if `save_to_dir` is set).
+            (if save_to_dir is set).
     """
 
     def __init__(self,
@@ -372,6 +388,7 @@ class ImageSampleArrayIterator(Iterator):
 
 class SampleDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
+
     The data will be looped over (in batches).
 
     Args:
@@ -385,28 +402,33 @@ class SampleDataGenerator(ImageDataGenerator):
         zca_whitening: boolean, apply ZCA whitening.
         rotation_range: int, degree range for random rotations.
         width_shift_range: float, 1-D array-like or int
-            float: fraction of total width, if < 1, or pixels if >= 1.
-            1-D array-like: random elements from the array.
-            int: integer number of pixels from interval
-                `(-width_shift_range, +width_shift_range)`
-            With `width_shift_range=2` possible values are ints [-1, 0, +1],
-            same as with `width_shift_range=[-1, 0, +1]`,
-            while with `width_shift_range=1.0` possible values are floats in
-            the interval [-1.0, +1.0).
+
+            - float: fraction of total width, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval
+              (-width_shift_range, +width_shift_range)
+            - With width_shift_range=2 possible values are ints [-1, 0, +1],
+              same as with width_shift_range=[-1, 0, +1],
+              while with width_shift_range=1.0 possible values are floats in
+              the interval [-1.0, +1.0).
+
         shear_range: float, shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range: float or [lower, upper], Range for random zoom.
-            If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
+            If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
         channel_shift_range: float, range for random channel shifts.
         fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+
             Default is 'nearest'. Points outside the boundaries of the input
             are filled according to the given mode:
-                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
-                'nearest':  aaaaaaaa|abcd|dddddddd
-                'reflect':  abcddcba|abcd|dcbaabcd
-                'wrap':  abcdabcd|abcd|abcdabcd
+
+                - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                - 'nearest':  aaaaaaaa|abcd|dddddddd
+                - 'reflect':  abcddcba|abcd|dcbaabcd
+                - 'wrap':  abcdabcd|abcd|abcdabcd
+
         cval: float or int, value used for points outside the boundaries
-            when `fill_mode = "constant"`.
+            when fill_mode = "constant".
         horizontal_flip: boolean, randomly flip inputs horizontally.
         vertical_flip: boolean, randomly flip inputs vertically.
         rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
@@ -417,14 +439,17 @@ class SampleDataGenerator(ImageDataGenerator):
             The function should take one argument:
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
+
         data_format: One of {"channels_first", "channels_last"}.
-            "channels_last" mode means that the images should have shape
-                `(samples, height, width, channels)`,
-            "channels_first" mode means that the images should have shape
-                `(samples, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-                Keras config file at `~/.keras/keras.json`.
-            If you never set it, then it will be "channels_last".
+
+            - "channels_last" mode means that the images should have shape
+              (samples, height, width, channels),
+            - "channels_first" mode means that the images should have shape
+              (samples, channels, height, width).
+            - It defaults to the image_data_format value found in your
+              Keras config file at "~/.keras/keras.json".
+            - If you never set it, then it will be "channels_last".
+
         validation_split: float, fraction of images reserved for validation
             (strictly between 0 and 1).
     """
@@ -445,8 +470,8 @@ class SampleDataGenerator(ImageDataGenerator):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
-            train_dict: dictionary consisting of numpy arrays for `X` and `y`.
-            image_data_generator: Instance of `ImageDataGenerator`
+            train_dict: dictionary consisting of numpy arrays for X and y.
+            image_data_generator: Instance of ImageDataGenerator
                 to use for random transformations and normalization.
             batch_size: Integer, size of a batch.
             shuffle: Boolean, whether to shuffle the data between epochs.
@@ -454,15 +479,15 @@ class SampleDataGenerator(ImageDataGenerator):
             balance_classes: balance class representation when sampling
             max_class_samples: maximum number of samples per class.
             seed: Random seed for data shuffling.
-            data_format: String, one of `channels_first`, `channels_last`.
+            data_format: String, one of 'channels_first', 'channels_last'.
             save_to_dir: Optional directory where to save the pictures
                 being yielded, in a viewable format. This is useful
                 for visualizing the random transformations being
                 applied, for debugging purposes.
             save_prefix: String prefix to use for saving sample
-                images (if `save_to_dir` is set).
+                images (if save_to_dir is set).
             save_format: Format to use for saving sample images
-                (if `save_to_dir` is set).
+                (if save_to_dir is set).
         """
         return ImageSampleArrayIterator(
             train_dict,
@@ -482,24 +507,24 @@ class SampleDataGenerator(ImageDataGenerator):
 
 
 class ImageFullyConvIterator(Iterator):
-    """Iterator yielding data from Numpy arrayss (`X and `y`).
+    """Iterator yielding data from Numpy arrayss (X and y).
 
     Args:
-        train_dict: dictionary consisting of numpy arrays for `X` and `y`.
-        image_data_generator: Instance of `ImageDataGenerator`
+        train_dict: dictionary consisting of numpy arrays for X and y.
+        image_data_generator: Instance of ImageDataGenerator
             to use for random transformations and normalization.
         batch_size: Integer, size of a batch.
         shuffle: Boolean, whether to shuffle the data between epochs.
         seed: Random seed for data shuffling.
-        data_format: String, one of `channels_first`, `channels_last`.
+        data_format: String, one of 'channels_first', 'channels_last'.
         save_to_dir: Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix: String prefix to use for saving sample
-            images (if `save_to_dir` is set).
+            images (if save_to_dir is set).
         save_format: Format to use for saving sample images
-            (if `save_to_dir` is set).
+            (if save_to_dir is set).
     """
 
     def __init__(self,
@@ -616,28 +641,32 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         zca_whitening: boolean, apply ZCA whitening.
         rotation_range: int, degree range for random rotations.
         width_shift_range: float, 1-D array-like or int
-            float: fraction of total width, if < 1, or pixels if >= 1.
-            1-D array-like: random elements from the array.
-            int: integer number of pixels from interval
-                `(-width_shift_range, +width_shift_range)`
-            With `width_shift_range=2` possible values are ints [-1, 0, +1],
-            same as with `width_shift_range=[-1, 0, +1]`,
-            while with `width_shift_range=1.0` possible values are floats in
-            the interval [-1.0, +1.0).
+
+            - float: fraction of total width, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval
+              (-width_shift_range, +width_shift_range)
+            - With width_shift_range=2 possible values are ints [-1, 0, +1],
+              same as with width_shift_range=[-1, 0, +1], while with
+              width_shift_range=1.0 possible values are floats in the interval
+              [-1.0, +1.0).
+
         shear_range: float, shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range: float or [lower, upper], Range for random zoom.
-            If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
+            If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
         channel_shift_range: float, range for random channel shifts.
         fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+
             Default is 'nearest'. Points outside the boundaries of the input
             are filled according to the given mode:
-                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
-                'nearest':  aaaaaaaa|abcd|dddddddd
-                'reflect':  abcddcba|abcd|dcbaabcd
-                'wrap':  abcdabcd|abcd|abcdabcd
+                - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                - 'nearest':  aaaaaaaa|abcd|dddddddd
+                - 'reflect':  abcddcba|abcd|dcbaabcd
+                - 'wrap':  abcdabcd|abcd|abcdabcd
+
         cval: float or int, value used for points outside the boundaries
-            when `fill_mode = "constant"`.
+            when fill_mode = "constant".
         horizontal_flip: boolean, randomly flip inputs horizontally.
         vertical_flip: boolean, randomly flip inputs vertically.
         rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
@@ -648,14 +677,17 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             The function should take one argument:
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
+
         data_format: One of {"channels_first", "channels_last"}.
-            "channels_last" mode means that the images should have shape
-                `(samples, height, width, channels)`,
-            "channels_first" mode means that the images should have shape
-                `(samples, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-                Keras config file at `~/.keras/keras.json`.
-            If you never set it, then it will be "channels_last".
+
+            - "channels_last" mode means that the images should have shape
+              (samples, height, width, channels),
+            - "channels_first" mode means that the images should have shape
+              (samples, channels, height, width).
+            - It defaults to the image_data_format value found in your
+              Keras config file at "~/.keras/keras.json".
+            - If you never set it, then it will be "channels_last".
+
         validation_split: float, fraction of images reserved for validation
             (strictly between 0 and 1).
     """
@@ -682,14 +714,14 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
                 This allows you to optionally specify a directory
                 to which to save the augmented pictures being generated
                 (useful for visualizing what you are doing).
-            save_prefix: str (default: `''`). Prefix to use for filenames of
-                saved pictures (only relevant if `save_to_dir` is set).
+            save_prefix: str (default: ''). Prefix to use for filenames of
+                saved pictures (only relevant if save_to_dir is set).
             save_format: one of "png", "jpeg". Default: "png".
-                (only relevant if `save_to_dir` is set)
+                (only relevant if save_to_dir is set)
 
         Returns:
-            An Iterator yielding tuples of `(x, y)` where `x` is a numpy array
-            of image data and `y` is a numpy array of labels of the same shape.
+            An Iterator yielding tuples of (x, y) where x is a numpy array
+            of image data and y is a numpy array of labels of the same shape.
         """
         return ImageFullyConvIterator(
             train_dict,
@@ -712,12 +744,12 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             x: 3D tensor or list of 3D tensors,
                 single image.
             y: 3D tensor or list of 3D tensors,
-                label mask(s) for `x`, optional.
+                label mask(s) for x, optional.
             seed: Random seed.
 
         Returns:
             A randomly transformed version of the input (same shape).
-            If `y` is passed, it is transformed if necessary and returned.
+            If y is passed, it is transformed if necessary and returned.
         """
         params = self.get_random_transform(x.shape, seed)
 
@@ -746,6 +778,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
 
 class MovieDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
+
     The data will be looped over (in batches).
 
     Args:
@@ -759,28 +792,32 @@ class MovieDataGenerator(ImageDataGenerator):
         zca_whitening: boolean, apply ZCA whitening.
         rotation_range: int, degree range for random rotations.
         width_shift_range: float, 1-D array-like or int
-            float: fraction of total width, if < 1, or pixels if >= 1.
-            1-D array-like: random elements from the array.
-            int: integer number of pixels from interval
-                `(-width_shift_range, +width_shift_range)`
-            With `width_shift_range=2` possible values are ints [-1, 0, +1],
-            same as with `width_shift_range=[-1, 0, +1]`,
-            while with `width_shift_range=1.0` possible values are floats in
-            the interval [-1.0, +1.0).
+
+            - float: fraction of total width, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval
+              (-width_shift_range, +width_shift_range)
+            - With width_shift_range=2 possible values are ints [-1, 0, +1],
+              same as with width_shift_range=[-1, 0, +1],
+              while with width_shift_range=1.0 possible values are floats in
+              the interval [-1.0, +1.0).
+
         shear_range: float, shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range: float or [lower, upper], Range for random zoom.
-            If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
+            If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
         channel_shift_range: float, range for random channel shifts.
         fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+
             Default is 'nearest'. Points outside the boundaries of the input
             are filled according to the given mode:
-                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
-                'nearest':  aaaaaaaa|abcd|dddddddd
-                'reflect':  abcddcba|abcd|dcbaabcd
-                'wrap':  abcdabcd|abcd|abcdabcd
+                - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                - 'nearest':  aaaaaaaa|abcd|dddddddd
+                - 'reflect':  abcddcba|abcd|dcbaabcd
+                - 'wrap':  abcdabcd|abcd|abcdabcd
+
         cval: float or int, value used for points outside the boundaries
-            when `fill_mode = "constant"`.
+            when fill_mode = "constant".
         horizontal_flip: boolean, randomly flip inputs horizontally.
         vertical_flip: boolean, randomly flip inputs vertically.
         rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
@@ -792,13 +829,15 @@ class MovieDataGenerator(ImageDataGenerator):
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
         data_format: One of {"channels_first", "channels_last"}.
-            "channels_last" mode means that the images should have shape
-                `(samples, height, width, channels)`,
-            "channels_first" mode means that the images should have shape
-                `(samples, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-                Keras config file at `~/.keras/keras.json`.
-            If you never set it, then it will be "channels_last".
+
+            - "channels_last" mode means that the images should have shape
+              (samples, height, width, channels),
+            - "channels_first" mode means that the images should have shape
+              (samples, channels, height, width).
+            - It defaults to the image_data_format value found in your
+              Keras config file at "~/.keras/keras.json".
+            - If you never set it, then it will be "channels_last".
+
         validation_split: float, fraction of images reserved for validation
             (strictly between 0 and 1).
     """
@@ -842,14 +881,14 @@ class MovieDataGenerator(ImageDataGenerator):
                 This allows you to optionally specify a directory
                 to which to save the augmented pictures being generated
                 (useful for visualizing what you are doing).
-            save_prefix: str (default: `''`). Prefix to use for filenames of
-                saved pictures (only relevant if `save_to_dir` is set).
+            save_prefix: str (default: ''). Prefix to use for filenames of
+                saved pictures (only relevant if save_to_dir is set).
             save_format: one of "png", "jpeg". Default: "png".
-                (only relevant if `save_to_dir` is set)
+                (only relevant if save_to_dir is set)
 
         Returns:
-            An Iterator yielding tuples of `(x, y)` where `x` is a numpy array
-            of image data and `y` is a numpy array of labels of the same shape.
+            An Iterator yielding tuples of (x, y) where x is a numpy array
+            of image data and y is a numpy array of labels of the same shape.
         """
         return MovieArrayIterator(
             train_dict,
@@ -920,12 +959,12 @@ class MovieDataGenerator(ImageDataGenerator):
 
         Args:
             x: 4D tensor, stack of images.
-            y: 4D tensor, label mask for `x`, optional.
+            y: 4D tensor, label mask for x, optional.
             seed: Random seed.
 
         Returns:
             A randomly transformed version of the input (same shape).
-            If `y` is passed, it is transformed if necessary and returned.
+            If y is passed, it is transformed if necessary and returned.
         """
         # Note: Workaround to use self.apply_transform on our 4D tensor
         self.row_axis -= 1
@@ -974,7 +1013,7 @@ class MovieDataGenerator(ImageDataGenerator):
         Args:
             x: Numpy array, the data to fit on. Should have rank 5.
             augment: Whether to fit on randomly augmented samples
-            rounds: If `augment`,
+            rounds: If augment,
                 how many augmentation passes to do over the data
             seed: random seed.
 
@@ -1039,25 +1078,25 @@ class MovieDataGenerator(ImageDataGenerator):
 
 
 class MovieArrayIterator(Iterator):
-    """Iterator yielding data from two 5D Numpy arrays (`X and `y`).
+    """Iterator yielding data from two 5D Numpy arrays (X and y).
 
     Args:
-        train_dict: dictionary consisting of numpy arrays for `X` and `y`.
-        movie_data_generator: Instance of `MovieDataGenerator`
+        train_dict: dictionary consisting of numpy arrays for X and y.
+        movie_data_generator: Instance of MovieDataGenerator
             to use for random transformations and normalization.
         batch_size: Integer, size of a batch.
         shuffle: Boolean, whether to shuffle the data between epochs.
         frames_per_batch: size of z axis in generated batches
         seed: Random seed for data shuffling.
-        data_format: String, one of `channels_first`, `channels_last`.
+        data_format: String, one of 'channels_first', 'channels_last'.
         save_to_dir: Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix: String prefix to use for saving sample
-            images (if `save_to_dir` is set).
+            images (if save_to_dir is set).
         save_format: Format to use for saving sample images
-            (if `save_to_dir` is set).
+            (if save_to_dir is set).
     """
 
     def __init__(self,
@@ -1209,12 +1248,13 @@ class MovieArrayIterator(Iterator):
 
 
 class SampleMovieArrayIterator(Iterator):
-    """Iterator yielding data from two 5D Numpy arrays (`X and `y`).
-    Sampling will generate a `window_size` voxel classifying the center pixel,
+    """Iterator yielding data from two 5D Numpy arrays (X and y).
+
+    Sampling will generate a window_size voxel classifying the center pixel,
 
     Args:
-        train_dict: dictionary consisting of numpy arrays for `X` and `y`.
-        movie_data_generator: Instance of `MovieDataGenerator`
+        train_dict: dictionary consisting of numpy arrays for X and y.
+        movie_data_generator: Instance of MovieDataGenerator
             to use for random transformations and normalization.
         batch_size: Integer, size of a batch.
         shuffle: Boolean, whether to shuffle the data between epochs.
@@ -1222,15 +1262,15 @@ class SampleMovieArrayIterator(Iterator):
         balance_classes: balance class representation when sampling
         max_class_samples: maximum number of samples per class.
         seed: Random seed for data shuffling.
-        data_format: String, one of `channels_first`, `channels_last`.
+        data_format: String, one of 'channels_first', 'channels_last'.
         save_to_dir: Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix: String prefix to use for saving sample
-            images (if `save_to_dir` is set).
+            images (if save_to_dir is set).
         save_format: Format to use for saving sample images
-            (if `save_to_dir` is set).
+            (if save_to_dir is set).
     """
 
     def __init__(self,
@@ -1411,6 +1451,7 @@ class SampleMovieArrayIterator(Iterator):
 
 class SampleMovieDataGenerator(MovieDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
+
     The data will be looped over (in batches).
 
     Args:
@@ -1424,28 +1465,32 @@ class SampleMovieDataGenerator(MovieDataGenerator):
         zca_whitening: boolean, apply ZCA whitening.
         rotation_range: int, degree range for random rotations.
         width_shift_range: float, 1-D array-like or int
-            float: fraction of total width, if < 1, or pixels if >= 1.
-            1-D array-like: random elements from the array.
-            int: integer number of pixels from interval
-                `(-width_shift_range, +width_shift_range)`
-            With `width_shift_range=2` possible values are ints [-1, 0, +1],
-            same as with `width_shift_range=[-1, 0, +1]`,
-            while with `width_shift_range=1.0` possible values are floats in
-            the interval [-1.0, +1.0).
+
+            - float: fraction of total width, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval
+              (-width_shift_range, +width_shift_range)
+            - With width_shift_range=2 possible values are ints [-1, 0, +1],
+              same as with width_shift_range=[-1, 0, +1],
+              while with width_shift_range=1.0 possible values are floats in
+              the interval [-1.0, +1.0).
+
         shear_range: float, shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range: float or [lower, upper], Range for random zoom.
-            If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
+            If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
         channel_shift_range: float, range for random channel shifts.
         fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+
             Default is 'nearest'. Points outside the boundaries of the input
             are filled according to the given mode:
-                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
-                'nearest':  aaaaaaaa|abcd|dddddddd
-                'reflect':  abcddcba|abcd|dcbaabcd
-                'wrap':  abcdabcd|abcd|abcdabcd
+                - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                - 'nearest':  aaaaaaaa|abcd|dddddddd
+                - 'reflect':  abcddcba|abcd|dcbaabcd
+                - 'wrap':  abcdabcd|abcd|abcdabcd
+
         cval: float or int, value used for points outside the boundaries
-            when `fill_mode = "constant"`.
+            when fill_mode = "constant".
         horizontal_flip: boolean, randomly flip inputs horizontally.
         vertical_flip: boolean, randomly flip inputs vertically.
         rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
@@ -1457,13 +1502,15 @@ class SampleMovieDataGenerator(MovieDataGenerator):
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
         data_format: One of {"channels_first", "channels_last"}.
-            "channels_last" mode means that the images should have shape
-                `(samples, height, width, channels)`,
-            "channels_first" mode means that the images should have shape
-                `(samples, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-                Keras config file at `~/.keras/keras.json`.
-            If you never set it, then it will be "channels_last".
+
+            - "channels_last" mode means that the images should have shape
+              (samples, height, width, channels),
+            - "channels_first" mode means that the images should have shape
+              (samples, channels, height, width).
+            - It defaults to the image_data_format value found in your
+              Keras config file at "~/.keras/keras.json".
+            - If you never set it, then it will be "channels_last".
+
         validation_split: float, fraction of images reserved for validation
             (strictly between 0 and 1).
     """
@@ -1494,14 +1541,14 @@ class SampleMovieDataGenerator(MovieDataGenerator):
                 This allows you to optionally specify a directory
                 to which to save the augmented pictures being generated
                 (useful for visualizing what you are doing).
-            save_prefix: str (default: `''`). Prefix to use for filenames of
-                saved pictures (only relevant if `save_to_dir` is set).
+            save_prefix: str (default: ''). Prefix to use for filenames of
+                saved pictures (only relevant if save_to_dir is set).
             save_format: one of "png", "jpeg". Default: "png".
-                (only relevant if `save_to_dir` is set)
+                (only relevant if save_to_dir is set)
 
         Returns:
-            An Iterator yielding tuples of `(x, y)` where `x` is a numpy array
-            of image data and `y` is a numpy array of labels of the same shape.
+            An Iterator yielding tuples of (x, y) where x is a numpy array
+            of image data and y is a numpy array of labels of the same shape.
         """
         return SampleMovieArrayIterator(
             train_dict,
@@ -1521,7 +1568,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
 
 
 """
-Custom siamese generators
+Custom tracking generators
 """
 
 
@@ -1543,15 +1590,15 @@ class SiameseDataGenerator(ImageDataGenerator):
             float: fraction of total width, if < 1, or pixels if >= 1.
             1-D array-like: random elements from the array.
             int: integer number of pixels from interval
-                `(-width_shift_range, +width_shift_range)`
-            With `width_shift_range=2` possible values are ints [-1, 0, +1],
-            same as with `width_shift_range=[-1, 0, +1]`,
-            while with `width_shift_range=1.0` possible values are floats in
+                (-width_shift_range, +width_shift_range)
+            With width_shift_range=2 possible values are ints [-1, 0, +1],
+            same as with width_shift_range=[-1, 0, +1],
+            while with width_shift_range=1.0 possible values are floats in
             the interval [-1.0, +1.0).
         shear_range: float, shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range: float or [lower, upper], Range for random zoom.
-            If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
+            If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
         channel_shift_range: float, range for random channel shifts.
         fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
             Default is 'nearest'. Points outside the boundaries of the input
@@ -1561,7 +1608,7 @@ class SiameseDataGenerator(ImageDataGenerator):
                 'reflect':  abcddcba|abcd|dcbaabcd
                 'wrap':  abcdabcd|abcd|abcdabcd
         cval: float or int, value used for points outside the boundaries
-            when `fill_mode = "constant"`.
+            when fill_mode = "constant".
         horizontal_flip: boolean, randomly flip inputs horizontally.
         vertical_flip: boolean, randomly flip inputs vertically.
         rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
@@ -1574,11 +1621,11 @@ class SiameseDataGenerator(ImageDataGenerator):
             and should output a Numpy tensor with the same shape.
         data_format: One of {"channels_first", "channels_last"}.
             "channels_last" mode means that the images should have shape
-                `(samples, height, width, channels)`,
+                (samples, height, width, channels),
             "channels_first" mode means that the images should have shape
-                `(samples, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-                Keras config file at `~/.keras/keras.json`.
+                (samples, channels, height, width).
+            It defaults to the image_data_format value found in your
+                Keras config file at "~/.keras/keras.json".
             If you never set it, then it will be "channels_last".
         validation_split: float, fraction of images reserved for validation
             (strictly between 0 and 1).
@@ -1617,32 +1664,32 @@ class SiameseDataGenerator(ImageDataGenerator):
 
 
 class SiameseIterator(Iterator):
-    """Iterator yielding two sets of features (`X`) and the relationship (`y`)
+    """Iterator yielding two sets of features (X) and the relationship (y)
     Features are passed in as a list of feature names, while the y is one of:
-        `same`, `different`, or `daughter`
+        "same", "different", or "daughter"
 
     Arguments:
-        train_dict: dictionary consisting of numpy arrays for `X` and `y`.
-        image_data_generator: Instance of `ImageDataGenerator`
+        train_dict: dictionary consisting of numpy arrays for X and y.
+        image_data_generator: Instance of ImageDataGenerator
             to use for random transformations and normalization.
         features: List of Strings, feature names to calculate and yield.
-        crop_dim: Integer, size of the resized `appearance` images
+        crop_dim: Integer, size of the resized appearance images
         min_track_length: Integer, minimum number of frames to track over.
-        neighborhood_scale_size: Integer, size of resized `neighborhood` images
-        neighborhood_true_size: Integer, size of cropped `neighborhood` images
+        neighborhood_scale_size: Integer, size of resized neighborhood images
+        neighborhood_true_size: Integer, size of cropped neighborhood images
         sync_transform: Boolean, whether to transform the features.
         batch_size: Integer, size of a batch.
         shuffle: Boolean, whether to shuffle the data between epochs.
         seed: Random seed for data shuffling.
-        data_format: String, one of `channels_first`, `channels_last`.
+        data_format: String, one of 'channels_first', 'channels_last'.
         save_to_dir: Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix: String prefix to use for saving sample
-            images (if `save_to_dir` is set).
+            images (if save_to_dir is set).
         save_format: Format to use for saving sample images
-            (if `save_to_dir` is set).
+            (if save_to_dir is set).
     """
     def __init__(self,
                  train_dict,
@@ -1742,8 +1789,13 @@ class SiameseIterator(Iterator):
             for cell in range(1, num_cells + 1):
                 # count number of pixels cell occupies in each frame
                 y_true = np.sum(y_batch == cell, axis=(self.row_axis - 1, self.col_axis - 1))
+
                 # get indices of frames where cell is present
-                y_index = np.where(y_true > 0)[0]
+                if self.channel_axis == 1:
+                    y_index = np.where(y_true > 0)[1]
+                else:
+                    y_index = np.where(y_true > 0)[0]
+
                 if y_index.size > 3:  # if cell is present at all
                     # Only include daughters if there are enough frames in their tracks
                     if self.daughters is not None:
@@ -1775,16 +1827,20 @@ class SiameseIterator(Iterator):
 
                 else:
                     y_batch[y_batch == cell] = 0
+
                     self.y[batch] = y_batch
 
-        # Add a field to the track_ids dict that locates all of the different cells
-        # in each frame
+        # Add a field to the track_ids dict that locates
+        # all of the different cells in each frame
         for track in track_ids:
             track_ids[track]['different'] = {}
             batch = track_ids[track]['batch']
             cell_label = track_ids[track]['label']
             for frame in track_ids[track]['frames']:
-                y_unique = np.unique(self.y[batch][frame])
+                if self.channel_axis == 1:
+                    y_unique = np.unique(self.y[batch, :, frame])
+                else:
+                    y_unique = np.unique(self.y[batch, frame])
                 y_unique = np.delete(y_unique, np.where(y_unique == 0))
                 y_unique = np.delete(y_unique, np.where(y_unique == cell_label))
                 track_ids[track]['different'][frame] = y_unique
@@ -1979,7 +2035,15 @@ class SiameseIterator(Iterator):
             appearance, centroid, neighborhood, regionprop, future_area = self._get_features(
                 X, y, frames, labels)
 
-            all_appearances[track] = appearance
+            if self.data_format == 'channels_first':
+                appearance = np.transpose(appearance, (1, 2, 3, 0))
+                all_appearances = np.transpose(all_appearances, (0, 2, 3, 4, 1))
+
+            all_appearances[track, np.array(frames), :, :, :] = appearance
+
+            if self.data_format == 'channels_first':
+                all_appearances = np.transpose(all_appearances, (0, 4, 1, 2, 3))
+
             all_centroids[track, np.array(frames), :] = centroid
             all_neighborhoods[track, np.array(frames), :, :] = neighborhood
 
@@ -2037,8 +2101,8 @@ class SiameseIterator(Iterator):
     def _fetch_frames(self, track, division=False):
         """Fetch a random interval of frames given a track:
 
-           If division, grab the last `min_track_length` frames.
-           Otherwise, grab any interval of frames of length `min_track_length`
+           If division, grab the last min_track_length frames.
+           Otherwise, grab any interval of frames of length min_track_length
            that does not include the last tracked frame.
 
            Args:
@@ -2046,7 +2110,7 @@ class SiameseIterator(Iterator):
                division: boolean, is the event being tracked a division
 
            Returns:
-               list of interval of frames of length `min_track_length`
+               list of interval of frames of length min_track_length
         """
         track_id = self.track_ids[track]
 
@@ -2055,11 +2119,10 @@ class SiameseIterator(Iterator):
 
         if division:
             # sanity check
-            if (self.x.shape[self.time_axis] - 1) in all_frames:
-                logging.warning('Track %s is annotated incorrectly. '
-                                'No parent cell should be in the last frame of'
-                                ' any movie.', track_id)
-                raise Exception('Parent cell should not be in last frame of movie')
+            if self.x.shape[self.time_axis] - 1 in all_frames:
+                raise ValueError('Track {} is annotated incorrectly. '
+                                 'No parent cell should be in the last frame '
+                                 'of any movie.'.format(track_id))
 
             candidate_interval = all_frames[-self.min_track_length:]
         else:
@@ -2391,15 +2454,15 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             float: fraction of total width, if < 1, or pixels if >= 1.
             1-D array-like: random elements from the array.
             int: integer number of pixels from interval
-                `(-width_shift_range, +width_shift_range)`
-            With `width_shift_range=2` possible values are ints [-1, 0, +1],
-            same as with `width_shift_range=[-1, 0, +1]`,
-            while with `width_shift_range=1.0` possible values are floats in
+                (-width_shift_range, +width_shift_range)
+            With width_shift_range=2 possible values are ints [-1, 0, +1],
+            same as with width_shift_range=[-1, 0, +1],
+            while with width_shift_range=1.0 possible values are floats in
             the interval [-1.0, +1.0).
         shear_range: float, shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range: float or [lower, upper], Range for random zoom.
-            If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
+            If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
         channel_shift_range: float, range for random channel shifts.
         fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
             Default is 'nearest'. Points outside the boundaries of the input
@@ -2409,7 +2472,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
                 'reflect':  abcddcba|abcd|dcbaabcd
                 'wrap':  abcdabcd|abcd|abcdabcd
         cval: float or int, value used for points outside the boundaries
-            when `fill_mode = "constant"`.
+            when fill_mode = "constant".
         horizontal_flip: boolean, randomly flip inputs horizontally.
         vertical_flip: boolean, randomly flip inputs vertically.
         rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
@@ -2422,11 +2485,11 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             and should output a Numpy tensor with the same shape.
         data_format: One of {"channels_first", "channels_last"}.
             "channels_last" mode means that the images should have shape
-                `(samples, height, width, channels)`,
+                (samples, height, width, channels),
             "channels_first" mode means that the images should have shape
-                `(samples, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-                Keras config file at `~/.keras/keras.json`.
+                (samples, channels, height, width).
+            It defaults to the image_data_format value found in your
+                Keras config file at "~/.keras/keras.json".
             If you never set it, then it will be "channels_last".
         validation_split: float, fraction of images reserved for validation
             (strictly between 0 and 1).
@@ -2435,10 +2498,14 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
     def flow(self,
              train_dict,
              compute_shapes=guess_shapes,
+             min_objects=3,
              num_classes=1,
              clear_borders=False,
              include_masks=False,
              panoptic=False,
+             include_mask_transforms=True,
+             transforms=['watershed'],
+             transforms_kwargs={},
              anchor_params=None,
              pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
              batch_size=32,
@@ -2452,8 +2519,9 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
         Args:
             train_dict: dictionary of X and y tensors. Both should be rank 4.
             compute_shapes: function to determine the shapes of the anchors
+            min_classes: images with fewer than 'min_objects' are ignored
             num_classes: number of classes to predict
-            clear_borders: boolean, whether to use `clear_border` on `y`.
+            clear_borders: boolean, whether to use clear_border on y.
             include_masks: boolean, train on mask data (MaskRCNN).
             batch_size: int (default: 1).
             shuffle: boolean (default: True).
@@ -2462,23 +2530,27 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
                 This allows you to optionally specify a directory
                 to which to save the augmented pictures being generated
                 (useful for visualizing what you are doing).
-            save_prefix: str (default: `''`). Prefix to use for filenames of
-                saved pictures (only relevant if `save_to_dir` is set).
+            save_prefix: str (default: ""). Prefix to use for filenames of
+                saved pictures (only relevant if save_to_dir is set).
             save_format: one of "png", "jpeg". Default: "png".
-                (only relevant if `save_to_dir` is set)
+                (only relevant if save_to_dir is set)
 
         Returns:
-            An Iterator yielding tuples of `(x, y)` where `x` is a numpy array
-            of image data and `y` is a numpy array of labels of the same shape.
+            An Iterator yielding tuples of (x, y) where x is a numpy array
+            of image data and y is a numpy array of labels of the same shape.
         """
         return RetinaNetIterator(
             train_dict,
             self,
             compute_shapes=compute_shapes,
+            min_objects=min_objects,
             num_classes=num_classes,
             clear_borders=clear_borders,
             include_masks=include_masks,
             panoptic=panoptic,
+            include_mask_transforms=include_mask_transforms,
+            transforms=transforms,
+            transforms_kwargs=transforms_kwargs,
             anchor_params=anchor_params,
             pyramid_levels=pyramid_levels,
             batch_size=batch_size,
@@ -2491,31 +2563,31 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
 
 
 class RetinaNetIterator(Iterator):
-    """Iterator yielding data from Numpy arrayss (`X and `y`).
+    """Iterator yielding data from Numpy arrayss (X and y).
 
     Adapted from https://github.com/fizyr/keras-retinanet.
 
     Args:
-        train_dict: dictionary consisting of numpy arrays for `X` and `y`.
-        image_data_generator: Instance of `ImageDataGenerator`
+        train_dict: dictionary consisting of numpy arrays for X and y.
+        image_data_generator: Instance of ImageDataGenerator
             to use for random transformations and normalization.
         compute_shapes: functor for generating shapes, based on the model.
-        min_objects: Integer, image with fewer than `min_objects` are ignored.
+        min_objects: Integer, image with fewer than min_objects are ignored.
         num_classes: Integer, number of classes for classification.
-        clear_borders: Boolean, whether to call `clear_border` on `y`.
+        clear_borders: Boolean, whether to call clear_border on y.
         include_masks: Boolean, whether to yield mask data.
         batch_size: Integer, size of a batch.
         shuffle: Boolean, whether to shuffle the data between epochs.
         seed: Random seed for data shuffling.
-        data_format: String, one of `channels_first`, `channels_last`.
+        data_format: String, one of 'channels_first', 'channels_last'.
         save_to_dir: Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix: String prefix to use for saving sample
-            images (if `save_to_dir` is set).
+            images (if save_to_dir is set).
         save_format: Format to use for saving sample images
-            (if `save_to_dir` is set).
+            (if save_to_dir is set).
     """
 
     def __init__(self,
@@ -2529,8 +2601,9 @@ class RetinaNetIterator(Iterator):
                  clear_borders=False,
                  include_masks=False,
                  panoptic=False,
-                 transform='watershed',
-                 transform_kwargs={},
+                 include_mask_transforms=True,
+                 transforms=['watershed'],
+                 transforms_kwargs={},
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -2561,6 +2634,9 @@ class RetinaNetIterator(Iterator):
         self.num_classes = num_classes
         self.include_masks = include_masks
         self.panoptic = panoptic
+        self.include_mask_transforms = include_mask_transforms
+        self.transforms = transforms
+        self.transforms_kwargs = transforms_kwargs
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
         self.data_format = data_format
@@ -2571,14 +2647,30 @@ class RetinaNetIterator(Iterator):
         # Add semantic segmentation targets if panoptic segmentation
         # flag is True
         if panoptic:
-            if 'y_semantic' in train_dict:
-                y_semantic = train_dict['y_semantic']
-            else:
-                y_semantic = _transform_masks(y, transform,
-                                              data_format=data_format,
-                                              **transform_kwargs)
+            # Create a list of all the semantic targets. We need to be able
+            # to have multiple semantic heads
+            y_semantic_list = []
+            # Add all the keys that contain y_semantic
+            for key in train_dict:
+                if 'y_semantic' in key:
+                    y_semantic_list.append(train_dict['y_semantic'])
 
-            self.y_semantic = np.asarray(y_semantic, dtype='int32')
+            if include_mask_transforms:
+                # Check whether transform_kwargs_dict has an entry
+                for transform in transforms:
+                    if transform not in transforms_kwargs:
+                        transforms_kwargs[transform] = {}
+
+                # Add transformed masks
+                for transform in transforms:
+                    transform_kwargs = transforms_kwargs[transform]
+                    y_transform = _transform_masks(y, transform,
+                                                   data_format=data_format,
+                                                   **transform_kwargs)
+                    y_semantic_list.append(y_transform)
+
+            self.y_semantic_list = [np.asarray(y_semantic, dtype='int32')
+                                    for y_semantic in y_semantic_list]
 
         invalid_batches = []
         # Remove images with small numbers of cells
@@ -2601,8 +2693,10 @@ class RetinaNetIterator(Iterator):
 
         self.y = np.delete(self.y, invalid_batches, axis=0)
         self.x = np.delete(self.x, invalid_batches, axis=0)
+
         if self.panoptic:
-            self.y_semantic = np.delete(self.y_semantic, invalid_batches, axis=0)
+            self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
+                                    for y in self.y_semantic_list]
 
         super(RetinaNetIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
@@ -2613,7 +2707,7 @@ class RetinaNetIterator(Iterator):
 
         Args:
             image: ndarray, the raw image data.
-            annotations: dict of annotations including `labels` and `bboxes`
+            annotations: dict of annotations including labels and bboxes
         """
         row_axis = 1 if self.data_format == 'channels_first' else 0
         invalid_indices = np.where(
@@ -2644,7 +2738,7 @@ class RetinaNetIterator(Iterator):
             y: tensor to annotate
 
         Returns:
-            annotations: dict of `bboxes` and `labels`
+            dict: annotations of bboxes and labels
         """
         labels, bboxes, masks = [], [], []
         for prop in regionprops(np.squeeze(y.astype('int'))):
@@ -2671,8 +2765,8 @@ class RetinaNetIterator(Iterator):
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
         if self.panoptic:
-            batch_y_semantic = np.zeros(tuple(
-                [len(index_array)] + list(self.y_semantic.shape[1:])))
+            batch_y_semantic_list = [np.zeros(tuple([len(index_array)] + list(ys.shape[1:])))
+                                     for ys in self.y_semantic_list]
 
         annotations_list = []
 
@@ -2683,13 +2777,13 @@ class RetinaNetIterator(Iterator):
             y = self.y[j]
 
             if self.panoptic:
-                y_semantic = self.y_semantic[j]
+                y_semantic_list = [y_semantic[j] for y_semantic in self.y_semantic_list]
 
             # Apply transformation
             if self.panoptic:
-                x, y_list = self.image_data_generator.random_transform(x, [y, y_semantic])
+                x, y_list = self.image_data_generator.random_transform(x, [y] + y_semantic_list)
                 y = y_list[0]
-                y_semantic = y_list[1]
+                y_semantic_list = y_list[1:]
             else:
                 x, y = self.image_data_generator.random_transform(x, y)
 
@@ -2710,7 +2804,8 @@ class RetinaNetIterator(Iterator):
             batch_x[i] = x
 
             if self.panoptic:
-                batch_y_semantic[i] = y_semantic
+                for k in range(len(y_semantic_list)):
+                    batch_y_semantic_list[k][i] = y_semantic_list[k]
 
         anchors = anchors_for_shape(
             batch_x.shape[1:],
@@ -2763,7 +2858,7 @@ class RetinaNetIterator(Iterator):
         if self.include_masks:
             batch_outputs.append(masks_batch)
         if self.panoptic:
-            batch_outputs.append(batch_y_semantic)
+            batch_outputs.extend(batch_y_semantic_list)
 
         return batch_x, batch_outputs
 
@@ -2777,3 +2872,226 @@ class RetinaNetIterator(Iterator):
         # The transformation of images is not under thread lock
         # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
+
+
+class ScaleIterator(Iterator):
+    """Iterator yielding data from Numpy arrayss (`X and `y`).
+
+    Args:
+        train_dict: dictionary consisting of numpy arrays for X and y.
+        image_data_generator: Instance of ImageDataGenerator
+            to use for random transformations and normalization.
+        batch_size: Integer, size of a batch.
+        shuffle: Boolean, whether to shuffle the data between epochs.
+        window_size: size of sampling window around each pixel
+        balance_classes: balance class representation when sampling
+        max_class_samples: maximum number of samples per class.
+        seed: Random seed for data shuffling.
+        data_format: String, one of 'channels_first', 'channels_last'.
+        save_to_dir: Optional directory where to save the pictures
+            being yielded, in a viewable format. This is useful
+            for visualizing the random transformations being
+            applied, for debugging purposes.
+        save_prefix: String prefix to use for saving sample
+            images (if save_to_dir is set).
+        save_format: Format to use for saving sample images
+            (if save_to_dir is set).
+    """
+
+    def __init__(self,
+                 train_dict,
+                 scale_generator,
+                 batch_size=1,
+                 shuffle=False,
+                 seed=None,
+                 data_format='channels_last',
+                 save_to_dir=None,
+                 save_prefix='',
+                 save_format='png'):
+        X, y = train_dict['X'], train_dict['y']
+        if X.shape[0] != y.shape[0]:
+            raise ValueError('Training batches and labels should have the same'
+                             'length. Found X.shape: {} y.shape: {}'.format(
+                                 X.shape, y.shape))
+        self.x = np.asarray(X, dtype=K.floatx())
+
+        if self.x.ndim != 4:
+            raise ValueError('Input data in `ImageFullyConvIterator` '
+                             'should have rank 4. You passed an array '
+                             'with shape', self.x.shape)
+
+        self.y = np.ones((self.x.shape[0], 1), dtype=K.floatx())
+        self.channel_axis = 3 if data_format == 'channels_last' else 1
+        self.scale_generator = scale_generator
+        self.data_format = data_format
+        self.save_to_dir = save_to_dir
+        self.save_prefix = save_prefix
+        self.save_format = save_format
+        super(ScaleIterator, self).__init__(
+            self.x.shape[0], batch_size, shuffle, seed)
+
+    def _get_batches_of_transformed_samples(self, index_array):
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
+        batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:]))
+
+        for i, j in enumerate(index_array):
+            x = self.x[j]
+            y = self.y[j]
+
+            x, y = self.scale_generator.random_transform(x.astype(K.floatx()), y)
+
+            x = self.scale_generator.standardize(x)
+
+            batch_x[i] = x
+            batch_y[i] = y
+
+        if self.save_to_dir:
+            for i, j in enumerate(index_array):
+                if self.data_format == 'channels_first':
+                    img_x = np.expand_dims(batch_x[i, 0, ...], 0)
+                else:
+                    img_x = np.expand_dims(batch_x[i, ..., 0], -1)
+                img = array_to_img(img_x, self.data_format, scale=True)
+                fname = '{prefix}_{index}_{hash}.{format}'.format(
+                    prefix=self.save_prefix,
+                    index=j,
+                    hash=np.random.randint(1e4),
+                    format=self.save_format)
+                img.save(os.path.join(self.save_to_dir, fname))
+
+        return batch_x, batch_y
+
+    def next(self):
+        """For python 2.x. Returns the next batch.
+        """
+        # Keeps under lock only the mechanism which advances
+        # the indexing of each batch.
+        with self.lock:
+            index_array = next(self.index_generator)
+        # The transformation of images is not under thread lock
+        # so it can be done in parallel
+        return self._get_batches_of_transformed_samples(index_array)
+
+
+class ScaleDataGenerator(ImageFullyConvDataGenerator):
+    """Generates batches of tensor image data with real-time data augmentation.
+    The data will be looped over (in batches).
+
+    Args:
+        featurewise_center: boolean, set input mean to 0 over the dataset,
+            feature-wise.
+        samplewise_center: boolean, set each sample mean to 0.
+        featurewise_std_normalization: boolean, divide inputs by std
+            of the dataset, feature-wise.
+        samplewise_std_normalization: boolean, divide each input by its std.
+        zca_epsilon: epsilon for ZCA whitening. Default is 1e-6.
+        zca_whitening: boolean, apply ZCA whitening.
+        rotation_range: int, degree range for random rotations.
+        width_shift_range: float, 1-D array-like or int
+            float: fraction of total width, if < 1, or pixels if >= 1.
+            1-D array-like: random elements from the array.
+            int: integer number of pixels from interval
+                `(-width_shift_range, +width_shift_range)`
+            With `width_shift_range=2` possible values are ints [-1, 0, +1],
+            same as with `width_shift_range=[-1, 0, +1]`,
+            while with `width_shift_range=1.0` possible values are floats in
+            the interval [-1.0, +1.0).
+        shear_range: float, shear Intensity
+            (Shear angle in counter-clockwise direction in degrees)
+        zoom_range: float or [lower, upper], Range for random zoom.
+            If a float, `[lower, upper] = [1-zoom_range, 1+zoom_range]`.
+        channel_shift_range: float, range for random channel shifts.
+        fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+            Default is 'nearest'. Points outside the boundaries of the input
+            are filled according to the given mode:
+                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                'nearest':  aaaaaaaa|abcd|dddddddd
+                'reflect':  abcddcba|abcd|dcbaabcd
+                'wrap':  abcdabcd|abcd|abcdabcd
+        cval: float or int, value used for points outside the boundaries
+            when `fill_mode = "constant"`.
+        horizontal_flip: boolean, randomly flip inputs horizontally.
+        vertical_flip: boolean, randomly flip inputs vertically.
+        rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
+            is applied, otherwise we multiply the data by the value provided
+            (before applying any other transformation).
+        preprocessing_function: function that will be implied on each input.
+            The function will run after the image is resized and augmented.
+            The function should take one argument:
+            one image (Numpy tensor with rank 3),
+            and should output a Numpy tensor with the same shape.
+        data_format: One of {"channels_first", "channels_last"}.
+            "channels_last" mode means that the images should have shape
+                `(samples, height, width, channels)`,
+            "channels_first" mode means that the images should have shape
+                `(samples, channels, height, width)`.
+            It defaults to the `image_data_format` value found in your
+                Keras config file at `~/.keras/keras.json`.
+            If you never set it, then it will be "channels_last".
+        validation_split: float, fraction of images reserved for validation
+            (strictly between 0 and 1).
+    """
+
+    def flow(self,
+             train_dict,
+             batch_size=1,
+             shuffle=True,
+             seed=None,
+             save_to_dir=None,
+             save_prefix='',
+             save_format='png'):
+        """Generates batches of augmented/normalized data with given arrays.
+
+        Args:
+            train_dict: dictionary of X and y tensors. Both should be rank 4.
+            batch_size: int (default: 1).
+            shuffle: boolean (default: True).
+            seed: int (default: None).
+            save_to_dir: None or str (default: None).
+                This allows you to optionally specify a directory
+                to which to save the augmented pictures being generated
+                (useful for visualizing what you are doing).
+            save_prefix: str (default: `''`). Prefix to use for filenames of
+                saved pictures (only relevant if `save_to_dir` is set).
+            save_format: one of "png", "jpeg". Default: "png".
+                (only relevant if `save_to_dir` is set)
+
+        Returns:
+            An Iterator yielding tuples of `(x, y)` where `x` is a numpy array
+            of image data and `y` is a numpy array of labels of the same shape.
+        """
+        return ScaleIterator(
+            train_dict,
+            self,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            seed=seed,
+            data_format=self.data_format,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
+
+    def random_transform(self, x, y=None, seed=None):
+        """Applies a random transformation to an image.
+
+        Args:
+            x: 3D tensor or list of 3D tensors,
+                single image.
+            y: 3D tensor or list of 3D tensors,
+                label mask(s) for `x`, optional.
+            seed: Random seed.
+
+        Returns:
+            A randomly transformed version of the input (same shape).
+        """
+        params = self.get_random_transform(x.shape, seed)
+        params['zy'] = params['zx']
+
+        if isinstance(x, list):
+            x = [self.apply_transform(x_i, params) for x_i in x]
+        else:
+            x = self.apply_transform(x, params)
+
+        if y is None:
+            return x
+        return x, np.array(params['zx'])

@@ -4,6 +4,14 @@ deepcell.layers package
 Submodules
 ----------
 
+deepcell.layers.filter_detections module
+----------------------------------------
+
+.. automodule:: deepcell.layers.filter_detections
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 deepcell.layers.location module
 -------------------------------
 
@@ -44,6 +52,14 @@ deepcell.layers.resize module
     :undoc-members:
     :show-inheritance:
 
+deepcell.layers.retinanet module
+--------------------------------
+
+.. automodule:: deepcell.layers.retinanet
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 deepcell.layers.tensor\_product module
 --------------------------------------
 
@@ -52,6 +68,13 @@ deepcell.layers.tensor\_product module
     :undoc-members:
     :show-inheritance:
 
+deepcell.layers.upsample module
+-------------------------------
+
+.. automodule:: deepcell.layers.upsample
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Module contents
 ---------------

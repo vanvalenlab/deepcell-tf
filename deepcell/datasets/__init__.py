@@ -29,11 +29,144 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+
+try:
+    from tensorflow.python.keras.utils.data_utils import get_file
+except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
+    from tensorflow.python.keras._impl.keras.utils.data_utils import get_file
+
+from deepcell.utils.data_utils import get_data
+
+
+class Dataset(object):  # pylint: disable=useless-object-inheritance
+
+    """General class for downloading datasets from S3.
+
+    Args:
+        path (str): path where to cache the dataset locally
+            (relative to ~/.keras/datasets).
+        url (str): URL of dataset in S3.
+        file_hash (str): md5hash for checking validity of cached file.
+        metadata (dict): miscellaneous other data for dataset
+    """
+
+    def __init__(self,
+                 path,
+                 url,
+                 file_hash,
+                 metadata):
+        self.path = path
+        self.url = url
+        self.file_hash = file_hash
+        self.metadata = metadata
+
+    def _load_data(self, path, mode, test_size=0.2, seed=0):
+        """Loads dataset.
+
+        Args:
+            test_size (float): fraction of data to reserve as test data
+            seed (int): the seed for randomly shuffling the dataset
+
+        Returns:
+            tuple: (x_train, y_train), (x_test, y_test).
+        """
+        basepath = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
+        prefix = path.split(os.path.sep)[:-1]
+        data_dir = os.path.join(basepath, *prefix) if prefix else basepath
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        elif not os.path.isdir(data_dir):
+            raise IOError('{} exists but is not a directory'.format(data_dir))
+
+        path = get_file(path,
+                        origin=self.url,
+                        file_hash=self.file_hash)
+
+        train_dict, test_dict = get_data(
+            path,
+            mode=mode,
+            test_size=test_size,
+            seed=seed)
+
+        x_train, y_train = train_dict['X'], train_dict['y']
+        x_test, y_test = test_dict['X'], test_dict['y']
+        return (x_train, y_train), (x_test, y_test)
+
+    def load_data(self, path=None, test_size=0.2, seed=0):
+        """Loads dataset.
+
+        Args:
+            path (str): filepath to save the data locally.
+            test_size (float): fraction of data to reserve as test data
+            seed (int): the seed for randomly shuffling the dataset
+
+        Returns:
+            tuple: (x_train, y_train), (x_test, y_test).
+        """
+        path = path if path else self.path
+        return self._load_data(path, 'sample', test_size=test_size, seed=seed)
+
+    def load_tracked_data(self, path=None, test_size=0.2, seed=0):
+        """Loads dataset using "siamese_daughters" mode.
+
+        Args:
+            path (str): filepath to save the data locally.
+            test_size (float): fraction of data to reserve as test data
+            seed (int): the seed for randomly shuffling the dataset
+
+        Returns:
+            tuple: (x_train, y_train), (x_test, y_test).
+        """
+        path = path if path else self.path
+        return self._load_data(path, 'siamese_daughters', test_size=test_size, seed=seed)
+
+# pylint: disable=line-too-long
+
+hek293 = Dataset(
+    path='HEK293.npz',
+    url='https://deepcell-data.s3.amazonaws.com/nuclei/3T3_NIH.npz',
+    file_hash='f6520df218847fa56be2de0d3552c8a2',
+    metadata={}
+)
+
+
+nih_3t3 = Dataset(
+    path='3T3_NIH.npz',
+    url='https://deepcell-data.s3.amazonaws.com/nuclei/3T3_NIH.npz',
+    file_hash='f6520df218847fa56be2de0d3552c8a2',
+    metadata={}
+)
+
+
+hela_s3 = Dataset(
+    path='HeLa_S3.npz',
+    url='https://deepcell-data.s3.amazonaws.com/nuclei/HeLa_S3.npz',
+    file_hash='759d28d87936fd59b250dea3b126b647',
+    metadata={}
+)
+
+
+mibi = Dataset(
+    path='mibi_original.npz',
+    url='https://deepcell-data.s3.amazonaws.com/mibi/mibi_original.npz',
+    file_hash='8b09a6bb143deb1912ada65742dfc847',
+    metadata={}
+)
+
+
+mousebrain = Dataset(
+    path='mousebrain.npz',
+    url='https://deepcell-data.s3.amazonaws.com/nuclei/mousebrain.npz',
+    file_hash='9c91304f7da7cc5559f46b2c5fc2eace',
+    metadata={}
+)
+
+# pylint: disable=wrong-import-position
+from deepcell.datasets import cytoplasm
+from deepcell.datasets import phase
 from deepcell.datasets import tracked
-from deepcell.datasets import hek293
-from deepcell.datasets import hela_s3
-from deepcell.datasets import mousebrain
-from deepcell.datasets import nih_3t3
+# pylint: enable=wrong-import-position
 
 del absolute_import
 del division

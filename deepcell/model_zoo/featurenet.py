@@ -33,8 +33,8 @@ import numpy as np
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Sequential, Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D, ConvLSTM2D, LSTM
-from tensorflow.python.keras.layers import Add, Input, Concatenate, Lambda, InputLayer
+from tensorflow.python.keras.layers import Conv2D, Conv3D, LSTM
+from tensorflow.python.keras.layers import Input, Concatenate, InputLayer
 from tensorflow.python.keras.layers import Flatten, Dense, Reshape
 from tensorflow.python.keras.layers import MaxPool2D, MaxPool3D
 from tensorflow.python.keras.layers import Cropping2D, Cropping3D
@@ -42,6 +42,7 @@ from tensorflow.python.keras.layers import Activation, Softmax
 from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.layers import ZeroPadding2D, ZeroPadding3D
 from tensorflow.python.keras.regularizers import l2
+from tensorflow.python.keras import utils as keras_utils
 
 from deepcell.layers import DilatedMaxPool2D, DilatedMaxPool3D
 from deepcell.layers import ImageNormalization2D, ImageNormalization3D
@@ -52,6 +53,7 @@ from deepcell.layers import TensorProduct
 
 def bn_feature_net_2D(receptive_field=61,
                       input_shape=(256, 256, 1),
+                      inputs=None,
                       n_features=3,
                       n_channels=1,
                       reg=1e-5,
@@ -66,6 +68,30 @@ def bn_feature_net_2D(receptive_field=61,
                       padding_mode='reflect',
                       multires=False,
                       include_top=True):
+    """Creates a 2D featurenet.
+
+    Args:
+        receptive_field (int): the receptive field of the neural network.
+        input_shape (tuple): If no input tensor, create one with this shape.
+        inputs (tensor): optional input tensor
+        n_features (int): Number of output features
+        n_channels (int): number of input channels
+        reg (int): regularization value
+        n_conv_filters (int): number of convolutional filters
+        n_dense_filters (int): number of dense filters
+        VGG_mode (bool): If multires, uses VGG_mode for multiresolution
+        init (str): Method for initalizing weights.
+        norm_method (str): ImageNormalization mode to use
+        location (bool): Whether to include location data
+        dilated (bool): Whether to use dilated pooling.
+        padding (bool): Whether to use padding.
+        padding_mode (str): Type of padding, one of 'reflect' or 'zero'
+        multires (bool): Enables multi-resolution mode
+        include_top (bool): Whether to include the final layer of the model
+
+    Returns:
+        tensorflow.keras.Model: 2D FeatureNet
+    """
     # Create layers list (x) to store all of the layers.
     # We need to use the functional API to enable the multiresolution mode
     x = []
@@ -90,8 +116,17 @@ def bn_feature_net_2D(receptive_field=61,
         if not dilated:
             input_shape = (receptive_field, receptive_field, n_channels)
 
-    x.append(Input(shape=input_shape))
-    x.append(ImageNormalization2D(norm_method=norm_method, filter_size=receptive_field)(x[-1]))
+    if inputs is not None:
+        if not K.is_keras_tensor(inputs):
+            img_input = Input(tensor=inputs, shape=input_shape)
+        else:
+            img_input = inputs
+        x.append(img_input)
+    else:
+        x.append(Input(shape=input_shape))
+
+    x.append(ImageNormalization2D(norm_method=norm_method,
+                                  filter_size=receptive_field)(x[-1]))
 
     if padding:
         if padding_mode == 'reflect':
@@ -103,8 +138,7 @@ def bn_feature_net_2D(receptive_field=61,
         x.append(Location2D(in_shape=tuple(x[-1].shape.as_list()[1:]))(x[-1]))
         x.append(Concatenate(axis=channel_axis)([x[-2], x[-1]]))
 
-    if multires:
-        layers_to_concat = []
+    layers_to_concat = []
 
     rf_counter = receptive_field
     block_counter = 0
@@ -112,7 +146,9 @@ def bn_feature_net_2D(receptive_field=61,
 
     while rf_counter > 4:
         filter_size = 3 if rf_counter % 2 == 0 else 4
-        x.append(Conv2D(n_conv_filters, (filter_size, filter_size), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+        x.append(Conv2D(n_conv_filters, filter_size, dilation_rate=d,
+                        kernel_initializer=init, padding='valid',
+                        kernel_regularizer=l2(reg))(x[-1]))
         x.append(BatchNormalization(axis=channel_axis)(x[-1]))
         x.append(Activation('relu')(x[-1]))
 
@@ -155,44 +191,72 @@ def bn_feature_net_2D(receptive_field=61,
             cropping = (row_crop, col_crop)
 
             c.append(Cropping2D(cropping=cropping)(x[l]))
-        x.append(Concatenate(axis=channel_axis)(c))
 
-    x.append(Conv2D(n_dense_filters, (rf_counter, rf_counter), dilation_rate=d, kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+        if multires:
+            x.append(Concatenate(axis=channel_axis)(c))
+
+    x.append(Conv2D(n_dense_filters, (rf_counter, rf_counter), dilation_rate=d,
+                    kernel_initializer=init, padding='valid',
+                    kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
-
-    x.append(TensorProduct(n_dense_filters, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
-    x.append(BatchNormalization(axis=channel_axis)(x[-1]))
-    x.append(Activation('relu')(x[-1]))
-
-    x.append(TensorProduct(n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
-
-    if not dilated:
-        x.append(Flatten()(x[-1]))
 
     if include_top:
+        x.append(TensorProduct(n_dense_filters, kernel_initializer=init,
+                               kernel_regularizer=l2(reg))(x[-1]))
+        x.append(BatchNormalization(axis=channel_axis)(x[-1]))
+        x.append(Activation('relu')(x[-1]))
+
+        x.append(TensorProduct(n_features, kernel_initializer=init,
+                               kernel_regularizer=l2(reg))(x[-1]))
+
+        if not dilated:
+            x.append(Flatten()(x[-1]))
+
         x.append(Softmax(axis=channel_axis)(x[-1]))
 
-    model = Model(inputs=x[0], outputs=x[-1])
+    if inputs is not None:
+        real_inputs = keras_utils.get_source_inputs(x[0])
+    else:
+        real_inputs = x[0]
+
+    model = Model(inputs=real_inputs, outputs=x[-1])
 
     return model
 
 
 def bn_feature_net_skip_2D(receptive_field=61,
                            input_shape=(256, 256, 1),
+                           inputs=None,
                            fgbg_model=None,
                            n_skips=2,
                            last_only=True,
                            norm_method='std',
                            padding_mode='reflect',
                            **kwargs):
-    if K.image_data_format() == 'channels_first':
-        channel_axis = 1
-    else:
-        channel_axis = -1
+    """Creates a 2D featurenet with skip-connections.
+
+    Args:
+        receptive_field (int): the receptive field of the neural network.
+        input_shape (tuple): If no input tensor, create one with this shape.
+        inputs (tensor): optional input tensor
+        fgbg_model (tensorflow.keras.Model): Concatenate output of this model
+            with the inputs as a skip-connection.
+        last_only (bool): Model will only output the final prediction,
+            and not return any of the underlying model predictions.
+        n_skips (int): The number of skip-connections
+        norm_method (str): The type of ImageNormalization to use
+        padding_mode (str): Type of padding, one of 'reflect' or 'zero'
+        kwargs (dict): Other model options defined in bn_feature_net_2D
+
+    Returns:
+        tensorflow.keras.Model: 2D FeatureNet with skip-connections
+    """
+    channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
 
     inputs = Input(shape=input_shape)
-    img = ImageNormalization2D(norm_method=norm_method, filter_size=receptive_field)(inputs)
+    img = ImageNormalization2D(norm_method=norm_method,
+                               filter_size=receptive_field)(inputs)
 
     models = []
     model_outputs = []
@@ -214,16 +278,21 @@ def bn_feature_net_skip_2D(receptive_field=61,
             model_input = img
 
         new_input_shape = model_input.get_shape().as_list()[1:]
-        models.append(bn_feature_net_2D(receptive_field=receptive_field, input_shape=new_input_shape, norm_method=None, dilated=True, padding=True, padding_mode=padding_mode, **kwargs))
+        models.append(bn_feature_net_2D(receptive_field=receptive_field,
+                                        input_shape=new_input_shape,
+                                        norm_method=None,
+                                        dilated=True,
+                                        padding=True,
+                                        padding_mode=padding_mode,
+                                        **kwargs))
         model_outputs.append(models[-1](model_input))
 
     if last_only:
         model = Model(inputs=inputs, outputs=model_outputs[-1])
+    elif fgbg_model is None:
+        model = Model(inputs=inputs, outputs=model_outputs)
     else:
-        if fgbg_model is None:
-            model = Model(inputs=inputs, outputs=model_outputs)
-        else:
-            model = Model(inputs=inputs, outputs=model_outputs[1:])
+        model = Model(inputs=inputs, outputs=model_outputs[1:])
 
     return model
 
@@ -245,6 +314,30 @@ def bn_feature_net_3D(receptive_field=61,
                       padding_mode='reflect',
                       multires=False,
                       include_top=True):
+    """Creates a 3D featurenet.
+
+    Args:
+        receptive_field (int): the receptive field of the neural network.
+        n_frames (int): Number of frames.
+        input_shape (tuple): If no input tensor, create one with this shape.
+        n_features (int): Number of output features
+        n_channels (int): number of input channels
+        reg (int): regularization value
+        n_conv_filters (int): number of convolutional filters
+        n_dense_filters (int): number of dense filters
+        VGG_mode (bool): If multires, uses VGG_mode for multiresolution
+        init (str): Method for initalizing weights.
+        norm_method (str): ImageNormalization mode to use
+        location (bool): Whether to include location data
+        dilated (bool): Whether to use dilated pooling.
+        padding (bool): Whether to use padding.
+        padding_mode (str): Type of padding, one of 'reflect' or 'zero'
+        multires (bool): Enables multi-resolution mode
+        include_top (bool): Whether to include the final layer of the model
+
+    Returns:
+        tensorflow.keras.Model: 3D FeatureNet
+    """
     # Create layers list (x) to store all of the layers.
     # We need to use the functional API to enable the multiresolution mode
     x = []
@@ -271,20 +364,20 @@ def bn_feature_net_3D(receptive_field=61,
             input_shape = (n_frames, receptive_field, receptive_field, n_channels)
 
     x.append(Input(shape=input_shape))
-    x.append(ImageNormalization3D(norm_method=norm_method, filter_size=receptive_field)(x[-1]))
+    x.append(ImageNormalization3D(norm_method=norm_method,
+                                  filter_size=receptive_field)(x[-1]))
 
     if padding:
         if padding_mode == 'reflect':
             x.append(ReflectionPadding3D(padding=(win_z, win, win))(x[-1]))
         elif padding_mode == 'zero':
-            x.append(ZeroPadding3D(padding=(win_z, win, win))([-1]))
+            x.append(ZeroPadding3D(padding=(win_z, win, win))(x[-1]))
 
     if location:
         x.append(Location3D(in_shape=tuple(x[-1].shape.as_list()[1:]))(x[-1]))
         x.append(Concatenate(axis=channel_axis)([x[-2], x[-1]]))
 
-    if multires:
-        layers_to_concat = []
+    layers_to_concat = []
 
     rf_counter = receptive_field
     block_counter = 0
@@ -292,7 +385,9 @@ def bn_feature_net_3D(receptive_field=61,
 
     while rf_counter > 4:
         filter_size = 3 if rf_counter % 2 == 0 else 4
-        x.append(Conv3D(n_conv_filters, (1, filter_size, filter_size), dilation_rate=(1, d, d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+        x.append(Conv3D(n_conv_filters, (1, filter_size, filter_size),
+                        dilation_rate=(1, d, d), kernel_initializer=init,
+                        padding='valid', kernel_regularizer=l2(reg))(x[-1]))
         x.append(BatchNormalization(axis=channel_axis)(x[-1]))
         x.append(Activation('relu')(x[-1]))
 
@@ -301,7 +396,8 @@ def bn_feature_net_3D(receptive_field=61,
 
         if block_counter % 2 == 0:
             if dilated:
-                x.append(DilatedMaxPool3D(dilation_rate=(1, d, d), pool_size=(1, 2, 2))(x[-1]))
+                x.append(DilatedMaxPool3D(dilation_rate=(1, d, d),
+                                          pool_size=(1, 2, 2))(x[-1]))
                 d *= 2
             else:
                 x.append(MaxPool3D(pool_size=(1, 2, 2))(x[-1]))
@@ -340,19 +436,25 @@ def bn_feature_net_3D(receptive_field=61,
             c.append(Cropping3D(cropping=cropping)(x[l]))
         x.append(Concatenate(axis=channel_axis)(c))
 
-    x.append(Conv3D(n_dense_filters, (1, rf_counter, rf_counter), dilation_rate=(1, d, d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+    x.append(Conv3D(n_dense_filters, (1, rf_counter, rf_counter),
+                    dilation_rate=(1, d, d), kernel_initializer=init,
+                    padding='valid', kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
-    x.append(Conv3D(n_dense_filters, (n_frames, 1, 1), dilation_rate=(1, d, d), kernel_initializer=init, padding='valid', kernel_regularizer=l2(reg))(x[-1]))
+    x.append(Conv3D(n_dense_filters, (n_frames, 1, 1), dilation_rate=(1, d, d),
+                    kernel_initializer=init, padding='valid',
+                    kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
-    x.append(TensorProduct(n_dense_filters, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
+    x.append(TensorProduct(n_dense_filters, kernel_initializer=init,
+                           kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     x.append(Activation('relu')(x[-1]))
 
-    x.append(TensorProduct(n_features, kernel_initializer=init, kernel_regularizer=l2(reg))(x[-1]))
+    x.append(TensorProduct(n_features, kernel_initializer=init,
+                           kernel_regularizer=l2(reg))(x[-1]))
 
     if not dilated:
         x.append(Flatten()(x[-1]))
@@ -373,13 +475,27 @@ def bn_feature_net_skip_3D(receptive_field=61,
                            norm_method='std',
                            padding_mode='reflect',
                            **kwargs):
-    if K.image_data_format() == 'channels_first':
-        channel_axis = 1
-    else:
-        channel_axis = -1
+    """Creates a 3D featurenet with skip-connections.
 
+    Args:
+        receptive_field (int): the receptive field of the neural network.
+        input_shape (tuple): Create input tensor with this shape.
+        fgbg_model (tensorflow.keras.Model): Concatenate output of this model
+            with the inputs as a skip-connection.
+        last_only (bool): Model will only output the final prediction,
+            and not return any of the underlying model predictions.
+        n_skips (int): The number of skip-connections
+        norm_method (str): The type of ImageNormalization to use
+        padding_mode (str): Type of padding, one of 'reflect' or 'zero'
+        kwargs (dict): Other model options defined in bn_feature_net_3D
+
+    Returns:
+        tensorflow.keras.Model: 3D FeatureNet with skip-connections
+    """
+    channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     inputs = Input(shape=input_shape)
-    img = ImageNormalization3D(norm_method=norm_method, filter_size=receptive_field)(inputs)
+    img = ImageNormalization3D(norm_method=norm_method,
+                               filter_size=receptive_field)(inputs)
 
     models = []
     model_outputs = []
@@ -398,17 +514,23 @@ def bn_feature_net_skip_3D(receptive_field=61,
             model_input = Concatenate(axis=channel_axis)([img, model_outputs[-1]])
         else:
             model_input = img
+
         new_input_shape = model_input.get_shape().as_list()[1:]
-        models.append(bn_feature_net_3D(receptive_field=receptive_field, input_shape=new_input_shape, norm_method=None, dilated=True, padding=True, padding_mode=padding_mode, **kwargs))
+        models.append(bn_feature_net_3D(receptive_field=receptive_field,
+                                        input_shape=new_input_shape,
+                                        norm_method=None,
+                                        dilated=True,
+                                        padding=True,
+                                        padding_mode=padding_mode,
+                                        **kwargs))
         model_outputs.append(models[-1](model_input))
 
     if last_only:
         model = Model(inputs=inputs, outputs=model_outputs[-1])
+    elif fgbg_model is None:
+        model = Model(inputs=inputs, outputs=model_outputs)
     else:
-        if fgbg_model is None:
-            model = Model(inputs=inputs, outputs=model_outputs)
-        else:
-            model = Model(inputs=inputs, outputs=model_outputs[1:])
+        model = Model(inputs=inputs, outputs=model_outputs[1:])
 
     return model
 
@@ -433,7 +555,8 @@ def siamese_model(input_shape=None,
         elif feature == 'distance':
             return (None, 2)
         elif feature == 'neighborhood':
-            return (None, 2 * neighborhood_scale_size + 1, 2 * neighborhood_scale_size + 1, 1)
+            return (None, 2 * neighborhood_scale_size + 1,
+                    2 * neighborhood_scale_size + 1, 1)
         elif feature == 'regionprop':
             return (None, 3)
         else:
@@ -460,7 +583,7 @@ def siamese_model(input_shape=None,
             N_layers = np.int(np.floor(np.log2(input_shape[1])))
             feature_extractor = Sequential()
             feature_extractor.add(InputLayer(input_shape=shape))
-            # feature_extractor.add(ImageNormalization2D(norm_method='std', filter_size=32))
+            # feature_extractor.add(ImageNormalization2D('std', filter_size=32))
             for layer in range(N_layers):
                 feature_extractor.add(Conv3D(64, (1, 3, 3),
                                              kernel_initializer=init,
@@ -507,10 +630,10 @@ def siamese_model(input_shape=None,
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
-        input_shape = (input_shape[0], None, *input_shape[1:])
+        input_shape = tuple([input_shape[0], None] + list(input_shape[1:]))
     else:
         channel_axis = -1
-        input_shape = (None, *input_shape)
+        input_shape = tuple([None] + list(input_shape))
 
     features = sorted(features)
 

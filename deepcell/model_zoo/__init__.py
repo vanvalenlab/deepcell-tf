@@ -34,11 +34,13 @@ from deepcell.model_zoo.featurenet import bn_feature_net_skip_2D
 from deepcell.model_zoo.featurenet import bn_feature_net_3D
 from deepcell.model_zoo.featurenet import bn_feature_net_skip_3D
 
+from deepcell.model_zoo.featurenet import siamese_model
+
 from deepcell.model_zoo.retinanet import RetinaNet
 from deepcell.model_zoo.retinanet import retinanet
 from deepcell.model_zoo.retinanet import retinanet_bbox
 
-from deepcell.model_zoo.maskrcnn import MaskRCNN
+from deepcell.model_zoo.maskrcnn import RetinaMask
 from deepcell.model_zoo.maskrcnn import retinanet_mask
 
 from deepcell.model_zoo.fpn import FPNet

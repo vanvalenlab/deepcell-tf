@@ -7,7 +7,9 @@ git:
 language: python
 
 python:
+  - 2.7
   - 3.5
+  - 3.6
 
 env:
   - TF_VERSION=1.8.0
@@ -29,17 +31,21 @@ install:
   - pip install scikit-learn
   - pip install scikit-image
   - pip install opencv-python
+  - pip install pathlib
   - pip install keras_preprocessing>=1.0.6
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
   # install testing requirements
   - pip install pytest pytest-cov==2.5.1 pytest-pep8 coveralls
+  # Install sphinx to check documentation build
+  - pip install sphinx m2r
   # install deepcell with setup.py
   # - python setup.py install
   - python setup.py build_ext --inplace
 
 script:
-  - python -m pytest --cov=deepcell --pep8 deepcell tests
+  - pytest --cov=deepcell --pep8
+  - sphinx-build -nT -b dummy ./docs/source build/html
 
 jobs:
   include:
