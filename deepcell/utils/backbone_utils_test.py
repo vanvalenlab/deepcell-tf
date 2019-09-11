@@ -70,35 +70,35 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
             out = backbone_utils.get_backbone(
                 backbone, inputs, use_imagenet=True)
 
-    # @parameterized.named_parameters([
-    #     ('resnet50',) * 2,
-    #     ('resnet101',) * 2,
-    #     ('resnet152',) * 2,
-    #     ('resnet50v2',) * 2,
-    #     ('resnet101v2',) * 2,
-    #     ('resnet152v2',) * 2,
-    #     ('resnext50',) * 2,
-    #     ('resnext101',) * 2,
-    #     ('vgg16',) * 2,
-    #     ('vgg19',) * 2,
-    #     ('densenet121',) * 2,
-    #     ('densenet169',) * 2,
-    #     ('densenet201',) * 2,
-    #     ('mobilenet',) * 2,
-    #     ('mobilenetv2',) * 2,
-    #     ('nasnet_large',) * 2,
-    #     ('nasnet_mobile',) * 2,
-    # ])
-    # def test_get_backbone(self, backbone):
-    #     inputs = Input(shape=(256, 256, 3))
-    #     out = backbone_utils.get_backbone(
-    #         backbone, inputs, return_dict=True)
-    #     assert isinstance(out, dict)
-    #     assert all(k.startswith('C') for k in out)
-    #
-    #     out = backbone_utils.get_backbone(
-    #         backbone, inputs, return_dict=False)
-    #     assert isinstance(out, Model)
+    @parameterized.named_parameters([
+        ('resnet50',) * 2,
+        ('resnet101',) * 2,
+        ('resnet152',) * 2,
+        ('resnet50v2',) * 2,
+        ('resnet101v2',) * 2,
+        ('resnet152v2',) * 2,
+        ('resnext50',) * 2,
+        ('resnext101',) * 2,
+        ('vgg16',) * 2,
+        ('vgg19',) * 2,
+        ('densenet121',) * 2,
+        ('densenet169',) * 2,
+        ('densenet201',) * 2,
+        ('mobilenet',) * 2,
+        ('mobilenetv2',) * 2,
+        ('nasnet_large',) * 2,
+        ('nasnet_mobile',) * 2,
+    ])
+    def test_get_backbone(self, backbone):
+        inputs = Input(shape=(256, 256, 3))
+        out = backbone_utils.get_backbone(
+            backbone, inputs, return_dict=True, weights=None)
+        assert isinstance(out, dict)
+        assert all(k.startswith('C') for k in out)
+
+        out = backbone_utils.get_backbone(
+            backbone, inputs, return_dict=False, weights=None)
+        assert isinstance(out, Model)
 
     def test_invalid_backbone(self):
         inputs = Input(shape=(4, 2, 3))
