@@ -445,7 +445,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     else:
         backbones = list(featurenet_backbones + densenet_backbones +
                          resnet_backbones + resnext_backbones +
-                         resnet_v2_backbones +  vgg_backbones +
+                         resnet_v2_backbones + vgg_backbones +
                          nasnet_backbones + mobilenet_backbones)
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
                          ', '.join(backbones))
