@@ -34,15 +34,20 @@ import copy
 import keras_applications as applications
 
 import tensorflow as tf
-from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
 
 try:
-    from tensorflow.python.keras.backend import is_keras_tensor
+    from tensorflow.python.keras import backend as K
 except ImportError:
-    from tensorflow.python.keras._impl.keras.backend import is_keras_tensor
+    from tensorflow.python.keras._impl.keras import backend as K
+
+try:
+    from tensorflow.python.keras.utils.data_utils import get_file
+except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
+    from tensorflow.python.keras._impl.keras.utils.data_utils import get_file
+
 
 try:
     from tensorflow.python.keras.utils.layer_utils import get_source_inputs
@@ -119,7 +124,7 @@ def featurenet_backbone(input_tensor=None, input_shape=None,
     """
     if input_tensor is None:
         img_input = Input(shape=input_shape)
-    elif not is_keras_tensor(input_tensor):
+    elif not K.is_keras_tensor(input_tensor):
         img_input = Input(tensor=input_tensor, shape=input_shape)
     else:
         img_input = input_tensor
@@ -159,7 +164,7 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None,
     """
     if input_tensor is None:
         img_input = Input(shape=input_shape)
-    elif not is_keras_tensor(input_tensor):
+    elif not K.is_keras_tensor(input_tensor):
         img_input = Input(tensor=input_tensor, shape=input_shape)
     else:
         img_input = input_tensor
@@ -210,10 +215,17 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     """
     _backbone = str(backbone).lower()
 
+    # set up general Utils class to deal with different tf versions
+    class Utils(object):  # pylint: disable=useless-object-inheritance
+        pass
+
+    Utils.get_file = get_file
+    Utils.get_source_inputs = get_source_inputs
+
     kwargs['backend'] = K
     kwargs['layers'] = tf.keras.layers
     kwargs['models'] = tf.keras.models
-    kwargs['utils'] = tf.keras.utils
+    kwargs['utils'] = Utils
 
     featurenet_backbones = ['featurenet', 'featurenet3d', 'featurenet_3d']
     vgg_backbones = ['vgg16', 'vgg19']
