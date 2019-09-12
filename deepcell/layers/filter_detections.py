@@ -89,6 +89,7 @@ def filter_detections(boxes,
                 filtered_boxes,
                 filtered_scores,
                 max_output_size=max_detections,
+                score_threshold=score_threshold,
                 iou_threshold=nms_threshold)
 
             # filter indices based on NMS
