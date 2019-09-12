@@ -463,21 +463,24 @@ class RetinaNetLosses(object):
 
             # split up the different predicted blobs
             boxes = y_pred[:, :, :4]
-            scores = y_pred[:, :, 4:]
+            scores = y_pred[:, :, 4:5]
 
             # split up the different blobs
-            annotations = y_true[:, :, :4]
+            annotations = y_true[:, :, :5]
 
             # batch size > 1 fix
             boxes = K.reshape(boxes, (-1, K.shape(boxes)[2]))
-            classification = K.reshape(scores, (-1, K.shape(scores)[2]))
+            scores = K.reshape(scores, (-1, K.shape(scores)[2]))
             annotations = K.reshape(annotations, (-1, K.shape(annotations)[2]))
 
             # compute overlap of boxes with annotations
             iou = overlap(boxes, annotations)
-            targets = K.cast(iou > iou_threshold, K.floatx())
+            max_iou = K.max(iou, axis=1)
+
+            targets = K.cast(max_iou > iou_threshold, K.floatx())
 
             # compute the loss
+            # loss = K.binary_crossentropy(targets, scores)
             loss = focal(targets, classification, alpha=self.alpha, gamma=self.gamma)
 
             # compute the normalizer: the number of positive anchors
