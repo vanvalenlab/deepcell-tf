@@ -245,16 +245,27 @@ class ClipBoxes(Layer):
 class ConcatenateBoxes(Layer):
     def call(self, inputs, **kwargs):
         boxes, other = inputs
-        boxes_shape = K.shape(boxes)
-        other_shape = K.shape(other)
-        other = K.reshape(other, (boxes_shape[0], boxes_shape[1], -1))
-        return K.concatenate([boxes, other], axis=2)
+        if K.ndim(boxes) == 3:
+            boxes_shape = K.shape(boxes)
+            other_shape = K.shape(other)
+            other = K.reshape(other, (boxes_shape[0], boxes_shape[1], -1))
+            return K.concatenate([boxes, other], axis=2)
+        elif K.ndim(boxes) == 4:
+            boxes_shape = K.shape(boxes)
+            other_shape = K.shape(other)
+            other = K.reshape(other, (boxes_shape[0], boxes_shape[1], boxes_shape[2], -1))
+            return K.concatenate([boxes, other], axis=3)
 
     def compute_output_shape(self, input_shape):
         boxes_shape, other_shape = input_shape
-        output_shape = tuple(list(boxes_shape[:2]) +
-                             [K.prod([s for s in other_shape[2:]]) + 4])
-        return tensor_shape.TensorShape(output_shape)
+        if len(boxes_shape) == 3:
+            output_shape = tuple(list(boxes_shape[:2]) +
+                                 [K.prod([s for s in other_shape[2:]]) + 4])
+            return tensor_shape.TensorShape(output_shape)
+        elif len(boxes_shape) == 4:
+            output_shape = tuple(list(boxes_shape[:3]) +
+                                 [K.prod([s for s in other_shape[3:]]) + 4])
+            return tensor_shape.TensorShape(output_shape)
 
 
 class RoiAlign(Layer):

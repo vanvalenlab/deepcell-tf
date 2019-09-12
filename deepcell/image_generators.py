@@ -2880,6 +2880,7 @@ class RetinaMovieIterator(Iterator):
                  frames_per_batch=2,
                  clear_borders=False,
                  include_masks=False,
+                 include_final_detection_layer=False,
                  panoptic=False,
                  include_mask_transforms=True,
                  transforms=['watershed'],
@@ -2919,6 +2920,7 @@ class RetinaMovieIterator(Iterator):
         self.num_classes = num_classes
         self.frames_per_batch = frames_per_batch
         self.include_masks = include_masks
+        self.include_final_detection_layer = include_final_detection_layer
         self.panoptic = panoptic
         self.include_mask_transforms = include_mask_transforms
         self.transforms = transforms
@@ -3202,6 +3204,8 @@ class RetinaMovieIterator(Iterator):
         batch_outputs = [regressions, labels]
         if self.include_masks:
             batch_outputs.append(masks_batch)
+        if self.include_final_detection_layer:
+            batch_outputs.append(masks_batch)
         if self.panoptic:
             batch_outputs += batch_y_semantic_list
 
@@ -3299,6 +3303,7 @@ class RetinaMovieDataGenerator(ImageDataGenerator):
              num_classes=1,
              clear_borders=False,
              include_masks=False,
+             include_final_detection_layer=False,
              panoptic=False,
              include_mask_transforms=True,
              transforms=['watershed'],
@@ -3339,6 +3344,7 @@ class RetinaMovieDataGenerator(ImageDataGenerator):
             num_classes=num_classes,
             clear_borders=clear_borders,
             include_masks=include_masks,
+            include_final_detection_layer = include_final_detection_layer,
             panoptic=panoptic,
             include_mask_transforms=include_mask_transforms,
             transforms=transforms,

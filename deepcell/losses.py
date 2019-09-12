@@ -363,6 +363,15 @@ class RetinaNetLosses(object):
     def mask_loss(self, y_true, y_pred):
 
         def _mask(y_true, y_pred, iou_threshold=0.5, mask_size=(28, 28)):
+            if K.ndim(y_pred) == 4:
+                y_pred_shape = tf.shape(y_pred)
+                new_y_pred_shape = [y_pred_shape[0]*y_pred_shape[1], y_pred_shape[2], y_pred_shape[3]]
+                y_pred = tf.reshape(y_pred, new_y_pred_shape)
+
+                y_true_shape = tf.shape(y_true)
+                new_y_true_shape = [y_true_shape[0]*y_true_shape[1], y_true_shape[2], y_true_shape[3]]
+                y_true = tf.reshape(y_true, new_y_true_shape)
+
             # split up the different predicted blobs
             boxes = y_pred[:, :, :4]
             masks = y_pred[:, :, 4:]
@@ -439,3 +448,52 @@ class RetinaNetLosses(object):
             lambda: _mask(y_true, y_pred,
                           iou_threshold=self.iou_threshold,
                           mask_size=self.mask_size))
+
+    def final_detection_loss(self, y_true, y_pred):
+
+        def _fdloss(y_true, y_pred, iou_threshold=0.75, mask_size=(28, 28)):
+            if K.ndim(y_pred) == 4:
+                y_pred_shape = tf.shape(y_pred)
+                new_y_pred_shape = [y_pred_shape[0]*y_pred_shape[1], y_pred_shape[2], y_pred_shape[3]]
+                y_pred = tf.reshape(y_pred, new_y_pred_shape)
+
+                y_true_shape = tf.shape(y_true)
+                new_y_true_shape = [y_true_shape[0]*y_true_shape[1], y_true_shape[2], y_true_shape[3]]
+                y_true = tf.reshape(y_true, new_y_true_shape)
+
+            # split up the different predicted blobs
+            boxes = y_pred[:, :, :4]
+            scores = y_pred[:, :, 4:]
+
+            # split up the different blobs
+            annotations = y_true[:, :, :4]
+
+            # batch size > 1 fix
+            boxes = K.reshape(boxes, (-1, K.shape(boxes)[2]))
+            classification = K.reshape(scores, (-1, K.shape(scores)[2]))
+            annotations = K.reshape(annotations, (-1, K.shape(annotations)[2]))
+
+            # compute overlap of boxes with annotations
+            iou = overlap(boxes, annotations)
+            targets = K.cast(iou > iou_threshold, K.floatx())
+
+            # compute the loss
+            loss = focal(targets, classification, alpha=self.alpha, gamma=self.gamma)
+
+            # compute the normalizer: the number of positive anchors
+            normalizer = tf.where(K.equal(targets, 1))
+            normalizer = K.cast(K.shape(normalizer)[0], K.floatx())
+            normalizer = K.maximum(K.cast_to_floatx(1.0), normalizer)
+
+            fdloss = K.sum(loss)/normalizer
+
+            return fdloss
+
+        # if there are no masks annotations, return 0; else, compute the masks loss
+        return tf.cond(
+            K.any(K.equal(K.shape(y_true), 0)),
+            lambda: K.cast_to_floatx(0.0),
+            lambda: _fdloss(y_true, y_pred,
+                          iou_threshold=self.iou_threshold,
+                          mask_size=self.mask_size))
+

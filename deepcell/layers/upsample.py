@@ -55,14 +55,14 @@ class UpsampleLike(Layer):
 
         new_shape = []
         axes_resized = list(set([0,1,2,3,4]) - set([0, 4, axis]))
-        for ax in range(len(image_shape)-1):
+        for ax in range(K.ndim(image)-1):
             if ax != axis:
                 new_shape.append(image_shape[ax])
             if ax == 3:
                 new_shape.append(image_shape[-1]*image_shape[axis])
 
         new_shape_2 = []
-        for ax in range(len(image_shape)):
+        for ax in range(K.ndim(image)):
             if ax == 0 or ax == 4 or ax == axis:
                 new_shape_2.append(image_shape[ax])
             elif ax == axes_resized[0]:
