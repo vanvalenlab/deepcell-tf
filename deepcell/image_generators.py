@@ -90,9 +90,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     Raises:
         IOError: An error occurred
     """
-<<<<<<< HEAD
-    valid_transforms = {'deepcell', 'disc', 'watershed', 'centroid', 'fgbg', 'deepcell_old'}
-=======
+
     valid_transforms = {
         'pixelwise',
         'disc',
@@ -100,7 +98,6 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         'centroid',
         'fgbg'
     }
->>>>>>> master
 
     if data_format is None:
         data_format = K.image_data_format()
@@ -122,11 +119,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         if transform not in valid_transforms:
             raise ValueError('`{}` is not a valid transform'.format(transform))
 
-<<<<<<< HEAD
-    if transform == 'deepcell': 
-=======
+
     if transform == 'pixelwise':
->>>>>>> master
         dilation_radius = kwargs.pop('dilation_radius', None)
         separate_edge_classes = kwargs.pop('separate_edge_classes', False)
         y_transform = pixelwise_transform(y, dilation_radius, data_format=data_format,
@@ -188,12 +182,6 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
 class ImageSampleArrayIterator(Iterator):
     """Iterator yielding data from a sampled Numpy array.
-    Sampling will generate a window_size image classifying the center pixel,
-
-    Args:
-        train_dict: dictionary consisting of numpy arrays for X and y.
-        image_data_generator: Instance of ImageDataGenerator
-            to use for random transformations and normalization.
         batch_size: Integer, size of a batch.
         shuffle: Boolean, whether to shuffle the data between epochs.
         window_size: size of sampling window around each pixel
@@ -3095,3 +3083,9 @@ class ScaleDataGenerator(ImageFullyConvDataGenerator):
         if y is None:
             return x
         return x, np.array(params['zx'])
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# All rights reserved.
+#
+# Licensed under a modified Apache License, Version 2.0 (the "License");
