@@ -364,13 +364,15 @@ class RetinaNetLosses(object):
 
         def _mask(y_true, y_pred, iou_threshold=0.5, mask_size=(28, 28)):
             if K.ndim(y_pred) == 4:
-                y_pred_shape = tf.shape(y_pred)
-                new_y_pred_shape = [y_pred_shape[0]*y_pred_shape[1], y_pred_shape[2], y_pred_shape[3]]
-                y_pred = tf.reshape(y_pred, new_y_pred_shape)
+                # y_pred_shape = K.shape(y_pred)
+                # new_y_pred_shape = [y_pred_shape[0]*y_pred_shape[1], y_pred_shape[2], y_pred_shape[3]]
+                # y_pred = K.reshape(y_pred, new_y_pred_shape)
 
-                y_true_shape = tf.shape(y_true)
-                new_y_true_shape = [y_true_shape[0]*y_true_shape[1], y_true_shape[2], y_true_shape[3]]
-                y_true = tf.reshape(y_true, new_y_true_shape)
+                # y_true_shape = K.shape(y_true)
+                # new_y_true_shape = [y_true_shape[0]*y_true_shape[1], y_true_shape[2], y_true_shape[3]]
+                # y_true = K.reshape(y_true, new_y_true_shape)
+                y_pred = y_pred[:,0,:,:]
+                y_true = y_true[:,0,:,:]
 
             # split up the different predicted blobs
             boxes = y_pred[:, :, :4]
@@ -451,7 +453,7 @@ class RetinaNetLosses(object):
 
     def final_detection_loss(self, y_true, y_pred):
 
-        def _fdloss(y_true, y_pred, iou_threshold=0.75, mask_size=(28, 28)):
+        def _fdloss(y_true, y_pred, iou_threshold=0.75):
             if K.ndim(y_pred) == 4:
                 y_pred_shape = tf.shape(y_pred)
                 new_y_pred_shape = [y_pred_shape[0]*y_pred_shape[1], y_pred_shape[2], y_pred_shape[3]]
@@ -480,13 +482,10 @@ class RetinaNetLosses(object):
             targets = K.cast(max_iou > iou_threshold, K.floatx())
 
             # compute the loss
-            # loss = K.binary_crossentropy(targets, scores)
-            loss = focal(targets, classification, alpha=self.alpha, gamma=self.gamma)
-
-            # compute the normalizer: the number of positive anchors
-            normalizer = tf.where(K.equal(targets, 1))
-            normalizer = K.cast(K.shape(normalizer)[0], K.floatx())
-            normalizer = K.maximum(K.cast_to_floatx(1.0), normalizer)
+            loss = K.binary_crossentropy(targets, scores)
+            normalizer = K.shape(targets)[0]
+            normalizer = K.maximum(K.cast(normalizer, K.floatx()), 1)
+            # loss = focal(targets, scores, alpha=self.alpha, gamma=self.gamma)
 
             fdloss = K.sum(loss)/normalizer
 
@@ -497,6 +496,5 @@ class RetinaNetLosses(object):
             K.any(K.equal(K.shape(y_true), 0)),
             lambda: K.cast_to_floatx(0.0),
             lambda: _fdloss(y_true, y_pred,
-                          iou_threshold=self.iou_threshold,
-                          mask_size=self.mask_size))
+                          iou_threshold=0.75))
 

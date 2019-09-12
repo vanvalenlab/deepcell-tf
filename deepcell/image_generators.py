@@ -3176,7 +3176,7 @@ class RetinaMovieIterator(Iterator):
             masks_batch = np.zeros(masks_batch_shape, dtype=K.floatx())
 
             for idx_time, time in enumerate(times):
-                annotations_frame = annotations_list[idx]
+                annotations_frame = annotations_list[idx_time]
                 for idx_batch, ann in enumerate(annotations_frame):
                     masks_batch[idx_batch, idx_time, :ann['bboxes'].shape[0], :4] = ann['bboxes']
                     masks_batch[idx_batch, idx_time, :ann['labels'].shape[0], 4] = ann['labels']
