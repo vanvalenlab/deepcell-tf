@@ -2536,7 +2536,6 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             clear_borders=clear_borders,
             include_masks=include_masks,
             panoptic=panoptic,
-            include_mask_transforms=include_mask_transforms,
             transforms=transforms,
             transforms_kwargs=transforms_kwargs,
             anchor_params=anchor_params,
@@ -2589,7 +2588,6 @@ class RetinaNetIterator(Iterator):
                  clear_borders=False,
                  include_masks=False,
                  panoptic=False,
-                 include_mask_transforms=True,
                  transforms=['watershed'],
                  transforms_kwargs={},
                  batch_size=32,
@@ -2622,7 +2620,6 @@ class RetinaNetIterator(Iterator):
         self.num_classes = num_classes
         self.include_masks = include_masks
         self.panoptic = panoptic
-        self.include_mask_transforms = include_mask_transforms
         self.transforms = transforms
         self.transforms_kwargs = transforms_kwargs
         self.channel_axis = 3 if data_format == 'channels_last' else 1
@@ -2632,33 +2629,26 @@ class RetinaNetIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
+        self.y_semantic_list = []  # optional semantic segmentation targets
+
         # Add semantic segmentation targets if panoptic segmentation
         # flag is True
         if panoptic:
             # Create a list of all the semantic targets. We need to be able
             # to have multiple semantic heads
-            y_semantic_list = []
             # Add all the keys that contain y_semantic
             for key in train_dict:
                 if 'y_semantic' in key:
-                    y_semantic_list.append(train_dict['y_semantic'])
+                    self.y_semantic_list.append(train_dict[key])
 
-            if include_mask_transforms:
-                # Check whether transform_kwargs_dict has an entry
-                for transform in transforms:
-                    if transform not in transforms_kwargs:
-                        transforms_kwargs[transform] = {}
-
-                # Add transformed masks
-                for transform in transforms:
-                    transform_kwargs = transforms_kwargs[transform]
-                    y_transform = _transform_masks(y, transform,
-                                                   data_format=data_format,
-                                                   **transform_kwargs)
-                    y_semantic_list.append(y_transform)
-
-            self.y_semantic_list = [np.asarray(y_semantic, dtype='int32')
-                                    for y_semantic in y_semantic_list]
+            # Add transformed masks
+            for transform in transforms:
+                transform_kwargs = transforms_kwargs.get(transform, dict())
+                y_transform = _transform_masks(y, transform,
+                                               data_format=data_format,
+                                               **transform_kwargs)
+                y_transform = np.asarray(y_transform, dtype='int32')
+                self.y_semantic_list.append(y_transform)
 
         invalid_batches = []
         # Remove images with small numbers of cells
@@ -2682,9 +2672,8 @@ class RetinaNetIterator(Iterator):
         self.y = np.delete(self.y, invalid_batches, axis=0)
         self.x = np.delete(self.x, invalid_batches, axis=0)
 
-        if self.panoptic:
-            self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
-                                    for y in self.y_semantic_list]
+        self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
+                                for y in self.y_semantic_list]
 
         super(RetinaNetIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
@@ -2752,9 +2741,11 @@ class RetinaNetIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
-        if self.panoptic:
-            batch_y_semantic_list = [np.zeros(tuple([len(index_array)] + list(ys.shape[1:])))
-                                     for ys in self.y_semantic_list]
+
+        batch_y_semantic_list = []
+        for y_sem in self.y_semantic_list:
+            shape = tuple([len(index_array)] + list(y_sem.shape[1:]))
+            batch_y_semantic_list.append(np.zeros(shape, dtype=y_sem.dtype))
 
         annotations_list = []
 
@@ -2764,16 +2755,14 @@ class RetinaNetIterator(Iterator):
             x = self.x[j]
             y = self.y[j]
 
-            if self.panoptic:
-                y_semantic_list = [y_semantic[j] for y_semantic in self.y_semantic_list]
+            y_semantic_list = [y_sem[j] for y_sem in self.y_semantic_list]
 
             # Apply transformation
-            if self.panoptic:
-                x, y_list = self.image_data_generator.random_transform(x, [y] + y_semantic_list)
-                y = y_list[0]
-                y_semantic_list = y_list[1:]
-            else:
-                x, y = self.image_data_generator.random_transform(x, y)
+            x, y_list = self.image_data_generator.random_transform(
+                x, [y] + y_semantic_list)
+
+            y = y_list[0]
+            y_semantic_list = y_list[1:]
 
             # Find max shape of image data.  Used for masking.
             if not max_shape:
@@ -2791,9 +2780,8 @@ class RetinaNetIterator(Iterator):
 
             batch_x[i] = x
 
-            if self.panoptic:
-                for k in range(len(y_semantic_list)):
-                    batch_y_semantic_list[k][i] = y_semantic_list[k]
+            for k, y_sem in enumerate(y_semantic_list):
+                batch_y_semantic_list[k][i] = y_sem
 
         anchors = anchors_for_shape(
             batch_x.shape[1:],
@@ -2843,10 +2831,11 @@ class RetinaNetIterator(Iterator):
                 img.save(os.path.join(self.save_to_dir, fname))
 
         batch_outputs = [regressions, labels]
+
         if self.include_masks:
             batch_outputs.append(masks_batch)
-        if self.panoptic:
-            batch_outputs.extend(batch_y_semantic_list)
+
+        batch_outputs.extend(batch_y_semantic_list)
 
         return batch_x, batch_outputs
 
