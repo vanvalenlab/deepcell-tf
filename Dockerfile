@@ -9,7 +9,6 @@ RUN mkdir /notebooks/intro_to_tensorflow && \
 
 # System maintenance
 RUN apt-get update && apt-get install -y \
-    git \
     python3-tk \
     libsm6 && \
     rm -rf /var/lib/apt/lists/* && \
