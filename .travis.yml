@@ -1,5 +1,5 @@
-sudo: false
-dist: trusty
+sudo: true
+dist: xenial
 
 git:
   depth: false
