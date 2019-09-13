@@ -41,7 +41,7 @@ script:
 jobs:
   include:
     - stage: deploy
-      if: (branch = master OR branch =~ ^r[0-9]+.[0-9]+) AND type != pull_request
+      if: tag IS present
       env: TF_VERSION=1.12.0
       python: 3.5
       script:
