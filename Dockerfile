@@ -30,5 +30,3 @@ RUN pip install /opt/deepcell-tf && \
 # Copy over deepcell notebooks
 COPY scripts/ /notebooks/
 
-# Change matplotlibrc file to use the Agg backend
-RUN echo "backend : Agg" > /usr/local/lib/python3.5/dist-packages/matplotlib/mpl-data/matplotlibrc
