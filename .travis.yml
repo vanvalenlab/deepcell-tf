@@ -21,18 +21,9 @@ env:
 cache: pip
 
 install:
-  - pip install cython
-  - pip install matplotlib
-  - pip install nbformat
-  - pip install scipy
-  - pip install numpy
-  - pip install pandas
-  - pip install networkx
-  - pip install scikit-learn
-  - pip install scikit-image
-  - pip install opencv-python
-  - pip install pathlib
-  - pip install keras_preprocessing>=1.0.6
+  # remove tensorflow from requirements.txt
+  - sed -i "" -n "/tensorflow/!p" requirements.txt
+  - pip install -r requirements.txt
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
   # install testing requirements
