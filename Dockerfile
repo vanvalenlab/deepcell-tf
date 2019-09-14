@@ -31,4 +31,4 @@ RUN pip install /opt/deepcell-tf && \
 # Copy over deepcell notebooks
 COPY scripts/ /notebooks/
 
-ENTRYPOINT ['jupyter', 'notebook', '--ip=0.0.0.0', '--allow-root']
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--allow-root"]
