@@ -35,7 +35,7 @@ install:
   - python setup.py build_ext --inplace
 
 script:
-  - pytest --cov=deepcell --pep8
+  # - pytest --cov=deepcell --pep8
   - sphinx-build -nT -b dummy ./docs/source build/html
 
 jobs:
