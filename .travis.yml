@@ -22,7 +22,7 @@ cache: pip
 
 install:
   # remove tensorflow from requirements.txt
-  - sed -i '' -n '/tensorflow/!p' requirements.txt
+  - sed -ri "/tensorflow/!p" requirements.txt
   - pip install -r requirements.txt
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
