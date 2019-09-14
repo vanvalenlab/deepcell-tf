@@ -6,6 +6,8 @@ ARG TF_TAG=-py3
 
 FROM tensorflow/tensorflow:${TF_VERSION}${TF_TAG}
 
+WORKDIR /notebooks
+
 # Older versions of TensorFlow have notebooks, but they may not exist
 RUN mkdir -p /notebooks/intro_to_tensorflow && \
     ls /notebooks | grep -v intro_to_tensorflow | \
