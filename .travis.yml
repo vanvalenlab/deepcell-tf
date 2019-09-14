@@ -22,7 +22,7 @@ cache: pip
 
 install:
   # remove tensorflow from requirements.txt
-  - sed -ri "/tensorflow/!p" requirements.txt
+  - sed -i "/tensorflow/d" requirements.txt
   - pip install -r requirements.txt
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
@@ -55,7 +55,7 @@ jobs:
       - docker push "$TRAVIS_REPO_SLUG"
       - docker rm "$TRAVIS_REPO_SLUG"
       # edit the requirements and Dockerfile to build the GPU TensorFlow base image
-      - sed -i "" -e "s/tensorflow/tensorflow-gpu/" requirements.txt
+      - sed -i -e "s/tensorflow/tensorflow-gpu/" requirements.txt
       - docker build --build-arg TF_TAG=-gpu-py3 --build-arg TF_VERSION=$TF_VERSION -t "$TRAVIS_REPO_SLUG" -f .
       - docker images
       # - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}-gpu"
