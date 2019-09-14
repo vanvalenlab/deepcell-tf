@@ -9,10 +9,12 @@ FROM tensorflow/tensorflow:${TF_VERSION}${TF_TAG}
 WORKDIR /notebooks
 
 # Older versions of TensorFlow have notebooks, but they may not exist
-RUN mkdir -p /notebooks/intro_to_tensorflow && \
-    ls /notebooks | grep -v intro_to_tensorflow | \
-    xargs mv -t /notebooks/intro_to_tensorflow  \
-    || true
+RUN if [ -n "$(find /notebooks/ -prune -empty)" ] ; \
+    then \
+      mkdir -p /notebooks/intro_to_tensorflow && \
+      ls /notebooks | grep -v intro_to_tensorflow | \
+      xargs -r mv -t /notebooks/intro_to_tensorflow ; \
+    fi
 
 # System maintenance
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
