@@ -6,8 +6,11 @@ ARG TF_TAG=-py3
 
 FROM tensorflow/tensorflow:${TF_VERSION}${TF_TAG}
 
-RUN mkdir /notebooks/intro_to_tensorflow && \
-    mv BUILD LICENSE /notebooks/*.ipynb intro_to_tensorflow/
+# Older versions of TensorFlow have notebooks, but they may not exist
+RUN mkdir -p /notebooks/intro_to_tensorflow && \
+    ls /notebooks | grep -v intro_to_tensorflow | \
+    xargs mv -t /notebooks/intro_to_tensorflow  \
+    || true
 
 # System maintenance
 RUN apt-get update && apt-get install -y \
