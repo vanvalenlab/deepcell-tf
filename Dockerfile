@@ -13,7 +13,7 @@ RUN mkdir -p /notebooks/intro_to_tensorflow && \
     || true
 
 # System maintenance
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     python3-tk \
     libsm6 && \
     rm -rf /var/lib/apt/lists/* && \
