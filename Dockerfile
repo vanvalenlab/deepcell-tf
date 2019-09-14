@@ -6,6 +6,13 @@ ARG TF_TAG=-py3
 
 FROM tensorflow/tensorflow:${TF_VERSION}${TF_TAG}
 
+# System maintenance
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    python3-tk \
+    libsm6 && \
+    rm -rf /var/lib/apt/lists/* && \
+    /usr/local/bin/pip install --upgrade pip
+
 WORKDIR /notebooks
 
 # Older versions of TensorFlow have notebooks, but they may not exist
@@ -15,13 +22,6 @@ RUN if [ -n "$(find /notebooks/ -prune -empty)" ] ; \
       ls /notebooks | grep -v intro_to_tensorflow | \
       xargs -r mv -t /notebooks/intro_to_tensorflow ; \
     fi
-
-# System maintenance
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    python3-tk \
-    libsm6 && \
-    rm -rf /var/lib/apt/lists/* && \
-    /usr/local/bin/pip install --upgrade pip
 
 # Copy the setup.py and requirements.txt and install the deepcell-tf dependencies
 COPY setup.py requirements.txt /opt/deepcell-tf/
