@@ -2,9 +2,8 @@
 # Change the build arg to edit the tensorflow version.
 # Only supporting python3.
 ARG TF_VERSION=1.11.0
-ARG TF_TAG=-py3
 
-FROM tensorflow/tensorflow:${TF_VERSION}${TF_TAG}
+FROM tensorflow/tensorflow:${TF_VERSION}-py3
 
 # System maintenance
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
