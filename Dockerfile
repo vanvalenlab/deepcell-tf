@@ -16,7 +16,10 @@ WORKDIR /notebooks
 
 # Copy the setup.py and requirements.txt and install the deepcell-tf dependencies
 COPY setup.py requirements.txt /opt/deepcell-tf/
-RUN pip install -r /opt/deepcell-tf/requirements.txt
+
+# Prevent reinstallation of tensorflow and install all other requirements.
+RUN sed -i "/tensorflow/d" requirements.txt && \
+    pip install -r /opt/deepcell-tf/requirements.txt
 
 # Copy the rest of the package code and its scripts
 COPY deepcell /opt/deepcell-tf/deepcell

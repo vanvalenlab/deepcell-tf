@@ -53,7 +53,6 @@ jobs:
       - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}"
       - docker push "$TRAVIS_REPO_SLUG"
       # edit the requirements and Dockerfile to build the GPU TensorFlow base image
-      - sed -i -e "s/tensorflow/tensorflow-gpu/" requirements.txt
       - docker build --build-arg TF_VERSION=$TF_VERSION-gpu -t "$TRAVIS_REPO_SLUG" .
       - docker images
       - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}-gpu"
