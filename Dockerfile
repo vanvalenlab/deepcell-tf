@@ -18,7 +18,7 @@ WORKDIR /notebooks
 COPY setup.py requirements.txt /opt/deepcell-tf/
 
 # Prevent reinstallation of tensorflow and install all other requirements.
-RUN sed -i "/tensorflow/d" requirements.txt && \
+RUN sed -i "/tensorflow/d" /opt/deepcell-tf/requirements.txt && \
     pip install -r /opt/deepcell-tf/requirements.txt
 
 # Copy the rest of the package code and its scripts
