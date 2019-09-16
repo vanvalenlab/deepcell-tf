@@ -7,15 +7,15 @@ git:
 language: python
 
 python:
-  # - 2.7
-  # - 3.5
+  - 2.7
+  - 3.5
   - 3.6
 
 env:
-  # - TF_VERSION=1.8.0
-  # - TF_VERSION=1.9.0
-  # - TF_VERSION=1.10.0
-  # - TF_VERSION=1.11.0
+  - TF_VERSION=1.8.0
+  - TF_VERSION=1.9.0
+  - TF_VERSION=1.10.0
+  - TF_VERSION=1.11.0
   - TF_VERSION=1.12.0
 
 cache: pip
@@ -24,10 +24,10 @@ install:
   # remove tensorflow from requirements.txt
   - sed -i "/tensorflow/d" requirements.txt
   - pip install -r requirements.txt
-  # # install TensorFlow (CPU version).
+  # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
-  # # install testing requirements
-  # - pip install pytest pytest-cov==2.5.1 pytest-pep8 coveralls
+  # install testing requirements
+  - pip install pytest pytest-cov==2.5.1 pytest-pep8 coveralls
   # Install sphinx to check documentation build
   - pip install sphinx m2r
   # install deepcell with setup.py
@@ -35,13 +35,13 @@ install:
   - python setup.py build_ext --inplace
 
 script:
-  # - pytest --cov=deepcell --pep8
+  - pytest --cov=deepcell --pep8
   - sphinx-build -nT -b dummy ./docs/source build/html
 
 jobs:
   include:
     - stage: deploy
-      # if: tag IS present
+      if: tag IS present
       env: TF_VERSION=1.12.0
       python: 3.5
       script:
@@ -50,14 +50,12 @@ jobs:
       - docker build --build-arg TF_VERSION=$TF_VERSION -t "$TRAVIS_REPO_SLUG" .
       - docker images
       - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":latest
-      # - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}"
-      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":test
+      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}"
       - docker push "$TRAVIS_REPO_SLUG"
       # edit the requirements and Dockerfile to build the GPU TensorFlow base image
       - docker build --build-arg TF_VERSION=$TF_VERSION-gpu -t "$TRAVIS_REPO_SLUG" .
       - docker images
-      # - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}-gpu"
-      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":test-gpu
+      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}-gpu"
       - docker push "$TRAVIS_REPO_SLUG"
 
 after_success:
