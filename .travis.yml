@@ -22,10 +22,10 @@ cache: pip
 
 install:
   # remove tensorflow from requirements.txt
-  # - sed -i "/tensorflow/d" requirements.txt
-  # - pip install -r requirements.txt
+  - sed -i "/tensorflow/d" requirements.txt
+  - pip install -r requirements.txt
   # # install TensorFlow (CPU version).
-  # - pip install tensorflow==$TF_VERSION
+  - pip install tensorflow==$TF_VERSION
   # # install testing requirements
   # - pip install pytest pytest-cov==2.5.1 pytest-pep8 coveralls
   # Install sphinx to check documentation build
