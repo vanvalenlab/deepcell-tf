@@ -33,11 +33,7 @@ import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras import backend as K
-
-try:  # tf v1.9 moves conv_utils from _impl to keras.utils
-    from tensorflow.python.keras.utils import conv_utils
-except ImportError:
-    from tensorflow.python.keras._impl.keras.utils import conv_utils
+from tensorflow.python.keras.utils import conv_utils
 
 from deepcell.utils import retinanet_anchor_utils
 

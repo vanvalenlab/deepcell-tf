@@ -37,11 +37,7 @@ from fnmatch import fnmatch
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import backend as K
-
-try:
-    from tensorflow.python.keras.utils import conv_utils
-except ImportError:
-    from tensorflow.python.keras._impl.keras.utils import conv_utils
+from tensorflow.python.keras.utils import conv_utils
 
 from deepcell.utils.io_utils import get_image
 from deepcell.utils.io_utils import get_image_sizes

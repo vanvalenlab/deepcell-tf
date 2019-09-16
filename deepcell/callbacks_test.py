@@ -35,11 +35,7 @@ import numpy as np
 
 from tensorflow.python import keras
 from tensorflow.python.platform import test
-
-try:
-    from tensorflow.python.keras import testing_utils
-except ImportError:
-    from tensorflow.python.keras._impl.keras import testing_utils
+from tensorflow.python.keras import testing_utils
 
 from deepcell.callbacks import RedirectModel
 
