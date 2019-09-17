@@ -19,11 +19,12 @@ env:
 cache: pip
 
 install:
-  # remove tensorflow from requirements.txt
-  - sed -i "/tensorflow/d" requirements.txt
-  - pip install -r requirements.txt
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
+  # remove tensorflow an requirements.txt
+  - sed -i "/tensorflow/d" requirements.txt
+  # install all other requirements
+  - pip install -r requirements.txt
   # install testing requirements
   - pip install pytest pytest-cov==2.5.1 pytest-pep8 coveralls
   # Install sphinx to check documentation build
