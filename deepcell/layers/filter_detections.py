@@ -77,15 +77,14 @@ def filter_detections(boxes,
         indices = tf.where(K.greater(scores, score_threshold))
 
         if nms:
-            # filtered_boxes = tf.gather_nd(boxes, indices)
-            # filtered_scores = K.gather(scores, indices)[:, 0]
+            filtered_boxes = tf.gather_nd(boxes, indices)
+            filtered_scores = K.gather(scores, indices)[:, 0]
 
             # perform NMS
             nms_indices = tf.image.non_max_suppression(
-                boxes,
-                scores,
+                filtered_boxes,
+                filtered_scores,
                 max_output_size=max_detections,
-                score_threshold=score_threshold,
                 iou_threshold=nms_threshold)
 
             # filter indices based on NMS
