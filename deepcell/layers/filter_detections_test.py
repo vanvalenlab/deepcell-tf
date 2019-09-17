@@ -140,7 +140,7 @@ class TestFilterDetections(test.TestCase):
             for a, e in zip(actual_other, expected_other):
                 self.assertAllEqual(a, e)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
+    # @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
         with self.test_session(use_gpu=True):
             # create simple FilterDetections layer
