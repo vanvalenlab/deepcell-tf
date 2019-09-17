@@ -45,11 +45,11 @@ def count_pairs(y, same_probability=0.5, data_format=None):
     """Compute number of training samples needed to observe all cell pairs.
 
     Args:
-        y: 5D tensor of cell labels
-        same_probability: liklihood that 2 cells are the same
+        y (numpy.array): 5D tensor of cell labels
+        same_probability (float): liklihood that 2 cells are the same
 
     Returns:
-        the total pairs needed to sample to see all possible pairings
+        int: the total pairs needed to sample to see all possible pairings
     """
     if data_format is None:
         data_format = K.image_data_format()
@@ -81,7 +81,7 @@ def count_pairs(y, same_probability=0.5, data_format=None):
 
         # Multiply cell pairings by 2 since the
         # odds of getting a non-self pairing are 50%
-        cell_pairings = non_self_pairings / same_probability
+        cell_pairings = non_self_pairings // same_probability
         # Add this batch cell-pairings to the total count
         total_pairs += cell_pairings
     return total_pairs
@@ -91,10 +91,10 @@ def load_trks(filename):
     """Load a trk/trks file.
 
     Args:
-        trks_file: full path to the file including .trk/.trks
+        trks_file (str): full path to the file including .trk/.trks
 
     Returns:
-        A dictionary with raw, tracked, and lineage data
+        dict: A dictionary with raw, tracked, and lineage data
     """
     with tarfile.open(filename, 'r') as trks:
 
@@ -135,11 +135,8 @@ def trk_folder_to_trks(dirname, trks_filename):
     """Compiles a directory of trk files into one trks_file.
 
     Args:
-        dirname: full path to the directory containing multiple trk files
-        trks_filename: desired filename (the name should end in .trks)
-
-    Returns:
-        Nothing
+        dirname (str): full path to the directory containing multiple trk files
+        trks_filename (str): desired filename (the name should end in .trks)
     """
     lineages = []
     raw = []
@@ -163,13 +160,10 @@ def save_trks(filename, lineages, raw, tracked):
     """Saves raw, tracked, and lineage data into one trks_file.
 
     Args:
-        filename: full path to the final trk files
-        lineages: a list of dictionaries saved as a json
-        raw: raw images data
-        tracked: annotated image data
-
-    Returns:
-        Nothing
+        filename (str): full path to the final trk files
+        lineages (dict[]): a list of dictionaries saved as a json
+        raw (numpy.array): raw images data
+        tracked (numpy.array): annotated image data
     """
     if not str(filename).lower().endswith('.trks'):
         raise ValueError('filename must end with `.trks`. Found %s' % filename)
@@ -196,10 +190,7 @@ def trks_stats(trks_file_name):
        the Number of frames per track, and the Number of divisions.
 
     Args:
-        filename: full path to a trks file
-
-    Returns:
-        Nothing
+        filename (str): full path to a trks file
     """
     training_data = load_trks(trks_file_name)
     X = training_data['X']
@@ -208,10 +199,24 @@ def trks_stats(trks_file_name):
                   for cell, fields in tracks.items()}
                  for tracks in training_data['lineages']]
 
+    print('Dataset Statistics: ')
     print('Image data shape: ', X.shape)
     print('Number of lineages (should equal batch size): ',
           len(training_data['lineages']))
 
+    # Calculate cell density
+    frame_area = X.shape[2] * X.shape[3]
+
+    avg_cells_in_frame = []
+    for batch in range(y.shape[0]):
+        num_cells_in_frame = []
+        for frame in y[batch]:
+            cells_in_frame = len(np.unique(frame)) - 1  # unique returns 0 (BKGD)
+            num_cells_in_frame.append(cells_in_frame)
+        avg_cells_in_frame.append(np.average(num_cells_in_frame))
+    avg_cells_per_sq_pixel = np.average(avg_cells_in_frame) / frame_area
+
+    # Calculate division information
     total_tracks = 0
     total_divisions = 0
     avg_frame_counts_in_batches = []
@@ -231,7 +236,7 @@ def trks_stats(trks_file_name):
         avg_frame_counts_in_batches.append(np.average(frame_counts))
     avg_num_frames_per_track = np.average(avg_frame_counts_in_batches)
 
-    print('Dataset Statistics:')
-    print('Total number of unique tracks (cells) - ', total_tracks)
-    print('Total number of divisions             - ', total_divisions)
-    print('Average number of frames per track    - ', int(avg_num_frames_per_track))
+    print('Total number of unique tracks (cells)      - ', total_tracks)
+    print('Total number of divisions                  - ', total_divisions)
+    print('Average cell density (cells/100 sq pixels) - ', avg_cells_per_sq_pixel * 100)
+    print('Average number of frames per track         - ', int(avg_num_frames_per_track))

@@ -4,34 +4,26 @@ deepcell.datasets package
 Submodules
 ----------
 
-deepcell.datasets.hek293 module
--------------------------------
+deepcell.datasets.cytoplasm module
+----------------------------------
 
-.. automodule:: deepcell.datasets.hek293
+.. automodule:: deepcell.datasets.cytoplasm
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.datasets.hela\_s3 module
----------------------------------
+deepcell.datasets.phase module
+------------------------------
 
-.. automodule:: deepcell.datasets.hela_s3
+.. automodule:: deepcell.datasets.phase
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.datasets.mousebrain module
------------------------------------
+deepcell.datasets.tracked module
+--------------------------------
 
-.. automodule:: deepcell.datasets.mousebrain
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-deepcell.datasets.nih\_3t3 module
----------------------------------
-
-.. automodule:: deepcell.datasets.nih_3t3
+.. automodule:: deepcell.datasets.tracked
     :members:
     :undoc-members:
     :show-inheritance:

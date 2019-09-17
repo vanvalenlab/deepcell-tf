@@ -23,15 +23,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Builtin Datasets"""
+"""Deepcell Applications - Pre-trained models for specific functions"""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.datasets.tracked import nih_3t3
-from deepcell.datasets.tracked import hela_s3
-from deepcell.datasets.tracked import hek293
+from deepcell.applications.cell_tracking import CellTrackingModel
+from deepcell.applications.nuclear_segmentation import NuclearSegmentationModel
+from deepcell.applications.label_detection import LabelDetectionModel
+from deepcell.applications.scale_detection import ScaleDetectionModel
+from deepcell.applications.phase_segmentation import PhaseSegmentationModel
+from deepcell.applications.fluorescent_cytoplasm_segmentation import \
+    FluorCytoplasmSegmentationModel
 
 del absolute_import
 del division

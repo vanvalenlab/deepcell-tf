@@ -68,7 +68,30 @@ def bn_feature_net_2D(receptive_field=61,
                       padding_mode='reflect',
                       multires=False,
                       include_top=True):
+    """Creates a 2D featurenet.
 
+    Args:
+        receptive_field (int): the receptive field of the neural network.
+        input_shape (tuple): If no input tensor, create one with this shape.
+        inputs (tensor): optional input tensor
+        n_features (int): Number of output features
+        n_channels (int): number of input channels
+        reg (int): regularization value
+        n_conv_filters (int): number of convolutional filters
+        n_dense_filters (int): number of dense filters
+        VGG_mode (bool): If multires, uses VGG_mode for multiresolution
+        init (str): Method for initalizing weights.
+        norm_method (str): ImageNormalization mode to use
+        location (bool): Whether to include location data
+        dilated (bool): Whether to use dilated pooling.
+        padding (bool): Whether to use padding.
+        padding_mode (str): Type of padding, one of 'reflect' or 'zero'
+        multires (bool): Enables multi-resolution mode
+        include_top (bool): Whether to include the final layer of the model
+
+    Returns:
+        tensorflow.keras.Model: 2D FeatureNet
+    """
     # Create layers list (x) to store all of the layers.
     # We need to use the functional API to enable the multiresolution mode
     x = []
@@ -211,6 +234,24 @@ def bn_feature_net_skip_2D(receptive_field=61,
                            norm_method='std',
                            padding_mode='reflect',
                            **kwargs):
+    """Creates a 2D featurenet with skip-connections.
+
+    Args:
+        receptive_field (int): the receptive field of the neural network.
+        input_shape (tuple): If no input tensor, create one with this shape.
+        inputs (tensor): optional input tensor
+        fgbg_model (tensorflow.keras.Model): Concatenate output of this model
+            with the inputs as a skip-connection.
+        last_only (bool): Model will only output the final prediction,
+            and not return any of the underlying model predictions.
+        n_skips (int): The number of skip-connections
+        norm_method (str): The type of ImageNormalization to use
+        padding_mode (str): Type of padding, one of 'reflect' or 'zero'
+        kwargs (dict): Other model options defined in bn_feature_net_2D
+
+    Returns:
+        tensorflow.keras.Model: 2D FeatureNet with skip-connections
+    """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
 
     inputs = Input(shape=input_shape)
@@ -273,6 +314,30 @@ def bn_feature_net_3D(receptive_field=61,
                       padding_mode='reflect',
                       multires=False,
                       include_top=True):
+    """Creates a 3D featurenet.
+
+    Args:
+        receptive_field (int): the receptive field of the neural network.
+        n_frames (int): Number of frames.
+        input_shape (tuple): If no input tensor, create one with this shape.
+        n_features (int): Number of output features
+        n_channels (int): number of input channels
+        reg (int): regularization value
+        n_conv_filters (int): number of convolutional filters
+        n_dense_filters (int): number of dense filters
+        VGG_mode (bool): If multires, uses VGG_mode for multiresolution
+        init (str): Method for initalizing weights.
+        norm_method (str): ImageNormalization mode to use
+        location (bool): Whether to include location data
+        dilated (bool): Whether to use dilated pooling.
+        padding (bool): Whether to use padding.
+        padding_mode (str): Type of padding, one of 'reflect' or 'zero'
+        multires (bool): Enables multi-resolution mode
+        include_top (bool): Whether to include the final layer of the model
+
+    Returns:
+        tensorflow.keras.Model: 3D FeatureNet
+    """
     # Create layers list (x) to store all of the layers.
     # We need to use the functional API to enable the multiresolution mode
     x = []
@@ -410,8 +475,24 @@ def bn_feature_net_skip_3D(receptive_field=61,
                            norm_method='std',
                            padding_mode='reflect',
                            **kwargs):
-    channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+    """Creates a 3D featurenet with skip-connections.
 
+    Args:
+        receptive_field (int): the receptive field of the neural network.
+        input_shape (tuple): Create input tensor with this shape.
+        fgbg_model (tensorflow.keras.Model): Concatenate output of this model
+            with the inputs as a skip-connection.
+        last_only (bool): Model will only output the final prediction,
+            and not return any of the underlying model predictions.
+        n_skips (int): The number of skip-connections
+        norm_method (str): The type of ImageNormalization to use
+        padding_mode (str): Type of padding, one of 'reflect' or 'zero'
+        kwargs (dict): Other model options defined in bn_feature_net_3D
+
+    Returns:
+        tensorflow.keras.Model: 3D FeatureNet with skip-connections
+    """
+    channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     inputs = Input(shape=input_shape)
     img = ImageNormalization3D(norm_method=norm_method,
                                filter_size=receptive_field)(inputs)

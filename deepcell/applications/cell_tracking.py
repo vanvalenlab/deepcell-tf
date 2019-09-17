@@ -23,48 +23,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""HeLa S3 Nuclear Dataset"""
+"""A model that can detect whether 2 cells are same, different, or related."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-import os
 
 try:
     from tensorflow.python.keras.utils.data_utils import get_file
 except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
     from tensorflow.python.keras._impl.keras.utils.data_utils import get_file
 
-from deepcell.utils.data_utils import get_data
+from deepcell import model_zoo
 
 
-def load_data(path='HeLa_S3.npz', test_size=.2, seed=0):
-    """Loads the HeLa-S3 dataset.
+WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+                'model-weights/tracking_model_benchmarking_757_step5_20'
+                'epoch_80split_9tl.h5')
 
-    # Args:
-        path: path where to cache the dataset locally
-            (relative to ~/.keras/datasets).
-        test_size: fraction of data to reserve as test data
-        seed: the seed for randomly shuffling the dataset
 
-    Returns:
-        Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
+def CellTrackingModel(input_shape=(32, 32, 1),
+                      neighborhood_scale_size=30,
+                      use_pretrained_weights=True):
+    """Creates an instance of a siamese_model.
+
+    Detects whether to input cells are the same cell, different cells, or
+    daughter cells.  This can be used along with a cost matrix to track full
+    cell lineages across many frames.
     """
-    basepath = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
-    prefix = path.split(os.path.sep)[:-1]
-    data_dir = os.path.join(basepath, *prefix) if prefix else basepath
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-    elif not os.path.isdir(data_dir):
-        raise IOError('{} exists but is not a directory'.format(data_dir))
+    features = {'appearance', 'distance', 'neighborhood', 'regionprop'}
 
-    path = get_file(path,
-                    origin='https://deepcell-data.s3.amazonaws.com/nuclei/HeLa_S3.npz',
-                    file_hash='759d28d87936fd59b250dea3b126b647')
+    model = model_zoo.siamese_model(
+        input_shape=input_shape,
+        reg=1e-5,
+        init='he_normal',
+        neighborhood_scale_size=neighborhood_scale_size,
+        features=features)
 
-    train_dict, test_dict = get_data(path, test_size=test_size, seed=seed)
+    if use_pretrained_weights:
+        weights_path = get_file(
+            'CellTrackingModel.h5',
+            WEIGHTS_PATH,
+            cache_subdir='models',
+            md5_hash='3349b363fdad0266a1845ba785e057a6')
 
-    x_train, y_train = train_dict['X'], train_dict['y']
-    x_test, y_test = test_dict['X'], test_dict['y']
-    return (x_train, y_train), (x_test, y_test)
+        model.load_weights(weights_path)
+
+    return model
