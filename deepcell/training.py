@@ -145,8 +145,11 @@ def train_model_sample(model,
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
     print('y_train shape:', train_dict['y'].shape)
-    #print('X_test shape:', test_dict['X'].shape)
-    #print('y_test shape:', test_dict['y'].shape)
+    
+    if val_monitor:
+        print('X_test shape:', test_dict['X'].shape)
+        print('y_test shape:', test_dict['y'].shape)
+    
     print('Output Shape:', model.layers[-1].output_shape)
     print('Number of Classes:', n_classes)
 
