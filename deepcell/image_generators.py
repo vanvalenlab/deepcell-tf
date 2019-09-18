@@ -90,7 +90,6 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     Raises:
         IOError: An error occurred
     """
-
     valid_transforms = {
         'pixelwise',
         'disc',
@@ -182,21 +181,26 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
 class ImageSampleArrayIterator(Iterator):
     """Iterator yielding data from a sampled Numpy array.
-        batch_size: Integer, size of a batch.
-        shuffle: Boolean, whether to shuffle the data between epochs.
-        window_size: size of sampling window around each pixel
-        balance_classes: balance class representation when sampling
-        max_class_samples: maximum number of samples per class.
-        seed: Random seed for data shuffling.
-        data_format: String, one of 'channels_first', 'channels_last'.
-        save_to_dir: Optional directory where to save the pictures
-            being yielded, in a viewable format. This is useful
-            for visualizing the random transformations being
-            applied, for debugging purposes.
-        save_prefix: String prefix to use for saving sample
-            images (if save_to_dir is set).
-        save_format: Format to use for saving sample images
-            (if save_to_dir is set).
+        Sampling will generate a window_size image classifying the center pixel,
+        Args:
+            train_dict: dictionary consisting of numpy arrays for X and y.
+            image_data_generator: Instance of ImageDataGenerator
+                to use for random transformations and normalization.
+            batch_size: Integer, size of a batch.
+            shuffle: Boolean, whether to shuffle the data between epochs.
+            window_size: size of sampling window around each pixel
+            balance_classes: balance class representation when sampling
+            max_class_samples: maximum number of samples per class.
+            seed: Random seed for data shuffling.
+            data_format: String, one of 'channels_first', 'channels_last'.
+            save_to_dir: Optional directory where to save the pictures
+                being yielded, in a viewable format. This is useful
+                for visualizing the random transformations being
+                applied, for debugging purposes.
+            save_prefix: String prefix to use for saving sample
+                images (if save_to_dir is set).
+            save_format: Format to use for saving sample images
+                (if save_to_dir is set).
     """
 
     def __init__(self,
