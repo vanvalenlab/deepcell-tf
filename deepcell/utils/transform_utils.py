@@ -109,7 +109,7 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
         dilated_background[i] = binary_dilation(background, strel)
 
     background_edges = (edges - dilated_background > 0).astype('int')
-    
+
     # edges that are not background-edges are interior-edges
     interior_edges = (edges - background_edges > 0).astype('int')
 

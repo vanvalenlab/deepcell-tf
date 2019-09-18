@@ -181,8 +181,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 class ImageSampleArrayIterator(Iterator):
     """Iterator yielding data from a sampled Numpy array.
     Sampling will generate a window_size image classifying the center pixel,
-    Args:
 
+    Args:
         train_dict: dictionary consisting of numpy arrays for X and y.
         image_data_generator: Instance of ImageDataGenerator
             to use for random transformations and normalization.
@@ -194,7 +194,7 @@ class ImageSampleArrayIterator(Iterator):
         seed: Random seed for data shuffling.
         data_format: String, one of 'channels_first', 'channels_last'.
         save_to_dir: Optional directory where to save the pictures
-        being yielded, in a viewable format. This is useful
+            being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix: String prefix to use for saving sample
