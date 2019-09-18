@@ -9,7 +9,7 @@ app_dormant
 ### Docker ###
 Dockerfile
 .dockerignore
-
+docker_data/
 ### Git ###
 .git
 .gitigore
