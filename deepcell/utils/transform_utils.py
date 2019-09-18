@@ -37,66 +37,6 @@ from skimage.morphology import ball, disk
 from skimage.morphology import binary_erosion, binary_dilation
 from tensorflow.python.keras import backend as K
 
-def deepcell_transform_old(mask, dilation_radius=None, data_format=None):
-    """Transforms a label mask for a z stack edge, interior, and background
-
-    Args:
-        mask: tensor of labels
-        dilation_radius:  width to enlarge the edge feature of each instance
-        data_format: `channels_first` or `channels_last`
-
-    Returns:
-        one-hot encoded tensor of masks:
-            [cell_edge, cell_interior, background]
-    """
-    if data_format is None:
-        data_format = K.image_data_format()
-
-    if data_format == 'channels_first':
-        channel_axis = 1
-    else:
-        channel_axis = len(mask.shape) - 1
-
-    mask = np.squeeze(mask, axis=channel_axis)
-
-    # Detect the edges and interiors
-    new_masks = np.zeros(mask.shape)
-    edges = np.zeros(mask.shape)
-    strel = ball(1) if mask.ndim > 3 else disk(1)
-    for cell_label in np.unique(mask):
-        if cell_label != 0:
-            for i in range(mask.shape[0]):
-                # get the cell interior
-                img = mask[i] == cell_label
-                img = binary_erosion(img, strel)
-                new_masks[i] += img
-
-    interiors = np.multiply(new_masks, mask)
-    edges = (mask - interiors > 0).astype('int')
-    interiors = (interiors > 0).astype('int')
-    background = (mask[i] == 0).astype('int')
-    print("Dilation raidus is set to {}".format(dilation_radius))
-    if dilation_radius:
-        dil_strel = ball(dilation_radius) if mask.ndim > 3 else disk(dilation_radius)
-        # Thicken cell edges to be more pronounced
-        for i in range(edges.shape[0]):
-            edges[i] = binary_dilation(edges[i], selem=dil_strel)
-
-        # Thin the augmented edges by subtracting the interior features.
-        edges = (edges - interiors > 0).astype('int')
-
-    background = (1 - edges - interiors > 0)
-    background = background.astype('int')
-
-    all_stacks = [
-        edges,
-        interiors,
-        background
-    ]
-
-    deepcell_stacks = np.stack(all_stacks, axis=channel_axis)
-    return deepcell_stacks
-
 
 def pixelwise_transform(mask, dilation_radius=None, data_format=None,
                         separate_edge_classes=False):
@@ -169,8 +109,10 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
         dilated_background[i] = binary_dilation(background, strel)
 
     background_edges = (edges - dilated_background > 0).astype('int')
+    
     # edges that are not background-edges are interior-edges
     interior_edges = (edges - background_edges > 0).astype('int')
+
     if dilation_radius:
         dil_strel = ball(dilation_radius) if mask.ndim > 3 else disk(dilation_radius)
         # Thicken cell edges to be more pronounced
