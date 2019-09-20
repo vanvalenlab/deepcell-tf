@@ -33,10 +33,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import TimeDistributed, Conv2D
 from tensorflow.python.keras.models import Model
-try:
-    from tensorflow.python.keras.initializers import normal
-except ImportError:  # tf 1.8.0 uses keras._impl directory
-    from tensorflow.python.keras._impl.keras.initializers import normal
+from tensorflow.python.keras.initializers import normal
 
 from deepcell.layers import Cast, Shape
 from deepcell.layers import Upsample, RoiAlign, ConcatenateBoxes
