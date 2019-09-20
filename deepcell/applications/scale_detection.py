@@ -30,11 +30,7 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow.python import keras
-
-try:
-    from tensorflow.python.keras.utils.data_utils import get_file
-except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
-    from tensorflow.python.keras._impl.keras.utils.data_utils import get_file
+from tensorflow.python.keras.utils.data_utils import get_file
 
 from deepcell.layers import ImageNormalization2D, TensorProduct
 from deepcell.utils.backbone_utils import get_backbone
