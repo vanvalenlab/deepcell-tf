@@ -85,6 +85,51 @@ class TestUpsampleLike(test.TestCase):
             self.assertAllEqual(actual, expected)
 
     @tf_test_util.run_in_graph_and_eager_modes()
+    def test_simple_3d(self):
+        with self.test_session():
+            # create simple UpsampleLike layer
+            upsample_like_layer = layers.UpsampleLike()
+
+            # create input source
+            source = np.zeros((1, 2, 2, 2, 1), dtype=K.floatx())
+            source = K.variable(source)
+            target = np.zeros((1, 5, 5, 5, 1), dtype=K.floatx())
+            expected = target
+            target = K.variable(target)
+
+            # compute output
+            computed_shape = upsample_like_layer.compute_output_shape(
+                [source.shape, target.shape])
+
+            actual = upsample_like_layer.call([source, target])
+            actual = K.get_value(actual)
+
+            self.assertEqual(actual.shape, computed_shape)
+            self.assertAllEqual(actual, expected)
+
+        # channels_first
+        with self.test_session():
+            # create simple UpsampleLike layer
+            upsample_like_layer = layers.UpsampleLike(
+                data_format='channels_first')
+
+            # create input source
+            source = np.zeros((1, 1, 2, 2, 2), dtype=K.floatx())
+            source = K.variable(source)
+            target = np.zeros((1, 1, 5, 5, 5), dtype=K.floatx())
+            expected = target
+            target = K.variable(target)
+
+            # compute output
+            computed_shape = upsample_like_layer.compute_output_shape(
+                [source.shape, target.shape])
+            actual = upsample_like_layer.call([source, target])
+            actual = K.get_value(actual)
+
+            self.assertEqual(actual.shape, computed_shape)
+            self.assertAllEqual(actual, expected)
+
+    @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
         with self.test_session():
             # create simple UpsampleLike layer

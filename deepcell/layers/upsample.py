@@ -55,6 +55,7 @@ class UpsampleLike(Layer):
         return resized_image
 
     def resize_volumes(self, volume, size):
+        # TODO: K.resize_volumes?
         if self.data_format == 'channels_first':
             volume = tf.transpose(volume, (0, 2, 3, 4, 1))
             new_size = (size[2], size[3], size[4])
@@ -79,6 +80,7 @@ class UpsampleLike(Layer):
             if self.data_format == 'channels_first':
                 source = tf.transpose(source, (0, 2, 3, 1))
                 new_shape = (target_shape[2], target_shape[3])
+                # TODO: K.resize_images?
                 output = tf.image.resize_images(
                     source, new_shape,
                     method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
@@ -92,6 +94,10 @@ class UpsampleLike(Layer):
         if source.get_shape().ndims == 5:
             output = self.resize_volumes(source, target_shape)
             return output
+
+        else:
+            raise ValueError('Expected input[0] to have ndim of 4 or 5, found'
+                             ' %s.' % source.get_shape().ndims)
 
     def compute_output_shape(self, input_shape):
         in_0 = tensor_shape.TensorShape(input_shape[0]).as_list()
