@@ -36,8 +36,12 @@ from deepcell.layers import ImageNormalization2D, TensorProduct
 from deepcell.utils.backbone_utils import get_backbone
 
 
-WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/LabelDetectionModel_VGG16.h5')
+VGG_WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+                    'model-weights/LabelDetectionModel_VGG16.h5')
+
+
+MOBILENET_WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+                          'model-weights/LabelDetectionModel_mobilenet.h5')
 
 
 def LabelDetectionModel(input_shape=(None, None, 1),
@@ -86,12 +90,19 @@ def LabelDetectionModel(input_shape=(None, None, 1),
     model = keras.Model(inputs=backbone_model.inputs, outputs=outputs)
 
     if use_pretrained_weights:
+        local_name = 'LabelDetectionModel_{}.h5'.format(backbone)
         if backbone.upper() == 'VGG16':
             weights_path = get_file(
-                'LabelDetectionModel_{}.h5'.format(backbone),
-                WEIGHTS_PATH,
+                local_name,
+                VGG_WEIGHTS_PATH,
                 cache_subdir='models',
                 md5_hash='090a0de7a33dceff7ad690b3c9852938')
+        if backbone.lower() == 'mobilenet':
+            weights_path = get_file(
+                local_name,
+                MOBILENET_WEIGHTS_PATH,
+                cache_subdir='models',
+                md5_hash='8f99c47399cd22a2c83b19c2690340cf')
         else:
             raise ValueError('Backbone %s does not have a weights file.' %
                              backbone)
