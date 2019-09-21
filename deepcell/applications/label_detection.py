@@ -44,9 +44,13 @@ MOBILENET_WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
                           'model-weights/LabelDetectionModel_mobilenet.h5')
 
 
+MOBILENETV2_WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+                            'model-weights/LabelDetectionModel_mobilenetv2.h5')
+
+
 def LabelDetectionModel(input_shape=(None, None, 1),
                         inputs=None,
-                        backbone='VGG16',
+                        backbone='mobilenetv2',
                         use_pretrained_weights=True):
     """Classify a microscopy image as Nuclear, Cytoplasm, or Phase.
 
@@ -97,12 +101,18 @@ def LabelDetectionModel(input_shape=(None, None, 1),
                 VGG_WEIGHTS_PATH,
                 cache_subdir='models',
                 md5_hash='090a0de7a33dceff7ad690b3c9852938')
-        if backbone.lower() == 'mobilenet':
+        elif backbone.lower() == 'mobilenet':
             weights_path = get_file(
                 local_name,
                 MOBILENET_WEIGHTS_PATH,
                 cache_subdir='models',
                 md5_hash='8f99c47399cd22a2c83b19c2690340cf')
+        elif backbone.lower() in {'mobilenetv2' or 'mobilenet_v2'}:
+            weights_path = get_file(
+                local_name,
+                MOBILENETV2_WEIGHTS_PATH,
+                cache_subdir='models',
+                md5_hash='42b8fe2e7da9ed26dc00cfb390a161f5')
         else:
             raise ValueError('Backbone %s does not have a weights file.' %
                              backbone)
