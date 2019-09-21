@@ -46,7 +46,7 @@ MOBILENET_WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 
 def ScaleDetectionModel(input_shape=(None, None, 1),
                         inputs=None,
-                        backbone='VGG16',
+                        backbone='mobilenet',
                         use_pretrained_weights=True):
     """Create a ScaleDetectionModel for detecting scales of input data.
 
@@ -90,7 +90,7 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
     model = keras.Model(inputs=backbone_model.inputs, outputs=outputs)
 
     if use_pretrained_weights:
-        local_name = 'ScaleDetectionModel_{}.h5'.format(backbone),
+        local_name = 'ScaleDetectionModel_{}.h5'.format(backbone)
         if backbone.upper() == 'VGG16':
             weights_path = get_file(
                 local_name,
