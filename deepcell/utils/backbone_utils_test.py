@@ -76,12 +76,12 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
                     backbone, inputs, use_imagenet=True)
 
     @parameterized.named_parameters([
-        # ('resnet50',) * 2,
-        # ('resnet101',) * 2,
-        # ('resnet152',) * 2,
-        # ('resnet50v2',) * 2,
-        # ('resnet101v2',) * 2,
-        # ('resnet152v2',) * 2,
+        ('resnet50',) * 2,
+        ('resnet101',) * 2,
+        ('resnet152',) * 2,
+        ('resnet50v2',) * 2,
+        ('resnet101v2',) * 2,
+        ('resnet152v2',) * 2,
         ('resnext50',) * 2,
         ('resnext101',) * 2,
         ('vgg16',) * 2,
@@ -90,9 +90,9 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         ('densenet169',) * 2,
         ('densenet201',) * 2,
         ('mobilenet',) * 2,
-        # ('mobilenetv2',) * 2,
-        # ('nasnet_large',) * 2,
-        # ('nasnet_mobile',) * 2,
+        ('mobilenetv2',) * 2,
+        ('nasnet_large',) * 2,
+        ('nasnet_mobile',) * 2,
     ])
     def test_get_backbone(self, backbone):
         with self.test_session(use_gpu=True):
