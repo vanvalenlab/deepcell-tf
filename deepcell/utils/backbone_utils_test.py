@@ -42,7 +42,7 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
 
     def test_get_featurenet_backbone(self):
         backbone = 'featurenet'
-        input_shape = (256, 256, 3)
+        input_shape = (512, 512, 3)
         inputs = Input(shape=input_shape)
         out = backbone_utils.get_backbone(backbone, inputs, return_dict=True)
         assert isinstance(out, dict)
@@ -57,7 +57,7 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
 
     def test_get_featurenet3d_backbone(self):
         backbone = 'featurenet3d'
-        input_shape = (40, 256, 256, 3)
+        input_shape = (40, 512, 512, 3)
         inputs = Input(shape=input_shape)
         out = backbone_utils.get_backbone(backbone, inputs, return_dict=True)
         assert isinstance(out, dict)
