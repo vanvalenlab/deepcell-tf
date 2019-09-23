@@ -31,12 +31,14 @@ from __future__ import division
 
 import copy
 
+import keras_applications as applications
+import tensorflow as tf
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import applications
 from tensorflow.python.keras.backend import is_keras_tensor
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
+from tensorflow.python.keras.utils.data_utils import get_file
 from tensorflow.python.keras.utils.layer_utils import get_source_inputs
 
 
@@ -205,11 +207,9 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     utils.get_file = get_file
     utils.get_source_inputs = get_source_inputs
 
-    K.is_keras_tensor = is_keras_tensor
-
-    kwargs['backend'] = K
-    kwargs['layers'] = tf.keras.layers
-    kwargs['models'] = tf.keras.models
+    kwargs['backend'] = tf.python.keras.backend
+    kwargs['layers'] = tf.python.keras.layers
+    kwargs['models'] = tf.python.keras.models
     kwargs['utils'] = utils
 
     featurenet_backbones = ['featurenet', 'featurenet3d', 'featurenet_3d']
