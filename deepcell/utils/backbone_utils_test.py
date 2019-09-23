@@ -90,7 +90,7 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         ('nasnet_mobile',) * 2,
     ])
     def test_get_backbone(self, backbone):
-        inputs = Input(shape=(256, 256, 3))
+        inputs = Input(shape=(512, 512, 3))
         out = backbone_utils.get_backbone(
             backbone, inputs, return_dict=True)
         assert isinstance(out, dict)
