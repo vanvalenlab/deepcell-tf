@@ -31,6 +31,7 @@ from __future__ import division
 
 from absl.testing import parameterized
 
+from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Input
 from tensorflow.python.keras.models import Model
 from tensorflow.python.platform import test
@@ -45,6 +46,7 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         input_shape = (512, 512, 3)
         inputs = Input(shape=input_shape)
         with self.test_session(use_gpu=True):
+            K.set_image_data_format('channels_last')
             out = backbone_utils.get_backbone(backbone, inputs, return_dict=True)
             assert isinstance(out, dict)
             assert all(k.startswith('C') for k in out)
@@ -61,6 +63,7 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         input_shape = (40, 512, 512, 3)
         inputs = Input(shape=input_shape)
         with self.test_session(use_gpu=True):
+            K.set_image_data_format('channels_last')
             out = backbone_utils.get_backbone(backbone, inputs, return_dict=True)
             assert isinstance(out, dict)
             assert all(k.startswith('C') for k in out)
@@ -73,12 +76,12 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
                     backbone, inputs, use_imagenet=True)
 
     @parameterized.named_parameters([
-        ('resnet50',) * 2,
-        ('resnet101',) * 2,
-        ('resnet152',) * 2,
-        ('resnet50v2',) * 2,
-        ('resnet101v2',) * 2,
-        ('resnet152v2',) * 2,
+        # ('resnet50',) * 2,
+        # ('resnet101',) * 2,
+        # ('resnet152',) * 2,
+        # ('resnet50v2',) * 2,
+        # ('resnet101v2',) * 2,
+        # ('resnet152v2',) * 2,
         ('resnext50',) * 2,
         ('resnext101',) * 2,
         ('vgg16',) * 2,
@@ -87,12 +90,13 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         ('densenet169',) * 2,
         ('densenet201',) * 2,
         ('mobilenet',) * 2,
-        ('mobilenetv2',) * 2,
-        ('nasnet_large',) * 2,
-        ('nasnet_mobile',) * 2,
+        # ('mobilenetv2',) * 2,
+        # ('nasnet_large',) * 2,
+        # ('nasnet_mobile',) * 2,
     ])
     def test_get_backbone(self, backbone):
         with self.test_session(use_gpu=True):
+            K.set_image_data_format('channels_last')
             inputs = Input(shape=(512, 512, 3))
             out = backbone_utils.get_backbone(
                 backbone, inputs, return_dict=True)
