@@ -375,7 +375,7 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
         layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     elif _backbone in mobilenet_backbones:
-        alpha = kwargs.get('alpha', 1.0)
+        alpha = kwargs.pop('alpha', 1.0)
         if _backbone.endswith('v2'):
             model = applications.mobilenet_v2.MobileNetV2(
                 alpha=alpha, input_tensor=input_tensor, **kwargs)
