@@ -207,9 +207,9 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     utils.get_file = get_file
     utils.get_source_inputs = get_source_inputs
 
-    kwargs['backend'] = tf.python.keras.backend
-    kwargs['layers'] = tf.python.keras.layers
-    kwargs['models'] = tf.python.keras.models
+    kwargs['backend'] = tf.keras.backend
+    kwargs['layers'] = tf.keras.layers
+    kwargs['models'] = tf.keras.models
     kwargs['utils'] = utils
 
     featurenet_backbones = ['featurenet', 'featurenet3d', 'featurenet_3d']
