@@ -207,7 +207,9 @@ def get_backbone(backbone, input_tensor, use_imagenet=False, return_dict=True, *
     utils.get_file = get_file
     utils.get_source_inputs = get_source_inputs
 
-    kwargs['backend'] = tf.keras.backend
+    K.is_keras_tensor = is_keras_tensor
+
+    kwargs['backend'] = K
     kwargs['layers'] = tf.keras.layers
     kwargs['models'] = tf.keras.models
     kwargs['utils'] = utils
