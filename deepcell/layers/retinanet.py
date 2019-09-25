@@ -308,6 +308,7 @@ class RoiAlign(Layer):
         else:
             time_distributed = False
 
+        print(K.ndim(boxes), time_distributed)
         if time_distributed:
             image_shape = image_shape[1:]
 
@@ -376,7 +377,7 @@ class RoiAlign(Layer):
             dtype=K.floatx(),
             parallel_iterations=self.parallel_iterations
         )
-
+        print(roi_batch.get_shape(), time_distributed)
         if time_distributed:
             roi_shape = tf.shape(roi_batch)
             new_roi_shape = [boxes_shape[0], boxes_shape[1]] + [roi_shape[i] for i in range(1, K.ndim(roi_batch))]
