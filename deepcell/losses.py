@@ -364,15 +364,13 @@ class RetinaNetLosses(object):
 
         def _mask(y_true, y_pred, iou_threshold=0.5, mask_size=(28, 28)):
             if K.ndim(y_pred) == 4:
-                # y_pred_shape = K.shape(y_pred)
-                # new_y_pred_shape = [y_pred_shape[0]*y_pred_shape[1], y_pred_shape[2], y_pred_shape[3]]
-                # y_pred = K.reshape(y_pred, new_y_pred_shape)
+                y_pred_shape = K.shape(y_pred)
+                new_y_pred_shape = [y_pred_shape[0]*y_pred_shape[1], y_pred_shape[2], y_pred_shape[3]]
+                y_pred = K.reshape(y_pred, new_y_pred_shape)
 
-                # y_true_shape = K.shape(y_true)
-                # new_y_true_shape = [y_true_shape[0]*y_true_shape[1], y_true_shape[2], y_true_shape[3]]
-                # y_true = K.reshape(y_true, new_y_true_shape)
-                y_pred = y_pred[:,0,:,:]
-                y_true = y_true[:,0,:,:]
+                y_true_shape = K.shape(y_true)
+                new_y_true_shape = [y_true_shape[0]*y_true_shape[1], y_true_shape[2], y_true_shape[3]]
+                y_true = K.reshape(y_true, new_y_true_shape)
 
             # split up the different predicted blobs
             boxes = y_pred[:, :, :4]

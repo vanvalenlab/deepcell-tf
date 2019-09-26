@@ -3124,12 +3124,12 @@ class RetinaMovieIterator(Iterator):
                         max_shape[k] = x.shape[k]
 
             # Get the bounding boxes from the transformed masks!
-            for idx, time in enumerate(times):
+            for idx_time, time in enumerate(times):
                 if self.time_axis == 1:
-                    annotations = self.load_annotations(y[idx])
+                    annotations = self.load_annotations(y[idx_time])
                 elif self.time_axis == 2:
-                    annotations = self.load_annotations(y[:, idx, ...])
-                annotations_list[idx].append(annotations)
+                    annotations = self.load_annotations(y[:, idx_time, ...])
+                annotations_list[idx_time].append(annotations)
 
             batch_x[i] = x
 
@@ -3180,8 +3180,8 @@ class RetinaMovieIterator(Iterator):
                 for idx_batch, ann in enumerate(annotations_frame):
                     masks_batch[idx_batch, idx_time, :ann['bboxes'].shape[0], :4] = ann['bboxes']
                     masks_batch[idx_batch, idx_time, :ann['labels'].shape[0], 4] = ann['labels']
-                    masks_batch[idx_batch, idx_time, :, 5] = max_shape[0] # width
-                    masks_batch[idx_batch, idx_time, :, 6] = max_shape[1] # height
+                    masks_batch[idx_batch, idx_time, :, 5] = max_shape[1] # width
+                    masks_batch[idx_batch, idx_time, :, 6] = max_shape[0] # height
 
                     # add flattened mask
                     for idx_mask, mask in enumerate(ann['masks']):
