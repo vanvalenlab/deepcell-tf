@@ -52,12 +52,7 @@ from tensorflow.python.keras.utils import to_categorical
 from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
-
-
-try:
-    from tensorflow.python.keras.utils import conv_utils
-except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
-    from tensorflow.python.keras._impl.keras.utils import conv_utils
+from tensorflow.python.keras.utils import conv_utils
 
 # Check if ImageDataGenerator is 1.11.0 or later
 if not hasattr(ImageDataGenerator, 'apply_transform'):

@@ -12,8 +12,6 @@ python:
   - 3.6
 
 env:
-  - TF_VERSION=1.8.0
-  - TF_VERSION=1.9.0
   - TF_VERSION=1.10.0
   - TF_VERSION=1.11.0
   - TF_VERSION=1.12.0
@@ -21,20 +19,12 @@ env:
 cache: pip
 
 install:
-  - pip install cython
-  - pip install matplotlib
-  - pip install nbformat
-  - pip install scipy
-  - pip install numpy
-  - pip install pandas
-  - pip install networkx
-  - pip install scikit-learn
-  - pip install scikit-image
-  - pip install opencv-python
-  - pip install pathlib
-  - pip install keras_preprocessing>=1.0.6
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
+  # remove tensorflow an requirements.txt
+  - sed -i "/tensorflow/d" requirements.txt
+  # install all other requirements
+  - pip install -r requirements.txt
   # install testing requirements
   - pip install pytest pytest-cov==2.5.1 pytest-pep8 coveralls
   # Install sphinx to check documentation build
@@ -50,15 +40,21 @@ script:
 jobs:
   include:
     - stage: deploy
-      if: (branch = master OR branch =~ ^r[0-9]+.[0-9]+) AND type != pull_request
+      if: tag IS present
       env: TF_VERSION=1.12.0
       python: 3.5
       script:
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - docker build -t "$TRAVIS_REPO_SLUG" .
+      # build an image with the CPU TensorFlow base image
+      - docker build --build-arg TF_VERSION=$TF_VERSION -t "$TRAVIS_REPO_SLUG" .
       - docker images
       - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":latest
-      - if [[ "$TRAVIS_BRANCH" != "master" ]] ; then docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_BRANCH#r}" ; fi
+      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}"
+      - docker push "$TRAVIS_REPO_SLUG"
+      # edit the requirements and Dockerfile to build the GPU TensorFlow base image
+      - docker build --build-arg TF_VERSION=$TF_VERSION-gpu -t "$TRAVIS_REPO_SLUG" .
+      - docker images
+      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}-gpu"
       - docker push "$TRAVIS_REPO_SLUG"
 
 after_success:

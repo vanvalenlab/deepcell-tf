@@ -33,22 +33,11 @@ import copy
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import applications
+from tensorflow.python.keras.backend import is_keras_tensor
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
-
-try:
-    from tensorflow.python.keras.backend import is_keras_tensor
-except ImportError:
-    from tensorflow.python.keras._impl.keras.backend import is_keras_tensor
-
-try:
-    from tensorflow.python.keras.utils.layer_utils import get_source_inputs
-except ImportError:
-    try:
-        from tensorflow.python.keras.engine.network import get_source_inputs
-    except ImportError:  # tf1.8 uses the _impl directory
-        from tensorflow.python.keras._impl.keras.engine.network import get_source_inputs
+from tensorflow.python.keras.utils.layer_utils import get_source_inputs
 
 
 def featurenet_block(x, n_filters):
