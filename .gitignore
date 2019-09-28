@@ -1,3 +1,6 @@
+# data directory
+docker_data
+
 # Application generated files
 scripts/generated_notebooks/
 deepcell/utils/compute_overlap.cypthon-*
