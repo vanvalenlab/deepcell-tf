@@ -1,0 +1,6 @@
+pytest==4.6.5
+pytest-cov==2.5.1
+pytest-pep8==1.0.6
+coveralls==1.8.2
+sphinx==2.1.2
+m2r==0.2.1
