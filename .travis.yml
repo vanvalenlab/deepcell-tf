@@ -19,6 +19,7 @@ env:
 cache: pip
 
 install:
+  - pip install --upgrade pip
   # install TensorFlow (CPU version).
   - pip install tensorflow==$TF_VERSION
   # remove tensorflow an requirements.txt
