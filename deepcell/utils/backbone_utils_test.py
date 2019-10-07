@@ -34,7 +34,6 @@ from absl.testing import parameterized
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Input
 from tensorflow.python.keras.models import Model
-from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.platform import test
 
 from deepcell.utils import backbone_utils
@@ -42,7 +41,6 @@ from deepcell.utils import backbone_utils
 
 class TestBackboneUtils(test.TestCase, parameterized.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_get_featurenet_backbone(self):
         backbone = 'featurenet'
         input_shape = (256, 256, 3)
@@ -60,7 +58,6 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
             out = backbone_utils.get_backbone(
                 backbone, inputs, use_imagenet=True)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_get_featurenet3d_backbone(self):
         backbone = 'featurenet3d'
         input_shape = (40, 256, 256, 3)
@@ -97,7 +94,6 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         ('nasnet_large',) * 2,
         ('nasnet_mobile',) * 2,
     ])
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_get_backbone(self, backbone):
         # with self.test_session(use_gpu=True):
         K.set_image_data_format('channels_last')
@@ -111,7 +107,6 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
             backbone, inputs, return_dict=False)
         assert isinstance(out, Model)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_invalid_backbone(self):
         inputs = Input(shape=(4, 2, 3))
         with self.assertRaises(ValueError):
