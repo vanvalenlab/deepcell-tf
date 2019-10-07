@@ -354,6 +354,7 @@ def retinanet_bbox(model=None,
                    class_specific_filter=True,
                    name='retinanet-bbox',
                    anchor_params=None,
+                   max_detections=300,
                    **kwargs):
     """Construct a RetinaNet model on top of a backbone and adds convenience
     functions to output boxes directly.
@@ -434,6 +435,7 @@ def retinanet_bbox(model=None,
     detections = FilterDetections(
         nms=nms,
         class_specific_filter=class_specific_filter,
+        max_detections=max_detections,
         name='filtered_detections'
     )([boxes, classification] + other)
 
