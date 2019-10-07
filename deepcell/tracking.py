@@ -343,8 +343,9 @@ class cell_tracker(object):  # pylint: disable=useless-object-inheritance
         death_matrix = death_matrix - np.eye(number_of_tracks)
 
         # Compute mordor matrix
-        # The mordor matrix needs to sastify shape constraints and allow for an auxillary 
-        # assignments - therefore it should be the transpose of the assignment matrix 
+        # The mordor matrix must sastify shape constraints and allow for
+        # auxillary assignments - therefore it should be the transpose of the
+        # assignment matrix
         mordor_matrix = assignment_matrix.T
 
         # Assemble full cost matrix
