@@ -265,13 +265,15 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         overlaps = compute_overlap(true_bbox, pred_bbox)
         ind_true, ind_pred = np.nonzeros(overlaps)
 
-        for index in range(ind_x.shape[0]):
-            intersection = np.logical_and(self.y_true == ind_true[index] + 1, self.y_pred == ind_pred[index] + 1)
-            union = np.logical_or(self.y_true == ind_true[index] + 1, self.y_pred == ind_pred[index] + 1)
-            self.iou[ind_true[index], ind_pred[index]] = intersection.sum()/union.sum()
+        for index in range(self.y_true.shape[0]):
+            intersection = np.logical_and(self.y_true == ind_true[index] + 1,
+                                          self.y_pred == ind_pred[index] + 1)
+            union = np.logical_or(self.y_true == ind_true[index] + 1,
+                                  self.y_pred == ind_pred[index] + 1)
+            self.iou[ind_true[index], ind_pred[index]] = intersection.sum() / union.sum()
 
             if (self.seg is True) & \
-               (intersection.sum() > 0.5 * np.sum(self.y_true == t)):
+               (intersection.sum() > 0.5 * np.sum(self.y_true == index)):
                 self.seg_thresh[ind_true[index], ind_pred[index]] = 1
 
     def _make_matrix(self):
@@ -327,8 +329,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         if self.seg is True:
             iou_mask = self.iou.copy()
             iou_mask[self.seg_thresh == 0] = np.nan
-            self.seg_score = np.nanmean(iou_mask[correct_index[0],
-                                        correct_index[1]])
+            self.seg_score = np.nanmean(iou_mask[correct_index[0], correct_index[1]])
 
         # Collect unassigned cells
         self.loners_pred, _ = np.where(
@@ -489,7 +490,6 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
     def print_report(self):
         """Print report of error types and frequency
         """
-
         print(self.save_to_dataframe())
 
     def save_to_dataframe(self):
@@ -919,15 +919,15 @@ def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
 
 
 def create_graph(file, node_key=None):
-    df = pd.read_csv(file, header=None, sep=' ', names=['Cell_ID','Start','End','Parent_ID'])
-    if node_key != None:
-        df[['Cell_ID','Parent_ID']] = df[['Cell_ID','Parent_ID']].replace(node_key)
+    df = pd.read_csv(file, header=None, sep=' ', names=['Cell_ID', 'Start', 'End', 'Parent_ID'])
+    if node_key is not None:
+        df[['Cell_ID', 'Parent_ID']] = df[['Cell_ID', 'Parent_ID']].replace(node_key)
     edges = pd.DataFrame()
     # Add each cell lineage as a set of edges to df
     for _, row in df.iterrows():
-        tpoints = np.arange(row['Start'], row['End']+1)
+        tpoints = np.arange(row['Start'], row['End'] + 1)
         deltaT = len(tpoints)
-        cellid = ['{cellid}_{frame}'.format(cellid = row['Cell_ID'], frame=t)
+        cellid = ['{cellid}_{frame}'.format(cellid=row['Cell_ID'], frame=t)
                   for t in tpoints]
         source = cellid[0:-1]
         target = cellid[1:]
@@ -935,7 +935,7 @@ def create_graph(file, node_key=None):
 
     Dattr = {}
     # Add parent-daughter connections
-    for _,row in df[df['Parent_ID']!=0].iterrows():
+    for _, row in df[df['Parent_ID'] != 0].iterrows():
         source = '{cellid}_{frame}'.format(cellid=row['Parent_ID'], frame=row['Start'] - 1)
         target = '{cellid}_{frame}'.format(cellid=row['Cell_ID'], frame=row['Start'])
         edges = edges.append(pd.DataFrame({'source': [source], 'target': [target]}))
@@ -967,7 +967,7 @@ def match_nodes(pattern1, pattern2):
             intersection = np.logical_and(gt == i, res == j)
             union = np.logical_or(gt == i, res == j)
             # iou[i,j] = intersection.sum() / union.sum()
-            iou[:,i,j] = intersection.sum(axis=(1, 2)) / union.sum(axis=(1, 2))
+            iou[:, i, j] = intersection.sum(axis=(1, 2)) / union.sum(axis=(1, 2))
             # gtcells, rescells = np.where(iou > .25)
     gtcells, rescells = np.where(np.nansum(iou, axis=0) >= 1)
     return gtcells, rescells
@@ -975,8 +975,8 @@ def match_nodes(pattern1, pattern2):
 
 def classify_divisions(G_gt, G_res):
     """Identify nodes with parent attribute"""
-    div_gt =[node for node,d in G_gt.node.data() if d.get('division')]
-    div_res =[node for node,d in G_res.node.data() if d.get('division')]
+    div_gt = [node for node, d in G_gt.node.data() if d.get('division')]
+    div_res = [node for node, d in G_res.node.data() if d.get('division')]
     divI = 0  # Correct division
     divJ = 0  # Wrong division
     divC = 0  # False positive division
