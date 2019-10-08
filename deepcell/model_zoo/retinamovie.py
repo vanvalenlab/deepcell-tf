@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""RetinaMovie models - TimeDistributed variants of RetinaNet 
+"""RetinaMovie models - TimeDistributed variants of RetinaNet
 adapted from https://github.com/fizyr/keras-retinanet"""
 
 from __future__ import absolute_import
@@ -45,12 +45,12 @@ from tensorflow.python.keras.initializers import RandomNormal
 
 from deepcell.initializers import PriorProbability
 from deepcell.layers import TensorProduct
-from deepcell.layers import FilterDetections
 from deepcell.layers import ImageNormalization2D, Location2D
 from deepcell.layers import Anchors, RegressBoxes, ClipBoxes, FilterDetections
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
 from deepcell.model_zoo.fpn import __create_pyramid_features, __create_semantic_head
 from deepcell.utils.backbone_utils import get_backbone
+
 
 def default_classification_model(num_classes,
                                  num_anchors,
@@ -167,6 +167,7 @@ def default_regression_model(num_values,
 
     return Model(inputs=inputs, outputs=outputs, name=name)
 
+
 def default_submodels(num_classes, num_anchors, frames_per_batch=5):
     """Create a list of default submodels used for object detection.
 
@@ -182,8 +183,10 @@ def default_submodels(num_classes, num_anchors, frames_per_batch=5):
             submodel and the second element is the submodel itself.
     """
     return [
-        ('regression', default_regression_model(4, num_anchors, frames_per_batch=frames_per_batch)),
-        ('classification', default_classification_model(num_classes, num_anchors, frames_per_batch=frames_per_batch))
+        ('regression', default_regression_model(
+            4, num_anchors, frames_per_batch=frames_per_batch)),
+        ('classification', default_classification_model(
+            num_classes, num_anchors, frames_per_batch=frames_per_batch))
     ]
 
 
@@ -256,21 +259,22 @@ def __build_anchors(anchor_parameters, features):
             ))(f) for i, f in enumerate(features)
         ]
         return Concatenate(axis=2, name='anchors')(anchors)
-    
+
+
 def retinamovie(inputs,
-              backbone_dict,
-              num_classes,
-              frames_per_batch=5,
-              backbone_levels=['C2', 'C3', 'C4', 'C5'],
-              pyramid_levels=['P2', 'P3', 'P4', 'P5', 'P6', 'P7'],
-              num_anchors=None,
-              create_pyramid_features=__create_pyramid_features,
-              create_semantic_head=__create_semantic_head,
-              panoptic=False,
-              num_semantic_heads=1,
-              num_semantic_classes=[3],
-              submodels=None,
-              name='retinanet'):
+                backbone_dict,
+                num_classes,
+                frames_per_batch=5,
+                backbone_levels=['C2', 'C3', 'C4', 'C5'],
+                pyramid_levels=['P2', 'P3', 'P4', 'P5', 'P6', 'P7'],
+                num_anchors=None,
+                create_pyramid_features=__create_pyramid_features,
+                create_semantic_head=__create_semantic_head,
+                panoptic=False,
+                num_semantic_heads=1,
+                num_semantic_classes=[3],
+                submodels=None,
+                name='retinanet'):
     """Construct a RetinaNet model on top of a backbone.
 
     This model is the minimum model necessary for training
@@ -349,6 +353,7 @@ def retinamovie(inputs,
 
     return model
 
+
 def retinamovie_bbox(model=None,
                      frames_per_batch=5,
                      nms=True,
@@ -357,6 +362,7 @@ def retinamovie_bbox(model=None,
                      class_specific_filter=True,
                      name='retinamovie-bbox',
                      anchor_params=None,
+                     max_detections=300,
                      **kwargs):
     """Construct a RetinaNet model on top of a backbone and adds convenience
     functions to output boxes directly.
@@ -404,7 +410,7 @@ def retinamovie_bbox(model=None,
 
     # create RetinaNet model
     if model is None:
-        model = retinamovie(num_anchors=anchor_params.num_anchors(), 
+        model = retinamovie(num_anchors=anchor_params.num_anchors(),
                             frames_per_batch=frames_per_batch,
                             **kwargs)
     else:
@@ -439,6 +445,7 @@ def retinamovie_bbox(model=None,
     detections = FilterDetections(
         nms=nms,
         class_specific_filter=class_specific_filter,
+        max_detections=max_detections,
         name='filtered_detections'
     )([boxes, classification] + other)
 
@@ -450,18 +457,19 @@ def retinamovie_bbox(model=None,
 
     # construct the model
     return Model(inputs=model.inputs, outputs=outputs, name=name)
-    
+
+
 def RetinaMovie(backbone,
-              num_classes,
-              input_shape,
-              frames_per_batch=5,
-              inputs=None,
-              norm_method='whole_image',
-              location=False,
-              use_imagenet=False,
-              pooling=None,
-              required_channels=3,
-              **kwargs):
+                num_classes,
+                input_shape,
+                frames_per_batch=5,
+                inputs=None,
+                norm_method='whole_image',
+                location=False,
+                use_imagenet=False,
+                pooling=None,
+                required_channels=3,
+                **kwargs):
     """Constructs a retinanet model using a backbone from keras-applications.
 
     Args:
@@ -516,11 +524,11 @@ def RetinaMovie(backbone,
         'input_shape': fixed_input_shape,
         'pooling': pooling
     }
-    
-    backbone_dict = get_backbone(backbone, 
-                                 input_tensor=fixed_inputs, 
-                                 use_imagenet=use_imagenet, 
-                                 time_distribute=True, 
+
+    backbone_dict = get_backbone(backbone,
+                                 input_tensor=fixed_inputs,
+                                 use_imagenet=use_imagenet,
+                                 time_distribute=True,
                                  frames_per_batch=frames_per_batch,
                                  **model_kwargs)
 

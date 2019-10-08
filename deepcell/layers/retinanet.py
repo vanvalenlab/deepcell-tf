@@ -227,7 +227,6 @@ class ClipBoxes(Layer):
             x2 = tf.clip_by_value(boxes[:, :, :, 2], 0, width)
             y2 = tf.clip_by_value(boxes[:, :, :, 3], 0, height)
             return K.stack([x1, y1, x2, y2], axis=3)
-        
 
     def compute_output_shape(self, input_shape):
         return tensor_shape.TensorShape(input_shape[1]).as_list()
@@ -299,12 +298,8 @@ class RoiAlign(Layer):
         scores = K.stop_gradient(inputs[2])
         fpn = [K.stop_gradient(i) for i in inputs[3:]]
 
-        if K.ndim(boxes) == 4:
-            time_distributed = True
-        else:
-            time_distributed = False
+        time_distributed = K.ndim(boxes) == 4
 
-        print(K.ndim(boxes), time_distributed)
         if time_distributed:
             image_shape = image_shape[1:]
 
@@ -312,9 +307,10 @@ class RoiAlign(Layer):
             scores_shape = tf.shape(scores)
             fpn_shape = [tf.shape(f) for f in fpn]
 
-            new_boxes_shape =  [-1] + [boxes_shape[i] for i in range(2, K.ndim(boxes))]
+            new_boxes_shape = [-1] + [boxes_shape[i] for i in range(2, K.ndim(boxes))]
             new_scores_shape = [-1] + [scores_shape[i] for i in range(2, K.ndim(scores))]
-            new_fpn_shape = [[-1] + [f_s[i] for i in range(2, K.ndim(f))] for f, f_s in zip(fpn, fpn_shape)]
+            new_fpn_shape = [[-1] + [f_s[i] for i in range(2, K.ndim(f))]
+                             for f, f_s in zip(fpn, fpn_shape)]
 
             boxes = tf.reshape(boxes, new_boxes_shape)
             scores = tf.reshape(scores, new_scores_shape)
@@ -373,10 +369,11 @@ class RoiAlign(Layer):
             dtype=K.floatx(),
             parallel_iterations=self.parallel_iterations
         )
-        print(roi_batch.get_shape(), time_distributed)
+
         if time_distributed:
             roi_shape = tf.shape(roi_batch)
-            new_roi_shape = [boxes_shape[0], boxes_shape[1]] + [roi_shape[i] for i in range(1, K.ndim(roi_batch))]
+            new_roi_shape = [boxes_shape[0], boxes_shape[1]] + \
+                            [roi_shape[i] for i in range(1, K.ndim(roi_batch))]
             roi_batch = tf.reshape(roi_batch, new_roi_shape)
 
         return roi_batch
@@ -401,7 +398,6 @@ class RoiAlign(Layer):
                 input_shape[3][-1]
             ]
             return tensor_shape.TensorShape(output_shape)
-
 
     def get_config(self):
         config = {'crop_size': self.crop_size}

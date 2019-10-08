@@ -29,9 +29,11 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import TimeDistributed, Conv2D
+from tensorflow.python.keras.layers import MaxPool2D, Lambda
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.initializers import normal
 
@@ -119,9 +121,10 @@ def default_mask_model(num_classes,
 
     return Model(inputs=inputs, outputs=outputs, name=name)
 
+
 def default_final_detection_model(pyramid_feature_size=256,
                                   final_detection_feature_size=256,
-                                  roi_size=(14,14),
+                                  roi_size=(14, 14),
                                   name='final_detection_submodel'):
     options = {
         'kernel_size': 3,
@@ -131,10 +134,10 @@ def default_final_detection_model(pyramid_feature_size=256,
         'bias_initializer': 'zeros',
         'activation': 'relu'
     }
-    
+
     inputs = Input(shape=(None, roi_size[0], roi_size[1], pyramid_feature_size))
     outputs = inputs
-    
+
     for i in range(2):
         outputs = TimeDistributed(Conv2D(
             filters=final_detection_feature_size,
@@ -144,24 +147,23 @@ def default_final_detection_model(pyramid_feature_size=256,
             filters=final_detection_feature_size,
             **options
         ), name='final_detection_submodel_conv2_block{}'.format(i))(outputs)
-        outputs = TimeDistributed(MaxPool2D(), 
-            name='final_detection_submodel_pool1_block{}'.format(i))(outputs)
-        
-    outputs = TimeDistributed(Conv2D(filters=final_detection_feature_size, 
-                                     kernel_size=3, 
+        outputs = TimeDistributed(MaxPool2D(
+        ), name='final_detection_submodel_pool1_block{}'.format(i))(outputs)
+
+    outputs = TimeDistributed(Conv2D(filters=final_detection_feature_size,
+                                     kernel_size=3,
                                      padding='valid',
                                      kernel_initializer=normal(mean=0.0, stddev=0.01, seed=None),
                                      bias_initializer='zeros',
                                      activation='relu'))(outputs)
-    
-    outputs = TimeDistributed(Conv2D(filters=1, 
-                                     kernel_size=1, 
+
+    outputs = TimeDistributed(Conv2D(filters=1,
+                                     kernel_size=1,
                                      activation='sigmoid'))(outputs)
-    
+
     outputs = Lambda(lambda x: tf.squeeze(x, axis=[2, 3]))(outputs)
-    
+
     return Model(inputs=inputs, outputs=outputs, name=name)
-        
 
 
 def default_roi_submodels(num_classes,

@@ -740,7 +740,7 @@ def _get_detections(generator,
 
         for i in range(generator.y.shape[0]):
             for j in range(0, generator.y.shape[1], frames_per_batch):
-                movie = generator.x[[i], j:j+frames_per_batch, ...]
+                movie = generator.x[[i], j:j + frames_per_batch, ...]
                 results = model.predict_on_batch(movie)
 
                 if generator.panoptic:
@@ -754,7 +754,7 @@ def _get_detections(generator,
                         masks = results[-1]
                     else:
                         boxes, scores, labels = results[0:3]
-                        
+
                     for k in range(frames_per_batch):
                         boxes_list.append(boxes[0, k, ...])
                         scores_list.append(scores[0, k, :])
@@ -763,11 +763,11 @@ def _get_detections(generator,
         batch_boxes = np.stack(boxes_list, axis=0)
         batch_scores = np.stack(scores_list, axis=0)
         batch_labels = np.stack(labels_list, axis=0)
-        
+
         print(batch_boxes.shape, batch_scores.shape, batch_labels.shape)
 
         all_detections = [[None for i in range(generator.num_classes)]
-                      for j in range(batch_boxes.shape[0])]
+                          for j in range(batch_boxes.shape[0])]
 
         all_masks = None
 
@@ -776,7 +776,7 @@ def _get_detections(generator,
             scores = batch_scores[[i]]
             labels = batch_labels[[i]]
 
-             # select indices which have a score above the threshold
+            # select indices which have a score above the threshold
             indices = np.where(scores[0, :] > score_threshold)[0]
 
             # select those scores
@@ -804,8 +804,7 @@ def _get_detections(generator,
     return all_detections, all_masks
 
 
-def _get_annotations(generator,
-                    frames_per_batch=5):
+def _get_annotations(generator, frames_per_batch=5):
     """Get the ground truth annotations from the generator.
 
     The result is a list of lists such that the size is:
@@ -813,6 +812,7 @@ def _get_annotations(generator,
 
     Args:
         generator: The generator used to retrieve ground truth annotations.
+
     Returns:
         list: The annotations for each image in the generator.
     """
@@ -844,7 +844,7 @@ def _get_annotations(generator,
         all_masks = None
         for i in range(generator.y.shape[0]):
             for j in range(0, generator.y.shape[1], frames_per_batch):
-                label_movie = generator.y[i, j:j+frames_per_batch, ...]
+                label_movie = generator.y[i, j:j + frames_per_batch, ...]
                 for k in range(0, frames_per_batch):
                     annotations = generator.load_annotations(label_movie[k])
                     imb_list = [None for i in range(generator.num_classes)]
@@ -870,6 +870,7 @@ def evaluate(generator, model,
         score_threshold (float): The score confidence threshold
             to use for detections.
         max_detections (int): The maximum number of detections to use per image.
+
     Returns:
         dict: A mapping of class names to mAP scores.
     """

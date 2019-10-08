@@ -193,12 +193,16 @@ class FilterDetections(Layer):
 
         if time_distributed:
             boxes_shape = tf.shape(boxes)
-            classification_shape = tf.shape(classification) #classification.get_shape()
+            # classification_shape = classification.get_shape()
+            classification_shape = tf.shape(classification)
             other_shape = [tf.shape(o) for o in other]
 
             new_boxes_shape = [-1] + [boxes_shape[i] for i in range(2, K.ndim(boxes))]
-            new_classification_shape = [-1] + [classification_shape[i] for i in range(2, K.ndim(classification)-1)] + [classification.get_shape()[-1]]
-            new_other_shape = [[-1] + [o_s[i] for i in range(2, K.ndim(o))] for o, o_s in zip(other, other_shape)]
+            new_classification_shape = [-1] + \
+                [classification_shape[i] for i in range(2, K.ndim(classification) - 1)] + \
+                [classification.get_shape()[-1]]
+            new_other_shape = [[-1] + [o_s[i] for i in range(2, K.ndim(o))]
+                               for o, o_s in zip(other, other_shape)]
 
             boxes = tf.reshape(boxes, new_boxes_shape)
             classification = tf.reshape(classification, new_classification_shape)
@@ -236,14 +240,25 @@ class FilterDetections(Layer):
             filtered_other = outputs[3:]
 
             final_boxes_shape = [boxes_shape[0], boxes_shape[1], self.max_detections, 4]
-            final_scores_shape = [classification_shape[0], classification_shape[1], self.max_detections]
-            final_labels_shape = [classification_shape[0], classification_shape[1], self.max_detections]
-            final_others_shape = [[o[0], o[1], self.max_detections] + [o[i] for i in range(3, K.ndim(o))] for o in other_shape]
+            final_scores_shape = [
+                classification_shape[0],
+                classification_shape[1],
+                self.max_detections
+            ]
+            final_labels_shape = [
+                classification_shape[0],
+                classification_shape[1],
+                self.max_detections
+            ]
+            final_others_shape = [[o[0], o[1], self.max_detections] +
+                                  [o[i] for i in range(3, K.ndim(o))]
+                                  for o in other_shape]
 
             filtered_boxes = tf.reshape(filtered_boxes, final_boxes_shape)
             filtered_scores = tf.reshape(filtered_scores, final_scores_shape)
             filtered_labels = tf.reshape(filtered_labels, final_labels_shape)
-            filtered_other = [tf.reshape(o, o_s) for o, o_s in zip(filtered_other, final_others_shape)]
+            filtered_other = [tf.reshape(o, o_s) for o, o_s in zip(filtered_other,
+                                                                   final_others_shape)]
 
             outputs = [filtered_boxes, filtered_scores, filtered_labels] + filtered_other
 

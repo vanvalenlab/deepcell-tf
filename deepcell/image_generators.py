@@ -2841,6 +2841,7 @@ class RetinaNetIterator(Iterator):
         # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
+
 class RetinaMovieIterator(Iterator):
     """Iterator yielding data from Numpy arrayss (`X and `y`).
 
@@ -2884,7 +2885,7 @@ class RetinaMovieIterator(Iterator):
                  panoptic=False,
                  include_mask_transforms=True,
                  transforms=['watershed'],
-                 transforms_kwargs = {},
+                 transforms_kwargs={},
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -2926,7 +2927,7 @@ class RetinaMovieIterator(Iterator):
         self.transforms = transforms
         self.transforms_kwargs = transforms_kwargs
         self.channel_axis = 4 if data_format == 'channels_last' else 1
-        self.time_axis = 1 if data_format =='channels_last' else 2
+        self.time_axis = 1 if data_format == 'channels_last' else 2
         self.row_axis = 2 if data_format == 'channels_last' else 3
         self.col_axis = 3 if data_format == 'channels_last' else 4
         self.movie_data_generator = movie_data_generator
@@ -2957,18 +2958,20 @@ class RetinaMovieIterator(Iterator):
                     transform_kwargs = transforms_kwargs[transform]
                     y_transform_list = []
                     for time in range(y.shape[self.time_axis]):
-                        y_temp = y[:,time,...] if data_format == 'channels_last' else y[:,:,time,...]
-                        y_temp_transform = _transform_masks(y_temp, transform,
-                                                    data_format=data_format,
-                                                    **transform_kwargs)
+                        if data_format == 'channels_first':
+                            y_temp = y[:, :, time, ...]
+                        else:
+                            y_temp = y[:, time, ...]
+                        y_temp_transform = _transform_masks(
+                            y_temp, transform,
+                            data_format=data_format,
+                            **transform_kwargs)
                         y_transform_list.append(y_temp_transform)
                     y_transform = np.stack(y_transform_list, axis=self.time_axis)
                     y_semantic_list.append(y_transform)
 
-            self.y_semantic_list = [np.asarray(y_semantic, dtype='int32') 
-                                        for y_semantic in y_semantic_list]
-
-            print(self.y.shape, [y_semantic.shape for y_semantic in self.y_semantic_list])
+            self.y_semantic_list = [np.asarray(y_semantic, dtype='int32')
+                                    for y_semantic in y_semantic_list]
 
         invalid_batches = []
         # Remove images with small numbers of cells
@@ -2992,8 +2995,8 @@ class RetinaMovieIterator(Iterator):
         self.y = np.delete(self.y, invalid_batches, axis=0)
         self.x = np.delete(self.x, invalid_batches, axis=0)
         if self.panoptic:
-            self.y_semantic_list = [np.delete(y, invalid_batches, axis=0) 
-                                        for y in self.y_semantic_list]
+            self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
+                                    for y in self.y_semantic_list]
 
         super(RetinaMovieIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
@@ -3073,16 +3076,19 @@ class RetinaMovieIterator(Iterator):
         if self.panoptic:
             if self.data_format == 'channels_first':
                 batch_y_semantic_list = [np.zeros(tuple([len(index_array),
-                                                            y_semantic.shape[1],
-                                                            self.frames_per_batch,
-                                                            y_semantic.shape[3],
-                                                            y_semantic.shape[4]])) for y_semantic in self.y_semantic_list]
+                                                         y_semantic.shape[1],
+                                                         self.frames_per_batch,
+                                                         y_semantic.shape[3],
+                                                         y_semantic.shape[4]]))
+                                         for y_semantic in self.y_semantic_list]
             else:
-                batch_y_semantic_list = [np.zeros(tuple([len(index_array), self.frames_per_batch] 
-                                        + list(y_semantic.shape[2:]))) 
-                                        for y_semantic in self.y_semantic_list]
+                batch_y_semantic_list = [
+                    np.zeros(tuple([len(index_array), self.frames_per_batch] +
+                                   list(y_semantic.shape[2:])))
+                    for y_semantic in self.y_semantic_list
+                ]
 
-        annotations_list = [ [] for _ in range(self.frames_per_batch) ]
+        annotations_list = [[] for _ in range(self.frames_per_batch)]
 
         max_shape = []
 
@@ -3098,12 +3104,14 @@ class RetinaMovieIterator(Iterator):
             elif self.time_axis == 2:
                 x = self.x[j, :, time_start:time_end, ...]
                 y = self.y[j, :, time_start:time_end, ...]
-            
+
             if self.panoptic:
                 if self.time_axis == 1:
-                    y_semantic_list = [y_semantic[j, time_start:time_end, ...] for y_semantic in self.y_semantic_list]
+                    y_semantic_list = [y_semantic[j, time_start:time_end, ...]
+                                       for y_semantic in self.y_semantic_list]
                 elif self.time_axis == 2:
-                    y_semantic_list = [y_semantic[j, :, time_start:time_end, ...] for y_semantic in self.y_semantic_list]
+                    y_semantic_list = [y_semantic[j, :, time_start:time_end, ...]
+                                       for y_semantic in self.y_semantic_list]
 
             # Apply transformation
             if self.panoptic:
@@ -3137,7 +3145,10 @@ class RetinaMovieIterator(Iterator):
                 for k in range(len(y_semantic_list)):
                     batch_y_semantic_list[k][i] = y_semantic_list[k]
 
-        batch_x_shape = batch_x.shape[2:] if self.data_format == 'channels_last' else [batch_x.shape[1], batch_x.shape[3], batch_x.shape[4]]
+        if self.data_format == 'channels_first':
+            batch_x_shape = [batch_x.shape[1], batch_x.shape[3], batch_x.shape[4]]
+        else:
+            batch_x_shape = batch_x.shape[2:]
 
         anchors = anchors_for_shape(
             batch_x_shape,
@@ -3148,7 +3159,10 @@ class RetinaMovieIterator(Iterator):
         regressions_list = []
         labels_list = []
 
-        batch_x_frame = batch_x[:, 0, ...] if self.data_format == 'channels_last' else batch_x[:, :, 0, ...]
+        if self.data_format == 'channels_first':
+            batch_x_frame = batch_x[:, :, 0, ...]
+        else:
+            batch_x_frame = batch_x[:, 0, ...]
         for idx, time in enumerate(times):
             regressions, labels = anchor_targets_bbox(
                 anchors,
@@ -3161,7 +3175,9 @@ class RetinaMovieIterator(Iterator):
         regressions = np.stack(regressions_list, axis=self.time_axis)
         labels = np.stack(labels_list, axis=self.time_axis)
 
-        max_shape = tuple([max_shape[self.row_axis-1], max_shape[self.col_axis-1]])  # was a list for max shape indexing
+        # was a list for max shape indexing
+        max_shape = tuple([max_shape[self.row_axis - 1],
+                           max_shape[self.col_axis - 1]])
 
         if self.include_masks:
             # masks_batch has shape: (batch size, max_annotations,
@@ -3180,8 +3196,8 @@ class RetinaMovieIterator(Iterator):
                 for idx_batch, ann in enumerate(annotations_frame):
                     masks_batch[idx_batch, idx_time, :ann['bboxes'].shape[0], :4] = ann['bboxes']
                     masks_batch[idx_batch, idx_time, :ann['labels'].shape[0], 4] = ann['labels']
-                    masks_batch[idx_batch, idx_time, :, 5] = max_shape[1] # width
-                    masks_batch[idx_batch, idx_time, :, 6] = max_shape[0] # height
+                    masks_batch[idx_batch, idx_time, :, 5] = max_shape[1]  # width
+                    masks_batch[idx_batch, idx_time, :, 6] = max_shape[0]  # height
 
                     # add flattened mask
                     for idx_mask, mask in enumerate(ann['masks']):
@@ -3221,6 +3237,7 @@ class RetinaMovieIterator(Iterator):
         # The transformation of images is not under thread lock
         # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
+
 
 class RetinaMovieDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
@@ -3307,7 +3324,7 @@ class RetinaMovieDataGenerator(ImageDataGenerator):
              panoptic=False,
              include_mask_transforms=True,
              transforms=['watershed'],
-             transforms_kwargs = {},
+             transforms_kwargs={},
              anchor_params=None,
              pyramid_levels=['P2', 'P3', 'P4', 'P5', 'P6', 'P7'],
              shuffle=False,
@@ -3344,7 +3361,7 @@ class RetinaMovieDataGenerator(ImageDataGenerator):
             num_classes=num_classes,
             clear_borders=clear_borders,
             include_masks=include_masks,
-            include_final_detection_layer = include_final_detection_layer,
+            include_final_detection_layer=include_final_detection_layer,
             panoptic=panoptic,
             include_mask_transforms=include_mask_transforms,
             transforms=transforms,
@@ -3433,11 +3450,11 @@ class RetinaMovieDataGenerator(ImageDataGenerator):
             else:
                 y_new = np.empty(y.shape)
         # apply_transform expects ndim=3, but we are ndim=4
-        
+
         if self.data_format == 'channels_first':
             params = self.get_random_transform(x[:, 0].shape, seed)
         else:
-            params = self.get_random_transform(x[0].shape, seed)    
+            params = self.get_random_transform(x[0].shape, seed)
 
         for frame in range(x.shape[self.time_axis]):
             if self.data_format == 'channels_first':
@@ -3451,16 +3468,16 @@ class RetinaMovieDataGenerator(ImageDataGenerator):
                 params['channel_shift_intensity'] = None
                 _interpolation_order = self.interpolation_order
                 self.interpolation_order = 0
-                
+
                 if isinstance(y, list):
                     if self.data_format == 'channels_first':
                         for y_list, y_old in zip(y_new, y):
-                            y_trans = self.apply_transform(y_old[:,frame], params)
+                            y_trans = self.apply_transform(y_old[:, frame], params)
                             y_list[:, frame] = np.rollaxis(y_trans, 1, 0)
                     else:
                         for y_list, y_old in zip(y_new, y):
                             y_list[frame] = self.apply_transform(y_old[frame], params)
-                else:    
+                else:
                     if self.data_format == 'channels_first':
                         y_trans = self.apply_transform(y[:, frame], params)
                         y_new[:, frame] = np.rollaxis(y_trans, 1, 0)

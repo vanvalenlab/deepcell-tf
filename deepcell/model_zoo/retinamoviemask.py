@@ -29,18 +29,14 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import tensorflow as tf
+from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.layers import Input, Concatenate, Lambda, Dense, Layer
-from tensorflow.python.keras.layers import BatchNormalization, Activation, Softmax
-from tensorflow.python.keras.layers import TimeDistributed, Conv2D, MaxPool2D
+from tensorflow.python.keras.layers import Input, Concatenate, Lambda, Dense
+from tensorflow.python.keras.layers import Layer, Softmax, TimeDistributed
 from tensorflow.python.keras.models import Model
-try:
-    from tensorflow.python.keras.initializers import normal
-except ImportError:  # tf 1.8.0 uses keras._impl directory
-    from tensorflow.python.keras._impl.keras.initializers import normal
 
-from deepcell.layers import Cast, Shape, UpsampleLike
-from deepcell.layers import Upsample, RoiAlign, ConcatenateBoxes
+from deepcell.layers import Shape, UpsampleLike, RoiAlign, ConcatenateBoxes
 from deepcell.layers import ClipBoxes, RegressBoxes, FilterDetections
 from deepcell.layers import TensorProduct, ImageNormalization2D, Location2D
 from deepcell.model_zoo.retinamovie import retinamovie
@@ -49,88 +45,91 @@ from deepcell.model_zoo.retinamovie import __build_anchors
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
 from deepcell.utils.backbone_utils import get_backbone
 
+
 class RoiAlign(Layer):
-   # Modified ROI Align layer
-   # Only takes in one feature map
-   # Feature map must be the size of the original image
+    # Modified ROI Align layer
+    # Only takes in one feature map
+    # Feature map must be the size of the original image
     def __init__(self, crop_size=(14, 14), parallel_iterations=32, **kwargs):
         self.crop_size = crop_size
-        self.parallel_iterations = parallel_iterations        
-        super(RoiAlign, self).__init__(**kwargs)    
-        
+        self.parallel_iterations = parallel_iterations
+        super(RoiAlign, self).__init__(**kwargs)
+
     def call(self, inputs, **kwargs):
         boxes = K.stop_gradient(inputs[0])
         fpn = K.stop_gradient(inputs[1])
-        
+
         if K.ndim(boxes) == 4:
             time_distributed = True
         else:
             time_distributed = False
-            
+
         if time_distributed:
             boxes_shape = K.shape(boxes)
             fpn_shape = K.shape(fpn)
-            
-            new_boxes_shape =  [-1] + [boxes_shape[i] for i in range(2, K.ndim(boxes))]
+
+            new_boxes_shape = [-1] + [boxes_shape[i] for i in range(2, K.ndim(boxes))]
             new_fpn_shape = [-1] + [fpn_shape[i] for i in range(2, K.ndim(fpn))]
-            
+
             boxes = K.reshape(boxes, new_boxes_shape)
             fpn = K.reshape(fpn, new_fpn_shape)
-            
-        image_shape = K.cast(K.shape(fpn), K.floatx())        
-        
+
+        image_shape = K.cast(K.shape(fpn), K.floatx())
+
         def _roi_align(args):
             boxes = args[0]
             fpn = args[1]            # process the feature map
             x1 = boxes[:, 0]
             y1 = boxes[:, 1]
             x2 = boxes[:, 2]
-            y2 = boxes[:, 3]            
-            
+            y2 = boxes[:, 3]
+
             fpn_shape = K.cast(K.shape(fpn), dtype=K.floatx())
             norm_boxes = K.stack([
-               (y1 / image_shape[1] * fpn_shape[0]) / (fpn_shape[0] - 1),
-               (x1 / image_shape[2] * fpn_shape[1]) / (fpn_shape[1] - 1),
-               (y2 / image_shape[1] * fpn_shape[0] - 1) / (fpn_shape[0] - 1),
-               (x2 / image_shape[2] * fpn_shape[1] - 1) / (fpn_shape[1] - 1)
-               ], axis=1)            
-            
+                (y1 / image_shape[1] * fpn_shape[0]) / (fpn_shape[0] - 1),
+                (x1 / image_shape[2] * fpn_shape[1]) / (fpn_shape[1] - 1),
+                (y2 / image_shape[1] * fpn_shape[0] - 1) / (fpn_shape[0] - 1),
+                (x2 / image_shape[2] * fpn_shape[1] - 1) / (fpn_shape[1] - 1)
+            ], axis=1)
+
             rois = tf.image.crop_and_resize(
-               K.expand_dims(fpn, axis=0),
-               norm_boxes,
-               tf.zeros((K.shape(norm_boxes)[0],), dtype='int32'),
-               self.crop_size)            
-            
-            return rois        
-        
+                K.expand_dims(fpn, axis=0),
+                norm_boxes,
+                tf.zeros((K.shape(norm_boxes)[0],), dtype='int32'),
+                self.crop_size)
+
+            return rois
+
         roi_batch = tf.map_fn(
-           _roi_align,
-           elems=[boxes, fpn],
-           dtype=K.floatx(),
-           parallel_iterations=self.parallel_iterations)
-        
+            _roi_align,
+            elems=[boxes, fpn],
+            dtype=K.floatx(),
+            parallel_iterations=self.parallel_iterations)
+
         if time_distributed:
             roi_shape = tf.shape(roi_batch)
-            new_roi_shape = [boxes_shape[0], boxes_shape[1]] + [roi_shape[i] for i in range(1, K.ndim(roi_batch))]
+            new_roi_shape = [boxes_shape[0], boxes_shape[1]] + \
+                            [roi_shape[i] for i in range(1, K.ndim(roi_batch))]
             roi_batch = tf.reshape(roi_batch, new_roi_shape)
-            
+
         return roi_batch
-        
+
     def compute_output_shape(self, input_shape):
         if len(input_shape[3]) == 4:
             output_shape = [
-               input_shape[1][0],
-               None,
-               self.crop_size[0],
-               self.crop_size[1],
-               input_shape[3][-1]
-           ]
-            return tensor_shape.TensorShape(output_shape)    
-    
+                input_shape[1][0],
+                None,
+                self.crop_size[0],
+                self.crop_size[1],
+                input_shape[3][-1]
+            ]
+            return tensor_shape.TensorShape(output_shape)
+
     def get_config(self):
         config = {'crop_size': self.crop_size}
         base_config = super(RoiAlign, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
+
 
 def default_roi_submodels(num_classes,
                           roi_size=(14, 14),
@@ -153,32 +152,34 @@ def default_roi_submodels(num_classes,
             submodel and the second element is the submodel itself.
     """
     return [
-        ('masks', TimeDistributed(default_mask_model(num_classes,
-                                     roi_size=roi_size,
-                                     mask_size=mask_size,
-                                     mask_dtype=mask_dtype,
-                                     retinanet_dtype=retinanet_dtype))),
-        ('final_detection', TimeDistributed(default_final_detection_model(roi_size=roi_size)))
+        ('masks', TimeDistributed(
+            default_mask_model(num_classes,
+                               roi_size=roi_size,
+                               mask_size=mask_size,
+                               mask_dtype=mask_dtype,
+                               retinanet_dtype=retinanet_dtype))),
+        ('final_detection', TimeDistributed(
+            default_final_detection_model(roi_size=roi_size)))
     ]
 
 
 def retinamovie_mask(inputs,
-                   backbone_dict,
-                   num_classes,
-                   frames_per_batch=5,
-                   backbone_levels=['C3', 'C4', 'C5'],
-                   pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
-                   retinamovie_model=None,
-                   anchor_params=None,
-                   nms=True,
-                   class_specific_filter=True,
-                   crop_size=(14, 14),
-                   mask_size=(28, 28),
-                   name='retinamovie-mask',
-                   roi_submodels=None,
-                   max_detections=100,
-                   mask_dtype=K.floatx(),
-                   **kwargs):
+                     backbone_dict,
+                     num_classes,
+                     frames_per_batch=5,
+                     backbone_levels=['C3', 'C4', 'C5'],
+                     pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
+                     retinamovie_model=None,
+                     anchor_params=None,
+                     nms=True,
+                     class_specific_filter=True,
+                     crop_size=(14, 14),
+                     mask_size=(28, 28),
+                     name='retinamovie-mask',
+                     roi_submodels=None,
+                     max_detections=100,
+                     mask_dtype=K.floatx(),
+                     **kwargs):
     """Construct a RetinaNet mask model on top of a retinanet bbox model.
     Uses the retinanet bbox model and appends layers to compute masks.
 
@@ -207,7 +208,6 @@ def retinamovie_mask(inputs,
                 boxes_masks, boxes, scores, labels, masks, other[0], ...
             ]
             ```
-
     """
     if anchor_params is None:
         anchor_params = AnchorParameters.default
@@ -222,7 +222,7 @@ def retinamovie_mask(inputs,
 
     image = inputs
     image_shape = Shape()(image)
-    
+
     if retinamovie_model is None:
         retinamovie_model = retinamovie(
             inputs=image,
@@ -258,7 +258,7 @@ def retinamovie_mask(inputs,
     # split up in known outputs and "other"
     boxes = detections[0]
     scores = detections[1]
-    
+
     fpn = features[0]
     fpn = UpsampleLike()([fpn, image])
 
@@ -275,7 +275,7 @@ def retinamovie_mask(inputs,
     # reconstruct the new output
     outputs = [regression, classification] + other + trainable_outputs + \
         detections + maskrcnn_outputs
-    
+
     model = Model(inputs=inputs, outputs=outputs, name=name)
     model.backbone_levels = backbone_levels
     model.pyramid_levels = pyramid_levels
@@ -284,20 +284,20 @@ def retinamovie_mask(inputs,
 
 
 def RetinaMovieMask(backbone,
-               num_classes,
-               input_shape,
-               frames_per_batch=5,
-               inputs=None,
-               backbone_levels=['C3', 'C4', 'C5'],
-               pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
-               norm_method='whole_image',
-               location=False,
-               use_imagenet=False,
-               crop_size=(14, 14),
-               pooling=None,
-               mask_dtype=K.floatx(),
-               required_channels=3,
-               **kwargs):
+                    num_classes,
+                    input_shape,
+                    frames_per_batch=5,
+                    inputs=None,
+                    backbone_levels=['C3', 'C4', 'C5'],
+                    pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
+                    norm_method='whole_image',
+                    location=False,
+                    use_imagenet=False,
+                    crop_size=(14, 14),
+                    pooling=None,
+                    mask_dtype=K.floatx(),
+                    required_channels=3,
+                    **kwargs):
     """Constructs a mrcnn model using a backbone from keras-applications.
 
     Args:
@@ -327,7 +327,7 @@ def RetinaMovieMask(backbone,
     if inputs is None:
         input_shape_with_time = tuple([frames_per_batch] + list(input_shape))
         inputs = Input(shape=input_shape_with_time)
-        
+
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
 
     if location:
@@ -353,9 +353,9 @@ def RetinaMovieMask(backbone,
         'pooling': pooling
     }
 
-    backbone_dict = get_backbone(backbone, 
-                                 input_tensor=fixed_inputs, 
-                                 use_imagenet=use_imagenet, 
+    backbone_dict = get_backbone(backbone,
+                                 input_tensor=fixed_inputs,
+                                 use_imagenet=use_imagenet,
                                  time_distribute=True,
                                  frames_per_batch=frames_per_batch,
                                  **model_kwargs)
@@ -363,7 +363,7 @@ def RetinaMovieMask(backbone,
     # create the full model
     return retinamovie_mask(
         inputs=inputs,
-        frames_per_batch = frames_per_batch,
+        frames_per_batch=frames_per_batch,
         num_classes=num_classes,
         backbone_dict=backbone_dict,
         crop_size=crop_size,
