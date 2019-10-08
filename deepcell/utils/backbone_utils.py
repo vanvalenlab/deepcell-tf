@@ -43,12 +43,6 @@ from tensorflow.python.keras.utils.data_utils import get_file
 from tensorflow.python.keras.utils.layer_utils import get_source_inputs
 
 
-from tensorflow.python.keras import backend
-from tensorflow.python.keras import layers
-from tensorflow.python.keras import models
-from tensorflow.python.keras import utils
-
-
 def featurenet_block(x, n_filters):
     """Add a set of layers that make up one unit of the featurenet backbone
 
@@ -127,8 +121,6 @@ def featurenet_backbone(input_tensor=None, input_shape=None,
     c3 = featurenet_block(c2, n_filters)  # 1/8 16x16
     c4 = featurenet_block(c3, n_filters)  # 1/16 8x8
     c5 = featurenet_block(c4, n_filters)  # 1/32 4x4
-
-
 
     backbone_features = [c1, c2, c3, c4, c5]
     backbone_names = ['C1', 'C2', 'C3', 'C4', 'C5']
@@ -236,8 +228,6 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
     resnext_backbones = ['resnext50', 'resnext101']
     nasnet_backbones = ['nasnet_large', 'nasnet_mobile']
 
-    all_backbones = featurenet_backbones + vgg_backbones + densenet_backbones + mobilenet_backbones + resnet_backbones + resnet_v2_backbones + resnext_backbones + nasnet_backbones
-
     # TODO: Check and make sure **kwargs is in the right format.
     # 'weights' flag should be None, and 'input_shape' must have size 3 on the channel axis
 
@@ -261,9 +251,6 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
     else:
         kwargs['weights'] = None
 
-    """
-    Feature net backbone
-    """
     if _backbone in featurenet_backbones:
         if use_imagenet:
             raise ValueError('A featurenet backbone that is pre-trained on '
@@ -458,7 +445,7 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         layer_names.extend(['normal_concat_%s' % i for i in block_ids])
         layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
-    if _backbone not in all_backbones:
+    else:
         backbones = list(featurenet_backbones + densenet_backbones +
                          resnet_backbones + resnext_backbones +
                          resnet_v2_backbones + vgg_backbones +
@@ -487,7 +474,6 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         #     new_model_outputs.append(Stack([out[i] for out in time_distributed_outputs]))
 
         # layer_outputs = new_model_outputs
-
 
         time_distributed_outputs = []
         for out in layer_outputs:
