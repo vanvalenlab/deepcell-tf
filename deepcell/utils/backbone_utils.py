@@ -51,11 +51,14 @@ from tensorflow.python.keras import utils
 
 def featurenet_block(x, n_filters):
     """Add a set of layers that make up one unit of the featurenet backbone
+
     Args:
-        x (layer): Keras layer object to pass to backbone unit
+        x (tensorflow.keras.layers.Layer): Keras layer object to pass to
+            backbone unit
         n_filters (int): Number of filters to use for convolutional layers
+
     Returns:
-        layer: Keras layer object
+        tensorflow.keras.layers.Layer: Keras layer object
     """
 
     # conv set 1
@@ -74,11 +77,14 @@ def featurenet_block(x, n_filters):
 
 def featurenet_3D_block(x, n_filters):
     """Add a set of layers that make up one unit of the featurenet 3D backbone
+
     Args:
-        x (layer): Keras layer object to pass to backbone unit
+        x (tensorflow.keras.layers.Layer): Keras layer object to pass to
+            backbone unit
         n_filters (int): Number of filters to use for convolutional layers
+
     Returns:
-        layer: Keras layer object
+        tensorflow.keras.layers.Layer: Keras layer object
     """
     df = K.image_data_format()
     # conv set 1
@@ -98,13 +104,14 @@ def featurenet_3D_block(x, n_filters):
 def featurenet_backbone(input_tensor=None, input_shape=None,
                         n_filters=32, **kwargs):
     """Construct the deepcell backbone with five convolutional units
+
     Args:
         input_tensor (tensor): Input tensor to specify input size
-        n_filters (int, optional): Defaults to 32. Number of filters for
+        n_filters (int): Defaults to 32. Number of filters for
             convolutional layers
+
     Returns:
-        (backbone_names, backbone_features): List of backbone layers,
-            list of backbone names
+        tuple: List of backbone layers, list of backbone names
     """
     if input_tensor is None:
         img_input = Input(shape=input_shape)
@@ -141,10 +148,13 @@ def featurenet_backbone(input_tensor=None, input_shape=None,
 def featurenet_3D_backbone(input_tensor=None, input_shape=None,
                            n_filters=32, **kwargs):
     """Construct the deepcell backbone with five convolutional units
+
+    Args:
         input_tensor (tensor): Input tensor to specify input size
-        n_filters (int, optional): Defaults to 32. Number of filters for convolutionaal layers
+        n_filters (int): Number of filters for convolutional layers
+
     Returns:
-        (backbone_names, backbone_features): List of backbone layers, list of backbone names
+        tuple: List of backbone layers, list of backbone names
     """
     if input_tensor is None:
         img_input = Input(shape=input_shape)
@@ -180,17 +190,25 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
                  use_imagenet=False, return_dict=True,
                  time_distribute=False, frames_per_batch=5, **kwargs):
     """Retrieve backbones - helper function for the construction of feature pyramid networks
-        backbone: Name of the backbone to be retrieved. Options include featurenets, resnets
-            densenets, mobilenets, and nasnets
-        input_tensor: The tensor to be used as the input for the backbone. Should have channel
-            dimension of size 3
-        use_imagenet: Defaults to False. Whether to load pre-trained weights for the backbone
-        return_dict: Defaults to True. Whether to return a dictionary of backbone layers,
-            e.g. {'C1': C1, 'C2': C2, 'C3': C3, 'C4': C4, 'C5': C5}. If false, the whole model
-            is returned instead
-        kwargs: Keyword dictionary for backbone constructions.
+
+    Args:
+        backbone (str): Name of the backbone to be retrieved.
+        input_tensor (tensor): The input tensor for the backbone.
+            Should have channel dimension of size 3
+        use_imagenet (bool): Load pre-trained weights for the backbone
+        return_dict (bool): Whether to return a dictionary of backbone layers,
+            e.g. {'C1': C1, 'C2': C2, 'C3': C3, 'C4': C4, 'C5': C5}.
+            If false, the whole model is returned instead
+        kwargs (dict): Keyword dictionary for backbone constructions.
             Relevant keys include 'include_top', 'weights' (should be set to None),
             'input_shape', and 'pooling'
+
+    Returns:
+        tensorflow.keras.Model: An instantiated backbone
+
+    Raises:
+        ValueError: bad backbone name
+        ValueError: featurenet backbone with pre-trained imagenet
     """
     _backbone = str(backbone).lower()
 
