@@ -351,7 +351,7 @@ def train_model_conv(model,
         vertical_flip=0)
 
     if train_dict['X'].ndim == 5:
-        train_data = datagen_val.flow(
+        train_data = datagen.flow(
             train_dict,
             skip=skip,
             seed=seed,
@@ -497,6 +497,9 @@ def train_model_siamese_daughter(model,
 
     total_train_pairs = tracking_utils.count_pairs(train_dict['y'], same_probability=5.0)
     total_test_pairs = tracking_utils.count_pairs(val_dict['y'], same_probability=5.0)
+
+    # total_train_pairs = tracking_utils.count_pairs(train_dict['y'], same_probability=0.5)
+    # total_test_pairs = tracking_utils.count_pairs(val_dict['y'], same_probability=0.5)
 
     train_data = datagen.flow(
         train_dict,

@@ -435,8 +435,8 @@ def retinanet_bbox(model=None,
     detections = FilterDetections(
         nms=nms,
         class_specific_filter=class_specific_filter,
-        name='filtered_detections',
-        max_detections=max_detections
+        max_detections=max_detections,
+        name='filtered_detections'
     )([boxes, classification] + other)
 
     # add the semantic head's output if needed

@@ -52,12 +52,7 @@ from tensorflow.python.keras.utils import to_categorical
 from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
-
-
-try:
-    from tensorflow.python.keras.utils import conv_utils
-except ImportError:  # tf v1.9 moves conv_utils from _impl to keras.utils
-    from tensorflow.python.keras._impl.keras.utils import conv_utils
+from tensorflow.python.keras.utils import conv_utils
 
 # Check if ImageDataGenerator is 1.11.0 or later
 if not hasattr(ImageDataGenerator, 'apply_transform'):
@@ -1552,7 +1547,7 @@ class SampleMovieDataGenerator(MovieDataGenerator):
 
 
 """
-Custom siamese generators
+Custom tracking generators
 """
 
 
@@ -1773,8 +1768,13 @@ class SiameseIterator(Iterator):
             for cell in range(1, num_cells + 1):
                 # count number of pixels cell occupies in each frame
                 y_true = np.sum(y_batch == cell, axis=(self.row_axis - 1, self.col_axis - 1))
+
                 # get indices of frames where cell is present
-                y_index = np.where(y_true > 0)[0]
+                if self.channel_axis == 1:
+                    y_index = np.where(y_true > 0)[1]
+                else:
+                    y_index = np.where(y_true > 0)[0]
+
                 if y_index.size > 3:  # if cell is present at all
                     # Only include daughters if there are enough frames in their tracks
                     if self.daughters is not None:
@@ -1806,16 +1806,20 @@ class SiameseIterator(Iterator):
 
                 else:
                     y_batch[y_batch == cell] = 0
+
                     self.y[batch] = y_batch
 
-        # Add a field to the track_ids dict that locates all of the different cells
-        # in each frame
+        # Add a field to the track_ids dict that locates
+        # all of the different cells in each frame
         for track in track_ids:
             track_ids[track]['different'] = {}
             batch = track_ids[track]['batch']
             cell_label = track_ids[track]['label']
             for frame in track_ids[track]['frames']:
-                y_unique = np.unique(self.y[batch][frame])
+                if self.channel_axis == 1:
+                    y_unique = np.unique(self.y[batch, :, frame])
+                else:
+                    y_unique = np.unique(self.y[batch, frame])
                 y_unique = np.delete(y_unique, np.where(y_unique == 0))
                 y_unique = np.delete(y_unique, np.where(y_unique == cell_label))
                 track_ids[track]['different'][frame] = y_unique
@@ -2010,7 +2014,15 @@ class SiameseIterator(Iterator):
             appearance, centroid, neighborhood, regionprop, future_area = self._get_features(
                 X, y, frames, labels)
 
-            all_appearances[track] = appearance
+            if self.data_format == 'channels_first':
+                appearance = np.transpose(appearance, (1, 2, 3, 0))
+                all_appearances = np.transpose(all_appearances, (0, 2, 3, 4, 1))
+
+            all_appearances[track, np.array(frames), :, :, :] = appearance
+
+            if self.data_format == 'channels_first':
+                all_appearances = np.transpose(all_appearances, (0, 4, 1, 2, 3))
+
             all_centroids[track, np.array(frames), :] = centroid
             all_neighborhoods[track, np.array(frames), :, :] = neighborhood
 
@@ -2086,11 +2098,10 @@ class SiameseIterator(Iterator):
 
         if division:
             # sanity check
-            if (self.x.shape[self.time_axis] - 1) in all_frames:
-                logging.warning('Track %s is annotated incorrectly. '
-                                'No parent cell should be in the last frame of'
-                                ' any movie.', track_id)
-                raise Exception('Parent cell should not be in last frame of movie')
+            if self.x.shape[self.time_axis] - 1 in all_frames:
+                raise ValueError('Track {} is annotated incorrectly. '
+                                 'No parent cell should be in the last frame '
+                                 'of any movie.'.format(track_id))
 
             candidate_interval = all_frames[-self.min_track_length:]
         else:
@@ -2516,7 +2527,6 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             clear_borders=clear_borders,
             include_masks=include_masks,
             panoptic=panoptic,
-            include_mask_transforms=include_mask_transforms,
             transforms=transforms,
             transforms_kwargs=transforms_kwargs,
             anchor_params=anchor_params,
@@ -2569,7 +2579,6 @@ class RetinaNetIterator(Iterator):
                  clear_borders=False,
                  include_masks=False,
                  panoptic=False,
-                 include_mask_transforms=True,
                  transforms=['watershed'],
                  transforms_kwargs={},
                  batch_size=32,
@@ -2602,7 +2611,6 @@ class RetinaNetIterator(Iterator):
         self.num_classes = num_classes
         self.include_masks = include_masks
         self.panoptic = panoptic
-        self.include_mask_transforms = include_mask_transforms
         self.transforms = transforms
         self.transforms_kwargs = transforms_kwargs
         self.channel_axis = 3 if data_format == 'channels_last' else 1
@@ -2612,33 +2620,26 @@ class RetinaNetIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
+        self.y_semantic_list = []  # optional semantic segmentation targets
+
         # Add semantic segmentation targets if panoptic segmentation
         # flag is True
         if panoptic:
             # Create a list of all the semantic targets. We need to be able
             # to have multiple semantic heads
-            y_semantic_list = []
             # Add all the keys that contain y_semantic
             for key in train_dict:
                 if 'y_semantic' in key:
-                    y_semantic_list.append(train_dict['y_semantic'])
+                    self.y_semantic_list.append(train_dict[key])
 
-            if include_mask_transforms:
-                # Check whether transform_kwargs_dict has an entry
-                for transform in transforms:
-                    if transform not in transforms_kwargs:
-                        transforms_kwargs[transform] = {}
-
-                # Add transformed masks
-                for transform in transforms:
-                    transform_kwargs = transforms_kwargs[transform]
-                    y_transform = _transform_masks(y, transform,
-                                                   data_format=data_format,
-                                                   **transform_kwargs)
-                    y_semantic_list.append(y_transform)
-
-            self.y_semantic_list = [np.asarray(y_semantic, dtype='int32')
-                                    for y_semantic in y_semantic_list]
+            # Add transformed masks
+            for transform in transforms:
+                transform_kwargs = transforms_kwargs.get(transform, dict())
+                y_transform = _transform_masks(y, transform,
+                                               data_format=data_format,
+                                               **transform_kwargs)
+                y_transform = np.asarray(y_transform, dtype='int32')
+                self.y_semantic_list.append(y_transform)
 
         invalid_batches = []
         # Remove images with small numbers of cells
@@ -2662,9 +2663,8 @@ class RetinaNetIterator(Iterator):
         self.y = np.delete(self.y, invalid_batches, axis=0)
         self.x = np.delete(self.x, invalid_batches, axis=0)
 
-        if self.panoptic:
-            self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
-                                    for y in self.y_semantic_list]
+        self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
+                                for y in self.y_semantic_list]
 
         super(RetinaNetIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
@@ -2732,9 +2732,11 @@ class RetinaNetIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
-        if self.panoptic:
-            batch_y_semantic_list = [np.zeros(tuple([len(index_array)] + list(ys.shape[1:])))
-                                     for ys in self.y_semantic_list]
+
+        batch_y_semantic_list = []
+        for y_sem in self.y_semantic_list:
+            shape = tuple([len(index_array)] + list(y_sem.shape[1:]))
+            batch_y_semantic_list.append(np.zeros(shape, dtype=y_sem.dtype))
 
         annotations_list = []
 
@@ -2744,16 +2746,14 @@ class RetinaNetIterator(Iterator):
             x = self.x[j]
             y = self.y[j]
 
-            if self.panoptic:
-                y_semantic_list = [y_semantic[j] for y_semantic in self.y_semantic_list]
+            y_semantic_list = [y_sem[j] for y_sem in self.y_semantic_list]
 
             # Apply transformation
-            if self.panoptic:
-                x, y_list = self.image_data_generator.random_transform(x, [y] + y_semantic_list)
-                y = y_list[0]
-                y_semantic_list = y_list[1:]
-            else:
-                x, y = self.image_data_generator.random_transform(x, y)
+            x, y_list = self.image_data_generator.random_transform(
+                x, [y] + y_semantic_list)
+
+            y = y_list[0]
+            y_semantic_list = y_list[1:]
 
             # Find max shape of image data.  Used for masking.
             if not max_shape:
@@ -2771,9 +2771,8 @@ class RetinaNetIterator(Iterator):
 
             batch_x[i] = x
 
-            if self.panoptic:
-                for k in range(len(y_semantic_list)):
-                    batch_y_semantic_list[k][i] = y_semantic_list[k]
+            for k, y_sem in enumerate(y_semantic_list):
+                batch_y_semantic_list[k][i] = y_sem
 
         anchors = anchors_for_shape(
             batch_x.shape[1:],
@@ -2823,10 +2822,11 @@ class RetinaNetIterator(Iterator):
                 img.save(os.path.join(self.save_to_dir, fname))
 
         batch_outputs = [regressions, labels]
+
         if self.include_masks:
             batch_outputs.append(masks_batch)
-        if self.panoptic:
-            batch_outputs.extend(batch_y_semantic_list)
+
+        batch_outputs.extend(batch_y_semantic_list)
 
         return batch_x, batch_outputs
 

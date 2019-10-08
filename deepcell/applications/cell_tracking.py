@@ -23,20 +23,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Deepcell Applications - Pre-trained models for specific functions"""
+"""A model that can detect whether 2 cells are same, different, or related."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.applications.cell_tracking import CellTrackingModel
-from deepcell.applications.nuclear_segmentation import NuclearSegmentationModel
-from deepcell.applications.label_detection import LabelDetectionModel
-from deepcell.applications.scale_detection import ScaleDetectionModel
-from deepcell.applications.phase_segmentation import PhaseSegmentationModel
-from deepcell.applications.fluorescent_cytoplasm_segmentation import \
-    FluorCytoplasmSegmentationModel
+from tensorflow.python.keras.utils.data_utils import get_file
 
-del absolute_import
-del division
-del print_function
+from deepcell import model_zoo
+
+
+WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+                'model-weights/tracking_model_benchmarking_757_step5_20'
+                'epoch_80split_9tl.h5')
+
+
+def CellTrackingModel(input_shape=(32, 32, 1),
+                      neighborhood_scale_size=30,
+                      use_pretrained_weights=True):
+    """Creates an instance of a siamese_model.
+
+    Detects whether to input cells are the same cell, different cells, or
+    daughter cells.  This can be used along with a cost matrix to track full
+    cell lineages across many frames.
+    """
+    features = {'appearance', 'distance', 'neighborhood', 'regionprop'}
+
+    model = model_zoo.siamese_model(
+        input_shape=input_shape,
+        reg=1e-5,
+        init='he_normal',
+        neighborhood_scale_size=neighborhood_scale_size,
+        features=features)
+
+    if use_pretrained_weights:
+        weights_path = get_file(
+            'CellTrackingModel.h5',
+            WEIGHTS_PATH,
+            cache_subdir='models',
+            md5_hash='3349b363fdad0266a1845ba785e057a6')
+
+        model.load_weights(weights_path)
+
+    return model

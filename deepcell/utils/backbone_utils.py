@@ -33,26 +33,14 @@ import copy
 
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
+from tensorflow.python.keras import applications
 from tensorflow.python.keras import utils as keras_utils
+from tensorflow.python.keras.backend import is_keras_tensor
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
 from tensorflow.python.keras.layers import TimeDistributed, Lambda
-
-import keras_applications as applications
-
-try:
-    from tensorflow.python.keras.backend import is_keras_tensor
-except ImportError:
-    from tensorflow.python.keras._impl.keras.backend import is_keras_tensor
-
-try:
-    from tensorflow.python.keras.utils.layer_utils import get_source_inputs
-except ImportError:
-    try:
-        from tensorflow.python.keras.engine.network import get_source_inputs
-    except ImportError:  # tf1.8 uses the _impl directory
-        from tensorflow.python.keras._impl.keras.engine.network import get_source_inputs
+from tensorflow.python.keras.utils.layer_utils import get_source_inputs
 
 
 from tensorflow.python.keras import backend
@@ -135,7 +123,7 @@ def featurenet_backbone(input_tensor=None, input_shape=None, weights=None,
     c3 = featurenet_block(c2, n_filters)  # 1/8 16x16
     c4 = featurenet_block(c3, n_filters)  # 1/16 8x8
     c5 = featurenet_block(c4, n_filters)  # 1/32 4x4
-    
+
 
 
     backbone_features = [c1, c2, c3, c4, c5]
@@ -192,8 +180,8 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None, weights=None,
     return model, output_dict
 
 
-def get_backbone(backbone, input_tensor=None, input_shape=None, 
-                        use_imagenet=False, return_dict=True, 
+def get_backbone(backbone, input_tensor=None, input_shape=None,
+                        use_imagenet=False, return_dict=True,
                         time_distribute=False, frames_per_batch=5, **kwargs):
     """Retrieve backbones - helper function for the construction of feature pyramid networks
         backbone: Name of the backbone to be retrieved. Options include featurenets, resnets
@@ -224,8 +212,8 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
     resnet_v2_backbones = ['resnet50v2', 'resnet101v2', 'resnet151v2']
     resnext_backbones = ['resnext50', 'resnext101']
     nasnet_backbones = ['nasnet_large', 'nasnet_mobile']
-    efficientnet_backbones = ['efficientnetb0', 'efficientnetb1', 'efficientnetb2', 
-                            'efficientnetb3', 'efficientnetb4', 'efficientnetb6', 
+    efficientnet_backbones = ['efficientnetb0', 'efficientnetb1', 'efficientnetb2',
+                            'efficientnetb3', 'efficientnetb4', 'efficientnetb6',
                             'efficientnetb7']
 
     all_backbones = featurenet_backbones + vgg_backbones + densenet_backbones + mobilenet_backbones + resnet_backbones + resnet_v2_backbones + resnext_backbones + nasnet_backbones + efficientnet_backbones
@@ -501,15 +489,15 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
 
-        layer_names = ['block2a_expand_activation', 'block3a_expand_activation', 'block4a_expand_activation', 
+        layer_names = ['block2a_expand_activation', 'block3a_expand_activation', 'block4a_expand_activation',
                             'block6a_expand_activation', 'top_activation']
         layer_outputs = [model.get_layer(name=layer_name).output for layer_name in layer_names]
 
 
     if _backbone not in all_backbones:
         backbones = list(featurenet_backbones + densenet_backbones +
-                         resnet_backbones + resnext_backbones + resnet_v2_backbones + 
-                         vgg_backbones + nasnet_backbones + mobilenet_backbones + 
+                         resnet_backbones + resnext_backbones + resnet_v2_backbones +
+                         vgg_backbones + nasnet_backbones + mobilenet_backbones +
                          efficientnet_backbones)
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
                          ', '.join(backbones))
@@ -517,7 +505,7 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
     if time_distribute:
         ### Alternative method of coding this - time distributes the layer
         ### manually. Not sure which is faster
-        
+
         # Split = Lambda(lambda x: tf.split(x, frames_per_batch, axis=1))
         # Squeeze = Lambda(lambda x: tf.squeeze(x, axis=1))
         # Stack = Lambda(lambda x: K.stack(x, axis=1))
@@ -540,7 +528,7 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         time_distributed_outputs = []
         for out in layer_outputs:
             time_distributed_outputs.append(TimeDistributed(Model(model.input, out))(input_tensor))
-        
+
         layer_outputs = time_distributed_outputs
 
     output_dict = {}
