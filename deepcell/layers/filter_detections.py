@@ -186,10 +186,7 @@ class FilterDetections(Layer):
         classification = inputs[1]
         other = inputs[2:]
 
-        if K.ndim(boxes) == 4:
-            time_distributed = True
-        else:
-            time_distributed = False
+        time_distributed = K.ndim(boxes) == 4
 
         if time_distributed:
             boxes_shape = tf.shape(boxes)
