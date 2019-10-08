@@ -454,8 +454,8 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
                          ', '.join(backbones))
 
     if time_distribute:
-        ### Alternative method of coding this - time distributes the layer
-        ### manually. Not sure which is faster
+        # Alternative method of coding this - time distributes the layer
+        # manually. Not sure which is faster
 
         # Split = Lambda(lambda x: tf.split(x, frames_per_batch, axis=1))
         # Squeeze = Lambda(lambda x: tf.squeeze(x, axis=1))

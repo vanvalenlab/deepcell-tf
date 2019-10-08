@@ -109,7 +109,8 @@ def default_classification_model(num_classes,
     # reshape output and apply sigmoid
     if K.image_data_format() == 'channels_first':
         outputs = Permute((2, 3, 4, 1), name='pyramid_classification_permute')(outputs)
-    outputs = Reshape((frames_per_batch, -1, num_classes), name='pyramid_classification_reshape')(outputs)
+    outputs = Reshape((frames_per_batch, -1, num_classes),
+                      name='pyramid_classification_reshape')(outputs)
     outputs = Activation('sigmoid', name='pyramid_classification_sigmoid')(outputs)
 
     return Model(inputs=inputs, outputs=outputs, name=name)
@@ -163,7 +164,8 @@ def default_regression_model(num_values,
     outputs = Conv3D(num_anchors * num_values, name='pyramid_regression', **options)(outputs)
     if K.image_data_format() == 'channels_first':
         outputs = Permute((2, 3, 4, 1), name='pyramid_regression_permute')(outputs)
-    outputs = Reshape((frames_per_batch, -1, num_values), name='pyramid_regression_reshape')(outputs)
+    outputs = Reshape((frames_per_batch, -1, num_values),
+                      name='pyramid_regression_reshape')(outputs)
 
     return Model(inputs=inputs, outputs=outputs, name=name)
 
