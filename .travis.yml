@@ -16,24 +16,45 @@ env:
   - TF_VERSION=1.11.0
   - TF_VERSION=1.12.0
 
-cache: pip
-
 install:
+  # code below is taken from https://github.com/keras-team/keras/blob/master/.travis.yml
+
+  # code below is taken from http://conda.pydata.org/docs/travis.html
+  # We do this conditionally because it saves us some downloading if the
+  # version is the same.
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+
+  - travis_retry conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
+  - source activate test-environment
+
   # install TensorFlow (CPU version).
-  - pip install tensorflow==$TF_VERSION
+  - travis_retry pip install tensorflow==$TF_VERSION
+
   # remove tensorflow an requirements.txt
   - sed -i "/tensorflow/d" requirements.txt
   # install all other requirements
-  - pip install -r requirements.txt
+  - travis_retry pip install -r requirements.txt --progress-bar off
   # install testing requirements
-  - pip install -r requirements-test.txt
+  - travis_retry pip install -r requirements-test.txt --progress-bar off
+
   # install deepcell with setup.py
   # - python setup.py install
   - python setup.py build_ext --inplace
 
 script:
-  - pytest --cov=deepcell --pep8
-  - sphinx-build -nT -b dummy ./docs/source build/html
+  - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8
+  - PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html
 
 jobs:
   include:
