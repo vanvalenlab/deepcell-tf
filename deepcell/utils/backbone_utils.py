@@ -180,7 +180,7 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None,
 
 def get_backbone(backbone, input_tensor=None, input_shape=None,
                  use_imagenet=False, return_dict=True,
-                 time_distribute=False, frames_per_batch=5, **kwargs):
+                 frames_per_batch=1, **kwargs):
     """Retrieve backbones - helper function for the construction of feature pyramid networks
 
     Args:
@@ -231,7 +231,7 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
     # TODO: Check and make sure **kwargs is in the right format.
     # 'weights' flag should be None, and 'input_shape' must have size 3 on the channel axis
 
-    if time_distribute:
+    if frames_per_batch > 1:
         if input_shape:
             img_input = Input(shape=input_shape)
         else:
@@ -453,7 +453,7 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
                          ', '.join(backbones))
 
-    if time_distribute:
+    if frames_per_batch > 1:
         # Alternative method of coding this - time distributes the layer
         # manually. Not sure which is faster
 
