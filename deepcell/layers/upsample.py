@@ -50,12 +50,12 @@ class UpsampleLike(Layer):
         image_shape = tf.shape(image)
 
         new_shape = []
-        axes_resized = list(set([0,1,2,3,4]) - set([0, 4, axis]))
-        for ax in range(K.ndim(image)-1):
+        axes_resized = list(set([0, 1, 2, 3, 4]) - set([0, 4, axis]))
+        for ax in range(K.ndim(image) - 1):
             if ax != axis:
                 new_shape.append(image_shape[ax])
             if ax == 3:
-                new_shape.append(image_shape[-1]*image_shape[axis])
+                new_shape.append(image_shape[-1] * image_shape[axis])
 
         new_shape_2 = []
         for ax in range(K.ndim(image)):
@@ -67,7 +67,11 @@ class UpsampleLike(Layer):
                 new_shape_2.append(size[1])
 
         new_image = tf.reshape(image, new_shape)
-        new_image_resized = tf.image.resize_images(new_image, size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        new_image_resized = tf.image.resize_images(
+            new_image,
+            size,
+            method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+
         new_image_2 = tf.reshape(new_image_resized, new_shape_2)
 
         return new_image_2
