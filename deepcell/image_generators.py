@@ -2482,7 +2482,6 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
              clear_borders=False,
              include_masks=False,
              panoptic=False,
-             include_mask_transforms=True,
              transforms=['watershed'],
              transforms_kwargs={},
              anchor_params=None,
@@ -2883,7 +2882,6 @@ class RetinaMovieIterator(Iterator):
                  include_masks=False,
                  include_final_detection_layer=False,
                  panoptic=False,
-                 include_mask_transforms=True,
                  transforms=['watershed'],
                  transforms_kwargs={},
                  batch_size=32,
@@ -2902,16 +2900,11 @@ class RetinaMovieIterator(Iterator):
 
         if X.ndim != 5:
             raise ValueError('Input data in `RetinaNetIterator` '
-                             'should have rank 5. You passed an array '
+                             'should have rank 4. You passed an array '
                              'with shape', X.shape)
 
         self.x = np.asarray(X, dtype=K.floatx())
         self.y = np.asarray(y, dtype='int32')
-
-        self.daughters = train_dict.get('daughters')
-        if self.daughters is None:
-            raise ValueError('`daughters` not found in `train_dict`. '
-                             'Lineage information is required for training.')
 
         # `compute_shapes` changes based on the model backbone.
         self.compute_shapes = compute_shapes
@@ -2923,7 +2916,6 @@ class RetinaMovieIterator(Iterator):
         self.include_masks = include_masks
         self.include_final_detection_layer = include_final_detection_layer
         self.panoptic = panoptic
-        self.include_mask_transforms = include_mask_transforms
         self.transforms = transforms
         self.transforms_kwargs = transforms_kwargs
         self.channel_axis = 4 if data_format == 'channels_last' else 1
@@ -2936,42 +2928,41 @@ class RetinaMovieIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
+        self.y_semantic_list = []  # optional semantic segmentation targets
+
+        if X.shape[self.time_axis] - frames_per_batch < 0:
+            raise ValueError(
+                'The number of frames used in each training batch should '
+                'be less than the number of frames in the training data!')
+
         # Add semantic segmentation targets if panoptic segmentation
         # flag is True
         if panoptic:
             # Create a list of all the semantic targets. We need to be able
             # to have multiple semantic heads
-            y_semantic_list = []
             # Add all the keys that contain y_semantic
-            for key in train_dict.keys():
+            for key in train_dict:
                 if 'y_semantic' in key:
-                    y_semantic_list.append(train_dict['y_semantic'])
+                    self.y_semantic_list.append(train_dict[key])
 
-            if include_mask_transforms:
-                # Check whether transform_kwargs has an entry
-                for transform in transforms:
-                    if transform not in transforms_kwargs.keys():
-                        transforms_kwargs[transform] = {}
+            # Add transformed masks
+            for transform in transforms:
+                transform_kwargs = transforms_kwargs.get(transform, dict())
+                y_transforms = []
+                for time in range(y.shape[self.time_axis]):
+                    if data_format == 'channels_first':
+                        y_temp = y[:, :, time, ...]
+                    else:
+                        y_temp = y[:, time, ...]
+                    y_temp_transform = _transform_masks(
+                        y_temp, transform,
+                        data_format=data_format,
+                        **transform_kwargs)
+                    y_temp_transform = np.asarray(y_temp_transform, dtype='int32')
+                    y_transforms.append(y_temp_transform)
 
-                # Add transformed masks
-                for transform in transforms:
-                    transform_kwargs = transforms_kwargs[transform]
-                    y_transform_list = []
-                    for time in range(y.shape[self.time_axis]):
-                        if data_format == 'channels_first':
-                            y_temp = y[:, :, time, ...]
-                        else:
-                            y_temp = y[:, time, ...]
-                        y_temp_transform = _transform_masks(
-                            y_temp, transform,
-                            data_format=data_format,
-                            **transform_kwargs)
-                        y_transform_list.append(y_temp_transform)
-                    y_transform = np.stack(y_transform_list, axis=self.time_axis)
-                    y_semantic_list.append(y_transform)
-
-            self.y_semantic_list = [np.asarray(y_semantic, dtype='int32')
-                                    for y_semantic in y_semantic_list]
+                y_transform = np.stack(y_transforms, axis=self.time_axis)
+                self.y_semantic_list.append(y_transform)
 
         invalid_batches = []
         # Remove images with small numbers of cells
@@ -2994,9 +2985,9 @@ class RetinaMovieIterator(Iterator):
 
         self.y = np.delete(self.y, invalid_batches, axis=0)
         self.x = np.delete(self.x, invalid_batches, axis=0)
-        if self.panoptic:
-            self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
-                                    for y in self.y_semantic_list]
+
+        self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
+                                for y in self.y_semantic_list]
 
         super(RetinaMovieIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
@@ -3205,17 +3196,17 @@ class RetinaMovieIterator(Iterator):
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
-                if self.data_format == 'channels_first':
-                    img_x = np.expand_dims(batch_x[i, 0, ...], 0)
-                else:
-                    img_x = np.expand_dims(batch_x[i, ..., 0], -1)
-                img = array_to_img(img_x, self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(
-                    prefix=self.save_prefix,
-                    index=j,
-                    hash=np.random.randint(1e4),
-                    format=self.save_format)
-                img.save(os.path.join(self.save_to_dir, fname))
+                for frame in range(batch_x.shape[self.time_axis]):
+                    if self.time_axis == 2:
+                        img = array_to_img(batch_x[i, :, frame], self.data_format, scale=True)
+                    else:
+                        img = array_to_img(batch_x[i, frame], self.data_format, scale=True)
+                    fname = '{prefix}_{index}_{hash}.{format}'.format(
+                        prefix=self.save_prefix,
+                        index=j,
+                        hash=np.random.randint(1e4),
+                        format=self.save_format)
+                    img.save(os.path.join(self.save_to_dir, fname))
 
         batch_outputs = [regressions, labels]
         if self.include_masks:
@@ -3239,7 +3230,7 @@ class RetinaMovieIterator(Iterator):
         return self._get_batches_of_transformed_samples(index_array)
 
 
-class RetinaMovieDataGenerator(ImageDataGenerator):
+class RetinaMovieDataGenerator(MovieDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
     The data will be looped over (in batches).
 
@@ -3298,20 +3289,6 @@ class RetinaMovieDataGenerator(ImageDataGenerator):
             (strictly between 0 and 1).
     """
 
-    def __init__(self, **kwargs):
-        super(RetinaMovieDataGenerator, self).__init__(**kwargs)
-        # Change the axes for 5D data
-        if self.data_format == 'channels_first':
-            self.channel_axis = 1
-            self.row_axis = 3
-            self.col_axis = 4
-            self.time_axis = 2
-        if self.data_format == 'channels_last':
-            self.channel_axis = 4
-            self.row_axis = 2
-            self.col_axis = 3
-            self.time_axis = 1
-
     def flow(self,
              train_dict,
              batch_size=1,
@@ -3322,11 +3299,10 @@ class RetinaMovieDataGenerator(ImageDataGenerator):
              include_masks=False,
              include_final_detection_layer=False,
              panoptic=False,
-             include_mask_transforms=True,
              transforms=['watershed'],
              transforms_kwargs={},
              anchor_params=None,
-             pyramid_levels=['P2', 'P3', 'P4', 'P5', 'P6', 'P7'],
+             pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
              shuffle=False,
              seed=None,
              save_to_dir=None,
@@ -3363,7 +3339,6 @@ class RetinaMovieDataGenerator(ImageDataGenerator):
             include_masks=include_masks,
             include_final_detection_layer=include_final_detection_layer,
             panoptic=panoptic,
-            include_mask_transforms=include_mask_transforms,
             transforms=transforms,
             transforms_kwargs=transforms_kwargs,
             anchor_params=anchor_params,
@@ -3376,194 +3351,6 @@ class RetinaMovieDataGenerator(ImageDataGenerator):
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
-
-    def standardize(self, x):
-        """Apply the normalization configuration to a batch of inputs.
-
-        Args:
-            x: batch of inputs to be normalized.
-
-        Returns:
-            The normalized inputs.
-        """
-        # TODO: standardize each image, not all frames at once
-        if self.preprocessing_function:
-            x = self.preprocessing_function(x)
-        if self.rescale:
-            x *= self.rescale
-        # x is a single image, so it doesn't have image number at index 0
-        img_channel_axis = self.channel_axis - 1
-        if self.samplewise_center:
-            x -= np.mean(x, axis=img_channel_axis, keepdims=True)
-        if self.samplewise_std_normalization:
-            x /= (np.std(x, axis=img_channel_axis, keepdims=True) + K.epsilon())
-
-        if self.featurewise_center:
-            if self.mean is not None:
-                x -= self.mean
-            else:
-                logging.warning('This ImageDataGenerator specifies '
-                                '`featurewise_std_normalization`, but it '
-                                'hasn\'t been fit on any training data. '
-                                'Fit it first by calling `.fit(numpy_data)`.')
-        if self.featurewise_std_normalization:
-            if self.std is not None:
-                x /= (self.std + K.epsilon())
-            else:
-                logging.warning('This ImageDataGenerator specifies '
-                                '`featurewise_std_normalization`, but it hasn\'t '
-                                'been fit on any training data. Fit it '
-                                'first by calling `.fit(numpy_data)`.')
-        if self.zca_whitening:
-            if self.principal_components is not None:
-                flatx = np.reshape(x, (-1, np.prod(x.shape[-3:])))
-                whitex = np.dot(flatx, self.principal_components)
-                x = np.reshape(whitex, x.shape)
-            else:
-                logging.warning('This ImageDataGenerator specifies '
-                                '`zca_whitening`, but it hasn\'t '
-                                'been fit on any training data. Fit it '
-                                'first by calling `.fit(numpy_data)`.')
-        return x
-
-    def random_transform(self, x, y=None, seed=None):
-        """Applies a random transformation to an image.
-
-        Args:
-            x: 4D tensor, stack of images.
-            y: 4D tensor, label mask for `x`, optional.
-            seed: Random seed.
-
-        Returns:
-            A randomly transformed version of the input (same shape).
-            If `y` is passed, it is transformed if necessary and returned.
-        """
-        # Note: Workaround to use self.apply_transform on our 4D tensor
-        self.row_axis -= 1
-        self.col_axis -= 1
-        self.time_axis -= 1
-        self.channel_axis -= 1
-        x_new = np.empty(x.shape)
-        if y is not None:
-            if isinstance(y, list):
-                y_new = [np.empty(y_old.shape) for y_old in y]
-            else:
-                y_new = np.empty(y.shape)
-        # apply_transform expects ndim=3, but we are ndim=4
-
-        if self.data_format == 'channels_first':
-            params = self.get_random_transform(x[:, 0].shape, seed)
-        else:
-            params = self.get_random_transform(x[0].shape, seed)
-
-        for frame in range(x.shape[self.time_axis]):
-            if self.data_format == 'channels_first':
-                x_trans = self.apply_transform(x[:, frame], params)
-                x_new[:, frame] = np.rollaxis(x_trans, -1, 0)
-            else:
-                x_new[frame] = self.apply_transform(x[frame], params)
-
-            if y is not None:
-                params['brightness'] = None
-                params['channel_shift_intensity'] = None
-                _interpolation_order = self.interpolation_order
-                self.interpolation_order = 0
-
-                if isinstance(y, list):
-                    if self.data_format == 'channels_first':
-                        for y_list, y_old in zip(y_new, y):
-                            y_trans = self.apply_transform(y_old[:, frame], params)
-                            y_list[:, frame] = np.rollaxis(y_trans, 1, 0)
-                    else:
-                        for y_list, y_old in zip(y_new, y):
-                            y_list[frame] = self.apply_transform(y_old[frame], params)
-                else:
-                    if self.data_format == 'channels_first':
-                        y_trans = self.apply_transform(y[:, frame], params)
-                        y_new[:, frame] = np.rollaxis(y_trans, 1, 0)
-                    else:
-                        y_new[frame] = self.apply_transform(y[frame], params)
-                self.interpolation_order = _interpolation_order
-        # Note: Undo workaround
-        self.row_axis += 1
-        self.col_axis += 1
-        self.time_axis += 1
-        self.channel_axis += 1
-        if y is None:
-            return x_new
-        return x_new, y_new
-
-    def fit(self, x, augment=False, rounds=1, seed=None):
-        """Fits internal statistics to some sample data.
-
-        Required for featurewise_center, featurewise_std_normalization
-        and zca_whitening.
-
-        Args:
-            x: Numpy array, the data to fit on. Should have rank 5.
-            augment: Whether to fit on randomly augmented samples
-            rounds: If `augment`,
-                how many augmentation passes to do over the data
-            seed: random seed.
-
-        Raises:
-            ValueError: If input rank is not 5.
-        """
-        x = np.asarray(x, dtype=self.dtype)
-        if x.ndim != 5:
-            raise ValueError('Input to `.fit()` should have rank 5. '
-                             'Got array with shape: ' + str(x.shape))
-        if x.shape[self.channel_axis] not in {1, 3, 4}:
-            logging.warning(
-                'Expected input to be images (as Numpy array) '
-                'following the data format convention "' +
-                self.data_format + '" (channels on axis ' +
-                str(self.channel_axis) + '), i.e. expected '
-                'either 1, 3 or 4 channels on axis ' +
-                str(self.channel_axis) + '. '
-                'However, it was passed an array with shape ' +
-                str(x.shape) + ' (' + str(x.shape[self.channel_axis]) +
-                ' channels).')
-
-        if seed is not None:
-            np.random.seed(seed)
-
-        x = np.copy(x)
-        if augment:
-            ax = np.zeros(
-                tuple([rounds * x.shape[0]] + list(x.shape)[1:]),
-                dtype=self.dtype)
-            for r in range(rounds):
-                for i in range(x.shape[0]):
-                    ax[i + r * x.shape[0]] = self.random_transform(x[i])
-            x = ax
-
-        if self.featurewise_center:
-            axis = (0, self.time_axis, self.row_axis, self.col_axis)
-            self.mean = np.mean(x, axis=axis)
-            broadcast_shape = [1, 1, 1, 1]
-            broadcast_shape[self.channel_axis - 1] = x.shape[self.channel_axis]
-            self.mean = np.reshape(self.mean, broadcast_shape)
-            x -= self.mean
-
-        if self.featurewise_std_normalization:
-            axis = (0, self.time_axis, self.row_axis, self.col_axis)
-            self.std = np.std(x, axis=axis)
-            broadcast_shape = [1, 1, 1, 1]
-            broadcast_shape[self.channel_axis - 1] = x.shape[self.channel_axis]
-            self.std = np.reshape(self.std, broadcast_shape)
-            x /= (self.std + K.epsilon())
-
-        if self.zca_whitening:
-            if scipy is None:
-                raise ImportError('Using zca_whitening requires SciPy. '
-                                  'Install SciPy.')
-            flat_x = np.reshape(
-                x, (x.shape[0], x.shape[1] * x.shape[2] * x.shape[3] * x.shape[4]))
-            sigma = np.dot(flat_x.T, flat_x) / flat_x.shape[0]
-            u, s, _ = scipy.linalg.svd(sigma)
-            s_inv = 1. / np.sqrt(s[np.newaxis] + self.zca_epsilon)
-            self.principal_components = (u * s_inv).dot(u.T)
 
 
 class ScaleIterator(Iterator):
