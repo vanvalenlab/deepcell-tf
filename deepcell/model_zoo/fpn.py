@@ -255,36 +255,25 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
     Returns:
         tensor: The upsampled tensor
     """
-
     acceptable_ndims = [2, 3]
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
 
+    conv = Conv2D if ndim == 2 else Conv3D
+    upsampling = UpSampling2D if ndim == 2 else UpSampling3D
+
     for i in range(n_upsample):
-        if ndim == 2:
-            x = Conv2D(n_filters, (3, 3), strides=(1, 1),
-                       padding='same', data_format='channels_last')(x)
+        x = conv(n_filters, 3, strides=1,
+                 padding='same', data_format='channels_last')(x)
 
-            if i == n_upsample - 1 and target is not None:
-                x = UpsampleLike()([x, target])
-            else:
-                x = UpSampling2D(size=(2, 2))(x)
+        if i == n_upsample - 1 and target is not None:
+            x = UpsampleLike()([x, target])
         else:
-            x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1),
-                       padding='same', data_format='channels_last')(x)
-
-            if i == n_upsample - 1 and target is not None:
-                x = UpsampleLike()([x, target])
-            else:
-                x = UpSampling3D(size=(2, 2, 2))(x)
+            x = upsampling(size=2)(x)
 
     if n_upsample == 0:
-        if ndim == 2:
-            x = Conv2D(n_filters, (3, 3), strides=(1, 1),
-                       padding='same', data_format='channels_last')(x)
-        else:
-            x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1),
-                       padding='same', data_format='channels_last')(x)
+        x = conv(n_filters, 3, strides=1,
+                 padding='same', data_format='channels_last')(x)
 
         if target is not None:
             x = UpsampleLike()([x, target])
@@ -339,7 +328,8 @@ def semantic_prediction(semantic_names,
     # Final upsampling
     min_level = int(re.findall(r'\d+', semantic_names[-1])[0])
     n_upsample = min_level - target_level
-    x = semantic_upsample(semantic_sum, n_upsample, target=input_target)
+    x = semantic_upsample(semantic_sum, n_upsample,
+                          target=input_target, ndim=ndim)
 
     # First tensor product
     x = TensorProduct(n_dense)(x)
@@ -358,7 +348,8 @@ def __create_semantic_head(pyramid_dict,
                            target_level=2,
                            n_classes=3,
                            n_filters=128,
-                           semantic_id=0):
+                           semantic_id=0,
+                           ndim=2):
     """
     Creates a semantic head from a feature pyramid network
     Args:
@@ -381,8 +372,6 @@ def __create_semantic_head(pyramid_dict,
 
     semantic_features = []
     semantic_names = []
-    # for P in pyramid_features:
-    #     print(P.get_shape())
 
     for N, P in zip(pyramid_names, pyramid_features):
         # Get level and determine how much to upsample
@@ -393,13 +382,13 @@ def __create_semantic_head(pyramid_dict,
 
         # Use semantic upsample to get semantic map
         semantic_features.append(semantic_upsample(
-            P, n_upsample, n_filters=n_filters, target=target))
+            P, n_upsample, n_filters=n_filters, target=target, ndim=ndim))
         semantic_names.append('Q' + str(level))
 
     # Combine all of the semantic features
     x = semantic_prediction(semantic_names, semantic_features,
                             n_classes=n_classes, input_target=input_target,
-                            semantic_id=semantic_id)
+                            semantic_id=semantic_id, ndim=ndim)
 
     return x
 
@@ -475,6 +464,7 @@ def FPNet(backbone,
     target_level = min(levels)
 
     x = __create_semantic_head(pyramid_dict, n_classes=n_classes,
-                               input_target=inputs, target_level=target_level)
+                               input_target=inputs, target_level=target_level,
+                               ndim=len(input_shape) - 1)
 
     return Model(inputs=inputs, outputs=x, name=name)
