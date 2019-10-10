@@ -405,6 +405,93 @@ class RoiAlign(Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
+class RoiAlign3D(Layer):
+    """Modified ROI Align layer.
+
+    Only takes in one feature map.
+    Feature map must be the size of the original image
+    """
+    def __init__(self, crop_size=(14, 14), parallel_iterations=32, **kwargs):
+        self.crop_size = crop_size
+        self.parallel_iterations = parallel_iterations
+        super(RoiAlign3D, self).__init__(**kwargs)
+
+    def call(self, inputs, **kwargs):
+        boxes = K.stop_gradient(inputs[0])
+        fpn = K.stop_gradient(inputs[1])
+
+        if K.ndim(boxes) == 4:
+            time_distributed = True
+        else:
+            time_distributed = False
+
+        if time_distributed:
+            boxes_shape = K.shape(boxes)
+            fpn_shape = K.shape(fpn)
+
+            new_boxes_shape = [-1] + [boxes_shape[i] for i in range(2, K.ndim(boxes))]
+            new_fpn_shape = [-1] + [fpn_shape[i] for i in range(2, K.ndim(fpn))]
+
+            boxes = K.reshape(boxes, new_boxes_shape)
+            fpn = K.reshape(fpn, new_fpn_shape)
+
+        image_shape = K.cast(K.shape(fpn), K.floatx())
+
+        def _roi_align(args):
+            boxes = args[0]
+            fpn = args[1]            # process the feature map
+            x1 = boxes[:, 0]
+            y1 = boxes[:, 1]
+            x2 = boxes[:, 2]
+            y2 = boxes[:, 3]
+
+            fpn_shape = K.cast(K.shape(fpn), dtype=K.floatx())
+            norm_boxes = K.stack([
+                (y1 / image_shape[1] * fpn_shape[0]) / (fpn_shape[0] - 1),
+                (x1 / image_shape[2] * fpn_shape[1]) / (fpn_shape[1] - 1),
+                (y2 / image_shape[1] * fpn_shape[0] - 1) / (fpn_shape[0] - 1),
+                (x2 / image_shape[2] * fpn_shape[1] - 1) / (fpn_shape[1] - 1)
+            ], axis=1)
+
+            rois = tf.image.crop_and_resize(
+                K.expand_dims(fpn, axis=0),
+                norm_boxes,
+                tf.zeros((K.shape(norm_boxes)[0],), dtype='int32'),
+                self.crop_size)
+
+            return rois
+
+        roi_batch = tf.map_fn(
+            _roi_align,
+            elems=[boxes, fpn],
+            dtype=K.floatx(),
+            parallel_iterations=self.parallel_iterations)
+
+        if time_distributed:
+            roi_shape = tf.shape(roi_batch)
+            new_roi_shape = [boxes_shape[0], boxes_shape[1]] + \
+                            [roi_shape[i] for i in range(1, K.ndim(roi_batch))]
+            roi_batch = tf.reshape(roi_batch, new_roi_shape)
+
+        return roi_batch
+
+    def compute_output_shape(self, input_shape):
+        if len(input_shape[3]) == 4:
+            output_shape = [
+                input_shape[1][0],
+                None,
+                self.crop_size[0],
+                self.crop_size[1],
+                input_shape[3][-1]
+            ]
+            return tensor_shape.TensorShape(output_shape)
+
+    def get_config(self):
+        config = {'crop_size': self.crop_size}
+        base_config = super(RoiAlign3D, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
 class Shape(Layer):
     def call(self, inputs, **kwargs):
         return K.shape(inputs)
