@@ -474,7 +474,7 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
             # TODO: ValueError: Shape must be rank 5 but is rank 4
             # time_distributed_outputs.append(
             #     TimeDistributed(Model(model.input, out))(img_input))
-            # pass
+            pass
 
         if time_distributed_outputs:
             layer_outputs = time_distributed_outputs
