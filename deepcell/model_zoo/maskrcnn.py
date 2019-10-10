@@ -37,8 +37,8 @@ from tensorflow.python.keras.layers import MaxPool2D, Lambda
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.initializers import normal
 
-from deepcell.layers import Cast, Shape
-from deepcell.layers import Upsample, RoiAlign, ConcatenateBoxes
+from deepcell.layers import Cast, Shape, UpsampleLike
+from deepcell.layers import Upsample, RoiAlign, RoiAlign3D, ConcatenateBoxes
 from deepcell.layers import ClipBoxes, RegressBoxes, FilterDetections
 from deepcell.layers import TensorProduct, ImageNormalization2D, Location2D
 from deepcell.model_zoo.retinanet import retinanet, __build_anchors
@@ -169,6 +169,7 @@ def default_final_detection_model(pyramid_feature_size=256,
 def default_roi_submodels(num_classes,
                           roi_size=(14, 14),
                           mask_size=(28, 28),
+                          frames_per_batch=1,
                           mask_dtype=K.floatx(),
                           retinanet_dtype=K.floatx()):
     """Create a list of default roi submodels.
@@ -186,6 +187,17 @@ def default_roi_submodels(num_classes,
         list: A list of tuple, where the first element is the name of the
             submodel and the second element is the submodel itself.
     """
+    if frames_per_batch > 1:
+        return [
+            ('masks', TimeDistributed(
+                default_mask_model(num_classes,
+                                   roi_size=roi_size,
+                                   mask_size=mask_size,
+                                   mask_dtype=mask_dtype,
+                                   retinanet_dtype=retinanet_dtype))),
+            ('final_detection', TimeDistributed(
+                default_final_detection_model(roi_size=roi_size)))
+        ]
     return [
         ('masks', default_mask_model(num_classes,
                                      roi_size=roi_size,
@@ -198,6 +210,7 @@ def default_roi_submodels(num_classes,
 def retinanet_mask(inputs,
                    backbone_dict,
                    num_classes,
+                   frames_per_batch=1,
                    backbone_levels=['C3', 'C4', 'C5'],
                    pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
                    retinanet_model=None,
@@ -250,7 +263,7 @@ def retinanet_mask(inputs,
         K.set_floatx(mask_dtype)
         roi_submodels = default_roi_submodels(
             num_classes, crop_size, mask_size,
-            mask_dtype, retinanet_dtype)
+            frames_per_batch, mask_dtype, retinanet_dtype)
         K.set_floatx(retinanet_dtype)
 
     image = inputs
@@ -265,6 +278,7 @@ def retinanet_mask(inputs,
             pyramid_levels=pyramid_levels,
             panoptic=panoptic,
             num_anchors=anchor_params.num_anchors(),
+            frames_per_batch=frames_per_batch,
             **kwargs
         )
 
@@ -303,8 +317,14 @@ def retinanet_mask(inputs,
     scores = detections[1]
 
     # get the region of interest features
-    roi_input = [image_shape, boxes, classification] + features
-    rois = RoiAlign(crop_size=crop_size)(roi_input)
+    if frames_per_batch == 1:
+        roi_input = [image_shape, boxes, classification] + features
+        rois = RoiAlign(crop_size=crop_size)(roi_input)
+    else:  # TODO: why is this necessary?
+        fpn = features[0]
+        fpn = UpsampleLike()([fpn, image])
+
+        rois = RoiAlign3D()([boxes, fpn])
 
     # execute maskrcnn submodels
     maskrcnn_outputs = [submodel(rois) for _, submodel in roi_submodels]
@@ -331,6 +351,7 @@ def retinanet_mask(inputs,
 def RetinaMask(backbone,
                num_classes,
                input_shape,
+               inputs=None,
                backbone_levels=['C3', 'C4', 'C5'],
                pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
                norm_method='whole_image',
@@ -340,6 +361,7 @@ def RetinaMask(backbone,
                pooling=None,
                mask_dtype=K.floatx(),
                required_channels=3,
+               frames_per_batch=1,
                **kwargs):
     """Constructs a mrcnn model using a backbone from keras-applications.
 
@@ -367,18 +389,36 @@ def RetinaMask(backbone,
     Returns:
         tensorflow.keras.Model: RetinaNet model with a backbone.
     """
-    inputs = Input(shape=input_shape)
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+    if inputs is None:
+        if frames_per_batch > 1:
+            if channel_axis == 1:
+                input_shape_with_time = tuple(
+                    [input_shape[0], frames_per_batch] + list(input_shape)[1:])
+            else:
+                input_shape_with_time = tuple(
+                    [frames_per_batch] + list(input_shape))
+            inputs = Input(shape=input_shape_with_time)
+        else:
+            inputs = Input(shape=input_shape)
 
     if location:
-        location = Location2D(in_shape=input_shape)(inputs)
-        concat = Concatenate(axis=channel_axis)([inputs, location])
+        if frames_per_batch > 1:
+            # TODO: TimeDistributed is incompatible with channels_first
+            loc = TimeDistributed(Location2D(in_shape=input_shape))(inputs)
+        else:
+            loc = Location2D(in_shape=input_shape)(inputs)
+        concat = Concatenate(axis=channel_axis)([inputs, loc])
     else:
         concat = inputs
 
     # force the channel size for backbone input to be `required_channels`
-    norm = ImageNormalization2D(norm_method=norm_method)(concat)
-    fixed_inputs = TensorProduct(required_channels)(norm)
+    if frames_per_batch > 1:
+        norm = TimeDistributed(ImageNormalization2D(norm_method=norm_method))(concat)
+        fixed_inputs = TimeDistributed(TensorProduct(required_channels))(norm)
+    else:
+        norm = ImageNormalization2D(norm_method=norm_method)(concat)
+        fixed_inputs = TensorProduct(required_channels)(norm)
 
     # force the input shape
     axis = 0 if K.image_data_format() == 'channels_first' else -1
@@ -393,7 +433,10 @@ def RetinaMask(backbone,
         'pooling': pooling
     }
 
-    backbone_dict = get_backbone(backbone, fixed_inputs, use_imagenet=use_imagenet, **model_kwargs)
+    backbone_dict = get_backbone(backbone, fixed_inputs,
+                                 use_imagenet=use_imagenet,
+                                 frames_per_batch=frames_per_batch,
+                                 **model_kwargs)
 
     # create the full model
     return retinanet_mask(
@@ -405,4 +448,5 @@ def RetinaMask(backbone,
         pyramid_levels=pyramid_levels,
         name='{}_retinanet_mask'.format(backbone),
         mask_dtype=mask_dtype,
+        frames_per_batch=frames_per_batch,
         **kwargs)

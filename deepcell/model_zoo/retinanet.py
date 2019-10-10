@@ -33,7 +33,7 @@ import re
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D
+from tensorflow.python.keras.layers import Conv2D, Conv3D, TimeDistributed
 from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import Permute, Reshape
 from tensorflow.python.keras.layers import Activation, Lambda
@@ -45,7 +45,8 @@ from deepcell.layers import FilterDetections
 from deepcell.layers import ImageNormalization2D, Location2D
 from deepcell.layers import Anchors, RegressBoxes, ClipBoxes
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
-from deepcell.model_zoo.fpn import __create_pyramid_features, __create_semantic_head
+from deepcell.model_zoo.fpn import __create_semantic_head
+from deepcell.model_zoo.fpn import __create_pyramid_features
 from deepcell.utils.backbone_utils import get_backbone
 
 
@@ -54,6 +55,7 @@ def default_classification_model(num_classes,
                                  pyramid_feature_size=256,
                                  prior_probability=0.01,
                                  classification_feature_size=256,
+                                 frames_per_batch=1,
                                  name='classification_submodel'):
     """Creates the default regression submodel.
 
@@ -73,19 +75,24 @@ def default_classification_model(num_classes,
         tensorflow.keras.Model: A model that predicts classes for
             each anchor.
     """
+    time_distributed = frames_per_batch > 1
+
     options = {
-        'kernel_size': 3,
+        'kernel_size': (3, 3, 3) if time_distributed else 3,
         'strides': 1,
         'padding': 'same',
     }
 
+    shape = [None] * (4 if time_distributed else 3)
     if K.image_data_format() == 'channels_first':
-        inputs = Input(shape=(pyramid_feature_size, None, None))
+        shape[0] = pyramid_feature_size
     else:
-        inputs = Input(shape=(None, None, pyramid_feature_size))
+        shape[-1] = pyramid_feature_size
+    inputs = Input(shape=shape)
     outputs = inputs
+    conv = Conv3D if time_distributed else Conv2D
     for i in range(4):
-        outputs = Conv2D(
+        outputs = conv(
             filters=classification_feature_size,
             activation='relu',
             name='pyramid_classification_{}'.format(i),
@@ -94,7 +101,7 @@ def default_classification_model(num_classes,
             **options
         )(outputs)
 
-    outputs = Conv2D(
+    outputs = conv(
         filters=num_classes * num_anchors,
         kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None),
         bias_initializer=PriorProbability(probability=prior_probability),
@@ -104,8 +111,14 @@ def default_classification_model(num_classes,
 
     # reshape output and apply sigmoid
     if K.image_data_format() == 'channels_first':
-        outputs = Permute((2, 3, 1), name='pyramid_classification_permute')(outputs)
-    outputs = Reshape((-1, num_classes), name='pyramid_classification_reshape')(outputs)
+        rank = 4 if time_distributed else 3
+        perm = tuple(list(range(2, rank + 1)) + [1])
+        outputs = Permute(perm, name='pyramid_classification_permute')(outputs)
+
+    new_shape = (frames_per_batch, -1, num_classes)
+    if not time_distributed:
+        new_shape = new_shape[1:]
+    outputs = Reshape(new_shape, name='pyramid_classification_reshape')(outputs)
     outputs = Activation('sigmoid', name='pyramid_classification_sigmoid')(outputs)
 
     return Model(inputs=inputs, outputs=outputs, name=name)
@@ -115,6 +128,7 @@ def default_regression_model(num_values,
                              num_anchors,
                              pyramid_feature_size=256,
                              regression_feature_size=256,
+                             frames_per_batch=1,
                              name='regression_submodel'):
     """Creates the default regression submodel.
 
@@ -134,36 +148,50 @@ def default_regression_model(num_values,
     # All new conv layers except the final one in the
     # RetinaNet (classification) subnets are initialized
     # with bias b = 0 and a Gaussian weight fill with stddev = 0.01.
+    time_distributed = frames_per_batch > 1
+
     options = {
-        'kernel_size': 3,
+        'kernel_size': (3, 3, 3) if time_distributed else 3,
         'strides': 1,
         'padding': 'same',
         'kernel_initializer': RandomNormal(mean=0.0, stddev=0.01, seed=None),
         'bias_initializer': 'zeros'
     }
 
+    shape = [None] * (4 if time_distributed else 3)
     if K.image_data_format() == 'channels_first':
-        inputs = Input(shape=(pyramid_feature_size, None, None))
+        shape[0] = pyramid_feature_size
     else:
-        inputs = Input(shape=(None, None, pyramid_feature_size))
+        shape[-1] = pyramid_feature_size
+    inputs = Input(shape=shape)
     outputs = inputs
+    conv = Conv3D if time_distributed else Conv2D
     for i in range(4):
-        outputs = Conv2D(
+        outputs = conv(
             filters=regression_feature_size,
             activation='relu',
             name='pyramid_regression_{}'.format(i),
             **options
         )(outputs)
 
-    outputs = Conv2D(num_anchors * num_values, name='pyramid_regression', **options)(outputs)
+    outputs = conv(num_anchors * num_values,
+                   name='pyramid_regression', **options)(outputs)
+
     if K.image_data_format() == 'channels_first':
-        outputs = Permute((2, 3, 1), name='pyramid_regression_permute')(outputs)
-    outputs = Reshape((-1, num_values), name='pyramid_regression_reshape')(outputs)
+        rank = 4 if time_distributed else 3
+        perm = tuple(list(range(2, rank + 1)) + [1])
+        outputs = Permute(perm, name='pyramid_regression_permute')(outputs)
+
+    new_shape = (frames_per_batch, -1, num_values)
+    if not time_distributed:
+        new_shape = new_shape[1:]
+
+    outputs = Reshape(new_shape, name='pyramid_regression_reshape')(outputs)
 
     return Model(inputs=inputs, outputs=outputs, name=name)
 
 
-def default_submodels(num_classes, num_anchors):
+def default_submodels(num_classes, num_anchors, frames_per_batch=1):
     """Create a list of default submodels used for object detection.
 
     The default submodels contains a regression submodel
@@ -178,8 +206,10 @@ def default_submodels(num_classes, num_anchors):
             submodel and the second element is the submodel itself.
     """
     return [
-        ('regression', default_regression_model(4, num_anchors)),
-        ('classification', default_classification_model(num_classes, num_anchors))
+        ('regression', default_regression_model(
+            4, num_anchors, frames_per_batch=frames_per_batch)),
+        ('classification', default_classification_model(
+            num_classes, num_anchors, frames_per_batch=frames_per_batch))
     ]
 
 
@@ -199,7 +229,7 @@ def __build_model_pyramid(name, model, features):
         identity = Lambda(lambda x: x, name=name)
         return identity(model(features[0]))
     else:
-        concat = Concatenate(axis=1, name=name)
+        concat = Concatenate(axis=-2, name=name)
         return concat([model(f) for f in features])
 
 
@@ -217,7 +247,7 @@ def __build_pyramid(models, features):
     return [__build_model_pyramid(n, m, features) for n, m in models]
 
 
-def __build_anchors(anchor_parameters, features):
+def __build_anchors(anchor_parameters, features, frames_per_batch=1):
     """Builds anchors for the shape of the features from FPN.
 
     Args:
@@ -234,24 +264,43 @@ def __build_anchors(anchor_parameters, features):
     """
 
     if len(features) == 1:
-        anchors = Anchors(
-            size=anchor_parameters.sizes[0],
-            stride=anchor_parameters.strides[0],
-            ratios=anchor_parameters.ratios,
-            scales=anchor_parameters.scales,
-            name='anchors')(features[0])
-        return anchors
-    else:
-        anchors = [
-            Anchors(
-                size=anchor_parameters.sizes[i],
-                stride=anchor_parameters.strides[i],
+        if frames_per_batch > 1:
+            anchors = TimeDistributed(Anchors(
+                size=anchor_parameters.sizes[0],
+                stride=anchor_parameters.strides[0],
                 ratios=anchor_parameters.ratios,
                 scales=anchor_parameters.scales,
-                name='anchors_{}'.format(i)
-            )(f) for i, f in enumerate(features)
-        ]
-        return Concatenate(axis=1, name='anchors')(anchors)
+                name='anchors'))(features[0])
+        else:
+            anchors = Anchors(
+                size=anchor_parameters.sizes[0],
+                stride=anchor_parameters.strides[0],
+                ratios=anchor_parameters.ratios,
+                scales=anchor_parameters.scales,
+                name='anchors')(features[0])
+        return anchors
+    else:
+        if frames_per_batch > 1:
+            anchors = [
+                TimeDistributed(Anchors(
+                    size=anchor_parameters.sizes[i],
+                    stride=anchor_parameters.strides[i],
+                    ratios=anchor_parameters.ratios,
+                    scales=anchor_parameters.scales,
+                    name='anchors_{}'.format(i)
+                ))(f) for i, f in enumerate(features)
+            ]
+        else:
+            anchors = [
+                Anchors(
+                    size=anchor_parameters.sizes[i],
+                    stride=anchor_parameters.strides[i],
+                    ratios=anchor_parameters.ratios,
+                    scales=anchor_parameters.scales,
+                    name='anchors_{}'.format(i)
+                )(f) for i, f in enumerate(features)
+            ]
+        return Concatenate(axis=-2, name='anchors')(anchors)
 
 
 def retinanet(inputs,
@@ -266,6 +315,7 @@ def retinanet(inputs,
               num_semantic_heads=1,
               num_semantic_classes=[3],
               submodels=None,
+              frames_per_batch=1,
               name='retinanet'):
     """Construct a RetinaNet model on top of a backbone.
 
@@ -309,7 +359,8 @@ def retinanet(inputs,
         num_anchors = AnchorParameters.default.num_anchors()
 
     if submodels is None:
-        submodels = default_submodels(num_classes, num_anchors)
+        submodels = default_submodels(num_classes, num_anchors,
+                                      frames_per_batch=frames_per_batch)
 
     if not isinstance(num_semantic_classes, list):
         num_semantic_classes = list(num_semantic_classes)
@@ -319,7 +370,8 @@ def retinanet(inputs,
     # Use only the desired backbone levels to create the feature pyramid
     backbone_dict_reduced = {k: backbone_dict[k] for k in backbone_dict
                              if k in backbone_levels}
-    pyramid_dict = create_pyramid_features(backbone_dict_reduced)
+    pyramid_dict = create_pyramid_features(
+        backbone_dict_reduced, ndim=3 if frames_per_batch > 1 else 2)
 
     # for the desired pyramid levels, run available submodels
     features = [pyramid_dict[key] for key in pyramid_levels]
@@ -334,7 +386,7 @@ def retinanet(inputs,
             semantic_head_list.append(create_semantic_head(
                 pyramid_dict, n_classes=num_semantic_classes[i],
                 input_target=inputs, target_level=target_level,
-                semantic_id=i))
+                semantic_id=i, ndim=3 if frames_per_batch > 1 else 2))
 
         outputs = object_head + semantic_head_list
     else:
@@ -355,6 +407,7 @@ def retinanet_bbox(model=None,
                    name='retinanet-bbox',
                    anchor_params=None,
                    max_detections=300,
+                   frames_per_batch=1,
                    **kwargs):
     """Construct a RetinaNet model on top of a backbone and adds convenience
     functions to output boxes directly.
@@ -402,7 +455,8 @@ def retinanet_bbox(model=None,
 
     # create RetinaNet model
     if model is None:
-        model = retinanet(num_anchors=anchor_params.num_anchors(), **kwargs)
+        model = retinanet(num_anchors=anchor_params.num_anchors(),
+                          frames_per_batch=frames_per_batch, **kwargs)
     else:
         names = ('regression', 'classification')
         if not all(output in model.output_names for output in names):
@@ -412,7 +466,8 @@ def retinanet_bbox(model=None,
 
     # compute the anchors
     features = [model.get_layer(l).output for l in model.pyramid_levels]
-    anchors = __build_anchors(anchor_params, features)
+    anchors = __build_anchors(anchor_params, features,
+                              frames_per_batch=frames_per_batch)
 
     # we expect anchors, regression. and classification values as first output
     regression = model.outputs[0]
@@ -458,6 +513,7 @@ def RetinaNet(backbone,
               use_imagenet=False,
               pooling=None,
               required_channels=3,
+              frames_per_batch=1,
               **kwargs):
     """Constructs a retinanet model using a backbone from keras-applications.
 
@@ -485,20 +541,37 @@ def RetinaNet(backbone,
     Returns:
         tensorflow.keras.Model: RetinaNet model with a backbone.
     """
-    if inputs is None:
-        inputs = Input(shape=input_shape)
-
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
 
+    if inputs is None:
+        if frames_per_batch > 1:
+            if channel_axis == 1:
+                input_shape_with_time = tuple(
+                    [input_shape[0], frames_per_batch] + list(input_shape)[1:])
+            else:
+                input_shape_with_time = tuple(
+                    [frames_per_batch] + list(input_shape))
+            inputs = Input(shape=input_shape_with_time)
+        else:
+            inputs = Input(shape=input_shape)
+
     if location:
-        location = Location2D(in_shape=input_shape)(inputs)
-        concat = Concatenate(axis=channel_axis)([inputs, location])
+        if frames_per_batch > 1:
+            # TODO: TimeDistributed is incompatible with channels_first
+            loc = TimeDistributed(Location2D(in_shape=input_shape))(inputs)
+        else:
+            loc = Location2D(in_shape=input_shape)(inputs)
+        concat = Concatenate(axis=channel_axis)([inputs, loc])
     else:
         concat = inputs
 
     # force the channel size for backbone input to be `required_channels`
-    norm = ImageNormalization2D(norm_method=norm_method)(concat)
-    fixed_inputs = TensorProduct(required_channels)(norm)
+    if frames_per_batch > 1:
+        norm = TimeDistributed(ImageNormalization2D(norm_method=norm_method))(concat)
+        fixed_inputs = TimeDistributed(TensorProduct(required_channels))(norm)
+    else:
+        norm = ImageNormalization2D(norm_method=norm_method)(concat)
+        fixed_inputs = TensorProduct(required_channels)(norm)
 
     # force the input shape
     axis = 0 if K.image_data_format() == 'channels_first' else -1
@@ -514,12 +587,15 @@ def RetinaNet(backbone,
     }
 
     backbone_dict = get_backbone(backbone, fixed_inputs,
-                                 use_imagenet=use_imagenet, **model_kwargs)
+                                 use_imagenet=use_imagenet,
+                                 frames_per_batch=frames_per_batch,
+                                 **model_kwargs)
 
     # create the full model
     return retinanet(
         inputs=inputs,
         num_classes=num_classes,
         backbone_dict=backbone_dict,
+        frames_per_batch=frames_per_batch,
         name='{}_retinanet'.format(backbone),
         **kwargs)
