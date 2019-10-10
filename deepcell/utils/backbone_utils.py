@@ -471,10 +471,13 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
 
         time_distributed_outputs = []
         for out in layer_outputs:
-            time_distributed_outputs.append(
-                TimeDistributed(Model(model.input, out))(img_input))
+            # TODO: ValueError: Shape must be rank 5 but is rank 4
+            # time_distributed_outputs.append(
+            #     TimeDistributed(Model(model.input, out))(img_input))
+            # pass
 
-        layer_outputs = time_distributed_outputs
+        if time_distributed_outputs:
+            layer_outputs = time_distributed_outputs
 
     output_dict = {'C{}'.format(i + 1): j for i, j in enumerate(layer_outputs)}
     return output_dict if return_dict else model
