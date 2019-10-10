@@ -464,13 +464,15 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
 
         # new_model_outputs = []
         # for i, out in enumerate(new_model.outputs):
-        #     new_model_outputs.append(Stack([out[i] for out in time_distributed_outputs]))
+        #     new_model_outputs.append(
+        #         Stack([out[i] for out in time_distributed_outputs]))
 
         # layer_outputs = new_model_outputs
 
         time_distributed_outputs = []
         for out in layer_outputs:
-            time_distributed_outputs.append(TimeDistributed(Model(model.input, out))(img_input))
+            time_distributed_outputs.append(
+                TimeDistributed(Model(model.input, out))(img_input))
 
         layer_outputs = time_distributed_outputs
 
