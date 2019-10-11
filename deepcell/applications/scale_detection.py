@@ -36,10 +36,6 @@ from deepcell.layers import ImageNormalization2D, TensorProduct
 from deepcell.utils.backbone_utils import get_backbone
 
 
-MOBILENET_WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                          'model-weights/ScaleDetectionModel_mobilenet.h5')
-
-
 MOBILENETV2_WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
                             'model-weights/ScaleDetectionModel_mobilenetv2.h5')
 
@@ -90,13 +86,7 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
 
     if use_pretrained_weights:
         local_name = 'ScaleDetectionModel_{}.h5'.format(backbone)
-        if backbone.lower() == 'mobilenet':
-            weights_path = get_file(
-                local_name,
-                MOBILENET_WEIGHTS_PATH,
-                cache_subdir='models',
-                md5_hash='3c1437193b2b2d8e7837901fde857fc3')
-        elif backbone.lower() in {'mobilenetv2' or 'mobilenet_v2'}:
+        if backbone.lower() in {'mobilenetv2' or 'mobilenet_v2'}:
             weights_path = get_file(
                 local_name,
                 MOBILENETV2_WEIGHTS_PATH,
