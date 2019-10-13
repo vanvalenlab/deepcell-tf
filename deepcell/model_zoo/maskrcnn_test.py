@@ -146,7 +146,7 @@ class RetinaMaskTest(test.TestCase, parameterized.TestCase):
         norm_method = None
 
         # not all backbones work with channels_first
-        backbone = 'featurenet3d' if frames > 1 else 'featurenet'
+        backbone = 'featurenet'
 
         # TODO: RetinaMask fails with channels_first
         for data_format in ('channels_last',):  # 'channels_first'):

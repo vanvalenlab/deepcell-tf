@@ -64,7 +64,7 @@ def featurenet_block(x, n_filters):
     x = BatchNormalization(axis=-1)(x)
     x = Activation('relu')(x)
     # Final max pooling stage
-    x = MaxPool2D(pool_size=(2, 2), data_format=df)(x)
+    x = MaxPool2D(pool_size=(2, 2), padding='same', data_format=df)(x)
 
     return x
 
@@ -230,9 +230,17 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
 
     # TODO: Check and make sure **kwargs is in the right format.
     # 'weights' flag should be None, and 'input_shape' must have size 3 on the channel axis
-    if input_tensor is not None:
-        img_input = input_tensor
+    if frames_per_batch == 1:
+        if input_tensor is not None:
+            img_input = input_tensor
+        else:
+            if input_shape:
+                img_input = Input(shape=input_shape)
+            else:
+                img_input = Input(shape=(None, None, 3))
     else:
+        # using 3D data but a 2D backbone.
+        # TODO: why ignore input_tensor
         if input_shape:
             img_input = Input(shape=input_shape)
         else:
@@ -466,15 +474,13 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         # for i, out in enumerate(new_model.outputs):
         #     new_model_outputs.append(
         #         Stack([out[i] for out in time_distributed_outputs]))
-
+        #
         # layer_outputs = new_model_outputs
 
         time_distributed_outputs = []
-        for out in layer_outputs:
-            # TODO: ValueError: Shape must be rank 5 but is rank 4
-            # time_distributed_outputs.append(
-            #     TimeDistributed(Model(model.input, out))(img_input))
-            pass
+        for i, out in enumerate(layer_outputs):
+            time_distributed_outputs.append(
+                TimeDistributed(Model(model.input, out))(input_tensor))
 
         if time_distributed_outputs:
             layer_outputs = time_distributed_outputs

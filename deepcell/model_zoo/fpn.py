@@ -154,7 +154,7 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
 
         N = backbone_names[i]
         level = int(re.findall(r'\d+', N)[0])
-        p_name = 'P' + str(level)
+        p_name = 'P{}'.format(level)
         pyramid_names.append(p_name)
 
         backbone_input = backbone_features[i]
@@ -208,7 +208,7 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
         # "Last pyramid layer is computed by applying ReLU
         # followed by a 3x3 stride-2 conv on second to last layer"
         level = int(re.findall(r'\d+', N)[0]) + 2
-        P_minus_1_name = 'P' + str(level)
+        P_minus_1_name = 'P{}'.format(level)
         P_minus_1 = Activation('relu', name=N + '_relu')(P_minus_2)
 
         if ndim == 2:
@@ -338,7 +338,7 @@ def semantic_prediction(semantic_names,
 
     # Apply tensor product and softmax layer
     x = TensorProduct(n_classes)(x)
-    x = Softmax(axis=channel_axis, name='semantic_' + str(semantic_id))(x)
+    x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
 
     return x
 
@@ -383,7 +383,7 @@ def __create_semantic_head(pyramid_dict,
         # Use semantic upsample to get semantic map
         semantic_features.append(semantic_upsample(
             P, n_upsample, n_filters=n_filters, target=target, ndim=ndim))
-        semantic_names.append('Q' + str(level))
+        semantic_names.append('Q{}'.format(level))
 
     # Combine all of the semantic features
     x = semantic_prediction(semantic_names, semantic_features,

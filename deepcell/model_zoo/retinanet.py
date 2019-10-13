@@ -118,6 +118,7 @@ def default_classification_model(num_classes,
     new_shape = (frames_per_batch, -1, num_classes)
     if not time_distributed:
         new_shape = new_shape[1:]
+
     outputs = Reshape(new_shape, name='pyramid_classification_reshape')(outputs)
     outputs = Activation('sigmoid', name='pyramid_classification_sigmoid')(outputs)
 

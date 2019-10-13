@@ -55,7 +55,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'pooling': None,
             'panoptic': False,
             'location': False,
-            'frames': 32,  # fails when too small
+            'frames': 5,
             'pyramid_levels': ['P3'],
         },
         {
@@ -79,7 +79,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'pooling': 'max',
             'panoptic': True,
             'location': False,
-            'frames': 32,
+            'frames': 5,
             'pyramid_levels': ['P5', 'P6', 'P7'],
         },
         {
@@ -95,7 +95,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'pooling': 'max',
             'panoptic': True,
             'location': True,
-            'frames': 32,  # fails when too small
+            'frames': 5,
             'pyramid_levels': ['P3', 'P7'],
         },
         {
@@ -111,7 +111,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'pooling': 'max',
             'panoptic': True,
             'location': True,
-            'frames': 32,
+            'frames': 5,
             'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
         }
     ])
@@ -121,7 +121,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
         norm_method = None
 
         # not all backbones work with channels_first
-        backbone = 'featurenet3d' if frames > 1 else 'featurenet'
+        backbone = 'featurenet'
 
         for data_format in ('channels_last', 'channels_first'):
             with self.test_session(use_gpu=True):
