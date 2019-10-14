@@ -189,10 +189,10 @@ class FilterDetections(Layer):
         time_distributed = K.ndim(boxes) == 4
 
         if time_distributed:
-            boxes_shape = tf.shape(boxes)
+            boxes_shape = K.shape(boxes)
             # classification_shape = classification.get_shape()
-            classification_shape = tf.shape(classification)
-            other_shape = [tf.shape(o) for o in other]
+            classification_shape = K.shape(classification)
+            other_shape = [K.shape(o) for o in other]
 
             new_boxes_shape = [-1] + [boxes_shape[i] for i in range(2, K.ndim(boxes))]
             new_classification_shape = [-1] + \
@@ -201,9 +201,9 @@ class FilterDetections(Layer):
             new_other_shape = [[-1] + [o_s[i] for i in range(2, K.ndim(o))]
                                for o, o_s in zip(other, other_shape)]
 
-            boxes = tf.reshape(boxes, new_boxes_shape)
-            classification = tf.reshape(classification, new_classification_shape)
-            other = [tf.reshape(o, o_s) for o, o_s in zip(other, new_other_shape)]
+            boxes = K.reshape(boxes, new_boxes_shape)
+            classification = K.reshape(classification, new_classification_shape)
+            other = [K.reshape(o, o_s) for o, o_s in zip(other, new_other_shape)]
 
         # wrap nms with our parameters
         def _filter_detections(args):
@@ -251,11 +251,11 @@ class FilterDetections(Layer):
                                   [o[i] for i in range(3, K.ndim(o))]
                                   for o in other_shape]
 
-            filtered_boxes = tf.reshape(filtered_boxes, final_boxes_shape)
-            filtered_scores = tf.reshape(filtered_scores, final_scores_shape)
-            filtered_labels = tf.reshape(filtered_labels, final_labels_shape)
-            filtered_other = [tf.reshape(o, o_s) for o, o_s in zip(filtered_other,
-                                                                   final_others_shape)]
+            filtered_boxes = K.reshape(filtered_boxes, final_boxes_shape)
+            filtered_scores = K.reshape(filtered_scores, final_scores_shape)
+            filtered_labels = K.reshape(filtered_labels, final_labels_shape)
+            filtered_other = [K.reshape(o, o_s) for o, o_s in zip(filtered_other,
+                                                                  final_others_shape)]
 
             outputs = [filtered_boxes, filtered_scores, filtered_labels] + filtered_other
 
