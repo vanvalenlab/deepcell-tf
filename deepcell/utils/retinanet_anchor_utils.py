@@ -859,6 +859,7 @@ def _get_annotations(generator, frames_per_batch=5):
 def evaluate(generator, model,
              iou_threshold=0.5,
              score_threshold=0.05,
+             frames_per_batch=1,
              max_detections=100):
     """Evaluate a given dataset using a given model.
 
@@ -877,6 +878,7 @@ def evaluate(generator, model,
     # gather all detections and annotations
     all_detections, _ = _get_detections(
         generator, model,
+        frames_per_batch=frames_per_batch,
         score_threshold=score_threshold,
         max_detections=max_detections)
 
@@ -953,6 +955,7 @@ def evaluate_mask(generator, model,
                   iou_threshold=0.5,
                   score_threshold=0.05,
                   max_detections=100,
+                  frames_per_batch=1,
                   binarize_threshold=0.5):
     """Evaluate a given dataset using a given model.
 
@@ -972,6 +975,7 @@ def evaluate_mask(generator, model,
     # gather all detections and annotations
     all_detections, all_masks = _get_detections(
         generator, model,
+        frames_per_batch=frames_per_batch,
         score_threshold=score_threshold,
         max_detections=max_detections)
     all_annotations, all_gt_masks = _get_annotations(generator)
