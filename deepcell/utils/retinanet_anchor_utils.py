@@ -747,18 +747,26 @@ def _get_detections(generator,
                     # Add logic for networks that have semantic heads
                     pass
                 else:
-                    if generator.include_masks:
+                    if (generator.include_masks and
+                            not generator.include_final_detection_layer):
                         boxes = results[-4]
                         scores = results[-3]
                         labels = results[-2]
                         masks = results[-1]
+                    elif (generator.include_masks and
+                          generator.include_final_detection_layer):
+                        boxes = results[-5]
+                        scores = results[-4]
+                        labels = results[-3]
+                        masks = results[-2]
+                        final_scores = results[-1]
                     else:
                         boxes, scores, labels = results[0:3]
 
                     for k in range(frames_per_batch):
-                        boxes_list.append(boxes[0, k, ...])
-                        scores_list.append(scores[0, k, :])
-                        labels_list.append(labels[0, k, :])
+                        boxes_list.append(boxes[0, k])
+                        scores_list.append(scores[0, k])
+                        labels_list.append(labels[0, k])
 
         batch_boxes = np.stack(boxes_list, axis=0)
         batch_scores = np.stack(scores_list, axis=0)
@@ -767,7 +775,8 @@ def _get_detections(generator,
         all_detections = [[None for i in range(generator.num_classes)]
                           for j in range(batch_boxes.shape[0])]
 
-        all_masks = None
+        all_masks = [[None for i in range(generator.num_classes)]
+                     for j in range(batch_boxes.shape[0])]
 
         for i in range(batch_boxes.shape[0]):
             boxes = batch_boxes[[i]]
@@ -798,6 +807,12 @@ def _get_detections(generator,
             for label in range(generator.num_classes):
                 imd = image_detections[image_detections[:, -1] == label, :-1]
                 all_detections[i][label] = imd
+
+            if generator.include_masks:
+                image_masks = masks[0, :, indices[scores_sort], :, :, image_labels]
+                for label in range(generator.num_classes):
+                    imm = image_masks[image_detections[:, -1] == label, ...]
+                    all_masks[i][label] = imm
 
     return all_detections, all_masks
 
@@ -839,17 +854,27 @@ def _get_annotations(generator, frames_per_batch=1):
 
     if len(generator.x.shape) == 5:
         all_annotations = []
-        all_masks = None
+        all_masks = []
         for i in range(generator.y.shape[0]):
             for j in range(0, generator.y.shape[1], frames_per_batch):
                 label_movie = generator.y[i, j:j + frames_per_batch, ...]
-                for k in range(0, frames_per_batch):
+                for k in range(frames_per_batch):
                     annotations = generator.load_annotations(label_movie[k])
+
+                    if generator.include_masks:
+                        annotations['masks'] = np.stack(annotations['masks'], axis=0)
+
                     imb_list = [None for i in range(generator.num_classes)]
+                    imm_list = [None for i in range(generator.num_classes)]
                     for label in range(generator.num_classes):
-                        imb = annotations['bboxes'][annotations['labels'] == label, :].copy()
+                        label_idx = annotations['labels'] == label
+                        imb = annotations['bboxes'][label_idx, :].copy()
                         imb_list[label] = imb
+                        if generator.include_masks:
+                            imm = annotations['masks'][label_idx, ..., 0].copy()
+                            imm_list[label] = imm
                     all_annotations.append(imb_list.copy())
+                    all_masks.append(imm_list.copy())
 
     return all_annotations, all_masks
 
@@ -1014,29 +1039,37 @@ def evaluate_mask(generator, model,
                 box_x = box[3] - box[1]
                 box_y = box[2] - box[0]
 
-                mask = resize(mask, (box_x, box_y))
+                if frames_per_batch == 1:
+                    mask = np.expand_dims(mask, axis=0)
+
+                mask = resize(mask, (frames_per_batch, box_x, box_y))
 
                 # binarize the mask
                 mask = (mask > binarize_threshold).astype('uint8')
 
                 # place mask in image frame
-                mask_image = np.zeros_like(gt_masks[0])
-                mask_image[box[1]:box[3], box[0]:box[2]] = mask
+                mask_image = np.zeros(tuple([frames_per_batch] +
+                                            list(gt_masks[0].shape)))
+
+                mask_image[:, box[1]:box[3], box[0]:box[2]] = mask
+
                 mask = mask_image
 
-                overlaps = compute_iou(np.expand_dims(mask, axis=0), gt_masks)
+                for f in range(frames_per_batch):
 
-                assigned_annotation = np.argmax(overlaps, axis=1)
-                max_overlap = overlaps[0, assigned_annotation]
+                    overlaps = compute_iou(np.expand_dims(mask[f], axis=0), gt_masks)
 
-                if max_overlap >= iou_threshold and \
-                   assigned_annotation not in detected_annotations:
-                    false_positives = np.append(false_positives, 0)
-                    true_positives = np.append(true_positives, 1)
-                    detected_annotations.append(assigned_annotation)
-                else:
-                    false_positives = np.append(false_positives, 1)
-                    true_positives = np.append(true_positives, 0)
+                    assigned_annotation = np.argmax(overlaps, axis=1)
+                    max_overlap = overlaps[0, assigned_annotation]
+
+                    if max_overlap >= iou_threshold and \
+                       assigned_annotation not in detected_annotations:
+                        false_positives = np.append(false_positives, 0)
+                        true_positives = np.append(true_positives, 1)
+                        detected_annotations.append(assigned_annotation)
+                    else:
+                        false_positives = np.append(false_positives, 1)
+                        true_positives = np.append(true_positives, 0)
 
         # no annotations -> AP for this class is 0 (is this correct?)
         if num_annotations == 0:
