@@ -300,7 +300,8 @@ def retinanet_mask(inputs,
                 for name in pyramid_levels]
 
     # build boxes
-    anchors = __build_anchors(anchor_params, features)
+    anchors = __build_anchors(anchor_params, features,
+                              frames_per_batch=frames_per_batch)
     boxes = RegressBoxes(name='boxes')([anchors, regression])
     boxes = ClipBoxes(name='clipped_boxes')([image, boxes])
 
