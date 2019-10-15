@@ -647,7 +647,7 @@ def _compute_ap(recall, precision):
 
 def _get_detections(generator,
                     model,
-                    frames_per_batch=5,
+                    frames_per_batch=1,
                     score_threshold=0.05,
                     max_detections=100):
     """Get the detections from the model using the generator.
@@ -802,7 +802,7 @@ def _get_detections(generator,
     return all_detections, all_masks
 
 
-def _get_annotations(generator, frames_per_batch=5):
+def _get_annotations(generator, frames_per_batch=1):
     """Get the ground truth annotations from the generator.
 
     The result is a list of lists such that the size is:
@@ -976,7 +976,7 @@ def evaluate_mask(generator, model,
         frames_per_batch=frames_per_batch,
         score_threshold=score_threshold,
         max_detections=max_detections)
-    all_annotations, all_gt_masks = _get_annotations(generator)
+    all_annotations, all_gt_masks = _get_annotations(generator, frames_per_batch)
     average_precisions = {}
 
     # import pickle
