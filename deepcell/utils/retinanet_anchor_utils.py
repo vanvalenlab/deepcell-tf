@@ -764,8 +764,6 @@ def _get_detections(generator,
         batch_scores = np.stack(scores_list, axis=0)
         batch_labels = np.stack(labels_list, axis=0)
 
-        print(batch_boxes.shape, batch_scores.shape, batch_labels.shape)
-
         all_detections = [[None for i in range(generator.num_classes)]
                           for j in range(batch_boxes.shape[0])]
 
