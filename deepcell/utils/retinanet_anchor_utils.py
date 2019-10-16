@@ -904,8 +904,7 @@ def evaluate(generator, model,
         frames_per_batch=frames_per_batch,
         score_threshold=score_threshold,
         max_detections=max_detections)
-
-    all_annotations, _ = _get_annotations(generator)
+    all_annotations, _ = _get_annotations(generator, frames_per_batch)
     average_precisions = {}
 
     # all_detections = pickle.load(open('all_detections.pkl', 'rb'))
