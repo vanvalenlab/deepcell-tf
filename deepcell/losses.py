@@ -549,16 +549,13 @@ def compute_fd_loss(boxes, scores, annotations, iou_threshold=0.75):
     """compute the overlap of boxes with annotations"""
     iou = overlap(boxes, annotations)
 
-    # max_iou = K.max(iou, axis=1)
-    # targets = K.cast(K.greater_equal(max_iou, iou_threshold), K.floatx())
-
-    targets = K.cast(K.greater_equal(iou, iou_threshold), K.floatx())
+    max_iou = K.max(iou, axis=1, keepdims=True)
+    targets = K.cast(K.greater_equal(max_iou, iou_threshold), K.floatx())
 
     # compute the loss
     loss = focal(targets, scores)  # alpha=self.alpha, gamma=self.gamma)
 
     # compute the normalizer: the number of cells present in the image
-
     normalizer = K.cast(K.shape(annotations)[0], K.floatx())
     normalizer = K.maximum(K.cast_to_floatx(1.0), normalizer)
 
