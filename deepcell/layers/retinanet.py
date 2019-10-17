@@ -402,7 +402,7 @@ class _RoiAlign(Layer):
 
     def get_config(self):
         config = {'crop_size': self.crop_size}
-        base_config = super(RoiAlign, self).get_config()
+        base_config = super(_RoiAlign, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
