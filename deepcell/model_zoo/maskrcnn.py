@@ -38,7 +38,7 @@ from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.initializers import normal
 
 from deepcell.layers import Cast, Shape, UpsampleLike
-from deepcell.layers import Upsample, RoiAlign, RoiAlign3D, ConcatenateBoxes
+from deepcell.layers import Upsample, RoiAlign, ConcatenateBoxes
 from deepcell.layers import ClipBoxes, RegressBoxes, FilterDetections
 from deepcell.layers import TensorProduct, ImageNormalization2D, Location2D
 from deepcell.model_zoo.retinanet import retinanet, __build_anchors
@@ -322,14 +322,13 @@ def retinanet_mask(inputs,
     scores = detections[1]
 
     # get the region of interest features
-    if frames_per_batch == 1:
-        roi_input = [image_shape, boxes, classification] + features
-        rois = RoiAlign(crop_size=crop_size)(roi_input)
-    else:  # TODO: why is this necessary?
-        fpn = features[0]
-        fpn = UpsampleLike()([fpn, image])
+    #
+    # roi_input = [image_shape, boxes, classification] + features
+    # rois = _RoiAlign(crop_size=crop_size)(roi_input)
 
-        rois = RoiAlign3D()([boxes, fpn])
+    fpn = features[0]
+    fpn = UpsampleLike()([fpn, image])
+    rois = RoiAlign(crop_size=crop_size)([boxes, fpn])
 
     # execute maskrcnn submodels
     maskrcnn_outputs = [submodel(rois) for _, submodel in roi_submodels]

@@ -263,11 +263,12 @@ class ConcatenateBoxes(Layer):
             return tensor_shape.TensorShape(output_shape)
 
 
-class RoiAlign(Layer):
+class _RoiAlign(Layer):
+    """Original RoiAlign Layer from https://github.com/fizyr/keras-retinanet"""
     def __init__(self, crop_size=(14, 14), parallel_iterations=32, **kwargs):
         self.crop_size = crop_size
         self.parallel_iterations = parallel_iterations
-        super(RoiAlign, self).__init__(**kwargs)
+        super(_RoiAlign, self).__init__(**kwargs)
 
     def map_to_level(self, boxes,
                      canonical_size=224,
@@ -405,20 +406,15 @@ class RoiAlign(Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-class RoiAlign3D(Layer):
-    """Modified ROI Align layer.
+class RoiAlign(_RoiAlign):
+    """Modified RoiAlign layer.
 
-    Only takes in one feature map.
-    Feature map must be the size of the original image
+    Only takes in one feature map, which must be the size of the original image
     """
-    def __init__(self, crop_size=(14, 14), parallel_iterations=32, **kwargs):
-        self.crop_size = crop_size
-        self.parallel_iterations = parallel_iterations
-        super(RoiAlign3D, self).__init__(**kwargs)
 
     def call(self, inputs, **kwargs):
         boxes = K.stop_gradient(inputs[0])
-        fpn = K.stop_gradient(inputs[1])
+        fpn = [K.stop_gradient(i) for i in inputs[1:]]
 
         if K.ndim(boxes) == 4:
             time_distributed = True
@@ -474,22 +470,6 @@ class RoiAlign3D(Layer):
             roi_batch = tf.reshape(roi_batch, new_roi_shape)
 
         return roi_batch
-
-    def compute_output_shape(self, input_shape):
-        if len(input_shape[3]) == 4:
-            output_shape = [
-                input_shape[1][0],
-                None,
-                self.crop_size[0],
-                self.crop_size[1],
-                input_shape[3][-1]
-            ]
-            return tensor_shape.TensorShape(output_shape)
-
-    def get_config(self):
-        config = {'crop_size': self.crop_size}
-        base_config = super(RoiAlign3D, self).get_config()
-        return dict(list(base_config.items()) + list(config.items()))
 
 
 class Shape(Layer):
