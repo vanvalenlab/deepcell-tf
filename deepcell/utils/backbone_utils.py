@@ -486,4 +486,4 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
             layer_outputs = time_distributed_outputs
 
     output_dict = {'C{}'.format(i + 1): j for i, j in enumerate(layer_outputs)}
-    return output_dict if return_dict else model
+    return (model, output_dict) if return_dict else model

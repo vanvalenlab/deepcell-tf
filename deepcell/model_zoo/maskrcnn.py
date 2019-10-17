@@ -438,10 +438,10 @@ def RetinaMask(backbone,
         'pooling': pooling
     }
 
-    backbone_dict = get_backbone(backbone, fixed_inputs,
-                                 use_imagenet=use_imagenet,
-                                 frames_per_batch=frames_per_batch,
-                                 **model_kwargs)
+    _, backbone_dict = get_backbone(backbone, fixed_inputs,
+                                    use_imagenet=use_imagenet,
+                                    frames_per_batch=frames_per_batch,
+                                    return_dict=True, **model_kwargs)
 
     # create the full model
     return retinanet_mask(

@@ -454,8 +454,10 @@ def FPNet(backbone,
     }
 
     # Get backbone outputs
-    backbone_dict = get_backbone(
-        backbone, fixed_inputs, use_imagenet=use_imagenet, **model_kwargs)
+    _, backbone_dict = get_backbone(backbone, fixed_inputs,
+                                    use_imagenet=use_imagenet,
+                                    frames_per_batch=frames_per_batch,
+                                    return_dict=True, **model_kwargs)
 
     # Construct feature pyramid network
     pyramid_dict = __create_pyramid_features(backbone_dict)
