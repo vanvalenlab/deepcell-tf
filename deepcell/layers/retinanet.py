@@ -414,7 +414,7 @@ class RoiAlign(_RoiAlign):
 
     def call(self, inputs, **kwargs):
         boxes = K.stop_gradient(inputs[0])
-        fpn = [K.stop_gradient(i) for i in inputs[1:]]
+        fpn = K.stop_gradient(inputs[1])
 
         time_distributed = K.ndim(boxes) == 4
 
