@@ -416,10 +416,7 @@ class RoiAlign(_RoiAlign):
         boxes = K.stop_gradient(inputs[0])
         fpn = [K.stop_gradient(i) for i in inputs[1:]]
 
-        if K.ndim(boxes) == 4:
-            time_distributed = True
-        else:
-            time_distributed = False
+        time_distributed = K.ndim(boxes) == 4
 
         if time_distributed:
             boxes_shape = K.shape(boxes)
