@@ -49,16 +49,15 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         inputs = Input(shape=input_shape)
         with self.test_session():
             K.set_image_data_format('channels_last')
-            out = backbone_utils.get_backbone(backbone, inputs, return_dict=True)
-            assert isinstance(out, dict)
-            assert all(k.startswith('C') for k in out)
+            model, output_dict = backbone_utils.get_backbone(
+                backbone, inputs, return_dict=True)
+            assert isinstance(output_dict, dict)
+            assert all(k.startswith('C') for k in output_dict)
+            assert isinstance(model, Model)
 
-            out = backbone_utils.get_backbone(backbone, inputs, return_dict=False)
-            assert isinstance(out, Model)
-
+            # No imagenet weights fr featurenet backbone
             with self.assertRaises(ValueError):
-                out = backbone_utils.get_backbone(
-                    backbone, inputs, use_imagenet=True)
+                backbone_utils.get_backbone(backbone, inputs, use_imagenet=True)
 
     def test_get_featurenet3d_backbone(self):
         backbone = 'featurenet3d'
@@ -66,16 +65,15 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         inputs = Input(shape=input_shape)
         with self.test_session():
             K.set_image_data_format('channels_last')
-            out = backbone_utils.get_backbone(backbone, inputs, return_dict=True)
-            assert isinstance(out, dict)
-            assert all(k.startswith('C') for k in out)
+            model, output_dict = backbone_utils.get_backbone(
+                backbone, inputs, return_dict=True)
+            assert isinstance(output_dict, dict)
+            assert all(k.startswith('C') for k in output_dict)
+            assert isinstance(model, Model)
 
-            out = backbone_utils.get_backbone(backbone, inputs, return_dict=False)
-            assert isinstance(out, Model)
-
+            # No imagenet weights fr featurenet backbone
             with self.assertRaises(ValueError):
-                out = backbone_utils.get_backbone(
-                    backbone, inputs, use_imagenet=True)
+                backbone_utils.get_backbone(backbone, inputs, use_imagenet=True)
 
     @parameterized.named_parameters([
         ('resnet50',) * 2,
