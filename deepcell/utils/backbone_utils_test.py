@@ -47,35 +47,35 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         backbone = 'featurenet'
         input_shape = (256, 256, 3)
         inputs = Input(shape=input_shape)
-        # with self.test_session(use_gpu=True):
-        K.set_image_data_format('channels_last')
-        out = backbone_utils.get_backbone(backbone, inputs, return_dict=True)
-        assert isinstance(out, dict)
-        assert all(k.startswith('C') for k in out)
+        with self.test_session():
+            K.set_image_data_format('channels_last')
+            out = backbone_utils.get_backbone(backbone, inputs, return_dict=True)
+            assert isinstance(out, dict)
+            assert all(k.startswith('C') for k in out)
 
-        out = backbone_utils.get_backbone(backbone, inputs, return_dict=False)
-        assert isinstance(out, Model)
+            out = backbone_utils.get_backbone(backbone, inputs, return_dict=False)
+            assert isinstance(out, Model)
 
-        with self.assertRaises(ValueError):
-            out = backbone_utils.get_backbone(
-                backbone, inputs, use_imagenet=True)
+            with self.assertRaises(ValueError):
+                out = backbone_utils.get_backbone(
+                    backbone, inputs, use_imagenet=True)
 
     def test_get_featurenet3d_backbone(self):
         backbone = 'featurenet3d'
         input_shape = (40, 256, 256, 3)
         inputs = Input(shape=input_shape)
-        # with self.test_session(use_gpu=True):
-        K.set_image_data_format('channels_last')
-        out = backbone_utils.get_backbone(backbone, inputs, return_dict=True)
-        assert isinstance(out, dict)
-        assert all(k.startswith('C') for k in out)
+        with self.test_session():
+            K.set_image_data_format('channels_last')
+            out = backbone_utils.get_backbone(backbone, inputs, return_dict=True)
+            assert isinstance(out, dict)
+            assert all(k.startswith('C') for k in out)
 
-        out = backbone_utils.get_backbone(backbone, inputs, return_dict=False)
-        assert isinstance(out, Model)
+            out = backbone_utils.get_backbone(backbone, inputs, return_dict=False)
+            assert isinstance(out, Model)
 
-        with self.assertRaises(ValueError):
-            out = backbone_utils.get_backbone(
-                backbone, inputs, use_imagenet=True)
+            with self.assertRaises(ValueError):
+                out = backbone_utils.get_backbone(
+                    backbone, inputs, use_imagenet=True)
 
     @parameterized.named_parameters([
         ('resnet50',) * 2,
