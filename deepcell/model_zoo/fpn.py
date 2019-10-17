@@ -402,6 +402,7 @@ def FPNet(backbone,
           required_channels=3,
           n_classes=3,
           name='fpnet',
+          frames_per_batch=1,
           **kwargs):
     """Creates a Feature Pyramid Network with a semantic segmentation head
 
