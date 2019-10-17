@@ -111,7 +111,6 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
                 assert all(k.startswith('C') for k in output_dict)
                 assert isinstance(model, Model)
 
-
     def test_invalid_backbone(self):
         inputs = Input(shape=(4, 2, 3))
         with self.assertRaises(ValueError):
