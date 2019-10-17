@@ -53,7 +53,7 @@ install:
   - python setup.py build_ext --inplace
 
 script:
-  - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8
+  - PYTHONPATH=$PWD:$PYTHONPATH travis_wait pytest --cov=deepcell --pep8
   - PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html
 
 jobs:
