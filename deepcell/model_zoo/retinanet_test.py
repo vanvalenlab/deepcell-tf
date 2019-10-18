@@ -124,7 +124,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
         backbone = 'featurenet'
 
         for data_format in ('channels_last', 'channels_first'):
-            with self.test_session(use_gpu=True):
+            with self.test_session():
                 K.set_image_data_format(data_format)
                 if data_format == 'channels_first':
                     axis = 1

@@ -40,7 +40,7 @@ class TestFilterDetections(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
-        with self.test_session(use_gpu=True):
+        with self.test_session():
             # create simple FilterDetections layer
             layer = layers.FilterDetections()
 
@@ -81,7 +81,7 @@ class TestFilterDetections(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple_3d(self):
-        with self.test_session(use_gpu=True):
+        with self.test_session():
             # create simple FilterDetections layer
             layer = layers.FilterDetections()
 
@@ -124,7 +124,7 @@ class TestFilterDetections(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple_with_other(self):
-        with self.test_session(use_gpu=True):
+        with self.test_session():
             # create simple FilterDetections layer
             layer = layers.FilterDetections()
 
@@ -185,7 +185,7 @@ class TestFilterDetections(test.TestCase):
 
     # @tf_test_util.run_in_graph_and_eager_modes()
     # def test_mini_batch(self):
-    #     with self.test_session(use_gpu=True):
+    #     with self.test_session():
     #         # create simple FilterDetections layer
     #         layer = layers.FilterDetections()
     #

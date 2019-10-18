@@ -39,7 +39,7 @@ install:
   - source activate test-environment
 
   # install TensorFlow (CPU version).
-  - travis_retry pip install tensorflow==$TF_VERSION
+  - travis_retry pip install tensorflow==$TF_VERSION --progress-bar off
 
   # remove tensorflow an requirements.txt
   - sed -i "/tensorflow/d" requirements.txt
