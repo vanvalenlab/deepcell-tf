@@ -96,20 +96,20 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
     ])
     def test_get_backbone(self, backbone):
         # some backbones seem to not play well with python2.7
-        bad_backbones = {
-            'resnext50', 'resnext101',
-            'resnet50v2', 'resnet101v2', 'resnet152v2'
-        }
-
-        if sys.version_info[0] != 2 or backbone not in bad_backbones:
-            with self.test_session():
-                K.set_image_data_format('channels_last')
-                inputs = Input(shape=(256, 256, 3))
-                model, output_dict = backbone_utils.get_backbone(
-                    backbone, inputs, return_dict=True)
-                assert isinstance(output_dict, dict)
-                assert all(k.startswith('C') for k in output_dict)
-                assert isinstance(model, Model)
+        # bad_backbones = {
+        #     'resnext50', 'resnext101',
+        #     'resnet50v2', 'resnet101v2', 'resnet152v2'
+        # }
+        #
+        # if sys.version_info[0] != 2 or backbone not in bad_backbones:
+        with self.test_session():
+            K.set_image_data_format('channels_last')
+            inputs = Input(shape=(256, 256, 3))
+            model, output_dict = backbone_utils.get_backbone(
+                backbone, inputs, return_dict=True)
+            assert isinstance(output_dict, dict)
+            assert all(k.startswith('C') for k in output_dict)
+            assert isinstance(model, Model)
 
     def test_invalid_backbone(self):
         inputs = Input(shape=(4, 2, 3))
