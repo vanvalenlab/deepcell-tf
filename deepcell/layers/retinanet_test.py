@@ -41,7 +41,7 @@ class TestAnchors(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_anchors_2d(self):
-        with self.test_session(use_gpu=True):
+        with self.test_session():
             testing_utils.layer_test(
                 layers.Anchors,
                 kwargs={'size': 1, 'stride': 1,

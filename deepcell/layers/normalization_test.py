@@ -43,7 +43,7 @@ class ImageNormalizationTest(test.TestCase):
     def test_normalize_2d(self):
         custom_objects = {'ImageNormalization2D': layers.ImageNormalization2D}
         norm_methods = [None, 'std', 'max', 'whole_image']
-        with self.test_session(use_gpu=True):
+        with self.test_session():
             # test each norm method
             for norm_method in norm_methods:
                 testing_utils.layer_test(
@@ -86,7 +86,7 @@ class ImageNormalizationTest(test.TestCase):
     def test_normalize_3d(self):
         custom_objects = {'ImageNormalization3D': layers.ImageNormalization3D}
         norm_methods = [None, 'std', 'max', 'whole_image']
-        with self.test_session(use_gpu=True):
+        with self.test_session():
             # test each norm method
             for norm_method in norm_methods:
                 testing_utils.layer_test(

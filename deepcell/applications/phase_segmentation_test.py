@@ -54,7 +54,7 @@ class TestPhaseSegmentationModel(test.TestCase):
                 # retinanet backbones do not work with versions < 1.10.0
                 continue
 
-            with self.test_session(use_gpu=True):
+            with self.test_session():
                 model = PhaseSegmentationModel(
                     input_shape=input_shape,
                     backbone=backbone,
