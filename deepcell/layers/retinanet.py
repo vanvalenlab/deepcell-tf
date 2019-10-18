@@ -200,18 +200,33 @@ class ClipBoxes(Layer):
     def call(self, inputs, **kwargs):
         image, boxes = inputs
         shape = K.cast(K.shape(image), K.floatx())
-        if self.data_format == "channels_first":
-            height = shape[2]
-            width = shape[3]
-        else:
-            height = shape[1]
-            width = shape[2]
-        x1 = tf.clip_by_value(boxes[:, :, 0], 0, width)
-        y1 = tf.clip_by_value(boxes[:, :, 1], 0, height)
-        x2 = tf.clip_by_value(boxes[:, :, 2], 0, width)
-        y2 = tf.clip_by_value(boxes[:, :, 3], 0, height)
+        if K.ndim(image) == 4:
+            if self.data_format == "channels_first":
+                height = shape[2]
+                width = shape[3]
+            else:
+                height = shape[1]
+                width = shape[2]
+        elif K.ndim(image) == 5:
+            if self.data_format == "channels_first":
+                height = shape[3]
+                width = shape[4]
+            else:
+                height = shape[2]
+                width = shape[3]
 
-        return K.stack([x1, y1, x2, y2], axis=2)
+        if K.ndim(image) == 4:
+            x1 = tf.clip_by_value(boxes[:, :, 0], 0, width)
+            y1 = tf.clip_by_value(boxes[:, :, 1], 0, height)
+            x2 = tf.clip_by_value(boxes[:, :, 2], 0, width)
+            y2 = tf.clip_by_value(boxes[:, :, 3], 0, height)
+            return K.stack([x1, y1, x2, y2], axis=2)
+        elif K.ndim(image) == 5:
+            x1 = tf.clip_by_value(boxes[:, :, :, 0], 0, width)
+            y1 = tf.clip_by_value(boxes[:, :, :, 1], 0, height)
+            x2 = tf.clip_by_value(boxes[:, :, :, 2], 0, width)
+            y2 = tf.clip_by_value(boxes[:, :, :, 3], 0, height)
+            return K.stack([x1, y1, x2, y2], axis=3)
 
     def compute_output_shape(self, input_shape):
         return tensor_shape.TensorShape(input_shape[1]).as_list()
@@ -225,23 +240,35 @@ class ClipBoxes(Layer):
 class ConcatenateBoxes(Layer):
     def call(self, inputs, **kwargs):
         boxes, other = inputs
-        boxes_shape = K.shape(boxes)
-        other_shape = K.shape(other)
-        other = K.reshape(other, (boxes_shape[0], boxes_shape[1], -1))
-        return K.concatenate([boxes, other], axis=2)
+        if K.ndim(boxes) == 3:
+            boxes_shape = K.shape(boxes)
+            other_shape = K.shape(other)
+            other = K.reshape(other, (boxes_shape[0], boxes_shape[1], -1))
+            return K.concatenate([boxes, other], axis=2)
+        elif K.ndim(boxes) == 4:
+            boxes_shape = K.shape(boxes)
+            other_shape = K.shape(other)
+            other = K.reshape(other, (boxes_shape[0], boxes_shape[1], boxes_shape[2], -1))
+            return K.concatenate([boxes, other], axis=3)
 
     def compute_output_shape(self, input_shape):
         boxes_shape, other_shape = input_shape
-        output_shape = tuple(list(boxes_shape[:2]) +
-                             [K.prod([s for s in other_shape[2:]]) + 4])
-        return tensor_shape.TensorShape(output_shape)
+        if len(boxes_shape) == 3:
+            output_shape = tuple(list(boxes_shape[:2]) +
+                                 [K.prod([s for s in other_shape[2:]]) + 4])
+            return tensor_shape.TensorShape(output_shape)
+        elif len(boxes_shape) == 4:
+            output_shape = tuple(list(boxes_shape[:3]) +
+                                 [K.prod([s for s in other_shape[3:]]) + 4])
+            return tensor_shape.TensorShape(output_shape)
 
 
-class RoiAlign(Layer):
+class _RoiAlign(Layer):
+    """Original RoiAlign Layer from https://github.com/fizyr/keras-retinanet"""
     def __init__(self, crop_size=(14, 14), parallel_iterations=32, **kwargs):
         self.crop_size = crop_size
         self.parallel_iterations = parallel_iterations
-        super(RoiAlign, self).__init__(**kwargs)
+        super(_RoiAlign, self).__init__(**kwargs)
 
     def map_to_level(self, boxes,
                      canonical_size=224,
@@ -271,6 +298,24 @@ class RoiAlign(Layer):
         boxes = K.stop_gradient(inputs[1])
         scores = K.stop_gradient(inputs[2])
         fpn = [K.stop_gradient(i) for i in inputs[3:]]
+
+        time_distributed = K.ndim(boxes) == 4
+
+        if time_distributed:
+            image_shape = image_shape[1:]
+
+            boxes_shape = tf.shape(boxes)
+            scores_shape = tf.shape(scores)
+            fpn_shape = [tf.shape(f) for f in fpn]
+
+            new_boxes_shape = [-1] + [boxes_shape[i] for i in range(2, K.ndim(boxes))]
+            new_scores_shape = [-1] + [scores_shape[i] for i in range(2, K.ndim(scores))]
+            new_fpn_shape = [[-1] + [f_s[i] for i in range(2, K.ndim(f))]
+                             for f, f_s in zip(fpn, fpn_shape)]
+
+            boxes = tf.reshape(boxes, new_boxes_shape)
+            scores = tf.reshape(scores, new_scores_shape)
+            fpn = [tf.reshape(f, f_s) for f, f_s in zip(fpn, new_fpn_shape)]
 
         def _roi_align(args):
             boxes = args[0]
@@ -326,22 +371,102 @@ class RoiAlign(Layer):
             parallel_iterations=self.parallel_iterations
         )
 
+        if time_distributed:
+            roi_shape = tf.shape(roi_batch)
+            new_roi_shape = [boxes_shape[0], boxes_shape[1]] + \
+                            [roi_shape[i] for i in range(1, K.ndim(roi_batch))]
+            roi_batch = tf.reshape(roi_batch, new_roi_shape)
+
         return roi_batch
 
     def compute_output_shape(self, input_shape):
-        output_shape = [
-            input_shape[1][0],
-            None,
-            self.crop_size[0],
-            self.crop_size[1],
-            input_shape[3][-1]
-        ]
-        return tensor_shape.TensorShape(output_shape)
+        if len(input_shape[3]) == 4:
+            output_shape = [
+                input_shape[1][0],
+                None,
+                self.crop_size[0],
+                self.crop_size[1],
+                input_shape[3][-1]
+            ]
+            return tensor_shape.TensorShape(output_shape)
+        elif len(input_shape[3]) == 5:
+            output_shape = [
+                input_shape[1][0],
+                input_shape[3][1],
+                None,
+                self.crop_size[0],
+                self.crop_size[1],
+                input_shape[3][-1]
+            ]
+            return tensor_shape.TensorShape(output_shape)
 
     def get_config(self):
         config = {'crop_size': self.crop_size}
-        base_config = super(RoiAlign, self).get_config()
+        base_config = super(_RoiAlign, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
+
+
+class RoiAlign(_RoiAlign):
+    """Modified RoiAlign layer.
+
+    Only takes in one feature map, which must be the size of the original image
+    """
+
+    def call(self, inputs, **kwargs):
+        boxes = K.stop_gradient(inputs[0])
+        fpn = K.stop_gradient(inputs[1])
+
+        time_distributed = K.ndim(boxes) == 4
+
+        if time_distributed:
+            boxes_shape = K.shape(boxes)
+            fpn_shape = K.shape(fpn)
+
+            new_boxes_shape = [-1] + [boxes_shape[i] for i in range(2, K.ndim(boxes))]
+            new_fpn_shape = [-1] + [fpn_shape[i] for i in range(2, K.ndim(fpn))]
+
+            boxes = K.reshape(boxes, new_boxes_shape)
+            fpn = K.reshape(fpn, new_fpn_shape)
+
+        image_shape = K.cast(K.shape(fpn), K.floatx())
+
+        def _roi_align(args):
+            boxes = args[0]
+            fpn = args[1]            # process the feature map
+            x1 = boxes[:, 0]
+            y1 = boxes[:, 1]
+            x2 = boxes[:, 2]
+            y2 = boxes[:, 3]
+
+            fpn_shape = K.cast(K.shape(fpn), dtype=K.floatx())
+            norm_boxes = K.stack([
+                (y1 / image_shape[1] * fpn_shape[0]) / (fpn_shape[0] - 1),
+                (x1 / image_shape[2] * fpn_shape[1]) / (fpn_shape[1] - 1),
+                (y2 / image_shape[1] * fpn_shape[0] - 1) / (fpn_shape[0] - 1),
+                (x2 / image_shape[2] * fpn_shape[1] - 1) / (fpn_shape[1] - 1)
+            ], axis=1)
+
+            rois = tf.image.crop_and_resize(
+                K.expand_dims(fpn, axis=0),
+                norm_boxes,
+                tf.zeros((K.shape(norm_boxes)[0],), dtype='int32'),
+                self.crop_size)
+
+            return rois
+
+        roi_batch = tf.map_fn(
+            _roi_align,
+            elems=[boxes, fpn],
+            dtype=K.floatx(),
+            parallel_iterations=self.parallel_iterations)
+
+        if time_distributed:
+            roi_shape = tf.shape(roi_batch)
+            new_roi_shape = [boxes_shape[0], boxes_shape[1]] + \
+                            [roi_shape[i] for i in range(1, K.ndim(roi_batch))]
+            roi_batch = tf.reshape(roi_batch, new_roi_shape)
+
+        return roi_batch
 
 
 class Shape(Layer):

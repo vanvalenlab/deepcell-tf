@@ -289,3 +289,61 @@ class ClipBoxesTest(test.TestCase):
 
             self.assertEqual(actual.shape, tuple(computed_shape))
             self.assertAllClose(actual, expected)
+
+    @tf_test_util.run_in_graph_and_eager_modes()
+    def test_simple_3d(self):
+        img_h, img_w = np.random.randint(2, 5), np.random.randint(5, 9)
+
+        boxes = np.array([[
+            [9, 9, 9, 9],
+            [-1, -1, -1, -1],
+            [0, 0, img_w, img_h],
+            [0, 0, img_w + 1, img_h + 1],
+            [0, 0, img_w - 1, img_h - 1],
+        ]], dtype='int')
+        boxes = np.expand_dims(boxes, axis=0)
+        boxes = K.variable(boxes)
+
+        # compute expected output
+        expected = np.array([[
+            [img_w, img_h, img_w, img_h],
+            [0, 0, 0, 0],
+            [0, 0, img_w, img_h],
+            [0, 0, img_w, img_h],
+            [0, 0, img_w - 1, img_h - 1],
+        ]], dtype=K.floatx())
+        expected = np.expand_dims(expected, axis=0)
+
+        # test channels_last
+        with self.test_session():
+            # create input
+            image = K.variable(np.random.random((1, 1, img_h, img_w, 3)))
+
+            # create simple ClipBoxes layer
+            layer = layers.ClipBoxes(data_format='channels_last')
+
+            # compute output
+            computed_shape = layer.compute_output_shape(
+                [image.shape, boxes.shape])
+            actual = layer.call([image, boxes])
+            actual = K.get_value(actual)
+
+            self.assertEqual(actual.shape, tuple(computed_shape))
+            self.assertAllClose(actual, expected)
+
+        # test channels_first
+        with self.test_session():
+            # create input
+            image = K.variable(np.random.random((1, 6, 1, img_h, img_w)))
+
+            # create simple ClipBoxes layer
+            layer = layers.ClipBoxes(data_format='channels_first')
+
+            # compute output
+            computed_shape = layer.compute_output_shape(
+                [image.shape, boxes.shape])
+            actual = layer.call([image, boxes])
+            actual = K.get_value(actual)
+
+            self.assertEqual(actual.shape, tuple(computed_shape))
+            self.assertAllClose(actual, expected)

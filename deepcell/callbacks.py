@@ -108,6 +108,7 @@ class Evaluate(Callback):
                  save_path=None,
                  tensorboard=None,
                  weighted_average=False,
+                 frames_per_batch=1,
                  verbose=1):
         self.generator = generator
         self.iou_threshold = iou_threshold
@@ -116,6 +117,7 @@ class Evaluate(Callback):
         self.save_path = save_path
         self.tensorboard = tensorboard
         self.weighted_average = weighted_average
+        self.frames_per_batch = frames_per_batch
         self.verbose = verbose
         super(Evaluate, self).__init__()
 
@@ -131,7 +133,8 @@ class Evaluate(Callback):
             self.model,
             iou_threshold=self.iou_threshold,
             score_threshold=self.score_threshold,
-            max_detections=self.max_detections
+            max_detections=self.max_detections,
+            frames_per_batch=self.frames_per_batch,
         )
 
         # compute per class average precision

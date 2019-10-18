@@ -80,6 +80,49 @@ class TestFilterDetections(test.TestCase):
             self.assertAllEqual(actual_labels, expected_labels)
 
     @tf_test_util.run_in_graph_and_eager_modes()
+    def test_simple_3d(self):
+        with self.test_session(use_gpu=True):
+            # create simple FilterDetections layer
+            layer = layers.FilterDetections()
+
+            # create simple input
+            boxes = np.array([[
+                [0, 0, 10, 10],
+                [0, 0, 10, 10],  # this will be suppressed
+            ]], dtype=K.floatx())
+            boxes = np.expand_dims(boxes, 0)
+            boxes = K.constant(boxes)
+
+            classification = np.array([[
+                [0, 0.9],  # this will be suppressed
+                [0, 1],
+            ]], dtype=K.floatx())
+            classification = np.expand_dims(classification, 0)
+            classification = K.constant(classification)
+
+            # compute output
+            actual_boxes, actual_scores, actual_labels = layer.call(
+                [boxes, classification])
+            actual_boxes = K.get_value(actual_boxes)
+            actual_scores = K.get_value(actual_scores)
+            actual_labels = K.get_value(actual_labels)
+
+            # define expected output
+            expected_boxes = -1 * np.ones((1, 1, 300, 4), dtype=K.floatx())
+            expected_boxes[0, 0, 0, :] = [0, 0, 10, 10]
+
+            expected_scores = -1 * np.ones((1, 1, 300), dtype=K.floatx())
+            expected_scores[0, 0, 0] = 1
+
+            expected_labels = -1 * np.ones((1, 1, 300), dtype=K.floatx())
+            expected_labels[0, 0, 0] = 1
+
+            # assert actual and expected are equal
+            self.assertAllEqual(actual_boxes, expected_boxes)
+            self.assertAllEqual(actual_scores, expected_scores)
+            self.assertAllEqual(actual_labels, expected_labels)
+
+    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple_with_other(self):
         with self.test_session(use_gpu=True):
             # create simple FilterDetections layer

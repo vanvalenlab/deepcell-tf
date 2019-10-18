@@ -105,7 +105,7 @@ def create_pyramid_level(backbone_input,
         pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
                                padding='same', name=final_name)(pyramid)
     else:
-        pyramid_final = Conv3D(feature_size, (3, 3, 3), strides=(1, 1, 1),
+        pyramid_final = Conv3D(feature_size, (1, 3, 3), strides=(1, 1, 1),
                                padding='same', name=final_name)(pyramid)
 
     return pyramid_final, pyramid_upsample
@@ -154,7 +154,7 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
 
         N = backbone_names[i]
         level = int(re.findall(r'\d+', N)[0])
-        p_name = 'P' + str(level)
+        p_name = 'P{}'.format(level)
         pyramid_names.append(p_name)
 
         backbone_input = backbone_features[i]
@@ -180,7 +180,8 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
         pf, pu = create_pyramid_level(backbone_input,
                                       upsamplelike_input=upsamplelike_input,
                                       addition_input=addition_input,
-                                      level=level)
+                                      level=level,
+                                      ndim=ndim)
         pyramid_finals.append(pf)
         pyramid_upsamples.append(pu)
 
@@ -197,8 +198,8 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
             P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
                                padding='same', name=P_minus_2_name)(F)
         else:
-            P_minus_2 = Conv3D(feature_size, kernel_size=(3, 3, 3),
-                               strides=(2, 2, 2), padding='same',
+            P_minus_2 = Conv3D(feature_size, kernel_size=(1, 3, 3),
+                               strides=(1, 2, 2), padding='same',
                                name=P_minus_2_name)(F)
 
         pyramid_names.insert(0, P_minus_2_name)
@@ -207,15 +208,15 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
         # "Last pyramid layer is computed by applying ReLU
         # followed by a 3x3 stride-2 conv on second to last layer"
         level = int(re.findall(r'\d+', N)[0]) + 2
-        P_minus_1_name = 'P' + str(level)
+        P_minus_1_name = 'P{}'.format(level)
         P_minus_1 = Activation('relu', name=N + '_relu')(P_minus_2)
 
         if ndim == 2:
             P_minus_1 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
                                padding='same', name=P_minus_1_name)(P_minus_1)
         else:
-            P_minus_1 = Conv3D(feature_size, kernel_size=(3, 3, 3),
-                               strides=(2, 2, 2), padding='same',
+            P_minus_1 = Conv3D(feature_size, kernel_size=(1, 3, 3),
+                               strides=(1, 2, 2), padding='same',
                                name=P_minus_1_name)(P_minus_1)
 
         pyramid_names.insert(0, P_minus_1_name)
@@ -254,36 +255,25 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
     Returns:
         tensor: The upsampled tensor
     """
-
     acceptable_ndims = [2, 3]
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
 
+    conv = Conv2D if ndim == 2 else Conv3D
+    upsampling = UpSampling2D if ndim == 2 else UpSampling3D
+
     for i in range(n_upsample):
-        if ndim == 2:
-            x = Conv2D(n_filters, (3, 3), strides=(1, 1),
-                       padding='same', data_format='channels_last')(x)
+        x = conv(n_filters, 3, strides=1,
+                 padding='same', data_format='channels_last')(x)
 
-            if i == n_upsample - 1 and target is not None:
-                x = UpsampleLike()([x, target])
-            else:
-                x = UpSampling2D(size=(2, 2))(x)
+        if i == n_upsample - 1 and target is not None:
+            x = UpsampleLike()([x, target])
         else:
-            x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1),
-                       padding='same', data_format='channels_last')(x)
-
-            if i == n_upsample - 1 and target is not None:
-                x = UpsampleLike()([x, target])
-            else:
-                x = UpSampling3D(size=(2, 2, 2))(x)
+            x = upsampling(size=2)(x)
 
     if n_upsample == 0:
-        if ndim == 2:
-            x = Conv2D(n_filters, (3, 3), strides=(1, 1),
-                       padding='same', data_format='channels_last')(x)
-        else:
-            x = Conv3D(n_filters, (3, 3, 3), strides=(1, 1, 1),
-                       padding='same', data_format='channels_last')(x)
+        x = conv(n_filters, 3, strides=1,
+                 padding='same', data_format='channels_last')(x)
 
         if target is not None:
             x = UpsampleLike()([x, target])
@@ -338,7 +328,8 @@ def semantic_prediction(semantic_names,
     # Final upsampling
     min_level = int(re.findall(r'\d+', semantic_names[-1])[0])
     n_upsample = min_level - target_level
-    x = semantic_upsample(semantic_sum, n_upsample, target=input_target)
+    x = semantic_upsample(semantic_sum, n_upsample,
+                          target=input_target, ndim=ndim)
 
     # First tensor product
     x = TensorProduct(n_dense)(x)
@@ -347,7 +338,7 @@ def semantic_prediction(semantic_names,
 
     # Apply tensor product and softmax layer
     x = TensorProduct(n_classes)(x)
-    x = Softmax(axis=channel_axis, name='semantic_' + str(semantic_id))(x)
+    x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
 
     return x
 
@@ -357,7 +348,8 @@ def __create_semantic_head(pyramid_dict,
                            target_level=2,
                            n_classes=3,
                            n_filters=128,
-                           semantic_id=0):
+                           semantic_id=0,
+                           ndim=2):
     """
     Creates a semantic head from a feature pyramid network
     Args:
@@ -380,8 +372,6 @@ def __create_semantic_head(pyramid_dict,
 
     semantic_features = []
     semantic_names = []
-    # for P in pyramid_features:
-    #     print(P.get_shape())
 
     for N, P in zip(pyramid_names, pyramid_features):
         # Get level and determine how much to upsample
@@ -392,13 +382,13 @@ def __create_semantic_head(pyramid_dict,
 
         # Use semantic upsample to get semantic map
         semantic_features.append(semantic_upsample(
-            P, n_upsample, n_filters=n_filters, target=target))
-        semantic_names.append('Q' + str(level))
+            P, n_upsample, n_filters=n_filters, target=target, ndim=ndim))
+        semantic_names.append('Q{}'.format(level))
 
     # Combine all of the semantic features
     x = semantic_prediction(semantic_names, semantic_features,
                             n_classes=n_classes, input_target=input_target,
-                            semantic_id=semantic_id)
+                            semantic_id=semantic_id, ndim=ndim)
 
     return x
 
@@ -412,6 +402,7 @@ def FPNet(backbone,
           required_channels=3,
           n_classes=3,
           name='fpnet',
+          frames_per_batch=1,
           **kwargs):
     """Creates a Feature Pyramid Network with a semantic segmentation head
 
@@ -464,8 +455,10 @@ def FPNet(backbone,
     }
 
     # Get backbone outputs
-    backbone_dict = get_backbone(
-        backbone, fixed_inputs, use_imagenet=use_imagenet, **model_kwargs)
+    _, backbone_dict = get_backbone(backbone, fixed_inputs,
+                                    use_imagenet=use_imagenet,
+                                    frames_per_batch=frames_per_batch,
+                                    return_dict=True, **model_kwargs)
 
     # Construct feature pyramid network
     pyramid_dict = __create_pyramid_features(backbone_dict)
@@ -474,6 +467,7 @@ def FPNet(backbone,
     target_level = min(levels)
 
     x = __create_semantic_head(pyramid_dict, n_classes=n_classes,
-                               input_target=inputs, target_level=target_level)
+                               input_target=inputs, target_level=target_level,
+                               ndim=len(input_shape) - 1)
 
     return Model(inputs=inputs, outputs=x, name=name)
