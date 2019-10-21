@@ -54,7 +54,7 @@ class TestFluorCytoplasmSegmentationModel(test.TestCase):
                 # retinanet backbones do not work with versions < 1.10.0
                 continue
 
-            with self.cached_session()(use_gpu=False):
+            with self.cached_session():
                 model = FluorCytoplasmSegmentationModel(
                     input_shape=input_shape,
                     backbone=backbone,
