@@ -12,11 +12,11 @@ python:
   - 3.6
 
 env:
-  - TF_VERSION=1.10.0
-  - TF_VERSION=1.11.0
-  - TF_VERSION=1.12.3
-  - TF_VERSION=1.13.2
-  - TF_VERSION=1.14.0
+  # - TF_VERSION=1.10.0
+  # - TF_VERSION=1.11.0
+  # - TF_VERSION=1.12.3
+  - TF_VERSION=1.13.1
+  # - TF_VERSION=1.14.0
 
 install:
   # code below is taken from https://github.com/keras-team/keras/blob/master/.travis.yml
