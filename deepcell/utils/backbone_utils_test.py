@@ -53,7 +53,7 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         backbone = 'featurenet'
         input_shape = (256, 256, 3)
         inputs = Input(shape=input_shape)
-        with self.cached_session()():
+        with self.cached_session():
             K.set_image_data_format(data_format)
             model, output_dict = backbone_utils.get_backbone(
                 backbone, inputs, return_dict=True)
@@ -74,7 +74,7 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         backbone = 'featurenet3d'
         input_shape = (40, 256, 256, 3)
         inputs = Input(shape=input_shape)
-        with self.cached_session()():
+        with self.cached_session():
             K.set_image_data_format(data_format)
             model, output_dict = backbone_utils.get_backbone(
                 backbone, inputs, return_dict=True)
@@ -107,7 +107,7 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
     ])
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_get_backbone(self, backbone):
-        with self.cached_session()():
+        with self.cached_session():
             K.set_image_data_format('channels_last')
             inputs = Input(shape=(256, 256, 3))
             model, output_dict = backbone_utils.get_backbone(

@@ -49,7 +49,7 @@ class TestLabelDetectionModel(test.TestCase):
         X = np.random.random(batch_shape)
 
         for backbone in valid_backbones:
-            with self.cached_session()():
+            with self.cached_session():
                 inputs = Input(shape=input_shape)
                 model = LabelDetectionModel(
                     inputs=inputs,
@@ -61,7 +61,7 @@ class TestLabelDetectionModel(test.TestCase):
                 assert y.shape[0] == X.shape[0]
                 assert len(y.shape) == 2
 
-            with self.cached_session()():
+            with self.cached_session():
                 model = LabelDetectionModel(
                     input_shape=input_shape,
                     backbone=backbone,

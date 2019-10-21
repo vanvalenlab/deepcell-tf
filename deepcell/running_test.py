@@ -157,7 +157,7 @@ class RunningTests(test.TestCase, parameterized.TestCase):
             data_format=data_format)
 
         for padding in ['reflect', 'zero']:
-            with self.cached_session()():
+            with self.cached_session():
                 inputs = keras.layers.Input(shape=input_shape)
                 outputs = layers.TensorProduct(features)(inputs)
                 model = keras.models.Model(inputs=inputs,

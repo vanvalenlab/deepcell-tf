@@ -15,7 +15,7 @@ env:
   # - TF_VERSION=1.10.0
   - TF_VERSION=1.11.0
   - TF_VERSION=1.12.3
-  # - TF_VERSION=1.13.2  # tf 1.13.0 times out on all model tests
+  # - TF_VERSION=1.13.2  # tf 1.13.x times out on all model tests
   - TF_VERSION=1.14.0
 
 install:

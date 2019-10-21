@@ -51,7 +51,7 @@ BATCH_SIZE = 5
 class CallbacksTest(test.TestCase):
 
     def test_RedirectModel(self):
-        with self.cached_session()():
+        with self.cached_session():
             np.random.seed(123)
             (x_train, y_train), (x_test, y_test) = testing_utils.get_test_data(
                 train_samples=TRAIN_SAMPLES,
