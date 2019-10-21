@@ -123,46 +123,46 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
         # not all backbones work with channels_first
         backbone = 'featurenet'
 
-        # for data_format in ('channels_last', 'channels_first'):
-        #     with self.test_session():
-        #         K.set_image_data_format(data_format)
-        #         if data_format == 'channels_first':
-        #             axis = 1
-        #             input_shape = (1, 32, 32)
-        #         else:
-        #             axis = -1
-        #             input_shape = (32, 32, 1)
-        #
-        #         if frames > 1 and data_format == 'channels_first':
-        #             # TODO: TimeDistributed is incompatible with channels_first
-        #             continue
-        #
-        #         num_semantic_classes = [3, 4]
-        #         if frames > 1:
-        #             # TODO: 3D and semantic heads is not implemented.
-        #             num_semantic_classes = []
-        #         model = RetinaNet(
-        #             backbone=backbone,
-        #             num_classes=num_classes,
-        #             input_shape=input_shape,
-        #             norm_method=norm_method,
-        #             location=location,
-        #             pooling=pooling,
-        #             panoptic=panoptic,
-        #             frames_per_batch=frames,
-        #             num_semantic_heads=len(num_semantic_classes),
-        #             num_semantic_classes=num_semantic_classes,
-        #             backbone_levels=['C3', 'C4', 'C5'],
-        #             pyramid_levels=pyramid_levels,
-        #         )
-        #
-        #         expected_size = 2 + panoptic * len(num_semantic_classes)
-        #         self.assertIsInstance(model.output_shape, list)
-        #         self.assertEqual(len(model.output_shape), expected_size)
-        #
-        #         self.assertEqual(model.output_shape[0][-1], 4)
-        #         self.assertEqual(model.output_shape[1][-1], num_classes)
-        #
-        #         if panoptic:
-        #             for i, n in enumerate(num_semantic_classes):
-        #                 self.assertEqual(model.output_shape[i + 2][axis], n)
+        for data_format in ('channels_last', 'channels_first'):
+            with self.test_session():
+                K.set_image_data_format(data_format)
+                if data_format == 'channels_first':
+                    axis = 1
+                    input_shape = (1, 32, 32)
+                else:
+                    axis = -1
+                    input_shape = (32, 32, 1)
+
+                if frames > 1 and data_format == 'channels_first':
+                    # TODO: TimeDistributed is incompatible with channels_first
+                    continue
+
+                num_semantic_classes = [3, 4]
+                if frames > 1:
+                    # TODO: 3D and semantic heads is not implemented.
+                    num_semantic_classes = []
+                model = RetinaNet(
+                    backbone=backbone,
+                    num_classes=num_classes,
+                    input_shape=input_shape,
+                    norm_method=norm_method,
+                    location=location,
+                    pooling=pooling,
+                    panoptic=panoptic,
+                    frames_per_batch=frames,
+                    num_semantic_heads=len(num_semantic_classes),
+                    num_semantic_classes=num_semantic_classes,
+                    backbone_levels=['C3', 'C4', 'C5'],
+                    pyramid_levels=pyramid_levels,
+                )
+
+                expected_size = 2 + panoptic * len(num_semantic_classes)
+                self.assertIsInstance(model.output_shape, list)
+                self.assertEqual(len(model.output_shape), expected_size)
+
+                self.assertEqual(model.output_shape[0][-1], 4)
+                self.assertEqual(model.output_shape[1][-1], num_classes)
+
+                if panoptic:
+                    for i, n in enumerate(num_semantic_classes):
+                        self.assertEqual(model.output_shape[i + 2][axis], n)

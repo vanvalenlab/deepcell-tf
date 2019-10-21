@@ -164,45 +164,45 @@ class RetinaMaskTest(test.TestCase, parameterized.TestCase):
             if frames > 1:
                 # TODO: 3D and semantic heads is not implemented.
                 num_semantic_classes = []
-            # model = RetinaMask(
-            #     backbone=backbone,
-            #     num_classes=num_classes,
-            #     input_shape=input_shape,
-            #     norm_method=norm_method,
-            #     location=location,
-            #     pooling=pooling,
-            #     nms=nms,
-            #     class_specific_filter=class_specific_filter,
-            #     frames_per_batch=frames,
-            #     panoptic=panoptic,
-            #     crop_size=crop_size,
-            #     mask_size=mask_size,
-            #     max_detections=max_detections,
-            #     num_semantic_heads=len(num_semantic_classes),
-            #     num_semantic_classes=num_semantic_classes,
-            #     backbone_levels=['C3', 'C4', 'C5'],
-            #     pyramid_levels=pyramid_levels,
-            # )
-            #
-            # expected_size = 7 + panoptic * len(num_semantic_classes)
-            #
-            # # TODO: What are these new outputs?
-            # if frames > 1:
-            #     expected_size += 2 + panoptic * 2
-            #
-            # self.assertIsInstance(model.output_shape, list)
-            # self.assertEqual(len(model.output_shape), expected_size)
-            #
-            # self.assertEqual(model.output_shape[0][-1], 4)
-            # self.assertEqual(model.output_shape[1][-1], num_classes)
-            #
-            # delta = (frames > 1)  # TODO: New output?
-            # self.assertEqual(model.output_shape[3 + delta][-1], 4)
-            # self.assertEqual(model.output_shape[4 + delta][-1], max_detections)
-            # self.assertEqual(model.output_shape[5 + delta][-1], max_detections)
-            #
-            # self.assertEqual(model.output_shape[6 + delta][axis], num_classes)
-            #
-            # if panoptic:
-            #     for i, n in enumerate(num_semantic_classes):
-            #         self.assertEqual(model.output_shape[i + 7 + delta][axis], n)
+            model = RetinaMask(
+                backbone=backbone,
+                num_classes=num_classes,
+                input_shape=input_shape,
+                norm_method=norm_method,
+                location=location,
+                pooling=pooling,
+                nms=nms,
+                class_specific_filter=class_specific_filter,
+                frames_per_batch=frames,
+                panoptic=panoptic,
+                crop_size=crop_size,
+                mask_size=mask_size,
+                max_detections=max_detections,
+                num_semantic_heads=len(num_semantic_classes),
+                num_semantic_classes=num_semantic_classes,
+                backbone_levels=['C3', 'C4', 'C5'],
+                pyramid_levels=pyramid_levels,
+            )
+
+            expected_size = 7 + panoptic * len(num_semantic_classes)
+
+            # TODO: What are these new outputs?
+            if frames > 1:
+                expected_size += 2 + panoptic * 2
+
+            self.assertIsInstance(model.output_shape, list)
+            self.assertEqual(len(model.output_shape), expected_size)
+
+            self.assertEqual(model.output_shape[0][-1], 4)
+            self.assertEqual(model.output_shape[1][-1], num_classes)
+
+            delta = (frames > 1)  # TODO: New output?
+            self.assertEqual(model.output_shape[3 + delta][-1], 4)
+            self.assertEqual(model.output_shape[4 + delta][-1], max_detections)
+            self.assertEqual(model.output_shape[5 + delta][-1], max_detections)
+
+            self.assertEqual(model.output_shape[6 + delta][axis], num_classes)
+
+            if panoptic:
+                for i, n in enumerate(num_semantic_classes):
+                    self.assertEqual(model.output_shape[i + 7 + delta][axis], n)
