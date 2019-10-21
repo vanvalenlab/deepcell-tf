@@ -138,41 +138,44 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             axis = 1 if data_format == 'channels_first' else -1
             self.assertEqual(model.output_shape[axis], output)
 
+    @parameterized.named_parameters([
+        ('channels_last',) * 2,
+        ('channels_first',) * 2,
+    ])
     # @tf_test_util.run_in_graph_and_eager_modes()
-    def test_bn_feature_net_2D_skip(self):
+    def test_bn_feature_net_2D_skip(self, data_format):
         receptive_field = 61
         n_features = 3
         n_dense_filters = 300
         input_shape = (256, 256, 1)
         n_skips = 1
 
-        for data_format in ('channels_first', 'channels_last'):
-            with self.test_session():
-                K.set_image_data_format(data_format)
-                axis = 1 if data_format == 'channels_first' else -1
+        with self.test_session():
+            K.set_image_data_format(data_format)
+            axis = 1 if data_format == 'channels_first' else -1
 
-                fgbg_model = featurenet.bn_feature_net_skip_2D(
-                    receptive_field=receptive_field,
-                    input_shape=input_shape,
-                    n_features=n_features,
-                    n_dense_filters=n_dense_filters,
-                    n_skips=n_skips,
-                    last_only=False)
+            fgbg_model = featurenet.bn_feature_net_skip_2D(
+                receptive_field=receptive_field,
+                input_shape=input_shape,
+                n_features=n_features,
+                n_dense_filters=n_dense_filters,
+                n_skips=n_skips,
+                last_only=False)
 
-                self.assertIsInstance(fgbg_model.output, list)
-                self.assertEqual(len(fgbg_model.output), n_skips + 1)
+            self.assertIsInstance(fgbg_model.output, list)
+            self.assertEqual(len(fgbg_model.output), n_skips + 1)
 
-                model = featurenet.bn_feature_net_skip_2D(
-                    receptive_field=receptive_field,
-                    input_shape=input_shape,
-                    fgbg_model=fgbg_model,
-                    n_features=n_features,
-                    n_dense_filters=n_dense_filters,
-                    n_skips=n_skips,
-                    last_only=True)
+            model = featurenet.bn_feature_net_skip_2D(
+                receptive_field=receptive_field,
+                input_shape=input_shape,
+                fgbg_model=fgbg_model,
+                n_features=n_features,
+                n_dense_filters=n_dense_filters,
+                n_skips=n_skips,
+                last_only=True)
 
-                self.assertEqual(len(model.output_shape), 4)
-                self.assertEqual(model.output_shape[axis], n_features)
+            self.assertEqual(len(model.output_shape), 4)
+            self.assertEqual(model.output_shape[axis], n_features)
 
     @parameterized.named_parameters([
         {
@@ -267,38 +270,41 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             channel_axis = 1 if data_format == 'channels_first' else -1
             self.assertEqual(model.output_shape[channel_axis], n_features)
 
+    @parameterized.named_parameters([
+        ('channels_last',) * 2,
+        ('channels_first',) * 2,
+    ])
     # @tf_test_util.run_in_graph_and_eager_modes()
-    def test_bn_feature_net_3D_skip(self):
+    def test_bn_feature_net_3D_skip(self, data_format):
         receptive_field = 61
         n_features = 3
         n_dense_filters = 300
         input_shape = (10, 32, 32, 1)
         n_skips = 1
 
-        for data_format in ('channels_first', 'channels_last'):
-            with self.test_session():
-                K.set_image_data_format(data_format)
-                axis = 1 if data_format == 'channels_first' else -1
+        with self.test_session():
+            K.set_image_data_format(data_format)
+            axis = 1 if data_format == 'channels_first' else -1
 
-                fgbg_model = featurenet.bn_feature_net_skip_3D(
-                    receptive_field=receptive_field,
-                    input_shape=input_shape,
-                    n_features=n_features,
-                    n_dense_filters=n_dense_filters,
-                    n_skips=n_skips,
-                    last_only=False)
+            fgbg_model = featurenet.bn_feature_net_skip_3D(
+                receptive_field=receptive_field,
+                input_shape=input_shape,
+                n_features=n_features,
+                n_dense_filters=n_dense_filters,
+                n_skips=n_skips,
+                last_only=False)
 
-                self.assertIsInstance(fgbg_model.output, list)
-                self.assertEqual(len(fgbg_model.output), n_skips + 1)
+            self.assertIsInstance(fgbg_model.output, list)
+            self.assertEqual(len(fgbg_model.output), n_skips + 1)
 
-                model = featurenet.bn_feature_net_skip_3D(
-                    receptive_field=receptive_field,
-                    input_shape=input_shape,
-                    fgbg_model=fgbg_model,
-                    n_features=n_features,
-                    n_dense_filters=n_dense_filters,
-                    n_skips=n_skips,
-                    last_only=True)
+            model = featurenet.bn_feature_net_skip_3D(
+                receptive_field=receptive_field,
+                input_shape=input_shape,
+                fgbg_model=fgbg_model,
+                n_features=n_features,
+                n_dense_filters=n_dense_filters,
+                n_skips=n_skips,
+                last_only=True)
 
-                self.assertEqual(len(model.output_shape), 5)
-                self.assertEqual(model.output_shape[axis], n_features)
+            self.assertEqual(len(model.output_shape), 5)
+            self.assertEqual(model.output_shape[axis], n_features)
