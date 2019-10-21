@@ -54,7 +54,7 @@ def _generate_test_masks():
 
 class TransformUtilsTest(test.TestCase):
     def test_pixelwise_transform_2d(self):
-        with self.test_session():
+        with self.cached_session()():
             K.set_image_data_format('channels_last')
             # test single edge class
             maskstack = np.array([label(i) for i in _generate_test_masks()])
@@ -96,7 +96,7 @@ class TransformUtilsTest(test.TestCase):
             img_stack = np.array(frame_list)
             img_list.append(img_stack)
 
-        with self.test_session():
+        with self.cached_session()():
             K.set_image_data_format('channels_last')
             # test single edge class
             maskstack = np.vstack(img_list)

@@ -39,7 +39,7 @@ class LocationTest(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_location_2d(self):
-        with self.test_session():
+        with self.cached_session()():
             testing_utils.layer_test(
                 layers.Location2D,
                 kwargs={'in_shape': (5, 6, 4),
@@ -55,7 +55,7 @@ class LocationTest(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_location_3d(self):
-        with self.test_session():
+        with self.cached_session()():
             testing_utils.layer_test(
                 layers.Location3D,
                 kwargs={'in_shape': (11, 12, 10, 4),

@@ -41,7 +41,7 @@ class TestAnchors(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_anchors_2d(self):
-        with self.test_session():
+        with self.cached_session()():
             testing_utils.layer_test(
                 layers.Anchors,
                 kwargs={'size': 1, 'stride': 1,
@@ -63,7 +63,7 @@ class TestAnchors(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
-        with self.test_session():
+        with self.cached_session()():
             # create simple Anchors layer
             anchors_layer = layers.Anchors(
                 size=32,
@@ -93,7 +93,7 @@ class TestAnchors(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
-        with self.test_session():
+        with self.cached_session()():
             # create simple Anchors layer
             anchors_layer = layers.Anchors(
                 size=32,
@@ -127,7 +127,7 @@ class TestRegressBoxes(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
-        with self.test_session():
+        with self.cached_session()():
             # create simple RegressBoxes layer
             layer = layers.RegressBoxes()
 
@@ -165,7 +165,7 @@ class TestRegressBoxes(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
-        with self.test_session():
+        with self.cached_session()():
             mean = [0, 0, 0, 0]
             std = [0.2, 0.2, 0.2, 0.2]
 
@@ -257,7 +257,7 @@ class ClipBoxesTest(test.TestCase):
         ]], dtype=K.floatx())
 
         # test channels_last
-        with self.test_session():
+        with self.cached_session()():
             # create input
             image = K.variable(np.random.random((1, img_h, img_w, 3)))
 
@@ -274,7 +274,7 @@ class ClipBoxesTest(test.TestCase):
             self.assertAllClose(actual, expected)
 
         # test channels_first
-        with self.test_session():
+        with self.cached_session()():
             # create input
             image = K.variable(np.random.random((1, 6, img_h, img_w)))
 
@@ -315,7 +315,7 @@ class ClipBoxesTest(test.TestCase):
         expected = np.expand_dims(expected, axis=0)
 
         # test channels_last
-        with self.test_session():
+        with self.cached_session()():
             # create input
             image = K.variable(np.random.random((1, 1, img_h, img_w, 3)))
 
@@ -332,7 +332,7 @@ class ClipBoxesTest(test.TestCase):
             self.assertAllClose(actual, expected)
 
         # test channels_first
-        with self.test_session():
+        with self.cached_session()():
             # create input
             image = K.variable(np.random.random((1, 6, 1, img_h, img_w)))
 

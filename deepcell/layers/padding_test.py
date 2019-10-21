@@ -60,7 +60,7 @@ class ReflectionPaddingTest(test.TestCase):
         data_formats = ['channels_first', 'channels_last']
         for data_format, inputs in zip(data_formats, [ins2, ins1]):
             # basic test
-            with self.test_session():
+            with self.cached_session()():
                 testing_utils.layer_test(
                     layers.ReflectionPadding2D,
                     kwargs={'padding': (2, 2),
@@ -75,7 +75,7 @@ class ReflectionPaddingTest(test.TestCase):
                     input_shape=inputs.shape)
 
             # correctness test
-            # with self.test_session():
+            # with self.cached_session()():
             #     layer = layers.ReflectionPadding2D(
             #         padding=(2, 2), data_format=data_format)
             #     layer.build(inputs.shape)
@@ -146,7 +146,7 @@ class ReflectionPaddingTest(test.TestCase):
         data_formats = ['channels_first', 'channels_last']
         for data_format, inputs in zip(data_formats, [inputs2, inputs1]):
             # basic test
-            with self.test_session():
+            with self.cached_session()():
                 testing_utils.layer_test(
                     layers.ReflectionPadding3D,
                     kwargs={'padding': (2, 2, 2),
@@ -155,7 +155,7 @@ class ReflectionPaddingTest(test.TestCase):
                     input_shape=inputs.shape)
 
         # correctness test
-        # with self.test_session():
+        # with self.cached_session()():
         #     layer = layers.ReflectionPadding3D(padding=(2, 2, 2))
         #     layer.build(inputs.shape)
         #     output = layer(keras.backend.variable(inputs))
