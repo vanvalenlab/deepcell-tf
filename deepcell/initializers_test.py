@@ -50,7 +50,7 @@ class InitializersTest(test.TestCase):
 
     def test_prior_probability(self):
         tensor_shape = (8, 12, 99)
-        # TODO: use self.cached_session() if tf version >= 1.11.0
-        with self.cached_session():
+        # TODO: use self.test_session() if tf version >= 1.11.0
+        with self.test_session():
             self._runner(PriorProbability(probability=0.01),
                          tensor_shape, target_mean=0., target_std=1)

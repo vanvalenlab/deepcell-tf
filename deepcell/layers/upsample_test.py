@@ -42,7 +42,7 @@ class TestUpsampleLike(test.TestCase):
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
         # channels_last
-        with self.cached_session():
+        with self.test_session():
             # create simple UpsampleLike layer
             upsample_like_layer = layers.UpsampleLike()
 
@@ -63,7 +63,7 @@ class TestUpsampleLike(test.TestCase):
             self.assertEqual(actual.shape, computed_shape)
             self.assertAllEqual(actual, expected)
         # channels_first
-        with self.cached_session():
+        with self.test_session():
             # create simple UpsampleLike layer
             upsample_like_layer = layers.UpsampleLike(
                 data_format='channels_first')
@@ -86,7 +86,7 @@ class TestUpsampleLike(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple_3d(self):
-        with self.cached_session():
+        with self.test_session():
             # create simple UpsampleLike layer
             upsample_like_layer = layers.UpsampleLike()
 
@@ -108,7 +108,7 @@ class TestUpsampleLike(test.TestCase):
             self.assertAllEqual(actual, expected)
 
         # channels_first
-        with self.cached_session():
+        with self.test_session():
             # create simple UpsampleLike layer
             upsample_like_layer = layers.UpsampleLike(
                 data_format='channels_first')
@@ -131,7 +131,7 @@ class TestUpsampleLike(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
-        with self.cached_session():
+        with self.test_session():
             # create simple UpsampleLike layer
             upsample_like_layer = layers.UpsampleLike()
 
@@ -153,7 +153,7 @@ class TestUpsampleLike(test.TestCase):
 class TestUpsample(test.TestCase):
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
-        with self.cached_session():
+        with self.test_session():
             testing_utils.layer_test(
                 layers.Upsample,
                 kwargs={'target_size': (2, 2)},
