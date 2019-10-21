@@ -48,7 +48,7 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         ('channels_last',) * 2,
         # ('channels_first',) * 2,
     ])
-    @tf_test_util.run_in_graph_and_eager_modes()
+    # @tf_test_util.run_in_graph_and_eager_modes()
     def test_get_featurenet_backbone(self, data_format):
         backbone = 'featurenet'
         input_shape = (256, 256, 3)
@@ -69,7 +69,7 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         ('channels_last',) * 2,
         # ('channels_first',) * 2,
     ])
-    @tf_test_util.run_in_graph_and_eager_modes()
+    # @tf_test_util.run_in_graph_and_eager_modes()
     def test_get_featurenet3d_backbone(self, data_format):
         backbone = 'featurenet3d'
         input_shape = (40, 256, 256, 3)
@@ -105,7 +105,7 @@ class TestBackboneUtils(test.TestCase, parameterized.TestCase):
         ('nasnet_large',) * 2,
         ('nasnet_mobile',) * 2,
     ])
-    @tf_test_util.run_in_graph_and_eager_modes()
+    # @tf_test_util.run_in_graph_and_eager_modes()
     def test_get_backbone(self, backbone):
         with self.cached_session():
             K.set_image_data_format('channels_last')
