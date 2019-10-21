@@ -115,7 +115,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
         }
     ])
-    # @tf_test_util.run_in_graph_and_eager_modes()
+    @tf_test_util.run_in_graph_and_eager_modes()
     def test_retinanet(self, pooling, panoptic, location, frames, pyramid_levels):
         num_classes = 3
         norm_method = None
