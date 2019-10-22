@@ -68,9 +68,3 @@ class TestPhaseSegmentationModel(test.TestCase):
                 self.assertEqual(shape[1][-1], 1)  # labels
                 self.assertEqual(shape[6][-3:-1], (28, 28))  # maskRCNN output
                 self.assertEqual(len(shape), 7)  # maskRCNN output is 7
-
-                # Removed the prediction check as it runs for 20+ more seconds
-                # y = model.predict(X)
-
-                # assert y[0].shape[0] == X.shape[0]
-                # assert isinstance(y, list)
