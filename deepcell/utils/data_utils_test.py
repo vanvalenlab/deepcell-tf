@@ -349,6 +349,8 @@ class TestDataUtils(test.TestCase):
         X = np.zeros((batches, frames, L, L, channels))
         y = np.random.randint(low=0, high=1000, size=(batches, frames, L, L, 1))
         new_size = 4
+        # guarantee there is a 0
+        y[:, 0, 0, 0, 0] = 0
 
         # test resize to smaller image, divisible
         new_X, new_y = data_utils.reshape_movie(X, y, new_size)
@@ -357,7 +359,7 @@ class TestDataUtils(test.TestCase):
                          (new_batch, frames, new_size, new_size, channels))
         self.assertEqual(new_y.shape,
                          (new_batch, frames, new_size, new_size, 1))
-        for b in range(new_y.shape[0]):
+        for b in range(new_X.shape[0]):
             self.assertEqual(list(np.unique(new_y[b])),
                              list(range(new_y[b].max() + 1)))
 
@@ -369,7 +371,7 @@ class TestDataUtils(test.TestCase):
                          (new_batch, frames, new_size, new_size, channels))
         self.assertEqual(new_y.shape,
                          (new_batch, frames, new_size, new_size, 1))
-        for b in range(new_y.shape[0]):
+        for b in range(new_X.shape[0]):
             self.assertEqual(list(np.unique(new_y[b])),
                              list(range(new_y[b].max() + 1)))
 
@@ -402,7 +404,7 @@ class TestDataUtils(test.TestCase):
                          (new_batch, channels, frames, new_size, new_size))
         self.assertEqual(new_y.shape,
                          (new_batch, 1, frames, new_size, new_size))
-        for b in range(new_y.shape[0]):
+        for b in range(new_X.shape[0]):
             self.assertEqual(list(np.unique(new_y[b])),
                              list(range(new_y[b].max() + 1)))
 
@@ -414,38 +416,47 @@ class TestDataUtils(test.TestCase):
                          (new_batch, channels, frames, new_size, new_size))
         self.assertEqual(new_y.shape,
                          (new_batch, 1, frames, new_size, new_size))
-        for b in range(new_y.shape[0]):
+        for b in range(new_X.shape[0]):
             self.assertEqual(list(np.unique(new_y[b])),
                              list(range(new_y[b].max() + 1)))
 
     def test_reshape_matrix(self):
         K.set_image_data_format('channels_last')
-        X = np.zeros((1, 16, 16, 3))
-        y = np.random.randint(low=0, high=10, size=(1, 16, 16, 1))
+        batches = np.random.randint(1, 5)
+        L = 8
+        channels = 3
+        X = np.zeros((batches, L, L, channels))
+        y = np.random.randint(low=0, high=1000, size=(batches, L, L, 1))
         new_size = 4
+        # guarantee there is a 0
+        y[:, 0, 0, 0] = 0
 
         # test resize to smaller image, divisible
         new_X, new_y = data_utils.reshape_matrix(X, y, new_size)
-        new_batch = np.ceil(16 / new_size) ** 2
-        self.assertEqual(new_X.shape, (new_batch, new_size, new_size, 3))
+        new_batch = np.ceil(L / new_size) ** 2 * batches
+        self.assertEqual(new_X.shape, (new_batch, new_size, new_size, channels))
         self.assertEqual(new_y.shape, (new_batch, new_size, new_size, 1))
-
-        self.assertEqual(list(np.unique(new_y)), list(range(new_y.max() + 1)))
+        for b in range(new_y.shape[0]):
+            self.assertEqual(list(np.unique(new_y[b])),
+                             list(range(new_y[b].max() + 1)))
 
         # test reshape with non-divisible values.
         new_size = 5
-        new_batch = np.ceil(16 / new_size) ** 2
+        new_batch = np.ceil(L / new_size) ** 2 * batches
         new_X, new_y = data_utils.reshape_matrix(X, y, new_size)
-        self.assertEqual(new_X.shape, (new_batch, new_size, new_size, 3))
+        self.assertEqual(new_X.shape, (new_batch, new_size, new_size, channels))
         self.assertEqual(new_y.shape, (new_batch, new_size, new_size, 1))
+        for b in range(new_y.shape[0]):
+            self.assertEqual(list(np.unique(new_y[b])),
+                             list(range(new_y[b].max() + 1)))
 
         # test reshape to bigger size
         with self.assertRaises(ValueError):
-            new_X, new_y = data_utils.reshape_matrix(X, y, 32)
+            new_X, new_y = data_utils.reshape_matrix(X, y, L * 2)
 
         # test wrong dimensions
-        bigger = np.zeros((1, 16, 16, 3, 1))
-        smaller = np.zeros((1, 16, 16))
+        bigger = np.zeros((1, L, L, channels, 1))
+        smaller = np.zeros((1, L, L))
         with self.assertRaises(ValueError):
             new_X, new_y = data_utils.reshape_matrix(smaller, y, new_size)
         with self.assertRaises(ValueError):
@@ -457,22 +468,28 @@ class TestDataUtils(test.TestCase):
 
         # channels_first
         K.set_image_data_format('channels_first')
-        X = np.zeros((1, 3, 16, 16))
-        y = np.zeros((1, 1, 16, 16))
+        X = np.zeros((1, channels, L, L))
+        y = np.zeros((1, 1, L, L))
         new_size = 4
 
         # test resize to smaller image, divisible
         new_X, new_y = data_utils.reshape_matrix(X, y, new_size)
-        new_batch = np.ceil(16 / new_size) ** 2
-        self.assertEqual(new_X.shape, (new_batch, 3, new_size, new_size))
+        new_batch = np.ceil(L / new_size) ** 2
+        self.assertEqual(new_X.shape, (new_batch, channels, new_size, new_size))
         self.assertEqual(new_y.shape, (new_batch, 1, new_size, new_size))
+        for b in range(new_X.shape[0]):
+            self.assertEqual(list(np.unique(new_y[b])),
+                             list(range(new_y[b].max() + 1)))
 
         # test reshape with non-divisible values.
         new_size = 5
-        new_batch = np.ceil(16 / new_size) ** 2
+        new_batch = np.ceil(L / new_size) ** 2
         new_X, new_y = data_utils.reshape_matrix(X, y, new_size)
-        self.assertEqual(new_X.shape, (new_batch, 3, new_size, new_size))
+        self.assertEqual(new_X.shape, (new_batch, channels, new_size, new_size))
         self.assertEqual(new_y.shape, (new_batch, 1, new_size, new_size))
+        for b in range(new_X.shape[0]):
+            self.assertEqual(list(np.unique(new_y[b])),
+                             list(range(new_y[b].max() + 1)))
 
 
 if __name__ == '__main__':
