@@ -36,6 +36,7 @@ from fnmatch import fnmatch
 
 import numpy as np
 from sklearn.model_selection import train_test_split
+from skimage.segmentation import relabel_sequential
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.utils import conv_utils
 
@@ -405,6 +406,7 @@ def reshape_matrix(X, y, reshape_size=256):
                     new_X[counter] = X[b, x_start:x_end, y_start:y_end, :]
                     new_y[counter] = y[b, x_start:x_end, y_start:y_end, :]
 
+                new_y[counter] = relabel_sequential(new_y[counter])[0]
                 counter += 1
 
     print('Reshaped feature data from {} to {}'.format(y.shape, new_y.shape))

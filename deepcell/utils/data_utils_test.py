@@ -343,7 +343,7 @@ class TestDataUtils(test.TestCase):
     def test_reshape_movie(self):
         K.set_image_data_format('channels_last')
         X = np.zeros((1, 3, 16, 16, 3))
-        y = np.zeros((1, 3, 16, 16, 1))
+        y = np.random.randint(low=0, high=10, size=(1, 3, 16, 16, 1))
         new_size = 4
 
         # test resize to smaller image, divisible
@@ -358,6 +358,8 @@ class TestDataUtils(test.TestCase):
         new_X, new_y = data_utils.reshape_movie(X, y, new_size)
         self.assertEqual(new_X.shape, (new_batch, 3, new_size, new_size, 3))
         self.assertEqual(new_y.shape, (new_batch, 3, new_size, new_size, 1))
+
+        self.assertEqual(list(np.unique(new_y)), list(range(new_y.max() + 1)))
 
         # test reshape to bigger size
         with self.assertRaises(ValueError):
@@ -397,7 +399,7 @@ class TestDataUtils(test.TestCase):
     def test_reshape_matrix(self):
         K.set_image_data_format('channels_last')
         X = np.zeros((1, 16, 16, 3))
-        y = np.zeros((1, 16, 16, 1))
+        y = np.random.randint(low=0, high=10, size=(1, 16, 16, 1))
         new_size = 4
 
         # test resize to smaller image, divisible
@@ -405,6 +407,8 @@ class TestDataUtils(test.TestCase):
         new_batch = np.ceil(16 / new_size) ** 2
         self.assertEqual(new_X.shape, (new_batch, new_size, new_size, 3))
         self.assertEqual(new_y.shape, (new_batch, new_size, new_size, 1))
+
+        self.assertEqual(list(np.unique(new_y)), list(range(new_y.max() + 1)))
 
         # test reshape with non-divisible values.
         new_size = 5
