@@ -49,6 +49,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'location': False,
             'frames': 1,
             'pyramid_levels': ['P3'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinanet_basic_td',
@@ -57,6 +58,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'location': False,
             'frames': 5,
             'pyramid_levels': ['P3'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinanet_avgnorm',
@@ -65,6 +67,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'location': False,
             'frames': 1,
             'pyramid_levels': ['P3', 'P4', 'P5'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinanet_panoptic_maxnorm',
@@ -73,6 +76,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'location': False,
             'frames': 1,
             'pyramid_levels': ['P5', 'P6', 'P7'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinanet_panoptic_maxnorm_td',
@@ -81,6 +85,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'location': False,
             'frames': 5,
             'pyramid_levels': ['P5', 'P6', 'P7'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinanet_location',
@@ -89,6 +94,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'location': True,
             'frames': 1,
             'pyramid_levels': ['P3', 'P7'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinanet_location_td',
@@ -97,6 +103,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'location': True,
             'frames': 5,
             'pyramid_levels': ['P3', 'P7'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinanet_panoptic_location',
@@ -105,6 +112,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'location': True,
             'frames': 1,
             'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinanet_panoptic_location_td',
@@ -113,56 +121,138 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'location': True,
             'frames': 5,
             'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+            'data_format': 'channels_last',
+        },
+        {
+            'testcase_name': 'retinanet_basic_cf',
+            'pooling': None,
+            'panoptic': False,
+            'location': False,
+            'frames': 1,
+            'pyramid_levels': ['P3'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinanet_basic_cf_td',
+            'pooling': None,
+            'panoptic': False,
+            'location': False,
+            'frames': 5,
+            'pyramid_levels': ['P3'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinanet_avgnorm_cf',
+            'pooling': 'avg',
+            'panoptic': False,
+            'location': False,
+            'frames': 1,
+            'pyramid_levels': ['P3', 'P4', 'P5'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinanet_panoptic_maxnorm_cf',
+            'pooling': 'max',
+            'panoptic': True,
+            'location': False,
+            'frames': 1,
+            'pyramid_levels': ['P5', 'P6', 'P7'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinanet_panoptic_maxnorm_cf_td',
+            'pooling': 'max',
+            'panoptic': True,
+            'location': False,
+            'frames': 5,
+            'pyramid_levels': ['P5', 'P6', 'P7'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinanet_location_cf',
+            'pooling': 'max',
+            'panoptic': True,
+            'location': True,
+            'frames': 1,
+            'pyramid_levels': ['P3', 'P7'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinanet_location_cf_td',
+            'pooling': 'max',
+            'panoptic': True,
+            'location': True,
+            'frames': 5,
+            'pyramid_levels': ['P3', 'P7'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinanet_panoptic_location_cf',
+            'pooling': 'max',
+            'panoptic': True,
+            'location': True,
+            'frames': 1,
+            'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinanet_panoptic_location_cf_td',
+            'pooling': 'max',
+            'panoptic': True,
+            'location': True,
+            'frames': 5,
+            'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+            'data_format': 'channels_first',
         }
     ])
     # @tf_test_util.run_in_graph_and_eager_modes()
-    def test_retinanet(self, pooling, panoptic, location, frames, pyramid_levels):
+    def test_retinanet(self, pooling, panoptic, location,
+                       frames, pyramid_levels, data_format):
         num_classes = 3
         norm_method = None
 
         # not all backbones work with channels_first
         backbone = 'featurenet'
 
-        for data_format in ('channels_last', 'channels_first'):
-            with self.test_session():
-                K.set_image_data_format(data_format)
-                if data_format == 'channels_first':
-                    axis = 1
-                    input_shape = (1, 32, 32)
-                else:
-                    axis = -1
-                    input_shape = (32, 32, 1)
+        # TODO: TimeDistributed is incompatible with channels_first
+        if frames > 1 and data_format == 'channels_first':
+            return
 
-                if frames > 1 and data_format == 'channels_first':
-                    # TODO: TimeDistributed is incompatible with channels_first
-                    continue
+        with self.test_session():
+            K.set_image_data_format(data_format)
+            if data_format == 'channels_first':
+                axis = 1
+                input_shape = (1, 32, 32)
+            else:
+                axis = -1
+                input_shape = (32, 32, 1)
 
-                num_semantic_classes = [3, 4]
-                if frames > 1:
-                    # TODO: 3D and semantic heads is not implemented.
-                    num_semantic_classes = []
-                model = RetinaNet(
-                    backbone=backbone,
-                    num_classes=num_classes,
-                    input_shape=input_shape,
-                    norm_method=norm_method,
-                    location=location,
-                    pooling=pooling,
-                    panoptic=panoptic,
-                    frames_per_batch=frames,
-                    num_semantic_heads=len(num_semantic_classes),
-                    num_semantic_classes=num_semantic_classes,
-                    backbone_levels=['C3', 'C4', 'C5'],
-                    pyramid_levels=pyramid_levels,
-                )
+            num_semantic_classes = [3, 4]
+            if frames > 1:
+                # TODO: 3D and semantic heads is not implemented.
+                num_semantic_classes = []
+            model = RetinaNet(
+                backbone=backbone,
+                num_classes=num_classes,
+                input_shape=input_shape,
+                norm_method=norm_method,
+                location=location,
+                pooling=pooling,
+                panoptic=panoptic,
+                frames_per_batch=frames,
+                num_semantic_heads=len(num_semantic_classes),
+                num_semantic_classes=num_semantic_classes,
+                backbone_levels=['C3', 'C4', 'C5'],
+                pyramid_levels=pyramid_levels,
+            )
 
-                expected_size = 2 + panoptic * len(num_semantic_classes)
-                self.assertIsInstance(model.output_shape, list)
-                self.assertEqual(len(model.output_shape), expected_size)
+            expected_size = 2 + panoptic * len(num_semantic_classes)
+            self.assertIsInstance(model.output_shape, list)
+            self.assertEqual(len(model.output_shape), expected_size)
 
-                self.assertEqual(model.output_shape[0][-1], 4)
-                self.assertEqual(model.output_shape[1][-1], num_classes)
+            self.assertEqual(model.output_shape[0][-1], 4)
+            self.assertEqual(model.output_shape[1][-1], num_classes)
 
-                if panoptic:
-                    for i, n in enumerate(num_semantic_classes):
-                        self.assertEqual(model.output_shape[i + 2][axis], n)
+            if panoptic:
+                for i, n in enumerate(num_semantic_classes):
+                    self.assertEqual(model.output_shape[i + 2][axis], n)
