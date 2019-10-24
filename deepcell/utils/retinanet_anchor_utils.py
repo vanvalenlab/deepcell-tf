@@ -517,15 +517,15 @@ def bbox_transform_inv(boxes, deltas, mean=None, std=None):
     if std is None:
         std = [0.2, 0.2, 0.2, 0.2]
 
-    width = boxes[:, :, 2] - boxes[:, :, 0]
-    height = boxes[:, :, 3] - boxes[:, :, 1]
+    width = boxes[..., 2] - boxes[..., 0]
+    height = boxes[..., 3] - boxes[..., 1]
 
-    x1 = boxes[:, :, 0] + (deltas[:, :, 0] * std[0] + mean[0]) * width
-    y1 = boxes[:, :, 1] + (deltas[:, :, 1] * std[1] + mean[1]) * height
-    x2 = boxes[:, :, 2] + (deltas[:, :, 2] * std[2] + mean[2]) * width
-    y2 = boxes[:, :, 3] + (deltas[:, :, 3] * std[3] + mean[3]) * height
+    x1 = boxes[..., 0] + (deltas[..., 0] * std[0] + mean[0]) * width
+    y1 = boxes[..., 1] + (deltas[..., 1] * std[1] + mean[1]) * height
+    x2 = boxes[..., 2] + (deltas[..., 2] * std[2] + mean[2]) * width
+    y2 = boxes[..., 3] + (deltas[..., 3] * std[3] + mean[3]) * height
 
-    pred_boxes = K.stack([x1, y1, x2, y2], axis=2)
+    pred_boxes = K.stack([x1, y1, x2, y2], axis=-1)
 
     return pred_boxes
 
@@ -647,6 +647,7 @@ def _compute_ap(recall, precision):
 
 def _get_detections(generator,
                     model,
+                    frames_per_batch=1,
                     score_threshold=0.05,
                     max_detections=100):
     """Get the detections from the model using the generator.
@@ -669,73 +670,154 @@ def _get_detections(generator,
     all_masks = [[None for i in range(generator.num_classes)]
                  for j in range(generator.y.shape[0])]
 
-    for i in range(generator.y.shape[0]):
-        # raw_image = generator.load_image(i)
-        # image = generator.preprocess_image(raw_image.copy())
-        # image, scale = generator.resize_image(image)
-        image = generator.x[i]
+    if len(generator.x.shape) == 4:
+        for i in range(generator.y.shape[0]):
+            # raw_image = generator.load_image(i)
+            # image = generator.preprocess_image(raw_image.copy())
+            # image, scale = generator.resize_image(image)
+            image = generator.x[i]
 
-        # run network
-        results = model.predict_on_batch(np.expand_dims(image, axis=0))
+            # run network
+            results = model.predict_on_batch(np.expand_dims(image, axis=0))
 
-        if generator.panoptic:
-            num_semantic_outputs = len(generator.y_semantic_list)
-            boxes = results[-num_semantic_outputs - 3]
-            scores = results[-num_semantic_outputs - 2]
-            labels = results[-num_semantic_outputs - 1]
-            semantic = results[-num_semantic_outputs:]
-            if generator.include_masks:
-                boxes = results[-num_semantic_outputs - 4]
-                scores = results[-num_semantic_outputs - 3]
-                labels = results[-num_semantic_outputs - 2]
-                masks = results[-num_semantic_outputs - 1]
-                semantic = results[-num_semantic_outputs]
-        elif generator.include_masks:
-            boxes = results[-4]
-            scores = results[-3]
-            labels = results[-2]
-            masks = results[-1]
-        else:
-            boxes, scores, labels = results[0:3]
+            if generator.panoptic:
+                num_semantic_outputs = len(generator.y_semantic_list)
+                boxes = results[-num_semantic_outputs - 3]
+                scores = results[-num_semantic_outputs - 2]
+                labels = results[-num_semantic_outputs - 1]
+                semantic = results[-num_semantic_outputs:]
+                if generator.include_masks:
+                    boxes = results[-num_semantic_outputs - 4]
+                    scores = results[-num_semantic_outputs - 3]
+                    labels = results[-num_semantic_outputs - 2]
+                    masks = results[-num_semantic_outputs - 1]
+                    semantic = results[-num_semantic_outputs]
+            elif generator.include_masks:
+                boxes = results[-4]
+                scores = results[-3]
+                labels = results[-2]
+                masks = results[-1]
+            else:
+                boxes = results[-3]
+                scores = results[-2]
+                labels = results[-1]
 
-        # correct boxes for image scale
-        # boxes = boxes / scale
+            # select indices which have a score above the threshold
+            indices = np.where(scores[0, :] > score_threshold)[0]
 
-        # select indices which have a score above the threshold
-        indices = np.where(scores[0, :] > score_threshold)[0]
+            # select those scores
+            scores = scores[0][indices]
 
-        # select those scores
-        scores = scores[0][indices]
+            # find the order with which to sort the scores
+            scores_sort = np.argsort(-scores)[:max_detections]
 
-        # find the order with which to sort the scores
-        scores_sort = np.argsort(-scores)[:max_detections]
+            # select detections
+            image_boxes = boxes[0, indices[scores_sort], :]
+            image_scores = scores[scores_sort]
+            image_labels = labels[0, indices[scores_sort]]
 
-        # select detections
-        image_boxes = boxes[0, indices[scores_sort], :]
-        image_scores = scores[scores_sort]
-        image_labels = labels[0, indices[scores_sort]]
+            image_detections = np.concatenate([
+                image_boxes,
+                np.expand_dims(image_scores, axis=1),
+                np.expand_dims(image_labels, axis=1)
+            ], axis=1)
 
-        image_detections = np.concatenate([
-            image_boxes,
-            np.expand_dims(image_scores, axis=1),
-            np.expand_dims(image_labels, axis=1)
-        ], axis=1)
-
-        # copy detections to all_detections
-        for label in range(generator.num_classes):
-            imd = image_detections[image_detections[:, -1] == label, :-1]
-            all_detections[i][label] = imd
-
-        if generator.include_masks:
-            image_masks = masks[0, indices[scores_sort], :, :, image_labels]
+            # copy detections to all_detections
             for label in range(generator.num_classes):
-                imm = image_masks[image_detections[:, -1] == label, ...]
-                all_masks[i][label] = imm
+                imd = image_detections[image_detections[:, -1] == label, :-1]
+                all_detections[i][label] = imd
+
+            if generator.include_masks:
+                image_masks = masks[0, indices[scores_sort], :, :, image_labels]
+                for label in range(generator.num_classes):
+                    imm = image_masks[image_detections[:, -1] == label, ...]
+                    all_masks[i][label] = imm
+
+    if len(generator.x.shape) == 5:
+        boxes_list = []
+        scores_list = []
+        labels_list = []
+
+        for i in range(generator.y.shape[0]):
+            for j in range(0, generator.y.shape[1], frames_per_batch):
+                movie = generator.x[[i], j:j + frames_per_batch, ...]
+                results = model.predict_on_batch(movie)
+
+                if generator.panoptic:
+                    # Add logic for networks that have semantic heads
+                    pass
+                else:
+                    if (generator.include_masks and
+                            not generator.include_final_detection_layer):
+                        boxes = results[-4]
+                        scores = results[-3]
+                        labels = results[-2]
+                        masks = results[-1]
+                    elif (generator.include_masks and
+                          generator.include_final_detection_layer):
+                        boxes = results[-5]
+                        scores = results[-4]
+                        labels = results[-3]
+                        masks = results[-2]
+                        final_scores = results[-1]
+                    else:
+                        boxes, scores, labels = results[0:3]
+
+                    for k in range(frames_per_batch):
+                        boxes_list.append(boxes[0, k])
+                        scores_list.append(scores[0, k])
+                        labels_list.append(labels[0, k])
+
+        batch_boxes = np.stack(boxes_list, axis=0)
+        batch_scores = np.stack(scores_list, axis=0)
+        batch_labels = np.stack(labels_list, axis=0)
+
+        all_detections = [[None for i in range(generator.num_classes)]
+                          for j in range(batch_boxes.shape[0])]
+
+        all_masks = [[None for i in range(generator.num_classes)]
+                     for j in range(batch_boxes.shape[0])]
+
+        for i in range(batch_boxes.shape[0]):
+            boxes = batch_boxes[[i]]
+            scores = batch_scores[[i]]
+            labels = batch_labels[[i]]
+
+            # select indices which have a score above the threshold
+            indices = np.where(scores[0, :] > score_threshold)[0]
+
+            # select those scores
+            scores = scores[0][indices]
+
+            # find the order with which to sort the scores
+            scores_sort = np.argsort(-scores)[:max_detections]
+
+            # select detections
+            image_boxes = boxes[0, indices[scores_sort], :]
+            image_scores = scores[scores_sort]
+            image_labels = labels[0, indices[scores_sort]]
+
+            image_detections = np.concatenate([
+                image_boxes,
+                np.expand_dims(image_scores, axis=1),
+                np.expand_dims(image_labels, axis=1)
+            ], axis=1)
+
+            # copy detections to all_detections
+            for label in range(generator.num_classes):
+                imd = image_detections[image_detections[:, -1] == label, :-1]
+                all_detections[i][label] = imd
+
+            if generator.include_masks:
+                image_masks = masks[0, :, indices[scores_sort], :, :, image_labels]
+                for label in range(generator.num_classes):
+                    imm = image_masks[image_detections[:, -1] == label, ...]
+                    all_masks[i][label] = imm
 
     return all_detections, all_masks
 
 
-def _get_annotations(generator):
+def _get_annotations(generator, frames_per_batch=1):
     """Get the ground truth annotations from the generator.
 
     The result is a list of lists such that the size is:
@@ -743,29 +825,56 @@ def _get_annotations(generator):
 
     Args:
         generator: The generator used to retrieve ground truth annotations.
+
     Returns:
         list: The annotations for each image in the generator.
     """
-    all_annotations = [[None for i in range(generator.num_classes)]
-                       for j in range(generator.y.shape[0])]
 
-    all_masks = [[None for i in range(generator.num_classes)]
-                 for j in range(generator.y.shape[0])]
+    if len(generator.x.shape) == 4:
+        all_annotations = [[None for i in range(generator.num_classes)]
+                           for j in range(generator.y.shape[0])]
 
-    for i in range(generator.y.shape[0]):
-        # load the annotations
-        annotations = generator.load_annotations(generator.y[i])
+        all_masks = [[None for i in range(generator.num_classes)]
+                     for j in range(generator.y.shape[0])]
 
-        if generator.include_masks:
-            annotations['masks'] = np.stack(annotations['masks'], axis=0)
+        for i in range(generator.y.shape[0]):
+            # load the annotations
+            annotations = generator.load_annotations(generator.y[i])
 
-        # copy detections to all_annotations
-        for label in range(generator.num_classes):
-            imb = annotations['bboxes'][annotations['labels'] == label, :].copy()
-            all_annotations[i][label] = imb
             if generator.include_masks:
-                imm = annotations['masks'][annotations['labels'] == label, ..., 0].copy()
-                all_masks[i][label] = imm
+                annotations['masks'] = np.stack(annotations['masks'], axis=0)
+
+            # copy detections to all_annotations
+            for label in range(generator.num_classes):
+                imb = annotations['bboxes'][annotations['labels'] == label, :].copy()
+                all_annotations[i][label] = imb
+                if generator.include_masks:
+                    imm = annotations['masks'][annotations['labels'] == label, ..., 0].copy()
+                    all_masks[i][label] = imm
+
+    if len(generator.x.shape) == 5:
+        all_annotations = []
+        all_masks = []
+        for i in range(generator.y.shape[0]):
+            for j in range(0, generator.y.shape[1], frames_per_batch):
+                label_movie = generator.y[i, j:j + frames_per_batch, ...]
+                for k in range(frames_per_batch):
+                    annotations = generator.load_annotations(label_movie[k])
+
+                    if generator.include_masks:
+                        annotations['masks'] = np.stack(annotations['masks'], axis=0)
+
+                    imb_list = [None for i in range(generator.num_classes)]
+                    imm_list = [None for i in range(generator.num_classes)]
+                    for label in range(generator.num_classes):
+                        label_idx = annotations['labels'] == label
+                        imb = annotations['bboxes'][label_idx, :].copy()
+                        imb_list[label] = imb
+                        if generator.include_masks:
+                            imm = annotations['masks'][label_idx, ..., 0].copy()
+                            imm_list[label] = imm
+                    all_annotations.append(imb_list.copy())
+                    all_masks.append(imm_list.copy())
 
     return all_annotations, all_masks
 
@@ -773,6 +882,7 @@ def _get_annotations(generator):
 def evaluate(generator, model,
              iou_threshold=0.5,
              score_threshold=0.05,
+             frames_per_batch=1,
              max_detections=100):
     """Evaluate a given dataset using a given model.
 
@@ -784,16 +894,17 @@ def evaluate(generator, model,
         score_threshold (float): The score confidence threshold
             to use for detections.
         max_detections (int): The maximum number of detections to use per image.
+
     Returns:
         dict: A mapping of class names to mAP scores.
     """
     # gather all detections and annotations
     all_detections, _ = _get_detections(
         generator, model,
+        frames_per_batch=frames_per_batch,
         score_threshold=score_threshold,
         max_detections=max_detections)
-
-    all_annotations, _ = _get_annotations(generator)
+    all_annotations, _ = _get_annotations(generator, frames_per_batch)
     average_precisions = {}
 
     # all_detections = pickle.load(open('all_detections.pkl', 'rb'))
@@ -866,6 +977,7 @@ def evaluate_mask(generator, model,
                   iou_threshold=0.5,
                   score_threshold=0.05,
                   max_detections=100,
+                  frames_per_batch=1,
                   binarize_threshold=0.5):
     """Evaluate a given dataset using a given model.
 
@@ -885,9 +997,10 @@ def evaluate_mask(generator, model,
     # gather all detections and annotations
     all_detections, all_masks = _get_detections(
         generator, model,
+        frames_per_batch=frames_per_batch,
         score_threshold=score_threshold,
         max_detections=max_detections)
-    all_annotations, all_gt_masks = _get_annotations(generator)
+    all_annotations, all_gt_masks = _get_annotations(generator, frames_per_batch)
     average_precisions = {}
 
     # import pickle
@@ -925,29 +1038,37 @@ def evaluate_mask(generator, model,
                 box_x = box[3] - box[1]
                 box_y = box[2] - box[0]
 
-                mask = resize(mask, (box_x, box_y))
+                if frames_per_batch == 1:
+                    mask = np.expand_dims(mask, axis=0)
+
+                mask = resize(mask, (frames_per_batch, box_x, box_y))
 
                 # binarize the mask
                 mask = (mask > binarize_threshold).astype('uint8')
 
                 # place mask in image frame
-                mask_image = np.zeros_like(gt_masks[0])
-                mask_image[box[1]:box[3], box[0]:box[2]] = mask
+                mask_image = np.zeros(tuple([frames_per_batch] +
+                                            list(gt_masks[0].shape)))
+
+                mask_image[:, box[1]:box[3], box[0]:box[2]] = mask
+
                 mask = mask_image
 
-                overlaps = compute_iou(np.expand_dims(mask, axis=0), gt_masks)
+                for f in range(frames_per_batch):
 
-                assigned_annotation = np.argmax(overlaps, axis=1)
-                max_overlap = overlaps[0, assigned_annotation]
+                    overlaps = compute_iou(np.expand_dims(mask[f], axis=0), gt_masks)
 
-                if max_overlap >= iou_threshold and \
-                   assigned_annotation not in detected_annotations:
-                    false_positives = np.append(false_positives, 0)
-                    true_positives = np.append(true_positives, 1)
-                    detected_annotations.append(assigned_annotation)
-                else:
-                    false_positives = np.append(false_positives, 1)
-                    true_positives = np.append(true_positives, 0)
+                    assigned_annotation = np.argmax(overlaps, axis=1)
+                    max_overlap = overlaps[0, assigned_annotation]
+
+                    if max_overlap >= iou_threshold and \
+                       assigned_annotation not in detected_annotations:
+                        false_positives = np.append(false_positives, 0)
+                        true_positives = np.append(true_positives, 1)
+                        detected_annotations.append(assigned_annotation)
+                    else:
+                        false_positives = np.append(false_positives, 1)
+                        true_positives = np.append(true_positives, 0)
 
         # no annotations -> AP for this class is 0 (is this correct?)
         if num_annotations == 0:

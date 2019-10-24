@@ -54,14 +54,16 @@ class TestNuclearSegmentationModel(test.TestCase):
                 # retinanet backbones do not work with versions < 1.10.0
                 continue
 
-            with self.test_session(use_gpu=True):
+            with self.test_session():
                 model = NuclearSegmentationModel(
                     input_shape=input_shape,
                     backbone=backbone,
                     use_pretrained_weights=False
                 )
 
-                y = model.predict(X)
-
-                assert y[0].shape[0] == X.shape[0]
-                assert isinstance(y, list)
+                shape = model.output_shape
+                self.assertIsInstance(shape, list)
+                self.assertEqual(shape[0][-1], 4)  # bounding boxes
+                self.assertEqual(shape[1][-1], 1)  # labels
+                self.assertEqual(shape[6][-3:-1], (28, 28))  # maskRCNN output
+                self.assertEqual(len(shape), 9)  # maskRCNN + 2 semantic heads

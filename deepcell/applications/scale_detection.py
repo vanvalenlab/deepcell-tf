@@ -36,13 +36,13 @@ from deepcell.layers import ImageNormalization2D, TensorProduct
 from deepcell.utils.backbone_utils import get_backbone
 
 
-WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/ScaleDetectionModel_VGG16.h5')
+MOBILENETV2_WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+                            'model-weights/ScaleDetectionModel_mobilenetv2.h5')
 
 
 def ScaleDetectionModel(input_shape=(None, None, 1),
                         inputs=None,
-                        backbone='VGG16',
+                        backbone='mobilenetv2',
                         use_pretrained_weights=True):
     """Create a ScaleDetectionModel for detecting scales of input data.
 
@@ -78,20 +78,20 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
         pooling=None)
 
     x = keras.layers.AveragePooling2D(4)(backbone_model.outputs[0])
-    x = TensorProduct(256)(x)
+    x = TensorProduct(256, activation='relu')(x)
     x = TensorProduct(1)(x)
-    x = keras.layers.Flatten()(x)
-    outputs = keras.layers.Activation('relu')(x)
+    outputs = keras.layers.Flatten()(x)
 
     model = keras.Model(inputs=backbone_model.inputs, outputs=outputs)
 
     if use_pretrained_weights:
-        if backbone.upper() == 'VGG16':
+        local_name = 'ScaleDetectionModel_{}.h5'.format(backbone)
+        if backbone.lower() in {'mobilenetv2' or 'mobilenet_v2'}:
             weights_path = get_file(
-                'ScaleDetectionModel_{}.h5'.format(backbone),
-                WEIGHTS_PATH,
+                local_name,
+                MOBILENETV2_WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='ab23e35676ffcdf1c72d3804cc65ea1d')
+                md5_hash='b9943554a86096fb66608ec66078aa46')
         else:
             raise ValueError('Backbone %s does not have a weights file.' %
                              backbone)

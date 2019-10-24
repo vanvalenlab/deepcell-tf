@@ -388,15 +388,16 @@ def reshape_matrix(X, y, reshape_size=256):
     for b in range(X.shape[0]):
         for i in range(rep_number):
             for j in range(rep_number):
+                _axis = 2 if is_channels_first else 1
                 if i != rep_number - 1:
                     x_start, x_end = i * reshape_size, (i + 1) * reshape_size
                 else:
-                    x_start, x_end = -reshape_size, X.shape[2 if is_channels_first else 1]
+                    x_start, x_end = -reshape_size, X.shape[_axis]
 
                 if j != rep_number - 1:
                     y_start, y_end = j * reshape_size, (j + 1) * reshape_size
                 else:
-                    y_start, y_end = -reshape_size, y.shape[3 if is_channels_first else 2]
+                    y_start, y_end = -reshape_size, y.shape[_axis + 1]
 
                 if is_channels_first:
                     new_X[counter] = X[b, :, x_start:x_end, y_start:y_end]
@@ -405,6 +406,7 @@ def reshape_matrix(X, y, reshape_size=256):
                     new_X[counter] = X[b, x_start:x_end, y_start:y_end, :]
                     new_y[counter] = y[b, x_start:x_end, y_start:y_end, :]
 
+                new_y[counter] = relabel_movie(new_y[counter])
                 counter += 1
 
     print('Reshaped feature data from {} to {}'.format(y.shape, new_y.shape))
