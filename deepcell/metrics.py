@@ -247,10 +247,10 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         else:
             self.empty_frame = False
 
-    def _calc_iou(self):
+    def _calc_iou(self, bbox_overlap_thresh=0.1):
         """Calculates IoU matrix for each pairwise comparison between true and
         predicted. Additionally, if seg is True, records a 1 for each pair of
-        objects where $|T\bigcap P| > 0.5 * |T|$
+        objects where $|Tbigcap P| > 0.5 * |T|$
         """
 
         self.iou = np.zeros((self.n_true, self.n_pred))
@@ -259,22 +259,35 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             self.seg_thresh = np.zeros((self.n_true, self.n_pred))
 
         # Use bounding boxes to find masks that are likely to overlap
-        true_bbox = regionprops_table(self.y_true)['bbox']
-        pred_bbox = regionprops_table(self.y_pred)['bbox']
+        y_true_props = skimage.measure.regionprops(np.squeeze(self.y_true.astype('int')))
+        y_true_boxes = [np.array(y_true_prop.bbox) for y_true_prop in y_true_props]
+        y_true_boxes = np.array(y_true_boxes).astype('double')
+        y_true_box_labels = [int(y_true_prop.label) for y_true_prop in y_true_props]
+        
+        y_pred_props = skimage.measure.regionprops(np.squeeze(self.y_pred.astype('int')))
+        y_pred_boxes = [np.array(y_pred_prop.bbox) for y_pred_prop in y_pred_props]
+        y_pred_boxes = np.array(y_pred_boxes).astype('double')
+        y_pred_box_labels = [int(y_pred_prop.label) for y_pred_prop in y_pred_props]
+        
+        # has the form [gt_bbox, res_bbox]
+        overlaps = compute_overlap(y_true_boxes, y_pred_boxes)
 
-        overlaps = compute_overlap(true_bbox, pred_bbox)
-        ind_true, ind_pred = np.nonzeros(overlaps)
+        # Find the bboxes that have overlap at all (ind_ corresponds to box number - starting at 0)
+        ind_true, ind_pred = np.nonzero(overlaps)
 
-        for index in range(self.y_true.shape[0]):
-            intersection = np.logical_and(self.y_true == ind_true[index] + 1,
-                                          self.y_pred == ind_pred[index] + 1)
-            union = np.logical_or(self.y_true == ind_true[index] + 1,
-                                  self.y_pred == ind_pred[index] + 1)
-            self.iou[ind_true[index], ind_pred[index]] = intersection.sum() / union.sum()
+        for index in range(ind_true.shape[0]):
+
+            iou_y_true_idx = y_true_box_labels[ind_true[index]]
+            iou_y_pred_idx = y_pred_box_labels[ind_pred[index]]
+            intersection = np.logical_and(self.y_true==iou_y_true_idx, self.y_pred==iou_y_pred_idx)
+            union = np.logical_or(self.y_true==iou_y_true_idx, self.y_pred==iou_y_pred_idx)
+            # Subtract 1 from index to account for skipping 0            
+            self.iou[iou_y_true_idx-1, iou_y_pred_idx-1] = intersection.sum() / union.sum()
+
 
             if (self.seg is True) & \
                (intersection.sum() > 0.5 * np.sum(self.y_true == index)):
-                self.seg_thresh[ind_true[index], ind_pred[index]] = 1
+                self.seg_thresh[iou_y_true_idx-1, iou_y_pred_idx-1] = 1
 
     def _make_matrix(self):
         """Assembles cost matrix using the iou matrix and cutoff1
@@ -955,21 +968,47 @@ def load_data(pattern):
     return(im)
 
 
-def match_nodes(pattern1, pattern2):
+def match_nodes(pattern1, pattern2, bbox_overlap_thresh=0.1):
     gt = load_data(pattern1)
     res = load_data(pattern2)
+    
     num_frames = gt.shape[0]
-    iou = np.zeros((num_frames, np.max(gt) + 1, np.max(res) + 1))
-
-    # compute iou's
-    for i in np.unique(gt):
-        for j in np.unique(res):
-            intersection = np.logical_and(gt == i, res == j)
-            union = np.logical_or(gt == i, res == j)
-            # iou[i,j] = intersection.sum() / union.sum()
-            iou[:, i, j] = intersection.sum(axis=(1, 2)) / union.sum(axis=(1, 2))
-            # gtcells, rescells = np.where(iou > .25)
-    gtcells, rescells = np.where(np.nansum(iou, axis=0) >= 1)
+    iou = np.zeros((num_frames, np.max(gt)+1, np.max(res)+1))   
+     
+    # Compute IOUs only when neccesary
+    # If bboxs for true and pred do not overlap with each other, the assignment 
+    # is immediate. Otherwise use pixel-wise IOU to determine which cell is which
+    
+    # Regionprops expects one frame at a time
+    for frame in range(num_frames):
+        gt_frame = gt[frame]
+        res_frame = res[frame]
+        
+        gt_props = skimage.measure.regionprops(np.squeeze(gt_frame.astype('int')))
+        gt_boxes = [np.array(gt_prop.bbox) for gt_prop in gt_props]
+        gt_boxes = np.array(gt_boxes).astype('double')
+        gt_box_labels = [int(gt_prop.label) for gt_prop in gt_props]
+        
+        res_props = skimage.measure.regionprops(np.squeeze(res_frame.astype('int')))
+        res_boxes = [np.array(res_prop.bbox) for res_prop in res_props]
+        res_boxes = np.array(res_boxes).astype('double')
+        res_box_labels = [int(res_prop.label) for res_prop in res_props]
+        
+        overlaps = compute_overlap(gt_boxes, res_boxes)    # has the form [gt_bbox, res_bbox]
+        
+        # Find the bboxes that have overlap at all (ind_ corresponds to box number - starting at 0)
+        ind_gt, ind_res = np.nonzero(overlaps)
+               
+        #frame_ious = np.zeros(overlaps.shape)
+        for index in range(ind_gt.shape[0]):
+                        
+            iou_gt_idx = gt_box_labels[ind_gt[index]]
+            iou_res_idx = res_box_labels[ind_res[index]]
+            intersection = np.logical_and(gt_frame==iou_gt_idx, res_frame==iou_res_idx)
+            union = np.logical_or(gt_frame==iou_gt_idx, res_frame==iou_res_idx)            
+            iou[frame, iou_gt_idx, iou_res_idx] = intersection.sum() / union.sum()
+                
+    gtcells, rescells = np.where(np.nansum(iou,axis=0)>=1)
     return gtcells, rescells
 
 
