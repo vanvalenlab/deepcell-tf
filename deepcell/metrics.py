@@ -41,12 +41,14 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import os
-import json
+from collections import Counter
 import datetime
-import operator
-import math
 import decimal
+import glob
+import json
+import math
+import operator
+import os
 
 import numpy as np
 import pandas as pd
@@ -57,9 +59,11 @@ from scipy.optimize import linear_sum_assignment
 import skimage.io
 import skimage.measure
 from skimage.segmentation import relabel_sequential
+from skimage.external.tifffile import TiffFile
 from sklearn.metrics import confusion_matrix
-
 from tensorflow.python.platform import tf_logging as logging
+
+from deepcell.utils.compute_overlap import compute_overlap
 
 
 def stats_pixelbased(y_true, y_pred):
@@ -246,23 +250,49 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
     def _calc_iou(self):
         """Calculates IoU matrix for each pairwise comparison between true and
         predicted. Additionally, if seg is True, records a 1 for each pair of
-        objects where $|T\bigcap P| > 0.5 * |T|$
+        objects where $|Tbigcap P| > 0.5 * |T|$
         """
 
+        def get_box_labels(images):
+            props = skimage.measure.regionprops(np.squeeze(images))
+            boxes, labels = [], []
+            for prop in props:
+                boxes.append(np.array(prop.bbox))
+                labels.append(int(prop.label))
+            boxes = np.array(boxes).astype('double')
+
+            return boxes, labels
+
         self.iou = np.zeros((self.n_true, self.n_pred))
-        if self.seg is True:
+
+        if self.seg:
             self.seg_thresh = np.zeros((self.n_true, self.n_pred))
 
-        # Make all pairwise comparisons to calc iou
-        for t in range(1, self.y_true.max() + 1):
-            for p in range(1, self.y_pred.max() + 1):
-                intersection = np.logical_and(self.y_true == t, self.y_pred == p)
-                union = np.logical_or(self.y_true == t, self.y_pred == p)
-                # Subtract 1 from index to account for skipping 0
-                self.iou[t - 1, p - 1] = intersection.sum() / union.sum()
-                if (self.seg is True) & \
-                   (intersection.sum() > 0.5 * np.sum(self.y_true == t)):
-                    self.seg_thresh[t - 1, p - 1] = 1
+        # Use bounding boxes to find masks that are likely to overlap
+        y_true_boxes, y_true_labels = get_box_labels(self.y_true.astype('int'))
+        y_pred_boxes, y_pred_labels = get_box_labels(self.y_pred.astype('int'))
+
+        # has the form [gt_bbox, res_bbox]
+        overlaps = compute_overlap(y_true_boxes, y_pred_boxes)
+
+        # Find the bboxes that have overlap at all
+        # (ind_ corresponds to box number - starting at 0)
+        ind_true, ind_pred = np.nonzero(overlaps)
+
+        for index in range(ind_true.shape[0]):
+
+            iou_y_true_idx = y_true_labels[ind_true[index]]
+            iou_y_pred_idx = y_pred_labels[ind_pred[index]]
+            intersection = np.logical_and(self.y_true == iou_y_true_idx,
+                                          self.y_pred == iou_y_pred_idx)
+            union = np.logical_or(self.y_true == iou_y_true_idx,
+                                  self.y_pred == iou_y_pred_idx)
+            # Subtract 1 from index to account for skipping 0
+            self.iou[iou_y_true_idx - 1, iou_y_pred_idx - 1] = intersection.sum() / union.sum()
+
+            if (self.seg) & \
+               (intersection.sum() > 0.5 * np.sum(self.y_true == index)):
+                self.seg_thresh[iou_y_true_idx - 1, iou_y_pred_idx - 1] = 1
 
     def _make_matrix(self):
         """Assembles cost matrix using the iou matrix and cutoff1
@@ -317,8 +347,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         if self.seg is True:
             iou_mask = self.iou.copy()
             iou_mask[self.seg_thresh == 0] = np.nan
-            self.seg_score = np.nanmean(iou_mask[correct_index[0],
-                                        correct_index[1]])
+            self.seg_score = np.nanmean(iou_mask[correct_index[0], correct_index[1]])
 
         # Collect unassigned cells
         self.loners_pred, _ = np.where(
@@ -479,7 +508,6 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
     def print_report(self):
         """Print report of error types and frequency
         """
-
         print(self.save_to_dataframe())
 
     def save_to_dataframe(self):
@@ -528,7 +556,6 @@ def to_precision(x, p):
     Based on the webkit javascript implementation taken from here:
     https://code.google.com/p/webkit-mirror/source/browse/JavaScriptCore/kjs/number_object.cpp
     """
-
     decimal.getcontext().prec = p
     return decimal.Decimal(x)
 
@@ -561,7 +588,6 @@ class Metrics(object):
                 y_pred_lbl,
                 y_true_unlbl,
                 y_true_unlbl)
-
         >>> m.all_pixel_stats(y_true_unlbl,y_pred_unlbl)
         >>> m.calc_obj_stats(y_true_lbl,y_pred_lbl)
         >>> m.save_to_json(m.output)
@@ -578,7 +604,6 @@ class Metrics(object):
                  feature_key=[],
                  json_notes='',
                  seg=False):
-
         self.model_name = model_name
         self.outdir = outdir
         self.cutoff1 = cutoff1
@@ -833,7 +858,6 @@ class Metrics(object):
         Args:
             L (list): List of metric dictionaries
         """
-
         todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
         outname = os.path.join(
             self.outdir, self.model_name + '_' + todays_date + '.json')
@@ -910,3 +934,122 @@ def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
     split2con = np.concatenate(split2, axis=0)
 
     return split2con
+
+
+def create_graph(file, node_key=None):
+    df = pd.read_csv(file, header=None, sep=' ', names=['Cell_ID', 'Start', 'End', 'Parent_ID'])
+    if node_key is not None:
+        df[['Cell_ID', 'Parent_ID']] = df[['Cell_ID', 'Parent_ID']].replace(node_key)
+    edges = pd.DataFrame()
+    # Add each cell lineage as a set of edges to df
+    for _, row in df.iterrows():
+        tpoints = np.arange(row['Start'], row['End'] + 1)
+        deltaT = len(tpoints)
+        cellid = ['{cellid}_{frame}'.format(cellid=row['Cell_ID'], frame=t)
+                  for t in tpoints]
+        source = cellid[0:-1]
+        target = cellid[1:]
+        edges = edges.append(pd.DataFrame({'source': source, 'target': target}))
+
+    Dattr = {}
+    # Add parent-daughter connections
+    for _, row in df[df['Parent_ID'] != 0].iterrows():
+        source = '{cellid}_{frame}'.format(cellid=row['Parent_ID'], frame=row['Start'] - 1)
+        target = '{cellid}_{frame}'.format(cellid=row['Cell_ID'], frame=row['Start'])
+        edges = edges.append(pd.DataFrame({'source': [source], 'target': [target]}))
+        Dattr[source] = {'division': True}
+    # Create graph
+    G = nx.from_pandas_edgelist(edges, source='source', target='target')
+    nx.set_node_attributes(G, Dattr)
+    return G
+
+
+def load_data(pattern):
+    files = np.sort(glob.glob(pattern))
+    Lim = []
+    for i, f in enumerate(files):
+        Lim.append(TiffFile(f).asarray())
+        im = np.stack(Lim)
+    return(im)
+
+
+def match_nodes(pattern1, pattern2):
+    gt = load_data(pattern1)
+    res = load_data(pattern2)
+
+    num_frames = gt.shape[0]
+    iou = np.zeros((num_frames, np.max(gt) + 1, np.max(res) + 1))
+
+    # Compute IOUs only when neccesary
+    # If bboxs for true and pred do not overlap with each other, the assignment
+    # is immediate. Otherwise use pixel-wise IOU to determine which cell is which
+
+    # Regionprops expects one frame at a time
+    for frame in range(num_frames):
+        gt_frame = gt[frame]
+        res_frame = res[frame]
+
+        gt_props = skimage.measure.regionprops(np.squeeze(gt_frame.astype('int')))
+        gt_boxes = [np.array(gt_prop.bbox) for gt_prop in gt_props]
+        gt_boxes = np.array(gt_boxes).astype('double')
+        gt_box_labels = [int(gt_prop.label) for gt_prop in gt_props]
+
+        res_props = skimage.measure.regionprops(np.squeeze(res_frame.astype('int')))
+        res_boxes = [np.array(res_prop.bbox) for res_prop in res_props]
+        res_boxes = np.array(res_boxes).astype('double')
+        res_box_labels = [int(res_prop.label) for res_prop in res_props]
+
+        overlaps = compute_overlap(gt_boxes, res_boxes)    # has the form [gt_bbox, res_bbox]
+
+        # Find the bboxes that have overlap at all (ind_ corresponds to box number - starting at 0)
+        ind_gt, ind_res = np.nonzero(overlaps)
+
+        for index in range(ind_gt.shape[0]):
+
+            iou_gt_idx = gt_box_labels[ind_gt[index]]
+            iou_res_idx = res_box_labels[ind_res[index]]
+            intersection = np.logical_and(gt_frame == iou_gt_idx, res_frame == iou_res_idx)
+            union = np.logical_or(gt_frame == iou_gt_idx, res_frame == iou_res_idx)
+            iou[frame, iou_gt_idx, iou_res_idx] = intersection.sum() / union.sum()
+
+    gtcells, rescells = np.where(np.nansum(iou, axis=0) >= 1)
+    return gtcells, rescells
+
+
+def classify_divisions(G_gt, G_res):
+    """Identify nodes with parent attribute"""
+    div_gt = [node for node, d in G_gt.node.data() if d.get('division')]
+    div_res = [node for node, d in G_res.node.data() if d.get('division')]
+    divI = 0  # Correct division
+    divJ = 0  # Wrong division
+    divC = 0  # False positive division
+    divGH = 0  # Missed division
+    for node in div_gt:
+        nb_gt = list(G_gt.neighbors(node))
+        # Check if res node was also called a division
+        if node in div_res:
+            nb_res = list(G_gt.neighbors(node))
+            # If neighbors are same, then correct division
+            if Counter(nb_gt) == Counter(nb_res):
+                divI += 1
+                # Wrong division
+            elif len(nb_res) == 3:
+                divJ += 1
+            else:
+                divGH += 1
+        # If not called division, then missed division
+        else:
+            divGH += 1
+        # Remove processed nodes from res list
+        try:
+            div_res.remove(node)
+        except:
+            print('attempted removal of node {} failed'.format(node))
+
+    # Count any remaining res nodes as false positives
+    divC += len(div_res)
+
+    return({'Correct division': divI,
+            'Incorrect division': divJ,
+            'False positive division': divC,
+            'False negative division': divGH})
