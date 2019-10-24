@@ -255,10 +255,10 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
 
         def get_box_labels(images):
             props = skimage.measure.regionprops(np.squeeze(images))
-            boxes, lables = [], []
+            boxes, labels = [], []
             for prop in props:
                 boxes.append(np.array(prop.bbox))
-                labels.append(int(y_true_prop.label))
+                labels.append(int(prop.label))
             boxes = np.array(boxes).astype('double')
 
             return boxes, labels
@@ -285,7 +285,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             iou_y_pred_idx = y_pred_labels[ind_pred[index]]
             intersection = np.logical_and(self.y_true == iou_y_true_idx,
                                           self.y_pred == iou_y_pred_idx)
-            union = np.logical_or(self.y_true == ou_y_true_idx,
+            union = np.logical_or(self.y_true == iou_y_true_idx,
                                   self.y_pred == iou_y_pred_idx)
             # Subtract 1 from index to account for skipping 0
             self.iou[iou_y_true_idx - 1, iou_y_pred_idx - 1] = intersection.sum() / union.sum()
