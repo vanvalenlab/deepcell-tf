@@ -31,6 +31,8 @@ from __future__ import print_function
 
 import warnings
 
+from deepcell_tracking import utils as tracking_utils
+
 from deepcell.utils import backbone_utils
 from deepcell.utils import data_utils
 from deepcell.utils import export_utils
