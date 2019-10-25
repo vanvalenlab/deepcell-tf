@@ -1673,7 +1673,7 @@ class SiameseIterator(Iterator):
     def __init__(self,
                  train_dict,
                  image_data_generator,
-                 features,
+                 features=['appearance', 'distance', 'neighborhood', 'regionprop'],
                  crop_dim=32,
                  min_track_length=5,
                  neighborhood_scale_size=64,
