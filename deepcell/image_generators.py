@@ -1555,7 +1555,7 @@ class SiameseDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
     The data will be looped over (in batches).
 
-    Arguments:
+    Args:
         featurewise_center: boolean, set input mean to 0 over the dataset,
             feature-wise.
         samplewise_center: boolean, set each sample mean to 0.
@@ -1647,7 +1647,7 @@ class SiameseIterator(Iterator):
     Features are passed in as a list of feature names, while the y is one of:
         "same", "different", or "daughter"
 
-    Arguments:
+    Args:
         train_dict: dictionary consisting of numpy arrays for X and y.
         image_data_generator: Instance of ImageDataGenerator
             to use for random transformations and normalization.
@@ -1673,7 +1673,7 @@ class SiameseIterator(Iterator):
     def __init__(self,
                  train_dict,
                  image_data_generator,
-                 features,
+                 features=['appearance', 'distance', 'neighborhood', 'regionprop'],
                  crop_dim=32,
                  min_track_length=5,
                  neighborhood_scale_size=64,
