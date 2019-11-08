@@ -490,7 +490,7 @@ class TestDataUtils(test.TestCase):
         for b in range(new_X.shape[0]):
             self.assertEqual(list(np.unique(new_y[b])),
                              list(range(new_y[b].max() + 1)))
-            
+
         # test reshape with non-square image, square new size
         K.set_image_data_format('channels_last')
         batches = np.random.randint(1, 5)
@@ -503,7 +503,7 @@ class TestDataUtils(test.TestCase):
         new_X, new_y = data_utils.reshape_matrix(X, y, new_size)
         self.assertEqual(new_X.shape, (new_batch, new_size, new_size, channels))
         self.assertEqual(new_y.shape, (new_batch, new_size, new_size, 1))
-        
+
         # test reshape with non-square image, non-square new size
         K.set_image_data_format('channels_last')
         batches = np.random.randint(1, 5)

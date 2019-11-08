@@ -353,15 +353,19 @@ def reshape_matrix(X, y, reshape_size=256):
     The input image is divided into subimages of side length reshape_size,
     with the last row and column of subimages overlapping the one before the last if the original image side lengths
     are not divisible by reshape_size.
+
     Args:
         X (numpy.array): raw 4D image tensor
         y (numpy.array): label mask of 4D image data
         reshape_size (int or a list of 2 ints): size of the output tensor
         If input is int, output images are square with side length equal reshape_size.
         If it is a list of 2 ints, then the output images size is reshape_size[0] x reshape_size[1]
+
     Returns:
-        numpy.array: reshaped X and y tensors in shape (reshape_size, reshape_size), if reshape_size is an int
-                     or shape (reshape_size[0], reshape_size[1]), if reshape_size is a list of length 2
+        numpy.array: reshaped X and y 4D tensors
+                     in shape[1:3] = (reshape_size, reshape_size), if reshape_size is an int, and
+                     shape[1:3] reshape_size, if reshape_size is a list of length 2
+                     
     Raises:
         ValueError: X.ndim is not 4
         ValueError: y.ndim is not 4
@@ -371,10 +375,10 @@ def reshape_matrix(X, y, reshape_size=256):
         raise ValueError('reshape_matrix expects X dim to be 4, got', X.ndim)
     elif y.ndim != 4:
         raise ValueError('reshape_matrix expects y dim to be 4, got', y.ndim)
-        
+
     if isinstance(reshape_size, int):
         reshape_size_x = reshape_size_y = reshape_size
-    elif len(reshape_size)==2 and isinstance(reshape_size[0], int) and isinstance(reshape_size[1], int):
+    elif len(reshape_size) == 2 and all(isinstance(x, int) for x in reshape_size):
         reshape_size_x, reshape_size_y = reshape_size
     else:
         raise ValueError('reshape_size must be an integer or an iterable containing 2 integers.')
