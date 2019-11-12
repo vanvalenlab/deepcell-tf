@@ -419,10 +419,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         """
 
         # Find subgraphs, e.g. merge/split
-
-        subgraphs = [self.G.subgraph(c) for c in nx.connected_components(self.G)]
-        for g in nx.connected_component_subgraphs(self.G):
-
+        for g in (self.G.subgraph(c) for c in nx.connected_components(self.G)):
             # Get the highest degree node
             k = max(dict(g.degree).items(), key=operator.itemgetter(1))[0]
 
