@@ -350,15 +350,21 @@ def reshape_matrix(X, y, reshape_size=256):
     Reshape matrix of dimension 4 to have x and y of size reshape_size.
     Adds overlapping slices to batches.
     E.g. reshape_size of 256 yields (1, 1024, 1024, 1) -> (16, 256, 256, 1)
+    The input image is divided into subimages of side length reshape_size,
+    with the last row and column of subimages overlapping the one before the last
+    if the original image side lengths are not divisible by reshape_size.
 
     Args:
         X (numpy.array): raw 4D image tensor
         y (numpy.array): label mask of 4D image data
-        reshape_size (int): size of the square output tensor
+        reshape_size (int or a list of 2 ints): size of the output tensor
+        If input is int, output images are square with side length equal reshape_size.
+        If it is a list of 2 ints, then the output images size is reshape_size[0] x reshape_size[1]
 
     Returns:
-        numpy.array: reshaped X and y tensors in shape
-            (reshape_size, reshape_size)
+        numpy.array: reshaped X and y 4D tensors
+                     in shape[1:3] = (reshape_size, reshape_size), if reshape_size is an int, and
+                     shape[1:3] reshape_size, if reshape_size is a list of length 2
 
     Raises:
         ValueError: X.ndim is not 4
@@ -370,34 +376,42 @@ def reshape_matrix(X, y, reshape_size=256):
     elif y.ndim != 4:
         raise ValueError('reshape_matrix expects y dim to be 4, got', y.ndim)
 
-    image_size_x, _ = X.shape[2:] if is_channels_first else X.shape[1:3]
-    rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
-    new_batch_size = X.shape[0] * (rep_number) ** 2
+    if isinstance(reshape_size, int):
+        reshape_size_x = reshape_size_y = reshape_size
+    elif len(reshape_size) == 2 and all(isinstance(x, int) for x in reshape_size):
+        reshape_size_x, reshape_size_y = reshape_size
+    else:
+        raise ValueError('reshape_size must be an integer or an iterable containing 2 integers.')
+
+    image_size_x, image_size_y = X.shape[2:] if is_channels_first else X.shape[1:3]
+    rep_number_x = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size_x)))
+    rep_number_y = np.int(np.ceil(np.float(image_size_y) / np.float(reshape_size_y)))
+    new_batch_size = X.shape[0] * rep_number_x * rep_number_y
 
     if is_channels_first:
-        new_X_shape = (new_batch_size, X.shape[1], reshape_size, reshape_size)
-        new_y_shape = (new_batch_size, y.shape[1], reshape_size, reshape_size)
+        new_X_shape = (new_batch_size, X.shape[1], reshape_size_x, reshape_size_y)
+        new_y_shape = (new_batch_size, y.shape[1], reshape_size_x, reshape_size_y)
     else:
-        new_X_shape = (new_batch_size, reshape_size, reshape_size, X.shape[3])
-        new_y_shape = (new_batch_size, reshape_size, reshape_size, y.shape[3])
+        new_X_shape = (new_batch_size, reshape_size_x, reshape_size_y, X.shape[3])
+        new_y_shape = (new_batch_size, reshape_size_x, reshape_size_y, y.shape[3])
 
     new_X = np.zeros(new_X_shape, dtype=K.floatx())
     new_y = np.zeros(new_y_shape, dtype='int32')
 
     counter = 0
     for b in range(X.shape[0]):
-        for i in range(rep_number):
-            for j in range(rep_number):
+        for i in range(rep_number_x):
+            for j in range(rep_number_y):
                 _axis = 2 if is_channels_first else 1
-                if i != rep_number - 1:
-                    x_start, x_end = i * reshape_size, (i + 1) * reshape_size
+                if i != rep_number_x - 1:
+                    x_start, x_end = i * reshape_size_x, (i + 1) * reshape_size_x
                 else:
-                    x_start, x_end = -reshape_size, X.shape[_axis]
+                    x_start, x_end = -reshape_size_x, X.shape[_axis]
 
-                if j != rep_number - 1:
-                    y_start, y_end = j * reshape_size, (j + 1) * reshape_size
+                if j != rep_number_y - 1:
+                    y_start, y_end = j * reshape_size_y, (j + 1) * reshape_size_y
                 else:
-                    y_start, y_end = -reshape_size, y.shape[_axis + 1]
+                    y_start, y_end = -reshape_size_y, y.shape[_axis + 1]
 
                 if is_channels_first:
                     new_X[counter] = X[b, :, x_start:x_end, y_start:y_end]
