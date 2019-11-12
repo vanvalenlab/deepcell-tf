@@ -931,18 +931,13 @@ def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
 
     return split2con
 
-def load_data(pattern):
-    files = np.sort(glob.glob(pattern))
-    Lim = []
-    for i, f in enumerate(files):
-        Lim.append(TiffFile(f).asarray())
-        im = np.stack(Lim)
-    return(im)
-
 
 def match_nodes(pattern1, pattern2):
-    gt = load_data(pattern1)
-    res = load_data(pattern2)
+    gt = np.stack([TiffFile(f).asarray()
+                   for f in np.sort(glob.glob(pattern1))])
+
+    res = np.stack([TiffFile(f).asarray()
+                    for f in np.sort(glob.glob(pattern2))])
 
     num_frames = gt.shape[0]
     iou = np.zeros((num_frames, np.max(gt) + 1, np.max(res) + 1))
@@ -987,4 +982,3 @@ def match_nodes(pattern1, pattern2):
 
     gtcells, rescells = np.where(np.nansum(iou, axis=0) >= 1)
     return gtcells, rescells
-
