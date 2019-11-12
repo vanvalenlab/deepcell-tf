@@ -940,7 +940,8 @@ def match_nodes(pattern1, pattern2):
         pattern2 (str): predicted data file pattern.
 
     Returns:
-        (np.array, np.array): indices of ground truth cells and predicted cells
+        tuple(np.array, np.array): indices of ground truth cells and
+            predicted cells.
     """
     gt = np.stack([TiffFile(f).asarray()
                    for f in np.sort(glob.glob(pattern1))])
@@ -977,16 +978,14 @@ def match_nodes(pattern1, pattern2):
         # (ind_ corresponds to box number - starting at 0)
         ind_gt, ind_res = np.nonzero(overlaps)
 
+        # frame_ious = np.zeros(overlaps.shape)
         for index in range(ind_gt.shape[0]):
             iou_gt_idx = gt_box_labels[ind_gt[index]]
             iou_res_idx = res_box_labels[ind_res[index]]
-
-            intersection = np.logical_and(gt_frame == iou_gt_idx,
-                                          res_frame == iou_res_idx)
-
-            union = np.logical_or(gt_frame == iou_gt_idx,
-                                  res_frame == iou_res_idx)
-
+            intersection = np.logical_and(
+                gt_frame == iou_gt_idx, res_frame == iou_res_idx)
+            union = np.logical_or(
+                gt_frame == iou_gt_idx, res_frame == iou_res_idx)
             iou[frame, iou_gt_idx, iou_res_idx] = intersection.sum() / union.sum()
 
     gtcells, rescells = np.where(np.nansum(iou, axis=0) >= 1)
