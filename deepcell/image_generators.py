@@ -2484,6 +2484,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
              panoptic=False,
              transforms=['watershed'],
              transforms_kwargs={},
+             shape_mask=False,
              anchor_params=None,
              pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
              batch_size=32,
@@ -2528,6 +2529,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             panoptic=panoptic,
             transforms=transforms,
             transforms_kwargs=transforms_kwargs,
+            shape_mask=shape_mask,
             anchor_params=anchor_params,
             pyramid_levels=pyramid_levels,
             batch_size=batch_size,
@@ -2580,6 +2582,7 @@ class RetinaNetIterator(Iterator):
                  panoptic=False,
                  transforms=['watershed'],
                  transforms_kwargs={},
+                 shape_mask=False,
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -2612,6 +2615,7 @@ class RetinaNetIterator(Iterator):
         self.panoptic = panoptic
         self.transforms = transforms
         self.transforms_kwargs = transforms_kwargs
+        self.shape_mask = shape_mask
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
         self.data_format = data_format
@@ -2787,6 +2791,14 @@ class RetinaNetIterator(Iterator):
 
         max_shape = tuple(max_shape)  # was a list for max shape indexing
 
+        if self.shape_mask:
+            max_annotations = max(len(a['masks']) for a in annotations_list)
+            batch_x_bbox_shape = (len(index_array), max_annotations, 4)
+            batch_x_bbox = np.zeros(batch_x_bbox_shape, dtype=K.floatx())
+            
+            for i, ann in enumerate(annotations_list):
+                batch_x_bbox[i,:ann['bboxes'].shape[0], :4] = ann['bboxes']            
+
         if self.include_masks:
             # masks_batch has shape: (batch size, max_annotations,
             #     bbox_x1 + bbox_y1 + bbox_x2 + bbox_y2 + label +
@@ -2820,14 +2832,18 @@ class RetinaNetIterator(Iterator):
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
+        batch_inputs = batch_x
         batch_outputs = [regressions, labels]
 
+        if self.shape_mask:
+            batch_inputs = [batch_x, batch_x_bbox]
+            
         if self.include_masks:
             batch_outputs.append(masks_batch)
 
         batch_outputs.extend(batch_y_semantic_list)
 
-        return batch_x, batch_outputs
+        return batch_inputs, batch_outputs
 
     def next(self):
         """For python 2.x. Returns the next batch.

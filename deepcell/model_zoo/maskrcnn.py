@@ -217,6 +217,7 @@ def retinanet_mask(inputs,
                    anchor_params=None,
                    nms=True,
                    panoptic=False,
+                   shape_mask=False,
                    class_specific_filter=True,
                    crop_size=(14, 14),
                    mask_size=(28, 28),
@@ -308,23 +309,23 @@ def retinanet_mask(inputs,
     boxes = ClipBoxes(name='clipped_boxes')([image, boxes])
 
     # filter detections (apply NMS / score threshold / select top-k)
-    detections = FilterDetections(
-        nms=nms,
-        nms_threshold=nms_threshold,
-        score_threshold=score_threshold,
-        class_specific_filter=class_specific_filter,
-        max_detections=max_detections,
-        name='filtered_detections'
-    )([boxes, classification] + other)
 
-    # split up in known outputs and "other"
-    boxes = detections[0]
-    scores = detections[1]
+    if shape_mask:
+        boxes = Input(shape=(None, 4))
+        inputs = [image, boxes]
 
-    # get the region of interest features
-    #
-    # roi_input = [image_shape, boxes, classification] + features
-    # rois = _RoiAlign(crop_size=crop_size)(roi_input)
+    else:
+        detections = FilterDetections(
+            nms=nms,
+            nms_threshold=nms_threshold,
+            score_threshold=score_threshold,
+            class_specific_filter=class_specific_filter,
+            max_detections=max_detections,
+            name='filtered_detections'
+        )([boxes, classification] + other)
+
+        # split up in known outputs and "other"
+        boxes = detections[0]
 
     fpn = features[0]
     fpn = UpsampleLike()([fpn, image])
@@ -339,6 +340,9 @@ def retinanet_mask(inputs,
                              roi_submodels, maskrcnn_outputs)]
 
     # reconstruct the new output
+    if shape_mask:
+        detections = []
+        
     outputs = [regression, classification] + other + trainable_outputs + \
         detections + maskrcnn_outputs
 
