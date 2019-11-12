@@ -351,8 +351,8 @@ def reshape_matrix(X, y, reshape_size=256):
     Adds overlapping slices to batches.
     E.g. reshape_size of 256 yields (1, 1024, 1024, 1) -> (16, 256, 256, 1)
     The input image is divided into subimages of side length reshape_size,
-    with the last row and column of subimages overlapping the one before the last if the original image side lengths
-    are not divisible by reshape_size.
+    with the last row and column of subimages overlapping the one before the last
+    if the original image side lengths are not divisible by reshape_size.
 
     Args:
         X (numpy.array): raw 4D image tensor
@@ -365,7 +365,7 @@ def reshape_matrix(X, y, reshape_size=256):
         numpy.array: reshaped X and y 4D tensors
                      in shape[1:3] = (reshape_size, reshape_size), if reshape_size is an int, and
                      shape[1:3] reshape_size, if reshape_size is a list of length 2
-                     
+
     Raises:
         ValueError: X.ndim is not 4
         ValueError: y.ndim is not 4
