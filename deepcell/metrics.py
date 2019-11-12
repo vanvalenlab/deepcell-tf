@@ -1040,7 +1040,7 @@ def classify_divisions(G_gt, G_res):
         # Remove processed nodes from res list
         try:
             div_res.remove(node)
-        except:
+        except ValueError:  # TODO: why did this fail?
             print('attempted removal of node {} failed'.format(node))
 
     # Count any remaining res nodes as false positives
