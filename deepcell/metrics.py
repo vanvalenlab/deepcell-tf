@@ -933,6 +933,15 @@ def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
 
 
 def match_nodes(pattern1, pattern2):
+    """Loads all data that matches each pattern and compares the graphs.
+
+    Args:
+        pattern1 (str): ground truth data file pattern.
+        pattern2 (str): predicted data file pattern.
+
+    Returns:
+        (np.array, np.array): indices of ground truth cells and predicted cells
+    """
     gt = np.stack([TiffFile(f).asarray()
                    for f in np.sort(glob.glob(pattern1))])
 
