@@ -1015,8 +1015,8 @@ def match_nodes(pattern1, pattern2):
 
 def classify_divisions(G_gt, G_res):
     """Identify nodes with parent attribute"""
-    div_gt = [node for node, d in G_gt.node.data() if d.get('division')]
-    div_res = [node for node, d in G_res.node.data() if d.get('division')]
+    div_gt = [node for node, d in G_gt.nodes(data='division') if d]
+    div_res = [node for node, d in G_res.nodes(data='division') if d]
     divI = 0  # Correct division
     divJ = 0  # Wrong division
     divC = 0  # False positive division
