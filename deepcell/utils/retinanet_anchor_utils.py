@@ -647,6 +647,7 @@ def _compute_ap(recall, precision):
 
 def _get_detections(generator,
                     model,
+                    shape_mask=False,
                     frames_per_batch=1,
                     score_threshold=0.05,
                     max_detections=100):
@@ -676,9 +677,19 @@ def _get_detections(generator,
             # image = generator.preprocess_image(raw_image.copy())
             # image, scale = generator.resize_image(image)
             image = generator.x[i]
+            input_image = np.expand_dims(image, axis=0)
+            inputs = input_image
+
+            if generator.shape_mask:
+                label_image = generator.y[i]
+                annotation = generator.load_annotations(label_image)
+                bboxes = annotation['bboxes']
+                input_bboxes = np.expand_dims(bboxes, axis=0)
+
+                inputs = [input_image, input_bboxes] 
 
             # run network
-            results = model.predict_on_batch(np.expand_dims(image, axis=0))
+            results = model.predict_on_batch(inputs)
 
             if generator.panoptic:
                 num_semantic_outputs = len(generator.y_semantic_list)
@@ -691,7 +702,15 @@ def _get_detections(generator,
                     scores = results[-num_semantic_outputs - 3]
                     labels = results[-num_semantic_outputs - 2]
                     masks = results[-num_semantic_outputs - 1]
-                    semantic = results[-num_semantic_outputs]
+                    semantic = results[-num_semantic_outputs:]
+
+                    if generator.shape_mask:
+                        boxes = results[0]
+                        scores = results[1]
+                        labels = results[2]
+                        masks = results[-num_semantic_outputs - 1]
+                        semantic = results[-num_semantic_outputs:]
+
             elif generator.include_masks:
                 boxes = results[-4]
                 scores = results[-3]
@@ -722,12 +741,14 @@ def _get_detections(generator,
                 np.expand_dims(image_labels, axis=1)
             ], axis=1)
 
+            # print(image_boxes, image_scores, image_labels)
+
             # copy detections to all_detections
             for label in range(generator.num_classes):
                 imd = image_detections[image_detections[:, -1] == label, :-1]
                 all_detections[i][label] = imd
 
-            if generator.include_masks:
+            if generator.include_masks and not generator.shape_mask:
                 image_masks = masks[0, indices[scores_sort], :, :, image_labels]
                 for label in range(generator.num_classes):
                     imm = image_masks[image_detections[:, -1] == label, ...]
@@ -808,7 +829,7 @@ def _get_detections(generator,
                 imd = image_detections[image_detections[:, -1] == label, :-1]
                 all_detections[i][label] = imd
 
-            if generator.include_masks:
+            if generator.include_masks and not generator.shape_mask:
                 image_masks = masks[0, :, indices[scores_sort], :, :, image_labels]
                 for label in range(generator.num_classes):
                     imm = image_masks[image_detections[:, -1] == label, ...]

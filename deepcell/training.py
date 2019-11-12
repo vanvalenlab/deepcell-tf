@@ -40,7 +40,7 @@ from tensorflow.python.keras.optimizers import SGD
 from deepcell import losses
 from deepcell import image_generators
 from deepcell.callbacks import RedirectModel, Evaluate
-from deepcell.model_zoo import retinanet_bbox
+from deepcell.model_zoo import retinanet_bbox, shapemask_bbox
 from deepcell.utils.retinanet_anchor_utils import make_shapes_callback
 from deepcell.utils.retinanet_anchor_utils import guess_shapes
 from deepcell.utils.retinanet_anchor_utils import evaluate
@@ -676,7 +676,15 @@ def train_model_retinanet(model,
     print('Training on {} GPUs'.format(num_gpus))
 
     # evaluation of model is done on `retinanet_bbox`
-    if include_masks:
+    if shape_mask:
+        prediction_model = shapemask_bbox(
+            model,
+            nms=True,
+            anchor_params=anchor_params,
+            num_semantic_heads=len(n_semantic_classes),
+            panoptic=panoptic,
+            class_specific_filter=False)
+    elif include_masks:
         prediction_model = model
     else:
         prediction_model = retinanet_bbox(

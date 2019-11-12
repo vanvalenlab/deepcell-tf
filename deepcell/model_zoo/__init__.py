@@ -42,6 +42,8 @@ from deepcell.model_zoo.retinanet import retinanet_bbox
 
 from deepcell.model_zoo.maskrcnn import RetinaMask
 from deepcell.model_zoo.maskrcnn import retinanet_mask
+from deepcell.model_zoo.maskrcnn import shapemask_bbox
+
 
 from deepcell.model_zoo.fpn import FPNet
 
