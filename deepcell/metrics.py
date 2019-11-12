@@ -931,35 +931,6 @@ def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
 
     return split2con
 
-
-def create_graph(file, node_key=None):
-    df = pd.read_csv(file, header=None, sep=' ', names=['Cell_ID', 'Start', 'End', 'Parent_ID'])
-    if node_key is not None:
-        df[['Cell_ID', 'Parent_ID']] = df[['Cell_ID', 'Parent_ID']].replace(node_key)
-    edges = pd.DataFrame()
-    # Add each cell lineage as a set of edges to df
-    for _, row in df.iterrows():
-        tpoints = np.arange(row['Start'], row['End'] + 1)
-        deltaT = len(tpoints)
-        cellid = ['{cellid}_{frame}'.format(cellid=row['Cell_ID'], frame=t)
-                  for t in tpoints]
-        source = cellid[0:-1]
-        target = cellid[1:]
-        edges = edges.append(pd.DataFrame({'source': source, 'target': target}))
-
-    Dattr = {}
-    # Add parent-daughter connections
-    for _, row in df[df['Parent_ID'] != 0].iterrows():
-        source = '{cellid}_{frame}'.format(cellid=row['Parent_ID'], frame=row['Start'] - 1)
-        target = '{cellid}_{frame}'.format(cellid=row['Cell_ID'], frame=row['Start'])
-        edges = edges.append(pd.DataFrame({'source': [source], 'target': [target]}))
-        Dattr[source] = {'division': True}
-    # Create graph
-    G = nx.from_pandas_edgelist(edges, source='source', target='target')
-    nx.set_node_attributes(G, Dattr)
-    return G
-
-
 def load_data(pattern):
     files = np.sort(glob.glob(pattern))
     Lim = []
@@ -1017,44 +988,3 @@ def match_nodes(pattern1, pattern2):
     gtcells, rescells = np.where(np.nansum(iou, axis=0) >= 1)
     return gtcells, rescells
 
-
-def classify_divisions(G_gt, G_res):
-    """Identify nodes with parent attribute"""
-    div_gt = [node for node, d in G_gt.nodes(data='division') if d]
-    div_res = [node for node, d in G_res.nodes(data='division') if d]
-    divI = 0  # Correct division
-    divJ = 0  # Wrong division
-    divC = 0  # False positive division
-    divGH = 0  # Missed division
-    for node in div_gt:
-        nb_gt = list(G_gt.neighbors(node))
-        # Check if res node was also called a division
-        if node in div_res:
-            nb_res = list(G_gt.neighbors(node))
-            # If neighbors are same, then correct division
-            if Counter(nb_gt) == Counter(nb_res):
-                divI += 1
-            # Wrong division
-            elif len(nb_res) == 3:
-                divJ += 1
-            else:
-                divGH += 1
-        # If not called division, then missed division
-        else:
-            divGH += 1
-
-        # Remove processed nodes from res list
-        try:
-            div_res.remove(node)
-        except ValueError:  # TODO: why did this fail?
-            print('attempted removal of node {} failed'.format(node))
-
-    # Count any remaining res nodes as false positives
-    divC += len(div_res)
-
-    return {
-        'Correct division': divI,
-        'Incorrect division': divJ,
-        'False positive division': divC,
-        'False negative division': divGH
-    }
