@@ -46,7 +46,6 @@ import datetime
 import decimal
 import glob
 import json
-import math
 import operator
 import os
 
@@ -979,7 +978,7 @@ def match_nodes(pattern1, pattern2):
 
     # Compute IOUs only when neccesary
     # If bboxs for true and pred do not overlap with each other, the assignment
-    # is immediate. Otherwise use pixel-wise IOU to determine which cell is which
+    # is immediate. Otherwise use pixelwise IOU to determine which cell is which
 
     # Regionprops expects one frame at a time
     for frame in range(num_frames):
@@ -996,17 +995,23 @@ def match_nodes(pattern1, pattern2):
         res_boxes = np.array(res_boxes).astype('double')
         res_box_labels = [int(res_prop.label) for res_prop in res_props]
 
-        overlaps = compute_overlap(gt_boxes, res_boxes)    # has the form [gt_bbox, res_bbox]
+        # has the form [gt_bbox, res_bbox]
+        overlaps = compute_overlap(gt_boxes, res_boxes)
 
-        # Find the bboxes that have overlap at all (ind_ corresponds to box number - starting at 0)
+        # Find the bboxes that have overlap at all
+        # (ind_ corresponds to box number - starting at 0)
         ind_gt, ind_res = np.nonzero(overlaps)
 
         for index in range(ind_gt.shape[0]):
-
             iou_gt_idx = gt_box_labels[ind_gt[index]]
             iou_res_idx = res_box_labels[ind_res[index]]
-            intersection = np.logical_and(gt_frame == iou_gt_idx, res_frame == iou_res_idx)
-            union = np.logical_or(gt_frame == iou_gt_idx, res_frame == iou_res_idx)
+
+            intersection = np.logical_and(gt_frame == iou_gt_idx,
+                                          res_frame == iou_res_idx)
+
+            union = np.logical_or(gt_frame == iou_gt_idx,
+                                  res_frame == iou_res_idx)
+
             iou[frame, iou_gt_idx, iou_res_idx] = intersection.sum() / union.sum()
 
     gtcells, rescells = np.where(np.nansum(iou, axis=0) >= 1)
@@ -1029,7 +1034,7 @@ def classify_divisions(G_gt, G_res):
             # If neighbors are same, then correct division
             if Counter(nb_gt) == Counter(nb_res):
                 divI += 1
-                # Wrong division
+            # Wrong division
             elif len(nb_res) == 3:
                 divJ += 1
             else:
@@ -1037,6 +1042,7 @@ def classify_divisions(G_gt, G_res):
         # If not called division, then missed division
         else:
             divGH += 1
+
         # Remove processed nodes from res list
         try:
             div_res.remove(node)
@@ -1046,7 +1052,9 @@ def classify_divisions(G_gt, G_res):
     # Count any remaining res nodes as false positives
     divC += len(div_res)
 
-    return({'Correct division': divI,
-            'Incorrect division': divJ,
-            'False positive division': divC,
-            'False negative division': divGH})
+    return {
+        'Correct division': divI,
+        'Incorrect division': divJ,
+        'False positive division': divC,
+        'False negative division': divGH
+    }
