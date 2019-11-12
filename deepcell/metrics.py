@@ -57,7 +57,7 @@ import networkx as nx
 from scipy.optimize import linear_sum_assignment
 
 import skimage.io
-import skimage.measure
+from skimage.measure import regionprops
 from skimage.segmentation import relabel_sequential
 from skimage.external.tifffile import TiffFile
 from sklearn.metrics import confusion_matrix
@@ -254,7 +254,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         """
 
         def get_box_labels(images):
-            props = skimage.measure.regionprops(np.squeeze(images))
+            props = regionprops(np.squeeze(images))
             boxes, labels = [], []
             for prop in props:
                 boxes.append(np.array(prop.bbox))
@@ -485,22 +485,22 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             gained_label_image = np.zeros_like(self.y_pred)
             for l in self.gained_indices['y_pred']:
                 gained_label_image[self.y_pred == l] = l
-            self.gained_props = skimage.measure.regionprops(gained_label_image)
+            self.gained_props = regionprops(gained_label_image)
 
             missed_label_image = np.zeros_like(self.y_true)
             for l in self.missed_indices['y_true']:
                 missed_label_image[self.y_true == l] = l
-            self.missed_props = skimage.measure.regionprops(missed_label_image)
+            self.missed_props = regionprops(missed_label_image)
 
             merge_label_image = np.zeros_like(self.y_true)
             for l in self.merge_indices['y_true']:
                 merge_label_image[self.y_true == l] = l
-            self.merge_props = skimage.measure.regionprops(merge_label_image)
+            self.merge_props = regionprops(merge_label_image)
 
             split_label_image = np.zeros_like(self.y_true)
             for l in self.split_indices['y_true']:
                 split_label_image[self.y_true == l] = l
-            self.split_props = skimage.measure.regionprops(merge_label_image)
+            self.split_props = regionprops(merge_label_image)
 
     def print_report(self):
         """Print report of error types and frequency
@@ -986,12 +986,12 @@ def match_nodes(pattern1, pattern2):
         gt_frame = gt[frame]
         res_frame = res[frame]
 
-        gt_props = skimage.measure.regionprops(np.squeeze(gt_frame.astype('int')))
+        gt_props = regionprops(np.squeeze(gt_frame.astype('int')))
         gt_boxes = [np.array(gt_prop.bbox) for gt_prop in gt_props]
         gt_boxes = np.array(gt_boxes).astype('double')
         gt_box_labels = [int(gt_prop.label) for gt_prop in gt_props]
 
-        res_props = skimage.measure.regionprops(np.squeeze(res_frame.astype('int')))
+        res_props = regionprops(np.squeeze(res_frame.astype('int')))
         res_boxes = [np.array(res_prop.bbox) for res_prop in res_props]
         res_boxes = np.array(res_boxes).astype('double')
         res_box_labels = [int(res_prop.label) for res_prop in res_props]
