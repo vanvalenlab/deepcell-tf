@@ -491,6 +491,32 @@ class TestDataUtils(test.TestCase):
             self.assertEqual(list(np.unique(new_y[b])),
                              list(range(new_y[b].max() + 1)))
 
+        # test reshape with non-square image, square new size
+        K.set_image_data_format('channels_last')
+        batches = np.random.randint(1, 5)
+        Lx, Ly = 30, 40
+        channels = 3
+        X = np.zeros((batches, Lx, Ly, channels))
+        y = np.random.randint(low=0, high=1000, size=(batches, Lx, Ly, 1))
+        new_size = 4
+        new_batch = batches * np.ceil(Lx / new_size) * np.ceil(Ly / new_size)
+        new_X, new_y = data_utils.reshape_matrix(X, y, new_size)
+        self.assertEqual(new_X.shape, (new_batch, new_size, new_size, channels))
+        self.assertEqual(new_y.shape, (new_batch, new_size, new_size, 1))
+
+        # test reshape with non-square image, non-square new size
+        K.set_image_data_format('channels_last')
+        batches = np.random.randint(1, 5)
+        Lx, Ly = 30, 40
+        channels = 3
+        X = np.zeros((batches, Lx, Ly, channels))
+        y = np.random.randint(low=0, high=1000, size=(batches, Lx, Ly, 1))
+        new_size = [15, 10]
+        new_batch = batches * np.ceil(Lx / new_size[0]) * np.ceil(Ly / new_size[1])
+        new_X, new_y = data_utils.reshape_matrix(X, y, new_size)
+        self.assertEqual(new_X.shape, (new_batch, new_size[0], new_size[1], channels))
+        self.assertEqual(new_y.shape, (new_batch, new_size[0], new_size[1], 1))
+
 
 if __name__ == '__main__':
     test.main()
