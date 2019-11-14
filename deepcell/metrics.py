@@ -46,7 +46,6 @@ import datetime
 import decimal
 import glob
 import json
-import math
 import operator
 import os
 
@@ -57,7 +56,7 @@ import networkx as nx
 from scipy.optimize import linear_sum_assignment
 
 import skimage.io
-import skimage.measure
+from skimage.measure import regionprops
 from skimage.segmentation import relabel_sequential
 from skimage.external.tifffile import TiffFile
 from sklearn.metrics import confusion_matrix
@@ -254,7 +253,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         """
 
         def get_box_labels(images):
-            props = skimage.measure.regionprops(np.squeeze(images))
+            props = regionprops(np.squeeze(images))
             boxes, labels = [], []
             for prop in props:
                 boxes.append(np.array(prop.bbox))
@@ -419,10 +418,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         """
 
         # Find subgraphs, e.g. merge/split
-
-        subgraphs = [self.G.subgraph(c) for c in nx.connected_components(self.G)]
-        for g in nx.connected_component_subgraphs(self.G):
-
+        for g in (self.G.subgraph(c) for c in nx.connected_components(self.G)):
             # Get the highest degree node
             k = max(dict(g.degree).items(), key=operator.itemgetter(1))[0]
 
@@ -488,22 +484,22 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             gained_label_image = np.zeros_like(self.y_pred)
             for l in self.gained_indices['y_pred']:
                 gained_label_image[self.y_pred == l] = l
-            self.gained_props = skimage.measure.regionprops(gained_label_image)
+            self.gained_props = regionprops(gained_label_image)
 
             missed_label_image = np.zeros_like(self.y_true)
             for l in self.missed_indices['y_true']:
                 missed_label_image[self.y_true == l] = l
-            self.missed_props = skimage.measure.regionprops(missed_label_image)
+            self.missed_props = regionprops(missed_label_image)
 
             merge_label_image = np.zeros_like(self.y_true)
             for l in self.merge_indices['y_true']:
                 merge_label_image[self.y_true == l] = l
-            self.merge_props = skimage.measure.regionprops(merge_label_image)
+            self.merge_props = regionprops(merge_label_image)
 
             split_label_image = np.zeros_like(self.y_true)
             for l in self.split_indices['y_true']:
                 split_label_image[self.y_true == l] = l
-            self.split_props = skimage.measure.regionprops(merge_label_image)
+            self.split_props = regionprops(merge_label_image)
 
     def print_report(self):
         """Print report of error types and frequency
@@ -936,120 +932,61 @@ def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
     return split2con
 
 
-def create_graph(file, node_key=None):
-    df = pd.read_csv(file, header=None, sep=' ', names=['Cell_ID', 'Start', 'End', 'Parent_ID'])
-    if node_key is not None:
-        df[['Cell_ID', 'Parent_ID']] = df[['Cell_ID', 'Parent_ID']].replace(node_key)
-    edges = pd.DataFrame()
-    # Add each cell lineage as a set of edges to df
-    for _, row in df.iterrows():
-        tpoints = np.arange(row['Start'], row['End'] + 1)
-        deltaT = len(tpoints)
-        cellid = ['{cellid}_{frame}'.format(cellid=row['Cell_ID'], frame=t)
-                  for t in tpoints]
-        source = cellid[0:-1]
-        target = cellid[1:]
-        edges = edges.append(pd.DataFrame({'source': source, 'target': target}))
-
-    Dattr = {}
-    # Add parent-daughter connections
-    for _, row in df[df['Parent_ID'] != 0].iterrows():
-        source = '{cellid}_{frame}'.format(cellid=row['Parent_ID'], frame=row['Start'] - 1)
-        target = '{cellid}_{frame}'.format(cellid=row['Cell_ID'], frame=row['Start'])
-        edges = edges.append(pd.DataFrame({'source': [source], 'target': [target]}))
-        Dattr[source] = {'division': True}
-    # Create graph
-    G = nx.from_pandas_edgelist(edges, source='source', target='target')
-    nx.set_node_attributes(G, Dattr)
-    return G
-
-
-def load_data(pattern):
-    files = np.sort(glob.glob(pattern))
-    Lim = []
-    for i, f in enumerate(files):
-        Lim.append(TiffFile(f).asarray())
-        im = np.stack(Lim)
-    return(im)
-
-
 def match_nodes(pattern1, pattern2):
-    gt = load_data(pattern1)
-    res = load_data(pattern2)
+    """Loads all data that matches each pattern and compares the graphs.
+
+    Args:
+        pattern1 (str): ground truth data file pattern.
+        pattern2 (str): predicted data file pattern.
+
+    Returns:
+        tuple(np.array, np.array): indices of ground truth cells and
+            predicted cells.
+    """
+    gt = np.stack([TiffFile(f).asarray()
+                   for f in np.sort(glob.glob(pattern1))])
+
+    res = np.stack([TiffFile(f).asarray()
+                    for f in np.sort(glob.glob(pattern2))])
 
     num_frames = gt.shape[0]
     iou = np.zeros((num_frames, np.max(gt) + 1, np.max(res) + 1))
 
     # Compute IOUs only when neccesary
     # If bboxs for true and pred do not overlap with each other, the assignment
-    # is immediate. Otherwise use pixel-wise IOU to determine which cell is which
+    # is immediate. Otherwise use pixelwise IOU to determine which cell is which
 
     # Regionprops expects one frame at a time
     for frame in range(num_frames):
         gt_frame = gt[frame]
         res_frame = res[frame]
 
-        gt_props = skimage.measure.regionprops(np.squeeze(gt_frame.astype('int')))
+        gt_props = regionprops(np.squeeze(gt_frame.astype('int')))
         gt_boxes = [np.array(gt_prop.bbox) for gt_prop in gt_props]
         gt_boxes = np.array(gt_boxes).astype('double')
         gt_box_labels = [int(gt_prop.label) for gt_prop in gt_props]
 
-        res_props = skimage.measure.regionprops(np.squeeze(res_frame.astype('int')))
+        res_props = regionprops(np.squeeze(res_frame.astype('int')))
         res_boxes = [np.array(res_prop.bbox) for res_prop in res_props]
         res_boxes = np.array(res_boxes).astype('double')
         res_box_labels = [int(res_prop.label) for res_prop in res_props]
 
-        overlaps = compute_overlap(gt_boxes, res_boxes)    # has the form [gt_bbox, res_bbox]
+        # has the form [gt_bbox, res_bbox]
+        overlaps = compute_overlap(gt_boxes, res_boxes)
 
-        # Find the bboxes that have overlap at all (ind_ corresponds to box number - starting at 0)
+        # Find the bboxes that have overlap at all
+        # (ind_ corresponds to box number - starting at 0)
         ind_gt, ind_res = np.nonzero(overlaps)
 
+        # frame_ious = np.zeros(overlaps.shape)
         for index in range(ind_gt.shape[0]):
-
             iou_gt_idx = gt_box_labels[ind_gt[index]]
             iou_res_idx = res_box_labels[ind_res[index]]
-            intersection = np.logical_and(gt_frame == iou_gt_idx, res_frame == iou_res_idx)
-            union = np.logical_or(gt_frame == iou_gt_idx, res_frame == iou_res_idx)
+            intersection = np.logical_and(
+                gt_frame == iou_gt_idx, res_frame == iou_res_idx)
+            union = np.logical_or(
+                gt_frame == iou_gt_idx, res_frame == iou_res_idx)
             iou[frame, iou_gt_idx, iou_res_idx] = intersection.sum() / union.sum()
 
     gtcells, rescells = np.where(np.nansum(iou, axis=0) >= 1)
     return gtcells, rescells
-
-
-def classify_divisions(G_gt, G_res):
-    """Identify nodes with parent attribute"""
-    div_gt = [node for node, d in G_gt.node.data() if d.get('division')]
-    div_res = [node for node, d in G_res.node.data() if d.get('division')]
-    divI = 0  # Correct division
-    divJ = 0  # Wrong division
-    divC = 0  # False positive division
-    divGH = 0  # Missed division
-    for node in div_gt:
-        nb_gt = list(G_gt.neighbors(node))
-        # Check if res node was also called a division
-        if node in div_res:
-            nb_res = list(G_gt.neighbors(node))
-            # If neighbors are same, then correct division
-            if Counter(nb_gt) == Counter(nb_res):
-                divI += 1
-                # Wrong division
-            elif len(nb_res) == 3:
-                divJ += 1
-            else:
-                divGH += 1
-        # If not called division, then missed division
-        else:
-            divGH += 1
-        # Remove processed nodes from res list
-        try:
-            div_res.remove(node)
-        except:
-            print('attempted removal of node {} failed'.format(node))
-
-    # Count any remaining res nodes as false positives
-    divC += len(div_res)
-
-    return({'Correct division': divI,
-            'Incorrect division': divJ,
-            'False positive division': divC,
-            'False negative division': divGH})
