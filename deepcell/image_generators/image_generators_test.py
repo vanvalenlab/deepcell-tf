@@ -32,6 +32,7 @@ from __future__ import print_function
 import numpy as np
 import skimage as sk
 
+from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import img_to_array
 from tensorflow.python.platform import test
@@ -211,11 +212,6 @@ class TestTransformMasks(test.TestCase):
         self.assertEqual(mask_transform.shape, (5, classes, 10, 30, 30))
 
     def test_bad_mask(self):
-        # test deprecated `deepcell` transform
-        with self.assertRaises(ValueError):
-            mask = np.random.randint(3, size=(5, 30, 30, 1))
-            image_generators._transform_masks(mask, transform='deepcell')
-
         # test bad transform
         with self.assertRaises(ValueError):
             mask = np.random.randint(3, size=(5, 30, 30, 1))
