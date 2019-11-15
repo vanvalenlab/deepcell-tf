@@ -44,7 +44,7 @@ class DilatedMaxPoolingTest(test.TestCase):
         for strides in [(1, 1), (2, 2), None]:
             for dilation_rate in [1, 2, (1, 2)]:
                 for padding in ['valid', 'same']:
-                    with self.test_session():
+                    with self.cached_session():
                         testing_utils.layer_test(
                             layers.DilatedMaxPool2D,
                             kwargs={'strides': strides,
@@ -71,7 +71,7 @@ class DilatedMaxPoolingTest(test.TestCase):
         for strides in [1, 2, None]:
             for dilation_rate in [1, 2, (1, 2, 2)]:
                 for padding in ['valid', 'same']:
-                    with self.test_session():
+                    with self.cached_session():
                         testing_utils.layer_test(
                             layers.DilatedMaxPool3D,
                             kwargs={'strides': strides,

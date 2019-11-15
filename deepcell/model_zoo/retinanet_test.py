@@ -218,7 +218,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
         if frames > 1 and data_format == 'channels_first':
             return
 
-        with self.test_session():
+        with self.cached_session():
             K.set_image_data_format(data_format)
             if data_format == 'channels_first':
                 axis = 1

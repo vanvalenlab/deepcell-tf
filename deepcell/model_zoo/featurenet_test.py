@@ -186,7 +186,7 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
         # BAD: dilated=True, include_top=False
         # BAD: inputs != None
 
-        with self.test_session():
+        with self.cached_session():
             K.set_image_data_format(data_format)
             model = featurenet.bn_feature_net_2D(
                 include_top=include_top,
@@ -216,7 +216,7 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
         input_shape = (256, 256, 1)
         n_skips = 1
 
-        with self.test_session():
+        with self.cached_session():
             K.set_image_data_format(data_format)
             axis = 1 if data_format == 'channels_first' else -1
 
@@ -383,7 +383,7 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
         n_frames = 5
         # input_shape = (10, 32, 32, 1)
 
-        with self.test_session():
+        with self.cached_session():
             K.set_image_data_format(data_format)
             model = featurenet.bn_feature_net_3D(
                 include_top=include_top,
@@ -413,7 +413,7 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
         input_shape = (10, 32, 32, 1)
         n_skips = 1
 
-        with self.test_session():
+        with self.cached_session():
             K.set_image_data_format(data_format)
             axis = 1 if data_format == 'channels_first' else -1
 
