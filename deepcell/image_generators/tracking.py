@@ -35,9 +35,8 @@ from skimage.transform import resize
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.platform import tf_logging as logging
-
-from deepcell.image_generators import Iterator
-from deepcell.image_generators import ImageDataGenerator
+from tensorflow.python.keras.preprocessing.image import Iterator
+from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
 
 class SiameseDataGenerator(ImageDataGenerator):
