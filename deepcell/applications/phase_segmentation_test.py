@@ -45,14 +45,7 @@ class TestPhaseSegmentationModel(test.TestCase):
         valid_backbones = ['featurenet']
         input_shape = (256, 256, 1)  # channels will be set to 3
 
-        batch_shape = tuple([8] + list(input_shape))
-
-        X = np.random.random(batch_shape)
-
         for backbone in valid_backbones:
-            if int(tf.VERSION.split('.')[1]) < 10:
-                # retinanet backbones do not work with versions < 1.10.0
-                continue
 
             with self.cached_session():
                 model = PhaseSegmentationModel(
