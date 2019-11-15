@@ -45,7 +45,6 @@ from deepcell.layers.normalization import ImageNormalization3D
 from deepcell.layers.pooling import DilatedMaxPool2D
 from deepcell.layers.pooling import DilatedMaxPool3D
 from deepcell.layers.resize import Resize2D
-from deepcell.layers.resize import Resize3D
 from deepcell.layers.tensor_product import TensorProduct
 from deepcell.layers.padding import ReflectionPadding2D
 from deepcell.layers.padding import ReflectionPadding3D
