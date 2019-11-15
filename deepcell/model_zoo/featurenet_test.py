@@ -31,18 +31,15 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 
-import numpy as np
-import tensorflow as tf
 from tensorflow.python.keras import backend as K
-
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.model_zoo import featurenet
 
 
-class FeatureNetTest(test.TestCase, parameterized.TestCase):
+class FeatureNetTest(keras_parameterized.TestCase):
 
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         {
             'testcase_name': 'dilated_include_top',
@@ -177,7 +174,6 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             'data_format': 'channels_first',
         },
     ])
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_bn_feature_net_2D(self, include_top, padding, padding_mode, shape,
                                dilated, multires, location, data_format):
         n_features = 3
@@ -204,11 +200,11 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             axis = 1 if data_format == 'channels_first' else -1
             self.assertEqual(model.output_shape[axis], output)
 
+    # @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         ('channels_last',) * 2,
         ('channels_first',) * 2,
     ])
-    # @tf_test_util.run_in_graph_and_eager_modes()
     def test_bn_feature_net_2D_skip(self, data_format):
         receptive_field = 61
         n_features = 3
@@ -243,6 +239,7 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             self.assertEqual(len(model.output_shape), 4)
             self.assertEqual(model.output_shape[axis], n_features)
 
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         {
             'testcase_name': 'dilated_include_top',
@@ -375,7 +372,6 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             'data_format': 'channels_first',
         },
     ])
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_bn_feature_net_3D(self, include_top, padding, padding_mode, shape,
                                dilated, multires, location, data_format):
         n_features = 3
@@ -401,11 +397,11 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             channel_axis = 1 if data_format == 'channels_first' else -1
             self.assertEqual(model.output_shape[channel_axis], n_features)
 
+    # @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         ('channels_last',) * 2,
         ('channels_first',) * 2,
     ])
-    # @tf_test_util.run_in_graph_and_eager_modes()
     def test_bn_feature_net_3D_skip(self, data_format):
         receptive_field = 61
         n_features = 3

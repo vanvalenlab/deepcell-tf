@@ -31,18 +31,15 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 
-import numpy as np
-import tensorflow as tf
 from tensorflow.python.keras import backend as K
-
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.model_zoo import RetinaMask
 
 
-class RetinaMaskTest(test.TestCase, parameterized.TestCase):
+class RetinaMaskTest(keras_parameterized.TestCase):
 
+    # @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         {
             'testcase_name': 'maskrcnn_basic',
@@ -135,7 +132,6 @@ class RetinaMaskTest(test.TestCase, parameterized.TestCase):
             'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
         }
     ])
-    # @tf_test_util.run_in_graph_and_eager_modes()
     def test_maskrcnn(self, pooling, panoptic, location, frames,
                       pyramid_levels, nms, class_specific_filter):
         num_classes = 3
