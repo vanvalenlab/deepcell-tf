@@ -560,3 +560,16 @@ def compute_fd_loss(boxes, scores, annotations, iou_threshold=0.75):
     normalizer = K.maximum(K.cast_to_floatx(1.0), normalizer)
 
     return K.sum(loss) / normalizer
+
+
+__all__ = [
+    'categorical_crossentropy',
+    'weighted_categorical_crossentropy',
+    'sample_categorical_crossentropy',
+    'dice_loss',
+    'discriminative_instance_loss',
+    'weighted_focal_loss',
+    'smooth_l1',
+    'focal',
+    'RetinaNetLosses',
+]
