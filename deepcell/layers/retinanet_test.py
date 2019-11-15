@@ -30,16 +30,15 @@ from __future__ import division
 
 import numpy as np
 from tensorflow.python.keras import backend as K
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.utils import testing_utils
 from deepcell import layers
 
 
-class TestAnchors(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class TestAnchors(run_all_keras_modes.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_anchors_2d(self):
         testing_utils.layer_test(
             layers.Anchors,
@@ -60,7 +59,6 @@ class TestAnchors(test.TestCase):
             custom_objects={'Anchors': layers.Anchors},
             input_shape=(3, 5, 6, 4))
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
         # create simple Anchors layer
         anchors_layer = layers.Anchors(
@@ -89,7 +87,6 @@ class TestAnchors(test.TestCase):
         # test anchor values
         self.assertAllEqual(anchors, expected)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
         # create simple Anchors layer
         anchors_layer = layers.Anchors(
@@ -120,9 +117,9 @@ class TestAnchors(test.TestCase):
         self.assertAllEqual(anchors, expected)
 
 
-class TestRegressBoxes(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class TestRegressBoxes(run_all_keras_modes.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
         # create simple RegressBoxes layer
         layer = layers.RegressBoxes()
@@ -159,7 +156,6 @@ class TestRegressBoxes(test.TestCase):
 
         self.assertAllClose(actual, expected)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
         mean = [0, 0, 0, 0]
         std = [0.2, 0.2, 0.2, 0.2]
@@ -216,7 +212,6 @@ class TestRegressBoxes(test.TestCase):
 
         self.assertAllClose(actual, expected)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_invalid_input(self):
         bad_mean = 'invalid_data_type'
         bad_std = 'invalid_data_type'
@@ -227,9 +222,9 @@ class TestRegressBoxes(test.TestCase):
             layers.RegressBoxes(mean=None, std=bad_std)
 
 
-class ClipBoxesTest(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class ClipBoxesTest(run_all_keras_modes.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
         img_h, img_w = np.random.randint(2, 5), np.random.randint(5, 9)
 
@@ -283,7 +278,6 @@ class ClipBoxesTest(test.TestCase):
         self.assertEqual(actual.shape, tuple(computed_shape))
         self.assertAllClose(actual, expected)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple_3d(self):
         img_h, img_w = np.random.randint(2, 5), np.random.randint(5, 9)
 

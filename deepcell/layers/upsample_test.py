@@ -30,16 +30,15 @@ from __future__ import division
 
 import numpy as np
 from tensorflow.python.keras import backend as K
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.utils import testing_utils
 from deepcell import layers
 
 
-class TestUpsampleLike(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class TestUpsampleLike(keras_parameterized.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
         # channels_last
         # create simple UpsampleLike layer
@@ -82,7 +81,6 @@ class TestUpsampleLike(test.TestCase):
         self.assertEqual(actual.shape, computed_shape)
         self.assertAllEqual(actual, expected)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple_3d(self):
         # create simple UpsampleLike layer
         upsample_like_layer = layers.UpsampleLike()
@@ -125,7 +123,6 @@ class TestUpsampleLike(test.TestCase):
         self.assertEqual(actual.shape, computed_shape)
         self.assertAllEqual(actual, expected)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
         # create simple UpsampleLike layer
         upsample_like_layer = layers.UpsampleLike()
@@ -145,8 +142,8 @@ class TestUpsampleLike(test.TestCase):
         self.assertAllEqual(actual, expected)
 
 
-class TestUpsample(test.TestCase):
-    @tf_test_util.run_in_graph_and_eager_modes()
+class TestUpsample(keras_parameterized.TestCase):
+
     def test_simple(self):
         testing_utils.layer_test(
             layers.Upsample,

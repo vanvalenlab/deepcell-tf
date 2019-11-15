@@ -31,16 +31,15 @@ from __future__ import division
 import numpy as np
 
 from tensorflow.python import keras
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.utils import testing_utils
 from deepcell import layers
 
 
-class TensorProdTest(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class TensorProdTest(keras_parameterized.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_tensorproduct(self):
         custom_objects = {'TensorProduct': layers.TensorProduct}
 

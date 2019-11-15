@@ -28,16 +28,15 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.utils import testing_utils
 from deepcell import layers
 
 
-class LocationTest(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class LocationTest(keras_parameterized.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_location_2d(self):
         testing_utils.layer_test(
             layers.Location2D,
@@ -52,7 +51,6 @@ class LocationTest(test.TestCase):
             custom_objects={'Location2D': layers.Location2D},
             input_shape=(3, 4, 5, 6))
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_location_3d(self):
         testing_utils.layer_test(
             layers.Location3D,

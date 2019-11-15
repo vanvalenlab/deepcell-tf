@@ -30,15 +30,14 @@ from __future__ import division
 
 import numpy as np
 from tensorflow.python.keras import backend as K
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell import layers
 
 
-class TestFilterDetections(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class TestFilterDetections(keras_parameterized.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
         # create simple FilterDetections layer
         layer = layers.FilterDetections()
@@ -78,7 +77,6 @@ class TestFilterDetections(test.TestCase):
         self.assertAllEqual(actual_scores, expected_scores)
         self.assertAllEqual(actual_labels, expected_labels)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple_3d(self):
         # create simple FilterDetections layer
         layer = layers.FilterDetections()
@@ -120,7 +118,6 @@ class TestFilterDetections(test.TestCase):
         self.assertAllEqual(actual_scores, expected_scores)
         self.assertAllEqual(actual_labels, expected_labels)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple_with_other(self):
         # create simple FilterDetections layer
         layer = layers.FilterDetections()
@@ -180,7 +177,6 @@ class TestFilterDetections(test.TestCase):
         for a, e in zip(actual_other, expected_other):
             self.assertAllEqual(a, e)
 
-    # @tf_test_util.run_in_graph_and_eager_modes()
     # def test_mini_batch(self):
     #     with self.cached_session():
     #         # create simple FilterDetections layer
