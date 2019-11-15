@@ -42,126 +42,120 @@ class TestUpsampleLike(test.TestCase):
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
         # channels_last
-        with self.cached_session():
-            # create simple UpsampleLike layer
-            upsample_like_layer = layers.UpsampleLike()
+        # create simple UpsampleLike layer
+        upsample_like_layer = layers.UpsampleLike()
 
-            # create input source
-            source = np.zeros((1, 2, 2, 1), dtype=K.floatx())
-            source = K.variable(source)
-            target = np.zeros((1, 5, 5, 1), dtype=K.floatx())
-            expected = target
-            target = K.variable(target)
+        # create input source
+        source = np.zeros((1, 2, 2, 1), dtype=K.floatx())
+        source = K.variable(source)
+        target = np.zeros((1, 5, 5, 1), dtype=K.floatx())
+        expected = target
+        target = K.variable(target)
 
-            # compute output
-            computed_shape = upsample_like_layer.compute_output_shape(
-                [source.shape, target.shape])
+        # compute output
+        computed_shape = upsample_like_layer.compute_output_shape(
+            [source.shape, target.shape])
 
-            actual = upsample_like_layer.call([source, target])
-            actual = K.get_value(actual)
+        actual = upsample_like_layer.call([source, target])
+        actual = K.get_value(actual)
 
-            self.assertEqual(actual.shape, computed_shape)
-            self.assertAllEqual(actual, expected)
+        self.assertEqual(actual.shape, computed_shape)
+        self.assertAllEqual(actual, expected)
         # channels_first
-        with self.cached_session():
-            # create simple UpsampleLike layer
-            upsample_like_layer = layers.UpsampleLike(
-                data_format='channels_first')
+        # create simple UpsampleLike layer
+        upsample_like_layer = layers.UpsampleLike(
+            data_format='channels_first')
 
-            # create input source
-            source = np.zeros((1, 1, 2, 2), dtype=K.floatx())
-            source = K.variable(source)
-            target = np.zeros((1, 1, 5, 5), dtype=K.floatx())
-            expected = target
-            target = K.variable(target)
+        # create input source
+        source = np.zeros((1, 1, 2, 2), dtype=K.floatx())
+        source = K.variable(source)
+        target = np.zeros((1, 1, 5, 5), dtype=K.floatx())
+        expected = target
+        target = K.variable(target)
 
-            # compute output
-            computed_shape = upsample_like_layer.compute_output_shape(
-                [source.shape, target.shape])
-            actual = upsample_like_layer.call([source, target])
-            actual = K.get_value(actual)
+        # compute output
+        computed_shape = upsample_like_layer.compute_output_shape(
+            [source.shape, target.shape])
+        actual = upsample_like_layer.call([source, target])
+        actual = K.get_value(actual)
 
-            self.assertEqual(actual.shape, computed_shape)
-            self.assertAllEqual(actual, expected)
+        self.assertEqual(actual.shape, computed_shape)
+        self.assertAllEqual(actual, expected)
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple_3d(self):
-        with self.cached_session():
-            # create simple UpsampleLike layer
-            upsample_like_layer = layers.UpsampleLike()
+        # create simple UpsampleLike layer
+        upsample_like_layer = layers.UpsampleLike()
 
-            # create input source
-            source = np.zeros((1, 2, 2, 2, 1), dtype=K.floatx())
-            source = K.variable(source)
-            target = np.zeros((1, 5, 5, 5, 1), dtype=K.floatx())
-            expected = target
-            target = K.variable(target)
+        # create input source
+        source = np.zeros((1, 2, 2, 2, 1), dtype=K.floatx())
+        source = K.variable(source)
+        target = np.zeros((1, 5, 5, 5, 1), dtype=K.floatx())
+        expected = target
+        target = K.variable(target)
 
-            # compute output
-            computed_shape = upsample_like_layer.compute_output_shape(
-                [source.shape, target.shape])
+        # compute output
+        computed_shape = upsample_like_layer.compute_output_shape(
+            [source.shape, target.shape])
 
-            actual = upsample_like_layer.call([source, target])
-            actual = K.get_value(actual)
+        actual = upsample_like_layer.call([source, target])
+        actual = K.get_value(actual)
 
-            self.assertEqual(actual.shape, computed_shape)
-            self.assertAllEqual(actual, expected)
+        self.assertEqual(actual.shape, computed_shape)
+        self.assertAllEqual(actual, expected)
 
         # channels_first
-        with self.cached_session():
-            # create simple UpsampleLike layer
-            upsample_like_layer = layers.UpsampleLike(
-                data_format='channels_first')
+        # create simple UpsampleLike layer
+        upsample_like_layer = layers.UpsampleLike(
+            data_format='channels_first')
 
-            # create input source
-            source = np.zeros((1, 1, 2, 2, 2), dtype=K.floatx())
-            source = K.variable(source)
-            target = np.zeros((1, 1, 5, 5, 5), dtype=K.floatx())
-            expected = target
-            target = K.variable(target)
+        # create input source
+        source = np.zeros((1, 1, 2, 2, 2), dtype=K.floatx())
+        source = K.variable(source)
+        target = np.zeros((1, 1, 5, 5, 5), dtype=K.floatx())
+        expected = target
+        target = K.variable(target)
 
-            # compute output
-            computed_shape = upsample_like_layer.compute_output_shape(
-                [source.shape, target.shape])
-            actual = upsample_like_layer.call([source, target])
-            actual = K.get_value(actual)
+        # compute output
+        computed_shape = upsample_like_layer.compute_output_shape(
+            [source.shape, target.shape])
+        actual = upsample_like_layer.call([source, target])
+        actual = K.get_value(actual)
 
-            self.assertEqual(actual.shape, computed_shape)
-            self.assertAllEqual(actual, expected)
+        self.assertEqual(actual.shape, computed_shape)
+        self.assertAllEqual(actual, expected)
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_mini_batch(self):
-        with self.cached_session():
-            # create simple UpsampleLike layer
-            upsample_like_layer = layers.UpsampleLike()
+        # create simple UpsampleLike layer
+        upsample_like_layer = layers.UpsampleLike()
 
-            # create input source
-            source = np.zeros((2, 2, 2, 1), dtype=K.floatx())
-            source = K.variable(source)
+        # create input source
+        source = np.zeros((2, 2, 2, 1), dtype=K.floatx())
+        source = K.variable(source)
 
-            target = np.zeros((2, 5, 5, 1), dtype=K.floatx())
-            expected = target
-            target = K.variable(target)
+        target = np.zeros((2, 5, 5, 1), dtype=K.floatx())
+        expected = target
+        target = K.variable(target)
 
-            # compute output
-            actual = upsample_like_layer.call([source, target])
-            actual = K.get_value(actual)
+        # compute output
+        actual = upsample_like_layer.call([source, target])
+        actual = K.get_value(actual)
 
-            self.assertAllEqual(actual, expected)
+        self.assertAllEqual(actual, expected)
 
 
 class TestUpsample(test.TestCase):
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
-        with self.cached_session():
-            testing_utils.layer_test(
-                layers.Upsample,
-                kwargs={'target_size': (2, 2)},
-                custom_objects={'Upsample': layers.Upsample},
-                input_shape=(3, 5, 6, 4))
-            testing_utils.layer_test(
-                layers.Upsample,
-                kwargs={'target_size': (2, 2),
-                        'data_format': 'channels_first'},
-                custom_objects={'Upsample': layers.Upsample},
-                input_shape=(3, 4, 5, 6))
+        testing_utils.layer_test(
+            layers.Upsample,
+            kwargs={'target_size': (2, 2)},
+            custom_objects={'Upsample': layers.Upsample},
+            input_shape=(3, 5, 6, 4))
+        testing_utils.layer_test(
+            layers.Upsample,
+            kwargs={'target_size': (2, 2),
+                    'data_format': 'channels_first'},
+            custom_objects={'Upsample': layers.Upsample},
+            input_shape=(3, 4, 5, 6))

@@ -39,15 +39,14 @@ class ResizeTest(test.TestCase):
 
     @tf_test_util.run_in_graph_and_eager_modes()
     def test_resize_2d(self):
-        with self.cached_session():
-            testing_utils.layer_test(
-                layers.Resize2D,
-                kwargs={'scale': 2},
-                custom_objects={'Resize2D': layers.Resize2D},
-                input_shape=(3, 5, 6, 4))
-            testing_utils.layer_test(
-                layers.Resize2D,
-                kwargs={'scale': 3,
-                        'data_format': 'channels_first'},
-                custom_objects={'Resize2D': layers.Resize2D},
-                input_shape=(3, 5, 6, 4))
+        testing_utils.layer_test(
+            layers.Resize2D,
+            kwargs={'scale': 2},
+            custom_objects={'Resize2D': layers.Resize2D},
+            input_shape=(3, 5, 6, 4))
+        testing_utils.layer_test(
+            layers.Resize2D,
+            kwargs={'scale': 3,
+                    'data_format': 'channels_first'},
+            custom_objects={'Resize2D': layers.Resize2D},
+            input_shape=(3, 5, 6, 4))

@@ -60,19 +60,18 @@ class ReflectionPaddingTest(test.TestCase):
         data_formats = ['channels_first', 'channels_last']
         for data_format, inputs in zip(data_formats, [ins2, ins1]):
             # basic test
-            with self.cached_session():
-                testing_utils.layer_test(
-                    layers.ReflectionPadding2D,
-                    kwargs={'padding': (2, 2),
-                            'data_format': data_format},
-                    custom_objects=custom_objects,
-                    input_shape=inputs.shape)
-                testing_utils.layer_test(
-                    layers.ReflectionPadding2D,
-                    kwargs={'padding': ((1, 2), (3, 4)),
-                            'data_format': data_format},
-                    custom_objects=custom_objects,
-                    input_shape=inputs.shape)
+            testing_utils.layer_test(
+                layers.ReflectionPadding2D,
+                kwargs={'padding': (2, 2),
+                        'data_format': data_format},
+                custom_objects=custom_objects,
+                input_shape=inputs.shape)
+            testing_utils.layer_test(
+                layers.ReflectionPadding2D,
+                kwargs={'padding': ((1, 2), (3, 4)),
+                        'data_format': data_format},
+                custom_objects=custom_objects,
+                input_shape=inputs.shape)
 
             # correctness test
             # with self.cached_session():
@@ -146,13 +145,12 @@ class ReflectionPaddingTest(test.TestCase):
         data_formats = ['channels_first', 'channels_last']
         for data_format, inputs in zip(data_formats, [inputs2, inputs1]):
             # basic test
-            with self.cached_session():
-                testing_utils.layer_test(
-                    layers.ReflectionPadding3D,
-                    kwargs={'padding': (2, 2, 2),
-                            'data_format': data_format},
-                    custom_objects=custom_objects,
-                    input_shape=inputs.shape)
+            testing_utils.layer_test(
+                layers.ReflectionPadding3D,
+                kwargs={'padding': (2, 2, 2),
+                        'data_format': data_format},
+                custom_objects=custom_objects,
+                input_shape=inputs.shape)
 
         # correctness test
         # with self.cached_session():

@@ -92,24 +92,22 @@ class TensorProdTest(test.TestCase):
                 input_shape=(3, 5, 6, None))
 
     def test_tensorproduct_regularization(self):
-        with self.cached_session():
-            layer = layers.TensorProduct(
-                3,
-                kernel_regularizer=keras.regularizers.l1(0.01),
-                bias_regularizer='l1',
-                activity_regularizer='l2',
-                name='tensorproduct_reg')
-            layer(keras.backend.variable(np.ones((2, 4))))
-            self.assertEqual(3, len(layer.losses))
+        layer = layers.TensorProduct(
+            3,
+            kernel_regularizer=keras.regularizers.l1(0.01),
+            bias_regularizer='l1',
+            activity_regularizer='l2',
+            name='tensorproduct_reg')
+        layer(keras.backend.variable(np.ones((2, 4))))
+        self.assertEqual(3, len(layer.losses))
 
     def test_tensorproduct_constraints(self):
-        with self.cached_session():
-            k_constraint = keras.constraints.max_norm(0.01)
-            b_constraint = keras.constraints.max_norm(0.01)
-            layer = layers.TensorProduct(
-                3,
-                kernel_constraint=k_constraint,
-                bias_constraint=b_constraint)
-            layer(keras.backend.variable(np.ones((2, 4))))
-            self.assertEqual(layer.kernel.constraint, k_constraint)
-            self.assertEqual(layer.bias.constraint, b_constraint)
+        k_constraint = keras.constraints.max_norm(0.01)
+        b_constraint = keras.constraints.max_norm(0.01)
+        layer = layers.TensorProduct(
+            3,
+            kernel_constraint=k_constraint,
+            bias_constraint=b_constraint)
+        layer(keras.backend.variable(np.ones((2, 4))))
+        self.assertEqual(layer.kernel.constraint, k_constraint)
+        self.assertEqual(layer.bias.constraint, b_constraint)
