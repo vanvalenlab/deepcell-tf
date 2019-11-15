@@ -218,3 +218,10 @@ def process_whole_image(model, images, num_crops=4, receptive_field=61, padding=
                     output[:, a:b, c:d, :] = predicted
 
     return output
+
+
+__all__ = [
+    'get_cropped_input_shape',
+    'get_padding_layers',
+    'process_whole_image',
+]

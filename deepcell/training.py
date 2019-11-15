@@ -833,3 +833,11 @@ def train_model_retinanet(model,
             print('mAP: {:.4f}'.format(sum(precisions) / sum(x > 0 for x in total_instances)))
 
     return model
+
+
+__all__ = [
+    'train_model_sample',
+    'train_model_conv',
+    'train_model_siamese_daughter',
+    'train_model_retinanet',
+]
