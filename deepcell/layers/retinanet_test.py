@@ -37,7 +37,7 @@ from deepcell import layers
 
 
 @keras_parameterized.run_all_keras_modes
-class TestAnchors(run_all_keras_modes.TestCase):
+class TestAnchors(keras_parameterized.TestCase):
 
     def test_anchors_2d(self):
         testing_utils.layer_test(
@@ -118,7 +118,7 @@ class TestAnchors(run_all_keras_modes.TestCase):
 
 
 @keras_parameterized.run_all_keras_modes
-class TestRegressBoxes(run_all_keras_modes.TestCase):
+class TestRegressBoxes(keras_parameterized.TestCase):
 
     def test_simple(self):
         # create simple RegressBoxes layer
@@ -223,7 +223,7 @@ class TestRegressBoxes(run_all_keras_modes.TestCase):
 
 
 @keras_parameterized.run_all_keras_modes
-class ClipBoxesTest(run_all_keras_modes.TestCase):
+class ClipBoxesTest(keras_parameterized.TestCase):
 
     def test_simple(self):
         img_h, img_w = np.random.randint(2, 5), np.random.randint(5, 9)
