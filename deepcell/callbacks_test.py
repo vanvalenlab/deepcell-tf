@@ -35,6 +35,7 @@ import numpy as np
 
 from tensorflow.python import keras
 from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 from tensorflow.python.keras import testing_utils
 
 from deepcell.callbacks import RedirectModel
@@ -48,7 +49,8 @@ NUM_HIDDEN = 5
 BATCH_SIZE = 5
 
 
-class CallbacksTest(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class CallbacksTest(keras_parameterized.TestCase):
 
     def test_RedirectModel(self):
         with self.cached_session():
