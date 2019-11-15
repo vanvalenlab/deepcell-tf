@@ -77,7 +77,7 @@ docker build -t $USER/deepcell-tf .
 The tensorflow version can be overridden with the build-arg `TF_VERSION`.
 
 ```bash
-docker build --build-arg TF_VERSION=1.9.0-gpu -t $USER/deepcell-tf .
+docker build --build-arg TF_VERSION=1.15.0-gpu -t $USER/deepcell-tf .
 ```
 
 ### Run the new docker image
