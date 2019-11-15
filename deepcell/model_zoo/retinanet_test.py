@@ -40,7 +40,7 @@ from deepcell.model_zoo import RetinaNet
 
 class RetinaNetTest(keras_parameterized.TestCase):
 
-    # @keras_parameterized.run_all_keras_modes
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         {
             'testcase_name': 'retinanet_basic',

@@ -39,7 +39,7 @@ from deepcell.model_zoo import RetinaMask
 
 class RetinaMaskTest(keras_parameterized.TestCase):
 
-    # @keras_parameterized.run_all_keras_modes
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         {
             'testcase_name': 'maskrcnn_basic',

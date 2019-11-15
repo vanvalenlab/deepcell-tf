@@ -42,7 +42,7 @@ from deepcell.utils import backbone_utils
 
 class TestBackboneUtils(keras_parameterized.TestCase):
 
-    # @keras_parameterized.run_all_keras_modes
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         ('channels_last',) * 2,
         # ('channels_first',) * 2,
