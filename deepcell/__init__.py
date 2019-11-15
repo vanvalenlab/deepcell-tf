@@ -44,10 +44,10 @@ from deepcell import utils
 from deepcell import metrics
 
 from deepcell.layers import *
-from deepcell.losses import *
 from deepcell.image_generators import *
 from deepcell.model_zoo import *
-from deepcell.running import *
+from deepcell.running import get_cropped_input_shape
+from deepcell.running import process_whole_image
 from deepcell.training import train_model_conv
 from deepcell.training import train_model_sample
 from deepcell.training import train_model_siamese_daughter
