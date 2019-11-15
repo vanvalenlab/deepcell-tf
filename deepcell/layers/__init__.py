@@ -28,15 +28,38 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.layers.location import *
-from deepcell.layers.normalization import *
-from deepcell.layers.pooling import *
-from deepcell.layers.resize import *
-from deepcell.layers.tensor_product import *
-from deepcell.layers.padding import *
-from deepcell.layers.filter_detections import *
-from deepcell.layers.retinanet import *
-from deepcell.layers.upsample import *
+from deepcell.layers import location
+from deepcell.layers import normalization
+from deepcell.layers import pooling
+from deepcell.layers import resize
+from deepcell.layers import tensor_product
+from deepcell.layers import padding
+from deepcell.layers import filter_detections
+from deepcell.layers import retinanet
+from deepcell.layers import upsample
+
+from deepcell.layers.location import Location2D
+from deepcell.layers.location import Location3D
+from deepcell.layers.normalization import ImageNormalization2D
+from deepcell.layers.normalization import ImageNormalization3D
+from deepcell.layers.pooling import DilatedMaxPool2D
+from deepcell.layers.pooling import DilatedMaxPool3D
+from deepcell.layers.resize import Resize2D
+from deepcell.layers.resize import Resize3D
+from deepcell.layers.tensor_product import TensorProduct
+from deepcell.layers.padding import ReflectionPadding2D
+from deepcell.layers.padding import ReflectionPadding3D
+from deepcell.layers.filter_detections import FilterDetections
+from deepcell.layers.retinanet import Anchors
+from deepcell.layers.retinanet import RegressBoxes
+from deepcell.layers.retinanet import ClipBoxes
+from deepcell.layers.retinanet import ConcatenateBoxes
+from deepcell.layers.retinanet import _RoiAlign
+from deepcell.layers.retinanet import RoiAlign
+from deepcell.layers.retinanet import Shape
+from deepcell.layers.retinanet import Cast
+from deepcell.layers.upsample import Upsample
+from deepcell.layers.upsample import UpsampleLike
 
 del absolute_import
 del division
