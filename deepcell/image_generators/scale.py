@@ -36,7 +36,8 @@ import numpy as np
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
+
+from deepcell.image_generators import ImageFullyConvDataGenerator
 
 
 class ScaleIterator(Iterator):
