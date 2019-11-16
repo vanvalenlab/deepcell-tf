@@ -29,4 +29,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell_tracking import cell_tracker
+# pylint: disable=unused-import,reimported
+from deepcell_tracking import CellTracker
+from deepcell_tracking import CellTracker as cell_tracker
+
+del absolute_import
+del division
+del print_function
