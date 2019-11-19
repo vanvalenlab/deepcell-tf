@@ -35,15 +35,6 @@ import numpy as np
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.utils import to_categorical
-from tensorflow.python.keras.preprocessing.image import Iterator
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
-
-# Check if ImageDataGenerator is 1.11.0 or later
-if not hasattr(ImageDataGenerator, 'apply_transform'):
-    # pylint: disable=W0404
-    # tf.version is 1.10.0 or earlier, use keras_preprocessing classes
-    from keras_preprocessing.image import Iterator
-    from keras_preprocessing.image import ImageDataGenerator
 
 from deepcell.utils import transform_utils
 

@@ -30,36 +30,33 @@ from __future__ import division
 
 import numpy as np
 from tensorflow.python import keras
-from tensorflow.python.platform import test
-from tensorflow.python.framework import test_util as tf_test_util
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.utils import testing_utils
 from deepcell import layers
 
 
-class ImageNormalizationTest(test.TestCase):
+class ImageNormalizationTest(keras_parameterized.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_normalize_2d(self):
         custom_objects = {'ImageNormalization2D': layers.ImageNormalization2D}
         norm_methods = [None, 'std', 'max', 'whole_image']
-        with self.test_session():
-            # test each norm method
-            for norm_method in norm_methods:
-                testing_utils.layer_test(
-                    layers.ImageNormalization2D,
-                    kwargs={'norm_method': norm_method,
-                            'filter_size': 3,
-                            'data_format': 'channels_last'},
-                    custom_objects=custom_objects,
-                    input_shape=(3, 5, 6, 4))
-                testing_utils.layer_test(
-                    layers.ImageNormalization2D,
-                    kwargs={'norm_method': norm_method,
-                            'filter_size': 3,
-                            'data_format': 'channels_first'},
-                    custom_objects=custom_objects,
-                    input_shape=(3, 4, 5, 6))
+        # test each norm method
+        for norm_method in norm_methods:
+            testing_utils.layer_test(
+                layers.ImageNormalization2D,
+                kwargs={'norm_method': norm_method,
+                        'filter_size': 3,
+                        'data_format': 'channels_last'},
+                custom_objects=custom_objects,
+                input_shape=(3, 5, 6, 4))
+            testing_utils.layer_test(
+                layers.ImageNormalization2D,
+                kwargs={'norm_method': norm_method,
+                        'filter_size': 3,
+                        'data_format': 'channels_first'},
+                custom_objects=custom_objects,
+                input_shape=(3, 4, 5, 6))
             # test constraints and bias
             k_constraint = keras.constraints.max_norm(0.01)
             b_constraint = keras.constraints.max_norm(0.01)
@@ -82,27 +79,25 @@ class ImageNormalizationTest(test.TestCase):
                 layer = layers.ImageNormalization2D()
                 layer.build([3, 5, 6, None])
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_normalize_3d(self):
         custom_objects = {'ImageNormalization3D': layers.ImageNormalization3D}
         norm_methods = [None, 'std', 'max', 'whole_image']
-        with self.test_session():
-            # test each norm method
-            for norm_method in norm_methods:
-                testing_utils.layer_test(
-                    layers.ImageNormalization3D,
-                    kwargs={'norm_method': norm_method,
-                            'filter_size': 3,
-                            'data_format': 'channels_last'},
-                    custom_objects=custom_objects,
-                    input_shape=(3, 11, 12, 10, 4))
-                testing_utils.layer_test(
-                    layers.ImageNormalization3D,
-                    kwargs={'norm_method': norm_method,
-                            'filter_size': 3,
-                            'data_format': 'channels_first'},
-                    custom_objects=custom_objects,
-                    input_shape=(3, 4, 11, 12, 10))
+        # test each norm method
+        for norm_method in norm_methods:
+            testing_utils.layer_test(
+                layers.ImageNormalization3D,
+                kwargs={'norm_method': norm_method,
+                        'filter_size': 3,
+                        'data_format': 'channels_last'},
+                custom_objects=custom_objects,
+                input_shape=(3, 11, 12, 10, 4))
+            testing_utils.layer_test(
+                layers.ImageNormalization3D,
+                kwargs={'norm_method': norm_method,
+                        'filter_size': 3,
+                        'data_format': 'channels_first'},
+                custom_objects=custom_objects,
+                input_shape=(3, 4, 11, 12, 10))
             # test constraints and bias
             k_constraint = keras.constraints.max_norm(0.01)
             b_constraint = keras.constraints.max_norm(0.01)

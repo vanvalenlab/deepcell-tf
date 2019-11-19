@@ -31,16 +31,15 @@ from __future__ import division
 import numpy as np
 
 from tensorflow.python import keras
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.utils import testing_utils
 from deepcell import layers
 
 
-class TensorProdTest(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class TensorProdTest(keras_parameterized.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_tensorproduct(self):
         custom_objects = {'TensorProduct': layers.TensorProduct}
 
@@ -92,24 +91,22 @@ class TensorProdTest(test.TestCase):
                 input_shape=(3, 5, 6, None))
 
     def test_tensorproduct_regularization(self):
-        with self.test_session():
-            layer = layers.TensorProduct(
-                3,
-                kernel_regularizer=keras.regularizers.l1(0.01),
-                bias_regularizer='l1',
-                activity_regularizer='l2',
-                name='tensorproduct_reg')
-            layer(keras.backend.variable(np.ones((2, 4))))
-            self.assertEqual(3, len(layer.losses))
+        layer = layers.TensorProduct(
+            3,
+            kernel_regularizer=keras.regularizers.l1(0.01),
+            bias_regularizer='l1',
+            activity_regularizer='l2',
+            name='tensorproduct_reg')
+        layer(keras.backend.variable(np.ones((2, 4))))
+        self.assertEqual(3, len(layer.losses))
 
     def test_tensorproduct_constraints(self):
-        with self.test_session():
-            k_constraint = keras.constraints.max_norm(0.01)
-            b_constraint = keras.constraints.max_norm(0.01)
-            layer = layers.TensorProduct(
-                3,
-                kernel_constraint=k_constraint,
-                bias_constraint=b_constraint)
-            layer(keras.backend.variable(np.ones((2, 4))))
-            self.assertEqual(layer.kernel.constraint, k_constraint)
-            self.assertEqual(layer.bias.constraint, b_constraint)
+        k_constraint = keras.constraints.max_norm(0.01)
+        b_constraint = keras.constraints.max_norm(0.01)
+        layer = layers.TensorProduct(
+            3,
+            kernel_constraint=k_constraint,
+            bias_constraint=b_constraint)
+        layer(keras.backend.variable(np.ones((2, 4))))
+        self.assertEqual(layer.kernel.constraint, k_constraint)
+        self.assertEqual(layer.bias.constraint, b_constraint)

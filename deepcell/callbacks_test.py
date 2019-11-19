@@ -35,6 +35,7 @@ import numpy as np
 
 from tensorflow.python import keras
 from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 from tensorflow.python.keras import testing_utils
 
 from deepcell.callbacks import RedirectModel
@@ -48,10 +49,11 @@ NUM_HIDDEN = 5
 BATCH_SIZE = 5
 
 
-class CallbacksTest(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class CallbacksTest(keras_parameterized.TestCase):
 
     def test_RedirectModel(self):
-        with self.test_session():
+        with self.cached_session():
             np.random.seed(123)
             (x_train, y_train), (x_test, y_test) = testing_utils.get_test_data(
                 train_samples=TRAIN_SAMPLES,

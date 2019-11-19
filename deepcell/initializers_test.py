@@ -30,12 +30,13 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow.python.keras import backend as K
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.initializers import PriorProbability
 
 
-class InitializersTest(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class InitializersTest(keras_parameterized.TestCase):
 
     def _runner(self, init, shape, target_mean=None, target_std=None,
                 target_max=None, target_min=None):
@@ -51,6 +52,6 @@ class InitializersTest(test.TestCase):
     def test_prior_probability(self):
         tensor_shape = (8, 12, 99)
         # TODO: use self.test_session() if tf version >= 1.11.0
-        with self.test_session():
+        with self.cached_session():
             self._runner(PriorProbability(probability=0.01),
                          tensor_shape, target_mean=0., target_std=1)

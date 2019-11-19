@@ -38,6 +38,7 @@ from skimage.segmentation import clear_border
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.preprocessing.image import array_to_img
+from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.platform import tf_logging as logging
 
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
@@ -45,7 +46,6 @@ from deepcell.utils.retinanet_anchor_utils import anchors_for_shape
 from deepcell.utils.retinanet_anchor_utils import guess_shapes
 
 from deepcell.image_generators import _transform_masks
-from deepcell.image_generators import Iterator
 from deepcell.image_generators import ImageFullyConvDataGenerator
 from deepcell.image_generators import MovieDataGenerator
 

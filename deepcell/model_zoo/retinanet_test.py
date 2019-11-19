@@ -32,15 +32,15 @@ from __future__ import print_function
 from absl.testing import parameterized
 
 from tensorflow.python.keras import backend as K
-
-from tensorflow.python.framework import test_util as tf_test_util
+from tensorflow.python.keras import keras_parameterized
 from tensorflow.python.platform import test
 
 from deepcell.model_zoo import RetinaNet
 
 
-class RetinaNetTest(test.TestCase, parameterized.TestCase):
+class RetinaNetTest(keras_parameterized.TestCase):
 
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         {
             'testcase_name': 'retinanet_basic',
@@ -205,7 +205,6 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
             'data_format': 'channels_first',
         }
     ])
-    # @tf_test_util.run_in_graph_and_eager_modes()
     def test_retinanet(self, pooling, panoptic, location,
                        frames, pyramid_levels, data_format):
         num_classes = 3
@@ -218,7 +217,7 @@ class RetinaNetTest(test.TestCase, parameterized.TestCase):
         if frames > 1 and data_format == 'channels_first':
             return
 
-        with self.test_session():
+        with self.cached_session():
             K.set_image_data_format(data_format)
             if data_format == 'channels_first':
                 axis = 1

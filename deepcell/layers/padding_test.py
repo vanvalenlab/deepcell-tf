@@ -33,8 +33,7 @@ import numpy as np
 
 # from tensorflow.python import keras
 # from tensorflow.python.eager import context
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.utils import testing_utils
 from deepcell import layers
@@ -45,9 +44,9 @@ def _get_random_padding(dim):
     return tuple([(R(), R()) for _ in range(dim)])
 
 
-class ReflectionPaddingTest(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class ReflectionPaddingTest(keras_parameterized.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_reflection_padding_2d(self):
         num_samples = 2
         stack_size = 2
@@ -60,22 +59,21 @@ class ReflectionPaddingTest(test.TestCase):
         data_formats = ['channels_first', 'channels_last']
         for data_format, inputs in zip(data_formats, [ins2, ins1]):
             # basic test
-            with self.test_session():
-                testing_utils.layer_test(
-                    layers.ReflectionPadding2D,
-                    kwargs={'padding': (2, 2),
-                            'data_format': data_format},
-                    custom_objects=custom_objects,
-                    input_shape=inputs.shape)
-                testing_utils.layer_test(
-                    layers.ReflectionPadding2D,
-                    kwargs={'padding': ((1, 2), (3, 4)),
-                            'data_format': data_format},
-                    custom_objects=custom_objects,
-                    input_shape=inputs.shape)
+            testing_utils.layer_test(
+                layers.ReflectionPadding2D,
+                kwargs={'padding': (2, 2),
+                        'data_format': data_format},
+                custom_objects=custom_objects,
+                input_shape=inputs.shape)
+            testing_utils.layer_test(
+                layers.ReflectionPadding2D,
+                kwargs={'padding': ((1, 2), (3, 4)),
+                        'data_format': data_format},
+                custom_objects=custom_objects,
+                input_shape=inputs.shape)
 
             # correctness test
-            # with self.test_session():
+            # with self.cached_session():
             #     layer = layers.ReflectionPadding2D(
             #         padding=(2, 2), data_format=data_format)
             #     layer.build(inputs.shape)
@@ -130,7 +128,6 @@ class ReflectionPaddingTest(test.TestCase):
             with self.assertRaises(ValueError):
                 layers.ReflectionPadding2D(padding=None)
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_reflection_padding_3d(self):
         num_samples = 2
         stack_size = 2
@@ -146,16 +143,15 @@ class ReflectionPaddingTest(test.TestCase):
         data_formats = ['channels_first', 'channels_last']
         for data_format, inputs in zip(data_formats, [inputs2, inputs1]):
             # basic test
-            with self.test_session():
-                testing_utils.layer_test(
-                    layers.ReflectionPadding3D,
-                    kwargs={'padding': (2, 2, 2),
-                            'data_format': data_format},
-                    custom_objects=custom_objects,
-                    input_shape=inputs.shape)
+            testing_utils.layer_test(
+                layers.ReflectionPadding3D,
+                kwargs={'padding': (2, 2, 2),
+                        'data_format': data_format},
+                custom_objects=custom_objects,
+                input_shape=inputs.shape)
 
         # correctness test
-        # with self.test_session():
+        # with self.cached_session():
         #     layer = layers.ReflectionPadding3D(padding=(2, 2, 2))
         #     layer.build(inputs.shape)
         #     output = layer(keras.backend.variable(inputs))

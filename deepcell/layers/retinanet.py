@@ -110,6 +110,9 @@ class Anchors(Layer):
                 total = K.prod(input_shape[2:4]) * self.num_anchors
             else:
                 total = K.prod(input_shape[1:3]) * self.num_anchors
+
+            # TODO: fails time_distributed tests for RetinaMask
+            # AttributeError: 'Tensor' object has no attribute 'numpy'
             total = K.get_value(total)
 
             return tensor_shape.TensorShape((input_shape[0], total, 4))
