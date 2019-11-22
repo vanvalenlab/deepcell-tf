@@ -310,7 +310,7 @@ def retinanet_mask(inputs,
 
     # filter detections (apply NMS / score threshold / select top-k)
     if shape_mask:
-        boxes = Input(shape=(None, 4))
+        boxes = Input(shape=(None, 4), name='boxes_input')
         inputs = [image, boxes]
 
     else:
@@ -327,8 +327,8 @@ def retinanet_mask(inputs,
         boxes = detections[0]
 
     fpn = features[0]
-    fpn = UpsampleLike()([fpn, image])
-    rois = RoiAlign(crop_size=crop_size)([boxes, fpn])
+    fpn = UpsampleLike(name='upsamplelike')([fpn, image])
+    rois = RoiAlign(crop_size=crop_size, name='roialign')([boxes, fpn])
 
     # execute maskrcnn submodels
     maskrcnn_outputs = [submodel(rois) for _, submodel in roi_submodels]
@@ -363,6 +363,7 @@ def shapemask_bbox(model=None,
                    anchor_params=None,
                    max_detections=300,
                    frames_per_batch=1,
+                   crop_size=(14, 14),
                    **kwargs):
     """Construct a RetinaNet model on top of a backbone and adds convenience
     functions to output boxes directly.
@@ -404,6 +405,7 @@ def shapemask_bbox(model=None,
             classification submodel.
 
     """
+
     # if no anchor parameters are passed, use default values
     if anchor_params is None:
         anchor_params = AnchorParameters.default
@@ -443,17 +445,33 @@ def shapemask_bbox(model=None,
         class_specific_filter=class_specific_filter,
         max_detections=max_detections,
         name='filtered_detections'
-    )([boxes, classification] + other)
+    )([boxes, classification])
+
+    # apply submodels to detections
+    image = model.layers[0].output
+    boxes = detections[0]
+
+    fpn = features[0]
+    fpn = UpsampleLike()([fpn, image])
+    rois = RoiAlign(crop_size=crop_size)([boxes, fpn])
+
+    mask_submodel = model.get_layer('mask_submodel')
+    masks = [mask_submodel(rois)]
 
     # add the semantic head's output if needed
     if panoptic:
-        outputs = detections + other + list(semantic)
+        outputs = detections + list(masks) + list(semantic)
     else:
-        outputs = detections + other
+        outputs = detections + list(masks)
 
     # construct the model
-    return Model(inputs=model.inputs, outputs=outputs, name=name)
+    new_model = Model(inputs=model.inputs, outputs=outputs, name=name)
 
+    image_input = model.inputs[0]
+    new_inputs = [image_input, tf.zeros([1,1,4])]
+
+    final_model = new_model(new_inputs)
+    return Model(inputs=image_input, outputs=final_model)
 
 def RetinaMask(backbone,
                num_classes,
@@ -505,9 +523,9 @@ def RetinaMask(backbone,
             else:
                 input_shape_with_time = tuple(
                     [frames_per_batch] + list(input_shape))
-            inputs = Input(shape=input_shape_with_time)
+            inputs = Input(shape=input_shape_with_time, name='image_input')
         else:
-            inputs = Input(shape=input_shape)
+            inputs = Input(shape=input_shape, name='image_input')
 
     if location:
         if frames_per_batch > 1:
