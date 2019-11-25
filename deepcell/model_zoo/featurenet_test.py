@@ -31,18 +31,15 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 
-import numpy as np
-import tensorflow as tf
 from tensorflow.python.keras import backend as K
-
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.model_zoo import featurenet
 
 
-class FeatureNetTest(test.TestCase, parameterized.TestCase):
+class FeatureNetTest(keras_parameterized.TestCase):
 
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         {
             'testcase_name': 'dilated_include_top',
@@ -55,6 +52,17 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             'shape': (32, 32, 1),
             'data_format': 'channels_last'
         },
+        {
+            'testcase_name': 'dilated_include_top_cf',
+            'include_top': True,
+            'dilated': True,
+            'padding_mode': 'reflect',
+            'padding': False,
+            'multires': False,
+            'location': False,
+            'shape': (32, 32, 1),
+            'data_format': 'channels_first'
+        },
         # {
         #     'testcase_name': 'not_dilated_include_top',
         #     'include_top': True,
@@ -65,6 +73,17 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
         #     'location': False,
         #     'shape': (32, 32, 1),
         #     'data_format': 'channels_last',
+        # },
+        # {
+        #     'testcase_name': 'not_dilated_include_top_cf',
+        #     'include_top': True,
+        #     'dilated': False,
+        #     'padding_mode': 'reflect',
+        #     'padding': True,
+        #     'multires': False,
+        #     'location': False,
+        #     'shape': (32, 32, 1),
+        #     'data_format': 'channels_first',
         # },
         {
             'testcase_name': 'dilated_no_top',
@@ -78,7 +97,29 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             'data_format': 'channels_last',
         },
         {
+            'testcase_name': 'dilated_no_top_cf',
+            'include_top': False,
+            'dilated': True,
+            'padding_mode': 'zero',
+            'padding': False,
+            'multires': False,
+            'location': False,
+            'shape': (33, 33, 1),
+            'data_format': 'channels_first',
+        },
+        {
             'testcase_name': 'not_dilated_no_top',
+            'include_top': False,
+            'dilated': False,
+            'padding_mode': 'reflect',
+            'padding': False,
+            'multires': False,
+            'location': False,
+            'shape': (32, 32, 1),
+            'data_format': 'channels_last',
+        },
+        {
+            'testcase_name': 'not_dilated_no_top_cf',
             'include_top': False,
             'dilated': False,
             'padding_mode': 'reflect',
@@ -100,6 +141,17 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             'data_format': 'channels_last',
         },
         {
+            'testcase_name': 'not_dilated_no_top_location_cf',
+            'include_top': False,
+            'dilated': False,
+            'padding_mode': 'reflect',
+            'padding': False,
+            'multires': True,
+            'location': True,
+            'shape': (32, 32, 1),
+            'data_format': 'channels_first',
+        },
+        {
             'testcase_name': 'not_dilated_no_top_multires',
             'include_top': False,
             'dilated': False,
@@ -110,8 +162,18 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             'shape': (32, 32, 1),
             'data_format': 'channels_last',
         },
+        {
+            'testcase_name': 'not_dilated_no_top_multires_cf',
+            'include_top': False,
+            'dilated': False,
+            'padding_mode': 'reflect',
+            'padding': False,
+            'multires': True,
+            'location': False,
+            'shape': (32, 32, 1),
+            'data_format': 'channels_first',
+        },
     ])
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_bn_feature_net_2D(self, include_top, padding, padding_mode, shape,
                                dilated, multires, location, data_format):
         n_features = 3
@@ -120,7 +182,7 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
         # BAD: dilated=True, include_top=False
         # BAD: inputs != None
 
-        with self.test_session(use_gpu=True):
+        with self.cached_session():
             K.set_image_data_format(data_format)
             model = featurenet.bn_feature_net_2D(
                 include_top=include_top,
@@ -138,42 +200,46 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             axis = 1 if data_format == 'channels_first' else -1
             self.assertEqual(model.output_shape[axis], output)
 
-    # @tf_test_util.run_in_graph_and_eager_modes()
-    def test_bn_feature_net_2D_skip(self):
+    # @keras_parameterized.run_all_keras_modes
+    @parameterized.named_parameters([
+        ('channels_last',) * 2,
+        ('channels_first',) * 2,
+    ])
+    def test_bn_feature_net_2D_skip(self, data_format):
         receptive_field = 61
         n_features = 3
         n_dense_filters = 300
         input_shape = (256, 256, 1)
         n_skips = 1
 
-        for data_format in ('channels_first', 'channels_last'):
-            with self.test_session(use_gpu=True):
-                K.set_image_data_format(data_format)
-                axis = 1 if data_format == 'channels_first' else -1
+        with self.cached_session():
+            K.set_image_data_format(data_format)
+            axis = 1 if data_format == 'channels_first' else -1
 
-                fgbg_model = featurenet.bn_feature_net_skip_2D(
-                    receptive_field=receptive_field,
-                    input_shape=input_shape,
-                    n_features=n_features,
-                    n_dense_filters=n_dense_filters,
-                    n_skips=n_skips,
-                    last_only=False)
+            fgbg_model = featurenet.bn_feature_net_skip_2D(
+                receptive_field=receptive_field,
+                input_shape=input_shape,
+                n_features=n_features,
+                n_dense_filters=n_dense_filters,
+                n_skips=n_skips,
+                last_only=False)
 
-                self.assertIsInstance(fgbg_model.output, list)
-                self.assertEqual(len(fgbg_model.output), n_skips + 1)
+            self.assertIsInstance(fgbg_model.output, list)
+            self.assertEqual(len(fgbg_model.output), n_skips + 1)
 
-                model = featurenet.bn_feature_net_skip_2D(
-                    receptive_field=receptive_field,
-                    input_shape=input_shape,
-                    fgbg_model=fgbg_model,
-                    n_features=n_features,
-                    n_dense_filters=n_dense_filters,
-                    n_skips=n_skips,
-                    last_only=True)
+            model = featurenet.bn_feature_net_skip_2D(
+                receptive_field=receptive_field,
+                input_shape=input_shape,
+                fgbg_model=fgbg_model,
+                n_features=n_features,
+                n_dense_filters=n_dense_filters,
+                n_skips=n_skips,
+                last_only=True)
 
-                self.assertEqual(len(model.output_shape), 4)
-                self.assertEqual(model.output_shape[axis], n_features)
+            self.assertEqual(len(model.output_shape), 4)
+            self.assertEqual(model.output_shape[axis], n_features)
 
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         {
             'testcase_name': 'dilated_include_top',
@@ -186,6 +252,17 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             'shape': (10, 33, 33, 1),
             'data_format': 'channels_last',
         },
+        {
+            'testcase_name': 'dilated_include_top_cf',
+            'include_top': True,
+            'dilated': True,
+            'padding_mode': 'reflect',
+            'padding': False,
+            'multires': False,
+            'location': False,
+            'shape': (10, 33, 33, 1),
+            'data_format': 'channels_first',
+        },
         # {
         #     'testcase_name': 'not_dilated_include_top',
         #     'include_top': True,
@@ -195,6 +272,16 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
         #     'multires': False,
         #     'location': False,
         #     'data_format': 'channels_last',
+        # },
+        # {
+        #     'testcase_name': 'not_dilated_include_top_cf',
+        #     'include_top': True,
+        #     'dilated': False,
+        #     'padding_mode': 'reflect',
+        #     'padding': True,
+        #     'multires': False,
+        #     'location': False,
+        #     'data_format': 'channels_first',
         # },
         {
             'testcase_name': 'dilated_no_top',
@@ -208,7 +295,29 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             'data_format': 'channels_last',
         },
         {
+            'testcase_name': 'dilated_no_top_cf',
+            'include_top': False,
+            'dilated': True,
+            'padding_mode': 'zero',
+            'padding': False,
+            'multires': False,
+            'location': False,
+            'shape': (10, 32, 32, 1),
+            'data_format': 'channels_first',
+        },
+        {
             'testcase_name': 'not_dilated_no_top',
+            'include_top': False,
+            'dilated': False,
+            'padding_mode': 'reflect',
+            'padding': False,
+            'multires': False,
+            'location': False,
+            'shape': (10, 33, 33, 1),
+            'data_format': 'channels_last',
+        },
+        {
+            'testcase_name': 'not_dilated_no_top_cf',
             'include_top': False,
             'dilated': False,
             'padding_mode': 'reflect',
@@ -230,6 +339,17 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             'data_format': 'channels_last',
         },
         {
+            'testcase_name': 'not_dilated_no_top_location_cf',
+            'include_top': False,
+            'dilated': False,
+            'padding_mode': 'reflect',
+            'padding': False,
+            'multires': True,
+            'location': True,
+            'shape': (10, 32, 32, 1),
+            'data_format': 'channels_first',
+        },
+        {
             'testcase_name': 'not_dilated_no_top_multires',
             'include_top': False,
             'dilated': False,
@@ -240,8 +360,18 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             'shape': (10, 33, 33, 1),
             'data_format': 'channels_last',
         },
+        {
+            'testcase_name': 'not_dilated_no_top_multires_cf',
+            'include_top': False,
+            'dilated': False,
+            'padding_mode': 'reflect',
+            'padding': False,
+            'multires': True,
+            'location': False,
+            'shape': (10, 33, 33, 1),
+            'data_format': 'channels_first',
+        },
     ])
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_bn_feature_net_3D(self, include_top, padding, padding_mode, shape,
                                dilated, multires, location, data_format):
         n_features = 3
@@ -249,7 +379,7 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
         n_frames = 5
         # input_shape = (10, 32, 32, 1)
 
-        with self.test_session(use_gpu=True):
+        with self.cached_session():
             K.set_image_data_format(data_format)
             model = featurenet.bn_feature_net_3D(
                 include_top=include_top,
@@ -267,38 +397,41 @@ class FeatureNetTest(test.TestCase, parameterized.TestCase):
             channel_axis = 1 if data_format == 'channels_first' else -1
             self.assertEqual(model.output_shape[channel_axis], n_features)
 
-    # @tf_test_util.run_in_graph_and_eager_modes()
-    def test_bn_feature_net_3D_skip(self):
+    # @keras_parameterized.run_all_keras_modes
+    @parameterized.named_parameters([
+        ('channels_last',) * 2,
+        ('channels_first',) * 2,
+    ])
+    def test_bn_feature_net_3D_skip(self, data_format):
         receptive_field = 61
         n_features = 3
         n_dense_filters = 300
         input_shape = (10, 32, 32, 1)
         n_skips = 1
 
-        for data_format in ('channels_first', 'channels_last'):
-            with self.test_session(use_gpu=True):
-                K.set_image_data_format(data_format)
-                axis = 1 if data_format == 'channels_first' else -1
+        with self.cached_session():
+            K.set_image_data_format(data_format)
+            axis = 1 if data_format == 'channels_first' else -1
 
-                fgbg_model = featurenet.bn_feature_net_skip_3D(
-                    receptive_field=receptive_field,
-                    input_shape=input_shape,
-                    n_features=n_features,
-                    n_dense_filters=n_dense_filters,
-                    n_skips=n_skips,
-                    last_only=False)
+            fgbg_model = featurenet.bn_feature_net_skip_3D(
+                receptive_field=receptive_field,
+                input_shape=input_shape,
+                n_features=n_features,
+                n_dense_filters=n_dense_filters,
+                n_skips=n_skips,
+                last_only=False)
 
-                self.assertIsInstance(fgbg_model.output, list)
-                self.assertEqual(len(fgbg_model.output), n_skips + 1)
+            self.assertIsInstance(fgbg_model.output, list)
+            self.assertEqual(len(fgbg_model.output), n_skips + 1)
 
-                model = featurenet.bn_feature_net_skip_3D(
-                    receptive_field=receptive_field,
-                    input_shape=input_shape,
-                    fgbg_model=fgbg_model,
-                    n_features=n_features,
-                    n_dense_filters=n_dense_filters,
-                    n_skips=n_skips,
-                    last_only=True)
+            model = featurenet.bn_feature_net_skip_3D(
+                receptive_field=receptive_field,
+                input_shape=input_shape,
+                fgbg_model=fgbg_model,
+                n_features=n_features,
+                n_dense_filters=n_dense_filters,
+                n_skips=n_skips,
+                last_only=True)
 
-                self.assertEqual(len(model.output_shape), 5)
-                self.assertEqual(model.output_shape[axis], n_features)
+            self.assertEqual(len(model.output_shape), 5)
+            self.assertEqual(model.output_shape[axis], n_features)

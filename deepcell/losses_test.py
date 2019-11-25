@@ -23,9 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for custom loss functions
-@author: David Van Valen
-"""
+"""Tests for custom loss functions"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -76,7 +74,7 @@ class _MSEMAELoss(object):
 class KerasLossesTest(test.TestCase):
 
     def test_objective_shapes_3d(self):
-        with self.test_session():
+        with self.cached_session():
             y_a = keras.backend.variable(np.random.random((5, 6, 7)))
             y_b = keras.backend.variable(np.random.random((5, 6, 7)))
             for obj in ALL_LOSSES:
@@ -85,7 +83,7 @@ class KerasLossesTest(test.TestCase):
                 self.assertListEqual(objective_output.get_shape().as_list(), [5, 6])
 
     def test_objective_shapes_2d(self):
-        with self.test_session():
+        with self.cached_session():
             y_a = keras.backend.variable(np.random.random((6, 7)))
             y_b = keras.backend.variable(np.random.random((6, 7)))
             for obj in ALL_LOSSES:
@@ -94,7 +92,7 @@ class KerasLossesTest(test.TestCase):
                 self.assertListEqual(objective_output.get_shape().as_list(), [6])
 
     def test_cce_one_hot(self):
-        with self.test_session():
+        with self.cached_session():
             y_a = keras.backend.variable(np.random.randint(0, 7, (5, 6)))
             y_b = keras.backend.variable(np.random.random((5, 6, 7)))
             objective_output = keras.losses.sparse_categorical_crossentropy(y_a, y_b)
@@ -133,7 +131,7 @@ class KerasLossesTest(test.TestCase):
         self.addCleanup(shutil.rmtree, tmpdir)
         model_filename = os.path.join(tmpdir, 'custom_loss.h5')
 
-        with self.test_session():
+        with self.cached_session():
             with keras.utils.custom_object_scope({'_MSEMAELoss': _MSEMAELoss}):
                 loss = _MSEMAELoss(0.3)
                 inputs = keras.layers.Input((2,))

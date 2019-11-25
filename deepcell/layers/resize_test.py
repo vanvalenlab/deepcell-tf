@@ -28,26 +28,24 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.utils import testing_utils
 from deepcell import layers
 
 
-class ResizeTest(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class ResizeTest(keras_parameterized.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_resize_2d(self):
-        with self.test_session(use_gpu=True):
-            testing_utils.layer_test(
-                layers.Resize2D,
-                kwargs={'scale': 2},
-                custom_objects={'Resize2D': layers.Resize2D},
-                input_shape=(3, 5, 6, 4))
-            testing_utils.layer_test(
-                layers.Resize2D,
-                kwargs={'scale': 3,
-                        'data_format': 'channels_first'},
-                custom_objects={'Resize2D': layers.Resize2D},
-                input_shape=(3, 5, 6, 4))
+        testing_utils.layer_test(
+            layers.Resize2D,
+            kwargs={'scale': 2},
+            custom_objects={'Resize2D': layers.Resize2D},
+            input_shape=(3, 5, 6, 4))
+        testing_utils.layer_test(
+            layers.Resize2D,
+            kwargs={'scale': 3,
+                    'data_format': 'channels_first'},
+            custom_objects={'Resize2D': layers.Resize2D},
+            input_shape=(3, 5, 6, 4))

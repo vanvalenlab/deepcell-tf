@@ -45,23 +45,19 @@ class TestFluorCytoplasmSegmentationModel(test.TestCase):
         valid_backbones = ['featurenet']
         input_shape = (256, 256, 1)  # channels will be set to 3
 
-        batch_shape = tuple([8] + list(input_shape))
-
-        X = np.random.random(batch_shape)
-
         for backbone in valid_backbones:
-            if int(tf.VERSION.split('.')[1]) < 10:
-                # retinanet backbones do not work with versions < 1.10.0
-                continue
 
-            with self.test_session(use_gpu=False):
+            with self.cached_session():
                 model = FluorCytoplasmSegmentationModel(
                     input_shape=input_shape,
                     backbone=backbone,
                     use_pretrained_weights=False
                 )
 
-                y = model.predict(X)
+                shape = model.output_shape
 
-                assert y[0].shape[0] == X.shape[0]
-                assert isinstance(y, list)
+                self.assertIsInstance(shape, list)
+                self.assertEqual(shape[0][-1], 4)  # bounding boxes
+                self.assertEqual(shape[1][-1], 1)  # labels
+                self.assertEqual(shape[6][-3:-1], (28, 28))  # maskRCNN output
+                self.assertEqual(len(shape), 7)  # maskRCNN output is 7

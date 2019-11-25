@@ -38,16 +38,20 @@ from deepcell import image_generators
 from deepcell import model_zoo
 from deepcell import notebooks
 from deepcell import running
+from deepcell import tracking
 from deepcell import training
 from deepcell import utils
 from deepcell import metrics
 
 from deepcell.layers import *
-from deepcell.losses import *
 from deepcell.image_generators import *
 from deepcell.model_zoo import *
-from deepcell.running import *
-from deepcell.training import *
+from deepcell.running import get_cropped_input_shape
+from deepcell.running import process_whole_image
+from deepcell.training import train_model_conv
+from deepcell.training import train_model_sample
+from deepcell.training import train_model_siamese_daughter
+from deepcell.training import train_model_retinanet
 from deepcell.utils import *
 
 del absolute_import

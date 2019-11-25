@@ -1,6 +1,6 @@
 # DeepCell: Deep Learning for Single Cell Analysis
 
-[![Build Status](https://travis-ci.org/vanvalenlab/deepcell-tf.svg?branch=master)](https://travis-ci.org/vanvalenlab/deepcell-tf)
+[![Build Status](https://travis-ci.com/vanvalenlab/deepcell-tf.svg?branch=master)](https://travis-ci.com/vanvalenlab/deepcell-tf)
 [![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master)
 
 DeepCell is neural network library for single cell analysis, written in Python and built using [TensorFlow](https://github.com/tensorflow/tensorflow) and [Keras](https://www.tensorflow.org/guide/keras).
@@ -77,7 +77,7 @@ docker build -t $USER/deepcell-tf .
 The tensorflow version can be overridden with the build-arg `TF_VERSION`.
 
 ```bash
-docker build --build-arg TF_VERSION=1.9.0-gpu -t $USER/deepcell-tf .
+docker build --build-arg TF_VERSION=1.15.0-gpu -t $USER/deepcell-tf .
 ```
 
 ### Run the new docker image

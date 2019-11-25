@@ -30,31 +30,181 @@ from __future__ import division
 
 import numpy as np
 from tensorflow.python.keras import backend as K
-from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.platform import test
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell import layers
 
 
-class TestFilterDetections(test.TestCase):
+@keras_parameterized.run_all_keras_modes
+class TestFilterDetections(keras_parameterized.TestCase):
 
-    @tf_test_util.run_in_graph_and_eager_modes()
     def test_simple(self):
-        with self.test_session(use_gpu=True):
+        # create simple FilterDetections layer
+        layer = layers.FilterDetections()
+
+        # create simple input
+        boxes = np.array([[
+            [0, 0, 10, 10],
+            [0, 0, 10, 10],  # this will be suppressed
+        ]], dtype=K.floatx())
+        boxes = K.constant(boxes)
+
+        classification = np.array([[
+            [0, 0.9],  # this will be suppressed
+            [0, 1],
+        ]], dtype=K.floatx())
+        classification = K.constant(classification)
+
+        # compute output
+        actual_boxes, actual_scores, actual_labels = layer.call(
+            [boxes, classification])
+        actual_boxes = K.get_value(actual_boxes)
+        actual_scores = K.get_value(actual_scores)
+        actual_labels = K.get_value(actual_labels)
+
+        # define expected output
+        expected_boxes = -1 * np.ones((1, 300, 4), dtype=K.floatx())
+        expected_boxes[0, 0, :] = [0, 0, 10, 10]
+
+        expected_scores = -1 * np.ones((1, 300), dtype=K.floatx())
+        expected_scores[0, 0] = 1
+
+        expected_labels = -1 * np.ones((1, 300), dtype=K.floatx())
+        expected_labels[0, 0] = 1
+
+        # assert actual and expected are equal
+        self.assertAllEqual(actual_boxes, expected_boxes)
+        self.assertAllEqual(actual_scores, expected_scores)
+        self.assertAllEqual(actual_labels, expected_labels)
+
+    def test_simple_3d(self):
+        # create simple FilterDetections layer
+        layer = layers.FilterDetections()
+
+        # create simple input
+        boxes = np.array([[
+            [0, 0, 10, 10],
+            [0, 0, 10, 10],  # this will be suppressed
+        ]], dtype=K.floatx())
+        boxes = np.expand_dims(boxes, 0)
+        boxes = K.constant(boxes)
+
+        classification = np.array([[
+            [0, 0.9],  # this will be suppressed
+            [0, 1],
+        ]], dtype=K.floatx())
+        classification = np.expand_dims(classification, 0)
+        classification = K.constant(classification)
+
+        # compute output
+        actual_boxes, actual_scores, actual_labels = layer.call(
+            [boxes, classification])
+        actual_boxes = K.get_value(actual_boxes)
+        actual_scores = K.get_value(actual_scores)
+        actual_labels = K.get_value(actual_labels)
+
+        # define expected output
+        expected_boxes = -1 * np.ones((1, 1, 300, 4), dtype=K.floatx())
+        expected_boxes[0, 0, 0, :] = [0, 0, 10, 10]
+
+        expected_scores = -1 * np.ones((1, 1, 300), dtype=K.floatx())
+        expected_scores[0, 0, 0] = 1
+
+        expected_labels = -1 * np.ones((1, 1, 300), dtype=K.floatx())
+        expected_labels[0, 0, 0] = 1
+
+        # assert actual and expected are equal
+        self.assertAllEqual(actual_boxes, expected_boxes)
+        self.assertAllEqual(actual_scores, expected_scores)
+        self.assertAllEqual(actual_labels, expected_labels)
+
+    def test_simple_with_other(self):
+        # create simple FilterDetections layer
+        layer = layers.FilterDetections()
+
+        # create simple input
+        boxes = np.array([[
+            [0, 0, 10, 10],
+            [0, 0, 10, 10],  # this will be suppressed
+        ]], dtype=K.floatx())
+        boxes = K.constant(boxes)
+
+        classification = np.array([[
+            [0, 0.9],  # this will be suppressed
+            [0, 1],
+        ]], dtype=K.floatx())
+        classification = K.constant(classification)
+
+        other = []
+        other.append(np.array([[
+            [0, 1234],  # this will be suppressed
+            [0, 5678],
+        ]], dtype=K.floatx()))
+        other.append(np.array([[
+            5678,  # this will be suppressed
+            1234,
+        ]], dtype=K.floatx()))
+        other = [K.constant(o) for o in other]
+
+        # compute output
+        actual = layer.call([boxes, classification] + other)
+        actual_boxes = K.get_value(actual[0])
+        actual_scores = K.get_value(actual[1])
+        actual_labels = K.get_value(actual[2])
+        actual_other = [K.get_value(a) for a in actual[3:]]
+
+        # define expected output
+        expected_boxes = -1 * np.ones((1, 300, 4), dtype=K.floatx())
+        expected_boxes[0, 0, :] = [0, 0, 10, 10]
+
+        expected_scores = -1 * np.ones((1, 300), dtype=K.floatx())
+        expected_scores[0, 0] = 1
+
+        expected_labels = -1 * np.ones((1, 300), dtype=K.floatx())
+        expected_labels[0, 0] = 1
+
+        expected_other = []
+        expected_other.append(-1 * np.ones((1, 300, 2), dtype=K.floatx()))
+        expected_other[-1][0, 0, :] = [0, 5678]
+        expected_other.append(-1 * np.ones((1, 300), dtype=K.floatx()))
+        expected_other[-1][0, 0] = 1234
+
+        # assert actual and expected are equal
+        self.assertAllEqual(actual_boxes, expected_boxes)
+        self.assertAllEqual(actual_scores, expected_scores)
+        self.assertAllEqual(actual_labels, expected_labels)
+
+        for a, e in zip(actual_other, expected_other):
+            self.assertAllEqual(a, e)
+
+    def test_mini_batch(self):
+        with self.cached_session():
             # create simple FilterDetections layer
             layer = layers.FilterDetections()
 
-            # create simple input
-            boxes = np.array([[
-                [0, 0, 10, 10],
-                [0, 0, 10, 10],  # this will be suppressed
-            ]], dtype=K.floatx())
+            # create input with batch_size=2
+            boxes = np.array([
+                [
+                    [0, 0, 10, 10],  # this will be suppressed
+                    [0, 0, 10, 10],
+                ],
+                [
+                    [100, 100, 150, 150],
+                    [100, 100, 150, 150],  # this will be suppressed
+                ],
+            ], dtype=K.floatx())
             boxes = K.constant(boxes)
 
-            classification = np.array([[
-                [0, 0.9],  # this will be suppressed
-                [0, 1],
-            ]], dtype=K.floatx())
+            classification = np.array([
+                [
+                    [0, 0.9],  # this will be suppressed
+                    [0, 1],
+                ],
+                [
+                    [1, 0],
+                    [0.9, 0],  # this will be suppressed
+                ],
+            ], dtype=K.floatx())
             classification = K.constant(classification)
 
             # compute output
@@ -65,133 +215,19 @@ class TestFilterDetections(test.TestCase):
             actual_labels = K.get_value(actual_labels)
 
             # define expected output
-            expected_boxes = -1 * np.ones((1, 300, 4), dtype=K.floatx())
+            expected_boxes = -1 * np.ones((2, 300, 4), dtype=K.floatx())
             expected_boxes[0, 0, :] = [0, 0, 10, 10]
+            expected_boxes[1, 0, :] = [100, 100, 150, 150]
 
-            expected_scores = -1 * np.ones((1, 300), dtype=K.floatx())
+            expected_scores = -1 * np.ones((2, 300), dtype=K.floatx())
             expected_scores[0, 0] = 1
+            expected_scores[1, 0] = 1
 
-            expected_labels = -1 * np.ones((1, 300), dtype=K.floatx())
+            expected_labels = -1 * np.ones((2, 300), dtype=K.floatx())
             expected_labels[0, 0] = 1
+            expected_labels[1, 0] = 0
 
             # assert actual and expected are equal
             self.assertAllEqual(actual_boxes, expected_boxes)
             self.assertAllEqual(actual_scores, expected_scores)
             self.assertAllEqual(actual_labels, expected_labels)
-
-    @tf_test_util.run_in_graph_and_eager_modes()
-    def test_simple_with_other(self):
-        with self.test_session(use_gpu=True):
-            # create simple FilterDetections layer
-            layer = layers.FilterDetections()
-
-            # create simple input
-            boxes = np.array([[
-                [0, 0, 10, 10],
-                [0, 0, 10, 10],  # this will be suppressed
-            ]], dtype=K.floatx())
-            boxes = K.constant(boxes)
-
-            classification = np.array([[
-                [0, 0.9],  # this will be suppressed
-                [0, 1],
-            ]], dtype=K.floatx())
-            classification = K.constant(classification)
-
-            other = []
-            other.append(np.array([[
-                [0, 1234],  # this will be suppressed
-                [0, 5678],
-            ]], dtype=K.floatx()))
-            other.append(np.array([[
-                5678,  # this will be suppressed
-                1234,
-            ]], dtype=K.floatx()))
-            other = [K.constant(o) for o in other]
-
-            # compute output
-            actual = layer.call([boxes, classification] + other)
-            actual_boxes = K.get_value(actual[0])
-            actual_scores = K.get_value(actual[1])
-            actual_labels = K.get_value(actual[2])
-            actual_other = [K.get_value(a) for a in actual[3:]]
-
-            # define expected output
-            expected_boxes = -1 * np.ones((1, 300, 4), dtype=K.floatx())
-            expected_boxes[0, 0, :] = [0, 0, 10, 10]
-
-            expected_scores = -1 * np.ones((1, 300), dtype=K.floatx())
-            expected_scores[0, 0] = 1
-
-            expected_labels = -1 * np.ones((1, 300), dtype=K.floatx())
-            expected_labels[0, 0] = 1
-
-            expected_other = []
-            expected_other.append(-1 * np.ones((1, 300, 2), dtype=K.floatx()))
-            expected_other[-1][0, 0, :] = [0, 5678]
-            expected_other.append(-1 * np.ones((1, 300), dtype=K.floatx()))
-            expected_other[-1][0, 0] = 1234
-
-            # assert actual and expected are equal
-            self.assertAllEqual(actual_boxes, expected_boxes)
-            self.assertAllEqual(actual_scores, expected_scores)
-            self.assertAllEqual(actual_labels, expected_labels)
-
-            for a, e in zip(actual_other, expected_other):
-                self.assertAllEqual(a, e)
-
-    # @tf_test_util.run_in_graph_and_eager_modes()
-    # def test_mini_batch(self):
-    #     with self.test_session(use_gpu=True):
-    #         # create simple FilterDetections layer
-    #         layer = layers.FilterDetections()
-    #
-    #         # create input with batch_size=2
-    #         boxes = np.array([
-    #             [
-    #                 [0, 0, 10, 10],  # this will be suppressed
-    #                 [0, 0, 10, 10],
-    #             ],
-    #             [
-    #                 [100, 100, 150, 150],
-    #                 [100, 100, 150, 150],  # this will be suppressed
-    #             ],
-    #         ], dtype=K.floatx())
-    #         boxes = K.constant(boxes)
-    #
-    #         classification = np.array([
-    #             [
-    #                 [0, 0.9],  # this will be suppressed
-    #                 [0, 1],
-    #             ],
-    #             [
-    #                 [1, 0],
-    #                 [0.9, 0],  # this will be suppressed
-    #             ],
-    #         ], dtype=K.floatx())
-    #         classification = K.constant(classification)
-    #
-    #         # compute output
-    #         actual_boxes, actual_scores, actual_labels = layer.call(
-    #             [boxes, classification])
-    #         actual_boxes = K.get_value(actual_boxes)
-    #         actual_scores = K.get_value(actual_scores)
-    #         actual_labels = K.get_value(actual_labels)
-    #
-    #         # define expected output
-    #         expected_boxes = -1 * np.ones((2, 300, 4), dtype=K.floatx())
-    #         expected_boxes[0, 0, :] = [0, 0, 10, 10]
-    #         expected_boxes[1, 0, :] = [100, 100, 150, 150]
-    #
-    #         expected_scores = -1 * np.ones((2, 300), dtype=K.floatx())
-    #         expected_scores[0, 0] = 1
-    #         expected_scores[1, 0] = 1
-    #
-    #         expected_labels = -1 * np.ones((2, 300), dtype=K.floatx())
-    #         expected_labels[0, 0] = 1
-    #         expected_labels[1, 0] = 0
-    #
-    #         # assert actual and expected are equal
-    #         self.assertAllEqual(actual_boxes, expected_boxes)
-    #         self.assertAllEqual(actual_scores, expected_scores)
-    #         self.assertAllEqual(actual_labels, expected_labels)

@@ -41,15 +41,15 @@ class TestScaleDetectionModel(test.TestCase):
 
     def test_scale_detection_model(self):
 
-        valid_backbones = ['VGG16']
-        input_shape = (256, 256, 1)  # channels will be set to 3
+        valid_backbones = ['featurenet']
+        input_shape = (216, 216, 1)  # channels will be set to 3
 
         batch_shape = tuple([8] + list(input_shape))
 
         X = np.random.random(batch_shape)
 
         for backbone in valid_backbones:
-            with self.test_session(use_gpu=True):
+            with self.cached_session():
                 inputs = Input(shape=input_shape)
                 model = ScaleDetectionModel(
                     inputs=inputs,
@@ -58,10 +58,10 @@ class TestScaleDetectionModel(test.TestCase):
 
                 y = model.predict(X)
 
-                assert y.shape[0] == X.shape[0]
                 assert len(y.shape) == 2
+                assert y.shape[0] == X.shape[0]
 
-            with self.test_session(use_gpu=True):
+            with self.cached_session():
                 model = ScaleDetectionModel(
                     input_shape=input_shape,
                     backbone=backbone,
@@ -69,5 +69,5 @@ class TestScaleDetectionModel(test.TestCase):
 
                 y = model.predict(X)
 
-                assert y.shape[0] == X.shape[0]
                 assert len(y.shape) == 2
+                assert y.shape[0] == X.shape[0]
