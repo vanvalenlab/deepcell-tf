@@ -30,4 +30,3 @@ from __future__ import print_function
 from __future__ import division
 
 from deepcell_tracking.utils import *
-from deepcell_tracking.isbi_utils import *
