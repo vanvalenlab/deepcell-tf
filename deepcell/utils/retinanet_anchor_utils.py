@@ -36,6 +36,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.framework import tensor_shape
 # from cv2 import resize
 from skimage.transform import resize
+from skimage.measure import regionprops
 
 try:
     from deepcell.utils.compute_overlap import compute_overlap
@@ -97,6 +98,67 @@ def generate_anchor_params(pyramid_levels, anchor_size_dict,
     strides = [2 ** int(level[1:]) for level in pyramid_levels]
     anchor_parameters = AnchorParameters(sizes, strides, ratios, scales)
     return anchor_parameters
+
+
+def determine_anchor_params(y):
+    """Obtain optimal anchor settings given a label image.
+
+    Args:
+        y: label image of shape (batch, x, y, 1)
+
+    Returns:
+        tuple: (backbone_layers, pyramid_layers, anchor_params)
+            backbone_layers: which layers of the backbone to include
+            pyramid_layers: which layers of the feature pyramid to include
+            anchor_params: anchor parameter settings 
+    """
+
+    areas = []
+    aspects = []
+    widths = []
+    heights = []
+
+    n_batches = y.shape[0]
+    
+    for batch in range(n_batches):
+        y_batch = y[batch,...,0]
+        props = regionprops(y_batch)
+        for prop in props:
+            bbox = prop.bbox
+            label = prop.label
+            width = np.float(bbox[2] - bbox[0])
+            height = np.float(bbox[3] - bbox[1])
+            
+            areas.append(width*height)
+            aspects.append(width/height)
+            
+    aspects = np.log2(aspects)
+    
+    size_min = np.sqrt(np.percentile(areas, 2.5))
+    size_max = np.sqrt(np.percentile(areas, 97.5))
+    
+    aspect_min = np.percentile(aspects, 2.5)
+    aspect_max = np.percentile(aspects, 97.5)
+    
+    layer_min = np.maximum(np.floor(np.log2(size_min))- 2, 1) 
+    layer_max = np.floor(np.log2(size_max)) - 2
+    
+    layers = np.arange(np.int(layer_min), np.int(layer_max)+1)
+
+    backbone_layers = ['C' + str(l) for l in layers]
+    pyramid_layers = ['P' + str(l) for l in layers]
+    
+    sizes = 2.0**(layers+2)
+    strides = 2.0**(layers)
+    ratios = 2.0**np.arange(np.int(aspect_min), np.int(aspect_max)+1)
+    scales=[2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]
+    
+    anchor_params = AnchorParameters(sizes=sizes, 
+                                    strides=strides,
+                                    ratios=ratios,
+                                    scales=scales)
+    
+    return backbone_layers, pyramid_layers, anchor_params
 
 
 def anchor_targets_bbox(anchors,
@@ -692,34 +754,46 @@ def _get_detections(generator,
             results = model.predict_on_batch(inputs)
 
             if generator.panoptic:
-                num_semantic_outputs = len(generator.y_semantic_list)
-                boxes = results[-num_semantic_outputs - 3]
-                scores = results[-num_semantic_outputs - 2]
-                labels = results[-num_semantic_outputs - 1]
-                semantic = results[-num_semantic_outputs:]
-                if generator.include_masks:
-                    boxes = results[-num_semantic_outputs - 4]
-                    scores = results[-num_semantic_outputs - 3]
-                    labels = results[-num_semantic_outputs - 2]
-                    masks = results[-num_semantic_outputs - 1]
-                    semantic = results[-num_semantic_outputs:]
-
-                    if generator.shape_mask:
+                if generator.shape_mask:
                         boxes = results[0]
                         scores = results[1]
                         labels = results[2]
                         masks = results[-num_semantic_outputs - 1]
                         semantic = results[-num_semantic_outputs:]
+                else:
+                    num_semantic_outputs = len(generator.y_semantic_list)
+                    boxes = results[-num_semantic_outputs - 3]
+                    scores = results[-num_semantic_outputs - 2]
+                    labels = results[-num_semantic_outputs - 1]
+                    semantic = results[-num_semantic_outputs:]
+                    if generator.include_masks:
+                        boxes = results[-num_semantic_outputs - 4]
+                        scores = results[-num_semantic_outputs - 3]
+                        labels = results[-num_semantic_outputs - 2]
+                        masks = results[-num_semantic_outputs - 1]
+                        semantic = results[-num_semantic_outputs:]
 
-            elif generator.include_masks:
-                boxes = results[-4]
-                scores = results[-3]
-                labels = results[-2]
-                masks = results[-1]
             else:
-                boxes = results[-3]
-                scores = results[-2]
-                labels = results[-1]
+                if generator.shape_mask:
+                    boxes = results[0]
+                    scores = results[1]
+                    labels = results[2]
+                    masks = results[3]
+                elif (generator.include_masks and
+                        not generator.include_final_detection_layer):
+                    boxes = results[-4]
+                    scores = results[-3]
+                    labels = results[-2]
+                    masks = results[-1]
+                elif (generator.include_masks and
+                      generator.include_final_detection_layer):
+                    boxes = results[-5]
+                    scores = results[-4]
+                    labels = results[-3]
+                    masks = results[-2]
+                    final_scores = results[-1]
+                else:
+                    boxes, scores, labels = results[0:3]
 
             # select indices which have a score above the threshold
             indices = np.where(scores[0, :] > score_threshold)[0]
@@ -768,7 +842,12 @@ def _get_detections(generator,
                     # Add logic for networks that have semantic heads
                     pass
                 else:
-                    if (generator.include_masks and
+                    if generator.shape_mask:
+                        boxes = results[0]
+                        scores = results[1]
+                        labels = results[2]
+                        masks = results[3]
+                    elif (generator.include_masks and
                             not generator.include_final_detection_layer):
                         boxes = results[-4]
                         scores = results[-3]

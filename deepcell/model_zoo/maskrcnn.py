@@ -191,10 +191,11 @@ def default_roi_submodels(num_classes,
         return [
             ('masks', TimeDistributed(
                 default_mask_model(num_classes,
+                                   name='mask_submodel_0',
                                    roi_size=roi_size,
                                    mask_size=mask_size,
                                    mask_dtype=mask_dtype,
-                                   retinanet_dtype=retinanet_dtype))),
+                                   retinanet_dtype=retinanet_dtype), name='mask_submodel')),
             ('final_detection', TimeDistributed(
                 default_final_detection_model(roi_size=roi_size)))
         ]
@@ -204,7 +205,8 @@ def default_roi_submodels(num_classes,
                                      mask_size=mask_size,
                                      mask_dtype=mask_dtype,
                                      retinanet_dtype=retinanet_dtype)),
-    ]
+        ('final_detection', default_final_detection_model(roi_size=roi_size))
+        ]
 
 
 def retinanet_mask(inputs,
@@ -310,7 +312,10 @@ def retinanet_mask(inputs,
 
     # filter detections (apply NMS / score threshold / select top-k)
     if shape_mask:
+      if frames_per_batch == 1:
         boxes = Input(shape=(None, 4), name='boxes_input')
+      else:
+        boxes = Input(shape=(None, None, 4), name='boxes_input')
         inputs = [image, boxes]
 
     else:
@@ -468,7 +473,11 @@ def shapemask_bbox(model=None,
     new_model = Model(inputs=model.inputs, outputs=outputs, name=name)
 
     image_input = model.inputs[0]
-    new_inputs = [image_input, tf.zeros([1,1,4])]
+    if frames_per_batch == 1:
+      temp_boxes = tf.zeros([1,1,4])
+    else:
+      temp_boxes = tf.zeros([1,1,1,4])
+    new_inputs = [image_input, temp_boxes]
 
     final_model = new_model(new_inputs)
     return Model(inputs=image_input, outputs=final_model)

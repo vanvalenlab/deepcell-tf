@@ -560,3 +560,13 @@ def compute_fd_loss(boxes, scores, annotations, iou_threshold=0.75):
     normalizer = K.maximum(K.cast_to_floatx(1.0), normalizer)
 
     return K.sum(loss) / normalizer
+
+def cluster_loss(y_true, y_pred):
+    def _compute_cluster_loss(y_pred):
+        qij = y_pred
+        pij_temp = qij ** 2 / K.sum(qij, axis=0)
+        pij = pij_temp / K.sum(pij_temp, axis=1)
+
+        loss = K.sum(pij*K.log(pij/qij))
+        return loss
+    return _compute_cluster_loss(y_pred)

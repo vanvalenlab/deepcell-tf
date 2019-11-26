@@ -41,51 +41,61 @@ from tensorflow.python.keras.layers import Layer, InputSpec
 from tensorflow.python.keras.utils import conv_utils
 
 class ClusterDense(Layer):
-	def __init__(self,
-				number_of_clusters=10):
+    def __init__(self,
+                number_of_clusters=10,
+                kernel_initializer='glorot_uniform',
+                kernel_regularizer=None,
+                activity_regularizer=None,
+                kernel_constraint=None,
+                **kwargs):
 
-		self.number_of_clusters = number_of_clusters
-		super(Cluster, self).__init__(
-			activity_regularizer=regularizers.get(activity_regularizer), 
-			**kwargs)
+        super(ClusterDense, self).__init__(**kwargs)
 
-	def build(self, input_shape):
-		input_shape = tensor_shape.TensorShape(input_shape)
+        self.number_of_clusters = number_of_clusters
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.activity_regularizer = regularizers.get(activity_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
+
+    def build(self, input_shape):
+        input_shape = tensor_shape.TensorShape(input_shape)
         if len(input_shape) != 2:
             raise ValueError('Inputs should have rank 2, '
                              'received input shape: %s' % input_shape)
+        embedding_dim = input_shape[-1]
 
-        mu_shape = (self.number_of_clusters)
+        mu_shape = (embedding_dim, self.number_of_clusters)
         self.mu = self.add_weight(shape=mu_shape,
-        					      initializer=self.kernel_initializer,
-        						  name='mu',
-        						  regularizer=self.kernel_regularizer,
-        						  constriant=self.kernel_constraint)
+                                  initializer=self.kernel_initializer,
+                                  name='mu',
+                                  regularizer=self.kernel_regularizer,
+                                  constraint=self.kernel_constraint)
 
-        self.input_spec = InputSpec(ndim=2, axes={channel_axis: 1})
+        self.input_spec = InputSpec(ndim=3)
         self.built = True
 
-	def compute_output_shape(self, input_shape):
-		input_shape = tensor_shape.TensorShape(input_shape).as_list()
-		output_shape = input_shape[0:-1] + [self.number_of_clusters]
-		return tensor_shape.TensorShape(output_shape)
+    def compute_output_shape(self, input_shape):
+        input_shape = tensor_shape.TensorShape(input_shape).as_list()
+        mu_output_shape = [embedding_dim, self.number_of_clusters]
+        qij_output_shape = [input_shape[0], self.number_of_clusters]
+        return [tensor_shape.TensorShape(mu_output_shape), tensor_shape.TensorShape(qij_output_shape)]
 
-	def call(self, inputs):
-		# Expand dimensions  for broad casting
-		zi = tf.tile(tf.expand_dims(inputs, axis=-1), [1,1,self.number_of_clusters])
-		mu = tf.expand_dims(tf.expand_dims(mu, axis=0), axis=0)
-		qij_temp = 1/(1 + (zi - mu)**2)
-		qij = qij_temp / tf.reduce_sum(qij_temp, axis=-1)
+    def call(self, inputs):
+        # Expand dimensions  for broad casting
+        zi = K.tile(K.expand_dims(inputs, axis=-1), [1,1,self.number_of_clusters])
+        mu = K.expand_dims(self.mu, axis=0)
+        qij_temp = 1/(1 + K.sum((zi - mu)**2, axis=1))
+        qij = qij_temp / K.sum(qij_temp, axis=-1, keepdims=True)
 
-		outputs = [mu, qij]
+        outputs = [self.mu, qij]
 
-		return outputs
+        return outputs
 
-	def get_config(self):
-		config = {
-			'number_of_clusters': self.number_of_clusters,
+    def get_config(self):
+        config = {
+            'number_of_clusters': self.number_of_clusters,
             'kernel_initializer': initializers.serialize(self.kernel_initializer),
             'kernel_regularizer': regularizers.serialize(self.kernel_regularizer),
             'activity_regularizer': regularizers.serialize(self.activity_regularizer),
             'kernel_constraint': constraints.serialize(self.kernel_constraint),
-		}
+        }

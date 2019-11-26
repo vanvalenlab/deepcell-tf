@@ -33,7 +33,7 @@ import re
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D, TimeDistributed
+from tensorflow.python.keras.layers import Conv2D, Conv3D, TimeDistributed, ConvLSTM2D
 from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import Permute, Reshape
 from tensorflow.python.keras.layers import Activation, Lambda
@@ -44,6 +44,7 @@ from deepcell.layers import TensorProduct
 from deepcell.layers import FilterDetections
 from deepcell.layers import ImageNormalization2D, Location2D
 from deepcell.layers import Anchors, RegressBoxes, ClipBoxes
+from deepcell.layers import ConvGRU2D
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
 from deepcell.model_zoo.fpn import __create_semantic_head
 from deepcell.model_zoo.fpn import __create_pyramid_features
@@ -303,6 +304,26 @@ def __build_anchors(anchor_parameters, features, frames_per_batch=1):
             ]
         return Concatenate(axis=-2, name='anchors')(anchors)
 
+def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per_batch=1):
+    if mode == 'conv':
+        temporal_feature = Conv3D(feature_size, 
+                                (frames_per_batch, 3, 3), 
+                                strides=(1,1,1),
+                                padding='same',
+                                )(feature)
+    elif mode == 'lstm':
+        temporal_feature = ConvLSTM2D(feature_size, 
+                                    (3, 3), 
+                                    padding='same',
+                                    return_sequences=True)(feature)
+    elif mode == 'gru':
+        temporal_feature = ConvGRU2D(feature_size,
+                                    (3, 3),
+                                    padding='same',
+                                    return_sequences=True)(feature)
+
+    return temporal_feature
+
 
 def retinanet(inputs,
               backbone_dict,
@@ -317,6 +338,7 @@ def retinanet(inputs,
               num_semantic_classes=[3],
               submodels=None,
               frames_per_batch=1,
+              temporal_mode=None,
               name='retinanet'):
     """Construct a RetinaNet model on top of a backbone.
 
@@ -376,6 +398,12 @@ def retinanet(inputs,
 
     # for the desired pyramid levels, run available submodels
     features = [pyramid_dict[key] for key in pyramid_levels]
+
+    if frames_per_batch > 1:
+        if temporal_mode in ['conv', 'lstm', 'gru']:
+            temporal_features = [__merge_temporal_features(feature, mode=temporal_mode) for feature in features]
+            features = temporal_features
+
     object_head = __build_pyramid(submodels, features)
 
     if panoptic:
