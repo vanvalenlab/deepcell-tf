@@ -29,4 +29,16 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from deepcell_tracking.utils import *
+# pylint: disable=unused-import
+from deepcell_tracking.utils import clean_up_annotations
+from deepcell_tracking.utils import resize
+from deepcell_tracking.utils import count_pairs
+from deepcell_tracking.utils import load_trks
+from deepcell_tracking.utils import trk_folder_to_trks
+from deepcell_tracking.utils import save_trks
+from deepcell_tracking.utils import trks_stats
+# pylint: enable=unused-import
+
+del absolute_import
+del print_function
+del division
