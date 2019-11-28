@@ -75,7 +75,7 @@ raw2647 = Dataset(
 nih_3t3_bench = Dataset(
     path='3T3_NIH_benchmarks.trks',
     url='https://deepcell-data.s3.amazonaws.com/tracking_manuscript_benchmarking/GT_tracks/3T3_NIH_benchmarks.trks',
-    file_hash='a2494def4f4369f24e6c45583293b4f3',
+    file_hash='fb4a6afc3fc10db0d9b07dd8db516eaf',
     metadata={}
 )
 
@@ -83,7 +83,7 @@ nih_3t3_bench = Dataset(
 hek293_bench = Dataset(
     path='HEK293_generic_benchmarks.trks',
     url='https://deepcell-data.s3.amazonaws.com/tracking_manuscript_benchmarking/GT_tracks/HEK293_generic_benchmarks.trks',
-    file_hash='61cc9e199711e04e434320499779fc82',
+    file_hash='b895098641c05655d79af9437962184f',
     metadata={}
 )
 
@@ -91,7 +91,7 @@ hek293_bench = Dataset(
 hela_s3_bench = Dataset(
     path='HeLa_S3_benchmarks.trks',
     url='https://deepcell-data.s3.amazonaws.com/tracking_manuscript_benchmarking/GT_tracks/HeLa_S3_benchmarks.trks',
-    file_hash='88af2d5bb21077c6c05c87ca201268f6',
+    file_hash='ab3bc9f1a1bd0b0f93bbd20690d51585',
     metadata={}
 )
 
@@ -99,6 +99,6 @@ hela_s3_bench = Dataset(
 raw2647_bench = Dataset(
     path='RAW2647_generic_benchmarks.trks',
     url='https://deepcell-data.s3.amazonaws.com/tracking_manuscript_benchmarking/GT_tracks/RAW2647_generic_benchmarks.trks',
-    file_hash='137faebfe26f9631ca0da67871e23ccf',
+    file_hash='d832a462c1d476c7f8b9c78891ab3881',
     metadata={}
 )
