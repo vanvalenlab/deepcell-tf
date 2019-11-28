@@ -67,7 +67,7 @@ class UpsampleLike(Layer):
                 new_shape_2.append(size[1])
 
         new_image = tf.reshape(image, new_shape)
-        new_image_resized = tf.image.resize_images(
+        new_image_resized = tf.image.resize(
             new_image,
             size,
             method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
@@ -103,13 +103,13 @@ class UpsampleLike(Layer):
                 source = tf.transpose(source, (0, 2, 3, 1))
                 new_shape = (target_shape[2], target_shape[3])
                 # TODO: K.resize_images?
-                output = tf.image.resize_images(
+                output = tf.image.resize(
                     source, new_shape,
                     method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
                 output = tf.transpose(output, (0, 3, 1, 2))
                 return output
             new_shape = (target_shape[1], target_shape[2])
-            return tf.image.resize_images(
+            return tf.image.resize(
                 source, new_shape,
                 method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
@@ -146,7 +146,7 @@ class Upsample(Layer):
         new_shape = (self.target_size[0], self.target_size[1])
         if self.data_format == 'channels_first':
             inputs = tf.transpose(inputs, (0, 2, 3, 1))
-        outputs = tf.image.resize_images(
+        outputs = tf.image.resize(
             inputs, new_shape, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
         if self.data_format == 'channels_first':
             outputs = tf.transpose(outputs, (0, 3, 1, 2))
