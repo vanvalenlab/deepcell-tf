@@ -34,7 +34,7 @@ import re
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D, Conv3D, TimeDistributed, ConvLSTM2D
-from tensorflow.python.keras.layers import Input, Concatenate
+from tensorflow.python.keras.layers import Input, Concatenate, BatchNormalization
 from tensorflow.python.keras.layers import Permute, Reshape
 from tensorflow.python.keras.layers import Activation, Lambda
 from tensorflow.python.keras.initializers import RandomNormal
@@ -306,21 +306,27 @@ def __build_anchors(anchor_parameters, features, frames_per_batch=1):
 
 def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per_batch=1):
     if mode == 'conv':
-        temporal_feature = Conv3D(feature_size, 
-                                (frames_per_batch, 3, 3), 
-                                strides=(1,1,1),
-                                padding='same',
-                                )(feature)
+        x = Conv3D(feature_size, 
+                    (frames_per_batch, 3, 3), 
+                    strides=(1,1,1),
+                    padding='same',
+                    )(feature)
+        x = BatchNormalization(axis=-1)(x)
+        x = Activation('relu')(x)
     elif mode == 'lstm':
-        temporal_feature = ConvLSTM2D(feature_size, 
-                                    (3, 3), 
-                                    padding='same',
-                                    return_sequences=True)(feature)
+        x = ConvLSTM2D(feature_size, 
+		               (3, 3), 
+                        padding='same',
+                        activation='relu',
+                        return_sequences=True)(feature)
     elif mode == 'gru':
-        temporal_feature = ConvGRU2D(feature_size,
-                                    (3, 3),
-                                    padding='same',
-                                    return_sequences=True)(feature)
+        x = ConvGRU2D(feature_size,
+	                    (3, 3),
+                        padding='same',
+                        activation='relu',
+                        return_sequences=True)(feature)
+
+    temporal_feature = feature + x     
 
     return temporal_feature
 
