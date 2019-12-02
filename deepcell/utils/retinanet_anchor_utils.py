@@ -31,6 +31,7 @@ from __future__ import division
 import itertools
 
 import numpy as np
+import skimage as sk
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.framework import tensor_shape
@@ -78,16 +79,58 @@ AnchorParameters.default = AnchorParameters(
 )
 
 
+def get_anchor_parameters(y):
+    """Automatically determine appropriate backbone layers, pyarmid layers,
+    and anchor parameters based on the annotated data.
+
+    Args:
+        y (np.array): Annotated data array (channels_last).
+
+    Returns:
+        tuple: Tuple of backbone layers, pyramid layers, and anchor parameters.
+    """
+    areas, aspects = [], []
+    for batch in range(y.shape[0]):
+        y_batch = y[batch, ..., 0]
+        for prop in sk.measure.regionprops(y_batch):
+            width = np.float(prop.bbox[2] - prop.bbox[0])
+            height = np.float(prop.bbox[3] - prop.bbox[1])
+
+            areas.append(width * height)
+            aspects.append(width / height)
+
+    aspects = np.log2(aspects)
+    size_min = np.sqrt(np.percentile(areas, 2.5))
+
+    size_max = np.sqrt(np.percentile(areas, 97.5))
+    aspect_min = np.percentile(aspects, 2.5)
+    aspect_max = np.percentile(aspects, 97.5)
+    layer_min = np.maximum(np.floor(np.log2(size_min)) - 2, 1)
+    layer_max = np.floor(np.log2(size_max)) - 2
+    layers = np.arange(np.int(layer_min), np.int(layer_max) + 1)
+
+    backbone_layers = ['C{}'.format(l) for l in layers]
+    pyramid_layers = ['P{}'.format(l) for l in layers]
+
+    sizes = 2.0 ** (layers + 2)
+    strides = 2.0 ** (layers)
+    ratios = 2.0 ** np.arange(np.int(aspect_min), np.int(aspect_max) + 1)
+    scales = [2 ** 0, 2 ** (1.0 / 3.0), 2 ** (2.0 / 3.0)]
+    anchor_params = AnchorParameters(sizes=sizes, strides=strides,
+                                     ratios=ratios, scales=scales)
+    return backbone_layers, pyramid_layers, anchor_params
+
+
 def generate_anchor_params(pyramid_levels, anchor_size_dict,
                            ratios=AnchorParameters.default.ratios,
                            scales=AnchorParameters.default.scales):
     """Get AnchorParameters for the given pyramid levels and anchor sizes.
 
     Args:
-        pyramid_levels (str[]): List of layers to use as pyramid features
+        pyramid_levels (list): List of layers to use as pyramid features
         anchor_size_dict (dict): dictionary of anchor sizes
-        ratios (float[]): list of ratios
-        scales (float[]): list of scales
+        ratios (list): list of ratios
+        scales (list): list of scales
 
     Returns:
         AnchorParameters: anchor configuration for the given
