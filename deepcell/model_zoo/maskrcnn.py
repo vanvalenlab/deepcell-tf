@@ -316,7 +316,7 @@ def retinanet_mask(inputs,
         boxes = Input(shape=(None, 4), name='boxes_input')
       else:
         boxes = Input(shape=(None, None, 4), name='boxes_input')
-        inputs = [image, boxes]
+      inputs = [image, boxes]
 
     else:
         # split up in known outputs and "other"
