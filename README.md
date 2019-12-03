@@ -66,17 +66,18 @@ This will start a jupyter session, with several example notebooks detailing vari
 
 DeepCell uses `nvidia-docker` and `tensorflow` to enable GPU processing.
 
-### Build a local docker container
+If using GCP, there are pre-built images which come with CUDA, docker, and nvidia-docker pre-installed: 
+https://console.cloud.google.com/marketplace/details/nvidia-ngc-public/nvidia_gpu_cloud_image
+
+Otheriwise, these will need to be downloaded and installed:
+https://github.com/NVIDIA/nvidia-docker
+https://docs.docker.com/install/linux/docker-ce/debian/
+
+### Build a local docker container, specifying the tensorflow version with TF_VERSION
 
 ```bash
 git clone https://github.com/vanvalenlab/deepcell-tf.git
 cd deepcell-tf
-docker build -t $USER/deepcell-tf .
-```
-
-The tensorflow version can be overridden with the build-arg `TF_VERSION`.
-
-```bash
 docker build --build-arg TF_VERSION=1.15.0-gpu -t $USER/deepcell-tf .
 ```
 
@@ -95,13 +96,34 @@ NV_GPU='0' nvidia-docker run -it \
 
 It can also be helpful to mount the local copy of the repository and the scripts to speed up local development.
 
+However, if you are going to mount a local version of the repository, you must first run the docker image without the local repository mounted so that the c extensions can be compiled and then copied over to your local version.
+
 ```bash
+# First run the docker image without mounting externally
+NV_GPU='0' nvidia-docker run -it \
+  -p 8888:8888 \
+  $USER/deepcell-tf:latest
+  
+# Use ctrl-p, ctrl-q to exit the running docker image without shutting it down
+
+# Then, get the container_id after running the below command
+docker ps 
+
+# Replace the path/to/deepcell-tf below with the path to your local copy of deepcell-tf, and replace container_id with the container_id from the docker ps command above
+
+docker cp container_id:/usr/local/lib/python3.6/dist-packages/deepcell/utils/compute_overlap.cpython-36m-x86_64-linux-gnu.so path/to/deepcell-tf/deepcell/utils/compute_overlap.cpython-36m-x86_64-linux-gnu.so
+
+# close the running docker
+docker kill container_id
+
+# you can now start the docker image with the code mounted for easy editing
 NV_GPU='0' nvidia-docker run -it \
   -p 8888:8888 \
   -v $PWD/deepcell:/usr/local/lib/python3.6/dist-packages/deepcell/ \
   -v $PWD/scripts:/notebooks \
   -v /data:/data \
   $USER/deepcell-tf:latest
+
 ```
 
 ## How to Cite
