@@ -204,8 +204,8 @@ def default_roi_submodels(num_classes,
                                      roi_size=roi_size,
                                      mask_size=mask_size,
                                      mask_dtype=mask_dtype,
-                                     retinanet_dtype=retinanet_dtype)),
-        ('final_detection', default_final_detection_model(roi_size=roi_size))
+                                     retinanet_dtype=retinanet_dtype))
+        # ('final_detection', default_final_detection_model(roi_size=roi_size))
         ]
 
 
