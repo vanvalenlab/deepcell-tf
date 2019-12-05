@@ -203,33 +203,18 @@ class ClipBoxes(Layer):
     def call(self, inputs, **kwargs):
         image, boxes = inputs
         shape = K.cast(K.shape(image), K.floatx())
-        if K.ndim(image) == 4:
-            if self.data_format == "channels_first":
-                height = shape[2]
-                width = shape[3]
-            else:
-                height = shape[1]
-                width = shape[2]
-        elif K.ndim(image) == 5:
-            if self.data_format == "channels_first":
-                height = shape[3]
-                width = shape[4]
-            else:
-                height = shape[2]
-                width = shape[3]
-
-        if K.ndim(image) == 4:
-            x1 = tf.clip_by_value(boxes[:, :, 0], 0, width)
-            y1 = tf.clip_by_value(boxes[:, :, 1], 0, height)
-            x2 = tf.clip_by_value(boxes[:, :, 2], 0, width)
-            y2 = tf.clip_by_value(boxes[:, :, 3], 0, height)
-            return K.stack([x1, y1, x2, y2], axis=2)
-        elif K.ndim(image) == 5:
-            x1 = tf.clip_by_value(boxes[:, :, :, 0], 0, width)
-            y1 = tf.clip_by_value(boxes[:, :, :, 1], 0, height)
-            x2 = tf.clip_by_value(boxes[:, :, :, 2], 0, width)
-            y2 = tf.clip_by_value(boxes[:, :, :, 3], 0, height)
-            return K.stack([x1, y1, x2, y2], axis=3)
+        ndim = K.ndim(image)
+        if self.data_format == "channels_first":
+            height = shape[ndim - 2]
+            width = shape[ndim - 1]
+        else:
+            height = shape[ndim - 3]
+            width = shape[ndim - 2]
+        x1 = tf.clip_by_value(boxes[..., 0], 0, width - 1)
+        y1 = tf.clip_by_value(boxes[..., 1], 0, height - 1)
+        x2 = tf.clip_by_value(boxes[..., 2], 0, width - 1)
+        y2 = tf.clip_by_value(boxes[..., 3], 0, height - 1)
+        return K.stack([x1, y1, x2, y2], axis=ndim - 2)
 
     def compute_output_shape(self, input_shape):
         return tensor_shape.TensorShape(input_shape[1]).as_list()
