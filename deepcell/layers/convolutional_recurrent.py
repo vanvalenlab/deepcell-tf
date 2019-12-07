@@ -66,7 +66,7 @@ from tensorflow.python.keras.engine.base_layer import Layer
 from tensorflow.python.keras.models import Sequential
 from tensorflow.python.keras.layers.convolutional import Conv3D
 from tensorflow.python.keras.layers.normalization import BatchNormalization
-from tensorflow.python.keras.layers.convolutional_recurrent import ConvLSTM2D, ConvRNN2D
+from tensorflow.python.keras.layers.convolutional_recurrent import ConvRNN2D
 
 
 class ConvGRU2DCell(Layer):
@@ -88,7 +88,6 @@ class ConvGRU2DCell(Layer):
                  kernel_regularizer=None,
                  recurrent_regularizer=None,
                  bias_regularizer=None,
-                 activity_regularizer=None,
                  kernel_constraint=None,
                  recurrent_constraint=None,
                  bias_constraint=None,
@@ -102,8 +101,7 @@ class ConvGRU2DCell(Layer):
         self.strides = conv_utils.normalize_tuple(strides, 2, 'strides')
         self.padding = conv_utils.normalize_padding(padding)
         self.data_format = conv_utils.normalize_data_format(data_format)
-        self.dilation_rate = conv_utils.normalize_tuple(dilation_rate, 2,
-                                                        'dilation_rate')
+        self.dilation_rate = conv_utils.normalize_tuple(dilation_rate, 2, 'dilation_rate')
         self.activation = activations.get(activation)
         self.recurrent_activation = activations.get(recurrent_activation)
         self.use_bias = use_bias
@@ -125,7 +123,7 @@ class ConvGRU2DCell(Layer):
         self.state_size = (self.filters, self.filters)
         self._dropout_mask = None
         self._recurrent_dropout_mask = None
-            
+
 
     def build(self, input_shape):
         if self.data_format == 'channels_first':
@@ -134,7 +132,7 @@ class ConvGRU2DCell(Layer):
             channel_axis = -1
         if input_shape[channel_axis] is None:
             raise ValueError('The channel dimension of the inputs '
-                           'should be defined. Found `None`.')
+                             'should be defined. Found `None`.')
         input_dim = input_shape[channel_axis]
         kernel_shape = self.kernel_size + (input_dim, self.filters * 3)
         self.kernel_shape = kernel_shape
@@ -169,14 +167,14 @@ class ConvGRU2DCell(Layer):
         self.kernel_r = self.kernel[:, :, :, self.filters: self.filters * 2]
         self.recurrent_kernel_r = self.recurrent_kernel[:, :, :, self.filters:self.filters * 2]
         # new gate 
-        self.kernel_h = self.kernel[:, :, :, self.filters * 2:]
-        self.recurrent_kernel_h = self.recurrent_kernel[:, :, :, self.filters * 2:]
+        self.kernel_h = self.kernel[:, :, :, self.filters * 2:self.filters * 3]
+        self.recurrent_kernel_h = self.recurrent_kernel[:, :, :, self.filters * 2: self.filters * 3]
 
         if self.use_bias:
             # bias for inputs
             self.bias_z = self.bias[:self.filters]
             self.bias_r = self.bias[self.filters: self.filters * 2]
-            self.bias_h = self.bias[self.filters * 2:]
+            self.bias_h = self.bias[self.filters * 2: self.filters * 3]
         else:
             self.bias_z = None
             self.bias_r = None
@@ -185,8 +183,7 @@ class ConvGRU2DCell(Layer):
 
         
     def call(self, inputs, states, training=None):
-        h_tm1 = states[0]  # previous memory state
-
+        
         if 0 < self.dropout < 1 and self._dropout_mask is None:
             self._dropout_mask = _generate_dropout_mask(
                 K.ones_like(inputs),
@@ -203,9 +200,10 @@ class ConvGRU2DCell(Layer):
 
         # dropout matrices for input units
         dp_mask = self._dropout_mask
-
         # dropout matrices for recurrent units
         rec_dp_mask = self._recurrent_dropout_mask
+
+        h_tm1 = states[0]  # previous memory state
 
         if 0. < self.dropout < 1.:
             inputs_z = inputs * dp_mask[0]
@@ -246,30 +244,28 @@ class ConvGRU2DCell(Layer):
         hh = self.activation(x_h + h_h)
         
         # previous and candidate state mixed by update gate
-        # h = (1 - z) * h_tm1 + z * hh
-
-        h = z * h_tm1 + (1.0 - z) * hh
+        h = (1 - z) * h_tm1 + z * hh
 
         if 0 < self.dropout + self.recurrent_dropout:
             if training is None:
                 h._uses_learning_phase = True
-
-        return h, [h, hh]
+        zeros = K.zeros_like(h_tm1)
+        return h, [h, zeros]
 
     def input_conv(self, x, w, b=None, padding='valid'):
         conv_out = K.conv2d(x, w, strides=self.strides,
-                          padding=padding,
-                          data_format=self.data_format,
-                          dilation_rate=self.dilation_rate)
+                            padding=padding,
+                            data_format=self.data_format,
+                            dilation_rate=self.dilation_rate)
         if b is not None:
             conv_out = K.bias_add(conv_out, b,
-                              data_format=self.data_format)
+                                  data_format=self.data_format)
         return conv_out
 
     def recurrent_conv(self, x, w):
         conv_out = K.conv2d(x, w, strides=(1, 1),
-                          padding='same',
-                          data_format=self.data_format)
+                            padding='same',
+                            data_format=self.data_format)
         return conv_out
 
     def get_config(self):
@@ -355,10 +351,10 @@ class ConvGRU2D(ConvRNN2D):
         self.activity_regularizer = regularizers.get(activity_regularizer)
         
     def call(self, inputs, mask=None, training=None, initial_state=None):
-        result = super(ConvGRU2D, self).call(inputs, 
-                                          mask=mask,
-                                          training=training, 
-                                          initial_state=initial_state)
+        result = super(ConvGRU2D, self).call(inputs,
+                                             mask=mask,
+                                             training=training,
+                                             initial_state=initial_state)
         return result
 
     @property

@@ -8,6 +8,8 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
+from tensorflow.python.keras import keras_parameterized
+
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Sequential, Model
 from tensorflow.python.keras.layers import Input
@@ -19,9 +21,9 @@ from deepcell.utils import testing_utils
 from deepcell import layers
 
 
-class ConvoluationalRecurrentTest(test.TestCase):
+class ConvolutionalRecurrentTest(keras_parameterized.TestCase):
     
-    @tf_test_util.run_in_graph_and_eager_modes()
+    @keras_parameterized.run_all_keras_modes
     def test_convolutional_gru_2d(self):
         num_row = 3
         num_col = 3
@@ -33,6 +35,7 @@ class ConvoluationalRecurrentTest(test.TestCase):
         sequence_len = 2
     
         custom_objects = {'ConvGRU2D': layers.ConvGRU2D}
+        # custom_objects = {'ConvLSTM2D': convolutional_recurrent.ConvLSTM2D}
         
         for data_format in ['channels_first', 'channels_last']:
             if data_format == 'channels_first':
@@ -52,6 +55,7 @@ class ConvoluationalRecurrentTest(test.TestCase):
                           'filters': filters,
                           'kernel_size': (num_row, num_col),
                           'padding': 'valid'}
+                #layer = convolutional_recurrent.ConvLSTM2D(**kwargs) 
                 layer = layers.ConvGRU2D(**kwargs)
                 layer.build(inputs.shape)
                 
@@ -64,6 +68,7 @@ class ConvoluationalRecurrentTest(test.TestCase):
                 np.testing.assert_allclose(K.eval(layer.states[0]), state, atol=1e-4)
 
                 # test for output shape:
+                # output = testing_utils.layer_test(convolutional_recurrent.ConvLSTM2D,
                 output = testing_utils.layer_test(layers.ConvGRU2D,
                         kwargs={'data_format': data_format,
                                 'return_sequences': return_sequences,
