@@ -150,10 +150,12 @@ class ConvGRU2DCell(Layer):
         self.recurrent_kernel_z = self.recurrent_kernel[:, :, :, :self.filters]
         # reset gate
         self.kernel_r = self.kernel[:, :, :, self.filters: self.filters * 2]
-        self.recurrent_kernel_r = self.recurrent_kernel[:, :, :, self.filters:self.filters * 2]
+        self.recurrent_kernel_r = \
+            self.recurrent_kernel[:, :, :, self.filters:self.filters * 2]
         # new gate
         self.kernel_h = self.kernel[:, :, :, self.filters * 2:self.filters * 3]
-        self.recurrent_kernel_h = self.recurrent_kernel[:, :, :, self.filters * 2: self.filters * 3]
+        self.recurrent_kernel_h = \
+            self.recurrent_kernel[:, :, :, self.filters * 2: self.filters * 3]
 
         if self.use_bias:
             # bias for inputs
