@@ -42,10 +42,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import numpy as np
-import warnings
-import os
-
 import tensorflow as tf
 
 from tensorflow.python.keras import activations
@@ -53,20 +49,10 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import constraints
 from tensorflow.python.keras import initializers
 from tensorflow.python.keras import regularizers
-from tensorflow.python.keras.engine.base_layer import Layer
+from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras.layers.recurrent import _generate_dropout_mask
-from tensorflow.python.keras.layers.recurrent import RNN
-
-from tensorflow.python.keras.utils import conv_utils
-from tensorflow.python.keras.utils import generic_utils
-from tensorflow.python.keras.utils import tf_utils
-
-from tensorflow.python.keras.engine.base_layer import Layer
-
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers.convolutional import Conv3D
-from tensorflow.python.keras.layers.normalization import BatchNormalization
 from tensorflow.python.keras.layers.convolutional_recurrent import ConvRNN2D
+from tensorflow.python.keras.utils import conv_utils
 
 
 class ConvGRU2DCell(Layer):
