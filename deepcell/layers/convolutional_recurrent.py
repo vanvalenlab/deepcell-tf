@@ -33,7 +33,7 @@ https://github.com/keras-team/keras/blob/master/keras/layers/recurrent.py#L422
 Keras ConvLSTM2D
 https://github.com/keras-team/keras/blob/master/keras/layers/convolutional_recurrent.py
 
-RFCNN 
+RFCNN
 https://gitlab.com/sepehr.valipour/RFCNN/blob/master/rfcnn/layers/convolutional.py
 Literature at https://ieeexplore.ieee.org/abstract/document/8296851
 """
@@ -57,7 +57,7 @@ from tensorflow.python.keras.utils import conv_utils
 
 class ConvGRU2DCell(Layer):
     """Cell class for the ConvGRU2D layer."""
-    
+
     def __init__(self,
                  filters,
                  kernel_size,
@@ -83,7 +83,7 @@ class ConvGRU2DCell(Layer):
         super(ConvGRU2DCell, self).__init__(**kwargs)
         self.filters = filters
         self.kernel_size = conv_utils.normalize_tuple(kernel_size, 2, 'kernel_size')
-        
+
         self.strides = conv_utils.normalize_tuple(strides, 2, 'strides')
         self.padding = conv_utils.normalize_padding(padding)
         self.data_format = conv_utils.normalize_data_format(data_format)
@@ -109,7 +109,6 @@ class ConvGRU2DCell(Layer):
         self.state_size = (self.filters, self.filters)
         self._dropout_mask = None
         self._recurrent_dropout_mask = None
-
 
     def build(self, input_shape):
         if self.data_format == 'channels_first':
@@ -138,9 +137,9 @@ class ConvGRU2DCell(Layer):
 
         if self.use_bias:
             self.bias = self.add_weight(
-                shape=(self.filters * 3,), 
+                shape=(self.filters * 3,),
                 name='bias',
-                initializer= self.bias_initializer,
+                initializer=self.bias_initializer,
                 regularizer=self.bias_regularizer,
                 constraint=self.bias_constraint)
         else:
@@ -152,7 +151,7 @@ class ConvGRU2DCell(Layer):
         # reset gate
         self.kernel_r = self.kernel[:, :, :, self.filters: self.filters * 2]
         self.recurrent_kernel_r = self.recurrent_kernel[:, :, :, self.filters:self.filters * 2]
-        # new gate 
+        # new gate
         self.kernel_h = self.kernel[:, :, :, self.filters * 2:self.filters * 3]
         self.recurrent_kernel_h = self.recurrent_kernel[:, :, :, self.filters * 2: self.filters * 3]
 
@@ -167,7 +166,6 @@ class ConvGRU2DCell(Layer):
             self.bias_h = None
         self.built = True
 
-        
     def call(self, inputs, states, training=None):
         
         if 0 < self.dropout < 1 and self._dropout_mask is None:
@@ -177,7 +175,7 @@ class ConvGRU2DCell(Layer):
                 training=training,
                 count=3)
         if (0 < self.recurrent_dropout < 1 and
-            self._recurrent_dropout_mask is None):
+                self._recurrent_dropout_mask is None):
             self._recurrent_dropout_mask = _generate_dropout_mask(
                 K.ones_like(h_tm1),
                 self.recurrent_dropout,
@@ -210,25 +208,22 @@ class ConvGRU2DCell(Layer):
             h_tm1_h = h_tm1
 
         x_z = self.input_conv(inputs_z, self.kernel_z, self.bias_z,
-                            padding=self.padding)
+                              padding=self.padding)
         x_r = self.input_conv(inputs_r, self.kernel_r, self.bias_r,
-                            padding=self.padding)
+                              padding=self.padding)
         x_h = self.input_conv(inputs_h, self.kernel_h, self.bias_h,
-                            padding=self.padding)
-        
-        h_z = self.recurrent_conv(h_tm1_z,
-                                self.recurrent_kernel_z)
-        h_r = self.recurrent_conv(h_tm1_r,
-                                self.recurrent_kernel_r)
+                              padding=self.padding)
+
+        h_z = self.recurrent_conv(h_tm1_z, self.recurrent_kernel_z)
+        h_r = self.recurrent_conv(h_tm1_r, self.recurrent_kernel_r)
 
         z = self.recurrent_activation(x_z + h_z)
         r = self.recurrent_activation(x_r + h_r)
 
-        h_h = self.recurrent_conv(r * h_tm1_h,
-                                self.recurrent_kernel_h)
+        h_h = self.recurrent_conv(r * h_tm1_h, self.recurrent_kernel_h)
 
         hh = self.activation(x_h + h_h)
-        
+
         # previous and candidate state mixed by update gate
         h = (1 - z) * h_tm1 + z * hh
 
@@ -279,9 +274,8 @@ class ConvGRU2DCell(Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-
 class ConvGRU2D(ConvRNN2D):
-    def __init__(self, 
+    def __init__(self,
                  filters,
                  kernel_size,
                  strides=(1, 1),
@@ -327,15 +321,15 @@ class ConvGRU2D(ConvRNN2D):
                              bias_constraint=bias_constraint,
                              dropout=dropout,
                              recurrent_dropout=recurrent_dropout)
-                
+
         super(ConvGRU2D, self).__init__(cell,
                                         return_sequences=return_sequences,
                                         go_backwards=go_backwards,
                                         stateful=stateful,
                                         **kwargs)
-      
+
         self.activity_regularizer = regularizers.get(activity_regularizer)
-        
+
     def call(self, inputs, mask=None, training=None, initial_state=None):
         result = super(ConvGRU2D, self).call(inputs,
                                              mask=mask,

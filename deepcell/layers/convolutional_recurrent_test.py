@@ -55,7 +55,7 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
                   'filters': filters,
                   'kernel_size': (num_row, num_col),
                   'padding': 'valid'}
-        #layer = convolutional_recurrent.ConvLSTM2D(**kwargs)
+        # layer = convolutional_recurrent.ConvLSTM2D(**kwargs)
         layer = layers.ConvGRU2D(**kwargs)
         layer.build(inputs.shape)
 
