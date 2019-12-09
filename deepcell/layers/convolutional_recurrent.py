@@ -297,6 +297,7 @@ class ConvGRU2D(ConvRNN2D):
                  recurrent_constraint=None,
                  bias_constraint=None,
                  return_sequences=False,
+                 return_state=False,
                  go_backwards=False,
                  stateful=False,
                  dropout=0.,
@@ -325,6 +326,7 @@ class ConvGRU2D(ConvRNN2D):
 
         super(ConvGRU2D, self).__init__(cell,
                                         return_sequences=return_sequences,
+                                        return_state=return_state,
                                         go_backwards=go_backwards,
                                         stateful=stateful,
                                         **kwargs)
