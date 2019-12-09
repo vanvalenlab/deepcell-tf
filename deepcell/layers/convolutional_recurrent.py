@@ -228,7 +228,7 @@ class ConvGRU2DCell(Layer):
         # previous and candidate state mixed by update gate
         h = (1 - z) * h_tm1 + z * hh
 
-        if 0 < self.dropout + self.recurrent_dropout:
+        if self.dropout + self.recurrent_dropout > 0:
             if training is None:
                 h._uses_learning_phase = True
         zeros = K.zeros_like(h_tm1)
