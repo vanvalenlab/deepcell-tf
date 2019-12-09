@@ -169,7 +169,7 @@ class ConvGRU2DCell(Layer):
         self.built = True
 
     def call(self, inputs, states, training=None):
-        
+        h_tm1 = states[0]  # previous memory state
         if 0 < self.dropout < 1 and self._dropout_mask is None:
             self._dropout_mask = _generate_dropout_mask(
                 K.ones_like(inputs),
@@ -188,8 +188,6 @@ class ConvGRU2DCell(Layer):
         dp_mask = self._dropout_mask
         # dropout matrices for recurrent units
         rec_dp_mask = self._recurrent_dropout_mask
-
-        h_tm1 = states[0]  # previous memory state
 
         if 0. < self.dropout < 1.:
             inputs_z = inputs * dp_mask[0]
