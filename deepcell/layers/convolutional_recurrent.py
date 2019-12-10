@@ -49,13 +49,13 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import constraints
 from tensorflow.python.keras import initializers
 from tensorflow.python.keras import regularizers
-from tensorflow.python.keras.layers import Layer
-from tensorflow.python.keras.layers.recurrent import _generate_dropout_mask
+from tensorflow.python.keras.layers.recurrent import AbstractRNNCell
+from tensorflow.python.keras.layers.recurrent import DropoutRNNCellMixin
 from tensorflow.python.keras.layers.convolutional_recurrent import ConvRNN2D
 from tensorflow.python.keras.utils import conv_utils
 
 
-class ConvGRU2DCell(Layer):
+class ConvGRU2DCell(DropoutRNNCellMixin, AbstractRNNCell):
     """Cell class for the ConvGRU2D layer."""
 
     def __init__(self,
@@ -106,9 +106,12 @@ class ConvGRU2DCell(Layer):
 
         self.dropout = min(1., max(0., dropout))
         self.recurrent_dropout = min(1., max(0., recurrent_dropout))
-        self.state_size = (self.filters, self.filters)
         self._dropout_mask = None
         self._recurrent_dropout_mask = None
+
+    @property
+    def state_size(self):
+        return (self.filters, self.filters)
 
     def build(self, input_shape):
         if self.data_format == 'channels_first':
@@ -169,19 +172,15 @@ class ConvGRU2DCell(Layer):
         self.built = True
 
     def call(self, inputs, states, training=None):
-        if 0 < self.dropout < 1 and self._dropout_mask is None:
-            self._dropout_mask = _generate_dropout_mask(
-                K.ones_like(inputs),
-                self.dropout,
-                training=training,
-                count=3)
-        if (0 < self.recurrent_dropout < 1 and
-                self._recurrent_dropout_mask is None):
-            self._recurrent_dropout_mask = _generate_dropout_mask(
-                K.ones_like(states[1]),
-                self.recurrent_dropout,
-                training=training,
-                count=3)
+        self._dropout_mask = self.get_dropout_mask_for_cell(
+            K.ones_like(inputs),
+            training=training,
+            count=3)
+
+        self._recurrent_dropout_mask = self.get_recurrent_dropout_mask_for_cell(
+            K.ones_like(states[0]),
+            training=training,
+            count=3)
 
         # dropout matrices for input units
         dp_mask = self._dropout_mask
