@@ -59,7 +59,7 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
 
         outputs = layer(x)
         _, states = outputs[0], outputs[1:]
-        self.assertEqual(len(states), 1)  # TODO: changed from 2 to 1 due to cell.state_size
+        self.assertEqual(len(states), len(layer.cell.state_size))
         model = keras.models.Model(x, states[0])
         state = model.predict(inputs)
 
