@@ -35,7 +35,6 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
         sequence_len = 2
 
         custom_objects = {'ConvGRU2D': layers.ConvGRU2D}
-        # custom_objects = {'ConvLSTM2D': convolutional_recurrent.ConvLSTM2D}
 
         if data_format == 'channels_first':
             inputs = np.random.rand(num_samples, sequence_len,
@@ -55,7 +54,6 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
                   'filters': filters,
                   'kernel_size': (num_row, num_col),
                   'padding': 'valid'}
-        # layer = convolutional_recurrent.ConvLSTM2D(**kwargs)
         layer = layers.ConvGRU2D(**kwargs)
         layer.build(inputs.shape)
 
@@ -71,7 +69,6 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
         # test for output shape:
         testing_utils.layer_test(
             layers.ConvGRU2D,
-            # convolutional_recurrent.ConvLSTM2D,
             kwargs={'data_format': data_format,
                     'return_sequences': return_sequences,
                     'filters': filters,
