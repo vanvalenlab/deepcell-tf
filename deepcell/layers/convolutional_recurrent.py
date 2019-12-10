@@ -111,7 +111,7 @@ class ConvGRU2DCell(DropoutRNNCellMixin, AbstractRNNCell):
 
     @property
     def state_size(self):
-        return (self.filters, self.filters)
+        return (self.filters,)
 
     def build(self, input_shape):
         if self.data_format == 'channels_first':
@@ -230,8 +230,8 @@ class ConvGRU2DCell(DropoutRNNCellMixin, AbstractRNNCell):
         if self.dropout + self.recurrent_dropout > 0:
             if training is None:
                 h._uses_learning_phase = True
-        zeros = K.zeros_like(h_tm1)
-        return h, [h, zeros]
+
+        return h, [h]
 
     def input_conv(self, x, w, b=None, padding='valid'):
         conv_out = K.conv2d(x, w, strides=self.strides,
