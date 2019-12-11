@@ -49,13 +49,13 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import constraints
 from tensorflow.python.keras import initializers
 from tensorflow.python.keras import regularizers
-from tensorflow.python.keras.layers.recurrent import AbstractRNNCell
+from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras.layers.recurrent import DropoutRNNCellMixin
 from tensorflow.python.keras.layers.convolutional_recurrent import ConvRNN2D
 from tensorflow.python.keras.utils import conv_utils
 
 
-class ConvGRU2DCell(DropoutRNNCellMixin, AbstractRNNCell):
+class ConvGRU2DCell(DropoutRNNCellMixin, Layer):
     """Cell class for the ConvGRU2D layer."""
 
     def __init__(self,
