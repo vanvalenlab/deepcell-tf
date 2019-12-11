@@ -19,7 +19,7 @@ from deepcell import layers
 
 class ConvGRU2DTest(keras_parameterized.TestCase):
 
-    # @keras_parameterized.run_all_keras_modes
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters(
         *tf_test_util.generate_combinations_with_testcase_name(
             data_format=['channels_first', 'channels_last'],
