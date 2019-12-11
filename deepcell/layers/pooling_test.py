@@ -34,9 +34,9 @@ from deepcell.utils import testing_utils
 from deepcell import layers
 
 
-@keras_parameterized.run_all_keras_modes
 class DilatedMaxPoolingTest(keras_parameterized.TestCase):
 
+    @keras_parameterized.run_all_keras_modes(always_skip_v1=True)
     def test_dilated_max_pool_2d(self):
         pool_size = (3, 3)
         custom_objects = {'DilatedMaxPool2D': layers.DilatedMaxPool2D}
@@ -62,6 +62,7 @@ class DilatedMaxPoolingTest(keras_parameterized.TestCase):
                         custom_objects=custom_objects,
                         input_shape=(3, 4, 5, 6))
 
+    @keras_parameterized.run_all_keras_modes(always_skip_v1=True)
     def test_dilated_max_pool_3d(self):
         custom_objects = {'DilatedMaxPool3D': layers.DilatedMaxPool3D}
         pool_size = (3, 3, 3)
