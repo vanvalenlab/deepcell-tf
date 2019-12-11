@@ -143,6 +143,7 @@ class TestUpsampleLike(keras_parameterized.TestCase):
         self.assertAllEqual(actual, expected)
 
 
+@keras_parameterized.run_all_keras_modes
 class TestUpsample(keras_parameterized.TestCase):
 
     def test_simple(self):
