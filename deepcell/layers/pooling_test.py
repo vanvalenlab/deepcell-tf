@@ -29,6 +29,7 @@ from __future__ import print_function
 from __future__ import division
 
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.platform import test
 
 from deepcell.utils import testing_utils
 from deepcell import layers
@@ -87,3 +88,7 @@ class DilatedMaxPoolingTest(keras_parameterized.TestCase):
                                     'pool_size': pool_size},
                             custom_objects=custom_objects,
                             input_shape=(3, 4, 11, 12, 10))
+
+
+if __name__ == '__main__':
+    test.main()
