@@ -148,46 +148,18 @@ class ConvGRU2DCell(DropoutRNNCellMixin, Layer):
         else:
             self.bias = None
 
-        # update gate
-        self.kernel_z = self.kernel[:, :, :, :self.filters]
-        self.recurrent_kernel_z = self.recurrent_kernel[:, :, :, :self.filters]
-        # reset gate
-        self.kernel_r = self.kernel[:, :, :, self.filters: self.filters * 2]
-        self.recurrent_kernel_r = \
-            self.recurrent_kernel[:, :, :, self.filters:self.filters * 2]
-        # new gate
-        self.kernel_h = self.kernel[:, :, :, self.filters * 2:self.filters * 3]
-        self.recurrent_kernel_h = \
-            self.recurrent_kernel[:, :, :, self.filters * 2: self.filters * 3]
-
-        if self.use_bias:
-            # bias for inputs
-            self.bias_z = self.bias[:self.filters]
-            self.bias_r = self.bias[self.filters: self.filters * 2]
-            self.bias_h = self.bias[self.filters * 2: self.filters * 3]
-        else:
-            self.bias_z = None
-            self.bias_r = None
-            self.bias_h = None
         self.built = True
 
     def call(self, inputs, states, training=None):
-        self._dropout_mask = self.get_dropout_mask_for_cell(
-            K.ones_like(inputs),
-            training=training,
-            count=3)
-
-        self._recurrent_dropout_mask = self.get_recurrent_dropout_mask_for_cell(
-            K.ones_like(states[0]),
-            training=training,
-            count=3)
+        h_tm1 = states[0]  # previous memory state
 
         # dropout matrices for input units
-        dp_mask = self._dropout_mask
-        # dropout matrices for recurrent units
-        rec_dp_mask = self._recurrent_dropout_mask
+        dp_mask = self.get_dropout_mask_for_cell(
+            inputs, training=training, count=3)
 
-        h_tm1 = states[0]  # previous memory state
+        # dropout matrices for recurrent units
+        rec_dp_mask = self.get_recurrent_dropout_mask_for_cell(
+            h_tm1, training=training, count=3)
 
         if 0. < self.dropout < 1.:
             inputs_z = inputs * dp_mask[0]
@@ -207,25 +179,30 @@ class ConvGRU2DCell(DropoutRNNCellMixin, Layer):
             h_tm1_r = h_tm1
             h_tm1_h = h_tm1
 
-        x_z = self.input_conv(inputs_z, self.kernel_z, self.bias_z,
-                              padding=self.padding)
-        x_r = self.input_conv(inputs_r, self.kernel_r, self.bias_r,
-                              padding=self.padding)
-        x_h = self.input_conv(inputs_h, self.kernel_h, self.bias_h,
-                              padding=self.padding)
+        (kernel_z, kernel_r, kernel_h) = tf.split(self.kernel, 3, axis=3)
+        (recurrent_kernel_z,
+         recurrent_kernel_r,
+         recurrent_kernel_h) = tf.split(self.recurrent_kernel, 3, axis=3)
 
-        h_z = self.recurrent_conv(h_tm1_z, self.recurrent_kernel_z)
-        h_r = self.recurrent_conv(h_tm1_r, self.recurrent_kernel_r)
+        if self.use_bias:
+            bias_z, bias_r, bias_h = tf.split(self.bias, 3)
+        else:
+            bias_z, bias_r, bias_h = None, None, None
+
+        x_z = self.input_conv(inputs_z, kernel_z, bias_z, padding=self.padding)
+        x_r = self.input_conv(inputs_r, kernel_r, bias_r, padding=self.padding)
+        x_h = self.input_conv(inputs_h, kernel_h, bias_h, padding=self.padding)
+
+        h_z = self.recurrent_conv(h_tm1_z, recurrent_kernel_z)
+        h_r = self.recurrent_conv(h_tm1_r, recurrent_kernel_r)
 
         z = self.recurrent_activation(x_z + h_z)
         r = self.recurrent_activation(x_r + h_r)
 
-        h_h = self.recurrent_conv(r * h_tm1_h, self.recurrent_kernel_h)
-
-        hh = self.activation(x_h + h_h)
+        h_h = self.recurrent_conv(r * h_tm1_h, recurrent_kernel_h)
 
         # previous and candidate state mixed by update gate
-        h = (1 - z) * h_tm1 + z * hh
+        h = (1 - z) * h_tm1 + z * self.activation(x_h + h_h)
 
         if self.dropout + self.recurrent_dropout > 0:
             if training is None:
