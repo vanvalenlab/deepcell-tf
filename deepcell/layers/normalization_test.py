@@ -36,6 +36,7 @@ from deepcell.utils import testing_utils
 from deepcell import layers
 
 
+@keras_parameterized.run_all_keras_modes
 class ImageNormalizationTest(keras_parameterized.TestCase):
 
     def test_normalize_2d(self):
