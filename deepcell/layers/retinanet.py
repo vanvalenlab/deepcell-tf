@@ -210,10 +210,12 @@ class ClipBoxes(Layer):
         else:
             height = shape[ndim - 3]
             width = shape[ndim - 2]
-        x1 = tf.clip_by_value(boxes[..., 0], 0, width - 1)
-        y1 = tf.clip_by_value(boxes[..., 1], 0, height - 1)
-        x2 = tf.clip_by_value(boxes[..., 2], 0, width - 1)
-        y2 = tf.clip_by_value(boxes[..., 3], 0, height - 1)
+
+        x1, y1, x2, y2 = tf.unstack(boxes, axis=-1)
+        x1 = tf.clip_by_value(x1, 0, width - 1)
+        y1 = tf.clip_by_value(y1, 0, height - 1)
+        x2 = tf.clip_by_value(x2, 0, width - 1)
+        y2 = tf.clip_by_value(y2, 0, height - 1)
         return K.stack([x1, y1, x2, y2], axis=ndim - 2)
 
     def compute_output_shape(self, input_shape):
