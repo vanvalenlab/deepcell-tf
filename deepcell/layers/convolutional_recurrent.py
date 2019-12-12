@@ -310,8 +310,8 @@ class ConvGRU2D(ConvRNN2D):
         self.activity_regularizer = regularizers.get(activity_regularizer)
 
     def call(self, inputs, mask=None, training=None, initial_state=None):
-        # self.cell.reset_dropout_mask()
-        # self.cell.reset_recurrent_dropout_mask()
+        self.cell.reset_dropout_mask()
+        self.cell.reset_recurrent_dropout_mask()
         result = super(ConvGRU2D, self).call(inputs,
                                              mask=mask,
                                              training=training,
