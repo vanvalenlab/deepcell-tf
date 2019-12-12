@@ -29,9 +29,12 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import threading
+
 import numpy as np
 
 from tensorflow.python import keras
+from tensorflow.python.eager import context
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.training.rmsprop import RMSPropOptimizer
 from tensorflow.python.util import tf_inspect
@@ -136,7 +139,18 @@ def layer_test(layer_cls, kwargs=None, input_shape=None, input_dtype=None,
         np.testing.assert_allclose(output, actual_output, rtol=1e-3)
 
     # test training mode (e.g. useful for dropout tests)
-    model.compile(RMSPropOptimizer(0.01), 'mse')
+    # Rebuild the model to avoid the graph being reused between predict() and
+    # train(). This was causing some error for layer with Defun as it body.
+    # See b/120160788 for more details. This should be mitigated after 2.0.
+    model = keras.models.Model(x, layer(x))
+    if _thread_local_data.run_eagerly is not None:
+        model.compile(
+            'rmsprop',
+            'mse',
+            weighted_metrics=['acc'],
+            run_eagerly=should_run_eagerly())
+    else:
+        model.compile('rmsprop', 'mse', weighted_metrics=['acc'])
     model.train_on_batch(input_data, actual_output)
 
     # test as first layer in Sequential API
@@ -176,3 +190,18 @@ def layer_test(layer_cls, kwargs=None, input_shape=None, input_dtype=None,
 
     # for further checks in the caller function
     return actual_output
+
+
+_thread_local_data = threading.local()
+_thread_local_data.model_type = None
+_thread_local_data.run_eagerly = None
+
+
+def should_run_eagerly():
+    """Returns whether the models we are testing should be run eagerly."""
+    if _thread_local_data.run_eagerly is None:
+        raise ValueError('Cannot call `should_run_eagerly()` outside of a '
+                         '`run_eagerly_scope()` or `run_all_keras_modes` '
+                         'decorator.')
+
+    return _thread_local_data.run_eagerly and context.executing_eagerly()
