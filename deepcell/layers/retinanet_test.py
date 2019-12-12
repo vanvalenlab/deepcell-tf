@@ -31,6 +31,7 @@ from __future__ import division
 import numpy as np
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.platform import test
 
 from deepcell.utils import testing_utils
 from deepcell import layers
@@ -332,3 +333,7 @@ class ClipBoxesTest(keras_parameterized.TestCase):
 
         self.assertEqual(actual.shape, tuple(computed_shape))
         self.assertAllClose(actual, expected)
+
+
+if __name__ == '__main__':
+    test.main()

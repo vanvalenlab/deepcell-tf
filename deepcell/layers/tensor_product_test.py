@@ -32,6 +32,7 @@ import numpy as np
 
 from tensorflow.python import keras
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.platform import test
 
 from deepcell.utils import testing_utils
 from deepcell import layers
@@ -110,3 +111,7 @@ class TensorProdTest(keras_parameterized.TestCase):
         layer(keras.backend.variable(np.ones((2, 4))))
         self.assertEqual(layer.kernel.constraint, k_constraint)
         self.assertEqual(layer.bias.constraint, b_constraint)
+
+
+if __name__ == '__main__':
+    test.main()

@@ -31,6 +31,7 @@ from __future__ import division
 import numpy as np
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.platform import test
 
 from deepcell import layers
 
@@ -231,3 +232,7 @@ class TestFilterDetections(keras_parameterized.TestCase):
             self.assertAllEqual(actual_boxes, expected_boxes)
             self.assertAllEqual(actual_scores, expected_scores)
             self.assertAllEqual(actual_labels, expected_labels)
+
+
+if __name__ == '__main__':
+    test.main()

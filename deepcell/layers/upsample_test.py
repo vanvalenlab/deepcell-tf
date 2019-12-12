@@ -31,6 +31,7 @@ from __future__ import division
 import numpy as np
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.platform import test
 
 from deepcell.utils import testing_utils
 from deepcell import layers
@@ -142,6 +143,7 @@ class TestUpsampleLike(keras_parameterized.TestCase):
         self.assertAllEqual(actual, expected)
 
 
+@keras_parameterized.run_all_keras_modes
 class TestUpsample(keras_parameterized.TestCase):
 
     def test_simple(self):
@@ -156,3 +158,7 @@ class TestUpsample(keras_parameterized.TestCase):
                     'data_format': 'channels_first'},
             custom_objects={'Upsample': layers.Upsample},
             input_shape=(3, 4, 5, 6))
+
+
+if __name__ == '__main__':
+    test.main()
