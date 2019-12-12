@@ -240,10 +240,10 @@ class ClipBoxesTest(keras_parameterized.TestCase):
 
         # compute expected output
         expected = np.array([[
-            [img_w, img_h, img_w, img_h],
+            [img_w - 1, img_h - 1, img_w - 1, img_h - 1],
             [0, 0, 0, 0],
-            [0, 0, img_w, img_h],
-            [0, 0, img_w, img_h],
+            [0, 0, img_w - 1, img_h - 1],
+            [0, 0, img_w - 1, img_h - 1],
             [0, 0, img_w - 1, img_h - 1],
         ]], dtype=K.floatx())
 
@@ -294,10 +294,10 @@ class ClipBoxesTest(keras_parameterized.TestCase):
 
         # compute expected output
         expected = np.array([[
-            [img_w, img_h, img_w, img_h],
+            [img_w - 1, img_h - 1, img_w - 1, img_h - 1],
             [0, 0, 0, 0],
-            [0, 0, img_w, img_h],
-            [0, 0, img_w, img_h],
+            [0, 0, img_w - 1, img_h - 1],
+            [0, 0, img_w - 1, img_h - 1],
             [0, 0, img_w - 1, img_h - 1],
         ]], dtype=K.floatx())
         expected = np.expand_dims(expected, axis=0)
