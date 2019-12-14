@@ -451,21 +451,21 @@ def bn_feature_net_3D(receptive_field=61,
                     kernel_regularizer=l2(reg))(x[-1]))
     x.append(BatchNormalization(axis=channel_axis)(x[-1]))
     feature = Activation('relu')(x[-1])
-    
-    def __merge_temporal_features(feature, mode='conv', residual=False, n_filters=256, 
+
+    def __merge_temporal_features(feature, mode='conv', residual=False, n_filters=256,
                                   n_frames=3, padding=True, temporal_kernel_size=3):
         if mode == 'conv':
             x = Conv3D(n_filters, (n_frames, temporal_kernel_size, temporal_kernel_size),
-                            kernel_initializer=init, padding='same', activation='relu',
-                            kernel_regularizer=l2(reg))(feature)
+                       kernel_initializer=init, padding='same', activation='relu',
+                       kernel_regularizer=l2(reg))(feature)
         elif mode == 'lstm':
             x = ConvLSTM2D(filters=n_filters, kernel_size=temporal_kernel_size,
-                            padding='same', kernel_initializer=init, activation='relu',
-                            kernel_regularizer=l2(reg), return_sequences=True)(feature)
+                           padding='same', kernel_initializer=init, activation='relu',
+                           kernel_regularizer=l2(reg), return_sequences=True)(feature)
         elif mode == 'gru':
             x = ConvGRU2D(filters=n_filters, kernel_size=temporal_kernel_size,
-                            padding='same', kernel_initializer=init, activation='relu',
-                            kernel_regularizer=l2(reg), return_sequences=True)(feature)
+                          padding='same', kernel_initializer=init, activation='relu',
+                          kernel_regularizer=l2(reg), return_sequences=True)(feature)
         else:
             return feature
         if residual is True:
@@ -474,10 +474,11 @@ def bn_feature_net_3D(receptive_field=61,
             temporal_feature = x
         temporal_feature_normed = BatchNormalization(axis=channel_axis)(temporal_feature)
         return temporal_feature_normed
-    
+
     temporal_feature = __merge_temporal_features(feature, mode=temporal, residual=residual,
-                                                n_filters=n_dense_filters, n_frames=n_frames, 
-                                                padding=padding, temporal_kernel_size=temporal_kernel_size)
+                                                 n_filters=n_dense_filters, n_frames=n_frames,
+                                                 padding=padding,
+                                                 temporal_kernel_size=temporal_kernel_size)
     x.append(temporal_feature)
 
     x.append(TensorProduct(n_dense_filters, kernel_initializer=init,
