@@ -36,7 +36,6 @@ from skimage.measure import regionprops
 from skimage.morphology import ball, disk
 from skimage.morphology import binary_erosion, binary_dilation
 from tensorflow.python.keras import backend as K
-import time
 
 
 def pixelwise_transform(mask, dilation_radius=None, data_format=None,
@@ -64,7 +63,6 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
     else:
         channel_axis = len(mask.shape) - 1
 
-    start_time = time.time()
     mask = np.squeeze(mask, axis=channel_axis)
 
     # Detect the edges and interiors
@@ -78,9 +76,6 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
                 img = mask[i] == cell_label
                 img = binary_erosion(img, strel)
                 new_masks[i] += img
-
-    new_time = time.time()
-    print("time after looping through cell labels is {}".format(new_time - start_time))
 
     interiors = np.multiply(new_masks, mask)
     edges = (mask - interiors > 0).astype('int')
@@ -104,11 +99,8 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
             interiors,
             background
         ]
-        new_time = time.time()
-        print("time after thickening edges is {}".format(new_time - start_time))
 
         return np.stack(all_stacks, axis=channel_axis)
-
 
     # dilate the background masks and subtract from all edges for background-edges
     dilated_background = np.zeros(mask.shape)
@@ -142,9 +134,6 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
         background
     ]
 
-    new_time = time.time()
-    print("time after thickening interior edges is {}".format(new_time - start_time))
-
     return np.stack(all_stacks, axis=channel_axis)
 
 
@@ -161,8 +150,6 @@ def erode_edges(mask, erosion_width):
     Raises:
         ValueError: mask.ndim is not 2 or 3
     """
-
-    start_time = time.time()
     if erosion_width:
         new_mask = np.zeros(mask.shape)
         if mask.ndim == 2:
@@ -177,9 +164,6 @@ def erode_edges(mask, erosion_width):
                 temp_img = mask == cell_label
                 temp_img = binary_erosion(temp_img, strel)
                 new_mask = np.where(mask == cell_label, temp_img, new_mask)
-
-        new_time = time.time()
-        print("time after eroding edges is {}".format(new_time - start_time))
         return np.multiply(new_mask, mask).astype('int')
     return mask
 
