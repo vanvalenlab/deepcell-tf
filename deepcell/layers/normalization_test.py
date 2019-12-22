@@ -31,11 +31,13 @@ from __future__ import division
 import numpy as np
 from tensorflow.python import keras
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.platform import test
 
 from deepcell.utils import testing_utils
 from deepcell import layers
 
 
+@keras_parameterized.run_all_keras_modes
 class ImageNormalizationTest(keras_parameterized.TestCase):
 
     def test_normalize_2d(self):
@@ -119,3 +121,7 @@ class ImageNormalizationTest(keras_parameterized.TestCase):
             with self.assertRaises(ValueError):
                 layer = layers.ImageNormalization3D()
                 layer.build([3, 10, 11, 12, None])
+
+
+if __name__ == '__main__':
+    test.main()

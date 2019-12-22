@@ -31,6 +31,7 @@ from __future__ import division
 import numpy as np
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.platform import test
 
 from deepcell.utils import testing_utils
 from deepcell import layers
@@ -239,10 +240,10 @@ class ClipBoxesTest(keras_parameterized.TestCase):
 
         # compute expected output
         expected = np.array([[
-            [img_w, img_h, img_w, img_h],
+            [img_w - 1, img_h - 1, img_w - 1, img_h - 1],
             [0, 0, 0, 0],
-            [0, 0, img_w, img_h],
-            [0, 0, img_w, img_h],
+            [0, 0, img_w - 1, img_h - 1],
+            [0, 0, img_w - 1, img_h - 1],
             [0, 0, img_w - 1, img_h - 1],
         ]], dtype=K.floatx())
 
@@ -293,10 +294,10 @@ class ClipBoxesTest(keras_parameterized.TestCase):
 
         # compute expected output
         expected = np.array([[
-            [img_w, img_h, img_w, img_h],
+            [img_w - 1, img_h - 1, img_w - 1, img_h - 1],
             [0, 0, 0, 0],
-            [0, 0, img_w, img_h],
-            [0, 0, img_w, img_h],
+            [0, 0, img_w - 1, img_h - 1],
+            [0, 0, img_w - 1, img_h - 1],
             [0, 0, img_w - 1, img_h - 1],
         ]], dtype=K.floatx())
         expected = np.expand_dims(expected, axis=0)
@@ -332,3 +333,7 @@ class ClipBoxesTest(keras_parameterized.TestCase):
 
         self.assertEqual(actual.shape, tuple(computed_shape))
         self.assertAllClose(actual, expected)
+
+
+if __name__ == '__main__':
+    test.main()

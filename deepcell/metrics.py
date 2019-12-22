@@ -932,23 +932,16 @@ def split_stack(arr, batch, n_split1, axis1, n_split2, axis2):
     return split2con
 
 
-def match_nodes(pattern1, pattern2):
+def match_nodes(gt, res):
     """Loads all data that matches each pattern and compares the graphs.
 
     Args:
-        pattern1 (str): ground truth data file pattern.
-        pattern2 (str): predicted data file pattern.
+        gt (np.array): data array to match to unique.
+        res (np.array): ground truth array with all cells labeled uniquely.
 
     Returns:
-        tuple(np.array, np.array): indices of ground truth cells and
-            predicted cells.
+        np.array: IoU of ground truth cells and predicted cells.
     """
-    gt = np.stack([TiffFile(f).asarray()
-                   for f in np.sort(glob.glob(pattern1))])
-
-    res = np.stack([TiffFile(f).asarray()
-                    for f in np.sort(glob.glob(pattern2))])
-
     num_frames = gt.shape[0]
     iou = np.zeros((num_frames, np.max(gt) + 1, np.max(res) + 1))
 
@@ -988,5 +981,4 @@ def match_nodes(pattern1, pattern2):
                 gt_frame == iou_gt_idx, res_frame == iou_res_idx)
             iou[frame, iou_gt_idx, iou_res_idx] = intersection.sum() / union.sum()
 
-    gtcells, rescells = np.where(np.nansum(iou, axis=0) >= 1)
-    return gtcells, rescells
+    return iou

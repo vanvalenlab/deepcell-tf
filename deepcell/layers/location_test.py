@@ -29,6 +29,7 @@ from __future__ import print_function
 from __future__ import division
 
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.platform import test
 
 from deepcell.utils import testing_utils
 from deepcell import layers
@@ -64,3 +65,7 @@ class LocationTest(keras_parameterized.TestCase):
                     'data_format': 'channels_first'},
             custom_objects={'Location3D': layers.Location3D},
             input_shape=(3, 4, 11, 12, 10))
+
+
+if __name__ == '__main__':
+    test.main()
