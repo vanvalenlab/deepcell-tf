@@ -55,6 +55,15 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
             if not separate_edge_classes: [cell_edge, cell_interior, background]
             otherwise: [bg_cell_edge, cell_cell_edge, cell_interior, background]
     """
+    if data_format is None:
+        data_format = K.image_data_format()
+
+    if data_format == 'channels_first':
+        channel_axis = 1
+    else:
+        channel_axis = len(mask.shape) - 1
+
+    mask = np.squeeze(mask, axis=channel_axis)
 
     # Detect the edges and interiors
     new_mask = np.zeros(mask.shape)
@@ -87,7 +96,7 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
             background
         ]
 
-        return np.stack(all_stacks, axis=-1)
+        return np.stack(all_stacks, axis=channel_axis)
 
     # dilate the background masks and subtract from all edges for background-edges
     background = (mask == 0).astype('int')
@@ -118,7 +127,7 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
         background
     ]
 
-    return np.stack(all_stacks, axis=-1)
+    return np.stack(all_stacks, axis=channel_axis)
 
 
 def erode_edges(mask, erosion_width):
