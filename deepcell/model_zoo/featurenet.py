@@ -454,20 +454,23 @@ def bn_feature_net_3D(receptive_field=61,
 
     def __merge_temporal_features(feature, mode='conv', residual=False, n_filters=256,
                                   n_frames=3, padding=True, temporal_kernel_size=3):
-        if mode == 'conv':
+        if mode is None:
+            return feature
+        if mode is 'conv':
             x = Conv3D(n_filters, (n_frames, temporal_kernel_size, temporal_kernel_size),
                        kernel_initializer=init, padding='same', activation='relu',
                        kernel_regularizer=l2(reg))(feature)
-        elif mode == 'lstm':
+        elif mode is 'lstm' or 'LSTM':
             x = ConvLSTM2D(filters=n_filters, kernel_size=temporal_kernel_size,
                            padding='same', kernel_initializer=init, activation='relu',
                            kernel_regularizer=l2(reg), return_sequences=True)(feature)
-        elif mode == 'gru':
+        elif mode is 'gru' or 'GRU':
             x = ConvGRU2D(filters=n_filters, kernel_size=temporal_kernel_size,
                           padding='same', kernel_initializer=init, activation='relu',
                           kernel_regularizer=l2(reg), return_sequences=True)(feature)
         else:
-            return feature
+            raise ValueError('`temporal` must be one of "conv", "lstm", "gru" or None')
+
         if residual is True:
             temporal_feature = Add()([feature, x])
         else:
