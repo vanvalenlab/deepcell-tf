@@ -338,6 +338,9 @@ def bn_feature_net_3D(receptive_field=61,
         padding_mode (str): Type of padding, one of 'reflect' or 'zero'
         multires (bool): Enables multi-resolution mode
         include_top (bool): Whether to include the final layer of the model
+        temporal (str): Type of temporal operation
+        residual (bool): Whether to use temporal information as a residual
+        temporal_kernel_size (int): size of 2D kernel used in temporal convolutions
 
     Returns:
         tensorflow.keras.Model: 3D FeatureNet
@@ -456,15 +459,15 @@ def bn_feature_net_3D(receptive_field=61,
                                   n_frames=3, padding=True, temporal_kernel_size=3):
         if mode is None:
             return feature
-        if mode is 'conv':
+        if mode.lower() == 'conv':
             x = Conv3D(n_filters, (n_frames, temporal_kernel_size, temporal_kernel_size),
                        kernel_initializer=init, padding='same', activation='relu',
                        kernel_regularizer=l2(reg))(feature)
-        elif mode is 'lstm' or 'LSTM':
+        elif mode.lower() == 'lstm':
             x = ConvLSTM2D(filters=n_filters, kernel_size=temporal_kernel_size,
                            padding='same', kernel_initializer=init, activation='relu',
                            kernel_regularizer=l2(reg), return_sequences=True)(feature)
-        elif mode is 'gru' or 'GRU':
+        elif mode.lower() == 'gru':
             x = ConvGRU2D(filters=n_filters, kernel_size=temporal_kernel_size,
                           padding='same', kernel_initializer=init, activation='relu',
                           kernel_regularizer=l2(reg), return_sequences=True)(feature)
@@ -506,9 +509,6 @@ def bn_feature_net_3D(receptive_field=61,
 def bn_feature_net_skip_3D(receptive_field=61,
                            input_shape=(5, 256, 256, 1),
                            fgbg_model=None,
-                           temporal=None,
-                           residual=False,
-                           temporal_kernel_size=3,
                            last_only=True,
                            n_skips=2,
                            norm_method='std',
@@ -561,9 +561,6 @@ def bn_feature_net_skip_3D(receptive_field=61,
                                         dilated=True,
                                         padding=True,
                                         padding_mode=padding_mode,
-                                        temporal=temporal,
-                                        residual=residual,
-                                        temporal_kernel_size=temporal_kernel_size,
                                         **kwargs))
         model_outputs.append(models[-1](model_input))
 
