@@ -106,8 +106,9 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             else:
                 mask = y[batch, ..., 0]
 
-            y_transform[batch] = transform_utils.pixelwise_transform(mask, dilation_radius, data_format=data_format,
-                                                                     separate_edge_classes=separate_edge_classes)
+            y_transform[batch] = transform_utils.pixelwise_transform(
+                mask, dilation_radius, data_format=data_format,
+                separate_edge_classes=separate_edge_classes)
 
     elif transform == 'watershed':
         distance_bins = kwargs.pop('distance_bins', 4)
