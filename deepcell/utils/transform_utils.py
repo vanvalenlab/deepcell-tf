@@ -59,11 +59,9 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
         data_format = K.image_data_format()
 
     if data_format == 'channels_first':
-        channel_axis = 1
+        channel_axis = 0
     else:
-        channel_axis = len(mask.shape) - 1
-
-    mask = np.squeeze(mask, axis=channel_axis)
+        channel_axis = -1
 
     # Detect the edges and interiors
     new_mask = np.zeros(mask.shape)
