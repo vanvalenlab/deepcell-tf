@@ -59,6 +59,7 @@ class TransformUtilsTest(test.TestCase):
             # test single edge class
             for img in _generate_test_masks():
                 img = label(img)
+                img = np.squeeze(img)
                 pw_img = transform_utils.pixelwise_transform(
                     img, data_format=None, separate_edge_classes=False)
                 pw_img_dil = transform_utils.pixelwise_transform(
@@ -75,6 +76,7 @@ class TransformUtilsTest(test.TestCase):
             # test separate edge classes
             for img in _generate_test_masks():
                 img = label(img)
+                img = np.squeeze(img)
                 pw_img = transform_utils.pixelwise_transform(
                     img, data_format=None, separate_edge_classes=True)
                 pw_img_dil = transform_utils.pixelwise_transform(
@@ -108,6 +110,7 @@ class TransformUtilsTest(test.TestCase):
 
             for i in range(maskstack.shape[0]):
                 img = maskstack[i, ...]
+                img = np.squeeze(img)
                 pw_img = transform_utils.pixelwise_transform(
                     img, data_format=None, separate_edge_classes=False)
                 pw_img_dil = transform_utils.pixelwise_transform(
@@ -128,6 +131,7 @@ class TransformUtilsTest(test.TestCase):
 
             for i in range(maskstack.shape[0]):
                 img = maskstack[i, ...]
+                img = np.squeeze(img)
                 pw_img = transform_utils.pixelwise_transform(
                     img, data_format=None, separate_edge_classes=True)
                 pw_img_dil = transform_utils.pixelwise_transform(
