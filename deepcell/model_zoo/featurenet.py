@@ -459,15 +459,17 @@ def bn_feature_net_3D(receptive_field=61,
                                   n_frames=3, padding=True, temporal_kernel_size=3):
         if mode is None:
             return feature
-        if mode.lower() == 'conv':
+        
+        mode = str(mode).lower()
+        if mode == 'conv':
             x = Conv3D(n_filters, (n_frames, temporal_kernel_size, temporal_kernel_size),
                        kernel_initializer=init, padding='same', activation='relu',
                        kernel_regularizer=l2(reg))(feature)
-        elif mode.lower() == 'lstm':
+        elif mode == 'lstm':
             x = ConvLSTM2D(filters=n_filters, kernel_size=temporal_kernel_size,
                            padding='same', kernel_initializer=init, activation='relu',
                            kernel_regularizer=l2(reg), return_sequences=True)(feature)
-        elif mode.lower() == 'gru':
+        elif mode == 'gru':
             x = ConvGRU2D(filters=n_filters, kernel_size=temporal_kernel_size,
                           padding='same', kernel_initializer=init, activation='relu',
                           kernel_regularizer=l2(reg), return_sequences=True)(feature)
