@@ -459,7 +459,7 @@ def bn_feature_net_3D(receptive_field=61,
                                   n_frames=3, padding=True, temporal_kernel_size=3):
         if mode is None:
             return feature
-        
+
         mode = str(mode).lower()
         if mode == 'conv':
             x = Conv3D(n_filters, (n_frames, temporal_kernel_size, temporal_kernel_size),
