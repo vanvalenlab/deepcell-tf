@@ -57,34 +57,38 @@ class TransformUtilsTest(test.TestCase):
         with self.cached_session():
             K.set_image_data_format('channels_last')
             # test single edge class
-            maskstack = np.array([label(i) for i in _generate_test_masks()])
-            pw_maskstack = transform_utils.pixelwise_transform(
-                maskstack, data_format=None, separate_edge_classes=False)
-            pw_maskstack_dil = transform_utils.pixelwise_transform(
-                maskstack, dilation_radius=1,
-                data_format='channels_last',
-                separate_edge_classes=False)
+            for img in _generate_test_masks():
+                img = label(img)
+                img = np.squeeze(img)
+                pw_img = transform_utils.pixelwise_transform(
+                    img, data_format=None, separate_edge_classes=False)
+                pw_img_dil = transform_utils.pixelwise_transform(
+                    img, dilation_radius=1,
+                    data_format='channels_last',
+                    separate_edge_classes=False)
 
-            self.assertEqual(pw_maskstack.shape[-1], 3)
-            self.assertEqual(pw_maskstack_dil.shape[-1], 3)
-            self.assertGreater(
-                pw_maskstack_dil[..., 0].sum() + pw_maskstack_dil[..., 1].sum(),
-                pw_maskstack[..., 0].sum() + pw_maskstack[..., 1].sum())
+                self.assertEqual(pw_img.shape[-1], 3)
+                self.assertEqual(pw_img_dil.shape[-1], 3)
+                self.assertGreater(
+                    pw_img_dil[..., 0].sum() + pw_img_dil[..., 1].sum(),
+                    pw_img[..., 0].sum() + pw_img[..., 1].sum())
 
             # test separate edge classes
-            maskstack = np.array([label(i) for i in _generate_test_masks()])
-            pw_maskstack = transform_utils.pixelwise_transform(
-                maskstack, data_format=None, separate_edge_classes=True)
-            pw_maskstack_dil = transform_utils.pixelwise_transform(
-                maskstack, dilation_radius=1,
-                data_format='channels_last',
-                separate_edge_classes=True)
+            for img in _generate_test_masks():
+                img = label(img)
+                img = np.squeeze(img)
+                pw_img = transform_utils.pixelwise_transform(
+                    img, data_format=None, separate_edge_classes=True)
+                pw_img_dil = transform_utils.pixelwise_transform(
+                    img, dilation_radius=1,
+                    data_format='channels_last',
+                    separate_edge_classes=True)
 
-            self.assertEqual(pw_maskstack.shape[-1], 4)
-            self.assertEqual(pw_maskstack_dil.shape[-1], 4)
-            self.assertGreater(
-                pw_maskstack_dil[..., 0].sum() + pw_maskstack_dil[..., 1].sum(),
-                pw_maskstack[..., 0].sum() + pw_maskstack[..., 1].sum())
+                self.assertEqual(pw_img.shape[-1], 4)
+                self.assertEqual(pw_img_dil.shape[-1], 4)
+                self.assertGreater(
+                    pw_img_dil[..., 0].sum() + pw_img_dil[..., 1].sum(),
+                    pw_img[..., 0].sum() + pw_img[..., 1].sum())
 
     def test_pixelwise_transform_3d(self):
         frames = 10
@@ -103,34 +107,42 @@ class TransformUtilsTest(test.TestCase):
             batch_count = maskstack.shape[0] // frames
             new_shape = tuple([batch_count, frames] + list(maskstack.shape[1:]))
             maskstack = np.reshape(maskstack, new_shape)
-            pw_maskstack = transform_utils.pixelwise_transform(
-                maskstack, data_format=None, separate_edge_classes=False)
-            pw_maskstack_dil = transform_utils.pixelwise_transform(
-                maskstack, dilation_radius=2,
-                data_format='channels_last',
-                separate_edge_classes=False)
-            self.assertEqual(pw_maskstack.shape[-1], 3)
-            self.assertEqual(pw_maskstack_dil.shape[-1], 3)
-            self.assertGreater(
-                pw_maskstack_dil[..., 0].sum() + pw_maskstack_dil[..., 1].sum(),
-                pw_maskstack[..., 0].sum() + pw_maskstack[..., 1].sum())
+
+            for i in range(maskstack.shape[0]):
+                img = maskstack[i, ...]
+                img = np.squeeze(img)
+                pw_img = transform_utils.pixelwise_transform(
+                    img, data_format=None, separate_edge_classes=False)
+                pw_img_dil = transform_utils.pixelwise_transform(
+                    img, dilation_radius=2,
+                    data_format='channels_last',
+                    separate_edge_classes=False)
+                self.assertEqual(pw_img.shape[-1], 3)
+                self.assertEqual(pw_img_dil.shape[-1], 3)
+                self.assertGreater(
+                    pw_img_dil[..., 0].sum() + pw_img_dil[..., 1].sum(),
+                    pw_img[..., 0].sum() + pw_img[..., 1].sum())
 
             # test separate edge classes
             maskstack = np.vstack(img_list)
             batch_count = maskstack.shape[0] // frames
             new_shape = tuple([batch_count, frames] + list(maskstack.shape[1:]))
             maskstack = np.reshape(maskstack, new_shape)
-            pw_maskstack = transform_utils.pixelwise_transform(
-                maskstack, data_format=None, separate_edge_classes=True)
-            pw_maskstack_dil = transform_utils.pixelwise_transform(
-                maskstack, dilation_radius=2,
-                data_format='channels_last',
-                separate_edge_classes=True)
-            self.assertEqual(pw_maskstack.shape[-1], 4)
-            self.assertEqual(pw_maskstack_dil.shape[-1], 4)
-            self.assertGreater(
-                pw_maskstack_dil[..., 0].sum() + pw_maskstack_dil[..., 1].sum(),
-                pw_maskstack[..., 0].sum() + pw_maskstack[..., 1].sum())
+
+            for i in range(maskstack.shape[0]):
+                img = maskstack[i, ...]
+                img = np.squeeze(img)
+                pw_img = transform_utils.pixelwise_transform(
+                    img, data_format=None, separate_edge_classes=True)
+                pw_img_dil = transform_utils.pixelwise_transform(
+                    img, dilation_radius=2,
+                    data_format='channels_last',
+                    separate_edge_classes=True)
+                self.assertEqual(pw_img.shape[-1], 4)
+                self.assertEqual(pw_img_dil.shape[-1], 4)
+                self.assertGreater(
+                    pw_img_dil[..., 0].sum() + pw_img_dil[..., 1].sum(),
+                    pw_img[..., 0].sum() + pw_img[..., 1].sum())
 
     def test_erode_edges_2d(self):
         for img in _generate_test_masks():

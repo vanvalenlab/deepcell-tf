@@ -92,10 +92,23 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     if transform == 'pixelwise':
         dilation_radius = kwargs.pop('dilation_radius', None)
         separate_edge_classes = kwargs.pop('separate_edge_classes', False)
-        y_transform = transform_utils.pixelwise_transform(
-            y, dilation_radius,
-            data_format=data_format,
-            separate_edge_classes=separate_edge_classes)
+
+        edge_class_shape = 4 if separate_edge_classes else 3
+
+        if data_format == 'channels_first':
+            y_transform = np.zeros(tuple([y.shape[0]] + [edge_class_shape] + list(y.shape[2:])))
+        else:
+            y_transform = np.zeros(tuple(list(y.shape[0:-1]) + [edge_class_shape]))
+
+        for batch in range(y_transform.shape[0]):
+            if data_format == 'channels_first':
+                mask = y[batch, 0, ...]
+            else:
+                mask = y[batch, ..., 0]
+
+            y_transform[batch] = transform_utils.pixelwise_transform(
+                mask, dilation_radius, data_format=data_format,
+                separate_edge_classes=separate_edge_classes)
 
     elif transform == 'watershed':
         distance_bins = kwargs.pop('distance_bins', 4)
