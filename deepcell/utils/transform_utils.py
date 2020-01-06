@@ -59,78 +59,69 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
         data_format = K.image_data_format()
 
     if data_format == 'channels_first':
-        channel_axis = 1
+        channel_axis = 0
     else:
-        channel_axis = len(mask.shape) - 1
-
-    mask = np.squeeze(mask, axis=channel_axis)
+        channel_axis = -1
 
     # Detect the edges and interiors
-    new_masks = np.zeros(mask.shape)
-    edges = np.zeros(mask.shape)
-    strel = ball(1) if mask.ndim > 3 else disk(1)
+    new_mask = np.zeros(mask.shape)
+    strel = ball(1) if mask.ndim > 2 else disk(1)
     for cell_label in np.unique(mask):
         if cell_label != 0:
-            for i in range(mask.shape[0]):
-                # get the cell interior
-                img = mask[i] == cell_label
-                img = binary_erosion(img, strel)
-                new_masks[i] += img
+            # get the cell interior
+            new_mask = mask == cell_label
+            new_mask = binary_erosion(new_mask, strel)
 
-    interiors = np.multiply(new_masks, mask)
-    edges = (mask - interiors > 0).astype('int')
-    interiors = (interiors > 0).astype('int')
+    interior = np.multiply(new_mask, mask)
+    edge = (mask - interior > 0).astype('int')
+    interior = (interior > 0).astype('int')
 
     if not separate_edge_classes:
         if dilation_radius:
-            dil_strel = ball(dilation_radius) if mask.ndim > 3 else disk(dilation_radius)
+            dil_strel = ball(dilation_radius) if mask.ndim > 2 else disk(dilation_radius)
             # Thicken cell edges to be more pronounced
-            for i in range(edges.shape[0]):
-                edges[i] = binary_dilation(edges[i], selem=dil_strel)
+            edge = binary_dilation(edge, selem=dil_strel)
 
             # Thin the augmented edges by subtracting the interior features.
-            edges = (edges - interiors > 0).astype('int')
+            edge = (edge - interior > 0).astype('int')
 
-        background = (1 - edges - interiors > 0)
+        background = (1 - edge - interior > 0)
         background = background.astype('int')
 
         all_stacks = [
-            edges,
-            interiors,
+            edge,
+            interior,
             background
         ]
 
         return np.stack(all_stacks, axis=channel_axis)
 
     # dilate the background masks and subtract from all edges for background-edges
-    dilated_background = np.zeros(mask.shape)
-    for i in range(mask.shape[0]):
-        background = (mask[i] == 0).astype('int')
-        dilated_background[i] = binary_dilation(background, strel)
+    background = (mask == 0).astype('int')
+    dilated_background = binary_dilation(background, strel)
 
-    background_edges = (edges - dilated_background > 0).astype('int')
+    background_edge = (edge - dilated_background > 0).astype('int')
 
     # edges that are not background-edges are interior-edges
-    interior_edges = (edges - background_edges > 0).astype('int')
+    interior_edge = (edge - background_edge > 0).astype('int')
 
     if dilation_radius:
-        dil_strel = ball(dilation_radius) if mask.ndim > 3 else disk(dilation_radius)
+        dil_strel = ball(dilation_radius) if mask.ndim > 2 else disk(dilation_radius)
         # Thicken cell edges to be more pronounced
-        for i in range(edges.shape[0]):
-            interior_edges[i] = binary_dilation(interior_edges[i], selem=dil_strel)
-            background_edges[i] = binary_dilation(background_edges[i], selem=dil_strel)
+        interior_edge = binary_dilation(interior_edge, selem=dil_strel)
+        background_edge = binary_dilation(background_edge, selem=dil_strel)
 
         # Thin the augmented edges by subtracting the interior features.
-        interior_edges = (interior_edges - interiors > 0).astype('int')
-        background_edges = (background_edges - interiors > 0).astype('int')
+        interior_edge = (interior_edge - interior > 0).astype('int')
+        background_edge = (background_edge - interior > 0).astype('int')
 
-    background = (1 - background_edges - interior_edges - interiors > 0)
+    background = (1 - background_edge - interior_edge - interior > 0)
     background = background.astype('int')
 
     all_stacks = [
-        background_edges,
-        interior_edges,
-        interiors,
+        background_edge,
+        interior_edge,
+        interior,
         background
     ]
 
