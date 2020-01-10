@@ -69,6 +69,7 @@ class TransformUtilsTest(test.TestCase):
 
                 self.assertEqual(pw_img.shape[-1], 3)
                 self.assertEqual(pw_img_dil.shape[-1], 3)
+                assert(np.all(np.equal(pw_img[..., 0] + pw_img[..., 1], img > 0)))
                 self.assertGreater(
                     pw_img_dil[..., 0].sum() + pw_img_dil[..., 1].sum(),
                     pw_img[..., 0].sum() + pw_img[..., 1].sum())
@@ -86,6 +87,7 @@ class TransformUtilsTest(test.TestCase):
 
                 self.assertEqual(pw_img.shape[-1], 4)
                 self.assertEqual(pw_img_dil.shape[-1], 4)
+                assert(np.all(np.equal(pw_img[..., 0] + pw_img[..., 1] + pw_img[..., 2], img > 0)))
                 self.assertGreater(
                     pw_img_dil[..., 0].sum() + pw_img_dil[..., 1].sum(),
                     pw_img[..., 0].sum() + pw_img[..., 1].sum())
@@ -119,6 +121,7 @@ class TransformUtilsTest(test.TestCase):
                     separate_edge_classes=False)
                 self.assertEqual(pw_img.shape[-1], 3)
                 self.assertEqual(pw_img_dil.shape[-1], 3)
+                assert(np.all(np.equal(pw_img[..., 0] + pw_img[..., 1], img > 0)))
                 self.assertGreater(
                     pw_img_dil[..., 0].sum() + pw_img_dil[..., 1].sum(),
                     pw_img[..., 0].sum() + pw_img[..., 1].sum())
@@ -140,6 +143,7 @@ class TransformUtilsTest(test.TestCase):
                     separate_edge_classes=True)
                 self.assertEqual(pw_img.shape[-1], 4)
                 self.assertEqual(pw_img_dil.shape[-1], 4)
+                assert(np.all(np.equal(pw_img[..., 0] + pw_img[..., 1] + pw_img[..., 2], img > 0)))
                 self.assertGreater(
                     pw_img_dil[..., 0].sum() + pw_img_dil[..., 1].sum(),
                     pw_img[..., 0].sum() + pw_img[..., 1].sum())
