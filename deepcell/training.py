@@ -442,7 +442,6 @@ def train_model_conv(model,
         validation_steps=val_data.y.shape[0] // batch_size,
         callbacks=train_callbacks)
 
-    model.save_weights(model_path)
     np.savez(loss_path, loss_history=loss_history.history)
 
     return model
