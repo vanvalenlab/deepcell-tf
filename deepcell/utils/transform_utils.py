@@ -69,8 +69,9 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
     for cell_label in np.unique(mask):
         if cell_label != 0:
             # get the cell interior
-            new_mask = mask == cell_label
-            new_mask = binary_erosion(new_mask, strel)
+            img = mask == cell_label
+            img = binary_erosion(img, strel)
+            new_mask += img
 
     interior = np.multiply(new_mask, mask)
     edge = (mask - interior > 0).astype('int')
