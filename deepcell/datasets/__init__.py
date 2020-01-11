@@ -122,8 +122,8 @@ class Dataset(object):  # pylint: disable=useless-object-inheritance
 
 hek293 = Dataset(
     path='HEK293.npz',
-    url='https://deepcell-data.s3.amazonaws.com/nuclei/3T3_NIH.npz',
-    file_hash='f6520df218847fa56be2de0d3552c8a2',
+    url='https://deepcell-data.s3-us-west-1.amazonaws.com/nuclei/HEK293.npz',
+    file_hash='6221fa459350cd1e45ce6c9145264329',
     metadata={}
 )
 
