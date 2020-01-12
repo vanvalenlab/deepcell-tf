@@ -42,7 +42,7 @@ def get_callbacks(model_path,
                   tensorboard_log_dir=None,
                   reduce_lr_on_plateau=False,
                   monitor='val_loss',
-                  verbose=1, manual_save=None):
+                  verbose=1, callback_kwargs={}):
     """Returns a list of callbacks used for training
 
     Args:
@@ -54,24 +54,26 @@ def get_callbacks(model_path,
         tensorboard_log_dir (str): log directory for tensorboard.
         monitor (str): quantity to monitor.
         verbose (int): verbosity mode, 0 or 1.
-        manual_save (int or None): optional parameter specifying period
-            to save model at, irrespective of validation accuracy improvements
+        callback_kwargs (optional_list): extra arguments for callbacks
 
     Returns:
         list: a list of callbacks to be passed to model.fit()
     """
-    if manual_save is None:
-        cbs = [
-            callbacks.ModelCheckpoint(
-                model_path + ".h5", monitor=monitor,
-                save_best_only=True, verbose=verbose,
-                save_weights_only=save_weights_only),
-        ]
-    else:
+    manual_save = callback_kwargs.pop('manual_save', False)
+
+    if manual_save:
         cbs = [
             callbacks.ModelCheckpoint(
                 model_path + "_epoch_{epoch:02d}.h5", period=manual_save,
                 save_best_only=False, verbose=verbose,
+                save_weights_only=save_weights_only),
+        ]
+
+    else:
+        cbs = [
+            callbacks.ModelCheckpoint(
+                model_path + ".h5", monitor=monitor,
+                save_best_only=True, verbose=verbose,
                 save_weights_only=save_weights_only),
         ]
 
