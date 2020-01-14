@@ -84,7 +84,7 @@ nih_3t3 = Dataset(
 
 A549 = Dataset(
     path='A549-cytoplasm.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_A549_s0_fluorescent_cyto_medium_stitched_2D.npz',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_A549_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
     file_hash='33741ff643b1c8c017269663978ab8d52f833bfb65156fb66defa325e5316e74',
     metadata={'methods': methods}
 )
