@@ -21,7 +21,6 @@ deepcell.image\_generators module
 .. automodule:: deepcell.image_generators
     :members:
     :undoc-members:
-    :show-inheritance:
 
 deepcell.metrics module
 -----------------------
@@ -29,7 +28,6 @@ deepcell.metrics module
 .. automodule:: deepcell.metrics
     :members:
     :undoc-members:
-    :show-inheritance:
 
 deepcell.losses module
 ----------------------
@@ -37,7 +35,6 @@ deepcell.losses module
 .. automodule:: deepcell.losses
     :members:
     :undoc-members:
-    :show-inheritance:
 
 deepcell.running module
 -----------------------
@@ -45,7 +42,6 @@ deepcell.running module
 .. automodule:: deepcell.running
     :members:
     :undoc-members:
-    :show-inheritance:
 
 deepcell.training module
 ------------------------
@@ -53,7 +49,6 @@ deepcell.training module
 .. automodule:: deepcell.training
     :members:
     :undoc-members:
-    :show-inheritance:
 
 deepcell.tracking module
 ------------------------
@@ -61,7 +56,6 @@ deepcell.tracking module
 .. automodule:: deepcell.tracking
     :members:
     :undoc-members:
-    :show-inheritance:
 
 Module contents
 ---------------
@@ -69,4 +63,4 @@ Module contents
 .. automodule:: deepcell
     :members:
     :undoc-members:
-    :show-inheritance:
+
