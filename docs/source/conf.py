@@ -204,8 +204,8 @@ autodoc_mock_imports = [
     'keras-preprocessing',
     'deepcell_tracking'
 ]
-
-sys.modules[tensorflow.keras.layers.recurrent] = mock.Mock(DropoutRNNCellMixin=object)
+# sys.modules[tensorflow] = mock.Mock()
+sys.modules['tensorflow.keras.layers.recurrent'] = mock.Mock(DropoutRNNCellMixin=object)
 
 # -- Options for intersphinx extension ---------------------------------------
 
