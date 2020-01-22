@@ -201,8 +201,7 @@ autodoc_mock_imports = [
     'cv2',
     'cython',
     'keras-preprocessing',
-    'deepcell_tracking',
-    'deepcell.utils.compute_overlap'
+    'deepcell_tracking'
 ]
 
 # -- Options for intersphinx extension ---------------------------------------
