@@ -21,6 +21,7 @@ Examples
 --------
 
 .. list-table::
+
     * - Raw Image
       - Segmented and Tracked
     * - .. image:: /docs/images/raw.gif
