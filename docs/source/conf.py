@@ -204,6 +204,8 @@ autodoc_mock_imports = [
     'deepcell_tracking'
 ]
 
+sys.modules[tensorflow.keras.layers.recurrent] = mock.Mock(DropoutRNNCellMixin=object)
+
 # -- Options for intersphinx extension ---------------------------------------
 
 intersphinx_mapping = {
