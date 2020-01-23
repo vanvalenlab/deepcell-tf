@@ -192,7 +192,7 @@ epub_exclude_files = ['search.html']
 
 # -- Extension configuration -------------------------------------------------
 autodoc_mock_imports = [
-    'tensorflow',
+    # 'tensorflow',
     'scipy',
     'sklearn',
     'skimage',
@@ -205,7 +205,7 @@ autodoc_mock_imports = [
     'deepcell_tracking'
 ]
 # sys.modules[tensorflow] = mock.Mock()
-sys.modules['tensorflow.keras.layers.recurrent'] = mock.Mock(DropoutRNNCellMixin=object)
+# sys.modules['tensorflow.keras.layers.recurrent'] = mock.Mock(DropoutRNNCellMixin=object)
 
 # -- Options for intersphinx extension ---------------------------------------
 
