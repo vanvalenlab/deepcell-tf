@@ -202,7 +202,8 @@ autodoc_mock_imports = [
     'cv2',
     'cython',
     'keras-preprocessing',
-    'deepcell_tracking'
+    'deepcell_tracking',
+    'keras_applications'
 ]
 # sys.modules[tensorflow] = mock.Mock()
 # sys.modules['tensorflow.keras.layers.recurrent'] = mock.Mock(DropoutRNNCellMixin=object)
