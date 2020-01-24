@@ -1,7 +1,7 @@
-.. DeepCell documentation master file
+.. _index:
 
 Home
-########################################################
+====
 
 .. toctree::
    :maxdepth: 2
