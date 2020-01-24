@@ -470,6 +470,9 @@ def bn_feature_net_3D(receptive_field=61,
                            padding='same', kernel_initializer=init, activation='relu',
                            kernel_regularizer=l2(reg), return_sequences=True)(feature)
         elif mode == 'gru':
+            x = Conv3D(n_filters, (n_frames, temporal_kernel_size, temporal_kernel_size),
+                       kernel_initializer=init, padding='same', activation='relu',
+                       kernel_regularizer=l2(reg))(feature)
             # x = ConvGRU2D(filters=n_filters, kernel_size=temporal_kernel_size,
             #               padding='same', kernel_initializer=init, activation='relu',
             #               kernel_regularizer=l2(reg), return_sequences=True)(feature)
