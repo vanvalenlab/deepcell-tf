@@ -194,6 +194,7 @@ epub_exclude_files = ['search.html']
 autodoc_mock_imports = [
     'tensorflow',
     'scipy',
+    'numpy',
     'sklearn',
     'skimage',
     'pandas',
@@ -203,8 +204,11 @@ autodoc_mock_imports = [
     'cython',
     'keras-preprocessing',
     'deepcell_tracking',
-    'keras_applications'
+    'keras_applications',
+    'matplotlib'
 ]
+
+sys.modules['deepcell.utils.compute_overlap'] = mock.Mock()
 # sys.modules[tensorflow] = mock.Mock()
 # sys.modules['tensorflow.keras.layers.recurrent'] = mock.Mock(DropoutRNNCellMixin=object)
 
