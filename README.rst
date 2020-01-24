@@ -24,8 +24,8 @@ Examples
 
     * - Raw Image
       - Segmented and Tracked
-    * - .. image:: /docs/images/raw.gif
-      - .. image:: /docs/images/tracked.gif
+    * - .. image:: https://github.com/vanvalenlab/deepcell-tf/blob/master/docs/images/raw.gif
+      - .. image:: https://github.com/vanvalenlab/deepcell-tf/blob/master/docs/images/tracked.gif
 
 Getting Started
 ---------------
