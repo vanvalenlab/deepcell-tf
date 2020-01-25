@@ -23,7 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Builtin Datasets"""
+"""Timelapse datasets of a nuclear label including the raw images and
+ground truth segmentation masks annotated to track cell lineages"""
 
 from __future__ import absolute_import
 from __future__ import division
