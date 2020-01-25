@@ -53,6 +53,7 @@ methods = {
         'images.'
 }
 
+#:
 all_cells = Dataset(
     path='20190813_all_phase_512.npz',
     url='https://deepcell-data.s3-us-west-1.amazonaws.com/cytoplasm/brightfield/20190813_all_phase_512.npz',
@@ -60,6 +61,7 @@ all_cells = Dataset(
     metadata={'methods': methods}
 )
 
+#:
 nih_3t3 = Dataset(
     path='nih_3t3-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_3T3_s0_phase_medium_stitched_2D_512.npz',
@@ -67,7 +69,7 @@ nih_3t3 = Dataset(
     metadata={'methods': methods}
 )
 
-
+#:
 A549 = Dataset(
     path='A549-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_A549_s0_phase_medium_stitched_2D_512.npz',
@@ -75,7 +77,7 @@ A549 = Dataset(
     metadata={'methods': methods}
 )
 
-
+#:
 CHO = Dataset(
     path='CHO-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_CHO_s0_phase_medium_stitched_2D_512.npz',
@@ -83,7 +85,7 @@ CHO = Dataset(
     metadata={'methods': methods}
 )
 
-
+#:
 HeLa_S3 = Dataset(
     path='HeLa_S3-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_HeLa-S3_s0_phase_medium_stitched_2D_512.npz',
@@ -91,7 +93,7 @@ HeLa_S3 = Dataset(
     metadata={'methods': methods}
 )
 
-
+#:
 HeLa = Dataset(
     path='HeLa-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_HeLa_s0_phase_medium_stitched_2D_512.npz',
@@ -99,7 +101,7 @@ HeLa = Dataset(
     metadata={'methods': methods}
 )
 
-
+#:
 PC3 = Dataset(
     path='PC3-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_PC3_s0_phase_medium_stitched_2D_512.npz',

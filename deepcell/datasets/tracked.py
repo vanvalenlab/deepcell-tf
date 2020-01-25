@@ -34,6 +34,7 @@ from deepcell.datasets import Dataset
 
 # pylint: disable=line-too-long
 
+#:
 nih_3t3 = Dataset(
     path='3T3_NIH.trks',
     url='https://deepcell-data.s3.amazonaws.com/tracked/3T3_NIH.trks',
@@ -41,7 +42,7 @@ nih_3t3 = Dataset(
     metadata={}
 )
 
-
+#:
 hek293 = Dataset(
     path='hek293.trks',
     url='https://deepcell-data.s3.amazonaws.com/tracked/HEK293.trks',
@@ -49,7 +50,7 @@ hek293 = Dataset(
     metadata={}
 )
 
-
+#:
 hela_s3 = Dataset(
     path='HeLa_S3.trks',
     url='https://deepcell-data.s3.amazonaws.com/tracked/HeLa_S3.trks',
@@ -57,7 +58,7 @@ hela_s3 = Dataset(
     metadata={}
 )
 
-
+#:
 raw2647 = Dataset(
     path='raw2647.trks',
     url='https://deepcell-data.s3.amazonaws.com/tracked/RAW2647.trks',
@@ -72,6 +73,7 @@ raw2647 = Dataset(
 # TODO: Correct all 4 full datasets (above) to improve training accuracy and
 #        allow for dynamic train/val/test split with seed values
 
+#:
 nih_3t3_bench = Dataset(
     path='3T3_NIH_benchmarks.trks',
     url='https://deepcell-data.s3.amazonaws.com/tracking_manuscript_benchmarking/GT_tracks/3T3_NIH_benchmarks.trks',
@@ -79,7 +81,7 @@ nih_3t3_bench = Dataset(
     metadata={}
 )
 
-
+#:
 hek293_bench = Dataset(
     path='HEK293_generic_benchmarks.trks',
     url='https://deepcell-data.s3.amazonaws.com/tracking_manuscript_benchmarking/GT_tracks/HEK293_generic_benchmarks.trks',
@@ -87,7 +89,7 @@ hek293_bench = Dataset(
     metadata={}
 )
 
-
+#:
 hela_s3_bench = Dataset(
     path='HeLa_S3_benchmarks.trks',
     url='https://deepcell-data.s3.amazonaws.com/tracking_manuscript_benchmarking/GT_tracks/HeLa_S3_benchmarks.trks',
@@ -95,7 +97,7 @@ hela_s3_bench = Dataset(
     metadata={}
 )
 
-
+#:
 raw2647_bench = Dataset(
     path='RAW2647_generic_benchmarks.trks',
     url='https://deepcell-data.s3.amazonaws.com/tracking_manuscript_benchmarking/GT_tracks/RAW2647_generic_benchmarks.trks',
