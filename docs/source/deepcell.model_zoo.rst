@@ -5,7 +5,7 @@ Submodules
 ----------
 
 deepcell.model_zoo.featurenet module
-------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: deepcell.model_zoo.featurenet
     :members:
@@ -13,7 +13,7 @@ deepcell.model_zoo.featurenet module
     :show-inheritance:
 
 deepcell.model_zoo.maskrcnn module
-----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: deepcell.model_zoo.maskrcnn
     :members:
@@ -21,18 +21,16 @@ deepcell.model_zoo.maskrcnn module
     :show-inheritance:
 
 deepcell.model_zoo.retinanet module
------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: deepcell.model_zoo.retinanet
     :members:
     :undoc-members:
     :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: deepcell.model_zoo
+deepcell.model_zoo.fpn module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: deepcell.model_zoo.fpn
     :members:
     :undoc-members:
     :show-inheritance:

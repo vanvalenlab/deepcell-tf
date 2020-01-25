@@ -1,9 +1,6 @@
 deepcell.notebooks package
 ==========================
 
-Submodules
-----------
-
 deepcell.notebooks.train module
 -------------------------------
 

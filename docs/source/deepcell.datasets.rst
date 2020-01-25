@@ -1,9 +1,6 @@
 deepcell.datasets package
 =========================
 
-Submodules
-----------
-
 deepcell.datasets.cytoplasm module
 ----------------------------------
 
