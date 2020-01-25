@@ -6,8 +6,9 @@ DeepCell: Deep Learning for Single Cell Analysis
 .. image:: https://travis-ci.com/vanvalenlab/deepcell-tf.svg?branch=master
     :target: https://travis-ci.com/vanvalenlab/deepcell-tf
 
-.. image:: https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master)
+.. image:: https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master
     :target: https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master
+
 
 DeepCell is neural network library for single cell analysis, written in Python and built using `TensorFlow <https://github.com/tensorflow/tensorflow>`_ and `Keras <https://www.tensorflow.org/guide/keras>`_.
 
@@ -24,8 +25,8 @@ Examples
 
     * - Raw Image
       - Segmented and Tracked
-    * - .. image:: https://github.com/vanvalenlab/deepcell-tf/blob/master/docs/images/raw.gif
-      - .. image:: https://github.com/vanvalenlab/deepcell-tf/blob/master/docs/images/tracked.gif
+    * - .. image:: docs/images/raw.gif
+      - .. image:: docs/images/tracked.gif
 
 Getting Started
 ---------------
@@ -40,36 +41,37 @@ This will start a jupyter session, with several example notebooks detailing vari
 
 PanOptic Segmentation using RetinaMask
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* `Retinanet Object Detection.ipynb <https://github.com/vanvalenlab/deepcell-tf/scripts/feature_pyramids/RetinaNet.ipynb>`_
-* `RetinaMask Instance Segmentation.ipynb <https://github.com/vanvalenlab/deepcell-tf/scripts/feature_pyramids/RetinaMask.ipynb>`_
-* `PanOptic Segmentation.ipynb <https://github.com/vanvalenlab/deepcell-tf/scripts/feature_pyramids/PanOpticFPN.ipynb>`_
+* `Retinanet Object Detection.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/feature_pyramids/RetinaNet.ipynb>`_
+* `RetinaMask Instance Segmentation.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/feature_pyramids/RetinaMask.ipynb>`_
+* `PanOptic Segmentation.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/feature_pyramids/PanOpticFPN.ipynb>`_
 
 Pixel-Wise Segmentation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-* `2D Pixel-Wise Transform - Fully Convolutional.ipynb <https://github.com/vanvalenlab/deepcell-tf/scripts/pixelwise/Interior-Edge%20Segmentation%202D%20Fully%20Convolutional.ipynb>`_
+* `2D Pixel-Wise Transform - Fully Convolutional.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/pixelwise/Interior-Edge%20Segmentation%202D%20Fully%20Convolutional.ipynb>`_
 
-* `2D Pixel-Wise Transform - Sample Based.ipynb <https://github.com/vanvalenlab/deepcell-tf/scripts/pixelwise/Interior-Edge%20Segmentation%202D%20Sample%20Based.ipynb>`_
+* `2D Pixel-Wise Transform - Sample Based.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/pixelwise/Interior-Edge%20Segmentation%202D%20Sample%20Based.ipynb>`_
 
-* `3D Pixel-Wise Transform - Fully Convolutional.ipynb <https://github.com/vanvalenlab/deepcell-tf/scripts/pixelwise/Interior-Edge%20Segmentation%203D%20Fully%20Convolutional.ipynb>`_
+* `3D Pixel-Wise Transform - Fully Convolutional.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/pixelwise/Interior-Edge%20Segmentation%203D%20Fully%20Convolutional.ipynb>`_
 
-* `3D Pixel-Wise Transform - Sample Based.ipynb <scripts/pixelwise/Interior-Edge%20Segmentation%203D%20Sample%20Based.ipynb>`_
+* `3D Pixel-Wise Transform - Sample Based.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/pixelwise/Interior-Edge%20Segmentation%203D%20Sample%20Based.ipynb>`_
 
 Deep Watershed Instance Segmentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* `2D Watershed - Fully Convolutional.ipynb <https://github.com/vanvalenlab/deepcell-tf/scripts/watershed/Watershed%20Transform%202D%20Fully%20Convolutional.ipynb>`_
+* `2D Watershed - Fully Convolutional.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/watershed/Watershed%20Transform%202D%20Fully%20Convolutional.ipynb>`_
 
-* `2D Watershed - Sample Based.ipynb <https://github.com/vanvalenlab/deepcell-tf/scripts/watershed/Watershed%20Transform%202D%20Sample%20Based.ipynb>`_
+* `2D Watershed - Sample Based.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/watershed/Watershed%20Transform%202D%20Sample%20Based.ipynb>`_
 
-* `3D Watershed - Fully Convolutional.ipynb <https://github.com/vanvalenlab/deepcell-tf/scripts/watershed/Watershed%20Transform%203D%20Fully%20Convolutional.ipynb>`_
+* `3D Watershed - Fully Convolutional.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/watershed/Watershed%20Transform%203D%20Fully%20Convolutional.ipynb>`_
 
-* `3D Watershed - Sample Based.ipynb <https://github.com/vanvalenlab/deepcell-tf/scripts/watershed/Watershed%20Transform%203D%20Sample%20Based.ipynb>`_
+* `3D Watershed - Sample Based.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/watershed/Watershed%20Transform%203D%20Sample%20Based.ipynb>`_
 
 Cell Tracking in Live Cell Imaging
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* `Tracking Example.ipynb <scripts/tracking/Tracking%20Example.ipynb>`_
+* `Training a Tracking Models.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/tracking/Training%20a%20Tracking%20Model.ipynb>`_
+* `Tracking Example with Benchmarking.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/tracking/Tracking%20Example%20with%20Benchmarking.ipynb>`_
 
 
 DeepCell for Developers

@@ -14,32 +14,34 @@
 #
 import os
 import sys
-import shlex
+from datetime import datetime
 import mock
+from sphinx.builders.html import StandaloneHTMLBuilder
 sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
 
-try:
-    from pip._internal.operations import freeze
-except ImportError:  # pip < 10.0
-    from pip.operations import freeze
+# try:
+#     from pip._internal.operations import freeze
+# except ImportError:  # pip < 10.0
+#     from pip.operations import freeze
 
-x = freeze.freeze()
-for p in x:
-    print p
+# x = freeze.freeze()
+# for p in x:
+#     print p
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'DeepCell'
-copyright = '2016-2018, Van Valen Lab at the California Institute of Technology (Caltech)'
+copyright = '2016-{currentyear}, Van Valen Lab at the California Institute of Technology (Caltech)'.format(
+    currentyear=datetime.now().year
+)
 author = 'Van Valen Lab at Caltech'
 
 # The short X.Y version
 version = '2.0'
 # The full version, including alpha/beta/rc tags
 release = '2.0.0'
-
 
 # -- General configuration ---------------------------------------------------
 
@@ -218,8 +220,6 @@ autodoc_mock_imports = [
 ]
 
 sys.modules['deepcell.utils.compute_overlap'] = mock.Mock()
-# sys.modules[tensorflow] = mock.Mock()
-# sys.modules['tensorflow.keras.layers.recurrent'] = mock.Mock(DropoutRNNCellMixin=object)
 
 # -- Options for intersphinx extension ---------------------------------------
 
@@ -227,6 +227,8 @@ intersphinx_mapping = {
     'kiosk': ('https://deepcell-kiosk.readthedocs.io/en/latest/', None),
     'python': ('https://docs.python.org/3.7', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'kiosk-redis-consumer': ('https://deepcell-kiosk.readthedocs.io/projects/kiosk-redis-consumer/en/latest/', None),
+    'kiosk-frontend': ('https://deepcell-kiosk.readthedocs.io/projects/kiosk-frontend/en/latest/', None)
 }
 
 intersphinx_cache_limit = 0
@@ -245,4 +247,11 @@ nitpick_ignore = [
     ('py:class', 'tensorflow.python.keras.layers.ZeroPadding3D'),
     ('py:class', 'tensorflow.python.keras.preprocessing.image.Iterator'),
     ('py:class', 'tensorflow.python.keras.preprocessing.image.ImageDataGenerator'),
+]
+
+StandaloneHTMLBuilder.supported_image_types = [
+    'image/svg+xml',
+    'image/gif',
+    'image/png',
+    'image/jpeg'
 ]
