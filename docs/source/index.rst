@@ -34,7 +34,7 @@ For more information on deploying DeepCell in the cloud:
    :maxdepth: 2
    :caption: Deepcell API:
 
-   deepcell
+   API/deepcell
 
 
 
