@@ -1,5 +1,5 @@
-## what
+## What
 * Describe high-level what changed.
 
-## why
+## Why
 * Provide the justifications for the changes.
