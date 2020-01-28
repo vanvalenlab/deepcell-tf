@@ -34,6 +34,7 @@ import numpy as np
 # from tensorflow.python import keras
 # from tensorflow.python.eager import context
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.platform import test
 
 from deepcell.utils import testing_utils
 from deepcell import layers
@@ -170,6 +171,7 @@ class ReflectionPaddingTest(keras_parameterized.TestCase):
             layers.ReflectionPadding3D(padding=(1, 1))
         with self.assertRaises(ValueError):
             layers.ReflectionPadding3D(padding=None)
+
 
 if __name__ == '__main__':
     test.main()

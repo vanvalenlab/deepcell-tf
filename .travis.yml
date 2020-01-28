@@ -73,6 +73,7 @@ jobs:
       - docker build --build-arg TF_VERSION=$TF_VERSION-gpu -t "$TRAVIS_REPO_SLUG" .
       - docker images
       - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}-gpu"
+      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"latest-gpu"
       - docker push "$TRAVIS_REPO_SLUG"
 
 after_success:
