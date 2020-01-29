@@ -936,11 +936,11 @@ def match_nodes(gt, res):
     """Loads all data that matches each pattern and compares the graphs.
 
     Args:
-        gt (np.array): data array to match to unique.
-        res (np.array): ground truth array with all cells labeled uniquely.
+        gt (numpy.array): data array to match to unique.
+        res (numpy.array): ground truth array with all cells labeled uniquely.
 
     Returns:
-        np.array: IoU of ground truth cells and predicted cells.
+        numpy.array: IoU of ground truth cells and predicted cells.
     """
     num_frames = gt.shape[0]
     iou = np.zeros((num_frames, np.max(gt) + 1, np.max(res) + 1))

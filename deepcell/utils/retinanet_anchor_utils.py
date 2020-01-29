@@ -84,7 +84,7 @@ def get_anchor_parameters(y):
     and anchor parameters based on the annotated data.
 
     Args:
-        y (np.array): Annotated data array (channels_last).
+        y (numpy.array): Annotated data array (channels_last).
 
     Returns:
         tuple: Tuple of backbone layers, pyramid layers, and anchor parameters.
