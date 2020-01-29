@@ -448,7 +448,6 @@ def retinanet_bbox(model=None,
     Raises:
         ValueError: the given model does not have a regression or
             classification submodel.
-
     """
     # if no anchor parameters are passed, use default values
     if anchor_params is None:
