@@ -61,6 +61,11 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'm2r',
+    'IPython.sphinxext.ipython_console_highlighting',
+    'nbsphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.autosectionlabel'
+    # 'sphinx-copybutton'
 ]
 
 napoleon_google_docstring = True
@@ -220,6 +225,10 @@ autodoc_mock_imports = [
 ]
 
 sys.modules['deepcell.utils.compute_overlap'] = mock.Mock()
+
+# Disable nbsphinx extension from running notebooks
+nbsphinx_execute = 'never'
+exclude_patterns = ['_build', '**.ipynb_checkpoints']
 
 # -- Options for intersphinx extension ---------------------------------------
 
