@@ -23,7 +23,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Fully convolutional data generators."""
+"""Fully convolutional data generators.
+
+These data generators allow for training on augmented label masks (y)
+instead of single label for the whole image.
+"""
 
 from __future__ import absolute_import
 from __future__ import print_function

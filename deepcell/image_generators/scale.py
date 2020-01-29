@@ -23,7 +23,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Fully convolutional data generators."""
+"""Scale data generators.
+
+These generators perform random zooming on the raw data, and yield each image
+along with the zoom value of the image. This allows for models to learn the
+scale factor of data, which can be used to help normalize the zoom factor of
+new data.
+"""
 
 from __future__ import absolute_import
 from __future__ import print_function

@@ -23,7 +23,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Sample based data generators."""
+"""Sample based data generators.
+
+Sample data generators yield data from a sliding window in order to categorize
+the pixel of the center of the window using the data closest to it. These
+generators can be helpful when there is limited training data.
+"""
 
 from __future__ import absolute_import
 from __future__ import print_function

@@ -23,7 +23,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Image generators for training convolutional neural networks."""
+"""Image generators for training RetinaNet based models.
+
+The RetinaNetGenerator and RetinaMovieDataGenerator take in a raw image as well
+as a label mask, and extract bounding boxes for all objects in the label mask.
+"""
 
 from __future__ import absolute_import
 from __future__ import print_function
