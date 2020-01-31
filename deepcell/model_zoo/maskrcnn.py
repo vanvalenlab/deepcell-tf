@@ -418,6 +418,7 @@ def RetinaMask(backbone,
             Used to create default roi_submodels.
         pooling (str): optional pooling mode for feature extraction
             when include_top is False.
+
             - None means that the output of the model will be
                 the 4D tensor output of the
                 last convolutional layer.
@@ -427,6 +428,7 @@ def RetinaMask(backbone,
                 the output of the model will be a 2D tensor.
             - 'max' means that global max pooling will
                 be applied.
+
         mask_dtype (str): Dtype to use for mask tensors.
         required_channels (int): The required number of channels of the
             backbone.  3 is the default for all current backbones.

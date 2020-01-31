@@ -279,6 +279,7 @@ class SampleDataGenerator(ImageDataGenerator):
 
             Default is 'nearest'. Points outside the boundaries of the input
             are filled according to the given mode:
+
                 - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
                 - 'nearest':  aaaaaaaa|abcd|dddddddd
                 - 'reflect':  abcddcba|abcd|dcbaabcd
