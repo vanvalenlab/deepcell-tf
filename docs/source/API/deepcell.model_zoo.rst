@@ -1,6 +1,11 @@
 deepcell.model_zoo package
 ==========================
 
+.. automodule:: deepcell.model_zoo
+
+.. contents:: Contents
+    :local:
+
 deepcell.model_zoo.featurenet module
 ------------------------------------
 

@@ -59,7 +59,7 @@ class ImageFullyConvIterator(Iterator):
         image_data_generator: Instance of ImageDataGenerator
             to use for random transformations and normalization.
         batch_size: Integer, size of a batch.
-        shuffle: Boolean, whether to shuffle the data between epochs.
+        shuffle (bool): whether to shuffle the data between epochs.
         seed: Random seed for data shuffling.
         data_format: String, one of 'channels_first', 'channels_last'.
         save_to_dir: Optional directory where to save the pictures
@@ -176,16 +176,16 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
     The data will be looped over (in batches).
 
     Args:
-        featurewise_center: boolean, set input mean to 0 over the dataset,
+        featurewise_center (bool): set input mean to 0 over the dataset,
             feature-wise.
-        samplewise_center: boolean, set each sample mean to 0.
-        featurewise_std_normalization: boolean, divide inputs by std
+        samplewise_center (bool): set each sample mean to 0.
+        featurewise_std_normalization (bool): divide inputs by std
             of the dataset, feature-wise.
-        samplewise_std_normalization: boolean, divide each input by its std.
+        samplewise_std_normalization (bool): divide each input by its std.
         zca_epsilon: epsilon for ZCA whitening. Default is 1e-6.
-        zca_whitening: boolean, apply ZCA whitening.
-        rotation_range: int, degree range for random rotations.
-        width_shift_range: float, 1-D array-like or int
+        zca_whitening (bool): apply ZCA whitening.
+        rotation_range (int): degree range for random rotations.
+        width_shift_range (float, 1-D array-like, int):
 
             - float: fraction of total width, if < 1, or pixels if >= 1.
             - 1-D array-like: random elements from the array.
@@ -196,12 +196,12 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
               width_shift_range=1.0 possible values are floats in the interval
               [-1.0, +1.0).
 
-        shear_range: float, shear Intensity
+        shear_range (float): shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
-        zoom_range: float or [lower, upper], Range for random zoom.
+        zoom_range (float or [lower, upper]): Range for random zoom.
             If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
-        channel_shift_range: float, range for random channel shifts.
-        fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+        channel_shift_range (float): range for random channel shifts.
+        fill_mode (str): One of {"constant", "nearest", "reflect" or "wrap"}.
 
             Default is 'nearest'. Points outside the boundaries of the input
             are filled according to the given mode:
@@ -210,11 +210,11 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
                 - 'reflect':  abcddcba|abcd|dcbaabcd
                 - 'wrap':  abcdabcd|abcd|abcdabcd
 
-        cval: float or int, value used for points outside the boundaries
+        cval (float or int): value used for points outside the boundaries
             when fill_mode = "constant".
-        horizontal_flip: boolean, randomly flip inputs horizontally.
-        vertical_flip: boolean, randomly flip inputs vertically.
-        rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
+        horizontal_flip (bool): randomly flip inputs horizontally.
+        vertical_flip (bool): randomly flip inputs vertically.
+        rescale (float or None): Rescaling factor. Defaults to None. If None or 0, no rescaling
             is applied, otherwise we multiply the data by the value provided
             (before applying any other transformation).
         preprocessing_function: function that will be implied on each input.
@@ -223,7 +223,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
 
-        data_format: One of {"channels_first", "channels_last"}.
+        data_format (str): One of {"channels_first", "channels_last"}.
 
             - "channels_last" mode means that the images should have shape
               (samples, height, width, channels),
@@ -233,7 +233,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
               Keras config file at "~/.keras/keras.json".
             - If you never set it, then it will be "channels_last".
 
-        validation_split: float, fraction of images reserved for validation
+        validation_split (float): fraction of images reserved for validation
             (strictly between 0 and 1).
     """
 
@@ -327,16 +327,16 @@ class MovieDataGenerator(ImageDataGenerator):
     The data will be looped over (in batches).
 
     Args:
-        featurewise_center: boolean, set input mean to 0 over the dataset,
+        featurewise_center (bool): set input mean to 0 over the dataset,
             feature-wise.
-        samplewise_center: boolean, set each sample mean to 0.
-        featurewise_std_normalization: boolean, divide inputs by std
+        samplewise_center (bool): set each sample mean to 0.
+        featurewise_std_normalization (bool): divide inputs by std
             of the dataset, feature-wise.
-        samplewise_std_normalization: boolean, divide each input by its std.
+        samplewise_std_normalization (bool): divide each input by its std.
         zca_epsilon: epsilon for ZCA whitening. Default is 1e-6.
-        zca_whitening: boolean, apply ZCA whitening.
-        rotation_range: int, degree range for random rotations.
-        width_shift_range: float, 1-D array-like or int
+        zca_whitening (bool): apply ZCA whitening.
+        rotation_range (int): degree range for random rotations.
+        width_shift_range (float): 1-D array-like or int
 
             - float: fraction of total width, if < 1, or pixels if >= 1.
             - 1-D array-like: random elements from the array.
@@ -347,11 +347,11 @@ class MovieDataGenerator(ImageDataGenerator):
               while with width_shift_range=1.0 possible values are floats in
               the interval [-1.0, +1.0).
 
-        shear_range: float, shear Intensity
+        shear_range (float): shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range: float or [lower, upper], Range for random zoom.
             If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
-        channel_shift_range: float, range for random channel shifts.
+        channel_shift_range (float): range for random channel shifts.
         fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
 
             Default is 'nearest'. Points outside the boundaries of the input
@@ -363,8 +363,8 @@ class MovieDataGenerator(ImageDataGenerator):
 
         cval: float or int, value used for points outside the boundaries
             when fill_mode = "constant".
-        horizontal_flip: boolean, randomly flip inputs horizontally.
-        vertical_flip: boolean, randomly flip inputs vertically.
+        horizontal_flip (bool): randomly flip inputs horizontally.
+        vertical_flip (bool): randomly flip inputs vertically.
         rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
             is applied, otherwise we multiply the data by the value provided
             (before applying any other transformation).
@@ -383,7 +383,7 @@ class MovieDataGenerator(ImageDataGenerator):
               Keras config file at "~/.keras/keras.json".
             - If you never set it, then it will be "channels_last".
 
-        validation_split: float, fraction of images reserved for validation
+        validation_split (float): fraction of images reserved for validation
             (strictly between 0 and 1).
     """
 
@@ -630,7 +630,7 @@ class MovieArrayIterator(Iterator):
         movie_data_generator: Instance of MovieDataGenerator
             to use for random transformations and normalization.
         batch_size: Integer, size of a batch.
-        shuffle: Boolean, whether to shuffle the data between epochs.
+        shuffle (bool): whether to shuffle the data between epochs.
         frames_per_batch: size of z axis in generated batches
         seed: Random seed for data shuffling.
         data_format: String, one of 'channels_first', 'channels_last'.

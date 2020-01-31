@@ -1,6 +1,11 @@
 deepcell.utils package
 ======================
 
+.. automodule:: deepcell.utils
+
+.. contents:: Contents
+    :local:
+
 deepcell.utils.backbone\_utils module
 -------------------------------------
 .. automodule:: deepcell.utils.backbone_utils

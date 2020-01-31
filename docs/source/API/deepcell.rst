@@ -1,8 +1,10 @@
 deepcell package
 ================
 
+Subpackages
+-----------
+
 .. toctree::
-    :caption: Subpackages
 
     deepcell.applications
     deepcell.datasets
@@ -12,8 +14,10 @@ deepcell package
     deepcell.notebooks
     deepcell.utils
 
+Submodules
+----------
+
 .. toctree::
-    :caption: Submodules
 
     deepcell.callbacks
     deepcell.initializers

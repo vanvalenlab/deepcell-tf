@@ -1,6 +1,8 @@
 deepcell.applications package
 =============================
 
+.. automodule:: deepcell.applications
+
 ``deepcell.applications`` enables direct utilization of a pre-defined model with the option of loading pre-trained weights.
 
 For example, :mod:`deepcell.applications.nuclear_segmentation` could be used as shown below.
@@ -13,6 +15,9 @@ For example, :mod:`deepcell.applications.nuclear_segmentation` could be used as 
     model = NuclearSegmentationModel(input_shape=tuple(X_test.shape[1:]), backbone='resnet50', use_pretrained_weights=True)
 
     predictions = model.predict(X_test)
+
+.. contents:: Contents
+    :local:
 
 deepcell.applications.cell_tracking module
 ------------------------------------------

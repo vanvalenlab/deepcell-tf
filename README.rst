@@ -16,7 +16,7 @@ DeepCell aids in biological analysis by automatically segmenting and classifying
 
 Read the documentation at `deepcell.readthedocs.io <https://deepcell.readthedocs.io>`_
 
-For more information on deploying DeepCell in the cloud `refer to the DeepCell Kiosk documentation <https://deepcell-kiosk.readthedocs.io>`_.
+For more information on deploying DeepCell in the cloud refer to the `DeepCell Kiosk documentation <https://deepcell-kiosk.readthedocs.io>`_.
 
 Examples
 --------
@@ -72,6 +72,10 @@ Cell Tracking in Live Cell Imaging
 
 * `Training a Tracking Models.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/tracking/Training%20a%20Tracking%20Model.ipynb>`_
 * `Tracking Example with Benchmarking.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/tracking/Tracking%20Example%20with%20Benchmarking.ipynb>`_
+
+:mod:`deepcell.applications` and :mod:`deepcell.datasets`
+---------------------------------------------------------
+Together :mod:`deepcell.datasets` and :mod:`deepcell.applications` work together to provide an accessible entrypoint to deep learning for biologists. The datasets module contains a variety of annotated datasets that can be used as training data. Additionally, the applications package initializes a set of models complete with the option to initialize with pre-trained weights.
 
 
 DeepCell for Developers

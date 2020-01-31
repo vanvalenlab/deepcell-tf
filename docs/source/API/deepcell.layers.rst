@@ -1,6 +1,11 @@
 deepcell.layers package
 =======================
 
+.. automodule:: deepcell.layers
+
+.. contents:: Contents
+    :local:
+
 deepcell.layers.location module
 -------------------------------
 .. automodule:: deepcell.layers.location

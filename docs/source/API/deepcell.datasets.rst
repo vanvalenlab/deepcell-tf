@@ -22,6 +22,9 @@ Tracked datasets have a dedicated load function to handle the different data str
     # path can be modified to determine where the dataset is stored locally
     (X_train,y_train),(X_test,y_test) = hela.load_data(path='hela_tracked.npz',test_size=0.1)
 
+.. contents:: Contents
+    :local:
+
 deepcell.datasets.cytoplasm module
 ----------------------------------
 
