@@ -42,7 +42,15 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 def FluorCytoplasmSegmentationModel(input_shape=(None, None, 1),
                                     backbone='resnet50',
                                     use_pretrained_weights=True):
-    """Initialize a model for cytoplasmic segmentation based on fluorescent data.
+    """
+    A RetinaMask model with a ResNet50 backbone
+    for cytoplasmic segmentation trained on fluorescent data.
+
+    Args:
+        input_shape (tuple): a 3-length tuple of the input data shape.
+        backbone (str): name of the backbone to use for the model.
+        use_pretrained_weights (bool): whether to load pre-trained weights.
+            Only supports the ResNet50 backbone.
     """
 
     backbone_levels = ['C1', 'C2', 'C3', 'C4', 'C5']

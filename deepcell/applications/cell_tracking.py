@@ -42,11 +42,16 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 def CellTrackingModel(input_shape=(32, 32, 1),
                       neighborhood_scale_size=30,
                       use_pretrained_weights=True):
-    """Creates an instance of a siamese_model.
+    """Creates an instance of a siamese_model used for cell tracking.
 
     Detects whether to input cells are the same cell, different cells, or
-    daughter cells.  This can be used along with a cost matrix to track full
+    daughter cells. This can be used along with a cost matrix to track full
     cell lineages across many frames.
+
+    Args:
+        input_shape (tuple): a 3-length tuple of the input data shape.
+        neighborhood_scale_size (int): size of resized neighborhood images
+        use_pretrained_weights (bool): whether to load pre-trained weights.
     """
     features = {'appearance', 'distance', 'neighborhood', 'regionprop'}
 
