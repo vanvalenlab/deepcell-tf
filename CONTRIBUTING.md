@@ -16,7 +16,7 @@ Before sending your pull requests, make sure you have followed this list.
 ### Contributing code
 
 If you have improvements to deepcell-tf, please send us your pull requests! If you are new to the process, Github has a
-[how to](https://help.github.com/articles/using-pull-requests/).
+[how-to](https://help.github.com/articles/using-pull-requests/).
 
 If you want to contribute, start working through the codebase. Navigate to the
 [Github "issues" tab](https://github.com/vanvalenlab/deepcell-tf/issues) and start
@@ -24,8 +24,7 @@ looking through interesting issues. If you are not sure of where to start, look 
 [issues with the "good first issue" label](https://github.com/vanvalenlab/deepcell-tf/labels/good%20first%20issue)
 and then take a look at the
 [issues with the "contributions welcome" label](https://github.com/vanvalenlab/deepcell-tf/labels/stat%3Acontributions%20welcome).
-These are issues that we believe are particularly well suited for outside
-contributions. If you decide to start on an issue, leave a comment so that other people know that you're working on it. If you want to help out, but not alone, use the issue comment thread to coordinate.
+These are issues that we believe are well suited for outside contributions. If you decide to start on an issue, leave a comment so that other people know that you're working on it. If you want to help out, but not alone, use the issue comment thread to coordinate.
 
 ### Contribution guidelines and standards
 
@@ -41,7 +40,7 @@ DeepCell coding style.
     changes to lower the maintenance cost.
 *   Bug fixes also generally require unit tests, because the presence of bugs
     usually indicates insufficient test coverage.
-*   When you contribute a new feature to DeepCell-tf, the maintenance burden is
+*   When you contribute a new feature to deepcell-tf, the maintenance burden is
     (by default) transferred to the DeepCell team. This means that the benefit
     of the contribution must be compared against the cost of maintaining the
     feature.
