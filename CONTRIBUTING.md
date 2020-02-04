@@ -8,8 +8,8 @@ Before sending your pull requests, make sure you have followed this list.
 
 - Read the guidelines below and ensure your changes are consistent with them.
 - Read and abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
-- Ensure your changes are consistent with the [coding style](https://github.com/vanvalenlab/deepcell-tf/blob/master/CONTRIBUTING.md#Python-coding-style).
-- Run the existing [tests](https://github.com/vanvalenlab/deepcell-tf/blob/master/CONTRIBUTING.md#running-existing-tests) and write new tests for your code.
+- Ensure your changes are consistent with the coding style.
+- Run the existing tests and write new tests for your code.
 
 ## How to become a contributor and submit new code
 
