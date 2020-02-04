@@ -8,8 +8,8 @@ Before sending your pull requests, make sure you have followed this list.
 
 - Read the guidelines below and ensure your changes are consistent with them.
 - Read and abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
-- Ensure your changes are consistent with the [coding style](https://github.com/vanvalenlab/deepcell-tf/blob/master/CONTRIBUTING.md#python-coding-style).
-- Run the existing [Unit Tests](https://github.com/vanvalenlab/deepcell-tf/blob/master/CONTRIBUTING.md#running-unit-tests) and write new tests for your code.
+- Ensure your changes are consistent with the [coding style](https://github.com/vanvalenlab/deepcell-tf/blob/master/CONTRIBUTING.md#Python-coding-style).
+- Run the existing [tests](https://github.com/vanvalenlab/deepcell-tf/blob/master/CONTRIBUTING.md#running-existing-tests) and write new tests for your code.
 
 ## How to become a contributor and submit new code
 
@@ -54,7 +54,7 @@ DeepCell coding style.
 Changes to DeepCell should conform to our style. As our library uses TensorFlow, we follow [Google's Python Style Guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md)
 
 Use `pylint` to check your Python changes. To install `pylint` and check a file
-with `pylint` against TensorFlow's custom style definition:
+with `pylint` against our custom style definition:
 
 ```bash
 pip install pylint
@@ -64,20 +64,13 @@ pylint --rcfile=deepcell-tf/.pylintrc myfile.py
 Note `pylint --rcfile=deepcell-tf/.pylintrc` should run from the
 top level directory.
 
-#### Running unit tests
+#### Running tests
 
-Use the following commands to run unit tests locally.
+Use the following commands to run all tests locally:
 
 ```bash
 pip install -r requirements.txt
 pip install -r requirements-test.txt
 
-PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8
-PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html
-```
-
-For example, to run all tests, do:
-
-```bash
-
+pytest --cov=deepcell --pep8
 ```
