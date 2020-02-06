@@ -357,9 +357,10 @@ def reshape_matrix(X, y, reshape_size=256):
     Args:
         X (numpy.array): raw 4D image tensor
         y (numpy.array): label mask of 4D image data
-        reshape_size (int or a list of 2 ints): size of the output tensor
-        If input is int, output images are square with side length equal reshape_size.
-        If it is a list of 2 ints, then the output images size is reshape_size[0] x reshape_size[1]
+        reshape_size (int, list): size of the output tensor
+            If input is int, output images are square with side length equal
+            reshape_size. If it is a list of 2 ints, then the output images
+            size is reshape_size[0] x reshape_size[1]
 
     Returns:
         numpy.array: reshaped X and y 4D tensors
