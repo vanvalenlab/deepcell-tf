@@ -26,7 +26,8 @@ For more information on deploying DeepCell in the cloud:
    :maxdepth: 1
    :caption: Start Here:
 
-   EXAMPLE_NOTEBOOK
+   Training-Segmentation
+   Training-Tracking
 
 .. toctree::
    :maxdepth: 2
