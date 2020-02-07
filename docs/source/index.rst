@@ -28,6 +28,8 @@ For more information on deploying DeepCell in the cloud:
 
    Training-Segmentation
    Training-Tracking
+   CODE_OF_CONDUCT
+   CONTRIBUTING
 
 .. toctree::
    :maxdepth: 2
