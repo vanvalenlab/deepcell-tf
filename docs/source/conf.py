@@ -43,6 +43,16 @@ version = '2.0'
 # The full version, including alpha/beta/rc tags
 release = '2.0.0'
 
+# -- RTD configuration ------------------------------------------------
+
+# on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
+on_rtd = os.environ.get("READTHEDOCS", None) == "True"
+
+# This is used for linking and such so we link to the thing we're building
+rtd_version = os.environ.get("READTHEDOCS_VERSION", "latest")
+if rtd_version not in ["stable", "latest", "mrgn-docs"]:
+    rtd_version = "stable"
+
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -233,11 +243,11 @@ exclude_patterns = ['_build', '**.ipynb_checkpoints']
 # -- Options for intersphinx extension ---------------------------------------
 
 intersphinx_mapping = {
-    'kiosk': ('https://deepcell-kiosk.readthedocs.io/en/latest/', None),
     'python': ('https://docs.python.org/3.7', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
-    'kiosk-redis-consumer': ('https://deepcell-kiosk.readthedocs.io/projects/kiosk-redis-consumer/en/latest/', None),
-    'kiosk-frontend': ('https://deepcell-kiosk.readthedocs.io/projects/kiosk-frontend/en/latest/', None)
+    'kiosk': ('https://deepcell-kiosk.readthedocs.io/en/{}/'.format(rtd_version), None),
+    'kiosk-redis-consumer': ('https://deepcell-kiosk.readthedocs.io/projects/kiosk-redis-consumer/en/{}/'.format(rtd_version), None),
+    'kiosk-frontend': ('https://deepcell-kiosk.readthedocs.io/projects/kiosk-frontend/en/{}/'.format(rtd_version), None)
 }
 
 intersphinx_cache_limit = 0
