@@ -1,6 +1,9 @@
 deepcell.running module
 =======================
 
+.. contents:: Contents
+    :local:
+
 .. automodule:: deepcell.running
     :members:
     :undoc-members:

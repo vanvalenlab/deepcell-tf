@@ -7,6 +7,9 @@ deepcell.notebooks package
 
     .. deprecated:: 0.5.0
 
+.. contents:: Contents
+    :local:
+
 deepcell.notebooks.train module
 -------------------------------
 
