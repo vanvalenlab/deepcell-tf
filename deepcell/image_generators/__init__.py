@@ -23,7 +23,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Deepcell Image Data Generators"""
+"""
+Custom Image Data Generators used to generate augmented batches of training
+data. These custom generators extend the keras.ImageDataGenerator, and allow
+for training with label masks, bounding boxes, and more customized annotations.
+"""
 
 from __future__ import absolute_import
 from __future__ import division

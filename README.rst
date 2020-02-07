@@ -5,9 +5,11 @@ DeepCell: Deep Learning for Single Cell Analysis
 
 .. image:: https://travis-ci.com/vanvalenlab/deepcell-tf.svg?branch=master
     :target: https://travis-ci.com/vanvalenlab/deepcell-tf
+    :alt: Build Status
 
 .. image:: https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master
     :target: https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master
+    :alt: Coverage Status
 
 
 DeepCell is neural network library for single cell analysis, written in Python and built using `TensorFlow <https://github.com/tensorflow/tensorflow>`_ and `Keras <https://www.tensorflow.org/guide/keras>`_.
@@ -163,3 +165,4 @@ Credits
 
 .. image:: https://upload.wikimedia.org/wikipedia/commons/7/75/Caltech_Logo.svg
     :target: http://www.vanvalen.caltech.edu/
+    :alt: Van Valen Lab. Caltech

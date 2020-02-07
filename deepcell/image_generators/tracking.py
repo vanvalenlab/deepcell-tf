@@ -44,40 +44,45 @@ class SiameseDataGenerator(ImageDataGenerator):
     The data will be looped over (in batches).
 
     Args:
-        featurewise_center: boolean, set input mean to 0 over the dataset,
+        featurewise_center (bool): Set input mean to 0 over the dataset,
             feature-wise.
-        samplewise_center: boolean, set each sample mean to 0.
-        featurewise_std_normalization: boolean, divide inputs by std
+        samplewise_center (bool): Set each sample mean to 0.
+        featurewise_std_normalization (bool): Divide inputs by std
             of the dataset, feature-wise.
-        samplewise_std_normalization: boolean, divide each input by its std.
-        zca_epsilon: epsilon for ZCA whitening. Default is 1e-6.
-        zca_whitening: boolean, apply ZCA whitening.
-        rotation_range: int, degree range for random rotations.
-        width_shift_range: float, 1-D array-like or int
-            float: fraction of total width, if < 1, or pixels if >= 1.
-            1-D array-like: random elements from the array.
-            int: integer number of pixels from interval
-                (-width_shift_range, +width_shift_range)
-            With width_shift_range=2 possible values are ints [-1, 0, +1],
-            same as with width_shift_range=[-1, 0, +1],
-            while with width_shift_range=1.0 possible values are floats in
-            the interval [-1.0, +1.0).
-        shear_range: float, shear Intensity
+        samplewise_std_normalization (bool): Divide each input by its std.
+        zca_epsilon (float): Epsilon for ZCA whitening. Default is 1e-6.
+        zca_whitening (bool): Apply ZCA whitening.
+        rotation_range (int): Degree range for random rotations.
+        width_shift_range (float): 1-D array-like or int
+
+            - float: fraction of total width, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval
+              (-width_shift_range, +width_shift_range)
+            - With width_shift_range=2 possible values are ints [-1, 0, +1],
+              same as with width_shift_range=[-1, 0, +1], while with
+              width_shift_range=1.0 possible values are floats in the interval
+              [-1.0, +1.0).
+
+        shear_range (float): Shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
-        zoom_range: float or [lower, upper], Range for random zoom.
+        zoom_range (float): float or [lower, upper], Range for random zoom.
             If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
-        channel_shift_range: float, range for random channel shifts.
-        fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+        channel_shift_range (float): range for random channel shifts.
+        fill_mode (str): One of {"constant", "nearest", "reflect" or "wrap"}.
+
             Default is 'nearest'. Points outside the boundaries of the input
             are filled according to the given mode:
-                'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
-                'nearest':  aaaaaaaa|abcd|dddddddd
-                'reflect':  abcddcba|abcd|dcbaabcd
-                'wrap':  abcdabcd|abcd|abcdabcd
-        cval: float or int, value used for points outside the boundaries
+
+                - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
+                - 'nearest':  aaaaaaaa|abcd|dddddddd
+                - 'reflect':  abcddcba|abcd|dcbaabcd
+                - 'wrap':  abcdabcd|abcd|abcdabcd
+
+        cval (float): Value used for points outside the boundaries
             when fill_mode = "constant".
-        horizontal_flip: boolean, randomly flip inputs horizontally.
-        vertical_flip: boolean, randomly flip inputs vertically.
+        horizontal_flip (bool): Randomly flip inputs horizontally.
+        vertical_flip (bool): Randomly flip inputs vertically.
         rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
             is applied, otherwise we multiply the data by the value provided
             (before applying any other transformation).
@@ -86,15 +91,17 @@ class SiameseDataGenerator(ImageDataGenerator):
             The function should take one argument:
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
-        data_format: One of {"channels_first", "channels_last"}.
-            "channels_last" mode means that the images should have shape
-                (samples, height, width, channels),
-            "channels_first" mode means that the images should have shape
-                (samples, channels, height, width).
-            It defaults to the image_data_format value found in your
-                Keras config file at "~/.keras/keras.json".
-            If you never set it, then it will be "channels_last".
-        validation_split: float, fraction of images reserved for validation
+        data_format (str): One of {"channels_first", "channels_last"}.
+
+            - "channels_last" mode means that the images should have shape
+              (samples, height, width, channels),
+            - "channels_first" mode means that the images should have shape
+              (samples, channels, height, width).
+            - It defaults to the image_data_format value found in your
+              Keras config file at "~/.keras/keras.json".
+            - If you never set it, then it will be "channels_last".
+
+        validation_split (float): Fraction of images reserved for validation
             (strictly between 0 and 1).
     """
 
@@ -131,31 +138,32 @@ class SiameseDataGenerator(ImageDataGenerator):
 
 
 class SiameseIterator(Iterator):
-    """Iterator yielding two sets of features (X) and the relationship (y)
+    """Iterator yielding two sets of features (X) and the relationship (y).
+
     Features are passed in as a list of feature names, while the y is one of:
-        "same", "different", or "daughter"
+        {"same", "different", or "daughter"}.
 
     Args:
-        train_dict: dictionary consisting of numpy arrays for X and y.
-        image_data_generator: Instance of ImageDataGenerator
-            to use for random transformations and normalization.
-        features: List of Strings, feature names to calculate and yield.
-        crop_dim: Integer, size of the resized appearance images
-        min_track_length: Integer, minimum number of frames to track over.
-        neighborhood_scale_size: Integer, size of resized neighborhood images
-        neighborhood_true_size: Integer, size of cropped neighborhood images
-        sync_transform: Boolean, whether to transform the features.
-        batch_size: Integer, size of a batch.
-        shuffle: Boolean, whether to shuffle the data between epochs.
-        seed: Random seed for data shuffling.
-        data_format: String, one of 'channels_first', 'channels_last'.
-        save_to_dir: Optional directory where to save the pictures
+        train_dict (dict): Consists of numpy arrays for X and y.
+        image_data_generator (SiameseDataGenerator): For random transformations
+            and normalization.
+        features (list): Feature names to calculate and yield.
+        crop_dim (int): Size of the resized appearance images
+        min_track_length (int): Minimum number of frames to track over.
+        neighborhood_scale_size (int): Size of resized neighborhood images
+        neighborhood_true_size (int): Size of cropped neighborhood images
+        sync_transform (bool): Whether to transform the features.
+        batch_size (int): Size of a batch.
+        shuffle (bool): Whether to shuffle the data between epochs.
+        seed (int): Random seed for data shuffling.
+        data_format (str): One of 'channels_first', 'channels_last'.
+        save_to_dir (str): Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
-        save_prefix: String prefix to use for saving sample
+        save_prefix (str): Prefix to use for saving sample
             images (if save_to_dir is set).
-        save_format: Format to use for saving sample images
+        save_format (str): Format to use for saving sample images
             (if save_to_dir is set).
     """
     def __init__(self,
