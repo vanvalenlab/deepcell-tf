@@ -64,13 +64,8 @@ This will start a jupyter session, with several example notebooks detailing vari
 
 ## DeepCell for Developers
 
-DeepCell uses `nvidia-docker` and `tensorflow` to enable GPU processing.
-
-If using GCP, there are [pre-built images](https://console.cloud.google.com/marketplace/details/nvidia-ngc-public/nvidia_gpu_cloud_image) which come with CUDA, docker, and nvidia-docker pre-installed: 
-
-
-Otheriwise, you will need to install [docker](
-https://docs.docker.com/install/linux/docker-ce/debian/), [nvidia-docker](https://github.com/NVIDIA/nvidia-docker), and [cuda](https://developer.nvidia.com/cuda-downloads) separately.
+DeepCell uses `nvidia-docker` and `tensorflow` to enable GPU processing. If using GCP, there are [pre-built images](https://console.cloud.google.com/marketplace/details/nvidia-ngc-public/nvidia_gpu_cloud_image) which come with CUDA, docker, and nvidia-docker pre-installed. Otherwise, you will need to install [docker](
+https://docs.docker.com/install/linux/docker-ce/debian/), [nvidia-docker](https://github.com/NVIDIA/nvidia-docker), and [CUDA](https://developer.nvidia.com/cuda-downloads) separately.
 
 
 ### Build a local docker container, specifying the tensorflow version with TF_VERSION
@@ -91,9 +86,7 @@ NV_GPU='0' nvidia-docker run -it \
   $USER/deepcell-tf:latest
 ```
 
-It can also be helpful to mount the local copy of the repository and the scripts to speed up local development.
-
-However, if you are going to mount a local version of the repository, you must first run the docker image without the local repository mounted so that the c extensions can be compiled and then copied over to your local version.
+It can also be helpful to mount the local copy of the repository and the scripts to speed up local development. However, if you are going to mount a local version of the repository, you must first run the docker image without the local repository mounted so that the c extensions can be compiled and then copied over to your local version.
 
 ```bash
 # First run the docker image without mounting externally
@@ -107,7 +100,7 @@ NV_GPU='0' nvidia-docker run -it \
 container_id=$(docker ps -q --filter ancestor="$USER/deepcell-tf") 
 
 # Copy the compiled c extensions into your local version of the codebase:
-docker cp "$CONTAINER_ID:/usr/local/lib/python3.6/dist-packages/deepcell/utils/compute_overlap.cpython-36m-x86_64-linux-gnu.so" deepcell/utils/compute_overlap.cpython-36m-x86_64-linux-gnu.so
+docker cp "$container_id:/usr/local/lib/python3.6/dist-packages/deepcell/utils/compute_overlap.cpython-36m-x86_64-linux-gnu.so" deepcell/utils/compute_overlap.cpython-36m-x86_64-linux-gnu.so
 
 # close the running docker
 docker kill $container_id
