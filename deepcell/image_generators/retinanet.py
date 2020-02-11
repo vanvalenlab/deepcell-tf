@@ -123,6 +123,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
              pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
              batch_size=32,
              shuffle=False,
+             semantic_only=False,
              seed=None,
              save_to_dir=None,
              save_prefix='',
@@ -167,6 +168,7 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             pyramid_levels=pyramid_levels,
             batch_size=batch_size,
             shuffle=shuffle,
+            semantic_only=semantic_only,
             seed=seed,
             data_format=self.data_format,
             save_to_dir=save_to_dir,
@@ -215,6 +217,7 @@ class RetinaNetIterator(Iterator):
                  panoptic=False,
                  transforms=['watershed'],
                  transforms_kwargs={},
+                 semantic_only=False,
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -253,6 +256,7 @@ class RetinaNetIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
+        self.semantic_only = semantic_only
 
         self.y_semantic_list = []  # optional semantic segmentation targets
 
@@ -272,7 +276,10 @@ class RetinaNetIterator(Iterator):
                 y_transform = _transform_masks(y, transform,
                                                data_format=data_format,
                                                **transform_kwargs)
-                y_transform = np.asarray(y_transform, dtype='int32')
+                if y_transform.shape[self.channel_axis] > 1:
+	                y_transform = np.asarray(y_transform, dtype='int32')
+                elif y_transform.shape[self.channel_axis] == 1:
+	                y_transform = np.asarray(y_transform, dtype=K.floatx())	
                 self.y_semantic_list.append(y_transform)
 
         invalid_batches = []
@@ -461,6 +468,9 @@ class RetinaNetIterator(Iterator):
             batch_outputs.append(masks_batch)
 
         batch_outputs.extend(batch_y_semantic_list)
+
+        if self.semantic_only:
+            batch_outputs = batch_y_semantic_list
 
         return batch_x, batch_outputs
 

@@ -30,11 +30,12 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
+import cv2
 from scipy import ndimage
 from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.morphology import ball, disk
-from skimage.morphology import binary_erosion, binary_dilation
+from skimage.morphology import binary_erosion, binary_dilation, erosion, dilation
 from tensorflow.python.keras import backend as K
 
 
@@ -193,6 +194,65 @@ def distance_transform_2d(mask, bins=16, erosion_width=None):
     distance = np.digitize(distance, bins, right=True)
     return distance - 1  # minimum distance should be 0, not 1
 
+def distance_transform_continuous_2d(mask, erosion_width=None):
+    """Transform a label mask into distance classes.
+
+    Args:
+        mask (numpy.array): a label mask (y data)
+        bins (int): the number of transformed distance classes
+        erosion_width (int): number of pixels to erode edges of each labels
+
+    Returns:
+        numpy.array: a mask of same shape as input mask,
+            with each label being a distance class from 1 to bins
+    """
+    mask = np.squeeze(mask)  # squeeze the channels
+    mask = erode_edges(mask, erosion_width)
+
+    distance = ndimage.distance_transform_edt(mask)
+    distance = distance.astype(K.floatx())  # normalized distances are floats
+
+    # uniquely label each cell and normalize the distance values
+    # by that cells maximum distance value
+    label_matrix = label(mask)
+    for prop in regionprops(label_matrix):
+        labeled_distance = distance[label_matrix == prop.label]
+        normalized_distance = labeled_distance / np.amax(labeled_distance)
+        distance[label_matrix == prop.label] = normalized_distance
+
+    return distance  # minimum distance should be 0, not 1
+
+def centroid_transform_2d(mask, erosion_width=None, disk_size=4):
+    distance = distance_transform_continuous_2d(mask, erosion_width = erosion_width)
+
+    centroids = distance == 1
+    centroids = centroids.astype(np.float32)
+    # centroids = cv2.dilate(centroids, disk(disk_size), iterations=1)
+    centroids = cv2.GaussianBlur(centroids, (5,5), cv2.BORDER_DEFAULT)
+    centroids /= np.amax(centroids)
+
+    return centroids
+
+def centroid_transform_continuous_2d(mask, erosion_width=None, alpha=0.1):
+    mask = np.squeeze(mask)
+    mask = erode_edges(mask, erosion_width)
+
+    distance = ndimage.distance_transform_edt(mask)
+    distance = distance.astype(K.floatx())
+
+    label_matrix = label(mask)
+
+    inner_distance = np.zeros(distance.shape, dtype = K.floatx())
+    for prop in regionprops(label_matrix, distance):
+        coords = prop.coords
+        center = prop.weighted_centroid
+        distance_to_center = np.sum((coords - center) ** 2, axis=1)
+        center_transform = 1/(1 + alpha * distance_to_center)
+        coords_x = coords[:,0]
+        coords_y = coords[:,1]
+        inner_distance[coords_x, coords_y] = center_transform
+        
+    return inner_distance
 
 def distance_transform_3d(maskstack, bins=4, erosion_width=None):
     """Transforms a label mask for a z stack into distance classes
