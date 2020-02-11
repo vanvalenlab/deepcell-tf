@@ -66,12 +66,12 @@ This will start a jupyter session, with several example notebooks detailing vari
 
 DeepCell uses `nvidia-docker` and `tensorflow` to enable GPU processing.
 
-If using GCP, there are pre-built images which come with CUDA, docker, and nvidia-docker pre-installed: 
-https://console.cloud.google.com/marketplace/details/nvidia-ngc-public/nvidia_gpu_cloud_image
+If using GCP, there are [pre-built images](https://console.cloud.google.com/marketplace/details/nvidia-ngc-public/nvidia_gpu_cloud_image) which come with CUDA, docker, and nvidia-docker pre-installed: 
 
-Otheriwise, these will need to be downloaded and installed:
-https://github.com/NVIDIA/nvidia-docker
-https://docs.docker.com/install/linux/docker-ce/debian/
+
+Otheriwise, you will need to install [docker](
+https://docs.docker.com/install/linux/docker-ce/debian/), [nvidia-docker](https://github.com/NVIDIA/nvidia-docker), and [cuda](https://developer.nvidia.com/cuda-downloads) separately.
+
 
 ### Build a local docker container, specifying the tensorflow version with TF_VERSION
 
@@ -85,9 +85,6 @@ docker build --build-arg TF_VERSION=1.15.0-gpu -t $USER/deepcell-tf .
 
 ```bash
 # NV_GPU refers to the specific GPU to run DeepCell on, and is not required
-
-# Mounting the codebase, scripts and data to the container is also optional
-# but can be handy for local development
 
 NV_GPU='0' nvidia-docker run -it \
   -p 8888:8888 \
@@ -106,22 +103,21 @@ NV_GPU='0' nvidia-docker run -it \
   
 # Use ctrl-p, ctrl-q to exit the running docker image without shutting it down
 
-# Then, get the container_id after running the below command
-docker ps 
+# Then, get the container_id corresponding to the running image of deepcell
+container_id=$(docker ps -q --filter ancestor="$USER/deepcell-tf") 
 
-# Replace the path/to/deepcell-tf below with the path to your local copy of deepcell-tf, and replace container_id with the container_id from the docker ps command above
-
-docker cp container_id:/usr/local/lib/python3.6/dist-packages/deepcell/utils/compute_overlap.cpython-36m-x86_64-linux-gnu.so path/to/deepcell-tf/deepcell/utils/compute_overlap.cpython-36m-x86_64-linux-gnu.so
+# Copy the compiled c extensions into your local version of the codebase:
+docker cp "$CONTAINER_ID:/usr/local/lib/python3.6/dist-packages/deepcell/utils/compute_overlap.cpython-36m-x86_64-linux-gnu.so" deepcell/utils/compute_overlap.cpython-36m-x86_64-linux-gnu.so
 
 # close the running docker
-docker kill container_id
+docker kill $container_id
 
 # you can now start the docker image with the code mounted for easy editing
 NV_GPU='0' nvidia-docker run -it \
   -p 8888:8888 \
   -v $PWD/deepcell:/usr/local/lib/python3.6/dist-packages/deepcell/ \
   -v $PWD/scripts:/notebooks \
-  -v /data:/data \
+  -v $PWD/data:/data \
   $USER/deepcell-tf:latest
 
 ```
