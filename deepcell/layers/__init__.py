@@ -28,6 +28,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from deepcell.layers import convolutional_recurrent
 from deepcell.layers import location
 from deepcell.layers import normalization
 from deepcell.layers import pooling
@@ -59,6 +60,7 @@ from deepcell.layers.retinanet import Shape
 from deepcell.layers.retinanet import Cast
 from deepcell.layers.upsample import Upsample
 from deepcell.layers.upsample import UpsampleLike
+from deepcell.layers.convolutional_recurrent import ConvGRU2D
 
 del absolute_import
 del division

@@ -72,7 +72,7 @@ class Resize2D(Layer):
         rows = self.scale * input_shape[1]
         cols = self.scale * input_shape[2]
         # TODO: K.resize_images() ?
-        resized = tf.image.resize_images(channel_last, (rows, cols))
+        resized = tf.image.resize(channel_last, (rows, cols))
 
         if self.data_format == 'channels_first':
             output = K.permute_dimensions(resized, (0, 3, 1, 2))

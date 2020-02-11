@@ -59,7 +59,7 @@ This will start a jupyter session, with several example notebooks detailing vari
 
 #### Cell Tracking in Live Cell Imaging
 
-* [Tracking Example.ipynb](scripts/tracking/Tracking%20Example.ipynb)
+* [Tracking Example.ipynb](scripts/tracking/Tracking%20Example%20with%20Benchmarking.ipynb)
 
 
 ## DeepCell for Developers
