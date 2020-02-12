@@ -194,6 +194,7 @@ def distance_transform_2d(mask, bins=16, erosion_width=None):
     distance = np.digitize(distance, bins, right=True)
     return distance - 1  # minimum distance should be 0, not 1
 
+
 def distance_transform_continuous_2d(mask, erosion_width=None):
     """Transform a label mask into distance classes.
 
@@ -222,6 +223,7 @@ def distance_transform_continuous_2d(mask, erosion_width=None):
 
     return distance  # minimum distance should be 0, not 1
 
+
 def centroid_transform_2d(mask, erosion_width=None, disk_size=4):
     distance = distance_transform_continuous_2d(mask, erosion_width = erosion_width)
 
@@ -232,6 +234,7 @@ def centroid_transform_2d(mask, erosion_width=None, disk_size=4):
     centroids /= np.amax(centroids)
 
     return centroids
+
 
 def centroid_transform_continuous_2d(mask, erosion_width=None, alpha=0.1):
     mask = np.squeeze(mask)
@@ -251,8 +254,9 @@ def centroid_transform_continuous_2d(mask, erosion_width=None, alpha=0.1):
         coords_x = coords[:,0]
         coords_y = coords[:,1]
         inner_distance[coords_x, coords_y] = center_transform
-        
+
     return inner_distance
+
 
 def distance_transform_3d(maskstack, bins=4, erosion_width=None):
     """Transforms a label mask for a z stack into distance classes
