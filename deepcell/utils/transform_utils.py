@@ -35,8 +35,10 @@ from scipy import ndimage
 from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.morphology import ball, disk
-from skimage.morphology import binary_erosion, binary_dilation, erosion, dilation
+from skimage.morphology import binary_erosion, binary_dilation
 from tensorflow.python.keras import backend as K
+
+from deepcell_data_processing import erode_edges
 
 
 def pixelwise_transform(mask, dilation_radius=None, data_format=None,
@@ -128,37 +130,6 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
     ]
 
     return np.stack(all_stacks, axis=channel_axis)
-
-
-def erode_edges(mask, erosion_width):
-    """Erode edge of objects to prevent them from touching
-
-    Args:
-        mask (numpy.array): uniquely labeled instance mask
-        erosion_width (int): integer value for pixel width to erode edges
-
-    Returns:
-        numpy.array: mask where each instance has had the edges eroded
-
-    Raises:
-        ValueError: mask.ndim is not 2 or 3
-    """
-    if erosion_width:
-        new_mask = np.zeros(mask.shape)
-        if mask.ndim == 2:
-            strel = disk(erosion_width)
-        elif mask.ndim == 3:
-            strel = ball(erosion_width)
-        else:
-            raise ValueError('erode_edges expects arrays of ndim 2 or 3.'
-                             'Got ndim: {}'.format(mask.ndim))
-        for cell_label in np.unique(mask):
-            if cell_label != 0:
-                temp_img = mask == cell_label
-                temp_img = binary_erosion(temp_img, strel)
-                new_mask = np.where(mask == cell_label, temp_img, new_mask)
-        return np.multiply(new_mask, mask).astype('int')
-    return mask
 
 
 def distance_transform_2d(mask, bins=16, erosion_width=None):
