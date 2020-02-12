@@ -60,6 +60,7 @@ from deepcell.layers.retinanet import Shape
 from deepcell.layers.retinanet import Cast
 from deepcell.layers.upsample import Upsample
 from deepcell.layers.upsample import UpsampleLike
+from deepcell.layers.weighted_add import WeightedAdd
 from deepcell.layers.convolutional_recurrent import ConvGRU2D
 
 del absolute_import

@@ -23,48 +23,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Layers to created weighted biFPNs"""
-
+"""Tests for the upsampling layers"""
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
 import numpy as np
-import tensorflow as tf
-from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import activations
-from tensorflow.python.keras import constraints
-from tensorflow.python.keras import initializers
-from tensorflow.python.keras import regularizers
-from tensorflow.python.keras.layers import Layer, InputSpec
-from tensorflow.python.keras.utils import conv_utils
+from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.platform import test
+
+from deepcell.utils import testing_utils
+from deepcell import layers
 
 
-class WeightedAdd(Layer):
-	def __init__(self, epsilon=1e-4, **kwargs):
-		self.epsilon = epsilon
-		super(WeightedAdd, self).__init__(**kwargs)
+@keras_parameterized.run_all_keras_modes
+class TestUpsample(keras_parameterized.TestCase):
 
-	def build(self, input_shape):
-		n_in = len(input_shape)
-		self.W = self.add_weight(name=self.name,
-								 shape=(n_in,),
-								 initializer=initializers.constant(1 / n_in),
-								 trainable=True,
-								 dtype=K.floatx())
+    def test_simple(self):
+        testing_utils.layer_test(
+            layers.WeightedAdd,
+            kwargs={'target_size': (2, 2)},
+            custom_objects={'WeightedAdd': layers.WeightedAdd},
+            input_shape=(3, 5, 6, 4))
+        testing_utils.layer_test(
+            layers.WeightedAdd,
+            kwargs={'target_size': (2, 2),
+                    'data_format': 'channels_first'},
+            custom_objects={'WeightedAdd': layers.WeightedAdd},
+            input_shape=(3, 4, 5, 6))
 
-	def call(self, inputs, **kwargs):
-		W = activations.relu(self.W)
-		x = tf.reduce_sum([W[i] * v for i, v in enumerate(inputs)], axis=0)
-		x = x / (tf.reduce_sum(W) + self.epsilon)
 
-	def compute_output_shape(self, input_shape):
-		return input_shape[0]
-
-	def get_config(self):
-		config = {
-			'epsilon': self.epsilon
-		}
-        base_config = super(WeightedAdd, self).get_config()
-        return dict(list(base_config.items()) + list(config.items()))
+if __name__ == '__main__':
+    test.main()
