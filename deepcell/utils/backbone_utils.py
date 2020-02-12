@@ -181,7 +181,8 @@ def featurenet_3D_backbone(input_tensor=None, input_shape=None,
 def get_backbone(backbone, input_tensor=None, input_shape=None,
                  use_imagenet=False, return_dict=True,
                  frames_per_batch=1, **kwargs):
-    """Retrieve backbones - helper function for the construction of feature pyramid networks
+    """Retrieve backbones for the construction of feature pyramid networks.
+
     Args:
         backbone (str): Name of the backbone to be retrieved.
         input_tensor (tensor): The input tensor for the backbone.
@@ -193,8 +194,10 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         kwargs (dict): Keyword dictionary for backbone constructions.
             Relevant keys include 'include_top', 'weights' (should be set to None),
             'input_shape', and 'pooling'
+
     Returns:
         tensorflow.keras.Model: An instantiated backbone
+
     Raises:
         ValueError: bad backbone name
         ValueError: featurenet backbone with pre-trained imagenet
