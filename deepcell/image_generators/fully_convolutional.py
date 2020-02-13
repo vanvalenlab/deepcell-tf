@@ -322,9 +322,9 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         if isinstance(y, list):
             y_new = []
             for y_i in y:
-                if y_i.shape[self.channel_axis-1] > 1:
+                if y_i.shape[self.channel_axis - 1] > 1:
                     y_t = self.apply_transform(y_i, params)
-                elif y_i.shape[self.channel_axis-1] == 1:
+                else:
                     self.interpolation_order = _interpolation_order
                     y_t = self.apply_transform(y_i, params)
                     self.interpolation_order = 0

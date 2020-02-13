@@ -420,7 +420,7 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     elif _backbone in nasnet_backbones:
-        model_cls = mobilenet_backbones[_backbone]
+        model_cls = nasnet_backbones[_backbone]
         model = model_cls(input_tensor=img_input, **kwargs)
         if _backbone.endswith('large'):
             block_ids = [5, 12, 18]

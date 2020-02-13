@@ -33,24 +33,19 @@ import re
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D, TimeDistributed
+from tensorflow.python.keras.layers import Conv2D, Conv3D
 from tensorflow.python.keras.layers import Input, Concatenate, Add
-from tensorflow.python.keras.layers import Permute, Reshape
-from tensorflow.python.keras.layers import Activation, Lambda, BatchNormalization, Softmax
-from tensorflow.python.keras.initializers import RandomNormal
+from tensorflow.python.keras.layers import Activation, BatchNormalization, Softmax
 from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
 
-from deepcell.initializers import PriorProbability
 from deepcell.layers import TensorProduct
-from deepcell.layers import FilterDetections
 from deepcell.layers import ImageNormalization2D, Location2D
-from deepcell.layers import Anchors, RegressBoxes, ClipBoxes
 from deepcell.layers import UpsampleLike
-from deepcell.utils.retinanet_anchor_utils import AnchorParameters
-from deepcell.model_zoo.fpn import __create_semantic_head
+# from deepcell.model_zoo.fpn import __create_semantic_head
 from deepcell.model_zoo.fpn import __create_pyramid_features
 from deepcell.utils.backbone_utils import get_backbone
 from deepcell.utils.misc_utils import get_sorted_keys
+
 
 def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
     """
@@ -130,7 +125,7 @@ def semantic_prediction(semantic_names,
 
     if n_classes == 1:
         include_top = False
-        
+
     acceptable_ndims = [2, 3]
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
@@ -219,32 +214,33 @@ def __create_semantic_head(pyramid_dict,
 
     return x
 
+
 def PanopticNet(backbone,
-               input_shape,
-               backbone_levels=['C3','C4','C5'],
-               pyramid_levels=['P3','P4','P5','P6','P7'],
-               create_pyramid_features=__create_pyramid_features,
-               create_semantic_head=__create_semantic_head,
-               num_semantic_heads=1,
-               num_semantic_classes=[3],
-               required_channels=3,
-               norm_method='whole_image',
-               pooling=None,
-               location=True,
-               use_imagenet=True,
-               name='panopticnet',
-               **kwargs):
-    
+                input_shape,
+                backbone_levels=['C3', 'C4', 'C5'],
+                pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
+                create_pyramid_features=__create_pyramid_features,
+                create_semantic_head=__create_semantic_head,
+                num_semantic_heads=1,
+                num_semantic_classes=[3],
+                required_channels=3,
+                norm_method='whole_image',
+                pooling=None,
+                location=True,
+                use_imagenet=True,
+                name='panopticnet',
+                **kwargs):
+
     inputs = Input(shape=input_shape)
     norm = ImageNormalization2D(norm_method=norm_method)(inputs)
     if location:
         loc = Location2D(in_shape=input_shape)(norm)
-        concat = Concatenate(axis=-1)([norm,loc])
+        concat = Concatenate(axis=-1)([norm, loc])
     else:
-        concat = norm    
-    
+        concat = norm
+
     fixed_inputs = TensorProduct(required_channels)(concat)
-    
+
     # force the input shape
     fixed_input_shape = list(input_shape)
     fixed_input_shape[-1] = required_channels
@@ -263,9 +259,9 @@ def PanopticNet(backbone,
                                     return_dict=True, **model_kwargs)
     backbone_dict_reduced = {k: backbone_dict[k] for k in backbone_dict
                              if k in backbone_levels}
-    
+
     pyramid_dict = create_pyramid_features(backbone_dict_reduced, ndim=2)
-    
+
     semantic_levels = [int(re.findall(r'\d+', k)[0]) for k in pyramid_dict]
     target_level = min(semantic_levels)
 
@@ -274,9 +270,7 @@ def PanopticNet(backbone,
         semantic_head_list.append(create_semantic_head(
             pyramid_dict, n_classes=num_semantic_classes[i],
             input_target=inputs, target_level=target_level,
-            semantic_id=i, ndim=2, **kwargs)) 
-    
-    outputs=semantic_head_list
-    
-    model = Model(inputs=inputs, outputs=outputs, name=name)
+            semantic_id=i, ndim=2, **kwargs))
+
+    model = Model(inputs=inputs, outputs=semantic_head_list, name=name)
     return model

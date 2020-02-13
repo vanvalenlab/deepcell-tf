@@ -35,16 +35,17 @@ import numpy as np
 
 from tensorflow.python.keras import backend as K
 
+
 class SegmentationApplication(object):
     def __init__(self,
-            model,
-            weights_path=None,
-            model_image_shape=(128,128,1),
-            dataset_metadata=None,
-            model_metadata=None,
-            model_mpp=0.65,
-            preprocessing_fn=None,
-            postprocessing_fn=None):
+                 model,
+                 weights_path=None,
+                 model_image_shape=(128, 128, 1),
+                 dataset_metadata=None,
+                 model_metadata=None,
+                 model_mpp=0.65,
+                 preprocessing_fn=None,
+                 postprocessing_fn=None):
 
         self.model = model
 
@@ -64,8 +65,8 @@ class SegmentationApplication(object):
         stride_x = np.int(0.75 * tile_size_x)
         stride_y = np.int(0.75 * tile_size_y)
 
-        rep_number_x = np.int(np.ceil((image_size_x - tile_size_x)/stride_x + 1))
-        rep_number_y = np.int(np.ceil((image_size_y - tile_size_y)/stride_y + 1))
+        rep_number_x = np.int(np.ceil((image_size_x - tile_size_x) / stride_x + 1))
+        rep_number_y = np.int(np.ceil((image_size_y - tile_size_y) / stride_y + 1))
         new_batch_size = image.shape[0] * rep_number_x * rep_number_y
 
         tiles_shape = (new_batch_size, tile_size_x, tile_size_y, image.shape[3])
@@ -83,12 +84,12 @@ class SegmentationApplication(object):
                 for j in range(rep_number_y):
                     _axis = 1
                     if i != rep_number_x - 1:
-                        x_start, x_end = i*stride_x, i*stride_x + tile_size_x
+                        x_start, x_end = i * stride_x, i * stride_x + tile_size_x
                     else:
                         x_start, x_end = -tile_size_x, image.shape[_axis]
 
                     if j != rep_number_y - 1:
-                        y_start, y_end = j*stride_y, j*stride_y + tile_size_y
+                        y_start, y_end = j * stride_y, j * stride_y + tile_size_y
                     else:
                         y_start, y_end = -tile_size_y, image.shape[_axis + 1]
 
@@ -127,27 +128,28 @@ class SegmentationApplication(object):
         tile_size_y = self.model_image_shape[1]
 
         image_shape = [image_shape[0], image_shape[1], image_shape[2], tiles.shape[-1]]
-        image = np.zeros(image_shape, dtype = K.floatx())
+        image = np.zeros(image_shape, dtype=K.floatx())
         n_tiles = tiles.shape[0]
 
-        for tile, batch, x_start, x_end, y_start, y_end in zip(tiles, batches, x_starts, x_ends, y_starts, y_ends):
+        zipped = zip(tiles, batches, x_starts, x_ends, y_starts, y_ends)
+        for tile, batch, x_start, x_end, y_start, y_end in zipped:
             tile_x_start = 0
             tile_x_end = tile_size_x
             tile_y_start = 0
             tile_y_end = tile_size_y
 
             if x_start != 0:
-                x_start += (tile_size_x - stride_x)/2
-                tile_x_start += (tile_size_x - stride_x)/2
+                x_start += (tile_size_x - stride_x) / 2
+                tile_x_start += (tile_size_x - stride_x) / 2
             if x_end != image_shape[_axis]:
-                x_end -= (tile_size_x - stride_x)/2
-                tile_x_end -= (tile_size_x - stride_x)/2
+                x_end -= (tile_size_x - stride_x) / 2
+                tile_x_end -= (tile_size_x - stride_x) / 2
             if y_start != 0:
-                y_start += (tile_size_y - stride_y)/2
-                tile_y_start += (tile_size_y - stride_y)/2
+                y_start += (tile_size_y - stride_y) / 2
+                tile_y_start += (tile_size_y - stride_y) / 2
             if y_end != image_shape[_axis]:
-                y_end -= (tile_size_y - stride_y)/2
-                tile_y_end -= (tile_size_y - stride_y)/2
+                y_end -= (tile_size_y - stride_y) / 2
+                tile_y_end -= (tile_size_y - stride_y) / 2
 
             x_start = np.int(x_start)
             x_end = np.int(x_end)
@@ -159,7 +161,8 @@ class SegmentationApplication(object):
             tile_y_start = np.int(tile_y_start)
             tile_y_end = np.int(tile_y_end)
 
-            image[batch, x_start:x_end, y_start:y_end, :] = tile[tile_x_start:tile_x_end, tile_y_start:tile_y_end, :]
+            sliced = tile[tile_x_start:tile_x_end, tile_y_start:tile_y_end, :]
+            image[batch, x_start:x_end, y_start:y_end, :] = sliced
 
         return image
 

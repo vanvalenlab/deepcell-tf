@@ -196,12 +196,12 @@ def distance_transform_continuous_2d(mask, erosion_width=None):
 
 
 def centroid_transform_2d(mask, erosion_width=None, disk_size=4):
-    distance = distance_transform_continuous_2d(mask, erosion_width = erosion_width)
+    distance = distance_transform_continuous_2d(mask, erosion_width=erosion_width)
 
     centroids = distance == 1
     centroids = centroids.astype(np.float32)
     # centroids = cv2.dilate(centroids, disk(disk_size), iterations=1)
-    centroids = cv2.GaussianBlur(centroids, (5,5), cv2.BORDER_DEFAULT)
+    centroids = cv2.GaussianBlur(centroids, (5, 5), cv2.BORDER_DEFAULT)
     centroids /= np.amax(centroids)
 
     return centroids
@@ -216,14 +216,14 @@ def centroid_transform_continuous_2d(mask, erosion_width=None, alpha=0.1):
 
     label_matrix = label(mask)
 
-    inner_distance = np.zeros(distance.shape, dtype = K.floatx())
+    inner_distance = np.zeros(distance.shape, dtype=K.floatx())
     for prop in regionprops(label_matrix, distance):
         coords = prop.coords
         center = prop.weighted_centroid
         distance_to_center = np.sum((coords - center) ** 2, axis=1)
-        center_transform = 1/(1 + alpha * distance_to_center)
-        coords_x = coords[:,0]
-        coords_y = coords[:,1]
+        center_transform = 1 / (1 + alpha * distance_to_center)
+        coords_x = coords[:, 0]
+        coords_y = coords[:, 1]
         inner_distance[coords_x, coords_y] = center_transform
 
     return inner_distance
