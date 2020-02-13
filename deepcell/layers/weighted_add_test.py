@@ -38,20 +38,14 @@ from deepcell import layers
 
 
 @keras_parameterized.run_all_keras_modes
-class TestUpsample(keras_parameterized.TestCase):
+class TestWeightedAdd(keras_parameterized.TestCase):
 
     def test_simple(self):
         testing_utils.layer_test(
             layers.WeightedAdd,
-            kwargs={'target_size': (2, 2)},
+            kwargs={'epsilon': 1e-4},
             custom_objects={'WeightedAdd': layers.WeightedAdd},
             input_shape=(3, 5, 6, 4))
-        testing_utils.layer_test(
-            layers.WeightedAdd,
-            kwargs={'target_size': (2, 2),
-                    'data_format': 'channels_first'},
-            custom_objects={'WeightedAdd': layers.WeightedAdd},
-            input_shape=(3, 4, 5, 6))
 
 
 if __name__ == '__main__':
