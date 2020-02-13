@@ -162,19 +162,19 @@ class SegmentationApplication(object):
             image[batch, x_start:x_end, y_start:y_end, :] = tile[tile_x_start:tile_x_end, tile_y_start:tile_y_end, :]
 
         return image
-        
-    def predict(self, image, 
+
+    def predict(self, image,
                 batch_size=4,
-                image_mpp=None, 
-                preprocess_kwargs={}, 
+                image_mpp=None,
+                preprocess_kwargs={},
                 postprocess_kwargs={}):
 
         # Resize image if necessary
-        
+
         # Preprocess image
         image = self.preprocessing_fn(image)
 
-        # Tile images 
+        # Tile images
         tiles, tiles_info = self._tile_image(image)
 
         # Run images through model
@@ -187,5 +187,5 @@ class SegmentationApplication(object):
         label_image = self.postprocessing_fn(output_images, **postprocess_kwargs)
 
         # Resize label_image back to original resolution if necessary
-        
+
         return image, tiles, label_image, output_tiles, output_images
