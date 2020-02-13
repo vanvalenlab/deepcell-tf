@@ -225,7 +225,7 @@ from deepcell.image_generators.retinanet import RetinaNetIterator
 from deepcell.image_generators.retinanet import RetinaMovieIterator
 from deepcell.image_generators.retinanet import RetinaMovieDataGenerator
 
-from deepcell.image_generators.semantic import SemanticGenerator
+from deepcell.image_generators.semantic import SemanticDataGenerator
 from deepcell.image_generators.semantic import SemanticIterator
 
 from deepcell.image_generators.sample import SampleDataGenerator

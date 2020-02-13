@@ -50,6 +50,7 @@ except ImportError:
 
 from deepcell.image_generators import _transform_masks
 
+
 class SemanticIterator(Iterator):
     """Iterator yielding data from Numpy arrays (X and y).
 
@@ -62,7 +63,6 @@ class SemanticIterator(Iterator):
         seed: Random seed for data shuffling.
         data_format: String, one of 'channels_first', 'channels_last'.
     """
-
     def __init__(self,
                  train_dict,
                  image_data_generator,
@@ -82,7 +82,7 @@ class SemanticIterator(Iterator):
         if X.ndim != 4:
             raise ValueError('Input data in `SemanticIterator` '
                              'should have rank 4. You passed an array '
-                             'with shape', self.x.shape)
+                             'with shape', X.shape)
 
         if y is None:
             raise ValueError('Instance masks are required for the SemanticIterator')
@@ -110,7 +110,7 @@ class SemanticIterator(Iterator):
             if y_transform.shape[self.channel_axis] > 1:
                 y_transform = np.asarray(y_transform, dtype='int32')
             elif y_transform.shape[self.channel_axis] == 1:
-                y_transform = np.asarray(y_transform, dtype=K.floatx()) 
+                y_transform = np.asarray(y_transform, dtype=K.floatx())
             self.y_semantic_list.append(y_transform)
 
         invalid_batches = []
@@ -142,12 +142,12 @@ class SemanticIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
-        
-        batch_y_semantic_list = []
+
+        batch_y = []
         for y_sem in self.y_semantic_list:
             shape = tuple([len(index_array)] + list(y_sem.shape[1:]))
-            batch_y_semantic_list.append(np.zeros(shape, dtype=y_sem.dtype))
-        
+            batch_y.append(np.zeros(shape, dtype=y_sem.dtype))
+
         for i, j in enumerate(index_array):
             x = self.x[j]
 
@@ -162,9 +162,7 @@ class SemanticIterator(Iterator):
             batch_x[i] = x
 
             for k, y_sem in enumerate(y_semantic_list):
-                batch_y_semantic_list[k][i] = y_sem
-
-        batch_y = batch_y_semantic_list
+                batch_y[k][i] = y_sem
 
         return batch_x, batch_y
 
@@ -179,7 +177,8 @@ class SemanticIterator(Iterator):
         # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
-class SemanticGenerator(ImageDataGenerator):
+
+class SemanticDataGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
     The data will be looped over (in batches).
 
@@ -313,7 +312,7 @@ class SemanticGenerator(ImageDataGenerator):
                     y_t = self.apply_transform(y_i, params)
 
                 # Keep original interpolation order if it is a
-                # regression task 
+                # regression task
                 elif y_i.shape[self.channel_axis-1] == 1:
                     self.interpolation_order = _interpolation_order
                     y_t = self.apply_transform(y_i, params)
@@ -325,4 +324,3 @@ class SemanticGenerator(ImageDataGenerator):
 
         self.interpolation_order = _interpolation_order
         return x, y
-
