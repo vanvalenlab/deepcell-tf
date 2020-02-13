@@ -250,14 +250,14 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         'nasnet_mobile': applications.nasnet.NASNetMobile,
     }
     efficientnet_backbones = {
-        'efficientnetb0': applications.efficientnet.EfficientNetB0,
-        'efficientnetb1': applications.efficientnet.EfficientNetB1,
-        'efficientnetb2': applications.efficientnet.EfficientNetB2,
-        'efficientnetb3': applications.efficientnet.EfficientNetB3,
-        'efficientnetb4': applications.efficientnet.EfficientNetB4,
-        'efficientnetb5': applications.efficientnet.EfficientNetB5,
-        'efficientnetb6': applications.efficientnet.EfficientNetB6,
-        'efficientnetb7': applications.efficientnet.EfficientNetB7,
+        # 'efficientnetb0': applications.efficientnet.EfficientNetB0,
+        # 'efficientnetb1': applications.efficientnet.EfficientNetB1,
+        # 'efficientnetb2': applications.efficientnet.EfficientNetB2,
+        # 'efficientnetb3': applications.efficientnet.EfficientNetB3,
+        # 'efficientnetb4': applications.efficientnet.EfficientNetB4,
+        # 'efficientnetb5': applications.efficientnet.EfficientNetB5,
+        # 'efficientnetb6': applications.efficientnet.EfficientNetB6,
+        # 'efficientnetb7': applications.efficientnet.EfficientNetB7,
     }
 
     # TODO: Check and make sure **kwargs is in the right format.
