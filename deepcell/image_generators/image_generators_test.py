@@ -1861,11 +1861,11 @@ class TestSemanticDataGenerator(test.TestCase):
         generator.fit(np.random.random((8, 10, 10, 5)))
 
         with self.assertRaises(ValueError):
-            generator = image_generators.RetinaNetGenerator(
+            generator = image_generators.SemanticDataGenerator(
                 data_format='unknown')
 
-        generator = image_generators.RetinaNetGenerator(
+        generator = image_generators.SemanticDataGenerator(
             zoom_range=(2, 2))
         with self.assertRaises(ValueError):
-            generator = image_generators.RetinaNetGenerator(
+            generator = image_generators.SemanticDataGenerator(
                 zoom_range=(2, 2, 2))
