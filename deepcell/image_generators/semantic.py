@@ -196,8 +196,11 @@ class SemanticIterator(Iterator):
                 if self.y is not None:
                     # Save argmax of y batch
                     for k, y_sem in enumerate(batch_y):
-                        img_y = np.argmax(y_sem[i], axis=self.channel_axis - 1)
-                        img_y = np.expand_dims(y_sem[i], axis=self.channel_axis - 1)
+                        if y_sem[i].shape[self.channel_axis - 1] == 1:
+                            img_y = y_sem[i]
+                        else:
+                            img_y = np.argmax(y_sem[i], axis=self.channel_axis - 1)
+                            img_y = np.expand_dims(img_y, axis=self.channel_axis - 1)
                         img = array_to_img(img_y, self.data_format, scale=True)
                         fname = 'y_{sem}_{prefix}_{index}_{hash}.{format}'.format(
                             sem=k,

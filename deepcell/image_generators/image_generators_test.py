@@ -1746,8 +1746,6 @@ class TestSemanticDataGenerator(test.TestCase):
                 horizontal_flip=True,
                 vertical_flip=True)
 
-            num_classes = np.random.randint(1, 3)
-
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((8, 10, 10, 3)),
@@ -1763,14 +1761,14 @@ class TestSemanticDataGenerator(test.TestCase):
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
-            for x, (r, l) in generator.flow(
+            transforms = ['watershed-cont', 'fgbg']
+            for x, y in generator.flow(
                     train_dict,
+                    transforms=transforms,
                     save_to_dir=temp_dir,
                     shuffle=True):
+                self.assertEqual(len(y), len(transforms))
                 self.assertEqual(x.shape[1:], images.shape[1:])
-                self.assertEqual(r.shape[:-1], l.shape[:-1])
-                self.assertEqual(r.shape[-1], 5)
-                self.assertEqual(l.shape[-1], num_classes + 1)
                 break
 
     def test_semantic_data_generator_channels_first(self):
@@ -1800,8 +1798,6 @@ class TestSemanticDataGenerator(test.TestCase):
                 vertical_flip=True,
                 data_format='channels_first')
 
-            num_classes = np.random.randint(1, 3)
-
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((8, 3, 10, 10)),
@@ -1817,15 +1813,14 @@ class TestSemanticDataGenerator(test.TestCase):
             y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
-
-            for x, (r, l) in generator.flow(
+            transforms = ['watershed-cont', 'fgbg']
+            for x, y in generator.flow(
                     train_dict,
+                    transforms=transforms,
                     save_to_dir=temp_dir,
                     shuffle=True):
+                self.assertEqual(len(y), len(transforms))
                 self.assertEqual(x.shape[1:], images.shape[1:])
-                self.assertEqual(r.shape[:-1], l.shape[:-1])
-                self.assertEqual(r.shape[-1], 5)
-                self.assertEqual(l.shape[-1], num_classes + 1)
                 break
 
     def test_semantic_data_generator_invalid_data(self):
