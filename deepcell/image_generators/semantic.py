@@ -72,7 +72,10 @@ class SemanticIterator(Iterator):
                  transforms_kwargs={},
                  seed=None,
                  min_objects=3,
-                 data_format='channels_last'):
+                 data_format='channels_last',
+                 save_to_dir=None,
+                 save_prefix='',
+                 save_format='png'):
         X, y = train_dict['X'], train_dict['y']
         if X.shape[0] != y.shape[0]:
             raise ValueError('Training batches and labels should have the same'
@@ -164,6 +167,34 @@ class SemanticIterator(Iterator):
             for k, y_sem in enumerate(y_semantic_list):
                 batch_y[k][i] = y_sem
 
+        if self.save_to_dir:
+            for i, j in enumerate(index_array):
+                if self.data_format == 'channels_first':
+                    img_x = np.expand_dims(batch_x[i, 0, ...], 0)
+                else:
+                    img_x = np.expand_dims(batch_x[i, ..., 0], -1)
+                img = array_to_img(img_x, self.data_format, scale=True)
+                fname = '{prefix}_{index}_{hash}.{format}'.format(
+                    prefix=self.save_prefix,
+                    index=j,
+                    hash=np.random.randint(1e4),
+                    format=self.save_format)
+                img.save(os.path.join(self.save_to_dir, fname))
+
+                if self.y is not None:
+                    # Save argmax of y batch
+                    for k, y_sem in enumerate(batch_y):
+                        img_y = np.argmax(y_sem[i], axis=self.channel_axis - 1)
+                        img_y = np.expand_dims(y_sem[i], axis=self.channel_axis - 1)
+                        img = array_to_img(img_y, self.data_format, scale=True)
+                        fname = 'y_{sem}_{prefix}_{index}_{hash}.{format}'.format(
+                            sem=k,
+                            prefix=self.save_prefix,
+                            index=j,
+                            hash=np.random.randint(1e4),
+                            format=self.save_format)
+                        img.save(os.path.join(self.save_to_dir, fname))
+
         return batch_x, batch_y
 
     def next(self):
@@ -249,9 +280,12 @@ class SemanticDataGenerator(ImageDataGenerator):
              batch_size=1,
              transforms=['watershed-cont'],
              transforms_kwargs={},
-             shuffle=True,
              min_objects=3,
-             seed=None):
+             shuffle=True,
+             seed=None,
+             save_to_dir=None,
+             save_prefix='',
+             save_format='png'):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
@@ -259,6 +293,14 @@ class SemanticDataGenerator(ImageDataGenerator):
             batch_size: int (default: 1).
             shuffle: boolean (default: True).
             seed: int (default: None).
+            save_to_dir: None or str (default: None).
+                This allows you to optionally specify a directory
+                to which to save the augmented pictures being generated
+                (useful for visualizing what you are doing).
+            save_prefix: str (default: ''). Prefix to use for filenames of
+                saved pictures (only relevant if save_to_dir is set).
+            save_format: one of "png", "jpeg". Default: "png".
+                (only relevant if save_to_dir is set)
 
         Returns:
             An Iterator yielding tuples of (x, y) where x is a numpy array
@@ -273,7 +315,10 @@ class SemanticDataGenerator(ImageDataGenerator):
             shuffle=shuffle,
             min_objects=min_objects,
             seed=seed,
-            data_format=self.data_format)
+            data_format=self.data_format,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
 
     def random_transform(self, x, y=None, seed=None):
         """Applies a random transformation to an image.
