@@ -105,6 +105,9 @@ class SemanticIterator(Iterator):
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
         self.data_format = data_format
+        self.save_to_dir = save_to_dir
+        self.save_prefix = save_prefix
+        self.save_format = save_format
         self.min_objects = min_objects
 
         self.y_semantic_list = []  # optional semantic segmentation targets
