@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Builtin Datasets"""
+"""Built-in Datasets"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -67,56 +67,63 @@ methods = {
         'and phase as well as a z-stack of phase images.'
 }
 
-all_cells = Dataset(
-    path='20190903_all_fluorescent_cyto_512.npz',
-    url='https://deepcell-data.s3-us-west-1.amazonaws.com/cytoplasm/fluorescent/20190903_all_fluorescent_cyto_512.npz',
-    file_hash='810f8180185dea6169f01470126fae4e38511645267fe92115d592ca11e1835e',
+all_cells_phase = Dataset(
+    path='20190813_all_phase_512_contrast_adjusted_curated.npz',
+    url='https://deepcell-data.s3-us-west-1.amazonaws.com/cytoplasm/brightfield/20190813_all_phase_512_contrast_adjusted_curated.npz',
+    file_hash='20d6a99216e7c966182e79eef4eaf937',
     metadata={'methods': methods}
 )
 
-nih_3t3 = Dataset(
-    path='nih_3t3-cytoplasm.npz',
-    url='https://deepcell-data.s3-us-west-1.amazonaws.com/cytoplasm/fluorescent/AM_3T3_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
-    file_hash='d04630d87835d27f11d80c123eac3d77684c57dadf783158c44084b11fac1fb3',
+all_cells_fluo = Dataset(
+    path='20190903_all_fluorescent_cyto_512_contrast_adjusted_curated.npz',
+    url='https://deepcell-data.s3-us-west-1.amazonaws.com/cytoplasm/fluorescent/20190903_all_fluorescent_cyto_512_contrast_adjusted_curated.npz',
+    file_hash='28b9b637d0f0c9ceb3045620e17cc100',
     metadata={'methods': methods}
 )
 
-
-A549 = Dataset(
-    path='A549-cytoplasm.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_A549_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
-    file_hash='33741ff643b1c8c017269663978ab8d52f833bfb65156fb66defa325e5316e74',
-    metadata={'methods': methods}
-)
-
-
-CHO = Dataset(
-    path='CHO-cytoplasm.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_CHO_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
-    file_hash='d56029039a94c3c5ffaf926796108b87d2f12792b30010af52136ef4281dbbff',
-    metadata={'methods': methods}
-)
+# nih_3t3 = Dataset(
+#     path='nih_3t3-cytoplasm.npz',
+#     url='https://deepcell-data.s3-us-west-1.amazonaws.com/cytoplasm/fluorescent/AM_3T3_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
+#     file_hash='d04630d87835d27f11d80c123eac3d77684c57dadf783158c44084b11fac1fb3',
+#     metadata={'methods': methods}
+# )
 
 
-hela_s3 = Dataset(
-    path='hela_s3-cytoplasm.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_HeLa-S3_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
-    file_hash='1ed6c47db02687e64a34d305a30677ad0a286106227c6d8992e23ca27ce6e098',
-    metadata={'methods': methods}
-)
+# A549 = Dataset(
+#     path='A549-cytoplasm.npz',
+#     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_A549_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
+#     file_hash='33741ff643b1c8c017269663978ab8d52f833bfb65156fb66defa325e5316e74',
+#     metadata={'methods': methods}
+# )
 
 
-hela = Dataset(
-    path='hela-cytoplasm.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_HeLa_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
-    file_hash='8dc76a2d4a5f384727e31daa9f25b6d861e64bd1775aec7ee42bea2cdf2b0527',
-    metadata={'methods': methods}
-)
+# CHO = Dataset(
+#     path='CHO-cytoplasm.npz',
+#     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_CHO_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
+#     file_hash='d56029039a94c3c5ffaf926796108b87d2f12792b30010af52136ef4281dbbff',
+#     metadata={'methods': methods}
+# )
 
 
-pc3 = Dataset(
-    path='pc3-cytoplasm.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_PC3_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
-    file_hash='194016feb25e97bdf0b1e335acab3c217d14ae2679a7ac7d3f6204ce4a864560',
-    metadata={'methods': methods}
-)
+# hela_s3 = Dataset(
+#     path='hela_s3-cytoplasm.npz',
+#     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_HeLa-S3_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
+#     file_hash='1ed6c47db02687e64a34d305a30677ad0a286106227c6d8992e23ca27ce6e098',
+#     metadata={'methods': methods}
+# )
+
+
+# hela = Dataset(
+#     path='hela-cytoplasm.npz',
+#     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_HeLa_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
+#     file_hash='8dc76a2d4a5f384727e31daa9f25b6d861e64bd1775aec7ee42bea2cdf2b0527',
+#     metadata={'methods': methods}
+# )
+
+
+# pc3 = Dataset(
+#     path='pc3-cytoplasm.npz',
+#     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/AM_PC3_s0_fluorescent_cyto_medium_stitched_2D_512.npz',
+#     file_hash='194016feb25e97bdf0b1e335acab3c217d14ae2679a7ac7d3f6204ce4a864560',
+#     metadata={'methods': methods}
+# )
