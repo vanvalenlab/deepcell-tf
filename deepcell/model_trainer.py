@@ -32,12 +32,15 @@ from __future__ import division
 import os
 import json
 import hashlib
+import numpy as np
 
 from deepcell.utils.export_utils import export_model
+from deepcell.utils.train_utils import rate_scheduler, get_callbacks
 from deepcell.metrics import Metrics
 
-def ModelTrainer(object):
-    def __init__(model,
+class ModelTrainer(object):
+    def __init__(self, 
+                model,
                 model_name,
                 model_path,
                 train_generator,
@@ -69,6 +72,8 @@ def ModelTrainer(object):
         self.validation_generator = validation_generator
         self.dataset_metadata = dataset_metadata
         self.postprocessing_fn = postprocessing_fn
+        self.postprocessing_kwargs = postprocessing_kwargs
+        self.predict_batch_size = predict_batch_size
 
         # Add directories for logging and model export
         if log_dir is None:
@@ -86,16 +91,16 @@ def ModelTrainer(object):
         self.training_steps_per_epoch = training_kwargs.pop('training_steps_per_epoch', 
                                                 self.train_generator.y.shape[0] // self.batch_size)
         self.validation_steps_per_epoch = training_kwargs.pop('validation_steps_per_epoch', 
-                                                self.val_generator.y.shape[0] // self.batch_size)
+                                                self.validation_generator.y.shape[0] // self.batch_size)
         self.n_epochs = training_kwargs.pop('n_epochs', 8)
         self.lr = training_kwargs.pop('lr', 1e-5)
         self.lr_decay = training_kwargs.pop('lr_decay', 0.95)
         self.lr_sched = training_kwargs.pop('lr_sched', rate_scheduler(lr=self.lr, decay=self.lr_decay))
-        self.training_seed = training_kwargs.pop('training_seed', 0)
 
         # Add callbacks
         if training_callbacks == 'default':
-            self.training_callbacks = get_callbacks(self.model_path, lr_sched=self.lr_sched,
+            model_name = os.path.join(model_path, model_name + '.h5')
+            self.training_callbacks = get_callbacks(model_name, lr_sched=self.lr_sched,
                                         tensorboard_log_dir=self.log_dir,
                                         save_weights_only=False,
                                         monitor='val_loss', verbose=1)
@@ -122,7 +127,7 @@ def ModelTrainer(object):
         loss_history = self.model.fit_generator(
         self.train_generator,
         steps_per_epoch=self.training_steps_per_epoch,
-        epochs=self.n_epoch,
+        epochs=self.n_epochs,
         validation_data=self.validation_generator,
         validation_steps=self.validation_steps_per_epoch,
         callbacks=self.training_callbacks)
@@ -136,11 +141,18 @@ def ModelTrainer(object):
         if not self.trained:
             raise ValueError('Model training is not complete')
         else:
-            outputs = self.model.predict(val_data.x, batch_size=self.predict_batch_size)
-            y_pred = self.postprocessing_fn(outputs, **postprocessing_kwargs)
+            outputs = self.model.predict(self.validation_generator.x, batch_size=self.predict_batch_size)
+            y_pred = self.postprocessing_fn(outputs, **self.postprocessing_kwargs)
+            y_pred = np.expand_dims(y_pred, axis=-1)    #TODO: This is a hack because the postprocessing fn returns
+                                                        #masks with no channel dimensions. This should be fixed.
             y_true = self.validation_generator.y.copy()
-            self.benchmarks = Metrics(self.model_name, seg=False)
-            self.benchmarks.calc_object_stats(y_true, y_pred)
+            benchmarks = Metrics(self.model_name, seg=False)
+            benchmarks.calc_object_stats(y_true, y_pred)
+
+            # Save benchmarks in dict
+            self.benchmarks = {}
+            for key in benchmarks.stats.keys():
+                self.benchmarks[key] = int(benchmarks.stats[key].sum())
 
         return None
 
@@ -149,7 +161,7 @@ def ModelTrainer(object):
         training_metadata['batch_size'] = self.batch_size
         training_metadata['lr'] = self.lr
         training_metadata['lr_decay'] = self.lr_decay
-        training_metadata['seed'] = self.training_seed
+        training_metadata['n_epochs'] = self.n_epochs
         training_metadata['training_steps_per_epoch'] = self.training_steps_per_epoch
         training_metadata['validation_steps_per_epoch'] = self.validation_steps_per_epoch
 
@@ -162,10 +174,14 @@ def ModelTrainer(object):
 
         return None
 
-    def create_model(self, export_serving=False, export_lite=False)
+    def create_model(self, export_serving=False, export_lite=False):
 
         # Train model
         self._fit()
+
+        # Load best performing weights
+        model_name = os.path.join(self.model_path, self.model_name + '.h5')
+        self.model.load_weights(model_name)
 
         # Create model hash
         self._create_hash()
@@ -185,7 +201,7 @@ def ModelTrainer(object):
         metadata['model_hash'] = self.model_hash
         metadata['training_metadata'] = self.training_metadata
         metadata['dataset_metadata'] = self.dataset_metadata
-        metadata['benchmarks'] = self.benchmarks.stats 
+        metadata['benchmarks'] = self.benchmarks
 
         # TODO: Saving the benchmarking object in this way saves each individual benchmark.
         # This should be refactored to save the sums.
