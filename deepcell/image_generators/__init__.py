@@ -149,7 +149,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.zeros(y.shape[0:-1])
 
         if y.ndim == 5:
-            raise ValueError('3D images not supported')
+            _distance_transform = transform_utils.distance_transform_continuous_movie    
         else:
             _distance_transform = transform_utils.distance_transform_continuous_2d
 
@@ -175,7 +175,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.zeros(y.shape[0:-1])
 
         if y.ndim == 5:
-            raise ValueError('3D images not supported')
+            _transform = transform_utils.centroid_transform_continuous_movie
         else:
             _transform = transform_utils.centroid_transform_continuous_2d
 
@@ -227,6 +227,8 @@ from deepcell.image_generators.retinanet import RetinaMovieDataGenerator
 
 from deepcell.image_generators.semantic import SemanticGenerator
 from deepcell.image_generators.semantic import SemanticIterator
+from deepcell.image_generators.semantic import SemanticMovieGenerator
+from deepcell.image_generators.semantic import SemanticMovieIterator
 
 from deepcell.image_generators.sample import SampleDataGenerator
 from deepcell.image_generators.sample import ImageSampleArrayIterator

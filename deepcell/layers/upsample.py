@@ -73,10 +73,9 @@ class UpsampleLike(Layer):
             method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
         new_image_2 = tf.reshape(new_image_resized, new_shape_2)
-
         return new_image_2
 
-    def resize_volumes(self, volume, size):
+    def resize_volumes(self, volume, size, size_static):
         # TODO: K.resize_volumes?
         if self.data_format == 'channels_first':
             volume = tf.transpose(volume, (0, 2, 3, 4, 1))
@@ -89,6 +88,9 @@ class UpsampleLike(Layer):
 
         resized_volume = self._resize_drop_axis(volume, new_shape_0, axis=1)
         resized_volume = self._resize_drop_axis(resized_volume, new_shape_1, axis=3)
+       
+        new_shape_static = [None, None, None, None, volume.get_shape()[-1]]
+        resized_volume.set_shape(new_shape_static)
 
         if self.data_format == 'channels_first':
             resized_volume = tf.transpose(resized_volume, (0, 4, 1, 2, 3))
@@ -114,7 +116,8 @@ class UpsampleLike(Layer):
                 method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
         if source.get_shape().ndims == 5:
-            output = self.resize_volumes(source, target_shape)
+            target_shape_static = target.get_shape()
+            output = self.resize_volumes(source, target_shape, target_shape_static)
             return output
 
         else:
