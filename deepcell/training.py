@@ -276,6 +276,9 @@ def train_model_conv(model,
                      flip=True,
                      shear=0,
                      zoom_range=0,
+                     channel_shift_range=0,
+                     fill_mode="mirror",
+                     cval=0,
                      seed=0,
                      **kwargs):
     """Train a model using fully convolutional mode.
@@ -383,14 +386,18 @@ def train_model_conv(model,
         shear_range=shear,
         zoom_range=zoom_range,
         horizontal_flip=flip,
-        vertical_flip=flip)
+        vertical_flip=flip,
+        fill_mode=fill_mode,
+        cval=cval,
+        channel_shift_range=channel_shift_range)
 
     datagen_val = DataGenerator(
         rotation_range=0,
         shear_range=0,
         zoom_range=0,
         horizontal_flip=0,
-        vertical_flip=0)
+        vertical_flip=0,
+        channel_shift_range=0)
 
     if train_dict['X'].ndim == 5:
         train_data = datagen.flow(
