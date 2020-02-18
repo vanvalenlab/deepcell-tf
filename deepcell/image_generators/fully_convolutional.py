@@ -263,7 +263,6 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
                 preprocessing_function=None,
                 data_format='channels_last',
                 validation_split=0.0,
-                interpolation_order=1,
                 dtype='float32'):
         
         # inherit functionality from original keras __init__
@@ -289,8 +288,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
                 preprocessing_function=None,
                 data_format='channels_last',
                 validation_split=0.0,
-                interpolation_order=1,
-                dtype='float32'):
+                dtype='float32')
 
 
     def flow(self,
@@ -339,6 +337,10 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
+
+    def get_random_transform(self, img_shape, seed=None):
+        ImageDataGenerator.get_random_transform(self, img_shape, seed=None)
+
 
     def random_transform(self, x, y=None, seed=None):
         """Applies a random transformation to an image.
