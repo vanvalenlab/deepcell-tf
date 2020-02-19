@@ -38,14 +38,14 @@ from tensorflow.python.keras import backend as K
 
 class SegmentationApplication(object):
     def __init__(self,
-            model,
-            weights_path=None,
-            model_image_shape=(128,128,1),
-            dataset_metadata=None,
-            model_metadata=None,
-            model_mpp=0.65,
-            preprocessing_fn=None,
-            postprocessing_fn=None):
+                 model,
+                 weights_path=None,
+                 model_image_shape=(128, 128, 1),
+                 dataset_metadata=None,
+                 model_metadata=None,
+                 model_mpp=0.65,
+                 preprocessing_fn=None,
+                postprocessing_fn=None):
 
         self.model = model
 
