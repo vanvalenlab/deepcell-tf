@@ -452,12 +452,11 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     else:
-        join = lambda x: [v for y in x for v in list(y.keys())]
-        backbones = join([featurenet_backbones + densenet_backbones +
-                          resnet_backbones + resnext_backbones +
-                          resnet_v2_backbones + vgg_backbones +
-                          nasnet_backbones + mobilenet_backbones +
-                          efficientnet_backbones])
+        backbones = list(featurenet_backbones + densenet_backbones +
+                         resnet_backbones + resnext_backbones +
+                         resnet_v2_backbones + vgg_backbones +
+                         nasnet_backbones + mobilenet_backbones +
+                         efficientnet_backbones)
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
                          ', '.join(backbones))
 
