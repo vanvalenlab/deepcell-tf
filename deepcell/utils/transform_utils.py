@@ -38,7 +38,7 @@ from skimage.morphology import ball, disk
 from skimage.morphology import binary_erosion, binary_dilation
 from tensorflow.python.keras import backend as K
 
-from deepcell_data_processing import erode_edges
+from deepcell_toolbox import erode_edges
 
 
 def pixelwise_transform(mask, dilation_radius=None, data_format=None,
