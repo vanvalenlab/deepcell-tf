@@ -291,7 +291,7 @@ class RetinaNetIterator(Iterator):
                                                **transform_kwargs)
                 if y_transform.shape[self.channel_axis] > 1:
                     y_transform = np.asarray(y_transform, dtype='int32')
-                elif y_transform.shape[self.channel_axis] == 1:
+                else:
                     y_transform = np.asarray(y_transform, dtype=K.floatx())
                 self.y_semantic_list.append(y_transform)
 
