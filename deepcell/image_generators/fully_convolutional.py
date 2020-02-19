@@ -363,7 +363,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         
         if transform_parameters.get("independent_channel_shift_intensities") is not None:
             x = apply_independent_channel_shift(x, transform_parameters["independent_channel_shift_intensities"],
-            img_channel_axis)
+            self.channel_axis - 1)
 
         return x
 
@@ -395,7 +395,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         # Nullify the transforms that don't affect `y`
         params['brightness'] = None
         params['channel_shift_intensity'] = None
-        params['independent_channel_shift_intensity'] = None
+        params['independent_channel_shift_intensities'] = None
         _interpolation_order = self.interpolation_order
         self.interpolation_order = 0
 
