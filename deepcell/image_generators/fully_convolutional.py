@@ -339,7 +339,14 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             save_format=save_format)
 
     def get_random_transform(self, img_shape, seed=None):
-        ImageDataGenerator.get_random_transform(self, img_shape, seed=None)
+        transform_parameters = ImageDataGenerator.get_random_transform(self, 
+        img_shape, seed=None)
+        return transform_parameters
+
+
+    def apply_transform(self, x, transform_parameters):
+        x = ImageDataGenerator.apply_transform(self, x, transform_parameters)
+        return x
 
 
     def random_transform(self, x, y=None, seed=None):
