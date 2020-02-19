@@ -277,6 +277,7 @@ def train_model_conv(model,
                      shear=0,
                      zoom_range=0,
                      channel_shift_range=0,
+                     independent_channel_shift_range=0,
                      fill_mode="mirror",
                      cval=0,
                      seed=0,
@@ -389,7 +390,8 @@ def train_model_conv(model,
         vertical_flip=flip,
         fill_mode=fill_mode,
         cval=cval,
-        channel_shift_range=channel_shift_range)
+        channel_shift_range=channel_shift_range,
+        independent_channel_shift_range=independent_channel_shift_range)
 
     datagen_val = DataGenerator(
         rotation_range=0,
@@ -397,7 +399,8 @@ def train_model_conv(model,
         zoom_range=0,
         horizontal_flip=0,
         vertical_flip=0,
-        channel_shift_range=0)
+        channel_shift_range=0,
+        independent_channel_shift_range=0)
 
     if train_dict['X'].ndim == 5:
         train_data = datagen.flow(

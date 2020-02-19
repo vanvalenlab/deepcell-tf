@@ -338,3 +338,25 @@ def to_categorical(y, num_classes=None):
     categorical = np.zeros((n, num_classes))
     categorical[np.arange(n), y] = 1
     return categorical
+
+def apply_independent_channel_shift(x, intensities, channel_axis=2):
+    """Performs a channel shift.
+
+    # Arguments
+        x: Input tensor. Must be 3D.
+        intensity: Transformation intensity.
+        channel_axis: Index of axis for channels in the input tensor.
+
+    # Returns
+        Numpy image tensor.
+
+    """
+    x = np.rollaxis(x, channel_axis, 0)
+
+    for chan in range(x.shape[0]):
+        min_x, max_x = np.min(x[chan, :, :]), np.max(x[chan, :, :])
+        x[chan, :, :] = np.clip(x[chan, :, :] + intensities[chan], min_x, max_x)
+    x = np.rollaxis(x, 0, channel_axis + 1)
+    return x
+
+

@@ -42,7 +42,7 @@ from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.python.platform import tf_logging as logging
-
+from deepcell.utils.transform_utils import apply_independent_channel_shift
 try:
     import scipy
     # scipy.linalg cannot be accessed until explicitly imported
@@ -205,6 +205,8 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range (float): float or [lower, upper], Range for random zoom.
             If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
+        independent_channel_shift_range: range for random channel shifts,
+            applied independently to each channel
         channel_shift_range (float): range for random channel shifts.
         fill_mode (str): One of {"constant", "nearest", "reflect" or "wrap"}.
 
@@ -255,6 +257,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
                 shear_range=0.,
                 zoom_range=0.,
                 channel_shift_range=0.,
+                independent_channel_shift_range=0.,
                 fill_mode='nearest',
                 cval=0.,
                 horizontal_flip=False,
@@ -289,6 +292,8 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
                 data_format='channels_last',
                 validation_split=0.0,
                 dtype='float32')
+
+        self.independent_channel_shift_range=independent_channel_shift_range
 
 
     def flow(self,
@@ -341,11 +346,25 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
     def get_random_transform(self, img_shape, seed=None):
         transform_parameters = ImageDataGenerator.get_random_transform(self, 
         img_shape, seed=None)
+
+        independent_channel_shift_intensities = None
+        if self.independent_channel_shift_range != 0:
+            independent_channel_shift_intensities = np.random.uniform(
+                -self.independent_channel_shift_range,
+                self.independent_channel_shift_range,
+                img_shape[self.channel_axis - 1])
+            transform_parameters["independent_channel_shift_intensities"] = independent_channel_shift_intensities
+        
         return transform_parameters
 
 
     def apply_transform(self, x, transform_parameters):
         x = ImageDataGenerator.apply_transform(self, x, transform_parameters)
+        
+        if transform_parameters.get("independent_channel_shift_intensities") is not None:
+            x = apply_independent_channel_shift(x, transform_parameters["independent_channel_shift_intensities"],
+            img_channel_axis)
+
         return x
 
 
@@ -376,6 +395,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         # Nullify the transforms that don't affect `y`
         params['brightness'] = None
         params['channel_shift_intensity'] = None
+        params['independent_channel_shift_intensity'] = None
         _interpolation_order = self.interpolation_order
         self.interpolation_order = 0
 
