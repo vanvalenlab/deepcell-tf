@@ -54,55 +54,55 @@ methods = {
 }
 
 all_cells = Dataset(
-    path='20190813_all_phase_512.npz',
-    url='https://deepcell-data.s3-us-west-1.amazonaws.com/cytoplasm/brightfield/20190813_all_phase_512.npz',
-    file_hash='1b10bb58175461bc45ccddeaa4dc8195cc25c0a7c0ba55e25541531830a75d91',
+    path='20190813_all_phase_512_contrast_adjusted_curated.npz',
+    url='https://deepcell-data.s3-us-west-1.amazonaws.com/cytoplasm/brightfield/20190813_all_phase_512_contrast_adjusted_curated.npz',
+    file_hash='20d6a99216e7c966182e79eef4eaf937',
     metadata={'methods': methods}
 )
 
 nih_3t3 = Dataset(
     path='nih_3t3-phase.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_3T3_s0_phase_medium_stitched_2D_512.npz',
-    file_hash='b0dc7fa28d6ec4dec25150187b9629330689372da40f730042f8e0824df4da2e',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/nih_3t3-phase_fixed.npz',
+    file_hash='d1a3b5a548300ef8389cee8021f53957',
     metadata={'methods': methods}
 )
 
 
 A549 = Dataset(
     path='A549-phase.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_A549_s0_phase_medium_stitched_2D_512.npz',
-    file_hash='4e2a17ed2083ffa7e9b64824c27591bf776257bae2b07639226aa2b9900fbb33',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/A549-phase_fixed.npz',
+    file_hash='d1820a7057079a774a9def8ae4634e74',
     metadata={'methods': methods}
 )
 
 
 CHO = Dataset(
     path='CHO-phase.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_CHO_s0_phase_medium_stitched_2D_512.npz',
-    file_hash='39aad99486825a856da14d87b48ac9b00dd176b7e54c9fc928489ee464828bcd',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/CHO-phase_fixed.npz',
+    file_hash='0d059506a9500e155d0fbfee64c43e21',
     metadata={'methods': methods}
 )
 
 
 HeLa_S3 = Dataset(
     path='HeLa_S3-phase.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_HeLa-S3_s0_phase_medium_stitched_2D_512.npz',
-    file_hash='505c42d89005186d0eb4d76740bb829c13220b6a96b0bfdc3980eaf95a359293',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/HeLa_S3-phase_fixed.npz',
+    file_hash='8ee318c32e41c9ff0fccf40bcd9d993d',
     metadata={'methods': methods}
 )
 
 
 HeLa = Dataset(
     path='HeLa-phase.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_HeLa_s0_phase_medium_stitched_2D_512.npz',
-    file_hash='e4e92e2611cd4bf087d8489db6fed35c893566f0d3fe859e366511f087a3f64c',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/HeLa-phase_fixed.npz',
+    file_hash='f16c22201d63d1ab856f066811b3dcfa',
     metadata={'methods': methods}
 )
 
 
 PC3 = Dataset(
     path='PC3-phase.npz',
-    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/AM_PC3_s0_phase_medium_stitched_2D_512.npz',
-    file_hash='3d2d5106e1d1437e4874c6c49c773dbacc2437d5556212f7c2d532a820e5a03e',
+    url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/PC3-phase_fixed.npz',
+    file_hash='1be17d9f6dbb009eed542f56f8282edd',
     metadata={'methods': methods}
 )
