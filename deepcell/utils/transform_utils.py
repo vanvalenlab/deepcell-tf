@@ -195,18 +195,16 @@ def distance_transform_continuous_2d(mask, erosion_width=None):
 
 
 def distance_transform_continuous_movie(mask, erosion_width=None):
-    """Transform a label mask into distance classes.
+    """Transform a label mask into a continuous distance value.
 
     Args:
         mask (numpy.array): a label mask (y data)
-        bins (int): the number of transformed distance classes
         erosion_width (int): number of pixels to erode edges of each labels
 
     Returns:
         numpy.array: a mask of same shape as input mask,
             with each label being a distance class from 1 to bins
     """
-
     distances = []
     for frame in range(mask.shape[0]):
         mask_frame = mask[frame]
@@ -231,6 +229,17 @@ def distance_transform_continuous_movie(mask, erosion_width=None):
 
 
 def centroid_transform_continuous_2d(mask, erosion_width=None, alpha=0.1):
+    """Transform a label mask into a continuous centroid value.
+
+    Args:
+        mask (numpy.array): a label mask (y data)
+        erosion_width (int): number of pixels to erode edges of each labels
+        alpha (float): coefficent to reduce the magnitude of the distance value.
+
+    Returns:
+        numpy.array: a mask of same shape as input mask,
+            with each label being a distance class from 1 to bins
+    """
     mask = np.squeeze(mask)
     mask = erode_edges(mask, erosion_width)
 
@@ -239,21 +248,31 @@ def centroid_transform_continuous_2d(mask, erosion_width=None, alpha=0.1):
 
     label_matrix = label(mask)
 
-    inner_distance = np.zeros(distance.shape, dtype = K.floatx())
+    inner_distance = np.zeros(distance.shape, dtype=K.floatx())
     for prop in regionprops(label_matrix, distance):
         coords = prop.coords
         center = prop.weighted_centroid
         distance_to_center = np.sum((coords - center) ** 2, axis=1)
-        center_transform = 1/(1 + alpha * distance_to_center)
-        coords_x = coords[:,0]
-        coords_y = coords[:,1]
+        center_transform = 1 / (1 + alpha * distance_to_center)
+        coords_x = coords[:, 0]
+        coords_y = coords[:, 1]
         inner_distance[coords_x, coords_y] = center_transform
 
     return inner_distance
 
 
 def centroid_transform_continuous_movie(mask, erosion_width=None, alpha=0.1):
+    """Transform a label mask into a continuous centroid value.
 
+    Args:
+        mask (numpy.array): a label mask (y data)
+        erosion_width (int): number of pixels to erode edges of each labels
+        alpha (float): coefficent to reduce the magnitude of the distance value.
+
+    Returns:
+        numpy.array: a mask of same shape as input mask,
+            with each label being a distance class from 1 to bins
+    """
     inner_distances = []
 
     for frame in range(mask.shape[0]):
@@ -266,14 +285,14 @@ def centroid_transform_continuous_movie(mask, erosion_width=None, alpha=0.1):
 
         label_matrix = label(mask_frame)
 
-        inner_distance = np.zeros(distance.shape, dtype = K.floatx())
+        inner_distance = np.zeros(distance.shape, dtype=K.floatx())
         for prop in regionprops(label_matrix, distance):
             coords = prop.coords
             center = prop.weighted_centroid
             distance_to_center = np.sum((coords - center) ** 2, axis=1)
-            center_transform = 1/(1 + alpha * distance_to_center)
-            coords_x = coords[:,0]
-            coords_y = coords[:,1]
+            center_transform = 1 / (1 + alpha * distance_to_center)
+            coords_x = coords[:, 0]
+            coords_y = coords[:, 1]
             inner_distance[coords_x, coords_y] = center_transform
         inner_distances.append(inner_distance)
 
@@ -283,7 +302,7 @@ def centroid_transform_continuous_movie(mask, erosion_width=None, alpha=0.1):
 
 
 def distance_transform_3d(maskstack, bins=4, erosion_width=None):
-    """Transforms a label mask for a z stack into distance classes
+    """Transforms a label mask for a z stack into distance classes.
     Uses scipy's distance_transform_edt
 
     Args:

@@ -211,14 +211,75 @@ class TransformUtilsTest(test.TestCase):
             self.assertEqual(np.expand_dims(distance, axis=1).shape, img.shape)
 
     def test_centroid_weighted_distance_transform_2d(self):
-        centroid_dist = transform_utils.centroid_weighted_distance_transform_2d
         for img in _generate_test_masks():
             K.set_image_data_format('channels_last')
-            dist_x, dist_y = centroid_dist(img)
+            dist_x, dist_y = \
+                transform_utils.centroid_weighted_distance_transform_2d(img)
             self.assertEqual(str(dist_x.dtype), str(K.floatx()))
             self.assertEqual(dist_x.shape, img.shape)
             self.assertEqual(str(dist_y.dtype), str(K.floatx()))
             self.assertEqual(dist_y.shape, img.shape)
+
+    def test_centroid_transform_continuous_2d(self):
+        for img in _generate_test_masks():
+            K.set_image_data_format('channels_last')
+            distance = transform_utils.centroid_transform_continuous_2d(img)
+            self.assertEqual(np.expand_dims(distance, axis=-1).shape, img.shape)
+
+            K.set_image_data_format('channels_first')
+            img = np.rollaxis(img, -1, 1)
+
+            distance = transform_utils.centroid_transform_continuous_2d(img)
+            self.assertEqual(np.expand_dims(distance, axis=1).shape, img.shape)
+
+    def test_centroid_transform_continuous_movie(self):
+        # TODO: not sure this is working properly!
+        mask_stack = np.array(_generate_test_masks())
+        img = np.zeros(mask_stack.shape)
+
+        for i, mask in enumerate(_generate_test_masks()):
+            img[i] = label(mask)
+
+        # pylint: disable=E1136
+        K.set_image_data_format('channels_last')
+        centroids = transform_utils.centroid_transform_continuous_movie(img)
+        print(centroids.shape)
+        self.assertEqual(str(centroids.dtype), str(K.floatx()))
+        self.assertEqual(centroids.shape, img.shape[:-1])
+
+        K.set_image_data_format('channels_first')
+        centroids = transform_utils.centroid_transform_continuous_movie(img)
+        self.assertEqual(str(centroids.dtype), str(K.floatx()))
+        self.assertEqual(centroids.shape, img.shape[:-1])
+
+    def test_distance_transform_continuous_2d(self):
+        for img in _generate_test_masks():
+            K.set_image_data_format('channels_last')
+            distance = transform_utils.distance_transform_continuous_2d(img)
+            self.assertEqual(np.expand_dims(distance, axis=-1).shape, img.shape)
+
+            K.set_image_data_format('channels_first')
+            img = np.rollaxis(img, -1, 1)
+
+            distance = transform_utils.distance_transform_continuous_2d(img)
+            self.assertEqual(np.expand_dims(distance, axis=1).shape, img.shape)
+
+    def test_distance_transform_continuous_movie(self):
+        mask_stack = np.array(_generate_test_masks())
+        img = np.zeros(mask_stack.shape)
+
+        for i, mask in enumerate(_generate_test_masks()):
+            img[i] = label(mask)
+
+        K.set_image_data_format('channels_last')
+        distance = transform_utils.distance_transform_continuous_movie(img)
+        self.assertEqual(np.expand_dims(distance, axis=-1).shape, img.shape)
+
+        K.set_image_data_format('channels_first')
+        img = np.rollaxis(img, -1, 1)
+
+        distance = transform_utils.distance_transform_continuous_movie(img)
+        self.assertEqual(np.expand_dims(distance, axis=1).shape, img.shape)
 
     def test_to_categorical(self):
         num_classes = 5
