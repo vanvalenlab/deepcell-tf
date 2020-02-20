@@ -70,7 +70,7 @@ nih_3t3 = Dataset(
 )
 
 
-A549 = Dataset(
+a549 = Dataset(
     path='A549-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/A549-phase_fixed.npz',
     file_hash='d1820a7057079a774a9def8ae4634e74',
@@ -78,7 +78,7 @@ A549 = Dataset(
 )
 
 
-CHO = Dataset(
+cho = Dataset(
     path='CHO-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/CHO-phase_fixed.npz',
     file_hash='0d059506a9500e155d0fbfee64c43e21',
@@ -86,7 +86,7 @@ CHO = Dataset(
 )
 
 
-HeLa_S3 = Dataset(
+hela_s3 = Dataset(
     path='HeLa_S3-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/HeLa_S3-phase_fixed.npz',
     file_hash='8ee318c32e41c9ff0fccf40bcd9d993d',
@@ -94,7 +94,7 @@ HeLa_S3 = Dataset(
 )
 
 
-HeLa = Dataset(
+hela = Dataset(
     path='HeLa-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/HeLa-phase_fixed.npz',
     file_hash='f16c22201d63d1ab856f066811b3dcfa',
@@ -102,7 +102,7 @@ HeLa = Dataset(
 )
 
 
-PC3 = Dataset(
+pc3 = Dataset(
     path='PC3-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/PC3-phase_fixed.npz',
     file_hash='1be17d9f6dbb009eed542f56f8282edd',

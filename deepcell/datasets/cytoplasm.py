@@ -84,7 +84,7 @@ nih_3t3 = Dataset(
 )
 
 
-A549 = Dataset(
+a549 = Dataset(
     path='A549-cytoplasm.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/A549-cytoplasm_fixed.npz',
     file_hash='b5934b2424d2c0e91aedb577883bb0e5',
@@ -92,7 +92,7 @@ A549 = Dataset(
 )
 
 
-CHO = Dataset(
+cho = Dataset(
     path='CHO-cytoplasm.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/CHO-cytoplasm_fixed.npz',
     file_hash='949c1259d1383feb088f4cecdbc9a655',
@@ -100,7 +100,7 @@ CHO = Dataset(
 )
 
 
-HeLa_S3 = Dataset(
+hela_s3 = Dataset(
     path='hela_s3-cytoplasm.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/hela_s3-cytoplasm_fixed.npz',
     file_hash='a2571357f5c2b238ed2ca9ec1329d8ea',
@@ -108,7 +108,7 @@ HeLa_S3 = Dataset(
 )
 
 
-HeLa = Dataset(
+hela = Dataset(
     path='hela-cytoplasm.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/hela-cytoplasm_fixed.npz',
     file_hash='40f301ffb315dab17491c06afbfdf641',
@@ -116,7 +116,7 @@ HeLa = Dataset(
 )
 
 
-PC3 = Dataset(
+pc3 = Dataset(
     path='pc3-cytoplasm.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/fluorescent/pc3-cytoplasm_fixed.npz',
     file_hash='636a280367c52bc9b57eebed23661295',
