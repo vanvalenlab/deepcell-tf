@@ -172,15 +172,16 @@ def __create_semantic_head(pyramid_dict,
                            semantic_id=0,
                            ndim=2,
                            **kwargs):
-    """
-    Creates a semantic head from a feature pyramid network
+    """Creates a semantic head from a feature pyramid network.
+
     Args:
         pyramid_dict: dict of pyramid names and features
-        input_target (tensor, optional): Defaults to None. Tensor with the input image.
-        target_level (int, optional): Defaults to 2. Upsampling level.
+        input_target (tensor): Defaults to None. Tensor with the input image.
+        target_level (int): Defaults to 2. Upsampling level.
             Level 1 = 1/2^1 size, Level 2 = 1/2^2 size, Level 3 = 1/2^3 size, etc.
-        n_classes (int, optional): Defaults to 3.  The number of classes to be predicted
-        n_filters (int, optional): Defaults to 128. The number of convolutional filters.
+        n_classes (int): Defaults to 3.  The number of classes to be predicted
+        n_filters (int): Defaults to 128. The number of convolutional filters.
+
     Returns:
         keras.layers.Layer: The semantic segmentation head
     """
@@ -218,7 +219,6 @@ def __create_semantic_head(pyramid_dict,
 def PanopticNet(backbone,
                 input_shape,
                 backbone_levels=['C3', 'C4', 'C5'],
-                pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
                 create_pyramid_features=__create_pyramid_features,
                 create_semantic_head=__create_semantic_head,
                 num_semantic_heads=1,
@@ -230,7 +230,40 @@ def PanopticNet(backbone,
                 use_imagenet=True,
                 name='panopticnet',
                 **kwargs):
+    """Constructs a mrcnn model using a backbone from keras-applications.
 
+    Args:
+        backbone (str): Name of backbone to use.
+        input_shape (tuple): The shape of the input data.
+        backbone_levels (list): The backbone levels to be used.
+            to create the feature pyramid. Defaults to ['C3', 'C4', 'C5'].
+        create_pyramid_features (function): Function to get the pyramid
+            features from the backbone.
+        create_semantic_head (function): Function to get to build a
+            semantic head submodel.
+        norm_method (str): ImageNormalization mode to use.
+        location (bool): Whether to include location data.
+        use_imagenet (bool): Whether to load imagenet-based pretrained weights.
+        pooling (str): optional pooling mode for feature extraction
+            when include_top is False.
+
+            - None means that the output of the model will be
+                the 4D tensor output of the
+                last convolutional layer.
+            - 'avg' means that global average pooling
+                will be applied to the output of the
+                last convolutional layer, and thus
+                the output of the model will be a 2D tensor.
+            - 'max' means that global max pooling will
+                be applied.
+
+        required_channels (int): The required number of channels of the
+            backbone.  3 is the default for all current backbones.
+        kwargs (dict): Other standard inputs for retinanet_mask.
+
+    Returns:
+        tensorflow.keras.Model: Panoptic model with a backbone.
+    """
     inputs = Input(shape=input_shape)
     norm = ImageNormalization2D(norm_method=norm_method)(inputs)
     if location:
