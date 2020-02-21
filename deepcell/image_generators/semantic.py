@@ -52,7 +52,7 @@ from deepcell.image_generators import _transform_masks
 
 
 class SemanticIterator(Iterator):
-    """Iterator yielding data from Numpy arrayss (X and y).
+    """Iterator yielding data from Numpy arrays (X and y).
 
     Args:
         train_dict (dict): Consists of numpy arrays for X and y.
