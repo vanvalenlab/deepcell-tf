@@ -20,15 +20,7 @@ from sphinx.builders.html import StandaloneHTMLBuilder
 sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
 
-# try:
-#     from pip._internal.operations import freeze
-# except ImportError:  # pip < 10.0
-#     from pip.operations import freeze
-
-# x = freeze.freeze()
-# for p in x:
-#     print p
-
+# pylint: disable=line-too-long
 
 # -- Project information -----------------------------------------------------
 
