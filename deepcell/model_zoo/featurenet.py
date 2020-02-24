@@ -44,7 +44,7 @@ from tensorflow.python.keras.layers import ZeroPadding2D, ZeroPadding3D
 from tensorflow.python.keras.regularizers import l2
 from tensorflow.python.keras import utils as keras_utils
 
-# from deepcell.layers import ConvGRU2D
+from deepcell.layers import ConvGRU2D
 from deepcell.layers import DilatedMaxPool2D, DilatedMaxPool3D
 from deepcell.layers import ImageNormalization2D, ImageNormalization3D
 from deepcell.layers import Location2D, Location3D
