@@ -325,6 +325,7 @@ def retinanet(inputs,
               num_semantic_classes=[3],
               submodels=None,
               frames_per_batch=1,
+              semantic_only=False,
               name='retinanet'):
     """Construct a RetinaNet model on top of a backbone.
 
@@ -403,6 +404,9 @@ def retinanet(inputs,
         outputs = object_head + semantic_head_list
     else:
         outputs = object_head
+
+    if semantic_only:
+        outputs = semantic_head_list
 
     model = Model(inputs=inputs, outputs=outputs, name=name)
     model.backbone_levels = backbone_levels

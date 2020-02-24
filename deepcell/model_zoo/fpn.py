@@ -343,8 +343,12 @@ def semantic_prediction(semantic_names,
     x = Activation('relu')(x)
 
     # Apply tensor product and softmax layer
-    x = TensorProduct(n_classes)(x)
-    x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
+    if n_classes > 1:
+        x = TensorProduct(n_classes)(x)
+        x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
+    else:  # n_classes == 1
+        x = TensorProduct(n_classes)(x)
+        x = Activation('relu', name='semantic_{}'.format(semantic_id))(x)
 
     return x
 
