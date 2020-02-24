@@ -1,5 +1,18 @@
 .. _index:
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Start Here:
+
+   Training-Segmentation
+   Training-Tracking
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Deepcell API:
+
+   API/deepcell
+
 .. include:: ../../README.rst
     :end-before: Examples
 
@@ -21,21 +34,6 @@ For more information on deploying DeepCell in the cloud:
 ---------------------------------------------------------
 
 :doc:`Refer to the DeepCell Kiosk documentation <kiosk:index>`
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Start Here:
-
-   Training-Segmentation
-   Training-Tracking
-   CODE_OF_CONDUCT
-   CONTRIBUTING
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Deepcell API:
-
-   API/deepcell
 
 
 
