@@ -41,44 +41,21 @@ The fastest way to get started with DeepCell is to run the latest docker image:
 
 This will start a jupyter session, with several example notebooks detailing various training methods:
 
-PanOptic Segmentation using RetinaMask
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-* `Retinanet Object Detection.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/feature_pyramids/RetinaNet.ipynb>`_
-* `RetinaMask Instance Segmentation.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/feature_pyramids/RetinaMask.ipynb>`_
-* `PanOptic Segmentation.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/feature_pyramids/PanOpticFPN.ipynb>`_
+For examples of how to use the deepcell library, check out the following notebooks:
+* `Training a segmentation model <https://deepcell.readthedocs.io/en/master/Training-Segmentation.html>`_
+* `Training a tracking model <https://deepcell.readthedocs.io/en/master/Training-Tracking.html>`_
 
-Pixel-Wise Segmentation
-^^^^^^^^^^^^^^^^^^^^^^^
-
-* `2D Pixel-Wise Transform - Fully Convolutional.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/pixelwise/Interior-Edge%20Segmentation%202D%20Fully%20Convolutional.ipynb>`_
-
-* `2D Pixel-Wise Transform - Sample Based.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/pixelwise/Interior-Edge%20Segmentation%202D%20Sample%20Based.ipynb>`_
-
-* `3D Pixel-Wise Transform - Fully Convolutional.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/pixelwise/Interior-Edge%20Segmentation%203D%20Fully%20Convolutional.ipynb>`_
-
-* `3D Pixel-Wise Transform - Sample Based.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/pixelwise/Interior-Edge%20Segmentation%203D%20Sample%20Based.ipynb>`_
-
-Deep Watershed Instance Segmentation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* `2D Watershed - Fully Convolutional.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/watershed/Watershed%20Transform%202D%20Fully%20Convolutional.ipynb>`_
-
-* `2D Watershed - Sample Based.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/watershed/Watershed%20Transform%202D%20Sample%20Based.ipynb>`_
-
-* `3D Watershed - Fully Convolutional.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/watershed/Watershed%20Transform%203D%20Fully%20Convolutional.ipynb>`_
-
-* `3D Watershed - Sample Based.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/watershed/Watershed%20Transform%203D%20Sample%20Based.ipynb>`_
-
-Cell Tracking in Live Cell Imaging
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-* `Training a Tracking Models.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/tracking/Training%20a%20Tracking%20Model.ipynb>`_
-* `Tracking Example with Benchmarking.ipynb <https://github.com/vanvalenlab/deepcell-tf/blob/master/scripts/tracking/Tracking%20Example%20with%20Benchmarking.ipynb>`_
-
-:mod:`deepcell.applications` and :mod:`deepcell.datasets`
+``deepcell.applications`` and ``deepcell.datasets``
 ---------------------------------------------------------
-Together :mod:`deepcell.datasets` and :mod:`deepcell.applications` work together to provide an accessible entrypoint to deep learning for biologists. The datasets module contains a variety of annotated datasets that can be used as training data. Additionally, the applications package initializes a set of models complete with the option to initialize with pre-trained weights.
+Together |deepcell.datasets| and |deepcell.applications|  work together to provide an accessible entrypoint to deep learning for biologists. The datasets module contains a variety of annotated datasets that can be used as training data. Additionally, the applications package initializes a set of models complete with the option to initialize with pre-trained weights.
 
+.. |deepcell.datasets| raw:: html
+
+    <tt><a href="https://deepcell.readthedocs.io/en/master/API/deepcell.datasets.html">deepcell.datasets</a></tt>
+
+.. |deepcell.applications| raw:: html
+
+    <tt><a href="https://deepcell.readthedocs.io/en/mrgn-docs/API/deepcell.applications.html">deepcell.applications</a></tt>
 
 DeepCell for Developers
 -----------------------
