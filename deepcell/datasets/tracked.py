@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Builtin Datasets"""
+"""Built-in Datasets"""
 
 from __future__ import absolute_import
 from __future__ import division

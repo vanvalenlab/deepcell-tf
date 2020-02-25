@@ -42,7 +42,16 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 def NuclearSegmentationModel(input_shape=(None, None, 1),
                              backbone='resnet50',
                              use_pretrained_weights=True):
-    """Initialize a model for nuclear segmentation based on dapi data."""
+    """
+    A RetinaMask model with a ResNet50 backbone
+    for nuclear segmentation trained on DAPI data.
+
+    Args:
+        input_shape (tuple): a 3-length tuple of the input data shape.
+        backbone (str): name of the backbone to use for the model.
+        use_pretrained_weights (bool): whether to load pre-trained weights.
+            Only supports the ResNet50 backbone.
+    """
     backbone_levels = ['C1', 'C2', 'C3', 'C4', 'C5']
     pyramid_levels = ['P2', 'P3', 'P4']
     anchor_size_dict = {'P2': 8, 'P3': 16, 'P4': 32}

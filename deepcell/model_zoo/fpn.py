@@ -56,13 +56,13 @@ def create_pyramid_level(backbone_input,
 
     Args:
         backbone_input (layer): Backbone layer to use to create they pyramid layer
-        upsamplelike_input ([type], optional): Defaults to None. Input to use
+        upsamplelike_input (tensor): Optional input to use
             as a template for shape to upsample to
-        addition_input (layer, optional): Defaults to None. Layer to add to
-            pyramid layer after conv and upsample
-        level (int, optional): Defaults to 5. Level to use in layer names
-        feature_size (int, optional): Defaults to 256. Number of filters for
-            convolutional layer
+        addition_input (layer): Optional layer to add to
+            pyramid layer after convolution and upsampling.
+        level (int): Level to use in layer names, defaults to 5.
+        feature_size (int):Number of filters for
+            convolutional layer, defaults to 256.
         ndim (int): The spatial dimensions of the input data. Default is 2,
             but it also works with 3
 
@@ -118,7 +118,7 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
     Args:
         backbone_dict (dictionary): A dictionary of the backbone layers, with
             the names as keys, e.g. {'C0': C0, 'C1': C1, 'C2': C2, ...}
-        feature_size (int, optional): Defaults to 256. The feature size to use
+        feature_size (int): Defaults to 256. The feature size to use
             for the resulting feature levels.
         include_final_layers (bool): Add two coarser pyramid levels
         ndim (int): The spatial dimensions of the input data.
@@ -244,16 +244,19 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
     Args:
         x (tensor): The input tensor to be upsampled
         n_upsample (int): The number of 2x upsamplings
-        n_filters (int, optional): Defaults to 256. The number of filters for
+        n_filters (int): Defaults to 256. The number of filters for
             the 3x3 convolution
-        target (tensor, optional): Defaults to None. A tensor with the target
-            shape. If included, then the final upsampling layer will reshape
+        target (tensor): An optional tensor with the target shape.
+            If included, then the final upsampling layer will reshape
             to the target tensor's size
         ndim (int): The spatial dimensions of the input data.
             Default is 2, but it also works with 3
 
     Returns:
         tensor: The upsampled tensor
+
+    Raises:
+        ValueError: ndim is not in {2, 3}.
     """
     acceptable_ndims = [2, 3]
     if ndim not in acceptable_ndims:
@@ -297,13 +300,16 @@ def semantic_prediction(semantic_names,
         semantic_features (list): A list of semantic features
             NOTE: The semantic_names and semantic features should be in decreasing order
             e.g. [Q6, Q5, Q4, ...]
-        target_level (int, optional): Defaults to 0. The level we need to reach.
-            Performs 2x upsampling until we're at the target level
-        input_target (tensor, optional): Defaults to None. Tensor with the input image.
-        n_dense (int, optional): Defaults to 256. The number of filters for dense layers.
-        n_classes (int, optional): Defaults to 3.  The number of classes to be predicted.
-        semantic_id (int): Defaults to 0. An number to name the final layer. Allows for multiple
-            semantic heads.
+        target_level (int): (Optional) The level we need to reach.
+            Performs 2x upsampling until we're at the target level.
+        input_target (tensor): Optional tensor with the input image.
+        n_filters (int): The number of filters for the 3x3 convolution.
+        n_dense (int): The number of filters for dense layers.
+        ndim (int): The spatial dimensions of the input data.
+            Default is 2, but it also works with 3.
+        n_classes (int): The number of classes to be predicted.
+        semantic_id (int): Defaults to 0. A number to name the final layer.
+            Allows for multiple semantic heads.
     Returns:
         tensor: The softmax prediction for the semantic segmentation head
 
@@ -337,8 +343,12 @@ def semantic_prediction(semantic_names,
     x = Activation('relu')(x)
 
     # Apply tensor product and softmax layer
-    x = TensorProduct(n_classes)(x)
-    x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
+    if n_classes > 1:
+        x = TensorProduct(n_classes)(x)
+        x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
+    else:  # n_classes == 1
+        x = TensorProduct(n_classes)(x)
+        x = Activation('relu', name='semantic_{}'.format(semantic_id))(x)
 
     return x
 
@@ -353,12 +363,16 @@ def __create_semantic_head(pyramid_dict,
     """
     Creates a semantic head from a feature pyramid network
     Args:
-        pyramid_dict: dict of pyramid names and features
-        input_target (tensor, optional): Defaults to None. Tensor with the input image.
-        target_level (int, optional): Defaults to 2. Upsampling level.
+        pyramid_dict (dict): Pyramid names and features
+        input_target (tensor): Optional tensor with the input image.
+        target_level (int): Upsampling level.
             Level 1 = 1/2^1 size, Level 2 = 1/2^2 size, Level 3 = 1/2^3 size, etc.
-        n_classes (int, optional): Defaults to 3.  The number of classes to be predicted
-        n_filters (int, optional): Defaults to 128. The number of convolutional filters.
+        n_classes (int): The number of classes to be predicted
+        n_filters (int): The number of convolutional filters.
+        semantic_id (int): A number to name the final layer.
+            Allows for multiple semantic heads.
+        ndim (int): The spatial dimensions of the input data.
+            Default is 2, but it also works with 3.
     Returns:
         keras.layers.Layer: The semantic segmentation head
     """
@@ -408,13 +422,11 @@ def FPNet(backbone,
 
     Args:
         backbone (str): A name of a supported backbone from [deepcell, resnet50]
-        input_shape (tuple): Shape of the input image
-        input (keras layer, optional): Defaults to None. Method to pass in preexisting layers
-        norm_method (str, optional): Defaults to 'whole_image'. Normalization method
-        weights (str, optional): Defaults to None. one of None (random initialization),
-            'imagenet' (pre-training on ImageNet),
-            or the path to the weights file to be loaded.
-        pooling (str, optional): Defaults to None. optional pooling mode for feature extraction
+        input_shape (tuple): Shape of the input image.
+        inputs (keras.Layer): Optional preexisting layers.
+        norm_method (str): Normalization method, defaults to 'whole_image'
+        use_imagenet (bool): Whether to load imagenet-based pretrained weights.
+        pooling (str): Optional pooling mode for feature extraction
             when include_top is False.
             - None means that the output of the model will be
                 the 4D tensor output of the
@@ -425,13 +437,15 @@ def FPNet(backbone,
                 the output of the model will be a 2D tensor.
             - 'max' means that global max pooling will
                 be applied.
-        required_channels (int, optional): Defaults to 3. The required number of channels of the
-            backbone.  3 is the default for all current backbones.
-        n_classes (int, optional): Defaults to 3.  The number of classes to be predicted
-        name (str, optional): Defaults to 'fpnet'. Name to use for the model.
+        required_channels (int): The required number of channels of the
+            backbone. 3 is the default for all current backbones.
+        n_classes (int): The number of classes to be predicted
+        name (str): Name to use for the model.
+        frames_per_batch (int): Size of z axis in generated batches.
+            If equal to 1, assumes 2D data.
 
     Returns:
-        keras.models.Model: Feature pyramid network with a semantic
+        tensorflow.keras.models.Model: Feature pyramid network with a semantic
             segmentation head as the output
     """
 

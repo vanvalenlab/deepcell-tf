@@ -23,7 +23,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Deepcell Utilities Module"""
+"""
+Custom Image Data Generators used to generate augmented batches of training
+data. These custom generators extend the keras.ImageDataGenerator, and allow
+for training with label masks, bounding boxes, and more customized annotations.
+"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -63,6 +67,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         'pixelwise',
         'disc',
         'watershed',
+        'watershed-cont',
         'centroid',
         'fgbg'
     }
@@ -139,6 +144,58 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
+    elif transform == 'watershed-cont':
+        erosion = kwargs.pop('erosion_width', 0)
+
+        if data_format == 'channels_first':
+            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
+        else:
+            y_transform = np.zeros(y.shape[0:-1])
+
+        if y.ndim == 5:
+            raise ValueError('3D images not supported')
+        else:
+            _distance_transform = transform_utils.distance_transform_continuous_2d
+
+        for batch in range(y_transform.shape[0]):
+            if data_format == 'channels_first':
+                mask = y[batch, 0, ...]
+            else:
+                mask = y[batch, ..., 0]
+
+            y_transform[batch] = _distance_transform(mask, erosion)
+
+        y_transform = np.expand_dims(y_transform, axis=-1)
+
+        if data_format == 'channels_first':
+            y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
+
+    elif transform == 'centroid':
+        erosion = kwargs.pop('erosion_width', 0)
+        disk_size = kwargs.pop('disk_size', 4)
+        if data_format == 'channels_first':
+            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
+        else:
+            y_transform = np.zeros(y.shape[0:-1])
+
+        if y.ndim == 5:
+            raise ValueError('3D images not supported')
+        else:
+            _transform = transform_utils.centroid_transform_continuous_2d
+
+        for batch in range(y_transform.shape[0]):
+            if data_format == 'channels_first':
+                mask = y[batch, 0, ...]
+            else:
+                mask = y[batch, ..., 0]
+
+            y_transform[batch] = _transform(mask, erosion)
+
+        y_transform = np.expand_dims(y_transform, axis=-1)
+
+        if data_format == 'channels_first':
+            y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
+
     elif transform == 'disc':
         y_transform = to_categorical(y.squeeze(channel_axis))
         if data_format == 'channels_first':
@@ -171,6 +228,9 @@ from deepcell.image_generators.retinanet import RetinaNetGenerator
 from deepcell.image_generators.retinanet import RetinaNetIterator
 from deepcell.image_generators.retinanet import RetinaMovieIterator
 from deepcell.image_generators.retinanet import RetinaMovieDataGenerator
+
+from deepcell.image_generators.semantic import SemanticDataGenerator
+from deepcell.image_generators.semantic import SemanticIterator
 
 from deepcell.image_generators.sample import SampleDataGenerator
 from deepcell.image_generators.sample import ImageSampleArrayIterator
