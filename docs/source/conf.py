@@ -25,9 +25,9 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'DeepCell'
-copyright = '2016-{currentyear}, Van Valen Lab at the California Institute of Technology (Caltech)'.format(
-    currentyear=datetime.now().year
-)
+copyright = ('2016-{currentyear}, Van Valen Lab at the '
+             'California Institute of Technology (Caltech)').format(
+                 currentyear=datetime.now().year)
 author = 'Van Valen Lab at Caltech'
 
 # The short X.Y version
@@ -42,7 +42,7 @@ on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 
 # This is used for linking and such so we link to the thing we're building
 rtd_version = os.environ.get("READTHEDOCS_VERSION", "latest")
-if rtd_version not in ["stable", "latest", "mrgn-docs"]:
+if rtd_version not in ["stable", "latest"]:
     rtd_version = "stable"
 
 # -- General configuration ---------------------------------------------------
@@ -238,8 +238,8 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3.7', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
     'kiosk': ('https://deepcell-kiosk.readthedocs.io/en/{}/'.format(rtd_version), None),
-    'kiosk-redis-consumer': ('https://deepcell-kiosk.readthedocs.io/projects/kiosk-redis-consumer/en/{}/'.format(rtd_version), None),
-    'kiosk-frontend': ('https://deepcell-kiosk.readthedocs.io/projects/kiosk-frontend/en/{}/'.format(rtd_version), None)
+    'kiosk-redis-consumer': (('https://deepcell-kiosk.readthedocs.io/'
+                              'projects/kiosk-redis-consumer/en/{}/').format(rtd_version), None),
 }
 
 intersphinx_cache_limit = 0
