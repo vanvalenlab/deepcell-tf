@@ -222,6 +222,7 @@ autodoc_mock_imports = [
     'cython',
     'keras-preprocessing',
     'deepcell_tracking',
+    'deepcell_toolbox'
     'keras_applications',
     'matplotlib'
 ]
