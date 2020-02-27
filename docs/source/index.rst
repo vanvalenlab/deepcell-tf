@@ -2,6 +2,7 @@
 
 .. toctree::
    :maxdepth: 1
+   :hidden:
    :caption: Start Here:
 
    Training-Segmentation
@@ -9,26 +10,12 @@
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
    :caption: Deepcell API:
 
    API/deepcell
 
-.. include:: ../../README.rst
-    :end-before: Examples
-
-Examples
---------
-.. list-table::
-
-    * - Raw Image
-      - Segmented and Tracked
-    * - .. image:: ../images/raw.gif
-      - .. image:: ../images/tracked.gif
-
-Getting Started
----------------
-.. include:: ../../README.rst
-    :start-after: Getting Started
+.. mdinclude:: ../../README.md
 
 For more information on deploying DeepCell in the cloud:
 ---------------------------------------------------------
