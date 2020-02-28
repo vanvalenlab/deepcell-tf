@@ -46,7 +46,7 @@ install:
   - travis_retry pip install -r requirements.txt --progress-bar off
   # install testing requirements
   - travis_retry pip install -r requirements-test.txt --progress-bar off
-  install documentation requirements
+  # install documentation requirements
   - travis_retry pip install -r docs/rtd-requirements.txt --progress-bar off
 
   # install deepcell with setup.py
