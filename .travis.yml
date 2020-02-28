@@ -49,6 +49,10 @@ install:
   # install documentation requirements
   - travis_retry pip install -r docs/rtd-requirements.txt
 
+  # install pandoc to test sphinx-build with nbconvert
+  - conda config --add channels conda-forge
+  - conda install pandoc
+
   # install deepcell with setup.py
   # - python setup.py install
   - python setup.py build_ext --inplace
