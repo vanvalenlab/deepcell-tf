@@ -29,14 +29,14 @@ deepcell.layers.pooling module
 
 deepcell.layers.resize module
 -----------------------------
-.. automodule:: from deepcell.layers.resize
+.. automodule:: deepcell.layers.resize
     :members:
     :undoc-members:
     :show-inheritance:
 
 deepcell.layers.tensor_product module
 -------------------------------------
-.. automodule:: from deepcell.layers.tensor_product
+.. automodule:: deepcell.layers.tensor_product
     :members:
     :undoc-members:
     :show-inheritance:
