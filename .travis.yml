@@ -22,9 +22,9 @@ install:
   # We do this conditionally because it saves us some downloading if the
   # version is the same.
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-    wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
     else
-    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -48,6 +48,10 @@ install:
   - travis_retry pip install -r requirements-test.txt --progress-bar off
   # install documentation requirements
   - travis_retry pip install -r docs/rtd-requirements.txt
+
+  # install pandoc to test sphinx-build with nbconvert
+  - conda config --add channels conda-forge
+  - conda install pandoc
 
   # install deepcell with setup.py
   # - python setup.py install

@@ -221,6 +221,7 @@ autodoc_mock_imports = [
     'cv2',
     'cython',
     'keras-preprocessing',
+    'keras_retinanet',
     'deepcell_tracking',
     'deepcell_toolbox'
     'keras_applications',
