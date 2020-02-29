@@ -223,7 +223,7 @@ autodoc_mock_imports = [
     'keras-preprocessing',
     'keras_retinanet',
     'deepcell_tracking',
-    'deepcell_toolbox'
+    'deepcell_toolbox',
     'keras_applications',
     'matplotlib'
 ]
