@@ -1,5 +1,5 @@
 m2r
 mock==3.0.5
-Sphinx>=1.8.5,<=2.3.1
+Sphinx==2.3.1
 ipython
 nbsphinx
