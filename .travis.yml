@@ -59,7 +59,10 @@ install:
 
 script:
   # - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8
-  - PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html
+  # - PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html
+  - if [[ "$TRAVIS_PYTHON_VERSION" != "2.7" ]]; then
+    PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html;
+    fi
 
 jobs:
   include:
