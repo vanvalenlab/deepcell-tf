@@ -47,7 +47,9 @@ install:
   # install testing requirements
   - travis_retry pip install -r requirements-test.txt --progress-bar off
   # install documentation requirements
-  - travis_retry pip install -r docs/rtd-requirements.txt
+  - if [[ "$TRAVIS_PYTHON_VERSION" != "2.7" ]]; then
+    travis_retry pip install -r docs/rtd-requirements.txt
+    fi
 
   # install pandoc to test sphinx-build with nbconvert
   - conda config --add channels conda-forge
