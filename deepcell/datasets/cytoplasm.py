@@ -69,9 +69,9 @@ methods = {
 
 
 all_cells = Dataset(
-    path='20190903_all_fluorescent_cyto_512_contrast_adjusted_curated.npz',
+    path='all_fluorescent_cyto_fixed.npz',
     url='https://deepcell-data.s3-us-west-1.amazonaws.com/cytoplasm/fluorescent/20190903_all_fluorescent_cyto_512_contrast_adjusted_curated.npz',
-    file_hash='a4e671a2c08e102f158903b288e88fff',
+    file_hash='6548b5b54cd940fb7ced864b4422eb96',
     metadata={'methods': methods}
 )
 
