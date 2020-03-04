@@ -36,6 +36,7 @@ import numpy as np
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import callbacks
 from tensorflow.python.keras.optimizers import SGD
+from tensorflow.python.keras.losses import MSE
 
 from deepcell import losses
 from deepcell import image_generators
@@ -332,6 +333,8 @@ def train_model_conv(model,
     def loss_function(y_true, y_pred):
         if isinstance(transform, str) and transform.lower() == 'disc':
             return losses.discriminative_instance_loss(y_true, y_pred)
+        if isinstance(transform, str) and transform.lower() == 'watershed-cont':
+            return MSE(y_true, y_pred)
         if focal:
             return losses.weighted_focal_loss(
                 y_true, y_pred, gamma=gamma, n_classes=n_classes)
@@ -620,6 +623,7 @@ def train_model_retinanet(model,
                           zoom_range=0,
                           compute_map=True,
                           seed=0,
+                          semantic_only=False,
                           **kwargs):
     """Train a RetinaNet model from the given backbone.
 
@@ -732,8 +736,10 @@ def train_model_retinanet(model,
 
     def semantic_loss(n_classes):
         def _semantic_loss(y_pred, y_true):
-            return panoptic_weight * losses.weighted_categorical_crossentropy(
-                y_pred, y_true, n_classes=n_classes)
+            if n_classes > 1:
+                return panoptic_weight * losses.weighted_categorical_crossentropy(
+                    y_pred, y_true, n_classes=n_classes)
+            return panoptic_weight * MSE(y_pred, y_true)
         return _semantic_loss
 
     loss = {
@@ -803,6 +809,7 @@ def train_model_retinanet(model,
         min_objects=min_objects,
         anchor_params=anchor_params,
         compute_shapes=compute_shapes,
+        semantic_only=semantic_only,
         batch_size=batch_size)
 
     val_data = datagen_val.flow(
@@ -816,6 +823,7 @@ def train_model_retinanet(model,
         min_objects=min_objects,
         anchor_params=anchor_params,
         compute_shapes=compute_shapes,
+        semantic_only=semantic_only,
         batch_size=batch_size)
 
     train_callbacks = get_callbacks(
