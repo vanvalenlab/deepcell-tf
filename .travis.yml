@@ -46,6 +46,12 @@ install:
   - travis_retry pip install -r requirements.txt --progress-bar off
   # install testing requirements
   - travis_retry pip install -r requirements-test.txt --progress-bar off
+<<<<<<< HEAD
+=======
+  # install documentation requirements
+  # - travis_retry pip install -r docs/rtd-requirements.txt
+  - if [[ "$TRAVIS_PYTHON_VERSION" -e "3.7" ]]; then travis_retry pip install -r docs/rtd-requirements.txt; fi
+>>>>>>> parent of d9ccfcc... Correct bash conditional
 
   # install pandoc to test sphinx-build with nbconvert
   - conda config --add channels conda-forge
@@ -68,11 +74,15 @@ install:
 script:
   # - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8
   # - PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html
+<<<<<<< HEAD
   - if [[ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]]; then
       source activate doc-environment;
       PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html;
       source activate test-environment;
     fi
+=======
+  - if [[ "$TRAVIS_PYTHON_VERSION" -e "3.7" ]]; then PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html; fi
+>>>>>>> parent of d9ccfcc... Correct bash conditional
 
 jobs:
   include:
