@@ -47,7 +47,7 @@ install:
   # install testing requirements
   - travis_retry pip install -r requirements-test.txt --progress-bar off
   # install documentation requirements
-  - if [[ "$TRAVIS_PYTHON_VERSION" -e "3.7" ]]; then
+  - if [[ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]]; then
       travis_retry pip install -r docs/rtd-requirements.txt;
     fi
 
@@ -61,7 +61,7 @@ install:
 
 script:
   - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8
-  - if [[ "$TRAVIS_PYTHON_VERSION" -e "3.7" ]]; then
+  - if [[ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]]; then
       PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html;
     fi
 
