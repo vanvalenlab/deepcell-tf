@@ -22,9 +22,9 @@ install:
   # We do this conditionally because it saves us some downloading if the
   # version is the same.
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-    wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
     else
-    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -46,9 +46,6 @@ install:
   - travis_retry pip install -r requirements.txt --progress-bar off
   # install testing requirements
   - travis_retry pip install -r requirements-test.txt --progress-bar off
-  # install documentation requirements
-  # - travis_retry pip install -r docs/rtd-requirements.txt
-  - if [[ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]]; then travis_retry pip install -r docs/rtd-requirements.txt; fi
 
   # install pandoc to test sphinx-build with nbconvert
   - conda config --add channels conda-forge
@@ -58,10 +55,24 @@ install:
   # - python setup.py install
   - python setup.py build_ext --inplace
 
+  # configure documentation specific environment
+  # install rtd specified packages
+  # install documentation requirements
+  - if [[ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]]; then
+      source activate doc-environment;
+      pip install "Pygments==2.3.1 setuptools==41.0.1 docutils==0.14 mock==1.0.1 pillow==5.4.1 alabaster>=0.7,<0.8,!=0.7.5 commonmark==0.8.1 recommonmark==0.5.0 sphinx<2 sphinx-rtd-theme<0.5 readthedocs-sphinx-ext<1.1";
+      travis_retry pip install -r docs/rtd-requirements.txt;
+      source activate test-environment;
+    fi
+
 script:
   # - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8
   # - PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html
-  - if [[ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]]; then PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html; fi
+  - if [[ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]]; then
+      source activate doc-environment;
+      PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html;
+      source activate test-environment;
+    fi
 
 jobs:
   include:
