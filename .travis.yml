@@ -48,7 +48,7 @@ install:
   - travis_retry pip install -r requirements-test.txt --progress-bar off
   # install documentation requirements
   # - travis_retry pip install -r docs/rtd-requirements.txt
-  - if [[ "$TRAVIS_PYTHON_VERSION" -e "3.7" ]]; then travis_retry pip install -r docs/rtd-requirements.txt; fi
+  - if [[ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]]; then travis_retry pip install -r docs/rtd-requirements.txt; fi
 
   # install pandoc to test sphinx-build with nbconvert
   - conda config --add channels conda-forge
@@ -61,7 +61,7 @@ install:
 script:
   # - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8
   # - PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html
-  - if [[ "$TRAVIS_PYTHON_VERSION" -e "3.7" ]]; then PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html; fi
+  - if [[ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]]; then PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html; fi
 
 jobs:
   include:
