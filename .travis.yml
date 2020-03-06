@@ -47,12 +47,10 @@ install:
   # install testing requirements
   - travis_retry pip install -r requirements-test.txt --progress-bar off
   # install documentation requirements
-  - echo $TRAVIS_PYTHON_VERSION
-  - echo "$TRAVIS_PYTHON_VERSION"
-  - echo "$TRAVIS_PYTHON_VERSION" == "3.7"
-  - echo [[ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]]
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]]; then
       travis_retry pip install -r docs/rtd-requirements.txt;
+    else
+      echo "Invalid python version for testing docs";
     fi
 
 
@@ -67,9 +65,11 @@ install:
   - python setup.py build_ext --inplace
 
 script:
-  # - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8
+  - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]]; then
       PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html;
+    else
+      echo "Invalid python version for testing docs";
     fi
 
 jobs:
