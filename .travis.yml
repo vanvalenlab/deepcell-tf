@@ -49,7 +49,7 @@ install:
   # install documentation requirements
   - echo $TRAVIS_PYTHON_VERSION
   - echo "$TRAVIS_PYTHON_VERSION"
-  - echo [ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]
+  - echo "$TRAVIS_PYTHON_VERSION" == "3.7"
   - echo [[ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]]
   - if [[ "$TRAVIS_PYTHON_VERSION" -eq "3.7" ]]; then
       travis_retry pip install -r docs/rtd-requirements.txt;
