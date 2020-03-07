@@ -53,9 +53,6 @@ install:
       echo "Invalid python version for testing docs";
     fi
 
-
-
-
   # install pandoc to test sphinx-build with nbconvert
   - conda config --add channels conda-forge
   - conda install pandoc
