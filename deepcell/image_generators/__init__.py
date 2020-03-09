@@ -46,7 +46,8 @@ from deepcell.utils import transform_utils
 def _transform_masks(y, transform, data_format=None, **kwargs):
     """Based on the transform key, apply a transform function to the masks.
 
-    More detailed description. Caution for unknown transform keys.
+    Refer to :mod:`deepcell.utils.transform_utils` for more information about
+    available transforms. Caution for unknown transform keys.
 
     Args:
         y (numpy.array): Labels of ndim 4 or 5

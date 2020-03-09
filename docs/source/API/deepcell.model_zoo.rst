@@ -1,8 +1,10 @@
 deepcell.model_zoo package
 ==========================
 
-Submodules
-----------
+.. automodule:: deepcell.model_zoo
+
+.. contents:: Contents
+    :local:
 
 deepcell.model_zoo.featurenet module
 ------------------------------------
@@ -28,11 +30,9 @@ deepcell.model_zoo.retinanet module
     :undoc-members:
     :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: deepcell.model_zoo
+deepcell.model_zoo.fpn module
+-----------------------------
+.. automodule:: deepcell.model_zoo.fpn
     :members:
     :undoc-members:
     :show-inheritance:

@@ -1,8 +1,14 @@
 deepcell.notebooks package
 ==========================
 
-Submodules
-----------
+.. automodule:: deepcell.notebooks
+
+.. warning::
+
+    .. deprecated:: 0.5.0
+
+.. contents:: Contents
+    :local:
 
 deepcell.notebooks.train module
 -------------------------------
@@ -16,15 +22,6 @@ deepcell.notebooks.visualize module
 -----------------------------------
 
 .. automodule:: deepcell.notebooks.visualize
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: deepcell.notebooks
     :members:
     :undoc-members:
     :show-inheritance:
