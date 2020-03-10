@@ -33,10 +33,10 @@ import re
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D, TimeDistributed
+from tensorflow.python.keras.layers import Conv2D, Conv3D, ConvLSTM2D, TimeDistributed
 from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import Permute, Reshape
-from tensorflow.python.keras.layers import Activation, Lambda
+from tensorflow.python.keras.layers import Activation, Lambda, BatchNormalization
 from tensorflow.python.keras.initializers import RandomNormal
 
 from deepcell.initializers import PriorProbability
@@ -44,11 +44,37 @@ from deepcell.layers import TensorProduct
 from deepcell.layers import FilterDetections
 from deepcell.layers import ImageNormalization2D, Location2D
 from deepcell.layers import Anchors, RegressBoxes, ClipBoxes
+from deepcell.layers import ConvGRU2D
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
 from deepcell.model_zoo.fpn import __create_semantic_head
 from deepcell.model_zoo.fpn import __create_pyramid_features
 from deepcell.utils.backbone_utils import get_backbone
 
+def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per_batch=1):
+    if mode == 'conv':
+        x = Conv3D(feature_size, 
+                    (frames_per_batch, 3, 3), 
+                    strides=(1,1,1),
+                    padding='same',
+                    )(feature)
+        x = BatchNormalization(axis=-1)(x)
+        x = Activation('relu')(x)
+    elif mode == 'lstm':
+        x = ConvLSTM2D(feature_size, 
+                       (3, 3), 
+                        padding='same',
+                        activation='relu',
+                        return_sequences=True)(feature)
+    elif mode == 'gru':
+        x = ConvGRU2D(feature_size,
+                        (3, 3),
+                        padding='same',
+                        activation='relu',
+                        return_sequences=True)(feature)
+
+    temporal_feature = feature + x     
+
+    return temporal_feature
 
 def default_classification_model(num_classes,
                                  num_anchors,
@@ -317,6 +343,7 @@ def retinanet(inputs,
               num_semantic_classes=[3],
               submodels=None,
               frames_per_batch=1,
+              temporal_mode=None,
               semantic_only=False,
               name='retinanet'):
     """Construct a RetinaNet model on top of a backbone.
@@ -377,6 +404,12 @@ def retinanet(inputs,
 
     # for the desired pyramid levels, run available submodels
     features = [pyramid_dict[key] for key in pyramid_levels]
+
+    if frames_per_batch > 1:
+        if temporal_mode in ['conv', 'lstm', 'gru']:
+            temporal_features = [__merge_temporal_features(feature, mode=temporal_mode) for feature in features]
+            features = temporal_features
+
     object_head = __build_pyramid(submodels, features)
 
     if panoptic:

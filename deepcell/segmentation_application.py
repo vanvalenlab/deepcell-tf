@@ -30,10 +30,32 @@ from __future__ import print_function
 from __future__ import division
 
 import os
-
 import numpy as np
+import tensorflow as tf
 
 from tensorflow.python.keras import backend as K
+from tensorflow.contrib import predictor
+
+class TFSavedModel(object):
+    def __init__(self,
+            model_path):
+        self.model = tf.compat.v2.keras.models.load_model(model_path)
+        self.predict_fn = predictor.from_saved_model(model_path)
+
+    def predict(self, X, batch_size=1):
+        output_keys = self.model.signatures['serving_default'].structured_outputs.keys()
+        output_keys = sorted(output_keys)
+        output_list = [[] for key in output_keys]
+        for i in range(0, X.shape[0], batch_size):
+            X_part = X[i:min(i+batch_size, X.shape[0])]
+            outputs = self.predict_fn({'image': X_part})
+            for key, o in zip(output_keys, output_list):
+                o.append(outputs[key])
+
+        output_list = [np.concatenate(o, axis=0) for o in output_list]
+
+        return output_list
+
 
 class SegmentationApplication(object):
     def __init__(self,
@@ -172,13 +194,17 @@ class SegmentationApplication(object):
         # Resize image if necessary
         
         # Preprocess image
-        image = self.preprocessing_fn(image)
+        if self.preprocessing_fn:
+            image = self.preprocessing_fn(image)
 
         # Tile images 
         tiles, tiles_info = self._tile_image(image)
 
         # Run images through model
         output_tiles = self.model.predict(tiles, batch_size=batch_size)
+
+        if not isinstance(output_tiles, list):
+            output_tiles = [output_tiles]
 
         # Untile images
         output_images = [self._untile_image(o, tiles_info) for o in output_tiles]

@@ -100,9 +100,9 @@ def stats_pixelbased(y_true, y_pred):
     pred = y_pred
     truth = y_true
 
-    if pred.sum() == 0 and truth.sum() == 0:
-        logging.warning('DICE score is technically 1.0, '
-                        'but prediction and truth arrays are empty. ')
+    # if pred.sum() == 0 and truth.sum() == 0:
+        # logging.warning('DICE score is technically 1.0, '
+                        # 'but prediction and truth arrays are empty. ')
 
     # Calculations for IOU
     intersection = np.logical_and(pred, truth)
@@ -223,11 +223,11 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
 
         # Check if either frame is empty before proceeding
         if self.n_true == 0:
-            logging.info('Ground truth frame is empty')
+            # logging.info('Ground truth frame is empty')
             self.gained_detections += self.n_pred
             self.empty_frame = 'n_true'
         elif self.n_pred == 0:
-            logging.info('Prediction frame is empty')
+            # logging.info('Prediction frame is empty')
             self.missed_detections += self.n_true
             self.empty_frame = 'n_pred'
         elif test is False:
