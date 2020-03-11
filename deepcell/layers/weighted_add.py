@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Layers to created weighted biFPNs"""
+"""WeightedAdd layers for BiFPN"""
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -31,41 +31,36 @@ from __future__ import division
 
 import numpy as np
 import tensorflow as tf
+
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import activations
-from tensorflow.python.keras import constraints
 from tensorflow.python.keras import initializers
-from tensorflow.python.keras import regularizers
-from tensorflow.python.keras.layers import Layer, InputSpec
-from tensorflow.python.keras.utils import conv_utils
+from tensorflow.python.keras.layers import Layer
 
 class WeightedAdd(Layer):
-	def __init__(self,
-				epsilon=1e-4,
-				**kwargs):
-		self.epsilon = epsilon
-		super(WeightedAdd, self).__init__(**kwargs)
+    def __init__(self, epsilon=1e-4, **kwargs):
+        super(WeightedAdd, self).__init__(**kwargs)
+        self.epsilon
 
-	def build(self, input_shape):
-		n_in = len(input_shape)
-		self.W = self.add_weight(name=self.name,
-								shape=(n_in, ),
-								initializer = initializers.constant(1/n_in),
-								trainable=True,
-								dtype = K.floatx())
+    def build(self, input_shape):
+        n_in = len(input_shape)
+        self.w = self.add_weight(name=self.name,
+                                shape=(n_in,),
+                                initializers = initializers.constant(1/n_in),
+                                trainable=True,
+                                dtype=K.floatx())
 
-	def call(self, inputs, **kwargs):
-		W = activations.relu(self.W)
-		x = tf.reduce_sum([W[i] * inputs[i] for i in range(len(inputs))], axis=0)
-		x = x / (tf.reduce_sum(W) + self.epsilon)
+    def call(self, inputs, **kwargs):
+        w = activations.relu(self.w)
+        x = tf.reduce_sum([w[i]* inputs[i] for i in range(len(inputs))], axis=0)
+        x = x / (tf.reduce_sum(w) + self.epsilon)
+        return x
 
-	def compute_output_shape(self, input_shape):
-		return input_shape[0]
+    def compute_output_shape(self, input_shape):
+        return tensor_shape.TensorShape(input_shape[0])
 
-	def get_config(self):
-		config = {
-			'epsilon': self.epsilon
-			}
+    def get_config(self):
+        config = {'epsilon': self.epsilon}
         base_config = super(WeightedAdd, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

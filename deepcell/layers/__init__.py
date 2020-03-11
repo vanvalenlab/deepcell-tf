@@ -39,6 +39,7 @@ from deepcell.layers import filter_detections
 from deepcell.layers import retinanet
 from deepcell.layers import upsample
 from deepcell.layers import tensor_compression
+from deepcell.layers import weighted_add
 
 from deepcell.layers.location import Location2D
 from deepcell.layers.location import Location3D

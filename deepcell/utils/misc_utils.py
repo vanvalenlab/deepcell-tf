@@ -57,5 +57,6 @@ def get_sorted_keys(dict_to_sort):
         list: list of sorted keys from dict_to_sort
     """
     sorted_keys = list(dict_to_sort.keys())
-    sorted_keys.sort(key=lambda x: int(x[1:]))
+    sorted_keys.sort(key=lambda x: int(re.findall(r'\d+', x)[0]))
+    # sorted_keys.sort(key=lambda x: int(x[1:]))
     return sorted_keys

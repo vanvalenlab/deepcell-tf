@@ -125,6 +125,10 @@ def create_pyramid_level(backbone_input,
         pyramid = Conv3D(feature_size, (1, 1, 1), strides=(1, 1, 1),
                          padding='same', name=reduced_name)(backbone_input)
 
+    # Add and then 3x3 conv
+    if addition_input is not None:
+        pyramid = Add(name=addition_name)([pyramid, addition_input])
+
     # Upsample pyramid input
     if upsamplelike_input is not None:
         # Pyramid construction only works for image sizes that
@@ -132,10 +136,6 @@ def create_pyramid_level(backbone_input,
         pyramid_upsample = upsampling(size=size, name=upsample_name)(pyramid)
     else:
         pyramid_upsample = None
-
-    # Add and then 3x3 conv
-    if addition_input is not None:
-        pyramid = Add(name=addition_name)([pyramid, addition_input])
 
     if ndim == 2:
         pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
@@ -479,8 +479,8 @@ def __create_semantic_head_prototype(pyramid_dict,
     pyramid_names.reverse()
     pyramid_features.reverse()
 
-    # semantic_features = []
-    # semantic_names = []
+    semantic_features = []
+    semantic_names = []
 
     # for N, P in zip(pyramid_names, pyramid_features):
 
