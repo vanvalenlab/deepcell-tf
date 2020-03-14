@@ -120,7 +120,7 @@ All rights reserved.
 
 ## License
 
-This software is licensed under a modified [APACHE2](https://github.com/vanvalenlab/kiosk/blob/master/LICENSE). See [LICENSE](https://github.com/vanvalenlab/kiosk/blob/master/LICENSE) for full details.
+This software is licensed under a modified [APACHE2](https://github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE). See [LICENSE](https://github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE) for full details.
 
 ## Trademarks
 
