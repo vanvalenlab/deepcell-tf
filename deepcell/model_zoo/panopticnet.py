@@ -33,7 +33,7 @@ import re
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D, TimeDistributed, ConvLSTM2D
+from tensorflow.python.keras.layers import Conv2D, Conv3D, DepthwiseConv2D, TimeDistributed, ConvLSTM2D
 from tensorflow.python.keras.layers import Input, Concatenate, Add
 from tensorflow.python.keras.layers import Permute, Reshape
 from tensorflow.python.keras.layers import Activation, Lambda, BatchNormalization, Softmax
@@ -598,7 +598,7 @@ def PanopticNet(backbone,
     ndim = 2 if frames_per_batch == 1 else 3
     pyramid_dict = create_pyramid_features(backbone_dict_reduced, ndim=ndim)
 
-    features = [pyramid_dict[key] for key in pyramid_levels]    
+    features = [pyramid_dict[key] for key in pyramid_levels]  
 
     if frames_per_batch > 1:
         if temporal_mode in ['conv', 'lstm', 'gru']:

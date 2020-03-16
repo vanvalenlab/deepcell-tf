@@ -38,6 +38,8 @@ from deepcell.utils.export_utils import export_model
 from deepcell.utils.train_utils import rate_scheduler, get_callbacks
 from deepcell.metrics import Metrics
 
+from tensorflow.python.compiler.tensorrt import trt_convert as trt
+
 class ModelTrainer(object):
     def __init__(self, 
                 model,
@@ -48,6 +50,8 @@ class ModelTrainer(object):
                 log_dir=None,
                 tfserving_path=None,
                 training_callbacks='default',
+                max_batch_size=256,
+                export_precisions = ['fp16'],
                 postprocessing_fn=None,
                 postprocessing_kwargs={},
                 predict_batch_size=4,
@@ -74,6 +78,10 @@ class ModelTrainer(object):
         self.postprocessing_fn = postprocessing_fn
         self.postprocessing_kwargs = postprocessing_kwargs
         self.predict_batch_size = predict_batch_size
+
+        # Add export infoprmation
+        self.max_batch_size = max_batch_size
+        self.export_precisions = export_precisions
 
         # Add directories for logging and model export
         if log_dir is None:
@@ -130,7 +138,8 @@ class ModelTrainer(object):
         epochs=self.n_epochs,
         validation_data=self.validation_generator,
         validation_steps=self.validation_steps_per_epoch,
-        callbacks=self.training_callbacks)
+        callbacks=self.training_callbacks,
+        verbose=2)
 
         self.trained = True
         self.loss_history = loss_history
@@ -172,6 +181,17 @@ class ModelTrainer(object):
     def _export_tf_serving(self):
         export_model(self.model, self.tfserving_path, model_version=self.model_version)
 
+        # Convert model to TensorRT with float16
+        if 'fp16' in self.export_precisions:
+            export_model_dir = os.path.join(self.tfserving_path, str(self.model_version))
+            export_model_dir_fp16 = os.path.join(self.tfserving_path + '_fp16', str(self.model_version))
+
+            converter = trt.TrtGraphConverter(input_saved_model_dir=export_model_dir,
+                                            max_batch_size=self.max_batch_size,
+                                            precision_mode='fp16')
+            converter.convert()
+            converter.save(export_model_dir_fp16)
+
         return None
 
     def create_model(self, export_serving=False, export_lite=False):
@@ -196,6 +216,10 @@ class ModelTrainer(object):
         model_name = os.path.join(self.model_path, self.model_name + '_' + self.model_hash + '.h5')
         self.model.save(model_name)
 
+        # Save loss history
+        loss_name = os.path.join(self.model_path, self.model_name + '_loss_' + self.model_hash + '.npz')
+        np.savez(loss_name, loss_history=self.loss_history.history)
+
         # Save metadata (training and dataset) and benchmarks
         metadata = {}
         metadata['model_hash'] = self.model_hash
@@ -213,6 +237,6 @@ class ModelTrainer(object):
 
         # Export tf serving model
         if export_serving:
-            self._export_tf_serving(self.model, self.tfserving_path, model_version=self.model_version)
+            self._export_tf_serving()
 
         return None

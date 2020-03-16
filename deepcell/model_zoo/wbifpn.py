@@ -47,21 +47,21 @@ from deepcell.layers import TensorProduct, ImageNormalization2D
 from deepcell.utils.backbone_utils import get_backbone
 from deepcell.utils.misc_utils import get_sorted_keys
 
-def ConvBlock(x, feature_size=64, kernel_size=1, strides=1, name='conv_block'):
+def ConvBlock(feature, feature_size=64, kernel_size=1, strides=1, name='conv_block'):
     x = Conv2D(feature_size, kernel_size=kernel_size, 
                 strides=strides, 
                 padding='same', 
                 use_bias=False, 
-                name = '{}_conv'.format(name))(x)
+                name = '{}_conv'.format(name))(feature)
     x = BatchNormalization(axis=-1, name='{}_bn'.format(name))(x)
     x = Activation('relu', name='{}_relu'.format(name))(x)
     return x
 
-def DepthwiseConvBlock(x, kernel_size=3, strides=1, name='depthwise_conv_block'):
+def DepthwiseConvBlock(feature, kernel_size=3, strides=1, name='depthwise_conv_block'):
     x = DepthwiseConv2D(kernel_size=kernel_size, strides=strides, 
                             padding='same', 
                             use_bias=False, 
-                            name='{}_dconv'.format(name))(x)
+                            name='{}_dconv'.format(name))(feature)
     x = BatchNormalization(axis=-1, name='{}_bn'.format(name))(x)
     x = Activation('relu', name='{}_relu'.format(name))(x)
     return x
@@ -117,8 +117,11 @@ def __build_upsample(input_dict, index=0):
         level = int(re.findall(r'\d+', N)[0])
         p_in = inputs[i]
 
-        upsample_dict['P{}_U'.format(level+1)] = UpSampling2D()(inputs[i-1])
-        
+        if i == 1:
+            upsample_dict['P{}_U'.format(level+1)] = UpSampling2D()(inputs[i-1])
+        else:
+            upsample_dict['P{}_U'.format(level+1)] = UpSampling2D()(td_dict['P{}_td'.format(level+1)])
+
         td = Add()([upsample_dict['P{}_U'.format(level+1)], p_in])
         td = DepthwiseConvBlock(td, kernel_size=3,
                                     strides=1,
@@ -142,15 +145,15 @@ def __build_downsample(input_dict, td_dict, index=0):
 
         if i == 0:
             output_dict['P{}'.format(level)] = tds[i]
-            downsample_dict['P{}_D'.format(level)] = MaxPooling2D(strides=(2,2))(output_dict['P{}'.format(level)])
-        elif i < len(td_dict):
+            downsample_dict['P{}_D'.format(level)] = MaxPooling2D(strides=(2,2))(tds[i])
+        elif i < len(td_names):
             out = Add()([downsample_dict['P{}_D'.format(level-1)], td_dict['P{}_td'.format(level)], input_dict['P{}_in'.format(level)]])
             out = DepthwiseConvBlock(out, kernel_size=3, 
                                         strides=1,
                                         name='BiFPN_{}_D_P{}'.format(index, level))
             output_dict['P{}'.format(level)] = out
-            downsample_dict['P{}_D'.format(level)] = MaxPooling2D(strides=(2,2))(output_dict['P{}'.format(level)])
-        else:
+            downsample_dict['P{}_D'.format(level)] = MaxPooling2D(strides=(2,2))(out)
+        elif i == len(td_names):
             N = td_names[-1]
             level = int(re.findall(r'\d+', N)[0]) + 1
             out = Add()([downsample_dict['P{}_D'.format(level-1)], input_dict['P{}_in'.format(level)]])
@@ -161,23 +164,21 @@ def __build_downsample(input_dict, td_dict, index=0):
 
     return output_dict
 
-def __create_bifpn_features(feature_dict, feature_size=64, include_final_layers=True, index=0, ndim=2):
+def __create_bifpn_features(feature_dict, phi=1, feature_size=32, include_final_layers=False, ndim=2):
     acceptable_ndims = {2}
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 dimensional networks are supported')
 
-    input_dict = __build_inputs(feature_dict, 
-                            feature_size=feature_size, 
-                            include_final_layers=include_final_layers,
-                            index=index)
+    for index in range(phi):
+        input_dict = __build_inputs(feature_dict, 
+                                feature_size=feature_size, 
+                                include_final_layers=include_final_layers if index==0 else False,
+                                index=index)
 
-    td_dict = __build_upsample(input_dict, index=index)
+        td_dict = __build_upsample(input_dict, index=index)
 
-    pyramid_dict = __build_downsample(input_dict, td_dict, index=index)
+        feature_dict = __build_downsample(input_dict, td_dict, index=index)
 
-    print(input_dict.keys(), td_dict.keys(), pyramid_dict.keys())
-    print([input_dict[key].name for key in input_dict.keys()])
-    print([td_dict[key].name for key in td_dict.keys()])
-    print([pyramid_dict[key].name for key in pyramid_dict.keys()])
+    pyramid_dict = feature_dict
 
     return pyramid_dict
