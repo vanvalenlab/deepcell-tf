@@ -41,13 +41,13 @@ from tensorflow.python.keras.layers import Layer
 class WeightedAdd(Layer):
     def __init__(self, epsilon=1e-4, **kwargs):
         super(WeightedAdd, self).__init__(**kwargs)
-        self.epsilon
+        self.epsilon = epsilon
 
     def build(self, input_shape):
         n_in = len(input_shape)
         self.w = self.add_weight(name=self.name,
                                 shape=(n_in,),
-                                initializers = initializers.constant(1/n_in),
+                                initializer=initializers.constant(1/n_in),
                                 trainable=True,
                                 dtype=K.floatx())
 

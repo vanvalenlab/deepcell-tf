@@ -47,8 +47,7 @@ from deepcell.layers import ImageNormalization2D, Location2D
 from deepcell.layers import Anchors, RegressBoxes, ClipBoxes
 from deepcell.layers import UpsampleLike
 from deepcell.utils.retinanet_anchor_utils import AnchorParameters
-# from deepcell.model_zoo.fpn import __create_semantic_head
-# from deepcell.model_zoo.fpn import __create_pyramid_features
+
 from deepcell.utils.backbone_utils import get_backbone
 from deepcell.utils.misc_utils import get_sorted_keys
 
@@ -140,6 +139,8 @@ def create_pyramid_level(backbone_input,
     if ndim == 2:
         pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
                                padding='same', name=final_name)(pyramid)
+        # pyramid_final = DepthwiseConv2D((3,3), strides=(1,1), 
+        #                         padding='same', name=final_name)(pyramid)
     else:
         pyramid_final = Conv3D(feature_size, (1, 3, 3), strides=(1, 1, 1),
                                padding='same', name=final_name)(pyramid)

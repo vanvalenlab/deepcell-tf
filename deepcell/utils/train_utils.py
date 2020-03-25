@@ -72,7 +72,7 @@ def get_callbacks(model_path,
         cbs.append(
             callbacks.ReduceLROnPlateau(
                 monitor=monitor, factor=0.1,
-                patience=10, verbose=verbose,
+                patience=2, verbose=verbose,
                 mode='auto', min_delta=0.0001,
                 cooldown=0, min_lr=0)
         )

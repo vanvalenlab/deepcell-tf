@@ -122,7 +122,7 @@ def __build_upsample(input_dict, index=0):
         else:
             upsample_dict['P{}_U'.format(level+1)] = UpSampling2D()(td_dict['P{}_td'.format(level+1)])
 
-        td = Add()([upsample_dict['P{}_U'.format(level+1)], p_in])
+        td = WeightedAdd()([upsample_dict['P{}_U'.format(level+1)], p_in])
         td = DepthwiseConvBlock(td, kernel_size=3,
                                     strides=1,
                                     name='BiFPN_{}_U_P{}'.format(index, level))
@@ -147,7 +147,7 @@ def __build_downsample(input_dict, td_dict, index=0):
             output_dict['P{}'.format(level)] = tds[i]
             downsample_dict['P{}_D'.format(level)] = MaxPooling2D(strides=(2,2))(tds[i])
         elif i < len(td_names):
-            out = Add()([downsample_dict['P{}_D'.format(level-1)], td_dict['P{}_td'.format(level)], input_dict['P{}_in'.format(level)]])
+            out = WeightedAdd()([downsample_dict['P{}_D'.format(level-1)], td_dict['P{}_td'.format(level)], input_dict['P{}_in'.format(level)]])
             out = DepthwiseConvBlock(out, kernel_size=3, 
                                         strides=1,
                                         name='BiFPN_{}_D_P{}'.format(index, level))
@@ -156,7 +156,7 @@ def __build_downsample(input_dict, td_dict, index=0):
         elif i == len(td_names):
             N = td_names[-1]
             level = int(re.findall(r'\d+', N)[0]) + 1
-            out = Add()([downsample_dict['P{}_D'.format(level-1)], input_dict['P{}_in'.format(level)]])
+            out = WeightedAdd()([downsample_dict['P{}_D'.format(level-1)], input_dict['P{}_in'.format(level)]])
             out = DepthwiseConvBlock(out, kernel_size=3,
                                         strides=1,
                                         name='BiFPN_{}_D_P{}'.format(index, level))
@@ -164,7 +164,7 @@ def __build_downsample(input_dict, td_dict, index=0):
 
     return output_dict
 
-def __create_bifpn_features(feature_dict, phi=1, feature_size=32, include_final_layers=False, ndim=2):
+def __create_bifpn_features(feature_dict, phi=2, feature_size=64, include_final_layers=True, ndim=2):
     acceptable_ndims = {2}
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 dimensional networks are supported')
