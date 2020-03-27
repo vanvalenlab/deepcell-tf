@@ -84,7 +84,8 @@ def create_pyramid_level(backbone_input,
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
         raise ValueError(
-            'Upsample method not supported. Choose from [\'upsamplelike\',\'upsampling2d\',\'upsampling3d\']')
+            'Upsample method not supported. Choose from [\'upsamplelike\','
+            '\'upsampling2d\',\'upsampling3d\']')
 
     reduced_name = 'C{}_reduced'.format(level)
     upsample_name = 'P{}_upsampled'.format(level)
@@ -161,7 +162,8 @@ def __create_pyramid_features(backbone_dict,
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
         raise ValueError(
-            'Upsample method not supported. Choose from [\'upsamplelike\',\'upsampling2d\',\'upsampling3d\']')
+            'Upsample method not supported. Choose from [\'upsamplelike\','
+            '\'upsampling2d\',\'upsampling3d\']')
 
     # Get names of the backbone levels and place in ascending order
     backbone_names = get_sorted_keys(backbone_dict)
