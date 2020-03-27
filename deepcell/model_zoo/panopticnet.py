@@ -48,7 +48,27 @@ from deepcell.utils.misc_utils import get_sorted_keys
 
 
 def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per_batch=1):
-    if mode == 'conv':
+    """
+
+    Args:
+        feature: Input layer
+        mode (str, optional): Choose from {'conv','lstm','gru'}. Defaults to 'conv'.
+        feature_size (int, optional): Defaults to 256.
+        frames_per_batch (int, optional): Defaults to 1.
+
+    Raises:
+        ValueError: Mode not 'conv', 'lstm' or 'gru'
+
+    Returns:
+        Same as feature: Output of layer following merge of temporal features
+    """
+
+    acceptable_modes = {'conv', 'lstm', 'gru'}
+    if mode.lower() not in acceptable_modes:
+        raise ValueError('Mode {} not supported. Please choose from {}.'.format(
+            mode.lower(), str(acceptable_modes)))
+
+    if mode.lower() == 'conv':
         x = Conv3D(feature_size,
                    (frames_per_batch, 3, 3),
                    strides=(1, 1, 1),
@@ -56,13 +76,13 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per
                    )(feature)
         x = BatchNormalization(axis=-1)(x)
         x = Activation('relu')(x)
-    elif mode == 'lstm':
+    elif mode.lower() == 'lstm':
         x = ConvLSTM2D(feature_size,
                        (3, 3),
                        padding='same',
                        activation='relu',
                        return_sequences=True)(feature)
-    elif mode == 'gru':
+    elif mode.lower() == 'gru':
         x = ConvGRU2D(feature_size,
                       (3, 3),
                       padding='same',
@@ -299,10 +319,18 @@ def PanopticNet(backbone,
             backbone.  3 is the default for all current backbones.
         kwargs (dict): Other standard inputs for retinanet_mask.
 
+    Raises:
+        ValueError: temporal_ode not 'conv', 'lstm' or 'gru'
+
     Returns:
         tensorflow.keras.Model: Panoptic model with a backbone.
     """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+
+    acceptable_modes = {'conv', 'lstm', 'gru'}
+    if temporal_mode.lower() not in acceptable_modes:
+        raise ValueError('Mode {} not supported. Please choose from {}.'.format(
+            temporal_mode.lower(), str(acceptable_modes)))
 
     if inputs is None:
         if frames_per_batch > 1:
@@ -366,11 +394,10 @@ def PanopticNet(backbone,
     features = [pyramid_dict[key] for key in pyramid_levels]
 
     if frames_per_batch > 1:
-        if temporal_mode in ['conv', 'lstm', 'gru']:
-            temporal_features = [__merge_temporal_features(
-                feature, mode=temporal_mode) for feature in features]
-            for f, k in zip(temporal_features, pyramid_dict.keys()):
-                pyramid_dict[k] = f
+        temporal_features = [__merge_temporal_features(
+            feature, mode=temporal_mode) for feature in features]
+        for f, k in zip(temporal_features, pyramid_dict.keys()):
+            pyramid_dict[k] = f
 
     semantic_levels = [int(re.findall(r'\d+', k)[0]) for k in pyramid_dict]
     target_level = min(semantic_levels)
