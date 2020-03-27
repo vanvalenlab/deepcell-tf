@@ -217,7 +217,7 @@ def __create_semantic_head(pyramid_dict,
     # Final upsampling
     min_level = int(re.findall(r'\d+', semantic_names[-1])[0])
     n_upsample = min_level
-    x = semantic_upsample_prototype(semantic_sum, n_upsample, ndim=ndim)
+    x = semantic_upsample(semantic_sum, n_upsample, ndim=ndim)
 
     # First tensor product
     x = TensorProduct(n_dense)(x)
@@ -292,7 +292,7 @@ def PanopticNet(backbone,
     Returns:
         tensorflow.keras.Model: Panoptic model with a backbone.
     """
-        channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+    channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
 
     if inputs is None:
         if frames_per_batch > 1:
