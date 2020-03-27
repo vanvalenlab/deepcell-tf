@@ -34,17 +34,44 @@ import re
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D, Conv3D
+from tensorflow.python.keras.layers import TimeDistributed, ConvLSTM2D
 from tensorflow.python.keras.layers import Input, Concatenate, Add
 from tensorflow.python.keras.layers import Activation, BatchNormalization, Softmax
 from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
 
-from deepcell.layers import TensorProduct
+from deepcell.layers import TensorProduct, ConvGRU2D
 from deepcell.layers import ImageNormalization2D, Location2D
 from deepcell.layers import UpsampleLike
-# from deepcell.model_zoo.fpn import __create_semantic_head
 from deepcell.model_zoo.fpn import __create_pyramid_features
 from deepcell.utils.backbone_utils import get_backbone
 from deepcell.utils.misc_utils import get_sorted_keys
+
+
+def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per_batch=1):
+    if mode == 'conv':
+        x = Conv3D(feature_size,
+                   (frames_per_batch, 3, 3),
+                   strides=(1, 1, 1),
+                   padding='same',
+                   )(feature)
+        x = BatchNormalization(axis=-1)(x)
+        x = Activation('relu')(x)
+    elif mode == 'lstm':
+        x = ConvLSTM2D(feature_size,
+                       (3, 3),
+                       padding='same',
+                       activation='relu',
+                       return_sequences=True)(feature)
+    elif mode == 'gru':
+        x = ConvGRU2D(feature_size,
+                      (3, 3),
+                      padding='same',
+                      activation='relu',
+                      return_sequences=True)(feature)
+
+    temporal_feature = x
+
+    return temporal_feature
 
 
 def semantic_upsample(x, n_upsample, n_filters=64, ndim=2):
@@ -133,8 +160,7 @@ def semantic_prediction(semantic_names,
     # Final upsampling
     min_level = int(re.findall(r'\d+', semantic_names[-1])[0])
     n_upsample = min_level - target_level
-    x = semantic_upsample(semantic_sum, n_upsample,
-                          target=input_target, ndim=ndim)
+    x = semantic_upsample(semantic_sum, n_upsample, ndim=ndim)
 
     # First tensor product
     x = TensorProduct(n_dense)(x)
