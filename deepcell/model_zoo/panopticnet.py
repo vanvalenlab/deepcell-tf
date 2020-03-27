@@ -47,7 +47,7 @@ from deepcell.utils.backbone_utils import get_backbone
 from deepcell.utils.misc_utils import get_sorted_keys
 
 
-def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
+def semantic_upsample(x, n_upsample, n_filters=64, ndim=2):
     """
     Performs iterative rounds of 2x upsampling and
     convolutions with a 3x3 filter to remove aliasing effects
@@ -55,11 +55,8 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
     Args:
         x (tensor): The input tensor to be upsampled
         n_upsample (int): The number of 2x upsamplings
-        n_filters (int, optional): Defaults to 256. The number of filters for
+        n_filters (int, optional): Defaults to 64. The number of filters for
             the 3x3 convolution
-        target (tensor, optional): Defaults to None. A tensor with the target
-            shape. If included, then the final upsampling layer will reshape
-            to the target tensor's size
         ndim (int): The spatial dimensions of the input data.
             Default is 2, but it also works with 3
 
@@ -71,24 +68,17 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
         raise ValueError('Only 2 and 3 dimensional networks are supported')
 
     conv = Conv2D if ndim == 2 else Conv3D
+    conv_kernel = (3, 3) if ndim == 2 else (1, 3, 3)
     upsampling = UpSampling2D if ndim == 2 else UpSampling3D
-
-    for i in range(n_upsample):
-        x = conv(n_filters, 3, strides=1,
+    size = (2, 2) if ndim == 2 else (1, 2, 2)
+    if n_upsample > 0:
+        for i in range(n_upsample):
+            x = conv(n_filters, conv_kernel, strides=1,
+                     padding='same', data_format='channels_last')(x)
+            x = upsampling(size=size)(x)
+    else:
+        x = conv(n_filters, conv_kernel, strides=1,
                  padding='same', data_format='channels_last')(x)
-
-        if i == n_upsample - 1 and target is not None:
-            x = UpsampleLike()([x, target])
-        else:
-            x = upsampling(size=2)(x)
-
-    if n_upsample == 0:
-        x = conv(n_filters, 3, strides=1,
-                 padding='same', data_format='channels_last')(x)
-
-        if target is not None:
-            x = UpsampleLike()([x, target])
-
     return x
 
 
@@ -165,26 +155,38 @@ def semantic_prediction(semantic_names,
 
 
 def __create_semantic_head(pyramid_dict,
-                           input_target=None,
-                           target_level=2,
                            n_classes=3,
-                           n_filters=128,
+                           n_filters=64,
+                           n_dense=128,
                            semantic_id=0,
                            ndim=2,
+                           include_top=False,
+                           target_level=2,
                            **kwargs):
     """Creates a semantic head from a feature pyramid network.
 
     Args:
         pyramid_dict: dict of pyramid names and features
-        input_target (tensor): Defaults to None. Tensor with the input image.
-        target_level (int): Defaults to 2. Upsampling level.
-            Level 1 = 1/2^1 size, Level 2 = 1/2^2 size, Level 3 = 1/2^3 size, etc.
         n_classes (int): Defaults to 3.  The number of classes to be predicted
-        n_filters (int): Defaults to 128. The number of convolutional filters.
+        n_filters (int): Defaults to 64. The number of convolutional filters.
+        n_dense (int): Defaults to 128. Number of dense filters.
+        semantic_id (int): Defaults to 0.
+        ndim (int): Defaults to 2, 3d supported.
+        include_top (bool): Defaults to False.
+        target_level (int, optional): Defaults to 2. The level we need to reach.
+            Performs 2x upsampling until we're at the target level
 
     Returns:
         keras.layers.Layer: The semantic segmentation head
     """
+    if K.image_data_format() == 'channels_first':
+        channel_axis = 1
+    else:
+        channel_axis = -1
+
+    if n_classes == 1:
+        include_top = False
+
     # Get pyramid names and features into list form
     pyramid_names = get_sorted_keys(pyramid_dict)
     pyramid_features = [pyramid_dict[name] for name in pyramid_names]
@@ -196,31 +198,52 @@ def __create_semantic_head(pyramid_dict,
     semantic_features = []
     semantic_names = []
 
-    for N, P in zip(pyramid_names, pyramid_features):
-        # Get level and determine how much to upsample
-        level = int(re.findall(r'\d+', N)[0])
+    # for N, P in zip(pyramid_names, pyramid_features):
 
-        n_upsample = level - target_level
-        target = semantic_features[-1] if len(semantic_features) > 0 else None
+    #     # Get level and determine how much to upsample
+    #     level = int(re.findall(r'\d+', N)[0])
+    #     n_upsample = level - target_level
 
-        # Use semantic upsample to get semantic map
-        semantic_features.append(semantic_upsample(
-            P, n_upsample, n_filters=n_filters, target=target, ndim=ndim))
-        semantic_names.append('Q{}'.format(level))
+    #     # Use semantic upsample to get semantic map
+    #     semantic_features.append(semantic_upsample_prototype(P, n_upsample, ndim=ndim))
+    #     semantic_names.append('Q{}'.format(level))
 
-    # Combine all of the semantic features
-    x = semantic_prediction(semantic_names, semantic_features,
-                            n_classes=n_classes, input_target=input_target,
-                            semantic_id=semantic_id, ndim=ndim, **kwargs)
+    # # Add all the semantic layers
+    # semantic_sum = Add()(semantic_features)
+
+    semantic_sum = pyramid_features[-1]
+    semantic_names = pyramid_names[-1]
+
+    # Final upsampling
+    min_level = int(re.findall(r'\d+', semantic_names[-1])[0])
+    n_upsample = min_level
+    x = semantic_upsample_prototype(semantic_sum, n_upsample, ndim=ndim)
+
+    # First tensor product
+    x = TensorProduct(n_dense)(x)
+    x = BatchNormalization(axis=channel_axis)(x)
+    x = Activation('relu')(x)
+
+    # Apply tensor product and softmax layer
+    x = TensorProduct(n_classes)(x)
+
+    if include_top:
+        x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
+    else:
+        x = Activation('relu', name='semantic_{}'.format(semantic_id))(x)
 
     return x
 
 
 def PanopticNet(backbone,
                 input_shape,
+                inputs=None,
                 backbone_levels=['C3', 'C4', 'C5'],
+                pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
                 create_pyramid_features=__create_pyramid_features,
                 create_semantic_head=__create_semantic_head,
+                frames_per_batch=1,
+                temporal_mode=None,
                 num_semantic_heads=1,
                 num_semantic_classes=[3],
                 required_channels=3,
@@ -237,11 +260,16 @@ def PanopticNet(backbone,
         input_shape (tuple): The shape of the input data.
         backbone_levels (list): The backbone levels to be used.
             to create the feature pyramid. Defaults to ['C3', 'C4', 'C5'].
+        pyramid_levels (list): Pyramid levels to use. Defaults to ['P3','P4','P5','P6','P7']
         create_pyramid_features (function): Function to get the pyramid
             features from the backbone.
         create_semantic_head (function): Function to get to build a
             semantic head submodel.
-        norm_method (str): ImageNormalization mode to use.
+        frames_per_batch (int): Defaults to 1.
+        temporal_mode: Defaults to None.
+        num_semantic_heads (int): Defaults to 1.
+        num_semantic_classes (list): Defaults to [3].
+        norm_method (str): ImageNormalization mode to use. Defaults to 'whole_image'
         location (bool): Whether to include location data.
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
         pooling (str): optional pooling mode for feature extraction
@@ -264,19 +292,48 @@ def PanopticNet(backbone,
     Returns:
         tensorflow.keras.Model: Panoptic model with a backbone.
     """
-    inputs = Input(shape=input_shape)
-    norm = ImageNormalization2D(norm_method=norm_method)(inputs)
+        channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+
+    if inputs is None:
+        if frames_per_batch > 1:
+            if channel_axis == 1:
+                input_shape_with_time = tuple(
+                    [input_shape[0], frames_per_batch] + list(input_shape)[1:])
+            else:
+                input_shape_with_time = tuple(
+                    [frames_per_batch] + list(input_shape))
+            inputs = Input(shape=input_shape_with_time)
+        else:
+            inputs = Input(shape=input_shape)
+
+    # force the channel size for backbone input to be `required_channels`
+    if norm_method is None:
+        norm = inputs
+    else:
+        if frames_per_batch > 1:
+            norm = TimeDistributed(ImageNormalization2D(norm_method=norm_method))(inputs)
+        else:
+            norm = ImageNormalization2D(norm_method=norm_method)(inputs)
+
     if location:
-        loc = Location2D(in_shape=input_shape)(norm)
-        concat = Concatenate(axis=-1)([norm, loc])
+        if frames_per_batch > 1:
+            # TODO: TimeDistributed is incompatible with channels_first
+            loc = TimeDistributed(Location2D(in_shape=input_shape))(norm)
+        else:
+            loc = Location2D(in_shape=input_shape)(norm)
+        concat = Concatenate(axis=channel_axis)([norm, loc])
     else:
         concat = norm
 
-    fixed_inputs = TensorProduct(required_channels)(concat)
+    if frames_per_batch > 1:
+        fixed_inputs = TimeDistributed(TensorProduct(required_channels))(concat)
+    else:
+        fixed_inputs = TensorProduct(required_channels)(concat)
 
     # force the input shape
+    axis = 0 if K.image_data_format() == 'channels_first' else -1
     fixed_input_shape = list(input_shape)
-    fixed_input_shape[-1] = required_channels
+    fixed_input_shape[axis] = required_channels
     fixed_input_shape = tuple(fixed_input_shape)
 
     model_kwargs = {
@@ -288,14 +345,22 @@ def PanopticNet(backbone,
 
     _, backbone_dict = get_backbone(backbone, fixed_inputs,
                                     use_imagenet=use_imagenet,
-                                    frames_per_batch=1,
+                                    frames_per_batch=frames_per_batch,
                                     return_dict=True, **model_kwargs)
+
     backbone_dict_reduced = {k: backbone_dict[k] for k in backbone_dict
                              if k in backbone_levels}
+    ndim = 2 if frames_per_batch == 1 else 3
+    pyramid_dict = create_pyramid_features(backbone_dict_reduced, ndim=ndim)
 
-    pyramid_dict = create_pyramid_features(backbone_dict_reduced,
-                                           upsample_type='upsampling2d',
-                                           ndim=2)
+    features = [pyramid_dict[key] for key in pyramid_levels]
+
+    if frames_per_batch > 1:
+        if temporal_mode in ['conv', 'lstm', 'gru']:
+            temporal_features = [__merge_temporal_features(
+                feature, mode=temporal_mode) for feature in features]
+            for f, k in zip(temporal_features, pyramid_dict.keys()):
+                pyramid_dict[k] = f
 
     semantic_levels = [int(re.findall(r'\d+', k)[0]) for k in pyramid_dict]
     target_level = min(semantic_levels)
@@ -305,7 +370,9 @@ def PanopticNet(backbone,
         semantic_head_list.append(create_semantic_head(
             pyramid_dict, n_classes=num_semantic_classes[i],
             input_target=inputs, target_level=target_level,
-            semantic_id=i, ndim=2, **kwargs))
+            semantic_id=i, ndim=ndim, **kwargs))
 
-    model = Model(inputs=inputs, outputs=semantic_head_list, name=name)
+    outputs = semantic_head_list
+
+    model = Model(inputs=inputs, outputs=outputs, name=name)
     return model
