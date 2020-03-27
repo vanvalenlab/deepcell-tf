@@ -293,7 +293,9 @@ def PanopticNet(backbone,
     backbone_dict_reduced = {k: backbone_dict[k] for k in backbone_dict
                              if k in backbone_levels}
 
-    pyramid_dict = create_pyramid_features(backbone_dict_reduced, ndim=2)
+    pyramid_dict = create_pyramid_features(backbone_dict_reduced,
+                                           upsample_type='upsampling2d',
+                                           ndim=2)
 
     semantic_levels = [int(re.findall(r'\d+', k)[0]) for k in pyramid_dict]
     target_level = min(semantic_levels)
