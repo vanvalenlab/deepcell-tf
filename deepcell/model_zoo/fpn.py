@@ -62,7 +62,7 @@ def create_pyramid_level(backbone_input,
         addition_input (layer): Optional layer to add to
             pyramid layer after convolution and upsampling.
         upsample_type (str, optional): Choice of upsampling methods
-            from ['upsamplelike','upsampling2d'], defaults to 'upsamplelike'.
+            from ['upsamplelike','upsampling2d','upsampling3d'], defaults to 'upsamplelike'.
         level (int): Level to use in layer names, defaults to 5.
         feature_size (int):Number of filters for
             convolutional layer, defaults to 256.
@@ -74,17 +74,17 @@ def create_pyramid_level(backbone_input,
 
     Raises:
         ValueError: ndim is not 2 or 3
-        ValueError: upsample_type not ['upsamplelike','upsampling2d']
+        ValueError: upsample_type not ['upsamplelike','upsampling2d','upsampling3d']
     """
 
     acceptable_ndims = {2, 3}
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
 
-    acceptable_upsample = {'upsamplelike', 'upsampling2d'}
+    acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
         raise ValueError(
-            'Upsample method not supported. Choose from [\'upsamplelike\',\'upsampling2d\']')
+            'Upsample method not supported. Choose from [\'upsamplelike\',\'upsampling2d\',\'upsampling3d\']')
 
     reduced_name = 'C{}_reduced'.format(level)
     upsample_name = 'P{}_upsampled'.format(level)
@@ -102,12 +102,6 @@ def create_pyramid_level(backbone_input,
     # Add and then 3x3 conv
     if addition_input is not None:
         pyramid = Add(name=addition_name)([pyramid, addition_input])
-
-# Select appropriate upsample based on upsample_type and ndim
-    if upsample_type == 'upsamplelike':
-        upsampling = UpsampleLike
-    else:
-        upsampling = UpSampling2D if ndim == 2 else UpSampling3D
 
     # Upsample pyramid input
     if upsamplelike_input is not None:
@@ -142,7 +136,7 @@ def __create_pyramid_features(backbone_dict,
         backbone_dict (dictionary): A dictionary of the backbone layers, with
             the names as keys, e.g. {'C0': C0, 'C1': C1, 'C2': C2, ...}
         upsample_type (str, optional): Choice of upsampling methods
-            from ['upsamplelike','upsamling2d'], defaults to 'upsamplelike'.
+            from ['upsamplelike','upsamling2d','upsampling3d'], defaults to 'upsamplelike'.
         feature_size (int): Defaults to 256. The feature size to use
             for the resulting feature levels.
         include_final_layers (bool): Add two coarser pyramid levels
@@ -157,17 +151,17 @@ def __create_pyramid_features(backbone_dict,
 
     Raises:
         ValueError: ndim is not 2 or 3
-        ValueError: upsample_type not ['upsamplelike','upsampling2d']
+        ValueError: upsample_type not ['upsamplelike','upsampling2d','upsampling3d']
     """
 
     acceptable_ndims = [2, 3]
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
 
-    acceptable_upsample = {'upsamplelike', 'upsampling2d'}
+    acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
         raise ValueError(
-            'Upsample method not supported. Choose from [\'upsamplelike\',\'upsampling2d\']')
+            'Upsample method not supported. Choose from [\'upsamplelike\',\'upsampling2d\',\'upsampling3d\']')
 
     # Get names of the backbone levels and place in ascending order
     backbone_names = get_sorted_keys(backbone_dict)
