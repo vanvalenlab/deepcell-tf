@@ -157,7 +157,6 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
     Warning:
         Position indicies are not currently collected appropriately
     """
-    # TODO: Implement recording of object indices for each error group
     def __init__(self,
                  y_true,
                  y_pred,
@@ -422,8 +421,9 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             # Get the highest degree node
             k = max(dict(g.degree).items(), key=operator.itemgetter(1))[0]
 
-            # Map index back to original cost matrix
-            index = int(k.split('_')[-1])
+            # Map index back to original cost matrix, adjust for 1-based indexing in labels
+            index = int(k.split('_')[-1]) + 1
+            print("index is now {}".format(index))
             # Process degree 0 nodes
             if g.degree[k] == 0:
                 if 'pred' in k:
@@ -436,7 +436,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             # Process degree 1 nodes
             if g.degree[k] == 1:
                 for node in g.nodes:
-                    node_index = int(node.split('_')[-1])
+                    node_index = int(node.split('_')[-1]) + 1
                     if 'pred' in node:
                         self.gained_detections += 1
                         self.gained_indices['y_pred'].append(node_index)
@@ -458,7 +458,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                     if 'pred' in node_type:
                         self.merge += 1
                         self.missed_det_from_merge += len(nodes) - 2
-                        merge_indices = [int(node.split('_')[-1])
+                        merge_indices = [int(node.split('_')[-1]) + 1
                                          for node in nodes if 'true' in node]
                         self.merge_indices['y_true'] += merge_indices
                     # Check for splits
@@ -471,8 +471,8 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                 # then we have a catastrophe
                 else:
                     self.catastrophe += 1
-                    true_indices = [int(node.split('_')[-1]) for node in nodes if 'true' in node]
-                    pred_indices = [int(node.split('_')[-1]) for node in nodes if 'pred' in node]
+                    true_indices = [int(node.split('_')[-1]) + 1 for node in nodes if 'true' in node]
+                    pred_indices = [int(node.split('_')[-1]) + 1 for node in nodes if 'pred' in node]
 
                     self.true_det_in_catastrophe = len(true_indices)
                     self.pred_det_in_catastrophe = len(pred_indices)
@@ -499,7 +499,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             split_label_image = np.zeros_like(self.y_true)
             for l in self.split_indices['y_true']:
                 split_label_image[self.y_true == l] = l
-            self.split_props = regionprops(merge_label_image)
+            self.split_props = regionprops(split_label_image)
 
     def print_report(self):
         """Print report of error types and frequency
@@ -542,7 +542,22 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe']
         df[col] = df[col].astype('int')
 
+        print("merge indices are {}".format(self.merge_indices["y_true"]))
+        print("split_indices are {}".format(self.split_indices["y_true"]))
         return df
+
+    def save_error_ids(self):
+        """Saves the ids of cells in each error category for subsequent visualization
+
+        Returns:
+            error_dict: dictionary containing {category_name: id list} pairs
+        """
+
+        error_dict = {"splits": self.split_indices, "merges": self.merge_indices, "gains": self.gained_indices,
+                      "misses": self.missed_indices, "catastrophes": self.catastrophe_indices,
+                      "correct": self.correct_indices}
+
+        return error_dict
 
 
 def to_precision(x, p):
@@ -739,6 +754,7 @@ class Metrics(object):
             y_pred (numpy.array): Labeled prediction mask
         """
         self.stats = pd.DataFrame()
+        self.label_ids = []
 
         for i in range(y_true.shape[0]):
             o = ObjectAccuracy(y_true[i],
@@ -747,6 +763,8 @@ class Metrics(object):
                                cutoff2=self.cutoff2,
                                seg=self.seg)
             self.stats = self.stats.append(o.save_to_dataframe())
+            id_dict = o.save_error_ids()
+            self.label_ids.append(id_dict)
             if i % 500 == 0:
                 logging.info('{} samples processed'.format(i))
 
@@ -768,6 +786,7 @@ class Metrics(object):
                 ))
 
         self.print_object_report()
+        return self.label_ids
 
     def print_object_report(self):
         """Print neat report of object based statistics
