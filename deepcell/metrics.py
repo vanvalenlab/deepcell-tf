@@ -1015,10 +1015,12 @@ def plot_errors(y_true, y_pred, error_dict):
 
     plotting_tif = np.zeros_like(y_true)
 
+    # TODO: decide what to do about sequentially relabeled cells?
     # erode edges for easier visualization of adjacent cells
     y_true = erode_edges(y_true, 1)
+    y_true, _, _ = relabel_sequential(y_true)
     y_pred = erode_edges(y_pred, 1)
-
+    y_pred, _, _ = relabel_sequential(y_pred)
     # gained detections are tracked with predicted labels
     gains = error_dict.pop("gains")["y_pred"]
     plotting_tif[np.isin(y_pred, gains)] = 1
@@ -1035,9 +1037,10 @@ def plot_errors(y_true, y_pred, error_dict):
 
     fig, ax = plt.subplots(nrows=1, ncols=1)
     mat = ax.imshow(plotting_tif, cmap=cmap, vmin=np.min(plotting_tif) - .5,
-                           vmax=np.max(plotting_tif) + .5)
+                    vmax=np.max(plotting_tif) + .5)
 
     # tell the colorbar to tick at integers
     cbar = fig.colorbar(mat, ticks=np.arange(np.min(plotting_tif), np.max(plotting_tif) + 1))
-    cbar.ax.set_yticklabels(["Background", "gains", "splits", "merges", "misses", "catastrophes", "correct"])
+    cbar.ax.set_yticklabels(["Background", "gains", "splits", "merges",
+                             "misses", "catastrophes", "correct"])
     fig.tight_layout()
