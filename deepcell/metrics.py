@@ -55,7 +55,8 @@ import networkx as nx
 
 from scipy.optimize import linear_sum_assignment
 
-import skimage.io
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 from skimage.measure import regionprops
 from skimage.segmentation import relabel_sequential
 from skimage.external.tifffile import TiffFile
@@ -63,6 +64,7 @@ from sklearn.metrics import confusion_matrix
 from tensorflow.python.platform import tf_logging as logging
 
 from deepcell.utils.compute_overlap import compute_overlap
+from deepcell_toolbox import erode_edges
 
 
 def stats_pixelbased(y_true, y_pred):
@@ -470,8 +472,10 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                 # then we have a catastrophe
                 else:
                     self.catastrophe += 1
-                    true_indices = [int(node.split('_')[-1]) + 1 for node in nodes if 'true' in node]
-                    pred_indices = [int(node.split('_')[-1]) + 1 for node in nodes if 'pred' in node]
+                    true_indices = [int(node.split('_')[-1]) + 1
+                                    for node in nodes if 'true' in node]
+                    pred_indices = [int(node.split('_')[-1]) + 1
+                                    for node in nodes if 'pred' in node]
 
                     self.true_det_in_catastrophe = len(true_indices)
                     self.pred_det_in_catastrophe = len(pred_indices)
@@ -550,8 +554,9 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             error_dict: dictionary containing {category_name: id list} pairs
         """
 
-        error_dict = {"splits": self.split_indices, "merges": self.merge_indices, "gains": self.gained_indices,
-                      "misses": self.missed_indices, "catastrophes": self.catastrophe_indices,
+        error_dict = {"splits": self.split_indices, "merges": self.merge_indices,
+                      "gains": self.gained_indices, "misses": self.missed_indices,
+                      "catastrophes": self.catastrophe_indices,
                       "correct": self.correct_indices}
 
         return error_dict
@@ -750,6 +755,10 @@ class Metrics(object):
             y_true (numpy.array): Labeled ground truth annotations
             y_pred (numpy.array): Labeled prediction mask
         """
+
+        if len(y_true.shape) < 3:
+            raise ValueError("Invalid input dimensions: must be at least 3D tensor")
+
         self.stats = pd.DataFrame()
         self.label_ids = []
 
@@ -998,3 +1007,37 @@ def match_nodes(gt, res):
             iou[frame, iou_gt_idx, iou_res_idx] = intersection.sum() / union.sum()
 
     return iou
+
+
+def plot_errors(y_true, y_pred, error_dict):
+    """Plots the errors identified from linear assignment code
+    """
+
+    plotting_tif = np.zeros_like(y_true)
+
+    # erode edges for easier visualization of adjacent cells
+    y_true = erode_edges(y_true, 1)
+    y_pred = erode_edges(y_pred, 1)
+
+    # gained detections are tracked with predicted labels
+    gains = error_dict.pop("gains")["y_pred"]
+    plotting_tif[np.isin(y_pred, gains)] = 1
+
+    # all other events are tracked with true labels
+    category_id = 2
+    for key in error_dict.keys():
+        labels = error_dict[key]["y_true"]
+        plotting_tif[np.isin(y_true, labels)] = category_id
+        category_id += 1
+
+    plotting_colors = ['Black', 'Pink', 'Blue', 'Green', 'tan', 'Red', 'Grey']
+    cmap = mpl.colors.ListedColormap(plotting_colors)
+
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    mat = ax.imshow(plotting_tif, cmap=cmap, vmin=np.min(plotting_tif) - .5,
+                           vmax=np.max(plotting_tif) + .5)
+
+    # tell the colorbar to tick at integers
+    cbar = fig.colorbar(mat, ticks=np.arange(np.min(plotting_tif), np.max(plotting_tif) + 1))
+    cbar.ax.set_yticklabels(["Background", "gains", "splits", "merges", "misses", "catastrophes", "correct"])
+    fig.tight_layout()

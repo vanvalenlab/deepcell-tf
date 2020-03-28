@@ -39,8 +39,7 @@ from skimage.measure import label
 from tensorflow.python.platform import test
 
 from deepcell import metrics
-import importlib
-importlib.reload(metrics)
+
 
 def _get_image(img_h=300, img_w=300):
     bias = np.random.rand(img_w, img_h) * 64
