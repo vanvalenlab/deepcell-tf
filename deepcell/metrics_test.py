@@ -39,7 +39,8 @@ from skimage.measure import label
 from tensorflow.python.platform import test
 
 from deepcell import metrics
-
+import importlib
+importlib.reload(metrics)
 
 def _get_image(img_h=300, img_w=300):
     bias = np.random.rand(img_w, img_h) * 64
@@ -83,8 +84,8 @@ def _generate_df():
 
 def _sample1(w, h, imw, imh, merge):
     """Basic two cell merge/split"""
-    x = np.random.randint(0, imw - w * 2)
-    y = np.random.randint(0, imh - h * 2)
+    x = np.random.randint(2, imw - w * 2)
+    y = np.random.randint(2, imh - h * 2)
 
     im = np.zeros((imw, imh))
     im[0:2, 0:2] = 1
@@ -495,6 +496,21 @@ class TestObjectAccuracy(test.TestCase):
         # Test for catastrophic errors
         y_true, y_pred = _sample_catastrophe(10, 10, 30, 30)
         _ = metrics.ObjectAccuracy(y_true, y_pred)
+
+    def test_save_error_ids(self):
+        # cell 1 in assigned correctly, cells 2 and 3 have been merged
+        y_true, y_pred = _sample1(10, 10, 30, 30, merge=True)
+        o = metrics.ObjectAccuracy(y_true, y_pred)
+        label_dict = o.save_error_ids()
+        assert label_dict["correct"]["y_true"] == [1]
+        assert label_dict["merges"]["y_true"] == [2, 3]
+
+        # cell 1 in assigned correctly, cell 2 has been split
+        y_true, y_pred = _sample1(10, 10, 30, 30, merge=False)
+        o = metrics.ObjectAccuracy(y_true, y_pred)
+        label_dict = o.save_error_ids()
+        assert label_dict["correct"]["y_true"] == [1]
+        assert label_dict["splits"]["y_true"] == [2]
 
     def test_optional_outputs(self):
         y_true, y_pred = _sample1(10, 10, 30, 30, True)

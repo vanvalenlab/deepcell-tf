@@ -338,8 +338,8 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         # Identify direct matches as true positives
         correct_index = np.where(self.cm_res[:self.n_true, :self.n_pred] == 1)
         self.correct_detections += len(correct_index[0])
-        self.correct_indices['y_true'].append(correct_index[0])
-        self.correct_indices['y_pred'].append(correct_index[1])
+        self.correct_indices['y_true'].append(correct_index[0] + 1)
+        self.correct_indices['y_pred'].append(correct_index[1] + 1)
 
         # Calc seg score for true positives if requested
         if self.seg is True:
@@ -423,7 +423,6 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
 
             # Map index back to original cost matrix, adjust for 1-based indexing in labels
             index = int(k.split('_')[-1]) + 1
-            print("index is now {}".format(index))
             # Process degree 0 nodes
             if g.degree[k] == 0:
                 if 'pred' in k:
@@ -542,8 +541,6 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe']
         df[col] = df[col].astype('int')
 
-        print("merge indices are {}".format(self.merge_indices["y_true"]))
-        print("split_indices are {}".format(self.split_indices["y_true"]))
         return df
 
     def save_error_ids(self):
