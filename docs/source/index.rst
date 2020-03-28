@@ -1,24 +1,26 @@
-.. DeepCell documentation master file
+.. _index:
 
-Home
-########################################################
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Start Here:
+
+   Training-Segmentation
+   Training-Tracking
 
 .. toctree::
    :maxdepth: 2
-   :caption: Start Here:
-   
-   readme_link
+   :hidden:
+   :caption: Deepcell API:
+
+   API/deepcell
+
+.. mdinclude:: ../../README.md
 
 For more information on deploying DeepCell in the cloud:
 ---------------------------------------------------------
 
-:doc:`Refer to the DeepCell Kiosk documentation <kiosk:readme_link>`
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Project Documentation:
-
-   modules
+:doc:`Refer to the DeepCell Kiosk documentation <kiosk:index>`
 
 
 
