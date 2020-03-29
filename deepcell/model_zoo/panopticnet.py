@@ -48,27 +48,33 @@ from deepcell.utils.misc_utils import get_sorted_keys
 
 
 def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per_batch=1):
-    """
+    """ Merges feature with its temporal residual through addition.
+    Input feature (x) --> Temporal convolution* --> Residual feature (x')
+    *Type of temporal convolution specified by "mode" argument
+    Output: y = x + x'
 
     Args:
         feature: Input layer
-        mode (str, optional): Choose from {'conv','lstm','gru'}. Defaults to 'conv'.
+        mode (str, optional): Mode of temporal convolution. Choose from {'conv','lstm','gru', None}
+            Defaults to 'conv'.
         feature_size (int, optional): Defaults to 256.
         frames_per_batch (int, optional): Defaults to 1.
 
     Raises:
-        ValueError: Mode not 'conv', 'lstm' or 'gru'
+        ValueError: Mode not 'conv', 'lstm', 'gru' or None
 
     Returns:
-        Same as feature: Output of layer following merge of temporal features
+        Input feature merged with its residual from a temporal convolution.
+            If mode=None, the output is exactly the input.
     """
 
-    acceptable_modes = {'conv', 'lstm', 'gru'}
-    if mode.lower() not in acceptable_modes:
+    acceptable_modes = {'conv', 'lstm', 'gru', 'None'}
+    mode = str(mode).lower()
+    if mode not in acceptable_modes:
         raise ValueError('Mode {} not supported. Please choose from {}.'.format(
-            mode.lower(), str(acceptable_modes)))
+            mode, str(acceptable_modes)))
 
-    if mode.lower() == 'conv':
+    if mode == 'conv':
         x = Conv3D(feature_size,
                    (frames_per_batch, 3, 3),
                    strides=(1, 1, 1),
@@ -76,18 +82,20 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per
                    )(feature)
         x = BatchNormalization(axis=-1)(x)
         x = Activation('relu')(x)
-    elif mode.lower() == 'lstm':
+    elif mode == 'lstm':
         x = ConvLSTM2D(feature_size,
                        (3, 3),
                        padding='same',
                        activation='relu',
                        return_sequences=True)(feature)
-    elif mode.lower() == 'gru':
+    elif mode == 'gru':
         x = ConvGRU2D(feature_size,
                       (3, 3),
                       padding='same',
                       activation='relu',
                       return_sequences=True)(feature)
+    else:
+        x = feature
 
     temporal_feature = x
 
@@ -95,8 +103,7 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per
 
 
 def semantic_upsample(x, n_upsample, n_filters=64, ndim=2):
-    """
-    Performs iterative rounds of 2x upsampling and
+    """Performs iterative rounds of 2x upsampling and
     convolutions with a 3x3 filter to remove aliasing effects
 
     Args:
@@ -106,6 +113,9 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2):
             the 3x3 convolution
         ndim (int): The spatial dimensions of the input data.
             Default is 2, but it also works with 3
+
+    Raises:
+        ValueError: ndim is not 2 or 3
 
     Returns:
         tensor: The upsampled tensor
@@ -320,13 +330,14 @@ def PanopticNet(backbone,
         kwargs (dict): Other standard inputs for retinanet_mask.
 
     Raises:
-        ValueError: temporal_ode not 'conv', 'lstm' or 'gru'
+        ValueError: temporal_mode not 'conv', 'lstm', 'gru'  or None
 
     Returns:
         tensorflow.keras.Model: Panoptic model with a backbone.
     """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
 
+    # Check input to
     acceptable_modes = {'conv', 'lstm', 'gru'}
     if temporal_mode.lower() not in acceptable_modes:
         raise ValueError('Mode {} not supported. Please choose from {}.'.format(
