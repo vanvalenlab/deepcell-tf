@@ -502,7 +502,7 @@ class TestObjectAccuracy(test.TestCase):
         o = metrics.ObjectAccuracy(y_true, y_pred)
         label_dict = o.save_error_ids()
         assert label_dict["correct"]["y_true"] == [1]
-        assert label_dict["merges"]["y_true"] == [2, 3]
+        assert set(label_dict["merges"]["y_true"]) == {2, 3}
 
         # cell 1 in assigned correctly, cell 2 has been split
         y_true, y_pred = _sample1(10, 10, 30, 30, merge=False)
