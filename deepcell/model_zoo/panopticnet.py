@@ -337,11 +337,12 @@ def PanopticNet(backbone,
     """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
 
-    # Check input to
-    acceptable_modes = {'conv', 'lstm', 'gru'}
-    if temporal_mode.lower() not in acceptable_modes:
+    # Check input to __merge_temporal_features
+    acceptable_modes = {'conv', 'lstm', 'gru', 'None'}
+    temporal_mode = str(temporal_mode).lower()
+    if temporal_mode not in acceptable_modes:
         raise ValueError('Mode {} not supported. Please choose from {}.'.format(
-            temporal_mode.lower(), str(acceptable_modes)))
+            temporal_mode, str(acceptable_modes)))
 
     if inputs is None:
         if frames_per_batch > 1:
