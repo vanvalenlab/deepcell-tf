@@ -148,51 +148,6 @@ class TransformUtilsTest(test.TestCase):
                     pw_img_dil[..., 0].sum() + pw_img_dil[..., 1].sum(),
                     pw_img[..., 0].sum() + pw_img[..., 1].sum())
 
-    def test_erode_edges_2d(self):
-        for img in _generate_test_masks():
-            img = label(img)
-            img = np.squeeze(img)
-
-            erode_0 = transform_utils.erode_edges(img, erosion_width=0)
-            erode_1 = transform_utils.erode_edges(img, erosion_width=1)
-            erode_2 = transform_utils.erode_edges(img, erosion_width=2)
-
-            self.assertEqual(img.shape, erode_0.shape)
-            self.assertEqual(erode_0.shape, erode_1.shape)
-            self.assertEqual(erode_1.shape, erode_2.shape)
-            self.assertAllEqual(erode_0, img)
-            self.assertGreater(np.sum(erode_0), np.sum(erode_1))
-            self.assertGreater(np.sum(erode_1), np.sum(erode_2))
-
-            # test too few dims
-            with self.assertRaises(ValueError):
-                erode_1 = transform_utils.erode_edges(img[0], erosion_width=1)
-
-    def test_erode_edges_3d(self):
-        mask_stack = np.array(_generate_test_masks())
-        unique = np.zeros(mask_stack.shape)
-
-        for i, mask in enumerate(_generate_test_masks()):
-            unique[i] = label(mask)
-
-        unique = np.squeeze(unique)
-
-        erode_0 = transform_utils.erode_edges(unique, erosion_width=0)
-        erode_1 = transform_utils.erode_edges(unique, erosion_width=1)
-        erode_2 = transform_utils.erode_edges(unique, erosion_width=2)
-
-        self.assertEqual(unique.shape, erode_0.shape)
-        self.assertEqual(erode_0.shape, erode_1.shape)
-        self.assertEqual(erode_1.shape, erode_2.shape)
-        self.assertAllEqual(erode_0, unique)
-        self.assertGreater(np.sum(erode_0), np.sum(erode_1))
-        self.assertGreater(np.sum(erode_1), np.sum(erode_2))
-
-        # test too many dims
-        with self.assertRaises(ValueError):
-            unique = np.expand_dims(unique, axis=-1)
-            erode_1 = transform_utils.erode_edges(unique, erosion_width=1)
-
     def test_distance_transform_3d(self):
         mask_stack = np.array(_generate_test_masks())
         unique = np.zeros(mask_stack.shape)
@@ -256,14 +211,75 @@ class TransformUtilsTest(test.TestCase):
             self.assertEqual(np.expand_dims(distance, axis=1).shape, img.shape)
 
     def test_centroid_weighted_distance_transform_2d(self):
-        centroid_dist = transform_utils.centroid_weighted_distance_transform_2d
         for img in _generate_test_masks():
             K.set_image_data_format('channels_last')
-            dist_x, dist_y = centroid_dist(img)
+            dist_x, dist_y = \
+                transform_utils.centroid_weighted_distance_transform_2d(img)
             self.assertEqual(str(dist_x.dtype), str(K.floatx()))
             self.assertEqual(dist_x.shape, img.shape)
             self.assertEqual(str(dist_y.dtype), str(K.floatx()))
             self.assertEqual(dist_y.shape, img.shape)
+
+    def test_centroid_transform_continuous_2d(self):
+        for img in _generate_test_masks():
+            K.set_image_data_format('channels_last')
+            distance = transform_utils.centroid_transform_continuous_2d(img)
+            self.assertEqual(np.expand_dims(distance, axis=-1).shape, img.shape)
+
+            K.set_image_data_format('channels_first')
+            img = np.rollaxis(img, -1, 1)
+
+            distance = transform_utils.centroid_transform_continuous_2d(img)
+            self.assertEqual(np.expand_dims(distance, axis=1).shape, img.shape)
+
+    def test_centroid_transform_continuous_movie(self):
+        # TODO: not sure this is working properly!
+        mask_stack = np.array(_generate_test_masks())
+        img = np.zeros(mask_stack.shape)
+
+        for i, mask in enumerate(_generate_test_masks()):
+            img[i] = label(mask)
+
+        # pylint: disable=E1136
+        K.set_image_data_format('channels_last')
+        centroids = transform_utils.centroid_transform_continuous_movie(img)
+        print(centroids.shape)
+        self.assertEqual(str(centroids.dtype), str(K.floatx()))
+        self.assertEqual(centroids.shape, img.shape[:-1])
+
+        K.set_image_data_format('channels_first')
+        centroids = transform_utils.centroid_transform_continuous_movie(img)
+        self.assertEqual(str(centroids.dtype), str(K.floatx()))
+        self.assertEqual(centroids.shape, img.shape[:-1])
+
+    def test_distance_transform_continuous_2d(self):
+        for img in _generate_test_masks():
+            K.set_image_data_format('channels_last')
+            distance = transform_utils.distance_transform_continuous_2d(img)
+            self.assertEqual(np.expand_dims(distance, axis=-1).shape, img.shape)
+
+            K.set_image_data_format('channels_first')
+            img = np.rollaxis(img, -1, 1)
+
+            distance = transform_utils.distance_transform_continuous_2d(img)
+            self.assertEqual(np.expand_dims(distance, axis=1).shape, img.shape)
+
+    def test_distance_transform_continuous_movie(self):
+        mask_stack = np.array(_generate_test_masks())
+        img = np.zeros(mask_stack.shape)
+
+        for i, mask in enumerate(_generate_test_masks()):
+            img[i] = label(mask)
+
+        K.set_image_data_format('channels_last')
+        distance = transform_utils.distance_transform_continuous_movie(img)
+        self.assertEqual(np.expand_dims(distance, axis=-1).shape, img.shape)
+
+        K.set_image_data_format('channels_first')
+        img = np.rollaxis(img, -1, 1)
+
+        distance = transform_utils.distance_transform_continuous_movie(img)
+        self.assertEqual(np.expand_dims(distance, axis=1).shape, img.shape)
 
     def test_to_categorical(self):
         num_classes = 5

@@ -41,7 +41,8 @@ class ReflectionPadding2D(ZeroPadding2D):
     at the top, bottom, left and right side of an image tensor.
 
     Args:
-        padding: int, or tuple of 2 ints, or tuple of 2 tuples of 2 ints.
+        padding (int, or tuple of 2 ints, or tuple of 2 tuples of 2 ints):
+
             - If int: the same symmetric padding
                 is applied to height and width.
             - If tuple of 2 ints:
@@ -64,6 +65,7 @@ class ReflectionPadding2D(ZeroPadding2D):
 
     Input shape:
         4D tensor with shape:
+
         - If data_format is "channels_last":
             (batch, rows, cols, channels)
         - If data_format is "channels_first":
@@ -71,6 +73,7 @@ class ReflectionPadding2D(ZeroPadding2D):
 
     Output shape:
         4D tensor with shape:
+
         - If data_format is "channels_last":
             (batch, padded_rows, padded_cols, channels)
         - If data_format is "channels_first":
