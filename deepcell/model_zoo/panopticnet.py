@@ -68,7 +68,7 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per
             If mode=None, the output is exactly the input.
     """
 
-    acceptable_modes = {'conv', 'lstm', 'gru', 'None'}
+    acceptable_modes = {'conv', 'lstm', 'gru', 'none'}
     mode = str(mode).lower()
     if mode not in acceptable_modes:
         raise ValueError('Mode {} not supported. Please choose from {}.'.format(
@@ -306,7 +306,7 @@ def PanopticNet(backbone,
         create_semantic_head (function): Function to get to build a
             semantic head submodel.
         frames_per_batch (int): Defaults to 1.
-        temporal_mode: Defaults to None.
+        temporal_mode: Mode of temporal convolution. Choose from {'conv','lstm','gru', None}. Defaults to None.
         num_semantic_heads (int): Defaults to 1.
         num_semantic_classes (list): Defaults to [3].
         norm_method (str): ImageNormalization mode to use. Defaults to 'whole_image'
@@ -338,7 +338,7 @@ def PanopticNet(backbone,
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
 
     # Check input to __merge_temporal_features
-    acceptable_modes = {'conv', 'lstm', 'gru', 'None'}
+    acceptable_modes = {'conv', 'lstm', 'gru', 'none'}
     temporal_mode = str(temporal_mode).lower()
     if temporal_mode not in acceptable_modes:
         raise ValueError('Mode {} not supported. Please choose from {}.'.format(
