@@ -45,6 +45,16 @@ install:
   - travis_retry pip install -r requirements.txt --progress-bar off
   # install testing requirements
   - travis_retry pip install -r requirements-test.txt --progress-bar off
+  # install documentation requirements
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]]; then
+      travis_retry pip install -r docs/rtd-requirements.txt;
+    else
+      echo "Invalid python version for testing docs";
+    fi
+
+  # install pandoc to test sphinx-build with nbconvert
+  - conda config --add channels conda-forge
+  - conda install pandoc
 
   # install deepcell with setup.py
   # - python setup.py install
@@ -52,7 +62,11 @@ install:
 
 script:
   - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8
-  - PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]]; then
+      PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html;
+    else
+      echo "Invalid python version for testing docs";
+    fi
 
 jobs:
   include:
@@ -61,19 +75,19 @@ jobs:
       env: TF_VERSION=1.14.0
       python: 3.6
       script:
-      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      # build an image with the CPU TensorFlow base image
-      - docker build --build-arg TF_VERSION=$TF_VERSION -t "$TRAVIS_REPO_SLUG" .
-      - docker images
-      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":latest
-      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}"
-      - docker push "$TRAVIS_REPO_SLUG"
-      # edit the requirements and Dockerfile to build the GPU TensorFlow base image
-      - docker build --build-arg TF_VERSION=$TF_VERSION-gpu -t "$TRAVIS_REPO_SLUG" .
-      - docker images
-      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}-gpu"
-      - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"latest-gpu"
-      - docker push "$TRAVIS_REPO_SLUG"
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        # build an image with the CPU TensorFlow base image
+        - docker build --build-arg TF_VERSION=$TF_VERSION -t "$TRAVIS_REPO_SLUG" .
+        - docker images
+        - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":latest
+        - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}"
+        - docker push "$TRAVIS_REPO_SLUG"
+        # edit the requirements and Dockerfile to build the GPU TensorFlow base image
+        - docker build --build-arg TF_VERSION=$TF_VERSION-gpu -t "$TRAVIS_REPO_SLUG" .
+        - docker images
+        - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"${TRAVIS_TAG}-gpu"
+        - docker tag "$TRAVIS_REPO_SLUG" "$TRAVIS_REPO_SLUG":"latest-gpu"
+        - docker push "$TRAVIS_REPO_SLUG"
 
 after_success:
   - coveralls
