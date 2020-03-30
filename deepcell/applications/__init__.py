@@ -32,6 +32,7 @@ from __future__ import print_function
 import os
 
 import numpy as np
+from tensorflow.python.keras.utils.data_utils import get_file
 
 from tensorflow.python.keras import backend as K
 
@@ -39,7 +40,6 @@ from tensorflow.python.keras import backend as K
 class SegmentationApplication(object):
     def __init__(self,
                  model,
-                 weights_path=None,
                  model_image_shape=(128, 128, 1),
                  dataset_metadata=None,
                  model_metadata=None,
@@ -48,9 +48,6 @@ class SegmentationApplication(object):
                  postprocessing_fn=None):
 
         self.model = model
-
-        if weights_path is not None:
-            self.model.load_weights(weights_path)
 
         self.model_image_shape = model_image_shape
         self.model_mpp = model_mpp
