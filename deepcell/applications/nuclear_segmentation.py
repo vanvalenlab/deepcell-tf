@@ -31,11 +31,12 @@ from __future__ import print_function
 
 from tensorflow.python.keras.utils.data_utils import get_file
 
+from deepcell_toolbox.postprocessing_utils import watershed_postprocessing
+
 from deepcell.utils.retinanet_anchor_utils import generate_anchor_params
 from deepcell import model_zoo
 from deepcell.datasets import SegmentationApplication
 from deepcell.model_zoo import PanopticNet
-from deepcell.utils.postprocessing_utils import watershed_postprocessing
 
 
 # WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
