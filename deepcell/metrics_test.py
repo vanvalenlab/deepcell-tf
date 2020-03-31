@@ -526,8 +526,8 @@ class TestObjectAccuracy(test.TestCase):
 
         # 2 of 3 cells merged together
         y_true, y_pred, merged = _sample2_2merge(10, 10, 30, 30)
-        o = metrics.ObjectAccuracy(y_true, y_pred)
-        label_dict = o.save_error_ids()
+        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.4)
+        label_dict, iou_matrix, cm, rm = o.save_error_ids()
         assert label_dict['correct']['y_true'] == [1]
         assert label_dict['correct']['y_pred'] == [1]
         assert set(label_dict['merges']['y_true']) == merged

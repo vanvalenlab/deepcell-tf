@@ -345,6 +345,8 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         self.correct_indices['y_true'].append(correct_index[0] + 1)
         self.correct_indices['y_pred'].append(correct_index[1] + 1)
 
+        print("correct indices are {}".format(self.correct_indices))
+
         # Calc seg score for true positives if requested
         if self.seg is True:
             iou_mask = self.iou.copy()
@@ -568,7 +570,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                       "catastrophes": self.catastrophe_indices,
                       "correct": self.correct_indices}
 
-        return error_dict
+        return error_dict, self.iou, self.cm, self.results
 
 
 def to_precision(x, p):
