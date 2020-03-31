@@ -109,18 +109,18 @@ def _sample1(w, h, imw, imh, merge):
 
 def _sample2(w, h, imw, imh):
     """Merge of three cells"""
-    x = np.random.randint(0, imw - w)
-    y = np.random.randint(0, imh - h)
+    x = np.random.randint(2, imw - w)
+    y = np.random.randint(2, imh - h)
 
     # Determine split points
     xs = np.random.randint(1, w * 0.9)
     ys = np.random.randint(1, h * 0.9)
 
     im = np.zeros((imw, imh))
-    im[0:2, 0:2] = 4
-    im[x:x + xs, y:y + ys] = 1
-    im[x + xs:x + w, y:y + ys] = 2
-    im[x:x + w, y + ys:y + h] = 3
+    im[0:2, 0:2] = 1
+    im[x:x + xs, y:y + ys] = 2
+    im[x + xs:x + w, y:y + ys] = 3
+    im[x:x + w, y + ys:y + h] = 4
 
     return im
 
@@ -129,19 +129,19 @@ def _sample2_2merge(w, h, imw, imh):
 
     im = _sample2(w, h, imw, imh)
 
-    a, b = sample(set([1, 2, 3]), 2)
+    a, b = sample(set([2, 3, 4]), 2)
     pred = im.copy()
     pred[pred == b] = a
 
-    return im.astype('int'), pred.astype('int')
+    return im.astype('int'), pred.astype('int'), {a, b}
 
 
 def _sample2_3merge(w, h, imw, imh):
 
     im = _sample2(w, h, imw, imh)
 
-    pred = (im != 0).copy()
-    pred[0:2, 0:2] = 2
+    pred = im.copy()
+    pred[pred > 1] = 2
 
     return im.astype('int'), pred.astype('int')
 
@@ -501,15 +501,38 @@ class TestObjectAccuracy(test.TestCase):
         y_true, y_pred = _sample1(10, 10, 30, 30, merge=True)
         o = metrics.ObjectAccuracy(y_true, y_pred)
         label_dict = o.save_error_ids()
-        assert label_dict["correct"]["y_true"] == [1]
-        assert set(label_dict["merges"]["y_true"]) == {2, 3}
+        assert label_dict['correct']['y_true'] == [1]
+        assert label_dict['correct']['y_pred'] == [1]
+        assert set(label_dict['merges']['y_true']) == {2, 3}
+        assert label_dict['merges']['y_pred'] == [2]
 
         # cell 1 in assigned correctly, cell 2 has been split
         y_true, y_pred = _sample1(10, 10, 30, 30, merge=False)
         o = metrics.ObjectAccuracy(y_true, y_pred)
         label_dict = o.save_error_ids()
-        assert label_dict["correct"]["y_true"] == [1]
-        assert label_dict["splits"]["y_true"] == [2]
+        assert label_dict['correct']['y_true'] == [1]
+        assert label_dict['correct']['y_pred'] == [1]
+        assert set(label_dict['splits']['y_pred']) == set{2, 3}
+        assert label_dict['splits']['y_true'] == [2]
+
+        # 3 cells merged together
+        y_true, y_pred = _sample2_3merge(10, 10, 30, 30)
+        o = metrics.ObjectAccuracy(y_true, y_pred)
+        label_dict = o.save_error_ids()
+        assert label_dict['correct']['y_true'] == [1]
+        assert label_dict['correct']['y_pred'] == [1]
+        assert set(label_dict['merges']['y_true']) == {2, 3, 4}
+        assert label_dict['merges']['y_pred'] == [2]
+
+        # 2 of 3 cells merged together
+        y_true, y_pred, merged = _sample2_2merge(10, 10, 30, 30)
+        o = metrics.ObjectAccuracy(y_true, y_pred)
+        label_dict = o.save_error_ids()
+        assert label_dict['correct']['y_true'] == [1]
+        assert label_dict['correct']['y_pred'] == [1]
+        assert set(label_dict['merges']['y_true']) == merged
+        assert label_dict['merges']['y_pred'] == [2]
+
 
     def test_optional_outputs(self):
         y_true, y_pred = _sample1(10, 10, 30, 30, True)

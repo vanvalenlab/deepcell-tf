@@ -214,9 +214,11 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
 
         self.merge_indices = {}
         self.merge_indices['y_true'] = []
+        self.merge_indices['y_pred'] = []
 
         self.split_indices = {}
         self.split_indices['y_true'] = []
+        self.split_indices['y_pred'] = []
 
         self.catastrophe_indices = {}
         self.catastrophe_indices['y_true'] = []
@@ -447,6 +449,9 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
 
             # Process multi-degree nodes
             elif g.degree[k] > 1:
+                print("highest degree node k {}".format(k))
+                print("nodes are {}".format(g.nodes))
+                print("g degree is {}".format(g.degree))
                 node_type = k.split('_')[0]
                 nodes = g.nodes()
                 # Check whether the subgraph has multiple types of the
@@ -459,14 +464,18 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                     if 'pred' in node_type:
                         self.merge += 1
                         self.missed_det_from_merge += len(nodes) - 2
-                        merge_indices = [int(node.split('_')[-1]) + 1
-                                         for node in nodes if 'true' in node]
-                        self.merge_indices['y_true'] += merge_indices
+                        true_merge_indices = [int(node.split('_')[-1]) + 1
+                                              for node in nodes if 'true' in node]
+                        self.merge_indices['y_true'] += true_merge_indices
+                        self.merge_indices['y_pred'].append(index)
                     # Check for splits
                     elif 'true' in node_type:
                         self.split += 1
                         self.gained_det_from_split += len(nodes) - 2
                         self.split_indices['y_true'].append(index)
+                        pred_split_indices = [int(node.split('_')[-1]) + 1
+                                              for node in nodes if 'pred' in node]
+                        self.split_indices['y_pred'] += pred_split_indices
 
                 # If there are multiple types of the high degree node,
                 # then we have a catastrophe
