@@ -23,38 +23,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Package for single cell image segmentation with convolutional neural networks"""
+"""
+The training submodule contains all the user entry points into DeepCell's
+training functionality.
+"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-from deepcell import applications
-from deepcell import callbacks
-from deepcell import datasets
-from deepcell import layers
-from deepcell import losses
-from deepcell import initializers
-from deepcell import image_generators
-from deepcell import model_zoo
-from deepcell import notebooks
-from deepcell import running
-from deepcell import tracking
-from deepcell import training
-from deepcell import utils
-from deepcell import metrics
-
-from deepcell.layers import *
-from deepcell.image_generators import *
-from deepcell.model_zoo import *
-from deepcell.running import get_cropped_input_shape
-from deepcell.running import process_whole_image
-#from deepcell.training.training import train_model_conv
-#from deepcell.training.training import train_model_sample
-#from deepcell.training.training import train_model_siamese_daughter
-#from deepcell.training.training import train_model_retinanet
-from deepcell.utils import *
-
-del absolute_import
-del division
-del print_function
+#from .training import *
+from .model_trainer import ModelTrainer
