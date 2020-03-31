@@ -31,11 +31,11 @@ from __future__ import print_function
 
 from tensorflow.python.keras.utils.data_utils import get_file
 
-from deepcell_toolbox.postprocessing_utils import watershed_postprocessing
+from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.utils.retinanet_anchor_utils import generate_anchor_params
 from deepcell import model_zoo
-from deepcell.datasets import SegmentationApplication
+from deepcell.applications import SegmentationApplication
 from deepcell.model_zoo import PanopticNet
 
 
@@ -119,9 +119,14 @@ class NuclearSegmentationApplication(SegmentationApplication):
             )
 
             self.model.load_weights(weights_path)
+        else:
+            weights_path = None
 
-        super(SegmentationApplication, self).__init__(
-            self.model,
-            weights_path=weights_path,
+        super(NuclearSegmentationApplication, self).__init__(self.model, **dict(
             model_image_shape=model_image_shape,
-            postprocessing_fn=watershed_postprocessing)
+            dataset_metadata=None,
+            model_metadata=None,
+            model_mpp=0.65,
+            preprocessing_fn=None,
+            postprocessing_fn=deep_watershed
+        ))

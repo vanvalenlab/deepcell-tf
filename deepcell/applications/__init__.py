@@ -42,14 +42,7 @@ class SegmentationApplication(object):
     """Application object that takes a model with weights and manages predictions
     """
 
-    def __init__(self,
-                 model,
-                 model_image_shape=(128, 128, 1),
-                 dataset_metadata=None,
-                 model_metadata=None,
-                 model_mpp=0.65,
-                 preprocessing_fn=None,
-                 postprocessing_fn=None):
+    def __init__(self, model, **kwargs):
         """Initializes model for application object
 
         Args:
@@ -68,11 +61,13 @@ class SegmentationApplication(object):
 
         self.model = model
 
-        self.model_image_shape = model_image_shape
-        self.model_mpp = model_mpp
-        self.preprocessing_fn = preprocessing_fn
-        self.postprocessing_fn = postprocessing_fn
-
+        self.model_image_shape = kwargs.get('model_image_shape', (128,128,1))
+        self.model_mpp = kwargs.get('model_mpp', 0.65)
+        self.preprocessing_fn = kwargs.get('preprocessing_fn', None)
+        self.postprocessing_fn = kwargs.get('postprocessing_fn', None)
+        self.dataset_metadata = kwargs.get('dataset_metadata', None)
+        self.model_metadata = kwargs.get('model_metadata', None)
+        
     def predict(self, image,
                 batch_size=4,
                 image_mpp=None,
@@ -101,7 +96,7 @@ class SegmentationApplication(object):
         # Check input size of image
 
         # Resize image if necessary
-        if image_mpp != self.model_mpp:
+        if (image_mpp is not None) & (image_mpp != self.model_mpp):
             original_shape = image.shape
             new_shape = np.round(image.shape / (image_mpp / self.model_mpp), decimals=0)
             image = resize(image, new_shape, data_format='channels_last')
@@ -113,13 +108,13 @@ class SegmentationApplication(object):
             image = self.preprocessing_fn(image, **preprocess_kwargs)
 
         # Tile images, needs 4d
-        tiles, tiles_info = tile_image(image)
+        tiles, tiles_info = tile_image(image, model_input_shape=self.model_image_shape)
 
         # Run images through model
         output_tiles = self.model.predict(tiles, batch_size=batch_size)
 
         # Untile images
-        output_images = [untile_image(o, tiles_info) for o in output_tiles]
+        output_images = [untile_image(o, tiles_info, self.model_image_shape) for o in output_tiles]
 
         # Postprocess predictions to create label image
         if self.postprocessing_fn is not None:
@@ -138,7 +133,7 @@ class SegmentationApplication(object):
 
 
 from deepcell.applications.cell_tracking import CellTrackingModel
-from deepcell.applications.nuclear_segmentation import NuclearSegmentationModel
+#from deepcell.applications.nuclear_segmentation import NuclearSegmentationModel
 from deepcell.applications.label_detection import LabelDetectionModel
 from deepcell.applications.scale_detection import ScaleDetectionModel
 from deepcell.applications.phase_segmentation import PhaseSegmentationModel
