@@ -60,6 +60,22 @@ class ModelTrainer(object):
         Model trainer class for segmentation models. This class eases model development by
         linking relevant metadata (dataset, training parameters, benchmarking) to the model
         training process.
+
+        Args:
+            model (tensorflow.keras.Model): The model to train.
+            model_name (str):
+            model_path (str):
+            train_generator (tensorflow.python.keras.preprocessing.image.ImageDataGenerator):
+            validation_generator (tensorflow.python.keras.preprocessing.image.ImageDataGenerator):
+            log_dir (st):
+            tfserving_path (str):
+            training_callbacks (str):
+            postprocessing_fn (function):
+            postprocessing_kwargs (dict):
+            predict_batch_size (int):
+            model_version (int):
+            dataset_metadata (dict):
+            training_kwargs (dict):
         """
 
         # Add model information
