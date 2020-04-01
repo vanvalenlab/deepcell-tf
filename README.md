@@ -84,11 +84,11 @@ It can also be helpful to mount the local copy of the repository and the scripts
 
 ```bash
 # First run the docker image without mounting externally
-NV_GPU='0' nvidia-docker run -it \
+docker run --gpus '"device=0"' -it \
 -p 8888:8888 \
 $USER/deepcell-tf:latest
 
-# Use ctrl-p, ctrl-q to exit the running docker image without shutting it down
+# Use ctrl-p, ctrl-q (or ctrl+p+q) to exit the running docker image without shutting it down
 
 # Then, get the container_id corresponding to the running image of deepcell
 container_id=$(docker ps -q --filter ancestor="$USER/deepcell-tf")
@@ -100,12 +100,12 @@ docker cp "$container_id:/usr/local/lib/python3.6/dist-packages/deepcell/utils/c
 docker kill $container_id
 
 # you can now start the docker image with the code mounted for easy editing
-NV_GPU='0' nvidia-docker run -it \
+docker run --gpus '"device=0"' -it \
     -p 8888:8888 \
     -v $PWD/deepcell:/usr/local/lib/python3.6/dist-packages/deepcell/ \
     -v $PWD/scripts:/notebooks \
     -v /$PWD:/data \
-    $USER/deepcell-tf:0.4.0-gpu
+    $USER/deepcell-tf:latest
 ```
 
 ## How to Cite
