@@ -98,3 +98,24 @@ def export_model(keras_model, export_path, model_version=0, weights_path=None):
 
     # Save the graph
     builder.save()
+
+def export_model_to_tflite(model_file, export_path, val_generator, file_name = 'model.tflite'):
+    val_images = val_generator.x
+
+    def representative_data_gen():
+        for input_value in val_images:
+            data = [np.expand_dims(input_value, axis=0)]
+            yield data
+
+    converter = tf.compat.v1.lite.TFLiteConverter.from_saved_model(model_file)
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+    converter.inference_input_type = tf.uint8
+    converter.inference_output_type = tf.uint8
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
+    converter.representative_dataset = representative_data_gen
+    tflite_quant_model = converter.convert()
+
+    # Save converted model
+    open(save_name, "wb").write(tflite_quant_model)
+    
+    return tflite_quant_model

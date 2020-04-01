@@ -53,7 +53,7 @@ except ImportError:
 # Globally-importable utils.
 from deepcell.utils.data_utils import get_data
 from deepcell.utils.data_utils import make_training_data
-from deepcell.utils.export_utils import export_model
+from deepcell.utils.export_utils import export_model, export_model_to_tflite
 from deepcell.utils.io_utils import get_immediate_subdirs
 from deepcell.utils.io_utils import get_image
 from deepcell.utils.io_utils import nikon_getfiles
