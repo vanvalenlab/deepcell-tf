@@ -44,10 +44,11 @@ Tracked Image
 The fastest way to get started with DeepCell is to run one of our existing images from Docker Hub. To do so, run the following command:
 
 ```bash
-nvidia-docker run -it --rm -p 8888:8888 vanvalenlab/deepcell-tf:0.4.0-gpu
+# Start a GPU enabled container on two GPUs
+docker run --gpus '"device=1,2"' -it --rm -p 8888:8888 vanvalenlab/deepcell-tf:0.4.0-gpu
 ```
 
-This will start a Jupyter session, with several example notebooks detailing various training methods:
+This will start a Jupyter session (using the default port 8888), with several example notebooks detailing various training methods.
 
 For examples of how to use the deepcell library, check out the following notebooks:
 
