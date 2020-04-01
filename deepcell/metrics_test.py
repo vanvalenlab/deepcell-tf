@@ -36,6 +36,8 @@ from random import sample
 import numpy as np
 import pandas as pd
 from skimage.measure import label
+from skimage.segmentation import relabel_sequential
+
 from tensorflow.python.platform import test
 
 from deepcell import metrics
@@ -125,25 +127,44 @@ def _sample2(w, h, imw, imh):
     return im
 
 
-def _sample2_2merge(w, h, imw, imh):
+def _sample2_2(w, h, imw, imh, merge=True):
 
-    im = _sample2(w, h, imw, imh)
+    im1 = _sample2(w, h, imw, imh)
 
-    a, b = sample(set([2, 3, 4]), 2)
-    pred = im.copy()
-    pred[pred == b] = a
+    a, b, c = sample(set([2, 3, 4]), 3)
+    im2 = im1.copy()
+    im2[im2 == b] = a
 
-    return im.astype('int'), pred.astype('int'), {a, b}
+    # ensure that output is sequential so it doesn't get subsequently relabeled
+    im2, _, _ = relabel_sequential(im2)
+
+    # record which values of im1 were correctly assigned
+    im1_wrong = {a, b}
+    im1_correct = {1, c}
+
+    # figure out which of newly relabeled values in im2 correspond to correct cells
+    im2_wrong = {im2[im1 == b][0]}
+    im2_correct = {1, im2[im1 == c][0]}
+
+    if merge:
+        return im1.astype('int'), im2.astype('int'), im1_wrong, \
+               im1_correct, im2_wrong, im2_correct
+    else:
+        return im2.astype('int'), im1.astype('int'), im2_wrong, \
+               im2_correct, im1_wrong, im1_correct
 
 
-def _sample2_3merge(w, h, imw, imh):
+def _sample2_3(w, h, imw, imh, merge=True):
 
-    im = _sample2(w, h, imw, imh)
+    im1 = _sample2(w, h, imw, imh)
 
-    pred = im.copy()
-    pred[pred > 1] = 2
+    im2 = im1.copy()
+    im2[im2 > 1] = 2
 
-    return im.astype('int'), pred.astype('int')
+    if merge:
+        return im1.astype('int'), im2.astype('int')
+    else:
+        return im2.astype('int'), im1.astype('int')
 
 
 def _sample3(w, h, imw, imh):
@@ -516,22 +537,44 @@ class TestObjectAccuracy(test.TestCase):
         assert label_dict['splits']['y_true'] == [2]
 
         # 3 cells merged together
-        y_true, y_pred = _sample2_3merge(10, 10, 30, 30)
+        y_true, y_pred = _sample2_3(10, 10, 30, 30, merge=True)
         o = metrics.ObjectAccuracy(y_true, y_pred)
-        label_dict = o.save_error_ids()
+        label_dict, iou_matrix, cm, rm = o.save_error_ids()
         assert label_dict['correct']['y_true'] == [1]
         assert label_dict['correct']['y_pred'] == [1]
         assert set(label_dict['merges']['y_true']) == {2, 3, 4}
         assert label_dict['merges']['y_pred'] == [2]
 
         # 2 of 3 cells merged together
-        y_true, y_pred, merged = _sample2_2merge(10, 10, 30, 30)
-        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.4)
+        y_true, y_pred, y_true_merge, y_true_correct, y_pred_merge, y_pred_correct = \
+            _sample2_2(10, 10, 30, 30)
+        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=.05, cutoff2=.05)
+        label_dict, iou_matrix, cm, rm = o.save_error_ids()
+        # TODO: modify correct so that y_true isn't list of arrays
+        assert set(label_dict['correct']['y_true'][0]) == y_true_correct
+        assert set(label_dict['correct']['y_pred'][0]) == y_pred_correct
+        assert set(label_dict['merges']['y_true']) == y_true_merge
+        assert set(label_dict['merges']['y_pred']) == y_pred_merge
+
+        # 1 cell split into three pieces
+        y_true, y_pred = _sample2_3(10, 10, 30, 30, merge=False)
+        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.05, cutoff2=0.05)
         label_dict, iou_matrix, cm, rm = o.save_error_ids()
         assert label_dict['correct']['y_true'] == [1]
         assert label_dict['correct']['y_pred'] == [1]
-        assert set(label_dict['merges']['y_true']) == merged
-        assert label_dict['merges']['y_pred'] == [2]
+        assert label_dict['splits']['y_true'] == [2]
+        assert set(label_dict['splits']['y_pred']) == {2, 3, 4}
+
+        # 1 cell split into two pieces, one small accurate cell
+        y_true, y_pred, y_true_split, y_true_correct, y_pred_split, y_pred_correct = \
+            _sample2_2(10, 10, 30, 30, merge=False)
+        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=.05, cutoff2=.05)
+        label_dict, iou_matrix, cm, rm = o.save_error_ids()
+        # TODO: modify correct so that y_true isn't list of arrays
+        assert set(label_dict['correct']['y_true'][0]) == y_true_correct
+        assert set(label_dict['correct']['y_pred'][0]) == y_pred_correct
+        assert set(label_dict['splits']['y_true']) == y_true_split
+        assert set(label_dict['splits']['y_pred']) == y_pred_split
 
 
     def test_optional_outputs(self):
