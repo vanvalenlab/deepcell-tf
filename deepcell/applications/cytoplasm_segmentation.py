@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Generate cytoplasm segmentations from a phase image"""
+"""Cytoplasmic segmentation application"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -31,58 +31,49 @@ from __future__ import print_function
 
 from tensorflow.python.keras.utils.data_utils import get_file
 
+from deepcell_toolbox.deep_watershed import deep_watershed
+
 from deepcell.utils.retinanet_anchor_utils import generate_anchor_params
 from deepcell import model_zoo
+from deepcell.applications import SegmentationApplication
+from deepcell.model_zoo import PanopticNet
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/resnet50_retinanet_20190813_all_phase_512.h5')
+                'model-weights/general_cyto_9c7b79e6238d72c14ea8f87023ac3af9.h5')
 
 
-def PhaseSegmentationModel(input_shape=(None, None, 1),
-                           backbone='resnet50',
-                           use_pretrained_weights=True):
-    """
-    A RetinaMask model with a ResNet50 backbone
-    for cytoplasmic segmentation trained on phase data.
+class CytoplasmSegmentationApplication(SegmentationApplication):
 
-    Args:
-        input_shape (tuple): a 3-length tuple of the input data shape.
-        backbone (str): name of the backbone to use for the model.
-        use_pretrained_weights (bool): whether to load pre-trained weights.
-            Only supports the ResNet50 backbone.
-    """
+    def __init__(self,
+                 use_pretrained_weights=True,
+                 model_image_shape=(128, 128, 1)):
 
-    backbone_levels = ['C1', 'C2', 'C3', 'C4', 'C5']
-    pyramid_levels = ['P3', 'P4', 'P5', 'P6']
-    anchor_size_dicts = {'P3': 32, 'P4': 64, 'P5': 128, 'P6': 256}
+        self.model = PanopticNet('resnet50',
+                                 input_shape=model_image_shape,
+                                 norm_method='whole_image',
+                                 num_semantic_heads=3,
+                                 num_semantic_classes=[1, 1, 2],
+                                 location=True,
+                                 include_top=True)
 
-    anchor_params = generate_anchor_params(pyramid_levels, anchor_size_dicts)
-
-    model = model_zoo.RetinaMask(
-        backbone=backbone,
-        use_imagenet=False,
-        panoptic=False,
-        num_semantic_heads=2,
-        num_semantic_classes=[4, 4],
-        input_shape=input_shape,
-        num_classes=1,
-        backbone_levels=backbone_levels,
-        pyramid_levels=pyramid_levels,
-        anchor_params=anchor_params,
-        norm_method='whole_image')
-
-    if use_pretrained_weights:
-        if backbone == 'resnet50':
+        if use_pretrained_weights:
             weights_path = get_file(
-                'resnet50_retinanet_20190813_all_phase_512.h5',
+                WEIGHTS_PATH.split('/')[-1],
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='ce31d084fadf7b907a25ab1fcf25529a')
+                md5_hash='4e9136df5071930a66365b2229fc358b'
+            )
 
-            model.load_weights(weights_path)
+            self.model.load_weights(weights_path)
         else:
-            raise ValueError('Backbone %s does not have a weights file.' %
-                             backbone)
+            weights_path = None
 
-    return model
+        super(CytoplasmSegmentationApplication, self).__init__(self.model, **dict(
+            model_image_shape=model_image_shape,
+            dataset_metadata=None,
+            model_metadata=None,
+            model_mpp=0.65,
+            preprocessing_fn=None,
+            postprocessing_fn=deep_watershed
+        ))
