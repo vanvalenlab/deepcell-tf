@@ -48,7 +48,7 @@ The fastest way to get started with DeepCell is to run one of our existing image
 docker run --gpus '"device=1,2"' -it --rm -p 8888:8888 vanvalenlab/deepcell-tf:0.4.0-gpu
 ```
 
-This will start a Jupyter session (using the default port 8888), with several example notebooks detailing various training methods.
+This will start a Jupyter session (using the default port 8888), with several example notebooks detailing various training methods. If you run accross any errors getting this started, you may be missing some neccesary dependencies. If so, please refer to the DeepCell for Developers section.
 
 For examples of how to use the deepcell library, check out the following notebooks:
 
@@ -57,7 +57,7 @@ For examples of how to use the deepcell library, check out the following noteboo
 
 ## DeepCell Applications and DeepCell Datasets
 
-Together <tt><a href="https://deepcell.readthedocs.io/en/master/API/deepcell.datasets.html">deepcell.datasets</a></tt> and <tt><a href="https://deepcell.readthedocs.io/en/master/API/deepcell.applications.html">deepcell.applications</a></tt> provide an accessible entrypoint to deep learning for biologists. The datasets module contains a variety of annotated datasets that can be used as training data. Additionally, the applications package initializes a set of models complete with the option to initialize with pre-trained weights.
+Together <tt><a href="https://deepcell.readthedocs.io/en/master/API/deepcell.datasets.html">deepcell.datasets</a></tt> and <tt><a href="https://deepcell.readthedocs.io/en/master/API/deepcell.applications.html">deepcell.applications</a></tt> provide an entrypoint to deep learning for biologists. The datasets module contains a variety of annotated datasets that can be used as training data. Additionally, the applications package initializes a set of models complete with the option to load pre-trained weights.
 
 ## DeepCell for Developers
 
