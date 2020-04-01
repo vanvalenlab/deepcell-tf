@@ -74,11 +74,10 @@ docker build --build-arg TF_VERSION=1.15.0-gpu -t $USER/deepcell-tf .
 ### Run the new docker image
 
 ```bash
-# NV_GPU refers to the specific GPU to run DeepCell on, and is not required
-
-NV_GPU='0' nvidia-docker run -it \
+# '"device=0"' refers to the specific GPU(s) to run DeepCell on, and is not required
+docker run --gpus '"device=0"' -it \
 -p 8888:8888 \
-$USER/deepcell-tf:0.4.0-gpu
+$USER/deepcell-tf:latest
 ```
 
 It can also be helpful to mount the local copy of the repository and the scripts to speed up local development. However, if you are going to mount a local version of the repository, you must first run the docker image without the local repository mounted so that the c extensions can be compiled and then copied over to your local version.
