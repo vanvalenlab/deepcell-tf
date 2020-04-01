@@ -67,7 +67,7 @@ class ModelTrainer(object):
             model_path (str):
             train_generator (tensorflow.python.keras.preprocessing.image.ImageDataGenerator):
             validation_generator (tensorflow.python.keras.preprocessing.image.ImageDataGenerator):
-            log_dir (st):
+            log_dir (str):
             tfserving_path (str):
             training_callbacks (str):
             postprocessing_fn (function):
