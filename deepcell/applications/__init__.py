@@ -61,13 +61,13 @@ class SegmentationApplication(object):
 
         self.model = model
 
-        self.model_image_shape = kwargs.get('model_image_shape', (128,128,1))
+        self.model_image_shape = kwargs.get('model_image_shape', (128, 128, 1))
         self.model_mpp = kwargs.get('model_mpp', 0.65)
         self.preprocessing_fn = kwargs.get('preprocessing_fn', None)
         self.postprocessing_fn = kwargs.get('postprocessing_fn', None)
         self.dataset_metadata = kwargs.get('dataset_metadata', None)
         self.model_metadata = kwargs.get('model_metadata', None)
-        
+
     def predict(self, image,
                 batch_size=4,
                 image_mpp=None,
@@ -114,7 +114,8 @@ class SegmentationApplication(object):
         output_tiles = self.model.predict(tiles, batch_size=batch_size)
 
         # Untile images
-        output_images = [untile_image(o, tiles_info, model_input_shape=self.model_image_shape) for o in output_tiles]
+        output_images = [untile_image(o, tiles_info, model_input_shape=self.model_image_shape,
+                                      dtype=o.dtype) for o in output_tiles]
 
         # Postprocess predictions to create label image
         if self.postprocessing_fn is not None:
