@@ -114,7 +114,7 @@ class SegmentationApplication(object):
         output_tiles = self.model.predict(tiles, batch_size=batch_size)
 
         # Untile images
-        output_images = [untile_image(o, tiles_info, self.model_image_shape) for o in output_tiles]
+        output_images = [untile_image(o, tiles_info, model_input_shape=self.model_image_shape) for o in output_tiles]
 
         # Postprocess predictions to create label image
         if self.postprocessing_fn is not None:
