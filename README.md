@@ -48,7 +48,7 @@ The fastest way to get started with DeepCell is to run one of our existing image
 docker run --gpus '"device=1,2"' -it --rm -p 8888:8888 vanvalenlab/deepcell-tf:0.4.0-gpu
 ```
 
-This will start a Jupyter session (using the default port 8888), with several example notebooks detailing various training methods. If you run accross any errors getting this started, you may be missing some neccesary dependencies. If so, please refer to the DeepCell for Developers section.
+This will start a Jupyter session (using the default port 8888), with several example notebooks detailing various training methods. The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 81:8888`. If you run accross any errors getting this started, you may be missing some neccesary dependencies. If so, please refer to the DeepCell for Developers section.
 
 For examples of how to use the deepcell library, check out the following notebooks:
 
