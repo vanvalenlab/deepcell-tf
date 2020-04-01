@@ -1,4 +1,4 @@
-# ![DeepCell Banner](https://raw.githubusercontent.com/vanvalenlab/deepcell-tf/readme_update/docs/images/DeepCell_Logo_Banner.png)
+# ![DeepCell Banner](https://raw.githubusercontent.com/vanvalenlab/deepcell-tf/master/docs/images/DeepCell_Logo_Banner.png)
 
 [![Build Status](https://travis-ci.com/vanvalenlab/deepcell-tf.svg?branch=master)](https://travis-ci.com/vanvalenlab/deepcell-tf)
 [![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master)
