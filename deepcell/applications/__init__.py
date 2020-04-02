@@ -29,117 +29,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-
-import numpy as np
-from tensorflow.python.keras.utils.data_utils import get_file
-
-from tensorflow.python.keras import backend as K
-from deepcell_toolbox.utils import resize, tile_image, untile_image
-
-
-class SegmentationApplication(object):
-    """Application object that takes a model with weights and manages predictions
-    """
-
-    def __init__(self, model, **kwargs):
-        """Initializes model for application object
-
-        Args:
-            model (tf.model): Tensorflow model with weights loaded
-            model_image_shape (tuple, optional): Shape of input expected by model.
-                Defaults to (128, 128, 1).
-            dataset_metadata (optional): Any input, e.g. str or dict. Defaults to None.
-            model_metadata (optional): Any input, e.g. str or dict. Defaults to None.
-            model_mpp (float, optional): Microns per pixel resolution of training data.
-                Defaults to 0.65.
-            preprocessing_fn (function, optional): Preprocessing function to apply to data
-                prior to prediction. Defaults to None.
-            postprocessing_fn (function, optional): Postprocessing function to apply
-                to data after prediction. Defaults to None.
-        """
-
-        self.model = model
-
-        self.model_image_shape = kwargs.get('model_image_shape', (128, 128, 1))
-        self.model_mpp = kwargs.get('model_mpp', 0.65)
-        self.preprocessing_fn = kwargs.get('preprocessing_fn', None)
-        self.postprocessing_fn = kwargs.get('postprocessing_fn', None)
-        self.dataset_metadata = kwargs.get('dataset_metadata', None)
-        self.model_metadata = kwargs.get('model_metadata', None)
-
-    def predict(self, image,
-                batch_size=4,
-                image_mpp=None,
-                preprocess_kwargs={},
-                postprocess_kwargs={},
-                debug=False):
-        """Generates a labeled image of the input running prediction with
-        appropriate pre and post processing functions
-
-        Args:
-            image (np.array): Input image.
-            batch_size (int, optional): Number of images to predict on per batch. Defaults to 4.
-            image_mpp (float, optional): Microns per pixel for the input image. Defaults to None.
-            preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
-                Defaults to {}.
-            postprocess_kwargs (dict, optional): Kwargs to pass to postprocessing function.
-                Defaults to {}.
-            debug (bool, optional): If True, returns intermediate outputs of data processing.
-                Defaults to False.
-
-        Returns:
-            np.array: Labeled image, if debug is False.
-                If debug is True, returns (image, tiles, output_tiles, output_images, label_image)
-        """
-
-        # Check input size of image
-
-        # Resize image if necessary
-        if (image_mpp is not None) & (image_mpp != self.model_mpp):
-            original_shape = image.shape
-            new_shape = np.round(image.shape / (image_mpp / self.model_mpp), decimals=0)
-            image = resize(image, new_shape, data_format='channels_last')
-        else:
-            original_shape = None
-
-        # Preprocess image
-        if self.preprocessing_fn is not None:
-            image = self.preprocessing_fn(image, **preprocess_kwargs)
-
-        # Tile images, needs 4d
-        tiles, tiles_info = tile_image(image, model_input_shape=self.model_image_shape)
-
-        # Run images through model
-        output_tiles = self.model.predict(tiles, batch_size=batch_size)
-
-        # Untile images
-        output_images = [untile_image(o, tiles_info, model_input_shape=self.model_image_shape,
-                                      dtype=o.dtype) for o in output_tiles]
-
-        # Postprocess predictions to create label image
-        if self.postprocessing_fn is not None:
-            label_image = self.postprocessing_fn(output_images, **postprocess_kwargs)
-        else:
-            label_image = output_images
-
-        # Resize label_image back to original resolution if necessary
-        if original_shape is not None:
-            label_image = resize(label_image, original_shape, data_format='channels_last')
-
-        if debug:
-            return image, tiles, output_tiles, output_images, label_image
-        else:
-            return label_image
-
-
+from deepcell.applications.segmentation_application import SegmentationApplication
+from deepcell.applications.cytoplasm_segmentation import CytoplasmSegmentationApplication
+from deepcell.applications.nuclear_segmentation import NuclearSegmentationApplication
 from deepcell.applications.cell_tracking import CellTrackingModel
-#from deepcell.applications.nuclear_segmentation import NuclearSegmentationModel
 from deepcell.applications.label_detection import LabelDetectionModel
 from deepcell.applications.scale_detection import ScaleDetectionModel
-from deepcell.applications.phase_segmentation import PhaseSegmentationModel
-from deepcell.applications.fluorescent_cytoplasm_segmentation import \
-    FluorCytoplasmSegmentationModel
 
 del absolute_import
 del division
