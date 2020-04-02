@@ -302,9 +302,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         """Modifies the IOU matrix to boost the value for small cells.
         """
 
-        if penalize_merges:
-            print("penalize_merges")
-        # get non-zero values in iou matrix
+        # identify cells that have matches in IOU but may be too small
         true_labels, pred_labels = np.where(np.logical_and(self.iou > 0,
                                                            self.iou < (1 - self.cutoff1)))
 
@@ -317,19 +315,23 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             true_mask = self.y_true == true_label
             pred_mask = self.y_pred == pred_label
 
-            true_in_pred = np.sum(self.y_true[pred_mask] == true_label) / (np.sum(true_mask) + 1)
-            pred_in_true = np.sum(self.y_pred[true_mask] == pred_label) / (np.sum(pred_mask) + 1)
+            # fraction of true cell that is contained within pred cell, vice versa
+            true_in_pred = np.sum(self.y_true[pred_mask] == true_label) / np.sum(true_mask)
+            pred_in_true = np.sum(self.y_pred[true_mask] == pred_label) / np.sum(pred_mask)
 
             iou_val = self.iou[true_label - 1, pred_label - 1]
             max_val = np.max([true_in_pred, pred_in_true])
 
             print("iou_val {}, max_val {}".format(iou_val, max_val))
 
-            # prevent small cells that were merged with large cell from getting dropped
-            if iou_val < self.cutoff2 and max_val > 0.5:
+            # if this cell has a small IOU due to its small size,
+            # but is at least half contained within the big cell,
+            # we bump its IOU value up so it doesn't get dropped from the graph
+            if iou_val <= self.cutoff1 and max_val > 0.5:
                 self.iou_modified[true_label - 1, pred_label - 1] = self.cutoff2
 
-                # if any of the above events are detected, prevents direct matches of partner cells
+                # optionally, we can also decrease the IOU value of the cell that
+                # swallowed up the small cell so that it doesn't directly match a different cell
                 if penalize_merges:
                     if true_in_pred > 0.5:
                         fix_idx = np.where(self.iou[:, pred_label - 1] > 1 - self.cutoff1)
