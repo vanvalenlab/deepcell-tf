@@ -30,12 +30,14 @@ from __future__ import print_function
 from __future__ import division
 
 import os
-
+import numpy as np
 import tensorflow as tf
+
 from tensorflow.python.keras import backend as K
 from tensorflow.python.saved_model import tag_constants
 from tensorflow.python.saved_model import signature_constants
 from tensorflow.python.saved_model.builder import SavedModelBuilder
+from tensorflow.python.keras.utils import CustomObjectScope
 
 
 def export_model(keras_model, export_path, model_version=0, weights_path=None):
@@ -99,23 +101,50 @@ def export_model(keras_model, export_path, model_version=0, weights_path=None):
     # Save the graph
     builder.save()
 
-def export_model_to_tflite(model_file, export_path, val_generator, file_name = 'model.tflite'):
-    val_images = val_generator.x
+def norm_images(images):
+    mean = np.mean(images, axis=(1,2), keepdims=True)
+    std = np.std(images, axis=(1,2), keepdims=True)
+    norm = (images-mean)/std
+    return norm
 
+def add_location(images):
+    x = np.arange(0, images.shape[1], dtype='float32')
+    y = np.arange(0, images.shape[2], dtype='float32')
+    
+    x = x/max(x)
+    y = y/max(y)
+    
+    loc_x, loc_y = np.meshgrid(x, y, indexing='ij')
+    loc = np.stack([loc_x, loc_y], axis=-1)
+    loc = np.expand_dims(loc, axis=0)
+    loc = np.tile(loc, (images.shape[0],1,1,1))
+    images_with_loc = np.concatenate([images, loc], axis=-1)
+    return images_with_loc
+
+def export_model_to_tflite(model_file, export_path, val_generator, file_name = 'model.tflite'):
+    from deepcell.layers import TensorProduct
+
+    val_images = val_generator.x[0:100].astype('float32')
+    val_images = norm_images(val_images)
+    val_images = add_location(val_images)
+    
     def representative_data_gen():
         for input_value in val_images:
             data = [np.expand_dims(input_value, axis=0)]
             yield data
 
-    converter = tf.compat.v1.lite.TFLiteConverter.from_saved_model(model_file)
-    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-    converter.inference_input_type = tf.uint8
-    converter.inference_output_type = tf.uint8
-    converter.optimizations = [tf.lite.Optimize.DEFAULT]
-    converter.representative_dataset = representative_data_gen
-    tflite_quant_model = converter.convert()
+    with CustomObjectScope({'TensorProduct': TensorProduct}):
+        converter = tf.compat.v1.lite.TFLiteConverter.from_keras_model_file(model_file)
+        converter.experimental_enable_mlir_converter = False
+        converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8] 
+        converter.inference_input_type = tf.uint8
+        converter.inference_output_type = tf.uint8
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        converter.representative_dataset = representative_data_gen
+        tflite_quant_model = converter.convert()
 
-    # Save converted model
-    open(save_name, "wb").write(tflite_quant_model)
+        # Save converted model
+        save_path = os.path.join(export_path, file_name)
+        open(save_path, "wb").write(tflite_quant_model)
     
-    return tflite_quant_model
+        return tflite_quant_model

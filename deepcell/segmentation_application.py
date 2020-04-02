@@ -56,6 +56,76 @@ class TFSavedModel(object):
 
         return output_list
 
+class TFLiteModel(object):
+    def __init__(self, 
+            model_path):
+        self.interpreter = tf.lite.Interpreter(model_path)
+        self.interpreter.allocate_tensors()
+        self.input_details = self.interpreter.get_input_details()
+        self.output_details = self.interpreter.get_output_details()
+        
+    def _norm_images(self, images):
+        mean = np.mean(images, axis=(1,2), keepdims=True)
+        std = np.std(images, axis=(1,2), keepdims=True)
+        norm = (images-mean)/std
+        return norm
+
+    def _add_location(self, images):
+        x = np.arange(0, images.shape[1], dtype='float32')
+        y = np.arange(0, images.shape[2], dtype='float32')
+
+        x = x/max(x)
+        y = y/max(y)
+
+        loc_x, loc_y = np.meshgrid(x, y, indexing='ij')
+        loc = np.stack([loc_x, loc_y], axis=-1)
+        loc = np.expand_dims(loc, axis=0)
+        loc = np.tile(loc, (images.shape[0],1,1,1))
+        images_with_loc = np.concatenate([images, loc], axis=-1)
+        return images_with_loc
+
+    def _quantize(self, data):
+        shape = self.input_details[0]['shape']
+        dtype = self.input_details[0]['dtype']
+        a, b = self.input_details[0]['quantization']
+        
+        quantized_data = (data/a + b).astype(dtype).reshape(shape)
+
+        return quantized_data
+
+    def _dequantize(self, output_list):
+        dequantized_list = []
+        for i, output in enumerate(output_list):
+            a, b = self.output_details[i]['quantization']
+            dequantized_output = (output - b)*a
+            dequantized_list.append(dequantized_output)
+
+        return dequantized_list
+
+    def predict(self, X, batch_size=1):
+        output_list = [[] for o in self.output_details]
+        X = self._norm_images(X)
+        X = self._add_location(X)
+        for i in range(0, X.shape[0], batch_size):
+            X_part = X[i:min(i+batch_size, X.shape[0])]
+
+            # Quantize
+            X_part_quantize = self._quantize(X_part)
+            
+            # Run model
+            self.interpreter.set_tensor(self.input_details[0]['index'], X_part_quantize)
+            self.interpreter.invoke()
+            
+            output = [self.interpreter.get_tensor(detail['index']) for detail in self.output_details]
+            output_float = self._dequantize(output)
+
+            for o, o_float in zip(output_list, output_float):
+                o.append(o_float)
+
+        output_list = [np.concatenate(o, axis=0) for o in output_list]
+
+        return output_list
+
 
 class SegmentationApplication(object):
     def __init__(self,
