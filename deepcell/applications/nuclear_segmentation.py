@@ -70,11 +70,28 @@ class NuclearSegmentationApplication(SegmentationApplication):
         else:
             weights_path = None
 
+        dataset_metadata = {
+            'name': 'general_nuclear_train_large',
+            'other': 'Pooled nuclear data from HEK293, HeLa-S3, NIH-3T3, and RAW264.7 cells.'
+        }
+
+        model_metadata = {
+            'batch_size': 16,
+            'lr': 1e-4,
+            'lr_decay': 0.95,
+            'training_seed': 0,
+            'n_epochs': 8,
+            'training_steps_per_epoch': 82800 // 16,
+            'validation_steps_per_epoch': 20760 // 16
+        }
+
         super(NuclearSegmentationApplication, self).__init__(self.model, **dict(
             model_image_shape=model_image_shape,
             dataset_metadata=None,
             model_metadata=None,
             model_mpp=0.65,
             preprocessing_fn=None,
-            postprocessing_fn=deep_watershed
+            postprocessing_fn=deep_watershed,
+            dataset_metadata=dataset_metadata,
+            model_metadata=model_metadata
         ))

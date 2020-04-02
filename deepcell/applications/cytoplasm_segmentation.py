@@ -69,11 +69,28 @@ class CytoplasmSegmentationApplication(SegmentationApplication):
         else:
             weights_path = None
 
+        dataset_metadata = {
+            'name': 'general_cyto',
+            'other': 'Pooled phase and fluorescent cytoplasm data - computationally curated'
+        }
+
+        model_metadata = {
+            'batch_size': 2,
+            'lr': 1e-5,
+            'lr_decay': 0.95,
+            'training_seed': 0,
+            'n_epochs': 8,
+            'training_steps_per_epoch': 7899 // 2,
+            'validation_steps_per_epoch': 1973 // 2
+        }
+
         super(CytoplasmSegmentationApplication, self).__init__(self.model, **dict(
             model_image_shape=model_image_shape,
             dataset_metadata=None,
             model_metadata=None,
             model_mpp=0.65,
             preprocessing_fn=None,
-            postprocessing_fn=deep_watershed
+            postprocessing_fn=deep_watershed,
+            dataset_metadata=dataset_metadata,
+            model_metadata=model_metadata
         ))
