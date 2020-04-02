@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for NuclearSegmentationApplication"""
+"""Tests for CytoplasmSegmentationModel"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -31,14 +31,14 @@ from __future__ import print_function
 
 from tensorflow.python.platform import test
 
-from deepcell.applications import NuclearSegmentationApplication
+from deepcell.applications import CytoplasmSegmentationApplication
 
 
-class TestNuclearSegmentationApplication(test.TestCase):
+class TestCytoplasmSegmentationApplication(test.TestCase):
 
-    def test_nuclear_app(self):
+    def test_cytoplasm_app(self):
 
-        app = NuclearSegmentationApplication(use_pretrained_weights=False)
+        app = CytoplasmSegmentationApplication(use_pretrained_weights=False)
 
         # Check shape parameters
         shape = app.model.output_shape
