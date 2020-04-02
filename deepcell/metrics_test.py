@@ -196,16 +196,16 @@ def _sample3(w, h, imw, imh):
     return true.astype('int'), pred.astype('int')
 
 
-def _sample4_loner(w, h, imw, imh, pred):
+def _sample4_loner(w, h, imw, imh, gain):
 
-    x = np.random.randint(0, imw - w * 2)
-    y = np.random.randint(0, imh - h * 2)
+    x = np.random.randint(2, imw - w * 2)
+    y = np.random.randint(2, imh - h * 2)
 
     im = np.zeros((imw, imh))
     im[0:2, 0:2] = 1
     im[x:x + w, y:y + h] = 2
 
-    if pred:
+    if gain:
         # Return loner in pred
         true = im.copy()
         true[true == 2] = 0
@@ -217,6 +217,7 @@ def _sample4_loner(w, h, imw, imh, pred):
         return im.astype('int'), pred.astype('int')
 
 
+# TODO: can we make this more random
 def _sample_catastrophe(w, h, imw, imh):
 
     x1 = np.random.randint(0, imw - w * 2)
@@ -518,6 +519,7 @@ class TestObjectAccuracy(test.TestCase):
         _ = metrics.ObjectAccuracy(y_true, y_pred)
 
     def test_save_error_ids(self):
+
         # cell 1 in assigned correctly, cells 2 and 3 have been merged
         y_true, y_pred = _sample1(10, 10, 30, 30, merge=True)
         o = metrics.ObjectAccuracy(y_true, y_pred)
@@ -575,6 +577,30 @@ class TestObjectAccuracy(test.TestCase):
         assert set(label_dict['correct']['y_pred'][0]) == y_pred_correct
         assert set(label_dict['splits']['y_true']) == y_true_split
         assert set(label_dict['splits']['y_pred']) == y_pred_split
+
+        # gained cell in predictions
+        y_true, y_pred = _sample4_loner(10, 10, 30, 30, gain=True)
+        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=.05, cutoff2=.05)
+        label_dict, iou_matrix, cm, rm = o.save_error_ids()
+        assert label_dict['correct']['y_true'] == [1]
+        assert label_dict['correct']['y_pred'] == [1]
+        assert label_dict['gains']['y_pred'] == [2]
+
+        # missed cell in true
+        y_true, y_pred = _sample4_loner(10, 10, 30, 30, gain=False)
+        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=.05, cutoff2=.05)
+        label_dict, iou_matrix, cm, rm = o.save_error_ids()
+        assert label_dict['correct']['y_true'] == [1]
+        assert label_dict['correct']['y_pred'] == [1]
+        assert label_dict['misses']['y_true'] == [2]
+
+        # trump presidency
+        y_true, y_pred = _sample_catastrophe(10, 10, 30, 30)
+        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=.05, cutoff2=.05)
+        label_dict, iou_matrix, cm, rm = o.save_error_ids()
+        assert set(label_dict['catastrophes']['y_true']) == set(np.unique(y_true[y_true > 0]))
+        assert set(label_dict['catastrophes']['y_pred']) == set(np.unique(y_pred[y_pred > 0]))
+
 
 
     def test_optional_outputs(self):
