@@ -165,7 +165,8 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                  cutoff1=0.4,
                  cutoff2=0.1,
                  test=False,
-                 seg=False):
+                 seg=False,
+                 penalize_merges=False):
         self.cutoff1 = cutoff1
         self.cutoff2 = cutoff2
         self.seg = seg
@@ -236,7 +237,8 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         elif test is False:
             self.empty_frame = False
             self._calc_iou()
-            self._make_matrix()
+            self._modify_iou(penalize_merges)
+            self.make_matrix()
             self._linear_assignment()
 
             # Check if there are loners before proceeding
@@ -296,7 +298,47 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                (intersection.sum() > 0.5 * np.sum(self.y_true == index)):
                 self.seg_thresh[iou_y_true_idx - 1, iou_y_pred_idx - 1] = 1
 
-    def _make_matrix(self):
+    def _modify_iou(self, penalize_merges):
+        """Modifies the IOU matrix to boost the value for small cells.
+        """
+
+        if penalize_merges:
+            print("penalize_merges")
+        # get non-zero values in iou matrix
+        true_labels, pred_labels = np.where(np.logical_and(self.iou > 0,
+                                                           self.iou < (1 - self.cutoff1)))
+
+        print("true labels, predicted labels {} {}".format(true_labels, pred_labels))
+        self.iou_modified = self.iou.copy()
+
+        for idx in range(len(true_labels)):
+            # add 1 to get back to original label id
+            true_label, pred_label = true_labels[idx] + 1, pred_labels[idx] + 1
+            true_mask = self.y_true == true_label
+            pred_mask = self.y_pred == pred_label
+
+            true_in_pred = np.sum(self.y_true[pred_mask] == true_label) / (np.sum(true_mask) + 1)
+            pred_in_true = np.sum(self.y_pred[true_mask] == pred_label) / (np.sum(pred_mask) + 1)
+
+            iou_val = self.iou[true_label - 1, pred_label - 1]
+            max_val = np.max([true_in_pred, pred_in_true])
+
+            print("iou_val {}, max_val {}".format(iou_val, max_val))
+
+            # prevent small cells that were merged with large cell from getting dropped
+            if iou_val < self.cutoff2 and max_val > 0.5:
+                self.iou_modified[true_label - 1, pred_label - 1] = self.cutoff2
+
+                # if any of the above events are detected, prevents direct matches of partner cells
+                if penalize_merges:
+                    if true_in_pred > 0.5:
+                        fix_idx = np.where(self.iou[:, pred_label - 1] > 1 - self.cutoff1)
+                        self.iou_modified[fix_idx, pred_label - 1] = 1 - self.cutoff1 - 0.01
+                    elif pred_in_true > 0.5:
+                            fix_idx = np.where(self.iou[true_label - 1, :] > 1 - self.cutoff1)
+                            self.iou_modified[true_label - 1, fix_idx] = 1 - self.cutoff1 - 0.01
+
+    def make_matrix(self):
         """Assembles cost matrix using the iou matrix and cutoff1
 
         The previously calculated iou matrix is cast into the top left and
@@ -309,8 +351,8 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         self.cm = np.ones((self.n_obj, self.n_obj))
 
         # Assign 1 - iou to top left and bottom right
-        self.cm[:self.n_true, :self.n_pred] = 1 - self.iou
-        self.cm[-self.n_pred:, -self.n_true:] = 1 - self.iou.T
+        self.cm[:self.n_true, :self.n_pred] = 1 - self.iou_modified
+        self.cm[-self.n_pred:, -self.n_true:] = 1 - self.iou_modified.T
 
         # Calculate diagonal corners
         bl = self.cutoff1 * \
@@ -345,7 +387,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         self.correct_indices['y_true'].append(correct_index[0] + 1)
         self.correct_indices['y_pred'].append(correct_index[1] + 1)
 
-        print("correct indices are {}".format(self.correct_indices))
+        print("the following cells were correctly detected: {}".format(self.correct_indices))
 
         # Calc seg score for true positives if requested
         if self.seg is True:
@@ -359,6 +401,8 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         self.loners_true, _ = np.where(
             self.cm_res[:self.n_true, -self.n_true:] == 1)
 
+        print("pred loners {}, true loners {}".format(self.loners_pred, self.loners_true))
+
     def _assign_loners(self):
         """Generate an iou matrix for the subset unassigned cells
         """
@@ -371,9 +415,9 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
 
         for i, t in enumerate(self.loners_true):
             for j, p in enumerate(self.loners_pred):
-                self.cost_l[i, j] = self.iou[t, p]
+                self.cost_l[i, j] = self.iou_modified[t, p]
 
-        self.cost_l_bin = self.cost_l > self.cutoff2
+        self.cost_l_bin = self.cost_l >= self.cutoff2
 
     def _array_to_graph(self):
         """Transform matrix for unassigned cells into a graph object
@@ -426,6 +470,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         for g in (self.G.subgraph(c) for c in nx.connected_components(self.G)):
             # Get the highest degree node
             k = max(dict(g.degree).items(), key=operator.itemgetter(1))[0]
+            print("g degree is {}, nodes {}".format(g.degree, g.nodes))
 
             # Map index back to original cost matrix, adjust for 1-based indexing in labels
             index = int(k.split('_')[-1]) + 1
@@ -451,9 +496,6 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
 
             # Process multi-degree nodes
             elif g.degree[k] > 1:
-                print("highest degree node k {}".format(k))
-                print("nodes are {}".format(g.nodes))
-                print("g degree is {}".format(g.degree))
                 node_type = k.split('_')[0]
                 nodes = g.nodes()
                 # Check whether the subgraph has multiple types of the
@@ -570,7 +612,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                       "catastrophes": self.catastrophe_indices,
                       "correct": self.correct_indices}
 
-        return error_dict, self.iou, self.cm, self.results
+        return error_dict, self.iou, self.cm, self.results, self.iou_modified
 
 
 def to_precision(x, p):
