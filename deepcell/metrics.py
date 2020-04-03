@@ -303,6 +303,10 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
 
     def _modify_iou(self, force_event_links):
         """Modifies the IOU matrix to boost the value for small cells.
+
+        Args:
+            force_event_links (:obj:`bool'): flag that determines whether to modify IOU values of
+             large cells if a small cell has been split or merged with them.
         """
 
         # identify cells that have matches in IOU but may be too small
@@ -1064,6 +1068,11 @@ def match_nodes(gt, res):
 
 def plot_errors(y_true, y_pred, error_dict):
     """Plots the errors identified from linear assignment code
+
+    Args:
+        y_true: 2D matrix of true labels
+        y_pred: 2D matrix of predicted labels
+        error_dict: dictionary produced by save_error_ids with IDs of all error cells
     """
 
     plotting_tif = np.zeros_like(y_true)
@@ -1074,14 +1083,15 @@ def plot_errors(y_true, y_pred, error_dict):
     y_true, _, _ = relabel_sequential(y_true)
     y_pred = erode_edges(y_pred, 1)
     y_pred, _, _ = relabel_sequential(y_pred)
-    # gained detections are tracked with predicted labels
-    gains = error_dict.pop("gains")["y_pred"]
-    plotting_tif[np.isin(y_pred, gains)] = 1
 
-    # all other events are tracked with true labels
+    # missed detections are tracked with true labels
+    misses = error_dict.pop("misses")["y_pred"]
+    plotting_tif[np.isin(y_pred, misses)] = 1
+
+    # all other events are tracked with predicted labels
     category_id = 2
     for key in error_dict.keys():
-        labels = error_dict[key]["y_true"]
+        labels = error_dict[key]["y_pred"]
         plotting_tif[np.isin(y_true, labels)] = category_id
         category_id += 1
 
@@ -1094,6 +1104,6 @@ def plot_errors(y_true, y_pred, error_dict):
 
     # tell the colorbar to tick at integers
     cbar = fig.colorbar(mat, ticks=np.arange(np.min(plotting_tif), np.max(plotting_tif) + 1))
-    cbar.ax.set_yticklabels(["Background", "gains", "splits", "merges",
-                             "misses", "catastrophes", "correct"])
+    cbar.ax.set_yticklabels(["Background", "misses", "splits", "merges",
+                             "gains", "catastrophes", "correct"])
     fig.tight_layout()
