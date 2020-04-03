@@ -383,8 +383,8 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         # Identify direct matches as true positives
         correct_index = np.where(self.cm_res[:self.n_true, :self.n_pred] == 1)
         self.correct_detections += len(correct_index[0])
-        self.correct_indices['y_true'].append(correct_index[0] + 1)
-        self.correct_indices['y_pred'].append(correct_index[1] + 1)
+        self.correct_indices['y_true'] += list(correct_index[0] + 1)
+        self.correct_indices['y_pred'] += list(correct_index[1] + 1)
 
         # Calc seg score for true positives if requested
         if self.seg is True:
