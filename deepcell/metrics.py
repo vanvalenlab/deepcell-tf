@@ -166,7 +166,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                  cutoff2=0.1,
                  test=False,
                  seg=False,
-                 penalize_merges=False):
+                 force_event_links=False):
         self.cutoff1 = cutoff1
         self.cutoff2 = cutoff2
         self.seg = seg
@@ -237,8 +237,8 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         elif test is False:
             self.empty_frame = False
             self._calc_iou()
-            self._modify_iou(penalize_merges)
-            self.make_matrix()
+            self._modify_iou(force_event_links)
+            self._make_matrix()
             self._linear_assignment()
 
             # Check if there are loners before proceeding
@@ -298,7 +298,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                (intersection.sum() > 0.5 * np.sum(self.y_true == index)):
                 self.seg_thresh[iou_y_true_idx - 1, iou_y_pred_idx - 1] = 1
 
-    def _modify_iou(self, penalize_merges):
+    def _modify_iou(self, force_event_links):
         """Modifies the IOU matrix to boost the value for small cells.
         """
 
@@ -306,7 +306,6 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         true_labels, pred_labels = np.where(np.logical_and(self.iou > 0,
                                                            self.iou < (1 - self.cutoff1)))
 
-        print("true labels, predicted labels {} {}".format(true_labels, pred_labels))
         self.iou_modified = self.iou.copy()
 
         for idx in range(len(true_labels)):
@@ -322,8 +321,6 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             iou_val = self.iou[true_label - 1, pred_label - 1]
             max_val = np.max([true_in_pred, pred_in_true])
 
-            print("iou_val {}, max_val {}".format(iou_val, max_val))
-
             # if this cell has a small IOU due to its small size,
             # but is at least half contained within the big cell,
             # we bump its IOU value up so it doesn't get dropped from the graph
@@ -332,7 +329,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
 
                 # optionally, we can also decrease the IOU value of the cell that
                 # swallowed up the small cell so that it doesn't directly match a different cell
-                if penalize_merges:
+                if force_event_links:
                     if true_in_pred > 0.5:
                         fix_idx = np.where(self.iou[:, pred_label - 1] > 1 - self.cutoff1)
                         self.iou_modified[fix_idx, pred_label - 1] = 1 - self.cutoff1 - 0.01
@@ -340,7 +337,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                             fix_idx = np.where(self.iou[true_label - 1, :] > 1 - self.cutoff1)
                             self.iou_modified[true_label - 1, fix_idx] = 1 - self.cutoff1 - 0.01
 
-    def make_matrix(self):
+    def _make_matrix(self):
         """Assembles cost matrix using the iou matrix and cutoff1
 
         The previously calculated iou matrix is cast into the top left and
@@ -389,8 +386,6 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         self.correct_indices['y_true'].append(correct_index[0] + 1)
         self.correct_indices['y_pred'].append(correct_index[1] + 1)
 
-        print("the following cells were correctly detected: {}".format(self.correct_indices))
-
         # Calc seg score for true positives if requested
         if self.seg is True:
             iou_mask = self.iou.copy()
@@ -402,8 +397,6 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             self.cm_res[-self.n_pred:, :self.n_pred] == 1)
         self.loners_true, _ = np.where(
             self.cm_res[:self.n_true, -self.n_true:] == 1)
-
-        print("pred loners {}, true loners {}".format(self.loners_pred, self.loners_true))
 
     def _assign_loners(self):
         """Generate an iou matrix for the subset unassigned cells
@@ -472,7 +465,6 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         for g in (self.G.subgraph(c) for c in nx.connected_components(self.G)):
             # Get the highest degree node
             k = max(dict(g.degree).items(), key=operator.itemgetter(1))[0]
-            print("g degree is {}, nodes {}".format(g.degree, g.nodes))
 
             # Map index back to original cost matrix, adjust for 1-based indexing in labels
             index = int(k.split('_')[-1]) + 1
@@ -614,7 +606,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                       "catastrophes": self.catastrophe_indices,
                       "correct": self.correct_indices}
 
-        return error_dict, self.iou, self.cm, self.results, self.iou_modified
+        return error_dict
 
 
 def to_precision(x, p):

@@ -184,8 +184,18 @@ def _sample3(w, h, imw, imh):
 
     true = im
 
-    xs = np.random.randint(1, w * 0.9)
-    ys = np.random.randint(1, h * 0.9)
+    # generate sequence of potential values for predicted split point
+    x_splits = np.arange(1, w * 0.9)
+    y_splits = np.arange(1, h * 0.9)
+
+    # generate mask to keep values that are sufficiently different from those picked for true image
+    x_keep = np.logical_or(x_splits < xs - w * 0.2, x_splits > xs + w * 0.3)
+    y_keep = np.logical_or(y_splits < ys - h * 0.2, y_splits > ys + h * 0.3)
+
+    # pick one of appropriate values as new cutoff point
+    xs = int(np.random.choice(x_splits[x_keep], 1)[0])
+    ys = int(np.random.choice(y_splits[y_keep], 1)[0])
+
     im = np.zeros((imw, imh))
     im[x:x + xs, y:y + ys] = 1
     im[x + xs:x + w, y:y + ys] = 2
@@ -217,7 +227,6 @@ def _sample4_loner(w, h, imw, imh, gain):
         return im.astype('int'), pred.astype('int')
 
 
-# TODO: can we make this more random
 def _sample_catastrophe(w, h, imw, imh):
 
     x1 = np.random.randint(0, imw - w * 2)
@@ -523,7 +532,7 @@ class TestObjectAccuracy(test.TestCase):
         # cell 1 in assigned correctly, cells 2 and 3 have been merged
         y_true, y_pred = _sample1(10, 10, 30, 30, merge=True)
         o = metrics.ObjectAccuracy(y_true, y_pred)
-        label_dict, iou_matrix, cm, rm, iou_modified = o.save_error_ids()
+        label_dict = o.save_error_ids()
         assert label_dict['correct']['y_true'] == [1]
         assert label_dict['correct']['y_pred'] == [1]
         assert set(label_dict['merges']['y_true']) == {2, 3}
@@ -532,76 +541,95 @@ class TestObjectAccuracy(test.TestCase):
         # cell 1 in assigned correctly, cell 2 has been split
         y_true, y_pred = _sample1(10, 10, 30, 30, merge=False)
         o = metrics.ObjectAccuracy(y_true, y_pred)
-        label_dict, iou_matrix, cm, rm, iou_modified = o.save_error_ids()
+        label_dict = o.save_error_ids()
         assert label_dict['correct']['y_true'] == [1]
         assert label_dict['correct']['y_pred'] == [1]
         assert set(label_dict['splits']['y_pred']) == {2, 3}
         assert label_dict['splits']['y_true'] == [2]
 
-        # 3 cells merged together
-        y_true, y_pred = _sample2_3(10, 10, 30, 30, merge=True)
-        o = metrics.ObjectAccuracy(y_true, y_pred, penalize_merges=True, cutoff1=0.2, cutoff2=0.1)
-        label_dict, iou_matrix, cm, rm, iou_modified = o.save_error_ids()
-        plt.imshow(y_true)
-        assert label_dict['correct']['y_true'] == [1]
-        assert label_dict['correct']['y_pred'] == [1]
-        assert set(label_dict['merges']['y_true']) == {2, 3, 4}
-        assert label_dict['merges']['y_pred'] == [2]
-
-        # 2 of 3 cells merged together
-        y_true, y_pred, y_true_merge, y_true_correct, y_pred_merge, y_pred_correct = \
-            _sample2_2(10, 10, 30, 30)
-        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=.2, cutoff2=.1, penalize_merges=True)
-        label_dict, iou_matrix, cm, rm, iou_modified = o.save_error_ids()
-        plt.imshow(y_true)
-        # TODO: modify correct so that y_true isn't list of arrays
-        assert set(label_dict['correct']['y_true'][0]) == y_true_correct
-        assert set(label_dict['correct']['y_pred'][0]) == y_pred_correct
-        assert set(label_dict['merges']['y_true']) == y_true_merge
-        assert set(label_dict['merges']['y_pred']) == y_pred_merge
-
-        # 1 cell split into three pieces
-        y_true, y_pred = _sample2_3(10, 10, 30, 30, merge=False)
-        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1, penalize_merges=True)
-        label_dict, iou_matrix, cm, rm, iou_modified = o.save_error_ids()
-        assert label_dict['correct']['y_true'] == [1]
-        assert label_dict['correct']['y_pred'] == [1]
-        assert label_dict['splits']['y_true'] == [2]
-        assert set(label_dict['splits']['y_pred']) == {2, 3, 4}
-
-        # 1 cell split into two pieces, one small accurate cell
-        y_true, y_pred, y_true_split, y_true_correct, y_pred_split, y_pred_correct = \
-            _sample2_2(10, 10, 30, 30, merge=False)
-        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=.05, cutoff2=.05)
-        label_dict, iou_matrix, cm, rm = o.save_error_ids()
-        # TODO: modify correct so that y_true isn't list of arrays
-        assert set(label_dict['correct']['y_true'][0]) == y_true_correct
-        assert set(label_dict['correct']['y_pred'][0]) == y_pred_correct
-        assert set(label_dict['splits']['y_true']) == y_true_split
-        assert set(label_dict['splits']['y_pred']) == y_pred_split
-
         # gained cell in predictions
         y_true, y_pred = _sample4_loner(10, 10, 30, 30, gain=True)
-        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=.05, cutoff2=.05)
-        label_dict, iou_matrix, cm, rm = o.save_error_ids()
+        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1)
+        label_dict = o.save_error_ids()
         assert label_dict['correct']['y_true'] == [1]
         assert label_dict['correct']['y_pred'] == [1]
         assert label_dict['gains']['y_pred'] == [2]
 
         # missed cell in true
         y_true, y_pred = _sample4_loner(10, 10, 30, 30, gain=False)
-        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=.05, cutoff2=.05)
-        label_dict, iou_matrix, cm, rm, iou_modified = o.save_error_ids()
+        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1)
+        label_dict = o.save_error_ids()
         assert label_dict['correct']['y_true'] == [1]
         assert label_dict['correct']['y_pred'] == [1]
         assert label_dict['misses']['y_true'] == [2]
 
-        # trump presidency
-        y_true, y_pred = _sample_catastrophe(10, 10, 30, 30)
-        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=.05, cutoff2=.05)
-        label_dict, iou_matrix, cm, rm, iou_modified = o.save_error_ids()
+        # catastrophe between 3 cells
+        y_true, y_pred = _sample3(10, 10, 30, 30)
+        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1)
+        label_dict = o.save_error_ids()
         assert set(label_dict['catastrophes']['y_true']) == set(np.unique(y_true[y_true > 0]))
         assert set(label_dict['catastrophes']['y_pred']) == set(np.unique(y_pred[y_pred > 0]))
+
+        # The tests below are more stochastic, and should be run multiple times
+
+        for _ in range(10):
+
+            # 3 cells merged together, with forced event links to ensure accurate assignment
+            y_true, y_pred = _sample2_3(10, 10, 30, 30, merge=True)
+            o = metrics.ObjectAccuracy(y_true, y_pred, force_event_links=True,
+                                       cutoff1=0.2, cutoff2=0.1)
+            label_dict = o.save_error_ids()
+            assert label_dict['correct']['y_true'] == [1]
+            assert label_dict['correct']['y_pred'] == [1]
+            assert set(label_dict['merges']['y_true']) == {2, 3, 4}
+            assert label_dict['merges']['y_pred'] == [2]
+
+            # # 3 cells merged together, without forced event links to ensure accurate assignment
+            # # This means errors will either be merges or misses
+            # y_true, y_pred = _sample2_3(10, 10, 30, 30, merge=True)
+            # o = metrics.ObjectAccuracy(y_true, y_pred, force_event_links=False)
+            # label_dict = o.save_error_ids()
+            # y_true_errors = set(label_dict['merges']['y_true'] + label_dict['misses']['y_true'])
+            # y_pred_errors = label_dict['merges']['y_pred']
+            #
+            # assert label_dict['correct']['y_true'] == [1]
+            # assert label_dict['correct']['y_pred'] == [1]
+            # assert y_true_errors == {2, 3, 4}
+            # assert y_pred_errors == [2]
+
+            # 2 of 3 cells merged together
+            y_true, y_pred, y_true_merge, y_true_correct, y_pred_merge, y_pred_correct = \
+                _sample2_2(10, 10, 30, 30)
+            o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1,
+                                       force_event_links=True)
+            label_dict = o.save_error_ids()
+            # TODO: modify correct so that y_true isn't list of arrays
+            assert set(label_dict['correct']['y_true'][0]) == y_true_correct
+            assert set(label_dict['correct']['y_pred'][0]) == y_pred_correct
+            assert set(label_dict['merges']['y_true']) == y_true_merge
+            assert set(label_dict['merges']['y_pred']) == y_pred_merge
+
+            # 1 cell split into three pieces
+            y_true, y_pred = _sample2_3(10, 10, 30, 30, merge=False)
+            o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1,
+                                       force_event_links=True)
+            label_dict = o.save_error_ids()
+            assert label_dict['correct']['y_true'] == [1]
+            assert label_dict['correct']['y_pred'] == [1]
+            assert label_dict['splits']['y_true'] == [2]
+            assert set(label_dict['splits']['y_pred']) == {2, 3, 4}
+
+            # 1 cell split into two pieces, one small accurate cell
+            y_true, y_pred, y_true_split, y_true_correct, y_pred_split, y_pred_correct = \
+                _sample2_2(10, 10, 30, 30, merge=False)
+            o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1,
+                                       force_event_links=True)
+            label_dict = o.save_error_ids()
+            # TODO: modify correct so that y_true isn't list of arrays
+            assert set(label_dict['correct']['y_true'][0]) == y_true_correct
+            assert set(label_dict['correct']['y_pred'][0]) == y_pred_correct
+            assert set(label_dict['splits']['y_true']) == y_true_split
+            assert set(label_dict['splits']['y_pred']) == y_pred_split
 
     def test_optional_outputs(self):
         y_true, y_pred = _sample1(10, 10, 30, 30, True)
