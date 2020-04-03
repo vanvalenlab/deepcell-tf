@@ -52,6 +52,10 @@ class SegmentationApplication(object):
             postprocessing_fn (function, optional): Postprocessing function to apply
                 to data after prediction. Defaults to None.
                 Must accept an input of a list of arrays and then return a single array.
+
+        Raises:
+            ValueError: Preprocessing_fn must be a callable function
+            ValueError: Postprocessing_fn must be a callable function
         """
 
         self.model = model
@@ -62,6 +66,12 @@ class SegmentationApplication(object):
         self.postprocessing_fn = kwargs.get('postprocessing_fn', None)
         self.dataset_metadata = kwargs.get('dataset_metadata', None)
         self.model_metadata = kwargs.get('model_metadata', None)
+
+        # Test that pre and post processing functions are callable
+        if (self.preprocessing_fn is not None) and (callable(self.preprocessing_fn) is False):
+            raise ValueError('Preprocessing_fn must be a callable function.')
+        if (self.postprocessing_fn is not None) and (callable(self.postprocessing_fn) is False):
+            raise ValueError('Postprocessing_fn must be a callable function.')
 
     def predict(self, image,
                 batch_size=4,

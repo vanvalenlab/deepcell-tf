@@ -126,6 +126,11 @@ class TestSegmentationApplication(test.TestCase):
         image, tiles, output_tiles, output_images, label_image = app.predict(x, debug=True)
         self.assertEqual(1, len(np.unique(image)))
 
+        # Test bad preprocess input
+        kwargs = {'preprocessing_fn': 'x'}
+        with self.assertRaises(ValueError):
+            app = SegmentationApplication(model, **kwargs)
+
     def test_predict_postprocess(self):
 
         def _postprocess(Lx):
@@ -141,3 +146,8 @@ class TestSegmentationApplication(test.TestCase):
         x = np.random.rand(1, 300, 300, 1)
         y = app.predict(x)
         self.assertEqual(1, len(np.unique(y)))
+
+        # Test bad postprocess input
+        kwargs = {'postprocessing_fn': 'x'}
+        with self.assertRaises(ValueError):
+            app = SegmentationApplication(model, **kwargs)
