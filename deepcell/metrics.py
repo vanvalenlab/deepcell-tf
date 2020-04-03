@@ -213,16 +213,19 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         self.gained_indices = {}
         self.gained_indices['y_pred'] = []
 
-        self.merge_indices = {}
-        self.merge_indices['y_true'] = []
-        self.merge_indices['y_pred'] = []
+        self.merge_indices = {
+            'y_true': [],
+            'y_pred': []
+        }
 
-        self.split_indices = {}
-        self.split_indices['y_true'] = []
-        self.split_indices['y_pred'] = []
+        self.split_indices = {
+            'y_true': [],
+            'y_pred': []
+        }
 
-        self.catastrophe_indices = {}
-        self.catastrophe_indices['y_true'] = []
+        self.catastrophe_indices = {
+            'y_true': []
+        }
         self.catastrophe_indices['y_pred'] = []
 
         # Check if either frame is empty before proceeding
