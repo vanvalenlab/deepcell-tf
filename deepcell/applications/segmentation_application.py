@@ -36,7 +36,14 @@ class SegmentationApplication(object):
     """Application object that takes a model with weights and manages predictions
     """
 
-    def __init__(self, model, **kwargs):
+    def __init__(self,
+                 model,
+                 model_image_shape=(128, 128, 1),
+                 model_mpp=0.65,
+                 preprocessing_fn=None,
+                 postprocessing_fn=None,
+                 dataset_metadata=None,
+                 model_metadata=None):
         """Initializes model for application object
 
         Args:
@@ -60,15 +67,15 @@ class SegmentationApplication(object):
 
         self.model = model
 
-        self.model_image_shape = kwargs.get('model_image_shape', (128, 128, 1))
+        self.model_image_shape = model_image_shape
         # Require dimension 1 larger than model_input_shape due to addition of batch dimension
         self.required_rank = len(self.model_image_shape) + 1
 
-        self.model_mpp = kwargs.get('model_mpp', 0.65)
-        self.preprocessing_fn = kwargs.get('preprocessing_fn', None)
-        self.postprocessing_fn = kwargs.get('postprocessing_fn', None)
-        self.dataset_metadata = kwargs.get('dataset_metadata', None)
-        self.model_metadata = kwargs.get('model_metadata', None)
+        self.model_mpp = model_mpp
+        self.preprocessing_fn = preprocessing_fn
+        self.postprocessing_fn = postprocessing_fn
+        self.dataset_metadata = dataset_metadata
+        self.model_metadata = model_metadata
 
         # Test that pre and post processing functions are callable
         if (self.preprocessing_fn is not None) and (callable(self.preprocessing_fn) is False):

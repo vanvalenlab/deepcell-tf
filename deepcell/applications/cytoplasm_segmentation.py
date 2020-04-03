@@ -86,11 +86,10 @@ class CytoplasmSegmentationApplication(SegmentationApplication):
             'validation_steps_per_epoch': 1973 // 2
         }
 
-        super(CytoplasmSegmentationApplication, self).__init__(self.model, **dict(
-            model_image_shape=model_image_shape,
-            model_mpp=0.65,
-            preprocessing_fn=None,
-            postprocessing_fn=deep_watershed,
-            dataset_metadata=dataset_metadata,
-            model_metadata=model_metadata
-        ))
+        super(CytoplasmSegmentationApplication, self).__init__(self.model,
+                                                               model_image_shape=model_image_shape,
+                                                               model_mpp=0.65,
+                                                               preprocessing_fn=None,
+                                                               postprocessing_fn=deep_watershed,
+                                                               dataset_metadata=dataset_metadata,
+                                                               model_metadata=model_metadata)
