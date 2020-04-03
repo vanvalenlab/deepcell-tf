@@ -152,12 +152,12 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             analysis during testing
         seg (:obj:`bool`, optional): Calculates SEG score for cell tracking
             competition
+        force_event_links(:obj:'bool, optional): Flag that determines whether to modify IOU
+            calculation so that merge or split events with cells of very different sizes are
+            never misclassified as misses/gains.
 
     Raises:
         ValueError: If y_true and y_pred are not the same shape
-
-    Warning:
-        Position indicies are not currently collected appropriately
     """
     def __init__(self,
                  y_true,
@@ -801,6 +801,9 @@ class Metrics(object):
         Args:
             y_true (numpy.array): Labeled ground truth annotations
             y_pred (numpy.array): Labeled prediction mask
+
+        Raises:
+            ValueError: if the shape of the input tensor is less than length three
         """
 
         if len(y_true.shape) < 3:
