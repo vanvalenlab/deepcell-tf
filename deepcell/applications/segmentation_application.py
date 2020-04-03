@@ -61,6 +61,9 @@ class SegmentationApplication(object):
         self.model = model
 
         self.model_image_shape = kwargs.get('model_image_shape', (128, 128, 1))
+        # Require dimension 1 larger than model_input_shape due to addition of batch dimension
+        self.required_rank = len(self.model_image_shape) + 1
+
         self.model_mpp = kwargs.get('model_mpp', 0.65)
         self.preprocessing_fn = kwargs.get('preprocessing_fn', None)
         self.postprocessing_fn = kwargs.get('postprocessing_fn', None)
@@ -105,9 +108,9 @@ class SegmentationApplication(object):
         """
 
         # Check input size of image
-        if len(image.shape) != 4:
-            raise ValueError('Input data must have 4 dimensions, [batch, x, y, channel'
-                             'Input data only has {} dimensions'.format(str(len(image.shape))))
+        if len(image.shape) != self.required_rank:
+            raise ValueError('Input data must have {} dimensions'
+                             'Input data only has {} dimensions'.format(str(self.required_rank), str(len(image.shape))))
 
         # Resize image if necessary
         if (image_mpp is not None) & (image_mpp != self.model_mpp):
