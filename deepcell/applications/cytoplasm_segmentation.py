@@ -29,6 +29,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+
 from tensorflow.python.keras.utils.data_utils import get_file
 
 from deepcell_toolbox.deep_watershed import deep_watershed
@@ -59,7 +61,7 @@ class CytoplasmSegmentationApplication(SegmentationApplication):
 
         if use_pretrained_weights:
             weights_path = get_file(
-                WEIGHTS_PATH.split('/')[-1],
+                os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
                 md5_hash='4e9136df5071930a66365b2229fc358b'

@@ -29,6 +29,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+
 from tensorflow.python.keras.utils.data_utils import get_file
 
 from deepcell_toolbox.deep_watershed import deep_watershed
@@ -60,7 +62,7 @@ class NuclearSegmentationApplication(SegmentationApplication):
 
         if use_pretrained_weights:
             weights_path = get_file(
-                WEIGHTS_PATH.split('/')[-1],
+                os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
                 md5_hash='eb29808ef2f662fb3bcda6986e47f91a'
