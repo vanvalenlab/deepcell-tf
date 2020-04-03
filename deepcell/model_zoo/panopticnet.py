@@ -48,6 +48,33 @@ from deepcell.utils.misc_utils import get_sorted_keys
 
 
 def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per_batch=1):
+    """ Merges feature with its temporal residual through addition.
+    Input feature (x) --> Temporal convolution* --> Residual feature (x')
+    *Type of temporal convolution specified by "mode" argument
+    Output: y = x + x'
+
+    Args:
+        feature: Input layer
+        mode (str, optional): Mode of temporal convolution. Choose from {'conv','lstm','gru', None}
+            Defaults to 'conv'.
+        feature_size (int, optional): Defaults to 256.
+        frames_per_batch (int, optional): Defaults to 1.
+
+    Raises:
+        ValueError: Mode not 'conv', 'lstm', 'gru' or None
+
+    Returns:
+        Input feature merged with its residual from a temporal convolution.
+            If mode=None, the output is exactly the input.
+    """
+
+    acceptable_modes = {'conv', 'lstm', 'gru', None}
+    if mode is not None:
+        mode = str(mode).lower()
+        if mode not in acceptable_modes:
+            raise ValueError('Mode {} not supported. Please choose from {}.'.format(
+                mode, str(acceptable_modes)))
+
     if mode == 'conv':
         x = Conv3D(feature_size,
                    (frames_per_batch, 3, 3),
@@ -68,6 +95,8 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per
                       padding='same',
                       activation='relu',
                       return_sequences=True)(feature)
+    else:
+        x = feature
 
     temporal_feature = x
 
@@ -75,8 +104,7 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per
 
 
 def semantic_upsample(x, n_upsample, n_filters=64, ndim=2):
-    """
-    Performs iterative rounds of 2x upsampling and
+    """Performs iterative rounds of 2x upsampling and
     convolutions with a 3x3 filter to remove aliasing effects
 
     Args:
@@ -86,6 +114,9 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2):
             the 3x3 convolution
         ndim (int): The spatial dimensions of the input data.
             Default is 2, but it also works with 3
+
+    Raises:
+        ValueError: ndim is not 2 or 3
 
     Returns:
         tensor: The upsampled tensor
@@ -276,7 +307,8 @@ def PanopticNet(backbone,
         create_semantic_head (function): Function to get to build a
             semantic head submodel.
         frames_per_batch (int): Defaults to 1.
-        temporal_mode: Defaults to None.
+        temporal_mode: Mode of temporal convolution. Choose from {'conv','lstm','gru', None}.
+            Defaults to None.
         num_semantic_heads (int): Defaults to 1.
         num_semantic_classes (list): Defaults to [3].
         norm_method (str): ImageNormalization mode to use. Defaults to 'whole_image'
@@ -299,10 +331,21 @@ def PanopticNet(backbone,
             backbone.  3 is the default for all current backbones.
         kwargs (dict): Other standard inputs for retinanet_mask.
 
+    Raises:
+        ValueError: temporal_mode not 'conv', 'lstm', 'gru'  or None
+
     Returns:
         tensorflow.keras.Model: Panoptic model with a backbone.
     """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+
+    # Check input to __merge_temporal_features
+    acceptable_modes = {'conv', 'lstm', 'gru', None}
+    if temporal_mode is not None:
+        temporal_mode = str(temporal_mode).lower()
+        if temporal_mode not in acceptable_modes:
+            raise ValueError('Mode {} not supported. Please choose from {}.'.format(
+                temporal_mode, str(acceptable_modes)))
 
     if inputs is None:
         if frames_per_batch > 1:
@@ -366,11 +409,10 @@ def PanopticNet(backbone,
     features = [pyramid_dict[key] for key in pyramid_levels]
 
     if frames_per_batch > 1:
-        if temporal_mode in ['conv', 'lstm', 'gru']:
-            temporal_features = [__merge_temporal_features(
-                feature, mode=temporal_mode) for feature in features]
-            for f, k in zip(temporal_features, pyramid_dict.keys()):
-                pyramid_dict[k] = f
+        temporal_features = [__merge_temporal_features(
+            feature, mode=temporal_mode) for feature in features]
+        for f, k in zip(temporal_features, pyramid_dict.keys()):
+            pyramid_dict[k] = f
 
     semantic_levels = [int(re.findall(r'\d+', k)[0]) for k in pyramid_dict]
     target_level = min(semantic_levels)
