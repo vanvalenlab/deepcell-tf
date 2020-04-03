@@ -152,10 +152,10 @@ def _sample2_2(w, h, imw, imh, merge=True, similar_size=False):
 
     if merge:
         return im1.astype('int'), im2.astype('int'), im1_wrong, \
-               im1_correct, im2_wrong, im2_correct
+            im1_correct, im2_wrong, im2_correct
     else:
         return im2.astype('int'), im1.astype('int'), im2_wrong, \
-               im2_correct, im1_wrong, im1_correct
+            im2_correct, im1_wrong, im1_correct
 
 
 def _sample2_3(w, h, imw, imh, merge=True, similar_size=False):
@@ -437,7 +437,7 @@ class TestObjectAccuracy(test.TestCase):
         o = metrics.ObjectAccuracy(y_true, y_pred, test=True)
 
         o._calc_iou()
-        o._modify_iou()
+        o._modify_iou(force_event_links=False)
 
         # Check that modified_iou was created
         self.assertTrue(hasattr(o, 'iou_modified'))
@@ -446,7 +446,7 @@ class TestObjectAccuracy(test.TestCase):
         y_true, y_pred = _sample1(10, 10, 30, 30, True)
         o = metrics.ObjectAccuracy(y_true, y_pred, test=True)
         o._calc_iou()
-        o._modify_iou()
+        o._modify_iou(force_event_links=False)
 
         o._make_matrix()
 
@@ -458,7 +458,7 @@ class TestObjectAccuracy(test.TestCase):
         y_true, y_pred = _sample1(10, 10, 30, 30, True)
         o = metrics.ObjectAccuracy(y_true, y_pred, test=True)
         o._calc_iou()
-        o._modify_iou()
+        o._modify_iou(force_event_links=False)
         o._make_matrix()
 
         o._linear_assignment()
@@ -473,7 +473,7 @@ class TestObjectAccuracy(test.TestCase):
         # Test condition where seg = True
         o = metrics.ObjectAccuracy(y_true, y_pred, test=True, seg=True)
         o._calc_iou()
-        o._modify_iou()
+        o._modify_iou(force_event_links=False)
         o._make_matrix()
         o._linear_assignment()
 
@@ -484,7 +484,7 @@ class TestObjectAccuracy(test.TestCase):
         y_true, y_pred = _sample1(10, 10, 30, 30, True)
         o = metrics.ObjectAccuracy(y_true, y_pred, test=True)
         o._calc_iou()
-        o._modify_iou()
+        o._modify_iou(force_event_links=False)
         o._make_matrix()
         o._linear_assignment()
 
@@ -495,7 +495,7 @@ class TestObjectAccuracy(test.TestCase):
         y_true, y_pred = _sample1(10, 10, 30, 30, True)
         o = metrics.ObjectAccuracy(y_true, y_pred, test=True)
         o._calc_iou()
-        o._modify_iou()
+        o._modify_iou(force_event_links=False)
         o._make_matrix()
         o._linear_assignment()
         o._assign_loners()
@@ -620,7 +620,7 @@ class TestObjectAccuracy(test.TestCase):
             assert label_dict['splits']['y_true'] == [2]
             assert set(label_dict['splits']['y_pred']) == {2, 3, 4}
 
-            # 1 cell split into three pieces, without forced event links. Cells must be similar size
+            # 1 cell split in three pieces, without forced event links. Cells must be similar size
             y_true, y_pred = _sample2_3(10, 10, 30, 30, merge=False, similar_size=True)
             o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1,
                                        force_event_links=False)
