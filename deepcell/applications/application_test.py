@@ -47,7 +47,7 @@ class DummyModel():
 
         y = np.random.rand(*x.shape)
 
-        return [y]*self.n_out
+        return [y] * self.n_out
 
 
 class TestApplication(test.TestCase):
@@ -83,11 +83,11 @@ class TestApplication(test.TestCase):
         self.assertEqual(x.shape, y.shape)
 
         # image_mpp > model_mpp
-        y = app.predict(x, image_mpp=2.1*kwargs['model_mpp'])
+        y = app.predict(x, image_mpp=2.1 * kwargs['model_mpp'])
         self.assertEqual(x.shape, y.shape)
 
         # image_mpp < model_mpp
-        y = app.predict(x, image_mpp=0.7*kwargs['model_mpp'])
+        y = app.predict(x, image_mpp=0.7 * kwargs['model_mpp'])
         self.assertEqual(x.shape, y.shape)
 
     def test_predict_segmentation_tiling(self):
