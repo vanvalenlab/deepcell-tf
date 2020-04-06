@@ -132,7 +132,8 @@ class SemanticIterator(Iterator):
         # Add transformed masks for second set of labels
         for transform in transforms_y2:
             transform_kwargs = transforms_kwargs.get(transform, dict())
-            y_transform = _transform_masks(y, transform,
+            print("using y_2")
+            y_transform = _transform_masks(y_2, transform,
                                            data_format=data_format,
                                            **transform_kwargs)
             if y_transform.shape[self.channel_axis] > 1:
