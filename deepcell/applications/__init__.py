@@ -29,9 +29,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.applications.segmentation_application import SegmentationApplication
-from deepcell.applications.cytoplasm_segmentation import CytoplasmSegmentationApplication
-from deepcell.applications.nuclear_segmentation import NuclearSegmentationApplication
+from deepcell.applications.application import Application
+from deepcell.applications.cytoplasm_segmentation import CytoplasmSegmentation
+from deepcell.applications.nuclear_segmentation import NuclearSegmentation
 from deepcell.applications.cell_tracking import CellTrackingModel
 from deepcell.applications.label_detection import LabelDetectionModel
 from deepcell.applications.scale_detection import ScaleDetectionModel

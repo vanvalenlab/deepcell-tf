@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for SegmentationApplication"""
+"""Tests for Application"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -34,7 +34,7 @@ import numpy as np
 from tensorflow.python.keras.layers import Input
 from tensorflow.python.platform import test
 
-from deepcell.applications import SegmentationApplication
+from deepcell.applications import Application
 
 
 class DummyModel():
@@ -50,14 +50,27 @@ class DummyModel():
         return [y]*self.n_out
 
 
-class TestSegmentationApplication(test.TestCase):
+class TestApplication(test.TestCase):
 
-    def test_predict_resize(self):
+    def predict_notimplemented(self):
 
         model = DummyModel()
         kwargs = {'model_mpp': 0.65,
                   'model_image_shape': (128, 128, 1)}
-        app = SegmentationApplication(model, **kwargs)
+        app = Application(model, **kwargs)
+
+        x = np.random.rand(1, 500, 500, 1)
+
+        with self.assertRaises(NotImplementedError):
+            app.predict(x)
+
+    def test_predict_segmentation_resize(self):
+
+        model = DummyModel()
+        kwargs = {'model_mpp': 0.65,
+                  'model_image_shape': (128, 128, 1)}
+        app = Application(model, **kwargs)
+        app.predict = app._predict_segmentation
 
         x = np.random.rand(1, 500, 500, 1)
 
@@ -77,12 +90,13 @@ class TestSegmentationApplication(test.TestCase):
         y = app.predict(x, image_mpp=0.7*kwargs['model_mpp'])
         self.assertEqual(x.shape, y.shape)
 
-    def test_predict_tiling(self):
+    def test_predict_segmentation_tiling(self):
 
         model = DummyModel()
         kwargs = {'model_mpp': 0.65,
                   'model_image_shape': (128, 128, 1)}
-        app = SegmentationApplication(model, **kwargs)
+        app = Application(model, **kwargs)
+        app.predict = app._predict_segmentation
 
         # No tiling
         x = np.random.rand(1, 128, 128, 1)
@@ -99,18 +113,19 @@ class TestSegmentationApplication(test.TestCase):
         y = app.predict(x)
         self.assertEqual(x.shape, y.shape)
 
-    def test_predict_input_size(self):
+    def test_predict_segmentation_input_size(self):
 
         model = DummyModel()
         kwargs = {'model_mpp': 0.65,
                   'model_image_shape': (128, 128, 1)}
-        app = SegmentationApplication(model, **kwargs)
+        app = Application(model, **kwargs)
+        app.predict = app._predict_segmentation
 
         # Raise valueerror for dim != 4
         with self.assertRaises(ValueError):
             y = app.predict(np.random.rand(128, 128, 1))
 
-    def test_predict_preprocess(self):
+    def test_predict_segmentation_preprocess(self):
 
         def _preprocess(x):
             y = np.ones(x.shape)
@@ -120,7 +135,8 @@ class TestSegmentationApplication(test.TestCase):
         kwargs = {'model_mpp': 0.65,
                   'model_image_shape': (128, 128, 1),
                   'preprocessing_fn': _preprocess}
-        app = SegmentationApplication(model, **kwargs)
+        app = Application(model, **kwargs)
+        app.predict = app._predict_segmentation
 
         x = np.random.rand(1, 300, 300, 1)
         image, tiles, output_tiles, output_images, label_image = app.predict(x, debug=True)
@@ -129,9 +145,9 @@ class TestSegmentationApplication(test.TestCase):
         # Test bad preprocess input
         kwargs = {'preprocessing_fn': 'x'}
         with self.assertRaises(ValueError):
-            app = SegmentationApplication(model, **kwargs)
+            app = Application(model, **kwargs)
 
-    def test_predict_postprocess(self):
+    def test_predict_segmentation_postprocess(self):
 
         def _postprocess(Lx):
             y = np.ones(Lx[0].shape)
@@ -141,7 +157,8 @@ class TestSegmentationApplication(test.TestCase):
         kwargs = {'model_mpp': 0.65,
                   'model_image_shape': (128, 128, 1),
                   'postprocessing_fn': _postprocess}
-        app = SegmentationApplication(model, **kwargs)
+        app = Application(model, **kwargs)
+        app.predict = app._predict_segmentation
 
         x = np.random.rand(1, 300, 300, 1)
         y = app.predict(x)
@@ -150,4 +167,4 @@ class TestSegmentationApplication(test.TestCase):
         # Test bad postprocess input
         kwargs = {'postprocessing_fn': 'x'}
         with self.assertRaises(ValueError):
-            app = SegmentationApplication(model, **kwargs)
+            app = Application(model, **kwargs)

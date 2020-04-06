@@ -37,7 +37,7 @@ from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.utils.retinanet_anchor_utils import generate_anchor_params
 from deepcell import model_zoo
-from deepcell.applications import SegmentationApplication
+from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
 
 
@@ -45,7 +45,7 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
                 'model-weights/general_cyto_9c7b79e6238d72c14ea8f87023ac3af9.h5')
 
 
-class CytoplasmSegmentationApplication(SegmentationApplication):
+class CytoplasmSegmentation(Application):
 
     def __init__(self,
                  use_pretrained_weights=True,
@@ -86,10 +86,12 @@ class CytoplasmSegmentationApplication(SegmentationApplication):
             'validation_steps_per_epoch': 1973 // 2
         }
 
-        super(CytoplasmSegmentationApplication, self).__init__(self.model,
-                                                               model_image_shape=model_image_shape,
-                                                               model_mpp=0.65,
-                                                               preprocessing_fn=None,
-                                                               postprocessing_fn=deep_watershed,
-                                                               dataset_metadata=dataset_metadata,
-                                                               model_metadata=model_metadata)
+        super(CytoplasmSegmentation, self).__init__(self.model,
+                                                    model_image_shape=model_image_shape,
+                                                    model_mpp=0.65,
+                                                    preprocessing_fn=None,
+                                                    postprocessing_fn=deep_watershed,
+                                                    dataset_metadata=dataset_metadata,
+                                                    model_metadata=model_metadata)
+
+        self.predict = self._predict_segmentation

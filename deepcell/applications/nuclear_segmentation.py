@@ -37,7 +37,7 @@ from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.utils.retinanet_anchor_utils import generate_anchor_params
 from deepcell import model_zoo
-from deepcell.applications import SegmentationApplication
+from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
 
 
@@ -46,7 +46,7 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
                 '8_epochs_c4b2167eb754923856bc84fb29074413.h5')
 
 
-class NuclearSegmentationApplication(SegmentationApplication):
+class NuclearSegmentation(Application):
 
     def __init__(self,
                  use_pretrained_weights=True,
@@ -87,10 +87,12 @@ class NuclearSegmentationApplication(SegmentationApplication):
             'validation_steps_per_epoch': 20760 // 16
         }
 
-        super(NuclearSegmentationApplication, self).__init__(self.model,
-                                                             model_image_shape=model_image_shape,
-                                                             model_mpp=0.65,
-                                                             preprocessing_fn=None,
-                                                             postprocessing_fn=deep_watershed,
-                                                             dataset_metadata=dataset_metadata,
-                                                             model_metadata=model_metadata)
+        super(NuclearSegmentation, self).__init__(self.model,
+                                                  model_image_shape=model_image_shape,
+                                                  model_mpp=0.65,
+                                                  preprocessing_fn=None,
+                                                  postprocessing_fn=deep_watershed,
+                                                  dataset_metadata=dataset_metadata,
+                                                  model_metadata=model_metadata)
+
+        self.predict = self._predict_segmentation

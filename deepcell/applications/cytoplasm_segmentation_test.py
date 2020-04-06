@@ -30,18 +30,21 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow.python.platform import test
+import numpy as np
 
-from deepcell.applications import CytoplasmSegmentationApplication
+from deepcell.applications import CytoplasmSegmentation
 
 
-class TestCytoplasmSegmentationApplication(test.TestCase):
+class TestCytoplasmSegmentation(test.TestCase):
+
+    def setUp(self):
+
+        self.app = CytoplasmSegmentation(use_pretrained_weights=False)
 
     def test_cytoplasm_app(self):
 
-        app = CytoplasmSegmentationApplication(use_pretrained_weights=False)
-
         # Check shape parameters
-        shape = app.model.output_shape
+        shape = self.app.model.output_shape
         print(shape)
 
         self.assertIsInstance(shape, list)
@@ -49,3 +52,10 @@ class TestCytoplasmSegmentationApplication(test.TestCase):
         self.assertEqual(len(shape[0]), 4)
         self.assertEqual(len(shape[1]), 4)
         self.assertEqual(len(shape[2]), 4)
+
+    def test_predict(self):
+
+        x = np.random.rand(1, 500, 500, 1)
+        y = self.app.predict(x)
+
+        self.assertEqual(x.shape[:-1], y.shape)

@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Base class for segmentation applications"""
+"""Base class for applications"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -32,7 +32,7 @@ from __future__ import print_function
 from deepcell_toolbox.utils import resize, tile_image, untile_image
 
 
-class SegmentationApplication(object):
+class Application(object):
     """Application object that takes a model with weights and manages predictions
     """
 
@@ -83,12 +83,16 @@ class SegmentationApplication(object):
         if (self.postprocessing_fn is not None) and (callable(self.postprocessing_fn) is False):
             raise ValueError('Postprocessing_fn must be a callable function.')
 
-    def predict(self, image,
-                batch_size=4,
-                image_mpp=None,
-                preprocess_kwargs={},
-                postprocess_kwargs={},
-                debug=False):
+    def predict(self, x):
+        raise NotImplementedError
+
+    def _predict_segmentation(self,
+                              image,
+                              batch_size=4,
+                              image_mpp=None,
+                              preprocess_kwargs={},
+                              postprocess_kwargs={},
+                              debug=False):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
