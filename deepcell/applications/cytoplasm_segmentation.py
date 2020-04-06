@@ -51,13 +51,13 @@ class CytoplasmSegmentation(Application):
                  use_pretrained_weights=True,
                  model_image_shape=(128, 128, 1)):
 
-        self.model = PanopticNet('resnet50',
-                                 input_shape=model_image_shape,
-                                 norm_method='whole_image',
-                                 num_semantic_heads=3,
-                                 num_semantic_classes=[1, 1, 2],
-                                 location=True,
-                                 include_top=True)
+        model = PanopticNet('resnet50',
+                            input_shape=model_image_shape,
+                            norm_method='whole_image',
+                            num_semantic_heads=3,
+                            num_semantic_classes=[1, 1, 2],
+                            location=True,
+                            include_top=True)
 
         if use_pretrained_weights:
             weights_path = get_file(
@@ -67,7 +67,7 @@ class CytoplasmSegmentation(Application):
                 md5_hash='4e9136df5071930a66365b2229fc358b'
             )
 
-            self.model.load_weights(weights_path)
+            model.load_weights(weights_path)
         else:
             weights_path = None
 
@@ -86,7 +86,7 @@ class CytoplasmSegmentation(Application):
             'validation_steps_per_epoch': 1973 // 2
         }
 
-        super(CytoplasmSegmentation, self).__init__(self.model,
+        super(CytoplasmSegmentation, self).__init__(model,
                                                     model_image_shape=model_image_shape,
                                                     model_mpp=0.65,
                                                     preprocessing_fn=None,
@@ -94,4 +94,5 @@ class CytoplasmSegmentation(Application):
                                                     dataset_metadata=dataset_metadata,
                                                     model_metadata=model_metadata)
 
-        self.predict = self._predict_segmentation
+    def predict(self, x, **kwargs):
+        return self._predict_segmentation(x, **kwargs)
