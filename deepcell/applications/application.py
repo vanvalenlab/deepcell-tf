@@ -121,7 +121,8 @@ class Application(object):
         # Check input size of image
         if len(image.shape) != self.required_rank:
             raise ValueError('Input data must have {} dimensions'
-                             'Input data only has {} dimensions'.format(str(self.required_rank), str(len(image.shape))))
+                             'Input data only has {} dimensions'.format(str(self.required_rank),
+                                                                        str(len(image.shape))))
 
         # Resize image if necessary
         if (image_mpp is not None) & (image_mpp != self.model_mpp):
@@ -136,7 +137,6 @@ class Application(object):
         # Preprocess image
         if self.preprocessing_fn is not None:
             image = self.preprocessing_fn(image, **preprocess_kwargs)
-            print('preprocessing')
 
         # Tile images, needs 4d
         tiles, tiles_info = tile_image(image, model_input_shape=self.model_image_shape)
