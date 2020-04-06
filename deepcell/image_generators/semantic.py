@@ -78,6 +78,7 @@ class SemanticIterator(Iterator):
                  batch_size=1,
                  shuffle=False,
                  transforms=['watershed-cont'],
+                 transforms_y2=['pixelwise'],
                  transforms_kwargs={},
                  seed=None,
                  min_objects=3,
@@ -85,7 +86,7 @@ class SemanticIterator(Iterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
-        X, y = train_dict['X'], train_dict['y']
+        X, y, y_2 = train_dict['X'], train_dict['y'], train_dict['y_2']
         if X.shape[0] != y.shape[0]:
             raise ValueError('Training batches and labels should have the same'
                              'length. Found X.shape: {} y.shape: {}'.format(
@@ -118,6 +119,18 @@ class SemanticIterator(Iterator):
 
         # Add transformed masks
         for transform in transforms:
+            transform_kwargs = transforms_kwargs.get(transform, dict())
+            y_transform = _transform_masks(y, transform,
+                                           data_format=data_format,
+                                           **transform_kwargs)
+            if y_transform.shape[self.channel_axis] > 1:
+                y_transform = np.asarray(y_transform, dtype='int32')
+            elif y_transform.shape[self.channel_axis] == 1:
+                y_transform = np.asarray(y_transform, dtype=K.floatx())
+            self.y_semantic_list.append(y_transform)
+
+        # Add transformed masks for second set of labels
+        for transform in transforms_y2:
             transform_kwargs = transforms_kwargs.get(transform, dict())
             y_transform = _transform_masks(y, transform,
                                            data_format=data_format,
@@ -293,6 +306,7 @@ class SemanticDataGenerator(ImageDataGenerator):
              train_dict,
              batch_size=1,
              transforms=['watershed-cont'],
+             transforms_y2=[],
              transforms_kwargs={},
              min_objects=3,
              shuffle=True,
@@ -327,6 +341,7 @@ class SemanticDataGenerator(ImageDataGenerator):
             self,
             batch_size=batch_size,
             transforms=transforms,
+            transforms_y2=transforms_y2,
             transforms_kwargs=transforms_kwargs,
             shuffle=shuffle,
             min_objects=min_objects,
