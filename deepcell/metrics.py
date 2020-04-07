@@ -56,7 +56,12 @@ import networkx as nx
 from scipy.optimize import linear_sum_assignment
 
 import matplotlib as mpl
+import matplotlib
+matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
+
+
 from skimage.measure import regionprops
 from skimage.segmentation import relabel_sequential
 from skimage.external.tifffile import TiffFile
@@ -1066,27 +1071,23 @@ def match_nodes(gt, res):
     return iou
 
 
-def _assign_plot_values():
-    x = 1
-
-
-def plot_errors(y_true, y_pred, error_dict):
-    """Plots the errors identified from linear assignment code
+def assign_plot_values(y_true, y_pred, error_dict):
+    """Generates a matrix with cells belong to error classes numbered for plotting
 
     Args:
         y_true: 2D matrix of true labels
-        y_pred: 2D matrix of predicted labels
+        y_pred 2D matrix of predicted labels
         error_dict: dictionary produced by save_error_ids with IDs of all error cells
+
+    Returns:
+        plotting_tiff: 2D matrix with cells belonging to same error class having same value
     """
 
     plotting_tif = np.zeros_like(y_true)
 
-    # TODO: decide what to do about sequentially relabeled cells?
     # erode edges for easier visualization of adjacent cells
     y_true = erode_edges(y_true, 1)
-    y_true, _, _ = relabel_sequential(y_true)
     y_pred = erode_edges(y_pred, 1)
-    y_pred, _, _ = relabel_sequential(y_pred)
 
     # missed detections are tracked with true labels
     misses = error_dict.pop("misses")["y_true"]
@@ -1098,6 +1099,20 @@ def plot_errors(y_true, y_pred, error_dict):
         labels = error_dict[key]["y_pred"]
         plotting_tif[np.isin(y_pred, labels)] = category_id
         category_id += 1
+
+    return plotting_tif
+
+
+def plot_errors(y_true, y_pred, error_dict):
+    """Plots the errors identified from linear assignment code
+
+    Args:
+        y_true: 2D matrix of true labels
+        y_pred: 2D matrix of predicted labels
+        error_dict: dictionary produced by save_error_ids with IDs of all error cells
+    """
+
+    plotting_tif = assign_plot_values(y_true, y_pred, error_dict)
 
     plotting_colors = ['Black', 'Pink', 'Blue', 'Green', 'tan', 'Red', 'Grey']
     cmap = mpl.colors.ListedColormap(plotting_colors)
