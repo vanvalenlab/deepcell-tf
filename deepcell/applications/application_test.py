@@ -144,7 +144,7 @@ class TestApplication(test.TestCase):
         self.assertIsInstance(tile_info, dict)
 
         # Smaller than expected
-        x = np.random.rand(1, 100, 100,  1)
+        x = np.random.rand(1, 100, 100, 1)
         y, tile_info = app._tile_input(x)
         self.assertEqual(kwargs['model_image_shape'][:-1], y.shape[1:-1])
         self.assertIsInstance(tile_info, dict)
@@ -198,7 +198,7 @@ class TestApplication(test.TestCase):
         self.assertEqual(x.shape, y.shape)
 
         # Smaller than expected
-        x = np.random.rand(1, 100, 100,  1)
+        x = np.random.rand(1, 100, 100, 1)
         tiles, tile_info = app._tile_input(x)
         y = app._untile_output(tiles, tile_info)
         self.assertEqual(x.shape, y.shape)

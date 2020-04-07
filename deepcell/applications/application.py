@@ -143,7 +143,6 @@ class Application(object):
         # Check difference between input and model image size
         x_diff = image.shape[1] - self.model_image_shape[0]
         y_diff = image.shape[2] - self.model_image_shape[1]
-        print(x_diff, y_diff)
 
         # Check if the input is smaller than model image size
         if x_diff < 0 or y_diff < 0:
@@ -225,8 +224,16 @@ class Application(object):
             array: Rescaled image
         """
 
-        # Compare image size to original_shape excluding batch and channel dimension
-        if image.shape[1:-1] != original_shape[1:-1]:
+        # Compare x,y based on rank of image
+        if len(image.shape) == 4:
+            same = image.shape[1:-1] == original_shape[1:-1]
+        elif len(image.shape) == 3:
+            same = image.shape[1:] == original_shape[1:-1]
+        else:
+            same = image.shape == original_shape[1:-1]
+
+        # Resize if same is false
+        if not same:
             # Resize function only takes the x,y dimensions for shape
             image = resize(image, original_shape[1:-1], data_format='channels_last')
 
