@@ -1066,6 +1066,10 @@ def match_nodes(gt, res):
     return iou
 
 
+def _assign_plot_values():
+    x = 1
+
+
 def plot_errors(y_true, y_pred, error_dict):
     """Plots the errors identified from linear assignment code
 
@@ -1085,14 +1089,14 @@ def plot_errors(y_true, y_pred, error_dict):
     y_pred, _, _ = relabel_sequential(y_pred)
 
     # missed detections are tracked with true labels
-    misses = error_dict.pop("misses")["y_pred"]
-    plotting_tif[np.isin(y_pred, misses)] = 1
+    misses = error_dict.pop("misses")["y_true"]
+    plotting_tif[np.isin(y_true, misses)] = 1
 
     # all other events are tracked with predicted labels
     category_id = 2
     for key in error_dict.keys():
         labels = error_dict[key]["y_pred"]
-        plotting_tif[np.isin(y_true, labels)] = category_id
+        plotting_tif[np.isin(y_pred, labels)] = category_id
         category_id += 1
 
     plotting_colors = ['Black', 'Pink', 'Blue', 'Green', 'tan', 'Red', 'Grey']

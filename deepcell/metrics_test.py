@@ -674,3 +674,11 @@ class TestObjectAccuracy(test.TestCase):
                    'missed_det_from_merge', 'gained_det_from_split', 'true_det_in_catastrophe',
                    'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe', 'gained_detections']
         self.assertItemsEqual(columns, list(df.columns))
+
+    def test_plot_errors(self):
+        y_true, y_pred, y_true_split, y_true_correct, y_pred_split, y_pred_correct = \
+            _sample2_2(10, 10, 30, 30, merge=False, similar_size=True)
+        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1,
+                                   force_event_links=False)
+        label_dict = o.save_error_ids()
+        metrics.plot_errors(y_true, y_pred, label_dict)
