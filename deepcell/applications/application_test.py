@@ -85,12 +85,12 @@ class TestApplication(test.TestCase):
 
         # image_mpp > model_mpp --> resize
         y, original_shape = app._resize_input(x, image_mpp=2.1 * kwargs['model_mpp'])
-        self.assertEqual(2.1, np.round(x.shape[1]/y.shape[1], decimals=1))
+        self.assertEqual(2.1, np.round(x.shape[1] / y.shape[1], decimals=1))
         self.assertEqual(x.shape, original_shape)
 
         # image_mpp < model_mpp --> resize
         y, original_shape = app._resize_input(x, image_mpp=0.7 * kwargs['model_mpp'])
-        self.assertEqual(0.7, np.round(x.shape[1]/y.shape[1], decimals=1))
+        self.assertEqual(0.7, np.round(x.shape[1] / y.shape[1], decimals=1))
         self.assertEqual(x.shape, original_shape)
 
     def test_preprocess(self):
@@ -143,6 +143,12 @@ class TestApplication(test.TestCase):
         self.assertEqual(kwargs['model_image_shape'][:-1], y.shape[1:-1])
         self.assertIsInstance(tile_info, dict)
 
+        # Smaller than expected
+        x = np.random.rand(1, 100, 100,  1)
+        y, tile_info = app._tile_input(x)
+        self.assertEqual(kwargs['model_image_shape'][:-1], y.shape[1:-1])
+        self.assertIsInstance(tile_info, dict)
+
     def test_postprocess(self):
 
         def _postprocess(Lx):
@@ -191,6 +197,12 @@ class TestApplication(test.TestCase):
         y = app._untile_output(tiles, tile_info)
         self.assertEqual(x.shape, y.shape)
 
+        # Smaller than expected
+        x = np.random.rand(1, 100, 100,  1)
+        tiles, tile_info = app._tile_input(x)
+        y = app._untile_output(tiles, tile_info)
+        self.assertEqual(x.shape, y.shape)
+
     def test_resize_output(self):
 
         model = DummyModel()
@@ -207,3 +219,12 @@ class TestApplication(test.TestCase):
         original_shape = (1, 500, 500, 1)
         y = app._resize_output(x, original_shape)
         self.assertEqual(original_shape, y.shape)
+
+    def test_predict_segmentation(self):
+
+        model = DummyModel()
+        app = Application(model)
+
+        x = np.random.rand(1, 128, 128, 1)
+        y = app._predict_segmentation(x)
+        self.assertEqual(x.shape, y.shape)

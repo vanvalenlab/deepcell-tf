@@ -29,6 +29,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
+
 from deepcell_toolbox.utils import resize, tile_image, untile_image
 
 
@@ -138,8 +140,26 @@ class Application(object):
                              'Image submitted for predict has {} dimensions'.format(
                                  len(image.shape)))
 
-        # Tile images, needs 4d
-        tiles, tiles_info = tile_image(image, model_input_shape=self.model_image_shape)
+        # Check difference between input and model image size
+        x_diff = image.shape[1] - self.model_image_shape[0]
+        y_diff = image.shape[2] - self.model_image_shape[1]
+        print(x_diff, y_diff)
+
+        # Check if the input is smaller than model image size
+        if x_diff < 0 or y_diff < 0:
+            # Calculate padding
+            x_diff, y_diff = abs(x_diff), abs(y_diff)
+            x_pad = (x_diff // 2, x_diff // 2 + 1) if x_diff % 2 else (x_diff // 2, x_diff // 2)
+            y_pad = (y_diff // 2, y_diff // 2 + 1) if y_diff % 2 else (y_diff // 2, y_diff // 2)
+
+            tiles = np.pad(image, [(0, 0), x_pad, y_pad, (0, 0)], 'reflect')
+            tiles_info = {'padding': True,
+                          'x_pad': x_pad,
+                          'y_pad': y_pad}
+        # Otherwise tile images larger than model size
+        else:
+            # Tile images, needs 4d
+            tiles, tiles_info = tile_image(image, model_input_shape=self.model_image_shape)
 
         return tiles, tiles_info
 
@@ -157,6 +177,8 @@ class Application(object):
 
         if self.postprocessing_fn is not None:
             image = self.postprocessing_fn(image, **kwargs)
+        elif isinstance(image, list) and len(image) == 1:
+            image = image[0]
 
         return image
 
@@ -171,14 +193,23 @@ class Application(object):
         Returns:
             array or list: Array or list according to input with untiled images
         """
+        # If padding was used, remove padding
+        if tiles_info.get('padding', False):
+            def _process(im, tiles_info):
+                x_pad, y_pad = tiles_info['x_pad'], tiles_info['y_pad']
+                out = im[:, x_pad[0]:-x_pad[1], y_pad[0]:-y_pad[1], :]
+                return out
+        # Otherwise untile
+        else:
+            def _process(im, tiles_info):
+                out = untile_image(im, tiles_info, model_input_shape=self.model_image_shape,
+                                   dtype=im.dtype)
+                return out
 
         if isinstance(output_tiles, list):
-            output_images = [untile_image(o, tiles_info, model_input_shape=self.model_image_shape,
-                                          dtype=o.dtype) for o in output_tiles]
+            output_images = [_process(o, tiles_info) for o in output_tiles]
         else:
-            output_images = untile_image(output_tiles, tiles_info,
-                                         model_input_shape=self.model_image_shape,
-                                         dtype=output_tiles.dtype)
+            output_images = _process(output_tiles, tiles_info)
 
         return output_images
 
