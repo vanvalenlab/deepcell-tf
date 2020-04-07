@@ -61,6 +61,8 @@ install:
   # - python setup.py install
   - python setup.py build_ext --inplace
 
+  - echo "backend: Agg" > ~/.config/matplotlib/matplotlibrc
+
 script:
   - PYTHONPATH=$PWD:$PYTHONPATH pytest --cov=deepcell --pep8
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]]; then
