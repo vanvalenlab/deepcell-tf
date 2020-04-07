@@ -38,21 +38,27 @@ from deepcell.utils.export_utils import export_model
 from deepcell.utils.train_utils import rate_scheduler, get_callbacks
 from deepcell.metrics import Metrics
 
+from tensorflow.keras.optimizers import SGD
+
 
 class ModelTrainer(object):
     def __init__(self,
                  model,
-                 model_name,
-                 model_path,
                  train_generator,
                  validation_generator,
+                 X_train,
+                 y_train,
+                 X_test,
+                 y_test,
+                 model_name = "test_model",
+                 model_path = "test_model_folder",
+                 model_version=0,
                  log_dir=None,
                  tfserving_path=None,
                  training_callbacks='default',
                  postprocessing_fn=None,
                  postprocessing_kwargs={},
                  predict_batch_size=4,
-                 model_version=0,
                  dataset_metadata={},
                  training_kwargs={}):
 
@@ -85,8 +91,16 @@ class ModelTrainer(object):
         self.model_version = model_version
 
         # Add dataset information
+        self.X_train = X_train
+        self.y_train = y_train
+        self.X_test = X_test
+        self.y_test = y_test
+
+        # Add generator information
         self.train_generator = train_generator
         self.validation_generator = validation_generator
+
+        # Add miscellaneous information
         self.dataset_metadata = dataset_metadata
         self.postprocessing_fn = postprocessing_fn
         self.postprocessing_kwargs = postprocessing_kwargs
@@ -107,16 +121,20 @@ class ModelTrainer(object):
         self.batch_size = training_kwargs.pop('batch_size', 1)
         self.training_steps_per_epoch = training_kwargs.pop(
             'training_steps_per_epoch',
-            self.train_generator.y.shape[0] // self.batch_size)
+            None)
         self.validation_steps_per_epoch = training_kwargs.pop(
             'validation_steps_per_epoch',
-            self.validation_generator.y.shape[0] // self.batch_size)
+            None)
         self.n_epochs = training_kwargs.pop('n_epochs', 8)
         self.lr = training_kwargs.pop('lr', 1e-5)
         self.lr_decay = training_kwargs.pop('lr_decay', 0.95)
         self.lr_sched = training_kwargs.pop(
             'lr_sched',
             rate_scheduler(lr=self.lr, decay=self.lr_decay))
+        self.loss_function = training_kwargs.pop("loss_function",
+                "mean_squared_error")
+        self.optimizer = training_kwargs.pop("optimizer",
+                SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True))
 
         # Add callbacks
         if training_callbacks == 'default':
@@ -126,10 +144,68 @@ class ModelTrainer(object):
                 tensorboard_log_dir=self.log_dir,
                 save_weights_only=False,
                 monitor='val_loss', verbose=1)
+            # TODO: hack. need to justify.
+            del self.training_callbacks[1]
         else:
             self.training_callbacks = training_callbacks
 
         self.trained = False
+
+    def _data_prep(self):
+        ## parameters
+        if isinstance(self.model.output_shape, list):
+            skip = len(self.model.output_shape) - 1
+        else:
+            skip = None
+        seed = 43
+        batch_size = 1
+        transform = None
+        transform_kwargs = {}
+        
+        ## training image generator
+        train_dict = {"X": self.X_train, "y": self.y_train}
+        self.train_data = self.train_generator.flow(
+            train_dict,
+            skip=skip,
+            seed=seed,
+            batch_size=batch_size,
+            transform=transform,
+            transform_kwargs=transform_kwargs)
+
+        ## validation image generator
+        validation_dict = {"X": self.X_test, "y": self.y_test}
+        self.validation_data = self.validation_generator.flow(
+            validation_dict,
+            skip=skip,
+            seed=seed,
+            batch_size=batch_size,
+            transform=transform,
+            transform_kwargs=transform_kwargs)
+
+    def _compile_model(self):
+        self.model.compile(loss=self.loss_function, optimizer=self.optimizer, metrics=['accuracy'])
+
+    def _train_model(self):
+        if self.training_steps_per_epoch is not None:
+            training_steps_per_epoch = self.training_steps_per_epoch
+        else:
+            training_steps_per_epoch = self.train_data.y.shape[0] // self.batch_size
+        
+        if self.validation_steps_per_epoch is not None:
+            validation_steps_per_epoch = self.validation_steps_per_epoch
+        else:
+            validation_steps_per_epoch = self.validation_data.y.shape[0] // self.batch_size
+        
+        loss_history = self.model.fit_generator(
+            self.train_data,
+            steps_per_epoch=self.training_steps_per_epoch,
+            epochs=self.n_epochs,
+            validation_data=self.validation_data,
+            validation_steps=self.validation_steps_per_epoch,
+            callbacks=self.training_callbacks)
+
+        self.trained = True
+        self.loss_history = loss_history
 
     def _create_hash(self):
         if not self.trained:
@@ -142,18 +218,6 @@ class ModelTrainer(object):
             summed_weights = sum(summed_weights_list)
             model_hash = hashlib.md5(str(summed_weights).encode())
             self.model_hash = model_hash.hexdigest()
-
-    def _fit(self):
-        loss_history = self.model.fit_generator(
-            self.train_generator,
-            steps_per_epoch=self.training_steps_per_epoch,
-            epochs=self.n_epochs,
-            validation_data=self.validation_generator,
-            validation_steps=self.validation_steps_per_epoch,
-            callbacks=self.training_callbacks)
-
-        self.trained = True
-        self.loss_history = loss_history
 
     def _benchmark(self):
         if not self.trained:
@@ -192,8 +256,14 @@ class ModelTrainer(object):
 
     def create_model(self, export_serving=False, export_lite=False):
 
-        # Train model
-        self._fit()
+        # Prep data generators
+        self._data_prep()
+
+        # Compile model
+        self._compile_model()
+
+        # Train model with prepped data generators
+        self._train_model()
 
         # Load best performing weights
         model_name = os.path.join(self.model_path, self.model_name + '.h5')
