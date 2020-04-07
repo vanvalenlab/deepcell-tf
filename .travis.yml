@@ -12,10 +12,8 @@ python:
   - 3.7
 
 env:
-  - TF_VERSION=1.14.0
-  - DISPLAY=0.0
+  - TF_VERSION=1.14.0 
   - TF_VERSION=1.15.0
-  - DISPLAY=localhost:0.0
 
 install:
   # code below is taken from https://github.com/keras-team/keras/blob/master/.travis.yml
