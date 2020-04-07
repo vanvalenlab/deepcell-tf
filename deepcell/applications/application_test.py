@@ -64,7 +64,7 @@ class TestApplication(test.TestCase):
         with self.assertRaises(NotImplementedError):
             app.predict(x)
 
-    def test_resize_input(self):
+    def test_resize(self):
 
         model = DummyModel()
         kwargs = {'model_mpp': 0.65,
@@ -118,10 +118,92 @@ class TestApplication(test.TestCase):
         with self.assertRaises(ValueError):
             app = Application(model, **kwargs)
 
-    # def test_tile_input(self):
+    def test_tile_input(self):
 
-    # def test_postprocess(self):
+        model = DummyModel()
+        kwargs = {'model_mpp': 0.65,
+                  'model_image_shape': (128, 128, 1)}
+        app = Application(model, **kwargs)
 
-    # def test_untile_output(self):
+        # No tiling
+        x = np.random.rand(1, 128, 128, 1)
+        y, tile_info = app._tile_input(x)
+        self.assertEqual(x.shape, y.shape)
+        self.assertIsInstance(tile_info, dict)
 
-    # def test_resize_output(self):
+        # Tiling square
+        x = np.random.rand(1, 400, 400, 1)
+        y, tile_info = app._tile_input(x)
+        self.assertEqual(kwargs['model_image_shape'][:-1], y.shape[1:-1])
+        self.assertIsInstance(tile_info, dict)
+
+        # Tiling rectangle
+        x = np.random.rand(1, 300, 500, 1)
+        y, tile_info = app._tile_input(x)
+        self.assertEqual(kwargs['model_image_shape'][:-1], y.shape[1:-1])
+        self.assertIsInstance(tile_info, dict)
+
+    def test_postprocess(self):
+
+        def _postprocess(Lx):
+            y = np.ones(Lx[0].shape)
+            return y
+
+        model = DummyModel()
+        x = np.random.rand(1, 30, 30, 1)
+
+        # No input
+        app = Application(model)
+        y = app._postprocess(x)
+        self.assertAllEqual(x, y)
+
+        # Ones
+        kwargs = {'postprocessing_fn': _postprocess}
+        app = Application(model, **kwargs)
+        y = app._postprocess(x)
+        self.assertAllEqual(np.ones(x.shape[1:]), y)
+
+        # Bad input
+        kwargs = {'postprocessing_fn': 'x'}
+        with self.assertRaises(ValueError):
+            app = Application(model, **kwargs)
+
+    def test_untile_output(self):
+        model = DummyModel()
+        kwargs = {'model_image_shape': (128, 128, 1)}
+        app = Application(model, **kwargs)
+
+        # No tiling
+        x = np.random.rand(1, 128, 128, 1)
+        tiles, tile_info = app._tile_input(x)
+        y = app._untile_output(tiles, tile_info)
+        self.assertEqual(x.shape, y.shape)
+
+        # Tiling square
+        x = np.random.rand(1, 400, 400, 1)
+        tiles, tile_info = app._tile_input(x)
+        y = app._untile_output(tiles, tile_info)
+        self.assertEqual(x.shape, y.shape)
+
+        # Tiling rectangle
+        x = np.random.rand(1, 300, 500, 1)
+        tiles, tile_info = app._tile_input(x)
+        y = app._untile_output(tiles, tile_info)
+        self.assertEqual(x.shape, y.shape)
+
+    def test_resize_output(self):
+
+        model = DummyModel()
+        kwargs = {'model_image_shape': (128, 128, 1)}
+        app = Application(model, **kwargs)
+
+        x = np.random.rand(1, 128, 128, 1)
+
+        # x.shape = original_shape --> no resize
+        y = app._resize_output(x, x.shape)
+        self.assertEqual(x.shape, y.shape)
+
+        # x.shape != original_shape --> resize
+        original_shape = (1, 500, 500, 1)
+        y = app._resize_output(x, original_shape)
+        self.assertEqual(original_shape, y.shape)

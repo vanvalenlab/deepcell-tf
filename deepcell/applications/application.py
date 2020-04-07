@@ -195,7 +195,7 @@ class Application(object):
         """
 
         # Compare image size to original_shape excluding batch and channel dimension
-        if image.shape[1:-1] == original_shape[1:-1]:
+        if image.shape[1:-1] != original_shape[1:-1]:
             # Resize function only takes the x,y dimensions for shape
             image = resize(image, original_shape[1:-1], data_format='channels_last')
 
