@@ -36,11 +36,13 @@ from random import sample
 import numpy as np
 import pandas as pd
 from skimage.measure import label
+from skimage.draw import random_shapes
 from skimage.segmentation import relabel_sequential
 
 from tensorflow.python.platform import test
 
 from deepcell import metrics
+from deepcell_toolbox import erode_edges
 
 
 def _get_image(img_h=300, img_w=300):
@@ -527,7 +529,7 @@ class TestObjectAccuracy(test.TestCase):
         # cell 1 in assigned correctly, cells 2 and 3 have been merged
         y_true, y_pred = _sample1(10, 10, 30, 30, merge=True)
         o = metrics.ObjectAccuracy(y_true, y_pred)
-        label_dict = o.save_error_ids()
+        label_dict, _, _ = o.save_error_ids()
         assert label_dict['correct']['y_true'] == [1]
         assert label_dict['correct']['y_pred'] == [1]
         assert set(label_dict['merges']['y_true']) == {2, 3}
@@ -536,7 +538,7 @@ class TestObjectAccuracy(test.TestCase):
         # cell 1 in assigned correctly, cell 2 has been split
         y_true, y_pred = _sample1(10, 10, 30, 30, merge=False)
         o = metrics.ObjectAccuracy(y_true, y_pred)
-        label_dict = o.save_error_ids()
+        label_dict, _, _ = o.save_error_ids()
         assert label_dict['correct']['y_true'] == [1]
         assert label_dict['correct']['y_pred'] == [1]
         assert set(label_dict['splits']['y_pred']) == {2, 3}
@@ -545,7 +547,7 @@ class TestObjectAccuracy(test.TestCase):
         # gained cell in predictions
         y_true, y_pred = _sample4_loner(10, 10, 30, 30, gain=True)
         o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1)
-        label_dict = o.save_error_ids()
+        label_dict, _, _ = o.save_error_ids()
         assert label_dict['correct']['y_true'] == [1]
         assert label_dict['correct']['y_pred'] == [1]
         assert label_dict['gains']['y_pred'] == [2]
@@ -553,7 +555,7 @@ class TestObjectAccuracy(test.TestCase):
         # missed cell in true
         y_true, y_pred = _sample4_loner(10, 10, 30, 30, gain=False)
         o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1)
-        label_dict = o.save_error_ids()
+        label_dict, _, _ = o.save_error_ids()
         assert label_dict['correct']['y_true'] == [1]
         assert label_dict['correct']['y_pred'] == [1]
         assert label_dict['misses']['y_true'] == [2]
@@ -561,7 +563,7 @@ class TestObjectAccuracy(test.TestCase):
         # catastrophe between 3 cells
         y_true, y_pred = _sample3(10, 10, 30, 30)
         o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1)
-        label_dict = o.save_error_ids()
+        label_dict, _, _ = o.save_error_ids()
         assert set(label_dict['catastrophes']['y_true']) == set(np.unique(y_true[y_true > 0]))
         assert set(label_dict['catastrophes']['y_pred']) == set(np.unique(y_pred[y_pred > 0]))
 
@@ -572,7 +574,7 @@ class TestObjectAccuracy(test.TestCase):
             y_true, y_pred = _sample2_3(10, 10, 30, 30, merge=True, similar_size=False)
             o = metrics.ObjectAccuracy(y_true, y_pred, force_event_links=True,
                                        cutoff1=0.2, cutoff2=0.1)
-            label_dict = o.save_error_ids()
+            label_dict, _, _ = o.save_error_ids()
             assert label_dict['correct']['y_true'] == [1]
             assert label_dict['correct']['y_pred'] == [1]
             assert set(label_dict['merges']['y_true']) == {2, 3, 4}
@@ -582,7 +584,7 @@ class TestObjectAccuracy(test.TestCase):
             y_true, y_pred = _sample2_3(10, 10, 30, 30, merge=True, similar_size=True)
             o = metrics.ObjectAccuracy(y_true, y_pred, force_event_links=False,
                                        cutoff1=0.2, cutoff2=0.1)
-            label_dict = o.save_error_ids()
+            label_dict, _, _ = o.save_error_ids()
             assert label_dict['correct']['y_true'] == [1]
             assert label_dict['correct']['y_pred'] == [1]
             assert set(label_dict['merges']['y_true']) == {2, 3, 4}
@@ -593,7 +595,7 @@ class TestObjectAccuracy(test.TestCase):
                 _sample2_2(10, 10, 30, 30, similar_size=False)
             o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1,
                                        force_event_links=True)
-            label_dict = o.save_error_ids()
+            label_dict, _, _ = o.save_error_ids()
             assert set(label_dict['correct']['y_true']) == y_true_correct
             assert set(label_dict['correct']['y_pred']) == y_pred_correct
             assert set(label_dict['merges']['y_true']) == y_true_merge
@@ -604,7 +606,7 @@ class TestObjectAccuracy(test.TestCase):
                 _sample2_2(10, 10, 30, 30, similar_size=True)
             o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1,
                                        force_event_links=False)
-            label_dict = o.save_error_ids()
+            label_dict, _, _ = o.save_error_ids()
             assert set(label_dict['correct']['y_true']) == y_true_correct
             assert set(label_dict['correct']['y_pred']) == y_pred_correct
             assert set(label_dict['merges']['y_true']) == y_true_merge
@@ -614,7 +616,7 @@ class TestObjectAccuracy(test.TestCase):
             y_true, y_pred = _sample2_3(10, 10, 30, 30, merge=False, similar_size=False)
             o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1,
                                        force_event_links=True)
-            label_dict = o.save_error_ids()
+            label_dict, _, _ = o.save_error_ids()
             assert label_dict['correct']['y_true'] == [1]
             assert label_dict['correct']['y_pred'] == [1]
             assert label_dict['splits']['y_true'] == [2]
@@ -624,7 +626,7 @@ class TestObjectAccuracy(test.TestCase):
             y_true, y_pred = _sample2_3(10, 10, 30, 30, merge=False, similar_size=True)
             o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1,
                                        force_event_links=False)
-            label_dict = o.save_error_ids()
+            label_dict, _, _ = o.save_error_ids()
             assert label_dict['correct']['y_true'] == [1]
             assert label_dict['correct']['y_pred'] == [1]
             assert label_dict['splits']['y_true'] == [2]
@@ -635,7 +637,7 @@ class TestObjectAccuracy(test.TestCase):
                 _sample2_2(10, 10, 30, 30, merge=False, similar_size=False)
             o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1,
                                        force_event_links=True)
-            label_dict = o.save_error_ids()
+            label_dict, _, _ = o.save_error_ids()
             assert set(label_dict['correct']['y_true']) == y_true_correct
             assert set(label_dict['correct']['y_pred']) == y_pred_correct
             assert set(label_dict['splits']['y_true']) == y_true_split
@@ -646,7 +648,7 @@ class TestObjectAccuracy(test.TestCase):
                 _sample2_2(10, 10, 30, 30, merge=False, similar_size=True)
             o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1,
                                        force_event_links=False)
-            label_dict = o.save_error_ids()
+            label_dict, _, _ = o.save_error_ids()
             assert set(label_dict['correct']['y_true']) == y_true_correct
             assert set(label_dict['correct']['y_pred']) == y_pred_correct
             assert set(label_dict['splits']['y_true']) == y_true_split
@@ -675,10 +677,24 @@ class TestObjectAccuracy(test.TestCase):
                    'pred_det_in_catastrophe', 'merge', 'split', 'catastrophe', 'gained_detections']
         self.assertItemsEqual(columns, list(df.columns))
 
-    def test_plot_errors(self):
-        y_true, y_pred, y_true_split, y_true_correct, y_pred_split, y_pred_correct = \
-            _sample2_2(10, 10, 30, 30, merge=False, similar_size=True)
-        o = metrics.ObjectAccuracy(y_true, y_pred, cutoff1=0.2, cutoff2=0.1,
-                                   force_event_links=False)
-        label_dict = o.save_error_ids()
-        metrics.plot_errors(y_true, y_pred, label_dict)
+    def test_assign_plot_values(self):
+        y_true, _ = random_shapes(image_shape=(200, 200), max_shapes=30, min_shapes=15,
+                                  min_size=10, multichannel=False)
+
+        # invert background
+        y_true[y_true == 255] = 0
+        y_true, _, _ = relabel_sequential(y_true)
+
+        error_dict = {'misses': {'y_true': [1, 2]}, 'splits': {'y_pred': [3, 4]},
+                      'merges': {'y_pred': [5, 6]}, 'gains': {'y_pred': [7, 8]},
+                      'catastrophes': {'y_pred': [9, 10]}, 'correct': {'y_pred': [11, 12]}}
+
+        plotting_tiff = metrics.assign_plot_values(y_true, y_true, error_dict)
+
+        # erode edges so that shape matches shape in plotting tiff
+        y_true = erode_edges(y_true, 1)
+
+        for error_type in error_dict.keys():
+            vals = list(error_dict[error_type].values())
+            mask = np.isin(y_true, vals)
+            assert len(np.unique(plotting_tiff[mask])) == 1

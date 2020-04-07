@@ -41,10 +41,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from collections import Counter
 import datetime
 import decimal
-import glob
 import json
 import operator
 import os
@@ -53,17 +51,12 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 
-from scipy.optimize import linear_sum_assignment
-import matplotlib
-matplotlib.use('Agg')
-
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-
+from scipy.optimize import linear_sum_assignment
 from skimage.measure import regionprops
 from skimage.segmentation import relabel_sequential
-from skimage.external.tifffile import TiffFile
 from sklearn.metrics import confusion_matrix
 from tensorflow.python.platform import tf_logging as logging
 
@@ -617,7 +610,7 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
                       "catastrophes": self.catastrophe_indices,
                       "correct": self.correct_indices}
 
-        return error_dict
+        return error_dict, self.y_true, self.y_pred
 
 
 def to_precision(x, p):
@@ -802,7 +795,7 @@ class Metrics(object):
         print('\nConfusion Matrix')
         print(self.cm)
 
-    def calc_object_stats(self, y_true, y_pred):
+    def calc_object_stats(self, y_true, y_pred, return_predictions=False):
         """Calculate object statistics and save to output
 
         Loops over each frame in the zeroth dimension, which should pass in
@@ -812,6 +805,7 @@ class Metrics(object):
         Args:
             y_true (numpy.array): Labeled ground truth annotations
             y_pred (numpy.array): Labeled prediction mask
+            return_predictions (bool): Determine whether predictions will be returned for analysis
 
         Raises:
             ValueError: if the shape of the input tensor is less than length three
@@ -821,7 +815,7 @@ class Metrics(object):
             raise ValueError("Invalid input dimensions: must be at least 3D tensor")
 
         self.stats = pd.DataFrame()
-        self.label_ids = []
+        self.predictions = []
 
         for i in range(y_true.shape[0]):
             o = ObjectAccuracy(y_true[i],
@@ -830,8 +824,9 @@ class Metrics(object):
                                cutoff2=self.cutoff2,
                                seg=self.seg)
             self.stats = self.stats.append(o.save_to_dataframe())
-            id_dict = o.save_error_ids()
-            self.label_ids.append(id_dict)
+            if return_predictions:
+                predictions = o.save_error_ids()
+                self.predictions.append(predictions)
             if i % 500 == 0:
                 logging.info('{} samples processed'.format(i))
 
@@ -853,7 +848,8 @@ class Metrics(object):
                 ))
 
         self.print_object_report()
-        return self.label_ids
+        if return_predictions:
+            return self.predictions
 
     def print_object_report(self):
         """Print neat report of object based statistics
@@ -1105,10 +1101,13 @@ def assign_plot_values(y_true, y_pred, error_dict):
 def plot_errors(y_true, y_pred, error_dict):
     """Plots the errors identified from linear assignment code
 
+    Due to sequential relabeling that occurs within the metrics code, only run
+    this plotting function on the outputs of save_error_ids so that values match up.
+
     Args:
-        y_true: 2D matrix of true labels
-        y_pred: 2D matrix of predicted labels
-        error_dict: dictionary produced by save_error_ids with IDs of all error cells
+        y_true: 2D matrix of true labels returned by save_error_ids
+        y_pred: 2D matrix of predicted labels returned by save_error_ids
+        error_dict: dictionary returned by save_error_ids with IDs of all error cells
     """
 
     plotting_tif = assign_plot_values(y_true, y_pred, error_dict)
