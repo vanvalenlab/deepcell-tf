@@ -35,8 +35,6 @@ from tensorflow.python.keras.utils.data_utils import get_file
 
 from deepcell_toolbox.deep_watershed import deep_watershed
 
-from deepcell.utils.retinanet_anchor_utils import generate_anchor_params
-from deepcell import model_zoo
 from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
 

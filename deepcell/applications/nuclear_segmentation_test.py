@@ -45,7 +45,6 @@ class TestNuclearSegmentation(test.TestCase):
 
         # Check shape parameters
         shape = self.app.model.output_shape
-        print(shape)
 
         self.assertIsInstance(shape, list)
         self.assertEqual(len(shape), 3)

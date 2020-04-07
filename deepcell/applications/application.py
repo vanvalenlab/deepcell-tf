@@ -34,17 +34,6 @@ from deepcell_toolbox.utils import resize, tile_image, untile_image
 
 class Application(object):
     """Application object that takes a model with weights and manages predictions
-    """
-
-    def __init__(self,
-                 model,
-                 model_image_shape=(128, 128, 1),
-                 model_mpp=0.65,
-                 preprocessing_fn=None,
-                 postprocessing_fn=None,
-                 dataset_metadata=None,
-                 model_metadata=None):
-        """Initializes model for application object
 
         Args:
             model (tf.model): Tensorflow model with weights loaded
@@ -65,6 +54,15 @@ class Application(object):
             ValueError: Postprocessing_fn must be a callable function
         """
 
+    def __init__(self,
+                 model,
+                 model_image_shape=(128, 128, 1),
+                 model_mpp=0.65,
+                 preprocessing_fn=None,
+                 postprocessing_fn=None,
+                 dataset_metadata=None,
+                 model_metadata=None):
+
         self.model = model
 
         self.model_image_shape = model_image_shape
@@ -78,9 +76,9 @@ class Application(object):
         self.model_metadata = model_metadata
 
         # Test that pre and post processing functions are callable
-        if (self.preprocessing_fn is not None) and (callable(self.preprocessing_fn) is False):
+        if self.preprocessing_fn is not None and not callable(self.preprocessing_fn):
             raise ValueError('Preprocessing_fn must be a callable function.')
-        if (self.postprocessing_fn is not None) and (callable(self.postprocessing_fn) is False):
+        if self.postprocessing_fn is not None and not callable(self.postprocessing_fn):
             raise ValueError('Postprocessing_fn must be a callable function.')
 
     def predict(self, x):
@@ -121,11 +119,11 @@ class Application(object):
         # Check input size of image
         if len(image.shape) != self.required_rank:
             raise ValueError('Input data must have {} dimensions'
-                             'Input data only has {} dimensions'.format(str(self.required_rank),
-                                                                        str(len(image.shape))))
+                             'Input data only has {} dimensions'.format(
+                                 self.required_rank, len(image.shape)))
 
         # Resize image if necessary
-        if (image_mpp is not None) & (image_mpp != self.model_mpp):
+        if image_mpp not in {None, self.model_mpp}:
             original_shape = image.shape
             scale_factor = image_mpp / self.model_mpp
             new_shape = (int(image.shape[1] / scale_factor),
