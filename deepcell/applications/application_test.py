@@ -52,7 +52,7 @@ class DummyModel():
 
 class TestApplication(test.TestCase):
 
-    def predict_notimplemented(self):
+    def test_predict_notimplemented(self):
 
         model = DummyModel()
         kwargs = {'model_mpp': 0.65,
@@ -64,107 +64,64 @@ class TestApplication(test.TestCase):
         with self.assertRaises(NotImplementedError):
             app.predict(x)
 
-    def test_predict_segmentation_resize(self):
+    def test_resize_input(self):
 
         model = DummyModel()
         kwargs = {'model_mpp': 0.65,
                   'model_image_shape': (128, 128, 1)}
         app = Application(model, **kwargs)
-        app.predict = app._predict_segmentation
 
         x = np.random.rand(1, 500, 500, 1)
 
-        # image_mpp = None
-        y = app.predict(x, image_mpp=None)
+        # image_mpp = None --> No resize
+        y, original_shape = app._resize_input(x, image_mpp=None)
         self.assertEqual(x.shape, y.shape)
+        self.assertEqual(x.shape, original_shape)
 
-        # image_mpp = model_mpp
-        y = app.predict(x, image_mpp=kwargs['model_mpp'])
+        # image_mpp = model_mpp --> No resize
+        y, original_shape = app._resize_input(x, image_mpp=kwargs['model_mpp'])
         self.assertEqual(x.shape, y.shape)
+        self.assertEqual(x.shape, original_shape)
 
-        # image_mpp > model_mpp
-        y = app.predict(x, image_mpp=2.1 * kwargs['model_mpp'])
-        self.assertEqual(x.shape, y.shape)
+        # image_mpp > model_mpp --> resize
+        y, original_shape = app._resize_input(x, image_mpp=2.1 * kwargs['model_mpp'])
+        self.assertEqual(2.1, np.round(x.shape[1]/y.shape[1], decimals=1))
+        self.assertEqual(x.shape, original_shape)
 
-        # image_mpp < model_mpp
-        y = app.predict(x, image_mpp=0.7 * kwargs['model_mpp'])
-        self.assertEqual(x.shape, y.shape)
+        # image_mpp < model_mpp --> resize
+        y, original_shape = app._resize_input(x, image_mpp=0.7 * kwargs['model_mpp'])
+        self.assertEqual(0.7, np.round(x.shape[1]/y.shape[1], decimals=1))
+        self.assertEqual(x.shape, original_shape)
 
-    def test_predict_segmentation_tiling(self):
-
-        model = DummyModel()
-        kwargs = {'model_mpp': 0.65,
-                  'model_image_shape': (128, 128, 1)}
-        app = Application(model, **kwargs)
-        app.predict = app._predict_segmentation
-
-        # No tiling
-        x = np.random.rand(1, 128, 128, 1)
-        y = app.predict(x)
-        self.assertEqual(x.shape, y.shape)
-
-        # Tiling square
-        x = np.random.rand(1, 400, 400, 1)
-        y = app.predict(x)
-        self.assertEqual(x.shape, y.shape)
-
-        # Tiling rectangle
-        x = np.random.rand(1, 300, 500, 1)
-        y = app.predict(x)
-        self.assertEqual(x.shape, y.shape)
-
-    def test_predict_segmentation_input_size(self):
-
-        model = DummyModel()
-        kwargs = {'model_mpp': 0.65,
-                  'model_image_shape': (128, 128, 1)}
-        app = Application(model, **kwargs)
-        app.predict = app._predict_segmentation
-
-        # Raise valueerror for dim != 4
-        with self.assertRaises(ValueError):
-            y = app.predict(np.random.rand(128, 128, 1))
-
-    def test_predict_segmentation_preprocess(self):
+    def test_preprocess(self):
 
         def _preprocess(x):
             y = np.ones(x.shape)
             return y
 
         model = DummyModel()
-        kwargs = {'model_mpp': 0.65,
-                  'model_image_shape': (128, 128, 1),
-                  'preprocessing_fn': _preprocess}
+        x = np.random.rand(1, 30, 30, 1)
+
+        # Test no preprocess input
+        app = Application(model)
+        y = app._preprocess(x)
+        self.assertAllEqual(x, y)
+
+        # Test ones function
+        kwargs = {'preprocessing_fn': _preprocess}
         app = Application(model, **kwargs)
-        app.predict = app._predict_segmentation
+        y = app._preprocess(x)
+        self.assertAllEqual(np.ones(x.shape), y)
 
-        x = np.random.rand(1, 300, 300, 1)
-        image, tiles, output_tiles, output_images, label_image = app.predict(x, debug=True)
-        self.assertEqual(1, len(np.unique(image)))
-
-        # Test bad preprocess input
+        # Test bad input
         kwargs = {'preprocessing_fn': 'x'}
         with self.assertRaises(ValueError):
             app = Application(model, **kwargs)
 
-    def test_predict_segmentation_postprocess(self):
+    # def test_tile_input(self):
 
-        def _postprocess(Lx):
-            y = np.ones(Lx[0].shape)
-            return y
+    # def test_postprocess(self):
 
-        model = DummyModel()
-        kwargs = {'model_mpp': 0.65,
-                  'model_image_shape': (128, 128, 1),
-                  'postprocessing_fn': _postprocess}
-        app = Application(model, **kwargs)
-        app.predict = app._predict_segmentation
+    # def test_untile_output(self):
 
-        x = np.random.rand(1, 300, 300, 1)
-        y = app.predict(x)
-        self.assertEqual(1, len(np.unique(y)))
-
-        # Test bad postprocess input
-        kwargs = {'postprocessing_fn': 'x'}
-        with self.assertRaises(ValueError):
-            app = Application(model, **kwargs)
+    # def test_resize_output(self):

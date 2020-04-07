@@ -84,6 +84,123 @@ class Application(object):
     def predict(self, x):
         raise NotImplementedError
 
+    def _resize_input(self, image, image_mpp):
+        """Checks if there is a difference between image and model resolution
+        and resizes if they are different. Otherwise returns the unmodified image.
+
+        Args:
+            image (array): Input image to resize
+            image_mpp (float): Microns per pixel for the input image
+
+        Returns:
+            array: Input image resized if necessary to match model_mpp
+        """
+
+        # Store original image size for use later
+        original_shape = image.shape
+
+        # Don't scale the image if mpp is the same or not defined
+        if image_mpp not in {None, self.model_mpp}:
+            scale_factor = image_mpp / self.model_mpp
+            new_shape = (int(image.shape[1] / scale_factor),
+                         int(image.shape[2] / scale_factor))
+            image = resize(image, new_shape, data_format='channels_last')
+
+        return image, original_shape
+
+    def _preprocess(self, image, **kwargs):
+        """Preprocess image if `preprocessing_fn` is defined.
+        Otherwise return unmodified image
+        """
+
+        if self.preprocessing_fn is not None:
+            image = self.preprocessing_fn(image, **kwargs)
+
+        return image
+
+    def _tile_input(self, image):
+        """Tile the input image to match shape expected by model
+        using the deepcell_toolbox function.
+        Currently only supports 4d images and otherwise raises an error
+
+        Args:
+            image (array): Input image to tile
+
+        Raises:
+            ValueError: Input images must have only 4 dimensions
+
+        Returns:
+            (array, dict): Tuple of tiled image and dictionary of tiling specs
+        """
+
+        if len(image.shape) != 4:
+            raise ValueError('deepcell_toolbox.tile_image only supports 4d images.'
+                             'Image submitted for predict has {} dimensions'.format(
+                                 len(image.shape)))
+
+        # Tile images, needs 4d
+        tiles, tiles_info = tile_image(image, model_input_shape=self.model_image_shape)
+
+        return tiles, tiles_info
+
+    def _postprocess(self, image, **kwargs):
+        """Applies postprocessing function to image if one has been defined.
+        Otherwise returns unmodified image.
+
+        Args:
+            image (array or list): Input to postprocessing function
+                either an array or list of arrays
+
+        Returns:
+            array: labeled image
+        """
+
+        if self.postprocessing_fn is not None:
+            image = self.postprocessing_fn(image, **kwargs)
+
+        return image
+
+    def _untile_output(self, output_tiles, tiles_info):
+        """Untiles either a single array or a list of arrays
+            according to a dictionary of tiling specs
+
+        Args:
+            output_tiles (array or list): Array or list of arrays
+            tiles_info (dict): Dictionary of tiling specs output by tiling function
+
+        Returns:
+            array or list: Array or list according to input with untiled images
+        """
+
+        if isinstance(output_tiles, list):
+            output_images = [untile_image(o, tiles_info, model_input_shape=self.model_image_shape,
+                                          dtype=o.dtype) for o in output_tiles]
+        else:
+            output_images = untile_image(output_tiles, tiles_info,
+                                         model_input_shape=self.model_image_shape,
+                                         dtype=output_tiles.dtype)
+
+        return output_images
+
+    def _resize_output(self, image, original_shape):
+        """Rescales input if the shape does not match the original shape
+        excluding the batch and channel dimensions
+
+        Args:
+            image (array): Image to be rescaled to original shape
+            original_shape (tuple): Shape of the original input image
+
+        Returns:
+            array: Rescaled image
+        """
+
+        # Compare image size to original_shape excluding batch and channel dimension
+        if image.shape[1:-1] == original_shape[1:-1]:
+            # Resize function only takes the x,y dimensions for shape
+            image = resize(image, original_shape[1:-1], data_format='channels_last')
+
+        return image
+
     def _predict_segmentation(self,
                               image,
                               batch_size=4,
@@ -109,7 +226,8 @@ class Application(object):
                 Defaults to False.
 
         Raises:
-            ValueError: Input data must have 4 dimensions, [batch, x, y, channel
+            ValueError: Input data must match required rank of the application, calculated as
+                one dimension more (batch dimension) than expected by the model
 
         Returns:
             np.array: Labeled image, if debug is False.
@@ -122,41 +240,25 @@ class Application(object):
                              'Input data only has {} dimensions'.format(
                                  self.required_rank, len(image.shape)))
 
-        # Resize image if necessary
-        if image_mpp not in {None, self.model_mpp}:
-            original_shape = image.shape
-            scale_factor = image_mpp / self.model_mpp
-            new_shape = (int(image.shape[1] / scale_factor),
-                         int(image.shape[2] / scale_factor))
-            image = resize(image, new_shape, data_format='channels_last')
-        else:
-            original_shape = None
+        # Resize image, returns unmodified if appropriate
+        image, original_shape = self._resize_input(image, image_mpp)
 
-        # Preprocess image
-        if self.preprocessing_fn is not None:
-            image = self.preprocessing_fn(image, **preprocess_kwargs)
+        # Preprocess image if function is defined
+        image = self._preprocess(image, **preprocess_kwargs)
 
-        # Tile images, needs 4d
-        tiles, tiles_info = tile_image(image, model_input_shape=self.model_image_shape)
+        # Tile images, raises error if the image is not 4d
+        tiles, tiles_info = self._tile_input(image)
 
         # Run images through model
         output_tiles = self.model.predict(tiles, batch_size=batch_size)
 
         # Untile images
-        output_images = [untile_image(o, tiles_info, model_input_shape=self.model_image_shape,
-                                      dtype=o.dtype) for o in output_tiles]
+        output_images = self._untile_output(output_tiles, tiles_info)
 
         # Postprocess predictions to create label image
-        if self.postprocessing_fn is not None:
-            label_image = self.postprocessing_fn(output_images, **postprocess_kwargs)
-        else:
-            label_image = output_images[0]
+        label_image = self._postprocess(output_images, **postprocess_kwargs)
 
         # Resize label_image back to original resolution if necessary
-        if original_shape is not None:
-            label_image = resize(label_image, original_shape[1:3], data_format='channels_last')
+        label_image = self._resize_output(label_image, original_shape)
 
-        if debug:
-            return image, tiles, output_tiles, output_images, label_image
-        else:
-            return label_image
+        return label_image
