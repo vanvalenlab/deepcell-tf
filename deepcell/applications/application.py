@@ -244,8 +244,7 @@ class Application(object):
                               batch_size=4,
                               image_mpp=None,
                               preprocess_kwargs={},
-                              postprocess_kwargs={},
-                              debug=False):
+                              postprocess_kwargs={}):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
@@ -260,8 +259,6 @@ class Application(object):
                 Defaults to {}.
             postprocess_kwargs (dict, optional): Kwargs to pass to postprocessing function.
                 Defaults to {}.
-            debug (bool, optional): If True, returns intermediate outputs of data processing.
-                Defaults to False.
 
         Raises:
             ValueError: Input data must match required rank of the application, calculated as
