@@ -5,13 +5,11 @@
 [![Documentation Status](https://img.shields.io/readthedocs/deepcell?logo=Read-the-Docs)](https://deepcell.readthedocs.io/en/master)
 [![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE)
 
-DeepCell-tf is a neural network library for single-cell analysis, written in Python and built using [TensorFlow](https://github.com/tensorflow/tensorflow) and [Keras](https://www.tensorflow.org/guide/keras). It is the heart of the DeepCell ecosystem.
-
-DeepCell aids in biological analysis by automatically segmenting and classifying cells in optical microscopy images.  The framework processes raw images and uniquely annotates each cell in the image.  These annotations can be used to quantify a variety of cellular properties.
+'deepcell-tf' is a deep learning library for single-cell analysis of biological images. It is written in Python and built using [TensorFlow](https://github.com/tensorflow/tensorflow) and [Keras](https://www.tensorflow.org/guide/keras) and allows users to apply pre-existing models to imaging data as well as develop new deep learning models for single cell analysis. The models in this library can perform single cell segmentation in 2D and 3D images and can track cells in 2D time-lapse datasets, and have been used to analyze data ranging from multiplexed images of tissues to dynamic live-cell imaging movies. This library is one of several the [Van Valen lab](http://vanvalen.caltech.edu/) has developed to facilitate the devlopment and application of new deep learning methods. These include [deepcell-toolbox](https://github.com/vanvalenlab/deepcell-toolbox) for pre and post-processing the outputs of deep learning models, [deepcell-tracking](https://github.com/vanvalenlab/deepcell-tracking) for creating cell lineages with deep learning tracking models, [Caliban](https://github.com/vanvalenlab/caliban) for annotating high-dimensional biological images, and [Kiosk](https://github.com/vanvalenlab/kiosk-console) for deploying workflows to large datasets in the cloud.
 
 Read the documentation at [deepcell.readthedocs.io](https://deepcell.readthedocs.io).
 
-For more information on deploying DeepCell in the cloud refer to the [DeepCell Kiosk documentation](https://deepcell-kiosk.readthedocs.io).
+For more information on deploying models in the cloud refer to the [the Kiosk documentation](https://deepcell-kiosk.readthedocs.io).
 
 ## Examples
 
@@ -41,27 +39,31 @@ Tracked Image
 
 ## Getting Started
 
-The fastest way to get started with DeepCell-tf is to run one of our existing images from Docker Hub. To do so, run the following command:
+The fastest way to get started with `deepcell-tf` is to run one of our existing images from Docker Hub. To do so, first install [`nvidia-docker`](https://github.com/NVIDIA/nvidia-docker). Once `nvidia-docker` is installed, run the following command:
 
 ```bash
-# Start a GPU enabled container on two GPUs
-docker run --gpus '"device=1,2"' -it --rm -p 8888:8888 vanvalenlab/deepcell-tf:0.4.0-gpu
+# Start a GPU enabled container on one GPUs
+docker run --gpus '"device=0"' -it --rm \
+	-p 8888:8888 \
+    -v $PWD/scripts:/notebooks \
+    -v $PWD/data:/data \
+    vanvalenlab/deepcell-tf:0.4.0-gpu
 ```
 
-This will start a Jupyter session (using the default port 8888), with several example notebooks detailing various training methods. The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 81:8888`. If you run accross any errors getting this started, you may be missing some neccesary dependencies. If so, please refer to the DeepCell-tf for Developers section.
+This will spin up a docker container with `deepcell-tf` installed and start a jupyter session using the default port 8888. This command also connects a data folder ($PWD/data) and a scripts folder ($PWD/scripts) to the docker container so it can access your data and juyter notebooks stored on the host workstation. The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 81:8888`. If you run across any errors getting started, you should either refer to the `deepcell-tf` for developers section or raise an issue on GitHub.
 
-For examples of how to use the DeepCell-tf library, check out the following notebooks:
+For examples of how to train models with the 'deepcell-tf' library, check out the following notebooks:
 
 - [Training a segmentation model](https://deepcell.readthedocs.io/en/master/Training-Segmentation.html)
 - [Training a tracking model](https://deepcell.readthedocs.io/en/master/Training-Tracking.html)
 
 ## DeepCell Applications and DeepCell Datasets
 
-Together <tt><a href="https://deepcell.readthedocs.io/en/master/API/deepcell.datasets.html">deepcell.datasets</a></tt> and <tt><a href="https://deepcell.readthedocs.io/en/master/API/deepcell.applications.html">deepcell.applications</a></tt> provide an entrypoint to deep learning for biologists. The datasets module contains a variety of annotated datasets that can be used as training data. Additionally, the applications package initializes a set of models complete with the option to load pre-trained weights.
+`deepcell-tf` contains two modules that greatly simplify the development and usage of deep learning models for single cell analysis. The first is <tt><a href="https://deepcell.readthedocs.io/en/master/API/deepcell.datasets.html">deepcell.datasets</a></tt>, which a collection of biological images that have single-cell annotations. These data include live-cell imaging movies of fluorescent nuclei (approximately 10,000 single cell trajectories over 30 frames), as well as static images of whole cells (both phase and fluorescence images - approximately 75,000 single cell annotations). The second is <tt><a href="https://deepcell.readthedocs.io/en/master/API/deepcell.applications.html">deepcell.applications</a></tt>, which contains pre-trained models (fluorescent nuclear and phase/fluorescent whole cell) for single cell analysis. Provided data is scaled so that the physical size of each pixel matches that in the training dataset, these models can be used out of the box on live-cell imaging data. We are currently working to expand these modules to include data and models for tissue images. Please note that they may be spun off into their own GitHub repositories in the near future.
 
 ## DeepCell-tf for Developers
 
-DeepCell-tf uses `nvidia-docker` and `tensorflow` to enable GPU processing. If using GCP, there are [pre-built images](https://console.cloud.google.com/marketplace/details/nvidia-ngc-public/nvidia_gpu_cloud_image) which come with CUDA, docker, and nvidia-docker pre-installed. Otherwise, you will need to install [docker](https://docs.docker.com/install/linux/docker-ce/debian/), [nvidia-docker](https://github.com/NVIDIA/nvidia-docker), and [CUDA](https://developer.nvidia.com/cuda-downloads) separately.
+`deepcell-tf` uses `nvidia-docker` and `tensorflow` to enable GPU processing. If using GCP, there are [pre-built images](https://console.cloud.google.com/marketplace/details/nvidia-ngc-public/nvidia_gpu_cloud_image) which come with CUDA, docker, and nvidia-docker pre-installed. Otherwise, you will need to install [docker](https://docs.docker.com/install/linux/docker-ce/debian/), [nvidia-docker](https://github.com/NVIDIA/nvidia-docker), and [CUDA](https://developer.nvidia.com/cuda-downloads) separately. These instructions set up a docker container so that you can directly change the `deepcell-tf` library itself and have those changes reflected within the container
 
 ### Build a local docker container, specifying the tensorflow version with TF_VERSION
 
@@ -110,12 +112,13 @@ docker run --gpus '"device=0"' -it \
 
 ## How to Cite
 
-- [The original DeepCell paper](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005177)
+- [Deep Learning Automates the Quantitative Analysis of Individual Cells in Live-Cell Imaging Experiments](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005177)
 - [Dynamic allocation of computational resources for deep learning-enabled cellular image analysis with Kubernetes](https://www.biorxiv.org/content/10.1101/505032v3)
+- [Accurate cell tracking and lineage construction in live-cell imaging experiments with deep learning](https://www.biorxiv.org/content/10.1101/803205v2)
 
 ## Copyright
 
-Copyright © 2016-2020 [The Van Valen Lab](http://www.vanvalen.caltech.edu/) at the California Institute of Technology (Caltech), with support from the Paul Allen Family Foundation, Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
+Copyright © 2016-2020 [The Van Valen Lab](http://www.vanvalen.caltech.edu/) at the California Institute of Technology (Caltech), with support from the Shurl and Kay Curci Foundation, Google Research Cloud, the Paul Allen Family Foundation, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 All rights reserved.
 
 ## License
