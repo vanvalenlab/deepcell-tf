@@ -40,7 +40,7 @@ class Application(object):
         Args:
             model (tf.model): Tensorflow model with weights loaded
             model_image_shape (tuple, optional): Shape of input expected by model.
-                Defaults to (128, 128, 1).
+                Defaults to `(128, 128, 1)`.
             dataset_metadata (optional): Any input, e.g. str or dict. Defaults to None.
             model_metadata (optional): Any input, e.g. str or dict. Defaults to None.
             model_mpp (float, optional): Microns per pixel resolution of training data.
@@ -52,8 +52,8 @@ class Application(object):
                 Must accept an input of a list of arrays and then return a single array.
 
         Raises:
-            ValueError: Preprocessing_fn must be a callable function
-            ValueError: Postprocessing_fn must be a callable function
+            ValueError: `Preprocessing_fn` must be a callable function
+            ValueError: `Postprocessing_fn` must be a callable function
         """
 
     def __init__(self,
@@ -95,7 +95,7 @@ class Application(object):
             image_mpp (float): Microns per pixel for the input image
 
         Returns:
-            array: Input image resized if necessary to match model_mpp
+            array: Input image resized if necessary to match `model_mpp`
         """
 
         # Store original image size for use later
@@ -183,7 +183,7 @@ class Application(object):
 
     def _untile_output(self, output_tiles, tiles_info):
         """Untiles either a single array or a list of arrays
-            according to a dictionary of tiling specs
+        according to a dictionary of tiling specs
 
         Args:
             output_tiles (array or list): Array or list of arrays
@@ -192,6 +192,7 @@ class Application(object):
         Returns:
             array or list: Array or list according to input with untiled images
         """
+
         # If padding was used, remove padding
         if tiles_info.get('padding', False):
             def _process(im, tiles_info):
@@ -248,11 +249,11 @@ class Application(object):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
-        Input images are required to have 4 dimensions [batch, x, y, channel]. Additional
+        Input images are required to have 4 dimensions `[batch, x, y, channel]`. Additional
         empty dimensions can be added using `np.expand_dims`
 
         Args:
-            image (np.array): Input image with shape [batch, x, y, channel]
+            image (np.array): Input image with shape `[batch, x, y, channel]`
             batch_size (int, optional): Number of images to predict on per batch. Defaults to 4.
             image_mpp (float, optional): Microns per pixel for the input image. Defaults to None.
             preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
@@ -265,8 +266,7 @@ class Application(object):
                 one dimension more (batch dimension) than expected by the model
 
         Returns:
-            np.array: Labeled image, if debug is False.
-                If debug is True, returns (image, tiles, output_tiles, output_images, label_image)
+            np.array: Labeled image
         """
 
         # Check input size of image
