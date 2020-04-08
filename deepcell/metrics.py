@@ -387,8 +387,8 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
         # Identify direct matches as true positives
         correct_index = np.where(self.cm_res[:self.n_true, :self.n_pred] == 1)
         self.correct_detections += len(correct_index[0])
-        self.correct_indices['y_true'] += list(correct_index[0] + 1)
-        self.correct_indices['y_pred'] += list(correct_index[1] + 1)
+        self.correct_indices['y_true'].extend(list(correct_index[0] + 1))
+        self.correct_indices['y_pred'].extend(list(correct_index[1] + 1))
 
         # Calc seg score for true positives if requested
         if self.seg is True:
@@ -605,10 +605,12 @@ class ObjectAccuracy(object):  # pylint: disable=useless-object-inheritance
             error_dict: dictionary containing {category_name: id list} pairs
         """
 
-        error_dict = {"splits": self.split_indices, "merges": self.merge_indices,
-                      "gains": self.gained_indices, "misses": self.missed_indices,
-                      "catastrophes": self.catastrophe_indices,
-                      "correct": self.correct_indices}
+        error_dict = {'splits': self.split_indices,
+                      'merges': self.merge_indices,
+                      'gains': self.gained_indices,
+                      'misses': self.missed_indices,
+                      'catastrophes': self.catastrophe_indices,
+                      'correct': self.correct_indices}
 
         return error_dict, self.y_true, self.y_pred
 
@@ -812,7 +814,7 @@ class Metrics(object):
         """
 
         if len(y_true.shape) < 3:
-            raise ValueError("Invalid input dimensions: must be at least 3D tensor")
+            raise ValueError('Invalid input dimensions: must be at least 3D tensor')
 
         self.stats = pd.DataFrame()
         self.predictions = []
@@ -1085,13 +1087,13 @@ def assign_plot_values(y_true, y_pred, error_dict):
     y_pred = erode_edges(y_pred, 1)
 
     # missed detections are tracked with true labels
-    misses = error_dict.pop("misses")["y_true"]
+    misses = error_dict.pop('misses')['y_true']
     plotting_tif[np.isin(y_true, misses)] = 1
 
     # all other events are tracked with predicted labels
     category_id = 2
     for key in error_dict.keys():
-        labels = error_dict[key]["y_pred"]
+        labels = error_dict[key]['y_pred']
         plotting_tif[np.isin(y_pred, labels)] = category_id
         category_id += 1
 
@@ -1121,6 +1123,6 @@ def plot_errors(y_true, y_pred, error_dict):
 
     # tell the colorbar to tick at integers
     cbar = fig.colorbar(mat, ticks=np.arange(np.min(plotting_tif), np.max(plotting_tif) + 1))
-    cbar.ax.set_yticklabels(["Background", "misses", "splits", "merges",
-                             "gains", "catastrophes", "correct"])
+    cbar.ax.set_yticklabels(['Background', 'misses', 'splits', 'merges',
+                             'gains', 'catastrophes', 'correct'])
     fig.tight_layout()
