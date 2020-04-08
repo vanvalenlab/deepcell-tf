@@ -797,7 +797,7 @@ class Metrics(object):
         print('\nConfusion Matrix')
         print(self.cm)
 
-    def calc_object_stats(self, y_true, y_pred, return_predictions=False):
+    def calc_object_stats(self, y_true, y_pred):
         """Calculate object statistics and save to output
 
         Loops over each frame in the zeroth dimension, which should pass in
@@ -807,7 +807,6 @@ class Metrics(object):
         Args:
             y_true (numpy.array): Labeled ground truth annotations
             y_pred (numpy.array): Labeled prediction mask
-            return_predictions (bool): Determine whether predictions will be returned for analysis
 
         Raises:
             ValueError: if the shape of the input tensor is less than length three
@@ -826,9 +825,8 @@ class Metrics(object):
                                cutoff2=self.cutoff2,
                                seg=self.seg)
             self.stats = self.stats.append(o.save_to_dataframe())
-            if return_predictions:
-                predictions = o.save_error_ids()
-                self.predictions.append(predictions)
+            predictions = o.save_error_ids()
+            self.predictions.append(predictions)
             if i % 500 == 0:
                 logging.info('{} samples processed'.format(i))
 
@@ -850,8 +848,6 @@ class Metrics(object):
                 ))
 
         self.print_object_report()
-        if return_predictions:
-            return self.predictions
 
     def print_object_report(self):
         """Print neat report of object based statistics
