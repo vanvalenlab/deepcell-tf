@@ -38,6 +38,7 @@ from tensorflow.python.keras.preprocessing.image import img_to_array
 from tensorflow.python.platform import test
 
 from deepcell import image_generators
+from deepcell.image_generators import semantic
 
 
 def _generate_test_images(img_w=21, img_h=21):
@@ -1728,7 +1729,7 @@ class TestSemanticDataGenerator(test.TestCase):
                 img_list.append(img_to_array(im)[None, ...])
 
             images = np.vstack(img_list)
-            generator = image_generators.SemanticDataGenerator(
+            generator = semantic.SemanticDataGenerator(
                 featurewise_center=True,
                 samplewise_center=True,
                 featurewise_std_normalization=True,
@@ -1864,3 +1865,110 @@ class TestSemanticDataGenerator(test.TestCase):
         with self.assertRaises(ValueError):
             generator = image_generators.SemanticDataGenerator(
                 zoom_range=(2, 2, 2))
+
+    def test_semantic_data_generator_multiple_labels(self):
+        for test_images in _generate_test_images(21, 21):
+            img_list = []
+            for im in test_images:
+                img_list.append(img_to_array(im)[None, ...])
+
+            images = np.vstack(img_list)
+            generator = semantic.SemanticDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True)
+
+            # Basic test before fit
+            train_dict = {
+                'X': np.random.random((8, 10, 10, 3)),
+                'y': np.random.random((8, 10, 10, 1)),
+                'y_1':  np.random.random((8, 10, 10, 1)),
+                'y_2': np.random.random((8, 10, 10, 1)),
+            }
+            generator.flow(train_dict)
+
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
+
+            # Fit
+            generator.fit(images, augment=True, seed=1)
+            y_shape = tuple(list(images.shape)[:-1] + [1])
+            train_dict['X'] = images
+            train_dict['y'] = np.random.randint(0, 9, size=y_shape)
+            transforms = [['watershed-cont', 'fgbg'], ['watershed-cont', 'fgbg'],
+                          ['watershed-cont', 'fgbg']]
+            for x, y in generator.flow(
+                    train_dict,
+                    transforms=transforms,
+                    save_to_dir=temp_dir,
+                    shuffle=True):
+                self.assertEqual(len(y), len(transforms) * len(transforms[0]))
+                self.assertEqual(x.shape[1:], images.shape[1:])
+                break
+
+    def test_semantic_data_generator_multiple_labels_same_transforms(self):
+        for test_images in _generate_test_images(21, 21):
+            img_list = []
+            for im in test_images:
+                img_list.append(img_to_array(im)[None, ...])
+
+            images = np.vstack(img_list)
+            generator = semantic.SemanticDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True)
+
+            # Basic test before fit
+            train_dict = {
+                'X': np.random.random((8, 10, 10, 3)),
+                'y': np.random.random((8, 10, 10, 1)),
+                'y_1':  np.random.random((8, 10, 10, 1)),
+                'y_2': np.random.random((8, 10, 10, 1)),
+            }
+            generator.flow(train_dict)
+
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
+
+            # Fit
+            generator.fit(images, augment=True, seed=1)
+            y_shape = tuple(list(images.shape)[:-1] + [1])
+            train_dict['X'] = images
+            train_dict['y'] = np.random.randint(0, 9, size=y_shape)
+            transforms = ['watershed-cont', 'fgbg']
+            for x, y in generator.flow(
+                    train_dict,
+                    transforms=transforms,
+                    save_to_dir=temp_dir,
+                    shuffle=True):
+                self.assertEqual(len(y), len(transforms) * (len(train_dict.keys()) - 1))
+                self.assertEqual(x.shape[1:], images.shape[1:])
+                break
+
+
