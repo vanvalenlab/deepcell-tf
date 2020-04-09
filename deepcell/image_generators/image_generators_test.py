@@ -1894,20 +1894,21 @@ class TestSemanticDataGenerator(test.TestCase):
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((8, 10, 10, 3)),
-                'y': np.random.random((8, 10, 10, 1)),
-                'y_1':  np.random.random((8, 10, 10, 1)),
-                'y_2': np.random.random((8, 10, 10, 1)),
+                'y': {'y1': np.random.random((8, 10, 10, 1)),
+                      'y2': np.random.random((8, 10, 10, 1)),
+                      'y3': np.random.random((8, 10, 10, 1)),
+                      }
             }
             generator.flow(train_dict)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
-
             # Fit
             generator.fit(images, augment=True, seed=1)
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
-            train_dict['y'] = np.random.randint(0, 9, size=y_shape)
+            for key in train_dict['y'].keys():
+                train_dict['y'][key] = np.random.randint(0, 9, size=y_shape)
             transforms = [['watershed-cont', 'fgbg'], ['watershed-cont', 'fgbg'],
                           ['watershed-cont', 'fgbg']]
             for x, y in generator.flow(
@@ -1915,7 +1916,7 @@ class TestSemanticDataGenerator(test.TestCase):
                     transforms=transforms,
                     save_to_dir=temp_dir,
                     shuffle=True):
-                self.assertEqual(len(y), len(transforms) * len(transforms[0]))
+                self.assertEqual(len(y), sum([len(sublist) for sublist in transforms]))
                 self.assertEqual(x.shape[1:], images.shape[1:])
                 break
 
@@ -1947,9 +1948,10 @@ class TestSemanticDataGenerator(test.TestCase):
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((8, 10, 10, 3)),
-                'y': np.random.random((8, 10, 10, 1)),
-                'y_1':  np.random.random((8, 10, 10, 1)),
-                'y_2': np.random.random((8, 10, 10, 1)),
+                'y': {'y1': np.random.random((8, 10, 10, 1)),
+                      'y2': np.random.random((8, 10, 10, 1)),
+                      'y3': np.random.random((8, 10, 10, 1)),
+                      }
             }
             generator.flow(train_dict)
 
@@ -1960,14 +1962,15 @@ class TestSemanticDataGenerator(test.TestCase):
             generator.fit(images, augment=True, seed=1)
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
-            train_dict['y'] = np.random.randint(0, 9, size=y_shape)
-            transforms = ['watershed-cont', 'fgbg']
+            for key in train_dict['y'].keys():
+                train_dict['y'][key] = np.random.randint(0, 9, size=y_shape)
+                transforms = ['watershed-cont', 'fgbg']
             for x, y in generator.flow(
                     train_dict,
                     transforms=transforms,
                     save_to_dir=temp_dir,
                     shuffle=True):
-                self.assertEqual(len(y), len(transforms) * (len(train_dict.keys()) - 1))
+                self.assertEqual(len(y), len(transforms) * len(train_dict['y']))
                 self.assertEqual(x.shape[1:], images.shape[1:])
                 break
 

@@ -86,6 +86,13 @@ class SemanticIterator(Iterator):
                  save_prefix='',
                  save_format='png'):
         X, y = train_dict['X'], train_dict['y']
+
+        multiple_label_types = type(y) is dict
+
+        # TODO: is there a better way to handle this? Want to pass the first y_label to shape check
+        if multiple_label_types:
+            y = y[list(y.keys())[0]]
+
         if X.shape[0] != y.shape[0]:
             raise ValueError('Training batches and labels should have the same'
                              'length. Found X.shape: {} y.shape: {}'.format(
@@ -119,12 +126,21 @@ class SemanticIterator(Iterator):
         # Add transformed masks
 
         # determine if multiple y_labels are being supplied
-        num_label_types = len(train_dict.keys()) - 1
-        multiple_transform_lists = type(transforms[0]) is list
-        labels = list(train_dict.keys())[1:]
+        if multiple_label_types:
+            y = train_dict['y']
+            num_label_types = len(y)
+            labels = list(y.keys())
+            label_dict = y
+        else:
+            num_label_types = 1
+            labels = ['y']
+            label_dict = train_dict
 
+        multiple_transform_lists = type(transforms[0]) is list
+
+        # loop through supplied labels, pair with appropriate transforms
         for label_num in range(num_label_types):
-            y_current = train_dict[labels[label_num]]
+            y_current = label_dict[labels[label_num]]
 
             if multiple_transform_lists:
                 current_transforms = transforms[label_num]
