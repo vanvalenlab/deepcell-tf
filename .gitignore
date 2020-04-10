@@ -119,3 +119,8 @@ venv.bak/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Documentation notebook byproducts
+docs/source/*.h5
+docs/source/nucleartracks/*
+docs/source/*.trk

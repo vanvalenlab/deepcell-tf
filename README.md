@@ -53,6 +53,7 @@ For examples of how to use the deepcell library, check out the following noteboo
 
 - [Training a segmentation model](https://deepcell.readthedocs.io/en/master/Training-Segmentation.html)
 - [Training a tracking model](https://deepcell.readthedocs.io/en/master/Training-Tracking.html)
+- [Nuclear segmentation and tracking usage](https://deepcell.readthedocs.io/en/master/Nuclear-Application.html)
 
 ## `deepcell.applications` and `deepcell.datasets`
 

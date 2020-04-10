@@ -7,6 +7,7 @@
 
    Training-Segmentation
    Training-Tracking
+   Nuclear-Application
 
 .. toctree::
    :maxdepth: 2
