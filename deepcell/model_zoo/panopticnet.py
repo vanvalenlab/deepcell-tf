@@ -82,6 +82,7 @@ def create_pyramid_level(backbone_input,
                          addition_input=None,
                          level=5,
                          ndim=2,
+                         lite=False,
                          feature_size=256):
     """Create a pyramid layer from a particular backbone input layer.
 
@@ -107,6 +108,9 @@ def create_pyramid_level(backbone_input,
     acceptable_ndims = {2, 3}
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
+
+    if ndim==3 and lite:
+        raise ValueError('lite mode does not currently work with 3 dimensional networks')
 
     upsampling = UpSampling2D if ndim == 2 else UpSampling3D
     size = (2,2) if ndim == 2 else (1,2,2)
@@ -137,10 +141,12 @@ def create_pyramid_level(backbone_input,
         pyramid_upsample = None
 
     if ndim == 2:
-        pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
+        if lite:
+            pyramid_final = DepthwiseConv2D((3,3), strides=(1,1), 
+                                padding='same', name=final_name)(pyramid)
+        else:
+            pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
                                padding='same', name=final_name)(pyramid)
-        # pyramid_final = DepthwiseConv2D((3,3), strides=(1,1), 
-        #                         padding='same', name=final_name)(pyramid)
     else:
         pyramid_final = Conv3D(feature_size, (1, 3, 3), strides=(1, 1, 1),
                                padding='same', name=final_name)(pyramid)
@@ -148,7 +154,9 @@ def create_pyramid_level(backbone_input,
     return pyramid_final, pyramid_upsample
 
 
-def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
+def __create_pyramid_features(backbone_dict, ndim=2, 
+                              feature_size=256,
+                              lite=False,
                               include_final_layers=True):
     """Creates the FPN layers on top of the backbone features.
 
@@ -218,6 +226,7 @@ def __create_pyramid_features(backbone_dict, ndim=2, feature_size=256,
                                       upsamplelike_input=upsamplelike_input,
                                       addition_input=addition_input,
                                       level=level,
+                                      lite=lite,
                                       ndim=ndim)
         pyramid_finals.append(pf)
         pyramid_upsamples.append(pu)
@@ -301,6 +310,8 @@ def __create_semantic_head(pyramid_dict,
                             target_level=2,
                             **kwargs):
 
+    conv = Conv2D if ndim == 2 else Conv3D
+    conv_kernel = (1,1) if ndim==2 else (1,1,1)
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
     else:
@@ -342,12 +353,19 @@ def __create_semantic_head(pyramid_dict,
     x = semantic_upsample(semantic_sum, n_upsample, ndim=ndim, semantic_id=semantic_id)
 
     # First tensor product
-    x = TensorProduct(n_dense, name='tensor_product_0_semantic_{}'.format(semantic_id))(x)
+    x = conv(n_dense, conv_kernel, strides=1, 
+                padding='same', data_format='channels_last', 
+                name='tensor_product_0_semantic_{}'.format(semantic_id))(x)
+
+    # x = TensorProduct(n_dense, name='tensor_product_0_semantic_{}'.format(semantic_id))(x)
     x = BatchNormalization(axis=channel_axis, name='batch_normalization_0_semantic_{}'.format(semantic_id))(x)
     x = Activation('relu', name='relu_0_semantic_{}'.format(semantic_id))(x)
 
     # Apply tensor product and softmax layer
-    x = TensorProduct(n_classes, name='tensor_product_1_semantic_{}'.format(semantic_id))(x)
+    x = conv(n_classes, conv_kernel, strides=1, 
+                padding='same', data_format='channels_last', 
+                name='tensor_product_1_semantic_{}'.format(semantic_id))(x)
+    # x = TensorProduct(n_classes, name='tensor_product_1_semantic_{}'.format(semantic_id))(x)
 
     if include_top:
         x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
@@ -372,6 +390,7 @@ def PanopticNet(backbone,
                pooling=None,
                location=True,
                use_imagenet=True,
+               lite=False,
                name='panopticnet',
                **kwargs):
     
@@ -409,9 +428,16 @@ def PanopticNet(backbone,
         concat = norm
 
     if frames_per_batch > 1:
-        fixed_inputs = TimeDistributed(TensorProduct(required_channels, name='tensor_product_channels'))(concat)
+        fixed_inputs = Conv3D(required_channels, (1,1,1), strides=1, 
+                                padding='same', name='tensor_product_channels')(concat)
     else:
-        fixed_inputs = TensorProduct(required_channels, name='tensor_product_channels')(concat)
+        fixed_inputs = Conv2D(required_channels, (1,1), strides=1, 
+                                padding='same', name='tensor_product_channels')(concat)
+                                
+    # if frames_per_batch > 1:
+    #     fixed_inputs = TimeDistributed(TensorProduct(required_channels, name='tensor_product_channels'))(concat)
+    # else:
+    #     fixed_inputs = TensorProduct(required_channels, name='tensor_product_channels')(concat)
 
     # force the input shape
     axis = 0 if K.image_data_format() == 'channels_first' else -1
@@ -434,7 +460,7 @@ def PanopticNet(backbone,
     backbone_dict_reduced = {k: backbone_dict[k] for k in backbone_dict
                              if k in backbone_levels}
     ndim = 2 if frames_per_batch == 1 else 3
-    pyramid_dict = create_pyramid_features(backbone_dict_reduced, ndim=ndim)
+    pyramid_dict = create_pyramid_features(backbone_dict_reduced, ndim=ndim, lite=True)
 
     features = [pyramid_dict[key] for key in pyramid_levels]  
 

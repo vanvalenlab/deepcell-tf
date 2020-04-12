@@ -34,6 +34,8 @@ import json
 import hashlib
 import numpy as np
 
+from skimage.morphology import remove_small_objects
+
 from deepcell.utils.export_utils import export_model
 from deepcell.utils.train_utils import rate_scheduler, get_callbacks
 from deepcell.metrics import Metrics
@@ -47,6 +49,7 @@ class ModelTrainer(object):
                 model_path,
                 train_generator,
                 validation_generator,
+                benchmarking_data=None,
                 log_dir=None,
                 tfserving_path=None,
                 training_callbacks='default',
@@ -56,6 +59,7 @@ class ModelTrainer(object):
                 postprocessing_kwargs={},
                 predict_batch_size=4,
                 model_version=0,
+                min_size=100,
                 dataset_metadata={},
                 training_kwargs={}):
     
@@ -74,12 +78,16 @@ class ModelTrainer(object):
         # Add dataset information
         self.train_generator = train_generator
         self.validation_generator = validation_generator
+        self.benchmarking_data = benchmarking_data
         self.dataset_metadata = dataset_metadata
         self.postprocessing_fn = postprocessing_fn
         self.postprocessing_kwargs = postprocessing_kwargs
         self.predict_batch_size = predict_batch_size
 
-        # Add export infoprmation
+        # Add benchmarking information
+        self.min_size = min_size
+
+        # Add export information
         self.max_batch_size = max_batch_size
         self.export_precisions = export_precisions
 
@@ -139,7 +147,7 @@ class ModelTrainer(object):
         validation_data=self.validation_generator,
         validation_steps=self.validation_steps_per_epoch,
         callbacks=self.training_callbacks,
-        verbose=2)
+        verbose=1)
 
         self.trained = True
         self.loss_history = loss_history
@@ -150,11 +158,20 @@ class ModelTrainer(object):
         if not self.trained:
             raise ValueError('Model training is not complete')
         else:
-            outputs = self.model.predict(self.validation_generator.x, batch_size=self.predict_batch_size)
+            if self.benchmarking_data is None:
+                x = self.validation_generator.x.copy()
+                y_true = self.validation_generator.y.copy()
+            else:
+                x = self.benchmarking_data['X']
+                y_true = self.benchmarking_data['y']
+
+            outputs = self.model.predict(x, batch_size=self.predict_batch_size)
             y_pred = self.postprocessing_fn(outputs, **self.postprocessing_kwargs)
-            y_pred = np.expand_dims(y_pred, axis=-1)    #TODO: This is a hack because the postprocessing fn returns
-                                                        #masks with no channel dimensions. This should be fixed.
-            y_true = self.validation_generator.y.copy()
+
+            if len(y_pred.shape) == 3:
+                y_pred = np.expand_dims(y_pred, axis=-1)    #TODO: This is a hack because the postprocessing fn returns
+                                                            #masks with no channel dimensions. This should be fixed.
+            
             benchmarks = Metrics(self.model_name, seg=False)
             benchmarks.calc_object_stats(y_true, y_pred)
 
@@ -162,6 +179,19 @@ class ModelTrainer(object):
             self.benchmarks = {}
             for key in benchmarks.stats.keys():
                 self.benchmarks[key] = int(benchmarks.stats[key].sum())
+
+            for i in range(y_pred.shape[0]):
+                y_pred[i] = remove_small_objects(y_pred[i].astype(int), min_size=self.min_size)
+                y_true[i] = remove_small_objects(y_true[i].astype(int), min_size=self.min_size)
+
+            benchmarks = Metrics(self.model_name + ' - Removed objects less than {} pixels'.format(self.min_size), 
+                                    seg=False)
+            benchmarks.calc_object_stats(y_true, y_pred)
+
+            # Save benchmarks in dict
+            self.benchmarks_remove_small_objects = {}
+            for key in benchmarks.stats.keys():
+                self.benchmarks_remove_small_objects[key] = int(benchmarks.stats[key].sum())
 
         return None
 
@@ -226,6 +256,7 @@ class ModelTrainer(object):
         metadata['training_metadata'] = self.training_metadata
         metadata['dataset_metadata'] = self.dataset_metadata
         metadata['benchmarks'] = self.benchmarks
+        metadata['benchmarks_remove_small_objects'] = self.benchmarks_remove_small_objects
 
         # TODO: Saving the benchmarking object in this way saves each individual benchmark.
         # This should be refactored to save the sums.
