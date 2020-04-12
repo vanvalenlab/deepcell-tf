@@ -147,7 +147,7 @@ class ModelTrainer(object):
         validation_data=self.validation_generator,
         validation_steps=self.validation_steps_per_epoch,
         callbacks=self.training_callbacks,
-        verbose=1)
+        verbose=2)
 
         self.trained = True
         self.loss_history = loss_history
