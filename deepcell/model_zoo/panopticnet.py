@@ -331,19 +331,6 @@ def __create_semantic_head(pyramid_dict,
     semantic_features = []
     semantic_names = []
 
-    # for N, P in zip(pyramid_names, pyramid_features):
-
-    #     # Get level and determine how much to upsample
-    #     level = int(re.findall(r'\d+', N)[0])
-    #     n_upsample = level - target_level
-
-    #     # Use semantic upsample to get semantic map
-    #     semantic_features.append(semantic_upsample_prototype(P, n_upsample, ndim=ndim))
-    #     semantic_names.append('Q{}'.format(level))
-
-    # # Add all the semantic layers
-    # semantic_sum = Add()(semantic_features)
-
     semantic_sum = pyramid_features[-1]
     semantic_names = pyramid_names[-1]
 
