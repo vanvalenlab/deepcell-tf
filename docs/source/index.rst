@@ -8,6 +8,7 @@
    Training-Segmentation
    Training-Tracking
    Nuclear-Application
+   Cytoplasm-Application
 
 .. toctree::
    :maxdepth: 2
