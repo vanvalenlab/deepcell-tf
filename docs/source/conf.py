@@ -234,6 +234,20 @@ sys.modules['tensorflow.python.keras.layers.convolutional_recurrent.ConvRNN2D'] 
 # Disable nbsphinx extension from running notebooks
 nbsphinx_execute = 'never'
 exclude_patterns = ['_build', '**.ipynb_checkpoints']
+# Download the file <a class="reference external" href="https://raw.githubusercontent.com/vanvalenlab/deepcell-tf/notebooks/{{ docname|e }}">here</a>.
+nbsphinx_prolog = r"""
+{% set docname = 'docs/source/' + env.doc2path(env.docname, base=None) %}
+{% set doclink = "https://github.com/vanvalenlab/deepcell-tf/blob/master/{{ docname|e }}" %}
+
+.. raw:: html
+
+    <div class="admonition note">
+        <p>This page was generated from
+            <a class="reference external" href={{ doclink|e }}>{{ docname|e }}</a>.
+            Download the notebook from <a class="reference external" href={{ doclink|e }}>Github</a>.
+        </p>
+    </div>
+"""
 
 # -- Options for intersphinx extension ---------------------------------------
 
