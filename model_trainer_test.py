@@ -21,7 +21,7 @@
 # about how big we want the scope of ModelTrainer to be.
 
 import deepcell
-import deepcell_toolbox
+
 
 def _load_data():
     # take in dataset
@@ -32,7 +32,6 @@ def _load_data():
                                                 filename,
                                                 test_size = test_size,
                                                 seed = seed)
-    #import pdb; pdb.set_trace()
     return (X_train, y_train), (X_test, y_test)
 
 def _create_generators():
@@ -50,52 +49,32 @@ def _create_generators():
 
 def _create_model(X_train):
     # create model
+    #model = deepcell.bn_feature_net_2D()
     receptive_field = 61
     n_skips = 3
-    
-    model_chosen = "no_skip"
-    if model_chosen == "skip":
-        model = deepcell.bn_feature_net_skip_2D(
-                n_features=22,  # segmentation mask (is_cell, is_not_cell)
-                n_skips=n_skips,
-                receptive_field=receptive_field,
-                n_conv_filters=32,
-                n_dense_filters=128,
-                input_shape=tuple(X_train.shape[1:]),
-                last_only=False)
-    elif model_chosen == "no_skip":
-        model = deepcell.bn_feature_net_2D(
-                n_features=22,  # segmentation mask (is_cell, is_not_cell)
-                receptive_field=receptive_field,
-                n_conv_filters=32,
-                n_dense_filters=128,
-                dilated=True,
-                input_shape=tuple(X_train.shape[1:]))
+    model = deepcell.bn_feature_net_skip_2D(
+            n_features=22,  # segmentation mask (is_cell, is_not_cell)
+            receptive_field=receptive_field,
+            n_skips=n_skips,
+            n_conv_filters=32,
+            n_dense_filters=128,
+            input_shape=tuple(X_train.shape[1:]),
+            last_only=False)
     return model
 
-def main():
-    # create model_trainer
-    (X_train, y_train), (X_test, y_test) = _load_data()
-    train_generator, validation_generator = _create_generators()
-    model = _create_model(X_train)
-    training_kwargs = {"n_epochs": 2}
-    trainer = deepcell.training.ModelTrainer(
-            X_train = X_train,
-            y_train = y_train,
-            X_test = X_test,
-            y_test = y_test,
-            model = model,
-            train_generator = train_generator,
-            validation_generator = validation_generator,
-            training_kwargs = training_kwargs)
-    #postprocessing_fn = deepcell_toolbox.retinamask_postprocess,
 
-    # train model
-    model_name, metadata_name = trainer.create_model()
+# create model_trainer
+(X_train, y_train), (X_test, y_test) = _load_data()
+train_generator, validation_generator = _create_generators()
+model = _create_model(X_train)
+trainer = deepcell.training.ModelTrainer(
+        X_train = X_train,
+        y_train = y_train,
+        X_test = X_test,
+        y_test = y_test,
+        model = model,
+        train_generator = train_generator,
+        validation_generator = validation_generator)
 
-    # Now, try to use metadata to create identical copy of model
-
-    # Finally, compare both models
-
-if __name__=='__main__':
-    main()
+# train model
+trainer.create_model()
