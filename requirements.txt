@@ -14,5 +14,5 @@ pathlib==1.0.1
 deepcell-tracking>=0.2.4
 deepcell-toolbox>=0.3.0
 tensorly>=0.4.5
-papermill==1.2.1
+papermill[all]==2.1.0
 google-cloud-storage==1.27.0
