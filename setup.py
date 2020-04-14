@@ -66,9 +66,10 @@ except Exception:
     logging.warning('Failed to load requirements file, using default ones.')
     install_reqs = []
 
+exec(open('deepcell/version.py').read())
 setup(
     name='DeepCell',
-    version='0.1',
+    version=__version__,
     packages=find_packages(),
     install_requires=install_reqs,
     extras_require={
