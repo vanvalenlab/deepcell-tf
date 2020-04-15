@@ -5,6 +5,7 @@ ARG TF_VERSION=1.15.0-gpu
 
 FROM tensorflow/tensorflow:${TF_VERSION}-py3
 
+
 # System maintenance
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     python3-tk \
