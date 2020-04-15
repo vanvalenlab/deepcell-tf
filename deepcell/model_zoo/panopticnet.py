@@ -35,13 +35,12 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D, Conv3D
 from tensorflow.python.keras.layers import TimeDistributed, ConvLSTM2D
-from tensorflow.python.keras.layers import Input, Concatenate, Add
+from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import Activation, BatchNormalization, Softmax
 from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
 
-from deepcell.layers import TensorProduct, ConvGRU2D
+from deepcell.layers import ConvGRU2D
 from deepcell.layers import ImageNormalization2D, Location2D
-from deepcell.layers import UpsampleLike
 from deepcell.model_zoo.fpn import __create_pyramid_features
 from deepcell.utils.backbone_utils import get_backbone
 from deepcell.utils.misc_utils import get_sorted_keys
@@ -152,7 +151,7 @@ def __create_semantic_head(pyramid_dict,
     """Creates a semantic head from a feature pyramid network.
 
     Args:
-        pyramid_dict: dict of pyramid names and features
+        pyramid_dict (dict): dict of pyramid names and features
         n_classes (int): Defaults to 3.  The number of classes to be predicted
         n_filters (int): Defaults to 64. The number of convolutional filters.
         n_dense (int): Defaults to 128. Number of dense filters.
@@ -167,7 +166,7 @@ def __create_semantic_head(pyramid_dict,
     """
 
     conv = Conv2D if ndim == 2 else Conv3D
-    conv_kernel = (1,1) if ndim==2 else (1,1,1)
+    conv_kernel = (1, 1) if ndim == 2 else (1, 1, 1)
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
@@ -194,16 +193,16 @@ def __create_semantic_head(pyramid_dict,
     x = semantic_upsample(semantic_feature, n_upsample, ndim=ndim)
 
     # First tensor product
-    x = conv(n_dense, conv_kernel, strides=1, 
-                padding='same', data_format='channels_last', 
-                name='tensor_product_0_semantic_{}'.format(semantic_id))(x)    
+    x = conv(n_dense, conv_kernel, strides=1,
+             padding='same', data_format='channels_last',
+             name='tensor_product_0_semantic_{}'.format(semantic_id))(x)
     x = BatchNormalization(axis=channel_axis)(x)
     x = Activation('relu')(x)
 
     # Apply tensor product and softmax layer
-    x = conv(n_classes, conv_kernel, strides=1, 
-                padding='same', data_format='channels_last', 
-                name='tensor_product_1_semantic_{}'.format(semantic_id))(x)
+    x = conv(n_classes, conv_kernel, strides=1,
+             padding='same', data_format='channels_last',
+             name='tensor_product_1_semantic_{}'.format(semantic_id))(x)
 
     if include_top:
         x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
@@ -252,7 +251,8 @@ def PanopticNet(backbone,
         norm_method (str): ImageNormalization mode to use. Defaults to 'whole_image'
         location (bool): Whether to include location data.
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
-        lite_fpn (bool): Whether to use a depthwise conv in the feature pyramid rather than regular conv
+        lite_fpn (bool): Whether to use a depthwise conv in the feature pyramid
+            instead of regular conv
         pooling (str): optional pooling mode for feature extraction
             when include_top is False.
 
@@ -278,7 +278,7 @@ def PanopticNet(backbone,
     """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     conv = Conv3D if frames_per_batch > 1 else Conv2D
-    conv_kernel = (1,1,1) if frames_per_batch > 1 else (1,1)
+    conv_kernel = (1, 1, 1) if frames_per_batch > 1 else (1, 1)
 
     # Check input to __merge_temporal_features
     acceptable_modes = {'conv', 'lstm', 'gru', None}
@@ -305,7 +305,8 @@ def PanopticNet(backbone,
         norm = inputs
     else:
         if frames_per_batch > 1:
-            norm = TimeDistributed(ImageNormalization2D(norm_method=norm_method, name='norm'))(inputs)
+            norm = TimeDistributed(ImageNormalization2D(
+                norm_method=norm_method, name='norm'))(inputs)
         else:
             norm = ImageNormalization2D(norm_method=norm_method, name='norm')(inputs)
 
@@ -322,7 +323,7 @@ def PanopticNet(backbone,
 
     # Force the channel size for backbone input to be `required_channels`
     fixed_inputs = conv(required_channels, conv_kernel, strides=1,
-                            padding='same', name='conv_channels')(concat)
+                        padding='same', name='conv_channels')(concat)
 
     # Force the input shape
     axis = 0 if K.image_data_format() == 'channels_first' else -1
