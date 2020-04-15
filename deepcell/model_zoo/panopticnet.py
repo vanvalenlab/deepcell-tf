@@ -140,77 +140,6 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2):
     return x
 
 
-def semantic_prediction(semantic_names,
-                        semantic_features,
-                        target_level=0,
-                        input_target=None,
-                        n_filters=64,
-                        n_dense=64,
-                        ndim=2,
-                        n_classes=3,
-                        semantic_id=0,
-                        include_top=True):
-    """Creates the prediction head from a list of semantic features
-
-    Args:
-        semantic_names (list): A list of the names of the semantic feature layers
-        semantic_features (list): A list of semantic features
-            NOTE: The semantic_names and semantic features should be in decreasing order
-            e.g. [Q6, Q5, Q4, ...]
-        target_level (int, optional): Defaults to 0. The level we need to reach.
-            Performs 2x upsampling until we're at the target level
-        input_target (tensor, optional): Defaults to None. Tensor with the input image.
-        n_dense (int, optional): Defaults to 256. The number of filters for dense layers.
-        n_classes (int, optional): Defaults to 3.  The number of classes to be predicted.
-        semantic_id (int): Defaults to 0. An number to name the final layer. Allows for multiple
-            semantic heads.
-    Returns:
-        tensor: The softmax prediction for the semantic segmentation head
-
-    Raises:
-        ValueError: ndim is not 2 or 3
-    """
-
-    if n_classes == 1:
-        include_top = False
-
-    acceptable_ndims = [2, 3]
-    if ndim not in acceptable_ndims:
-        raise ValueError('Only 2 and 3 dimensional networks are supported')
-
-    if K.image_data_format() == 'channels_first':
-        channel_axis = 1
-    else:
-        channel_axis = -1
-
-    # Add all the semantic layers
-    semantic_sum = semantic_features[0]
-    for semantic_feature in semantic_features[1:]:
-        semantic_sum = Add()([semantic_sum, semantic_feature])
-
-    # Final upsampling
-    min_level = int(re.findall(r'\d+', semantic_names[-1])[0])
-    n_upsample = min_level - target_level
-    x = semantic_upsample(semantic_sum, n_upsample, ndim=ndim)
-
-    # First tensor product
-    x = TensorProduct(n_dense)(x)
-    x = BatchNormalization(axis=channel_axis)(x)
-    x = Activation('relu')(x)
-
-    # Apply tensor product and softmax layer
-    x = TensorProduct(n_classes)(x)
-
-    if include_top:
-        x = TensorProduct(n_classes)(x)
-        x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
-    else:
-        x = TensorProduct(n_classes)(x)
-        x = Activation('relu', name='semantic_{}'.format(semantic_id))(x)
-
-    return x
-
-
 def __create_semantic_head(pyramid_dict,
                            n_classes=3,
                            n_filters=64,
@@ -256,13 +185,13 @@ def __create_semantic_head(pyramid_dict,
     pyramid_names.reverse()
     pyramid_features.reverse()
 
-    semantic_sum = pyramid_features[-1]
-    semantic_names = pyramid_names[-1]
+    semantic_feature = pyramid_features[-1]
+    semantic_name = pyramid_names[-1]
 
     # Final upsampling
-    min_level = int(re.findall(r'\d+', semantic_names[-1])[0])
+    min_level = int(re.findall(r'\d+', semantic_name[-1])[0])
     n_upsample = min_level
-    x = semantic_upsample(semantic_sum, n_upsample, ndim=ndim)
+    x = semantic_upsample(semantic_feature, n_upsample, ndim=ndim)
 
     # First tensor product
     x = conv(n_dense, conv_kernel, strides=1, 
