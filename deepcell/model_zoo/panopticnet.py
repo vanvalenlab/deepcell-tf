@@ -236,6 +236,10 @@ def __create_semantic_head(pyramid_dict,
     Returns:
         keras.layers.Layer: The semantic segmentation head
     """
+
+    conv = Conv2D if ndim == 2 else Conv3D
+    conv_kernel = (1,1) if ndim==2 else (1,1,1)
+
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
     else:
@@ -261,12 +265,16 @@ def __create_semantic_head(pyramid_dict,
     x = semantic_upsample(semantic_sum, n_upsample, ndim=ndim)
 
     # First tensor product
-    x = TensorProduct(n_dense)(x)
+    x = conv(n_dense, conv_kernel, strides=1, 
+                padding='same', data_format='channels_last', 
+                name='tensor_product_0_semantic_{}'.format(semantic_id))(x)    
     x = BatchNormalization(axis=channel_axis)(x)
     x = Activation('relu')(x)
 
     # Apply tensor product and softmax layer
-    x = TensorProduct(n_classes)(x)
+    x = conv(n_classes, conv_kernel, strides=1, 
+                padding='same', data_format='channels_last', 
+                name='tensor_product_1_semantic_{}'.format(semantic_id))(x)
 
     if include_top:
         x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
@@ -338,6 +346,8 @@ def PanopticNet(backbone,
         tensorflow.keras.Model: Panoptic model with a backbone.
     """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
+    conv = Conv3D if frames_per_batch > 1 else Conv2D
+    conv_kernel = (1,1,1) if frames_per_batch > 1 else (1,1)
 
     # Check input to __merge_temporal_features
     acceptable_modes = {'conv', 'lstm', 'gru', None}
@@ -355,35 +365,35 @@ def PanopticNet(backbone,
             else:
                 input_shape_with_time = tuple(
                     [frames_per_batch] + list(input_shape))
-            inputs = Input(shape=input_shape_with_time)
+            inputs = Input(shape=input_shape_with_time, name='input_0')
         else:
-            inputs = Input(shape=input_shape)
+            inputs = Input(shape=input_shape, name='input_0')
 
-    # force the channel size for backbone input to be `required_channels`
+    # Normalize input images
     if norm_method is None:
         norm = inputs
     else:
         if frames_per_batch > 1:
-            norm = TimeDistributed(ImageNormalization2D(norm_method=norm_method))(inputs)
+            norm = TimeDistributed(ImageNormalization2D(norm_method=norm_method, name='norm'))(inputs)
         else:
-            norm = ImageNormalization2D(norm_method=norm_method)(inputs)
+            norm = ImageNormalization2D(norm_method=norm_method, name='norm')(inputs)
 
+    # Add location layer
     if location:
         if frames_per_batch > 1:
             # TODO: TimeDistributed is incompatible with channels_first
-            loc = TimeDistributed(Location2D(in_shape=input_shape))(norm)
+            loc = TimeDistributed(Location2D(in_shape=input_shape, name='location'))(norm)
         else:
-            loc = Location2D(in_shape=input_shape)(norm)
-        concat = Concatenate(axis=channel_axis)([norm, loc])
+            loc = Location2D(in_shape=input_shape, name='location')(norm)
+        concat = Concatenate(axis=channel_axis, name='concatenate_location')([norm, loc])
     else:
         concat = norm
 
-    if frames_per_batch > 1:
-        fixed_inputs = TimeDistributed(TensorProduct(required_channels))(concat)
-    else:
-        fixed_inputs = TensorProduct(required_channels)(concat)
+    # Force the channel size for backbone input to be `required_channels`
+    fixed_inputs = conv(required_channels, conv_kernel, strides=1,
+                            padding='same', name='conv_channels')(concat)
 
-    # force the input shape
+    # Force the input shape
     axis = 0 if K.image_data_format() == 'channels_first' else -1
     fixed_input_shape = list(input_shape)
     fixed_input_shape[axis] = required_channels
