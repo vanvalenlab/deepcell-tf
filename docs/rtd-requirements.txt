@@ -3,3 +3,4 @@ mock==3.0.5
 Sphinx==2.3.1
 ipython
 nbsphinx
+nbspinx-link
