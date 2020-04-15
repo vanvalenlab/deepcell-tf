@@ -33,7 +33,7 @@ import re
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D
+from tensorflow.python.keras.layers import Conv2D, Conv3D, DepthwiseConv2D
 from tensorflow.python.keras.layers import Softmax
 from tensorflow.python.keras.layers import Input, Add
 from tensorflow.python.keras.layers import Activation
@@ -52,6 +52,7 @@ def create_pyramid_level(backbone_input,
                          upsample_type='upsamplelike',
                          level=5,
                          ndim=2,
+                         lite=False,
                          feature_size=256):
     """Create a pyramid layer from a particular backbone input layer.
 
@@ -68,6 +69,8 @@ def create_pyramid_level(backbone_input,
             convolutional layer, defaults to 256.
         ndim (int): The spatial dimensions of the input data. Default is 2,
             but it also works with 3
+        lite (bool): Whether to use depthwise conv instead of regular conv for 
+            feature pyramid construction
 
     Returns:
         tuple: Pyramid layer after processing, upsampled pyramid layer
@@ -80,6 +83,9 @@ def create_pyramid_level(backbone_input,
     acceptable_ndims = {2, 3}
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
+
+    if ndim==3 and lite:
+        raise ValueError('lite == True is not compatible with 3 dimensional networks')
 
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
@@ -117,7 +123,11 @@ def create_pyramid_level(backbone_input,
         pyramid_upsample = None
 
     if ndim == 2:
-        pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
+        if lite:
+            pyramid_final = DepthwiseConv2D((3,3), strides=(1,1),
+                                padding='same', name=final_name)(pyramid)
+        else:
+            pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
                                padding='same', name=final_name)(pyramid)
     else:
         pyramid_final = Conv3D(feature_size, (1, 3, 3), strides=(1, 1, 1),
@@ -130,7 +140,8 @@ def __create_pyramid_features(backbone_dict,
                               upsample_type='upsamplelike',
                               ndim=2,
                               feature_size=256,
-                              include_final_layers=True):
+                              include_final_layers=True,
+                              lite=False):
     """Creates the FPN layers on top of the backbone features.
 
     Args:
@@ -143,6 +154,8 @@ def __create_pyramid_features(backbone_dict,
         include_final_layers (bool): Add two coarser pyramid levels
         ndim (int): The spatial dimensions of the input data.
             Default is 2, but it also works with 3
+        lite (bool): Whether to use depthwise conv instead of regular conv for 
+            feature pyramid construction
 
     Returns:
         dict: The feature pyramid names and levels,
@@ -209,7 +222,8 @@ def __create_pyramid_features(backbone_dict,
                                       addition_input=addition_input,
                                       upsample_type=upsample_type,
                                       level=level,
-                                      ndim=ndim)
+                                      ndim=ndim,
+                                      lite=lite)
         pyramid_finals.append(pf)
         pyramid_upsamples.append(pu)
 

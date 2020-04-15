@@ -300,6 +300,7 @@ def PanopticNet(backbone,
                 pooling=None,
                 location=True,
                 use_imagenet=True,
+                lite_fpn=False,
                 name='panopticnet',
                 **kwargs):
     """Constructs a mrcnn model using a backbone from keras-applications.
@@ -322,6 +323,7 @@ def PanopticNet(backbone,
         norm_method (str): ImageNormalization mode to use. Defaults to 'whole_image'
         location (bool): Whether to include location data.
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
+        lite_fpn (bool): Whether to use a depthwise conv in the feature pyramid rather than regular conv
         pooling (str): optional pooling mode for feature extraction
             when include_top is False.
 
@@ -414,7 +416,7 @@ def PanopticNet(backbone,
     backbone_dict_reduced = {k: backbone_dict[k] for k in backbone_dict
                              if k in backbone_levels}
     ndim = 2 if frames_per_batch == 1 else 3
-    pyramid_dict = create_pyramid_features(backbone_dict_reduced, ndim=ndim)
+    pyramid_dict = create_pyramid_features(backbone_dict_reduced, ndim=ndim, lite=lite_fpn)
 
     features = [pyramid_dict[key] for key in pyramid_levels]
 
