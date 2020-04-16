@@ -103,7 +103,7 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per
     return temporal_feature
 
 
-def semantic_upsample(x, n_upsample, n_filters=64, ndim=2):
+def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, semantic_id=0):
     """Performs iterative rounds of 2x upsampling and
     convolutions with a 3x3 filter to remove aliasing effects
 
@@ -195,19 +195,19 @@ def __create_semantic_head(pyramid_dict,
     # Final upsampling
     min_level = int(re.findall(r'\d+', semantic_name[-1])[0])
     n_upsample = min_level
-    x = semantic_upsample(semantic_feature, n_upsample, ndim=ndim)
+    x = semantic_upsample(semantic_feature, n_upsample, ndim=ndim, semantic_id=semantic_id)
 
     # First tensor product
     x = conv(n_dense, conv_kernel, strides=1, 
                 padding='same', data_format='channels_last', 
-                name='tensor_product_0_semantic_{}'.format(semantic_id))(x)    
+                name='conv_0_semantic_{}'.format(semantic_id))(x)    
     x = BatchNormalization(axis=channel_axis)(x)
-    x = Activation('relu')(x)
+    x = Activation('relu', name='relu_0_semantic_{}'.format(semantic_id))(x)
 
     # Apply tensor product and softmax layer
     x = conv(n_classes, conv_kernel, strides=1, 
                 padding='same', data_format='channels_last', 
-                name='tensor_product_1_semantic_{}'.format(semantic_id))(x)
+                name='conv_1_semantic_{}'.format(semantic_id))(x)
 
     if include_top:
         x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
