@@ -69,7 +69,7 @@ def create_pyramid_level(backbone_input,
             convolutional layer, defaults to 256.
         ndim (int): The spatial dimensions of the input data. Default is 2,
             but it also works with 3
-        lite (bool): Whether to use depthwise conv instead of regular conv for 
+        lite (bool): Whether to use depthwise conv instead of regular conv for
             feature pyramid construction
 
     Returns:
@@ -84,7 +84,7 @@ def create_pyramid_level(backbone_input,
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
 
-    if ndim==3 and lite:
+    if ndim == 3 and lite:
         raise ValueError('lite == True is not compatible with 3 dimensional networks')
 
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
@@ -124,11 +124,11 @@ def create_pyramid_level(backbone_input,
 
     if ndim == 2:
         if lite:
-            pyramid_final = DepthwiseConv2D((3,3), strides=(1,1),
-                                padding='same', name=final_name)(pyramid)
+            pyramid_final = DepthwiseConv2D((3, 3), strides=(1, 1),
+                                            padding='same', name=final_name)(pyramid)
         else:
             pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
-                               padding='same', name=final_name)(pyramid)
+                                   padding='same', name=final_name)(pyramid)
     else:
         pyramid_final = Conv3D(feature_size, (1, 3, 3), strides=(1, 1, 1),
                                padding='same', name=final_name)(pyramid)
@@ -154,7 +154,7 @@ def __create_pyramid_features(backbone_dict,
         include_final_layers (bool): Add two coarser pyramid levels
         ndim (int): The spatial dimensions of the input data.
             Default is 2, but it also works with 3
-        lite (bool): Whether to use depthwise conv instead of regular conv for 
+        lite (bool): Whether to use depthwise conv instead of regular conv for
             feature pyramid construction
 
     Returns:
