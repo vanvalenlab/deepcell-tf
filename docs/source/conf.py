@@ -67,8 +67,7 @@ extensions = [
     'IPython.sphinxext.ipython_console_highlighting',
     'nbsphinx',
     'sphinx.ext.todo',
-    'sphinx.ext.autosectionlabel',
-    'nbsphinx_link'
+    'sphinx.ext.autosectionlabel'
 ]
 
 napoleon_google_docstring = True
