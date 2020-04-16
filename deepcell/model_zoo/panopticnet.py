@@ -132,11 +132,15 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2):
     if n_upsample > 0:
         for i in range(n_upsample):
             x = conv(n_filters, conv_kernel, strides=1,
-                     padding='same', data_format='channels_last')(x)
-            x = upsampling(size=size)(x)
+                     padding='same', data_format='channels_last',
+                     name='conv_{}_semantic_upsample_{}'.format(i, semantic_id))(x)
+            x = upsampling(size=size, 
+                            name='upsampling_{}_semantic_upsample_{}'.format(i, semantic_id),
+                            interpolation='bilinear')(x)
     else:
         x = conv(n_filters, conv_kernel, strides=1,
-                 padding='same', data_format='channels_last')(x)
+                 padding='same', data_format='channels_last',
+                 name='conv_final_semantic_upsample_{}'.format(semantic_id))(x)
     return x
 
 
@@ -346,7 +350,10 @@ def PanopticNet(backbone,
     backbone_dict_reduced = {k: backbone_dict[k] for k in backbone_dict
                              if k in backbone_levels}
     ndim = 2 if frames_per_batch == 1 else 3
-    pyramid_dict = create_pyramid_features(backbone_dict_reduced, ndim=ndim, lite=lite_fpn)
+    pyramid_dict = create_pyramid_features(backbone_dict_reduced, 
+                            ndim=ndim, 
+                            lite=lite_fpn, 
+                            upsample_type='upsampling2d')
 
     features = [pyramid_dict[key] for key in pyramid_levels]
 
