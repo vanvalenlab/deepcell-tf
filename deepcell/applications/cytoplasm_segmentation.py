@@ -34,6 +34,7 @@ import os
 from tensorflow.python.keras.utils.data_utils import get_file
 
 from deepcell_toolbox.deep_watershed import deep_watershed
+from deepcell_toolbox.processing import phase_preprocess
 
 from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
@@ -130,7 +131,7 @@ class CytoplasmSegmentation(Application):
         super(CytoplasmSegmentation, self).__init__(model,
                                                     model_image_shape=model_image_shape,
                                                     model_mpp=0.65,
-                                                    preprocessing_fn=None,
+                                                    preprocessing_fn=phase_preprocess,
                                                     postprocessing_fn=deep_watershed,
                                                     dataset_metadata=self.dataset_metadata,
                                                     model_metadata=self.model_metadata)
