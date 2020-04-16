@@ -1966,5 +1966,3 @@ class TestSemanticDataGenerator(test.TestCase):
                 self.assertEqual(len(y), len(transforms) * y_shape[1])
                 self.assertEqual(x.shape[1:], images.shape[1:])
                 break
-
-
