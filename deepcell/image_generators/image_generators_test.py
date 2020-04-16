@@ -1894,10 +1894,7 @@ class TestSemanticDataGenerator(test.TestCase):
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((8, 10, 10, 3)),
-                'y': {'y1': np.random.random((8, 10, 10, 1)),
-                      'y2': np.random.random((8, 10, 10, 1)),
-                      'y3': np.random.random((8, 10, 10, 1)),
-                      }
+                'y': np.random.random((8, 10, 10, 2)),
             }
             generator.flow(train_dict)
 
@@ -1905,29 +1902,28 @@ class TestSemanticDataGenerator(test.TestCase):
             temp_dir = self.get_temp_dir()
             # Fit
             generator.fit(images, augment=True, seed=1)
-            y_shape = tuple(list(images.shape)[:-1] + [1])
+            y_shape = tuple(list(images.shape)[:-1] + [2])
             train_dict['X'] = images
-            for key in train_dict['y'].keys():
-                train_dict['y'][key] = np.random.randint(0, 9, size=y_shape)
-            transforms = [['watershed-cont', 'fgbg'], ['watershed-cont', 'fgbg'],
-                          ['watershed-cont', 'fgbg']]
+            train_dict['y'] = np.random.randint(0, 9, size=y_shape)
+            transforms = ['watershed-cont', 'fgbg']
             for x, y in generator.flow(
                     train_dict,
                     transforms=transforms,
                     save_to_dir=temp_dir,
                     shuffle=True):
-                self.assertEqual(len(y), sum([len(sublist) for sublist in transforms]))
+                self.assertEqual(len(y), len(transforms) * y_shape[-1])
                 self.assertEqual(x.shape[1:], images.shape[1:])
                 break
 
-    def test_semantic_data_generator_multiple_labels_same_transforms(self):
+    def test_semantic_data_generator_multiple_labels_channels_first(self):
         for test_images in _generate_test_images(21, 21):
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
 
             images = np.vstack(img_list)
-            generator = semantic.SemanticDataGenerator(
+            images = np.rollaxis(images, 3, 1)
+            generator = image_generators.SemanticDataGenerator(
                 featurewise_center=True,
                 samplewise_center=True,
                 featurewise_std_normalization=True,
@@ -1939,19 +1935,17 @@ class TestSemanticDataGenerator(test.TestCase):
                 shear_range=0.5,
                 zoom_range=0.2,
                 channel_shift_range=1.,
-                brightness_range=(1, 5),
+                # brightness_range=(1, 5),  # TODO: `channels_first` conflict
                 fill_mode='nearest',
                 cval=0.5,
                 horizontal_flip=True,
-                vertical_flip=True)
+                vertical_flip=True,
+                data_format='channels_first')
 
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((8, 10, 10, 3)),
-                'y': {'y1': np.random.random((8, 10, 10, 1)),
-                      'y2': np.random.random((8, 10, 10, 1)),
-                      'y3': np.random.random((8, 10, 10, 1)),
-                      }
+                'X': np.random.random((8, 3, 10, 10)),
+                'y': np.random.random((8, 2, 10, 10)),
             }
             generator.flow(train_dict)
 
@@ -1960,17 +1954,16 @@ class TestSemanticDataGenerator(test.TestCase):
 
             # Fit
             generator.fit(images, augment=True, seed=1)
-            y_shape = tuple(list(images.shape)[:-1] + [1])
+            y_shape = tuple([images.shape[0], 2] + list(images.shape)[2:])
             train_dict['X'] = images
-            for key in train_dict['y'].keys():
-                train_dict['y'][key] = np.random.randint(0, 9, size=y_shape)
-                transforms = ['watershed-cont', 'fgbg']
+            train_dict['y'] = np.random.randint(0, 9, size=y_shape)
+            transforms = ['watershed-cont', 'fgbg']
             for x, y in generator.flow(
                     train_dict,
                     transforms=transforms,
                     save_to_dir=temp_dir,
                     shuffle=True):
-                self.assertEqual(len(y), len(transforms) * len(train_dict['y']))
+                self.assertEqual(len(y), len(transforms) * y_shape[1])
                 self.assertEqual(x.shape[1:], images.shape[1:])
                 break
 

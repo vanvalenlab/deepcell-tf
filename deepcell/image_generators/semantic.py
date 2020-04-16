@@ -87,12 +87,6 @@ class SemanticIterator(Iterator):
                  save_format='png'):
         X, y = train_dict['X'], train_dict['y']
 
-        multiple_label_types = type(y) is dict
-
-        # TODO: is there a better way to handle this? Want to pass the first y_label to shape check
-        if multiple_label_types:
-            y = y[list(y.keys())[0]]
-
         if X.shape[0] != y.shape[0]:
             raise ValueError('Training batches and labels should have the same'
                              'length. Found X.shape: {} y.shape: {}'.format(
@@ -125,29 +119,17 @@ class SemanticIterator(Iterator):
 
         # Add transformed masks
 
-        # determine if multiple y_labels are being supplied
-        if multiple_label_types:
-            y = train_dict['y']
-            num_label_types = len(y)
-            labels = list(y.keys())
-            label_dict = y
-        else:
-            num_label_types = 1
-            labels = ['y']
-            label_dict = train_dict
+        # loop over channels axis of labels in case there are multiple label types
+        for label_num in range(y.shape[self.channel_axis]):
 
-        multiple_transform_lists = type(transforms[0]) is list
-
-        # loop through supplied labels, pair with appropriate transforms
-        for label_num in range(num_label_types):
-            y_current = label_dict[labels[label_num]]
-
-            if multiple_transform_lists:
-                current_transforms = transforms[label_num]
+            if self.channel_axis == 1:
+                y_current = y[:, label_num:(label_num + 1), ...]
             else:
-                current_transforms = transforms
+                y_current = y[..., label_num:(label_num + 1)]
 
-            for transform in current_transforms:
+            print('shape of y_current is {}'.format(y_current.shape))
+
+            for transform in transforms:
                 transform_kwargs = transforms_kwargs.get(transform, dict())
                 y_transform = _transform_masks(y_current, transform,
                                                data_format=data_format,
@@ -162,11 +144,6 @@ class SemanticIterator(Iterator):
 
         # Remove images with small numbers of cells
         for b in range(self.x.shape[0]):
-            y_batch = np.squeeze(self.y[b], axis=self.channel_axis - 1)
-            y_batch = np.expand_dims(y_batch, axis=self.channel_axis - 1)
-
-            self.y[b] = y_batch
-
             if len(np.unique(self.y[b])) - 1 < self.min_objects:
                 invalid_batches.append(b)
 
