@@ -250,9 +250,10 @@ def PanopticNet(backbone,
         num_semantic_heads (int): Defaults to 1.
         num_semantic_classes (list): Defaults to [3].
         norm_method (str): ImageNormalization mode to use. Defaults to 'whole_image'
-        location (bool): Whether to include location data.
+        location (bool): Whether to include location data. Defaults to True
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
-        lite_fpn (bool): Whether to use a depthwise conv in the feature pyramid rather than regular conv
+        lite_fpn (bool): Whether to use a depthwise conv in the feature pyramid rather than regular conv.
+            Defaults to False.
         pooling (str): optional pooling mode for feature extraction
             when include_top is False.
 
