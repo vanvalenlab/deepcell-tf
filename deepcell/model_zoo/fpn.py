@@ -118,7 +118,8 @@ def create_pyramid_level(backbone_input,
         else:
             upsampling = UpSampling2D if ndim == 2 else UpSampling3D
             size = (2, 2) if ndim == 2 else (1, 2, 2)
-            pyramid_upsample = upsampling(size=size, name=upsample_name, interpolation='bilinear')(pyramid)
+            pyramid_upsample = upsampling(size=size, name=upsample_name,
+                                          interpolation='bilinear')(pyramid)
     else:
         pyramid_upsample = None
 
@@ -305,9 +306,9 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
         raise ValueError('Only 2 and 3 dimensional networks are supported')
 
     conv = Conv2D if ndim == 2 else Conv3D
-    conv_kernel = (3,3) if ndim == 2 else (1,3,3)
+    conv_kernel = (3, 3) if ndim == 2 else (1, 3, 3)
     upsampling = UpSampling2D if ndim == 2 else UpSampling3D
-    size = (2,2) if ndim == 2 else (1,2,2)
+    size = (2, 2) if ndim == 2 else (1, 2, 2)
 
     for i in range(n_upsample):
         x = conv(n_filters, conv_kernel, strides=1,
@@ -317,10 +318,10 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, target=None):
         if i == n_upsample - 1 and target is not None:
             x = UpsampleLike()([x, target])
         else:
-            x = upsampling(size=size, 
-                            name='upsampling_{}_semantic_upsample_{}'.format(i, semantic_id),
-                            interpolation='bilinear')(x)
-                            
+            x = upsampling(size=size,
+                           name='upsampling_{}_semantic_upsample_{}'.format(i, semantic_id),
+                           interpolation='bilinear')(x)
+
     if n_upsample == 0:
         x = conv(n_filters, conv_kernel, strides=1,
                  padding='same', data_format='channels_last',

@@ -133,9 +133,9 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, semantic_id=0):
             x = conv(n_filters, conv_kernel, strides=1,
                      padding='same', data_format='channels_last',
                      name='conv_{}_semantic_upsample_{}'.format(i, semantic_id))(x)
-            x = upsampling(size=size, 
-                            name='upsampling_{}_semantic_upsample_{}'.format(i, semantic_id),
-                            interpolation='bilinear')(x)
+            x = upsampling(size=size,
+                           name='upsampling_{}_semantic_upsample_{}'.format(i, semantic_id),
+                           interpolation='bilinear')(x)
     else:
         x = conv(n_filters, conv_kernel, strides=1,
                  padding='same', data_format='channels_last',
@@ -197,16 +197,16 @@ def __create_semantic_head(pyramid_dict,
     x = semantic_upsample(semantic_feature, n_upsample, ndim=ndim, semantic_id=semantic_id)
 
     # First tensor product
-    x = conv(n_dense, conv_kernel, strides=1, 
-                padding='same', data_format='channels_last', 
-                name='conv_0_semantic_{}'.format(semantic_id))(x)    
+    x = conv(n_dense, conv_kernel, strides=1,
+             padding='same', data_format='channels_last',
+             name='conv_0_semantic_{}'.format(semantic_id))(x)
     x = BatchNormalization(axis=channel_axis)(x)
     x = Activation('relu', name='relu_0_semantic_{}'.format(semantic_id))(x)
 
     # Apply tensor product and softmax layer
-    x = conv(n_classes, conv_kernel, strides=1, 
-                padding='same', data_format='channels_last', 
-                name='conv_1_semantic_{}'.format(semantic_id))(x)
+    x = conv(n_classes, conv_kernel, strides=1,
+             padding='same', data_format='channels_last',
+             name='conv_1_semantic_{}'.format(semantic_id))(x)
 
     if include_top:
         x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
@@ -255,8 +255,8 @@ def PanopticNet(backbone,
         norm_method (str): ImageNormalization mode to use. Defaults to 'whole_image'
         location (bool): Whether to include location data. Defaults to True
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
-        lite_fpn (bool): Whether to use a depthwise conv in the feature pyramid rather than regular conv.
-            Defaults to False.
+        lite_fpn (bool): Whether to use a depthwise conv in the feature pyramid
+            rather than regular conv. Defaults to False.
         pooling (str): optional pooling mode for feature extraction
             when include_top is False.
 
@@ -350,10 +350,10 @@ def PanopticNet(backbone,
     backbone_dict_reduced = {k: backbone_dict[k] for k in backbone_dict
                              if k in backbone_levels}
     ndim = 2 if frames_per_batch == 1 else 3
-    pyramid_dict = create_pyramid_features(backbone_dict_reduced, 
-                            ndim=ndim, 
-                            lite=lite_fpn, 
-                            upsample_type='upsampling2d')
+    pyramid_dict = create_pyramid_features(backbone_dict_reduced,
+                                           ndim=ndim,
+                                           lite=lite_fpn,
+                                           upsample_type='upsampling2d')
 
     features = [pyramid_dict[key] for key in pyramid_levels]
 
