@@ -243,9 +243,11 @@ class Application(object):
             # cv2.resize only supports float so change dtype and cast back after resize
             intype = image.dtype
             # Resize function only takes the x,y dimensions for shape
+            new_shape = original_shape[1:-1]
             # Flip order of shape axes to prevent transpose of data
+            new_shape = new_shape[::-1]
             image = resize(image.astype('float32'),
-                           original_shape[1:-1:-1], data_format='channels_last')
+                           new_shape, data_format='channels_last')
             image = image.astype(intype)
 
         return image
