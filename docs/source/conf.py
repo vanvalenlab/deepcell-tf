@@ -18,7 +18,6 @@ from datetime import datetime
 import mock
 from sphinx.builders.html import StandaloneHTMLBuilder
 sys.path.insert(0, os.path.abspath('../..'))
-sys.path.insert(0, os.path.abspath('../../scripts'))
 # sys.path.insert(0, os.path.abspath('.'))
 
 # pylint: disable=line-too-long

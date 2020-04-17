@@ -120,7 +120,7 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
-# Documentation notebook byproducts
+# Data files
 *.h5
-docs/source/nucleartracks/*
 *.trk
+*.trks
