@@ -8,9 +8,8 @@
 
 * [RetinaNet](https://arxiv.org/abs/1708.02002) - These models find bounding boxes that encapsulate cells within an image. These models only return a bounding box and do not provide an instance mask. This is effectively a port of the [fizyr retinanet library](https://github.com/fizyr/keras-retinanet) that was adapted to work with tf.keras and offer greater control of image augmentation operations. These models include the option to attach a [semantic segmentation head](http://openaccess.thecvf.com/content_CVPR_2019/html/Kirillov_Panoptic_Feature_Pyramid_Networks_CVPR_2019_paper.html) for panoptic segmentation tasks.
 
-* [RetinaMask](https://arxiv.org/abs/1901.03353) - These models use retinanet to find bounding boxes and then predict instance masks within each bounding boxes. These models are essentially the same as the popular [MaskRCNN](https://arxiv.org/abs/1703.06870) method, except it uses RetinaNet to generatte the bounding boxes as opposed to FasterRCNN. This is effectively a port of the [fizyr maskrcnn library](https://github.com/fizyr/keras-maskrcnn). These models include the option to attach a semantic segmentation head.
+* [RetinaMask](https://arxiv.org/abs/1901.03353) - These models use retinanet to find bounding boxes and then predict instance masks within each bounding boxes. These models are essentially the same as the popular [MaskRCNN](https://arxiv.org/abs/1703.06870) method, except it uses RetinaNet to generate the bounding boxes as opposed to FasterRCNN. This is effectively a port of the [fizyr maskrcnn library](https://github.com/fizyr/keras-maskrcnn). These models include the option to attach a semantic segmentation head.
 
 * [Siamese Model](https://www.biorxiv.org/content/10.1101/803205v2) This architecture, contained within featurenet.py, is meant for cell tracking. This architecture, which was inspired by [previous](http://openaccess.thecvf.com/content_iccv_2017/html/Sadeghian_Tracking_the_Untrackable_ICCV_2017_paper.html) object tracking models,
-
 
 
