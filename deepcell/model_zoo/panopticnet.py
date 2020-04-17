@@ -196,14 +196,14 @@ def __create_semantic_head(pyramid_dict,
     n_upsample = min_level
     x = semantic_upsample(semantic_feature, n_upsample, ndim=ndim, semantic_id=semantic_id)
 
-    # First tensor product
+    # Apply conv in place of previous tensor product
     x = conv(n_dense, conv_kernel, strides=1,
              padding='same', data_format='channels_last',
              name='conv_0_semantic_{}'.format(semantic_id))(x)
     x = BatchNormalization(axis=channel_axis)(x)
     x = Activation('relu', name='relu_0_semantic_{}'.format(semantic_id))(x)
 
-    # Apply tensor product and softmax layer
+    # Apply conv and softmax layer
     x = conv(n_classes, conv_kernel, strides=1,
              padding='same', data_format='channels_last',
              name='conv_1_semantic_{}'.format(semantic_id))(x)
