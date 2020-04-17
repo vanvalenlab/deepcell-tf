@@ -165,12 +165,18 @@ def __create_semantic_head(pyramid_dict,
         target_level (int, optional): Defaults to 2. The level we need to reach.
             Performs 2x upsampling until we're at the target level
 
+    Raises:
+        ValueError: ndim must be 2 or 3
+
     Returns:
         keras.layers.Layer: The semantic segmentation head
     """
 
+    if ndim not in {2, 3}:
+        raise(ValueError('ndim must be either 2 or 3. Received ndim = {}'.format(ndim)))
+
     conv = Conv2D if ndim == 2 else Conv3D
-    conv_kernel = (1, 1) if ndim == 2 else (1, 1, 1)
+    conv_kernel = (1,) * ndim
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
