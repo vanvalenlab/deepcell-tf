@@ -114,7 +114,8 @@ class CytoplasmSegmentation(Application):
                             num_semantic_heads=3,
                             num_semantic_classes=[1, 1, 2],
                             location=True,
-                            include_top=True)
+                            include_top=True,
+                            lite_fpn=True)
 
         if use_pretrained_weights:
             weights_path = get_file(
