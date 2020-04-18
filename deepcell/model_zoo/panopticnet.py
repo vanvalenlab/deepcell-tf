@@ -238,7 +238,7 @@ def PanopticNet(backbone,
                 pooling=None,
                 location=True,
                 use_imagenet=True,
-                lite_fpn=False,
+                lite=False,
                 name='panopticnet',
                 **kwargs):
     """Constructs a mrcnn model using a backbone from keras-applications.
@@ -248,20 +248,21 @@ def PanopticNet(backbone,
         input_shape (tuple): The shape of the input data.
         backbone_levels (list): The backbone levels to be used.
             to create the feature pyramid. Defaults to ['C3', 'C4', 'C5'].
-        pyramid_levels (list): Pyramid levels to use. Defaults to ['P3','P4','P5','P6','P7']
+        pyramid_levels (list): Pyramid levels to use. Defaults to
+            ['P3','P4','P5','P6','P7']
         create_pyramid_features (function): Function to get the pyramid
             features from the backbone.
         create_semantic_head (function): Function to get to build a
             semantic head submodel.
         frames_per_batch (int): Defaults to 1.
-        temporal_mode: Mode of temporal convolution. Choose from {'conv','lstm','gru', None}.
-            Defaults to None.
+        temporal_mode: Mode of temporal convolution. Choose from
+            {'conv','lstm','gru', None}. Defaults to None.
         num_semantic_heads (int): Defaults to 1.
         num_semantic_classes (list): Defaults to [3].
         norm_method (str): ImageNormalization mode to use. Defaults to 'whole_image'
         location (bool): Whether to include location data. Defaults to True
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
-        lite_fpn (bool): Whether to use a depthwise conv in the feature pyramid
+        lite (bool): Whether to use a depthwise conv in the feature pyramid
             rather than regular conv. Defaults to False.
         pooling (str): optional pooling mode for feature extraction
             when include_top is False.
@@ -358,7 +359,7 @@ def PanopticNet(backbone,
     ndim = 2 if frames_per_batch == 1 else 3
     pyramid_dict = create_pyramid_features(backbone_dict_reduced,
                                            ndim=ndim,
-                                           lite=lite_fpn,
+                                           lite=lite,
                                            upsample_type='upsampling2d')
 
     features = [pyramid_dict[key] for key in pyramid_levels]
