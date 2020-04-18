@@ -53,6 +53,7 @@ def create_pyramid_level(backbone_input,
                          level=5,
                          ndim=2,
                          lite=False,
+                         interpolation='bilinear',
                          feature_size=256):
     """Create a pyramid layer from a particular backbone input layer.
 
@@ -71,6 +72,8 @@ def create_pyramid_level(backbone_input,
             but it also works with 3
         lite (bool): Whether to use depthwise conv instead of regular conv for
             feature pyramid construction
+        interpolation (str): Choice of interpolation mode for upsampling
+            layers from ['bilinear', 'nearest'. Defaults to bilinear.
 
     Returns:
         tuple: Pyramid layer after processing, upsampled pyramid layer
@@ -79,14 +82,22 @@ def create_pyramid_level(backbone_input,
         ValueError: ndim is not 2 or 3
         ValueError: upsample_type not ['upsamplelike','upsampling2d','upsampling3d']
     """
-
+    # Check input to ndims
     acceptable_ndims = {2, 3}
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
 
+    # Check if inputs to ndim and lite are compatible
     if ndim == 3 and lite:
         raise ValueError('lite == True is not compatible with 3 dimensional networks')
 
+    # Check input to interpolation
+    acceptable_interpolation = {'bilinear', 'nearest'}
+    if interpolation not in acceptable_interpolation:
+        raise ValueError('Interpolation mode not supported. Choose from '
+            '[\'bilinear\', \'nearest\']')
+
+    # Check input to upsample_type
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
         raise ValueError(
@@ -119,7 +130,7 @@ def create_pyramid_level(backbone_input,
             upsampling = UpSampling2D if ndim == 2 else UpSampling3D
             size = (2, 2) if ndim == 2 else (1, 2, 2)
             pyramid_upsample = upsampling(size=size, name=upsample_name,
-                                          interpolation='bilinear')(pyramid)
+                                          interpolation=interpolation)(pyramid)
     else:
         pyramid_upsample = None
 
@@ -142,7 +153,8 @@ def __create_pyramid_features(backbone_dict,
                               ndim=2,
                               feature_size=256,
                               include_final_layers=True,
-                              lite=False):
+                              lite=False,
+                              interpolation='bilinear'):
     """Creates the FPN layers on top of the backbone features.
 
     Args:
@@ -157,6 +169,8 @@ def __create_pyramid_features(backbone_dict,
             Default is 2, but it also works with 3
         lite (bool): Whether to use depthwise conv instead of regular conv for
             feature pyramid construction
+        interpolation (str): Choice of interpolation mode for upsampling
+            layers from ['bilinear', 'nearest'. Defaults to bilinear.
 
     Returns:
         dict: The feature pyramid names and levels,
@@ -172,6 +186,11 @@ def __create_pyramid_features(backbone_dict,
     acceptable_ndims = [2, 3]
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
+
+    acceptable_interpolation = {'bilinear', 'nearest'}
+    if interpolation not in acceptable_interpolation:
+        raise ValueError('Interpolation mode not supported. Choose from '
+            '[\'bilinear\', \'nearest\']')
 
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
@@ -224,7 +243,8 @@ def __create_pyramid_features(backbone_dict,
                                       upsample_type=upsample_type,
                                       level=level,
                                       ndim=ndim,
-                                      lite=lite)
+                                      lite=lite,
+                                      interpolation=interpolation)
         pyramid_finals.append(pf)
         pyramid_upsamples.append(pu)
 

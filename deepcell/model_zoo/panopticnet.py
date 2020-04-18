@@ -66,7 +66,7 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per
         Input feature merged with its residual from a temporal convolution.
             If mode=None, the output is exactly the input.
     """
-
+    # Check inputs to mode
     acceptable_modes = {'conv', 'lstm', 'gru', None}
     if mode is not None:
         mode = str(mode).lower()
@@ -102,7 +102,8 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per
     return temporal_feature
 
 
-def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, semantic_id=0):
+def semantic_upsample(x, n_upsample, n_filters=64, ndim=2,
+                      semantic_id=0, interpolation='bilinear'):
     """Performs iterative rounds of 2x upsampling and
     convolutions with a 3x3 filter to remove aliasing effects
 
@@ -113,6 +114,8 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, semantic_id=0):
             the 3x3 convolution
         ndim (int): The spatial dimensions of the input data.
             Default is 2, but it also works with 3
+        interpolation (str): Choice of interpolation mode for upsampling
+            layers from ['bilinear', 'nearest'. Defaults to bilinear.
 
     Raises:
         ValueError: ndim is not 2 or 3
@@ -120,9 +123,16 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, semantic_id=0):
     Returns:
         tensor: The upsampled tensor
     """
+    # Check input to ndims
     acceptable_ndims = [2, 3]
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
+
+    # Check input to interpolation
+    acceptable_interpolation = {'bilinear', 'nearest'}
+    if interpolation not in acceptable_interpolation:
+        raise ValueError('Interpolation mode not supported. Choose from '
+                         '[\'bilinear\', \'nearest\']')
 
     conv = Conv2D if ndim == 2 else Conv3D
     conv_kernel = (3, 3) if ndim == 2 else (1, 3, 3)
@@ -135,7 +145,7 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2, semantic_id=0):
                      name='conv_{}_semantic_upsample_{}'.format(i, semantic_id))(x)
             x = upsampling(size=size,
                            name='upsampling_{}_semantic_upsample_{}'.format(i, semantic_id),
-                           interpolation='bilinear')(x)
+                           interpolation=interpolation)(x)
     else:
         x = conv(n_filters, conv_kernel, strides=1,
                  padding='same', data_format='channels_last',
@@ -151,6 +161,7 @@ def __create_semantic_head(pyramid_dict,
                            ndim=2,
                            include_top=False,
                            target_level=2,
+                           interpolation='bilinear',
                            **kwargs):
     """Creates a semantic head from a feature pyramid network.
 
@@ -163,7 +174,9 @@ def __create_semantic_head(pyramid_dict,
         ndim (int): Defaults to 2, 3d supported.
         include_top (bool): Defaults to False.
         target_level (int, optional): Defaults to 2. The level we need to reach.
-            Performs 2x upsampling until we're at the target level
+            Performs 2x upsampling until we're at the target level.
+        interpolation (str): Choice of interpolation mode for upsampling
+            layers from ['bilinear', 'nearest'. Defaults to bilinear.
 
     Raises:
         ValueError: ndim must be 2 or 3
@@ -171,9 +184,15 @@ def __create_semantic_head(pyramid_dict,
     Returns:
         keras.layers.Layer: The semantic segmentation head
     """
-
+    # Check input to ndims
     if ndim not in {2, 3}:
         raise(ValueError('ndim must be either 2 or 3. Received ndim = {}'.format(ndim)))
+
+    # Check input to interpolation
+    acceptable_interpolation = {'bilinear', 'nearest'}
+    if interpolation not in acceptable_interpolation:
+        raise ValueError('Interpolation mode not supported. Choose from '
+                         '[\'bilinear\', \'nearest\']')
 
     conv = Conv2D if ndim == 2 else Conv3D
     conv_kernel = (1,) * ndim
@@ -200,7 +219,8 @@ def __create_semantic_head(pyramid_dict,
     # Final upsampling
     min_level = int(re.findall(r'\d+', semantic_name[-1])[0])
     n_upsample = min_level
-    x = semantic_upsample(semantic_feature, n_upsample, ndim=ndim, semantic_id=semantic_id)
+    x = semantic_upsample(semantic_feature, n_upsample, ndim=ndim,
+                          interpolation=interpolation, semantic_id=semantic_id)
 
     # Apply conv in place of previous tensor product
     x = conv(n_dense, conv_kernel, strides=1,
@@ -239,6 +259,7 @@ def PanopticNet(backbone,
                 location=True,
                 use_imagenet=True,
                 lite=False,
+                interpolation='bilinear',
                 name='panopticnet',
                 **kwargs):
     """Constructs a mrcnn model using a backbone from keras-applications.
@@ -264,6 +285,8 @@ def PanopticNet(backbone,
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
         lite (bool): Whether to use a depthwise conv in the feature pyramid
             rather than regular conv. Defaults to False.
+        interpolation (str): Choice of interpolation mode for upsampling
+            layers from ['bilinear', 'nearest'. Defaults to bilinear.
         pooling (str): optional pooling mode for feature extraction
             when include_top is False.
 
@@ -298,6 +321,12 @@ def PanopticNet(backbone,
         if temporal_mode not in acceptable_modes:
             raise ValueError('Mode {} not supported. Please choose from {}.'.format(
                 temporal_mode, str(acceptable_modes)))
+
+    # Check input to interpolation
+    acceptable_interpolation = {'bilinear', 'nearest'}
+    if interpolation not in acceptable_interpolation:
+        raise ValueError('Interpolation mode not supported. Choose from '
+                         '[\'bilinear\', \'nearest\']')
 
     if inputs is None:
         if frames_per_batch > 1:
