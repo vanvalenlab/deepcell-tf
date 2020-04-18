@@ -1,6 +1,6 @@
 # deepcell.model_zoo
 
-'deepcell-tf' features several model architectures for cell segmentation. All of the models in this library are `keras.models` and can easily fit into any `keras` deep learning workflow. These include:
+`deepcell-tf` features several model architectures for cell segmentation. All of the models in this library are `keras.models` and can easily fit into any `keras` deep learning workflow. These include:
 
 * [FeatureNets](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005177) - This architecture was introduced in the first DeepCell paper and are quite effective for analyzing images with a single relevant length scale. This architecture is governed by a single control parameter, the receptive field, which controls the size of the spatial region around each pixel used to make predictions for that pixel. These models can perform instance segmentation by predicting a transform of the instance masks - e.g. whether pixels are edge/interior/background or a distance transform that can be used with watershed. While these are no longer the state-of-the-art, they're easy to train and are still effective - particularly for bacterial images.
 
