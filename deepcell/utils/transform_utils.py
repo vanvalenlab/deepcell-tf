@@ -243,6 +243,11 @@ def centroid_transform_continuous_2d(mask, erosion_width=None, alpha=0.1):
             with each label being a distance class from 1 to bins
     """
 
+    # Check input to alpha
+    if isinstance(alpha, str):
+        if alpha.lower() != 'auto':
+            raise ValueError('alpha must be set to "auto"')
+            
     mask = np.squeeze(mask)
     mask = erode_edges(mask, erosion_width)
 
