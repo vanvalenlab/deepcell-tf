@@ -58,13 +58,15 @@ def create_pyramid_level(backbone_input,
     """Create a pyramid layer from a particular backbone input layer.
 
     Args:
-        backbone_input (layer): Backbone layer to use to create they pyramid layer
+        backbone_input (layer): Backbone layer to use to create they pyramid
+            layer
         upsamplelike_input (tensor): Optional input to use
             as a template for shape to upsample to
         addition_input (layer): Optional layer to add to
             pyramid layer after convolution and upsampling.
         upsample_type (str, optional): Choice of upsampling methods
-            from ['upsamplelike','upsampling2d','upsampling3d'], defaults to 'upsamplelike'.
+            from ['upsamplelike','upsampling2d','upsampling3d'].
+            Defaults to 'upsamplelike'.
         level (int): Level to use in layer names, defaults to 5.
         feature_size (int):Number of filters for
             convolutional layer, defaults to 256.
@@ -80,7 +82,8 @@ def create_pyramid_level(backbone_input,
 
     Raises:
         ValueError: ndim is not 2 or 3
-        ValueError: upsample_type not ['upsamplelike','upsampling2d','upsampling3d']
+        ValueError: upsample_type not ['upsamplelike','upsampling2d',
+            'upsampling3d']
     """
     # Check input to ndims
     acceptable_ndims = {2, 3}
@@ -89,20 +92,21 @@ def create_pyramid_level(backbone_input,
 
     # Check if inputs to ndim and lite are compatible
     if ndim == 3 and lite:
-        raise ValueError('lite == True is not compatible with 3 dimensional networks')
+        raise ValueError('lite == True is not compatible with 3 dimensional '
+                         'networks')
 
     # Check input to interpolation
     acceptable_interpolation = {'bilinear', 'nearest'}
     if interpolation not in acceptable_interpolation:
         raise ValueError('Interpolation mode not supported. Choose from '
-            '[\'bilinear\', \'nearest\']')
+                         '["bilinear", "nearest"]')
 
     # Check input to upsample_type
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
         raise ValueError(
-            'Upsample method not supported. Choose from [\'upsamplelike\','
-            '\'upsampling2d\',\'upsampling3d\']')
+            'Upsample method not supported. Choose from ["upsamplelike",'
+            '"upsampling2d", "upsampling3d"]')
 
     reduced_name = 'C{}_reduced'.format(level)
     upsample_name = 'P{}_upsampled'.format(level)
@@ -137,7 +141,8 @@ def create_pyramid_level(backbone_input,
     if ndim == 2:
         if lite:
             pyramid_final = DepthwiseConv2D((3, 3), strides=(1, 1),
-                                            padding='same', name=final_name)(pyramid)
+                                            padding='same',
+                                            name=final_name)(pyramid)
         else:
             pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
                                    padding='same', name=final_name)(pyramid)
@@ -161,7 +166,8 @@ def __create_pyramid_features(backbone_dict,
         backbone_dict (dictionary): A dictionary of the backbone layers, with
             the names as keys, e.g. {'C0': C0, 'C1': C1, 'C2': C2, ...}
         upsample_type (str, optional): Choice of upsampling methods
-            from ['upsamplelike','upsamling2d','upsampling3d'], defaults to 'upsamplelike'.
+            from ['upsamplelike','upsamling2d','upsampling3d'].
+            Defaults to 'upsamplelike'.
         feature_size (int): Defaults to 256. The feature size to use
             for the resulting feature levels.
         include_final_layers (bool): Add two coarser pyramid levels
@@ -190,13 +196,13 @@ def __create_pyramid_features(backbone_dict,
     acceptable_interpolation = {'bilinear', 'nearest'}
     if interpolation not in acceptable_interpolation:
         raise ValueError('Interpolation mode not supported. Choose from '
-            '[\'bilinear\', \'nearest\']')
+                         '["bilinear", "nearest"]')
 
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
         raise ValueError(
-            'Upsample method not supported. Choose from [\'upsamplelike\','
-            '\'upsampling2d\',\'upsampling3d\']')
+            'Upsample method not supported. Choose from ["upsamplelike",'
+            '"upsampling2d", "upsampling3d"]')
 
     # Get names of the backbone levels and place in ascending order
     backbone_names = get_sorted_keys(backbone_dict)
@@ -258,8 +264,9 @@ def __create_pyramid_features(backbone_dict,
         P_minus_2_name = 'P{}'.format(level)
 
         if ndim == 2:
-            P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
-                               padding='same', name=P_minus_2_name)(F)
+            P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3),
+                               strides=(2, 2), padding='same',
+                               name=P_minus_2_name)(F)
         else:
             P_minus_2 = Conv3D(feature_size, kernel_size=(1, 3, 3),
                                strides=(1, 2, 2), padding='same',

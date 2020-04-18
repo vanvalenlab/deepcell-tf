@@ -46,7 +46,8 @@ from deepcell.utils.backbone_utils import get_backbone
 from deepcell.utils.misc_utils import get_sorted_keys
 
 
-def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per_batch=1):
+def __merge_temporal_features(feature, mode='conv', feature_size=256,
+                              frames_per_batch=1):
     """ Merges feature with its temporal residual through addition.
     Input feature (x) --> Temporal convolution* --> Residual feature (x')
     *Type of temporal convolution specified by "mode" argument
@@ -54,8 +55,8 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per
 
     Args:
         feature: Input layer
-        mode (str, optional): Mode of temporal convolution. Choose from {'conv','lstm','gru', None}
-            Defaults to 'conv'.
+        mode (str, optional): Mode of temporal convolution. Choose from
+            {'conv','lstm','gru', None}. Defaults to 'conv'.
         feature_size (int, optional): Defaults to 256.
         frames_per_batch (int, optional): Defaults to 1.
 
@@ -71,8 +72,8 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256, frames_per
     if mode is not None:
         mode = str(mode).lower()
         if mode not in acceptable_modes:
-            raise ValueError('Mode {} not supported. Please choose from {}.'.format(
-                mode, str(acceptable_modes)))
+            raise ValueError('Mode {} not supported. Please choose '
+                             'from {}.'.format(mode, str(acceptable_modes)))
 
     if mode == 'conv':
         x = Conv3D(feature_size,
@@ -132,7 +133,7 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2,
     acceptable_interpolation = {'bilinear', 'nearest'}
     if interpolation not in acceptable_interpolation:
         raise ValueError('Interpolation mode not supported. Choose from '
-                         '[\'bilinear\', \'nearest\']')
+                         '["bilinear", "nearest"]')
 
     conv = Conv2D if ndim == 2 else Conv3D
     conv_kernel = (3, 3) if ndim == 2 else (1, 3, 3)
@@ -186,13 +187,14 @@ def __create_semantic_head(pyramid_dict,
     """
     # Check input to ndims
     if ndim not in {2, 3}:
-        raise(ValueError('ndim must be either 2 or 3. Received ndim = {}'.format(ndim)))
+        raise(ValueError('ndim must be either 2 or 3. '
+                         'Received ndim = {}'.format(ndim)))
 
     # Check input to interpolation
     acceptable_interpolation = {'bilinear', 'nearest'}
     if interpolation not in acceptable_interpolation:
         raise ValueError('Interpolation mode not supported. Choose from '
-                         '[\'bilinear\', \'nearest\']')
+                         '["bilinear", "nearest"]')
 
     conv = Conv2D if ndim == 2 else Conv3D
     conv_kernel = (1,) * ndim
@@ -280,7 +282,8 @@ def PanopticNet(backbone,
             {'conv','lstm','gru', None}. Defaults to None.
         num_semantic_heads (int): Defaults to 1.
         num_semantic_classes (list): Defaults to [3].
-        norm_method (str): ImageNormalization mode to use. Defaults to 'whole_image'
+        norm_method (str): ImageNormalization mode to use.
+            Defaults to 'whole_image'.
         location (bool): Whether to include location data. Defaults to True
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
         lite (bool): Whether to use a depthwise conv in the feature pyramid
@@ -319,14 +322,15 @@ def PanopticNet(backbone,
     if temporal_mode is not None:
         temporal_mode = str(temporal_mode).lower()
         if temporal_mode not in acceptable_modes:
-            raise ValueError('Mode {} not supported. Please choose from {}.'.format(
-                temporal_mode, str(acceptable_modes)))
+            raise ValueError('Mode {} not supported. Please choose '
+                             'from {}.'.format(temporal_mode,
+                                               str(acceptable_modes)))
 
     # Check input to interpolation
     acceptable_interpolation = {'bilinear', 'nearest'}
     if interpolation not in acceptable_interpolation:
         raise ValueError('Interpolation mode not supported. Choose from '
-                         '[\'bilinear\', \'nearest\']')
+                         '["bilinear", "nearest"]')
 
     if inputs is None:
         if frames_per_batch > 1:
@@ -348,16 +352,19 @@ def PanopticNet(backbone,
             norm = TimeDistributed(ImageNormalization2D(
                 norm_method=norm_method, name='norm'))(inputs)
         else:
-            norm = ImageNormalization2D(norm_method=norm_method, name='norm')(inputs)
+            norm = ImageNormalization2D(norm_method=norm_method,
+                                        name='norm')(inputs)
 
     # Add location layer
     if location:
         if frames_per_batch > 1:
             # TODO: TimeDistributed is incompatible with channels_first
-            loc = TimeDistributed(Location2D(in_shape=input_shape, name='location'))(norm)
+            loc = TimeDistributed(Location2D(in_shape=input_shape,
+                                             name='location'))(norm)
         else:
             loc = Location2D(in_shape=input_shape, name='location')(norm)
-        concat = Concatenate(axis=channel_axis, name='concatenate_location')([norm, loc])
+        concat = Concatenate(axis=channel_axis,
+                             name='concatenate_location')([norm, loc])
     else:
         concat = norm
 
