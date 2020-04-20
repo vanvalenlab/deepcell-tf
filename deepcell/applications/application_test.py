@@ -166,8 +166,8 @@ class TestApplication(test.TestCase):
         # Ones
         kwargs = {'postprocessing_fn': _postprocess}
         app = Application(model, **kwargs)
-        y = app._postprocess(x)
-        self.assertAllEqual(np.ones(x.shape[1:]), y)
+        y = app._postprocess([x])
+        self.assertAllEqual(np.ones(x.shape), y)
 
         # Bad input
         kwargs = {'postprocessing_fn': 'x'}

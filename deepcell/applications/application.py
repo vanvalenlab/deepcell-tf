@@ -176,6 +176,11 @@ class Application(object):
 
         if self.postprocessing_fn is not None:
             image = self.postprocessing_fn(image, **kwargs)
+
+            # Restore channel dimension if not already there
+            if len(image.shape) == self.required_rank - 1:
+                image = np.expand_dims(image, axis=-1)
+
         elif isinstance(image, list) and len(image) == 1:
             image = image[0]
 
@@ -235,8 +240,15 @@ class Application(object):
 
         # Resize if same is false
         if not same:
+            # cv2.resize only supports float so change dtype and cast back after resize
+            intype = image.dtype
             # Resize function only takes the x,y dimensions for shape
-            image = resize(image, original_shape[1:-1], data_format='channels_last')
+            new_shape = original_shape[1:-1]
+            # Flip order of shape axes to prevent transpose of data
+            new_shape = new_shape[::-1]
+            image = resize(image.astype('float32'),
+                           new_shape, data_format='channels_last')
+            image = image.astype(intype)
 
         return image
 
