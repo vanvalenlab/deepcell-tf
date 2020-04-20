@@ -123,19 +123,20 @@ def export_model_to_tflite(model_file, export_path, calibration_images,
         file_name (str): File name for the exported model. Defaults to
             'model.tflite'
     """
-    # Define helper functions
+    # Define helper function - normalization
     def norm_images(images):
         mean = np.mean(images, axis=(1, 2), keepdims=True)
         std = np.std(images, axis=(1, 2), keepdims=True)
-        norm = (images-mean)/std
+        norm = (images - mean) / std
         return norm
 
+    # Define helper function - add location layer
     def add_location(images):
         x = np.arange(0, images.shape[1], dtype='float32')
         y = np.arange(0, images.shape[2], dtype='float32')
 
-        x = x/max(x)
-        y = y/max(y)
+        x = x / max(x)
+        y = y / max(y)
 
         loc_x, loc_y = np.meshgrid(x, y, indexing='ij')
         loc = np.stack([loc_x, loc_y], axis=-1)
