@@ -116,7 +116,7 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2,
         ndim (int): The spatial dimensions of the input data.
             Default is 2, but it also works with 3
         interpolation (str): Choice of interpolation mode for upsampling
-            layers from ['bilinear', 'nearest'. Defaults to bilinear.
+            layers from ['bilinear', 'nearest']. Defaults to bilinear.
 
     Raises:
         ValueError: ndim is not 2 or 3
@@ -177,7 +177,7 @@ def __create_semantic_head(pyramid_dict,
         target_level (int, optional): Defaults to 2. The level we need to reach.
             Performs 2x upsampling until we're at the target level.
         interpolation (str): Choice of interpolation mode for upsampling
-            layers from ['bilinear', 'nearest'. Defaults to bilinear.
+            layers from ['bilinear', 'nearest']. Defaults to bilinear.
 
     Raises:
         ValueError: ndim must be 2 or 3
@@ -289,7 +289,7 @@ def PanopticNet(backbone,
         lite (bool): Whether to use a depthwise conv in the feature pyramid
             rather than regular conv. Defaults to False.
         interpolation (str): Choice of interpolation mode for upsampling
-            layers from ['bilinear', 'nearest'. Defaults to bilinear.
+            layers from ['bilinear', 'nearest']. Defaults to bilinear.
         pooling (str): optional pooling mode for feature extraction
             when include_top is False.
 

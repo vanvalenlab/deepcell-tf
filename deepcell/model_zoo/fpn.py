@@ -75,7 +75,7 @@ def create_pyramid_level(backbone_input,
         lite (bool): Whether to use depthwise conv instead of regular conv for
             feature pyramid construction
         interpolation (str): Choice of interpolation mode for upsampling
-            layers from ['bilinear', 'nearest'. Defaults to bilinear.
+            layers from ['bilinear', 'nearest']. Defaults to bilinear.
 
     Returns:
         tuple: Pyramid layer after processing, upsampled pyramid layer
@@ -176,7 +176,7 @@ def __create_pyramid_features(backbone_dict,
         lite (bool): Whether to use depthwise conv instead of regular conv for
             feature pyramid construction
         interpolation (str): Choice of interpolation mode for upsampling
-            layers from ['bilinear', 'nearest'. Defaults to bilinear.
+            layers from ['bilinear', 'nearest']. Defaults to bilinear.
 
     Returns:
         dict: The feature pyramid names and levels,
