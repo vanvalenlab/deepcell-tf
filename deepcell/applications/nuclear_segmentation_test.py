@@ -57,4 +57,4 @@ class TestNuclearSegmentation(test.TestCase):
         x = np.random.rand(1, 500, 500, 1)
         y = self.app.predict(x)
 
-        self.assertEqual(x.shape[:-1], y.shape)
+        self.assertEqual(x.shape, y.shape)
