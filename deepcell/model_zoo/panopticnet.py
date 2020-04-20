@@ -396,7 +396,8 @@ def PanopticNet(backbone,
     pyramid_dict = create_pyramid_features(backbone_dict_reduced,
                                            ndim=ndim,
                                            lite=lite,
-                                           upsample_type='upsampling2d')
+                                           upsample_type='upsampling2d',
+                                           interpolation=interpolation)
 
     features = [pyramid_dict[key] for key in pyramid_levels]
 
@@ -414,7 +415,8 @@ def PanopticNet(backbone,
         semantic_head_list.append(create_semantic_head(
             pyramid_dict, n_classes=num_semantic_classes[i],
             input_target=inputs, target_level=target_level,
-            semantic_id=i, ndim=ndim, **kwargs))
+            semantic_id=i, ndim=ndim, interpolation=interpolation,
+            **kwargs))
 
     outputs = semantic_head_list
 

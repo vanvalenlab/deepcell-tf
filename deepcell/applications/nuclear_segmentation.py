@@ -115,7 +115,8 @@ class NuclearSegmentation(Application):
                             num_semantic_classes=[1, 1, 2],
                             location=True,
                             include_top=True,
-                            lite_fpn=True)
+                            lite=True,
+                            interpolation='bilinear')
 
         if use_pretrained_weights:
             weights_path = get_file(
