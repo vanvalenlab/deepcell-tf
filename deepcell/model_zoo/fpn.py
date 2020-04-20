@@ -33,7 +33,7 @@ import re
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D
+from tensorflow.python.keras.layers import Conv2D, Conv3D, DepthwiseConv2D
 from tensorflow.python.keras.layers import Softmax
 from tensorflow.python.keras.layers import Input, Add
 from tensorflow.python.keras.layers import Activation
@@ -52,40 +52,61 @@ def create_pyramid_level(backbone_input,
                          upsample_type='upsamplelike',
                          level=5,
                          ndim=2,
+                         lite=False,
+                         interpolation='bilinear',
                          feature_size=256):
     """Create a pyramid layer from a particular backbone input layer.
 
     Args:
-        backbone_input (layer): Backbone layer to use to create they pyramid layer
+        backbone_input (layer): Backbone layer to use to create they pyramid
+            layer
         upsamplelike_input (tensor): Optional input to use
             as a template for shape to upsample to
         addition_input (layer): Optional layer to add to
             pyramid layer after convolution and upsampling.
         upsample_type (str, optional): Choice of upsampling methods
-            from ['upsamplelike','upsampling2d','upsampling3d'], defaults to 'upsamplelike'.
+            from ['upsamplelike','upsampling2d','upsampling3d'].
+            Defaults to 'upsamplelike'.
         level (int): Level to use in layer names, defaults to 5.
         feature_size (int):Number of filters for
             convolutional layer, defaults to 256.
         ndim (int): The spatial dimensions of the input data. Default is 2,
             but it also works with 3
+        lite (bool): Whether to use depthwise conv instead of regular conv for
+            feature pyramid construction
+        interpolation (str): Choice of interpolation mode for upsampling
+            layers from ['bilinear', 'nearest']. Defaults to bilinear.
 
     Returns:
         tuple: Pyramid layer after processing, upsampled pyramid layer
 
     Raises:
         ValueError: ndim is not 2 or 3
-        ValueError: upsample_type not ['upsamplelike','upsampling2d','upsampling3d']
+        ValueError: upsample_type not ['upsamplelike','upsampling2d',
+            'upsampling3d']
     """
-
+    # Check input to ndims
     acceptable_ndims = {2, 3}
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
 
+    # Check if inputs to ndim and lite are compatible
+    if ndim == 3 and lite:
+        raise ValueError('lite == True is not compatible with 3 dimensional '
+                         'networks')
+
+    # Check input to interpolation
+    acceptable_interpolation = {'bilinear', 'nearest'}
+    if interpolation not in acceptable_interpolation:
+        raise ValueError('Interpolation mode not supported. Choose from '
+                         '["bilinear", "nearest"]')
+
+    # Check input to upsample_type
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
         raise ValueError(
-            'Upsample method not supported. Choose from [\'upsamplelike\','
-            '\'upsampling2d\',\'upsampling3d\']')
+            'Upsample method not supported. Choose from ["upsamplelike",'
+            '"upsampling2d", "upsampling3d"]')
 
     reduced_name = 'C{}_reduced'.format(level)
     upsample_name = 'P{}_upsampled'.format(level)
@@ -112,13 +133,19 @@ def create_pyramid_level(backbone_input,
         else:
             upsampling = UpSampling2D if ndim == 2 else UpSampling3D
             size = (2, 2) if ndim == 2 else (1, 2, 2)
-            pyramid_upsample = upsampling(size=size, name=upsample_name)(pyramid)
+            pyramid_upsample = upsampling(size=size, name=upsample_name,
+                                          interpolation=interpolation)(pyramid)
     else:
         pyramid_upsample = None
 
     if ndim == 2:
-        pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
-                               padding='same', name=final_name)(pyramid)
+        if lite:
+            pyramid_final = DepthwiseConv2D((3, 3), strides=(1, 1),
+                                            padding='same',
+                                            name=final_name)(pyramid)
+        else:
+            pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
+                                   padding='same', name=final_name)(pyramid)
     else:
         pyramid_final = Conv3D(feature_size, (1, 3, 3), strides=(1, 1, 1),
                                padding='same', name=final_name)(pyramid)
@@ -130,19 +157,26 @@ def __create_pyramid_features(backbone_dict,
                               upsample_type='upsamplelike',
                               ndim=2,
                               feature_size=256,
-                              include_final_layers=True):
+                              include_final_layers=True,
+                              lite=False,
+                              interpolation='bilinear'):
     """Creates the FPN layers on top of the backbone features.
 
     Args:
         backbone_dict (dictionary): A dictionary of the backbone layers, with
             the names as keys, e.g. {'C0': C0, 'C1': C1, 'C2': C2, ...}
         upsample_type (str, optional): Choice of upsampling methods
-            from ['upsamplelike','upsamling2d','upsampling3d'], defaults to 'upsamplelike'.
+            from ['upsamplelike','upsamling2d','upsampling3d'].
+            Defaults to 'upsamplelike'.
         feature_size (int): Defaults to 256. The feature size to use
             for the resulting feature levels.
         include_final_layers (bool): Add two coarser pyramid levels
         ndim (int): The spatial dimensions of the input data.
             Default is 2, but it also works with 3
+        lite (bool): Whether to use depthwise conv instead of regular conv for
+            feature pyramid construction
+        interpolation (str): Choice of interpolation mode for upsampling
+            layers from ['bilinear', 'nearest']. Defaults to bilinear.
 
     Returns:
         dict: The feature pyramid names and levels,
@@ -159,11 +193,16 @@ def __create_pyramid_features(backbone_dict,
     if ndim not in acceptable_ndims:
         raise ValueError('Only 2 and 3 dimensional networks are supported')
 
+    acceptable_interpolation = {'bilinear', 'nearest'}
+    if interpolation not in acceptable_interpolation:
+        raise ValueError('Interpolation mode not supported. Choose from '
+                         '["bilinear", "nearest"]')
+
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
         raise ValueError(
-            'Upsample method not supported. Choose from [\'upsamplelike\','
-            '\'upsampling2d\',\'upsampling3d\']')
+            'Upsample method not supported. Choose from ["upsamplelike",'
+            '"upsampling2d", "upsampling3d"]')
 
     # Get names of the backbone levels and place in ascending order
     backbone_names = get_sorted_keys(backbone_dict)
@@ -209,7 +248,9 @@ def __create_pyramid_features(backbone_dict,
                                       addition_input=addition_input,
                                       upsample_type=upsample_type,
                                       level=level,
-                                      ndim=ndim)
+                                      ndim=ndim,
+                                      lite=lite,
+                                      interpolation=interpolation)
         pyramid_finals.append(pf)
         pyramid_upsamples.append(pu)
 
@@ -223,8 +264,9 @@ def __create_pyramid_features(backbone_dict,
         P_minus_2_name = 'P{}'.format(level)
 
         if ndim == 2:
-            P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
-                               padding='same', name=P_minus_2_name)(F)
+            P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3),
+                               strides=(2, 2), padding='same',
+                               name=P_minus_2_name)(F)
         else:
             P_minus_2 = Conv3D(feature_size, kernel_size=(1, 3, 3),
                                strides=(1, 2, 2), padding='same',
