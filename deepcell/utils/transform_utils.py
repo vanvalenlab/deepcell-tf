@@ -247,7 +247,7 @@ def centroid_transform_continuous_2d(mask, erosion_width=None, alpha=0.1):
     if isinstance(alpha, str):
         if alpha.lower() != 'auto':
             raise ValueError('alpha must be set to "auto"')
-            
+
     mask = np.squeeze(mask)
     mask = erode_edges(mask, erosion_width)
 
@@ -261,7 +261,7 @@ def centroid_transform_continuous_2d(mask, erosion_width=None, alpha=0.1):
         coords = prop.coords
         center = prop.weighted_centroid
         distance_to_center = np.sum((coords - center) ** 2, axis=1)
-        
+
         # Determine alpha to use
         if str(alpha).lower() == 'auto':
             _alpha = 1 / np.sqrt(prop.area)
