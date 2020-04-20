@@ -67,7 +67,6 @@ extensions = [
     'nbsphinx',
     'sphinx.ext.todo',
     'sphinx.ext.autosectionlabel'
-    # 'sphinx-copybutton'
 ]
 
 napoleon_google_docstring = True
@@ -234,6 +233,20 @@ sys.modules['tensorflow.python.keras.layers.convolutional_recurrent.ConvRNN2D'] 
 # Disable nbsphinx extension from running notebooks
 nbsphinx_execute = 'never'
 exclude_patterns = ['_build', '**.ipynb_checkpoints']
+
+nbsphinx_prolog = r"""
+{% set docname = 'scripts/' + env.doc2path(env.docname, base=None)|replace("nblink", "ipynb") %}
+{% set doclink = "https://github.com/vanvalenlab/deepcell-tf/blob/master/{{ docname }}" %}
+
+.. raw:: html
+
+    <div class="admonition note">
+        <p>This page was generated from
+            <a class="reference external" href="https://github.com/vanvalenlab/deepcell-tf/blob/master/{{ docname }}">{{ docname|e }}</a>.
+            Download the notebook from <a class="reference external" href="https://github.com/vanvalenlab/deepcell-tf/blob/master/{{ docname }}">Github</a>.
+        </p>
+    </div>
+"""
 
 # -- Options for intersphinx extension ---------------------------------------
 
