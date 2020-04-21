@@ -42,7 +42,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
     # @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         {
-            'testcase_name': 'maskrcnn_basic',
+            'testcase_name': 'retinamask_basic',
             'pooling': None,
             'panoptic': False,
             'location': False,
@@ -52,7 +52,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'pyramid_levels': ['P3'],
         },
         {
-            'testcase_name': 'maskrcnn_basic_td',
+            'testcase_name': 'retinamask_basic_td',
             'pooling': None,
             'panoptic': False,
             'location': False,
@@ -62,7 +62,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'pyramid_levels': ['P3'],
         },
         {
-            'testcase_name': 'maskrcnn_avgnorm',
+            'testcase_name': 'retinamask_avgnorm',
             'pooling': 'avg',
             'panoptic': False,
             'location': False,
@@ -72,7 +72,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'pyramid_levels': ['P3', 'P4', 'P5'],
         },
         {
-            'testcase_name': 'maskrcnn_panoptic_maxnorm',
+            'testcase_name': 'retinamask_panoptic_maxnorm',
             'pooling': 'max',
             'panoptic': True,
             'location': False,
@@ -82,7 +82,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'pyramid_levels': ['P5', 'P6', 'P7'],
         },
         {
-            'testcase_name': 'maskrcnn_panoptic_maxnorm_td',
+            'testcase_name': 'retinamask_panoptic_maxnorm_td',
             'pooling': 'max',
             'panoptic': True,
             'location': False,
@@ -92,7 +92,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'pyramid_levels': ['P5', 'P6', 'P7'],
         },
         {
-            'testcase_name': 'maskrcnn_location',
+            'testcase_name': 'retinamask_location',
             'pooling': 'max',
             'panoptic': False,
             'location': True,
@@ -102,7 +102,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'pyramid_levels': ['P3', 'P7'],
         },
         {
-            'testcase_name': 'maskrcnn_location_td',
+            'testcase_name': 'retinamask_location_td',
             'pooling': 'max',
             'panoptic': False,
             'location': True,
@@ -112,7 +112,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'pyramid_levels': ['P3', 'P7'],
         },
         {
-            'testcase_name': 'maskrcnn_panoptic_location',
+            'testcase_name': 'retinamask_panoptic_location',
             'pooling': 'max',
             'panoptic': True,
             'location': True,
@@ -122,7 +122,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
         },
         {
-            'testcase_name': 'maskrcnn_panoptic_location_td',
+            'testcase_name': 'retinamask_panoptic_location_td',
             'pooling': 'max',
             'panoptic': True,
             'location': True,
@@ -132,8 +132,8 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
         }
     ])
-    def test_maskrcnn(self, pooling, panoptic, location, frames,
-                      pyramid_levels, nms, class_specific_filter):
+    def test_retinamask(self, pooling, panoptic, location, frames,
+                        pyramid_levels, nms, class_specific_filter):
         num_classes = 3
         crop_size = (14, 14)
         mask_size = (28, 28)
