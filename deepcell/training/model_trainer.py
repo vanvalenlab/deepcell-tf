@@ -161,8 +161,6 @@ class ModelTrainer(object):
                 tensorboard_log_dir=self.log_dir,
                 save_weights_only=False,
                 monitor='val_loss', verbose=1)
-            # TODO: hack. need to justify.
-            del self.training_callbacks[1]
         else:
             self.training_callbacks = training_callbacks
 
@@ -345,11 +343,16 @@ class ModelTrainer(object):
             
             output_metadata["model"]["training"] = {}
             output_metadata["model"]["training"]["n_epochs"] = n_epochs
-            output_metadata["model"]["training"]["train_data"] = train_data
-            output_metadata["model"]["training"]["validation_data"] = validation_data
+            output_metadata["model"]["training"]["train_data"] = \
+                    re.match("<([\w.]+) object at",str(train_data)).group(1)
+            output_metadata["model"]["training"]["validation_data"] = \
+                    re.match("<([\w.]+) object at",str(validation_data)).group(1)
             output_metadata["model"]["training"]["training_steps_per_epoch"] = training_steps_per_epoch
             output_metadata["model"]["training"]["validation_steps_per_epoch"] = validation_steps_per_epoch
-            output_metadata["model"]["training"]["training_callbacks"] = training_callbacks
+            output_metadata["model"]["training"]["training_callbacks"] = []
+            for callback in training_callbacks:
+                callback_name = re.match("<([\w.]+) object at",str(callback)).group(1)
+                output_metadata["model"]["training"]["training_callbacks"].append(callback_name)
 
 
             return loss_history
@@ -363,8 +366,9 @@ class ModelTrainer(object):
                     weights += layer.get_weights()
                 summed_weights_list = [np.sum(w) for w in weights]
                 summed_weights = sum(summed_weights_list)
-                model_hash = hashlib.md5(str(summed_weights).encode())
-                output_metadata["model"]["trained_model_md5_digest"] = model_hash.hexdigest()
+                model_hash = hashlib.md5(str(summed_weights).encode()).hexdigest()
+                output_metadata["model"]["trained_model_md5_digest"] = model_hash
+                return model_hash
 
         loss_history = train_model(
                 self.output_metadata,
@@ -383,7 +387,7 @@ class ModelTrainer(object):
         model_name = os.path.join(self.model_path, self.model_name + '.h5')
         self.model.load_weights(model_name)
 
-        create_hash(self.trained, self.model, self.output_metadata)
+        self.model_hash = create_hash(self.trained, self.model, self.output_metadata)
 
         print(self.output_metadata)
         import pdb; pdb.set_trace()
@@ -436,11 +440,11 @@ class ModelTrainer(object):
         self.model.save(model_name)
 
         # Save metadata (training and dataset) and benchmarks
-        metadata = {}
-        metadata['model_hash'] = self.model_hash
-        metadata['training_metadata'] = self.training_metadata
-        metadata['dataset_metadata'] = self.dataset_metadata
-        metadata['benchmarks'] = self.benchmarks
+        #metadata = {}
+        #metadata['model_hash'] = self.model_hash
+        #metadata['training_metadata'] = self.training_metadata
+        #metadata['dataset_metadata'] = self.dataset_metadata
+        #metadata['benchmarks'] = self.benchmarks
 
         # TODO: Saving the benchmarking object in this way saves each individual benchmark.
         # This should be refactored to save the sums.
