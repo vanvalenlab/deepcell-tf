@@ -72,7 +72,7 @@ class PanopticNetTest(keras_parameterized.TestCase):
             'location': True,
         }
     ])
-    def test_maskrcnn(self, pooling, location):
+    def test_panopticnet(self, pooling, location):
         num_classes = 3
         crop_size = (14, 14)
         mask_size = (28, 28)
