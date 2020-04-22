@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Nuclear segmentation application"""
+"""Cytoplasmic segmentation application"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -34,18 +34,18 @@ import os
 from tensorflow.python.keras.utils.data_utils import get_file
 
 from deepcell_toolbox.deep_watershed import deep_watershed
+from deepcell_toolbox.processing import phase_preprocess
 
 from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/general_nuclear_train_batch_size_82800_resnet50_'
-                '8_epochs_c4b2167eb754923856bc84fb29074413.h5')
+                'model-weights/general_cyto_9c7b79e6238d72c14ea8f87023ac3af9.h5')
 
 
-class NuclearSegmentation(Application):
-    """Loads a `deepcell.model_zoo.PanopticNet` model for nuclear segmentation
+class CytoplasmSegmentation(Application):
+    """Loads a `deepcell.model_zoo.PanopticNet` model for cytoplasm segmentation
     with pretrained weights.
     The `predict` method handles prep and post processing steps to return a labeled image.
 
@@ -54,9 +54,9 @@ class NuclearSegmentation(Application):
     .. nbinput:: ipython3
 
         from skimage.io import imread
-        from deepcell.applications import NuclearSegmentation
+        from deepcell.applications import CytoplasmSegmentation
 
-        im = imread('HeLa_nuclear.png')
+        im = imread('HeLa_cytoplasm.png')
         im.shape
 
     .. nboutput::
@@ -76,7 +76,7 @@ class NuclearSegmentation(Application):
 
     .. nbinput:: ipython3
 
-        app = NuclearSegmentation(use_pretrained_weights=True)
+        app = CytoplasmSegmentation(use_pretrained_weights=True)
         labeled_image = app.predict(image)
 
     .. nboutput::
@@ -89,19 +89,19 @@ class NuclearSegmentation(Application):
 
     #: Metadata for the dataset used to train the model
     dataset_metadata = {
-        'name': 'general_nuclear_train_large',
-        'other': 'Pooled nuclear data from HEK293, HeLa-S3, NIH-3T3, and RAW264.7 cells.'
+        'name': 'general_cyto',
+        'other': 'Pooled phase and fluorescent cytoplasm data - computationally curated'
     }
 
     #: Metadata for the model and training process
     model_metadata = {
-        'batch_size': 16,
-        'lr': 1e-4,
+        'batch_size': 2,
+        'lr': 1e-5,
         'lr_decay': 0.95,
         'training_seed': 0,
         'n_epochs': 8,
-        'training_steps_per_epoch': 82800 // 16,
-        'validation_steps_per_epoch': 20760 // 16
+        'training_steps_per_epoch': 7899 // 2,
+        'validation_steps_per_epoch': 1973 // 2
     }
 
     def __init__(self,
@@ -121,20 +121,20 @@ class NuclearSegmentation(Application):
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='eb29808ef2f662fb3bcda6986e47f91a'
+                md5_hash='4e9136df5071930a66365b2229fc358b'
             )
 
             model.load_weights(weights_path)
         else:
             weights_path = None
 
-        super(NuclearSegmentation, self).__init__(model,
-                                                  model_image_shape=model_image_shape,
-                                                  model_mpp=0.65,
-                                                  preprocessing_fn=None,
-                                                  postprocessing_fn=deep_watershed,
-                                                  dataset_metadata=self.dataset_metadata,
-                                                  model_metadata=self.model_metadata)
+        super(CytoplasmSegmentation, self).__init__(model,
+                                                    model_image_shape=model_image_shape,
+                                                    model_mpp=0.65,
+                                                    preprocessing_fn=phase_preprocess,
+                                                    postprocessing_fn=deep_watershed,
+                                                    dataset_metadata=self.dataset_metadata,
+                                                    model_metadata=self.model_metadata)
 
     def predict(self,
                 image,

@@ -23,40 +23,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for PhaseSegmentationModel"""
+"""Tests for NuclearSegmentationApplication"""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import numpy as np
-import tensorflow as tf
-
 from tensorflow.python.platform import test
+import numpy as np
 
-from deepcell.applications import NuclearSegmentationModel
+from deepcell.applications import NuclearSegmentation
 
 
-class TestNuclearSegmentationModel(test.TestCase):
+class TestNuclearSegmentation(test.TestCase):
 
-    def test_nuclear_segmentation_model(self):
+    def setUp(self):
 
-        # TODO: resnet50 is trained but tests fail due to tf version
-        valid_backbones = ['featurenet']
-        input_shape = (256, 256, 1)  # channels will be set to 3
+        self.app = NuclearSegmentation(use_pretrained_weights=False)
 
-        for backbone in valid_backbones:
+    def test_nuclear_app(self):
 
-            with self.cached_session():
-                model = NuclearSegmentationModel(
-                    input_shape=input_shape,
-                    backbone=backbone,
-                    use_pretrained_weights=False
-                )
+        # Check shape parameters
+        shape = self.app.model.output_shape
 
-                shape = model.output_shape
-                self.assertIsInstance(shape, list)
-                self.assertEqual(shape[0][-1], 4)  # bounding boxes
-                self.assertEqual(shape[1][-1], 1)  # labels
-                self.assertEqual(shape[6][-3:-1], (28, 28))  # maskRCNN output
-                self.assertEqual(len(shape), 9)  # maskRCNN + 2 semantic heads
+        self.assertIsInstance(shape, list)
+        self.assertEqual(len(shape), 3)
+        self.assertEqual(len(shape[0]), 4)
+        self.assertEqual(len(shape[1]), 4)
+        self.assertEqual(len(shape[2]), 4)
+
+    def test_predict(self):
+
+        x = np.random.rand(1, 500, 500, 1)
+        y = self.app.predict(x)
+
+        self.assertEqual(x.shape, y.shape)

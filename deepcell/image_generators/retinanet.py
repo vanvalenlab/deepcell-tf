@@ -43,6 +43,7 @@ from skimage.segmentation import clear_border
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
+from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.python.platform import tf_logging as logging
 
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
@@ -50,11 +51,10 @@ from deepcell.utils.retinanet_anchor_utils import anchors_for_shape
 from deepcell.utils.retinanet_anchor_utils import guess_shapes
 
 from deepcell.image_generators import _transform_masks
-from deepcell.image_generators import ImageFullyConvDataGenerator
 from deepcell.image_generators import MovieDataGenerator
 
 
-class RetinaNetGenerator(ImageFullyConvDataGenerator):
+class RetinaNetGenerator(ImageDataGenerator):
     """Generates batches of tensor image data with real-time data augmentation.
 
     The data will be looped over (in batches).
@@ -187,6 +187,48 @@ class RetinaNetGenerator(ImageFullyConvDataGenerator):
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
+
+    def random_transform(self, x, y=None, seed=None):
+        """Applies a random transformation to an image.
+
+        Args:
+            x: 3D tensor or list of 3D tensors,
+                single image.
+            y: 3D tensor or list of 3D tensors,
+                label mask(s) for x, optional.
+            seed: Random seed.
+
+        Returns:
+            A randomly transformed version of the input (same shape).
+            If y is passed, it is transformed if necessary and returned.
+        """
+        params = self.get_random_transform(x.shape, seed)
+
+        if isinstance(x, list):
+            x = [self.apply_transform(x_i, params) for x_i in x]
+        else:
+            x = self.apply_transform(x, params)
+
+        if y is None:
+            return x
+
+        # Nullify the transforms that don't affect `y`
+        params['brightness'] = None
+        params['channel_shift_intensity'] = None
+        _interpolation_order = self.interpolation_order
+        self.interpolation_order = 0
+
+        if isinstance(y, list):
+            y_new = []
+            for y_i in y:
+                y_t = self.apply_transform(y_i, params)
+                y_new.append(y_t)
+            y = y_new
+        else:
+            y = self.apply_transform(y, params)
+
+        self.interpolation_order = _interpolation_order
+        return x, y
 
 
 class RetinaNetIterator(Iterator):
