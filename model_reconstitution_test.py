@@ -21,128 +21,158 @@
 # about how big we want the scope of ModelTrainer to be.
 
 import deepcell
+import argparse
 import json
 import hashlib
 import re
 #import deepcell_toolbox
 
-def _load_data():
-    # take in dataset
-    filename = 'HeLa_S3.npz'
-    test_size = 0.1 # % of data saved as test
-    seed = 0 # seed for random train-test split
-    (X_train, y_train), (X_test, y_test) = deepcell.datasets.hela_s3.load_data(
-                                                filename,
-                                                test_size = test_size,
-                                                seed = seed)
-    return (X_train, y_train), (X_test, y_test)
+class ModelComparison():
+    def __init__(self, metadata_file_path):
+        with open(metadata_file_path) as metadata_file:
+            self.source_metadata = json.load(metadata_file)
 
-def _create_generators():
-    ## training image generator
-    train_generator = deepcell.ImageFullyConvDataGenerator()
-    ## validation image generator
-    validation_generator = deepcell.ImageFullyConvDataGenerator()
-    #train_iterator = deepcell.ImageFullyConvIterator(
-    #                    train_dict = train_dict,
-    #                    image_data_generator = train_generator)
-    #validation_iterator = deepcell.ImageFullyConvIterator(
-    #                    train_dict = validation_dict,
-    #                    image_data_generator = train_generator)
-    return train_generator, validation_generator
+    def _compare_deepcell_version(self):
+        assert self.source_metadata["deepcell_version"] == deepcell.__version__
 
-def _create_model(X_train):
-    # create model
-    receptive_field = 61
-    n_skips = 3
-    
-    model_chosen = "no_skip"
-    if model_chosen == "skip":
-        model = deepcell.bn_feature_net_skip_2D(
-                n_features=22,  # segmentation mask (is_cell, is_not_cell)
-                n_skips=n_skips,
-                receptive_field=receptive_field,
-                n_conv_filters=32,
-                n_dense_filters=128,
-                input_shape=tuple(X_train.shape[1:]),
-                last_only=False)
-    elif model_chosen == "no_skip":
-        model = deepcell.bn_feature_net_2D(
-                n_features=22,  # segmentation mask (is_cell, is_not_cell)
-                receptive_field=receptive_field,
-                n_conv_filters=32,
-                n_dense_filters=128,
-                dilated=True,
-                input_shape=tuple(X_train.shape[1:]))
-    return model
+    def _load_data(self):
+        # take in dataset
+        filename = 'HeLa_S3.npz'
+        test_size = 0.1 # % of data saved as test
+        seed = 0 # seed for random train-test split
+        (self.X_train, self.y_train), (self.X_test, self.y_test) = deepcell.datasets.hela_s3.load_data(
+                                                                   filename,
+                                                                   test_size = test_size,
+                                                                   seed = seed)
 
-def _load():
-    with open("/deepcell_mount/test_model_folder/test_model_71c8a983acfd383d9c9371f291b81406.json") as json_file:
-        json_text = json.load(json_file)
-    return json_text
+    def _compare_data(self):
+        assert tuple(self.source_metadata["dataset"]["training"]["X_train_shape"]) == self.X_train.shape
+        assert self.source_metadata["dataset"]["training"]["X_train_datatype"] == self.X_train.dtype.name
+        assert self.source_metadata["dataset"]["training"]["X_train_md5_digest"] == hashlib.md5(self.X_train).hexdigest()
+        assert tuple(self.source_metadata["dataset"]["training"]["y_train_shape"]) == self.y_train.shape
+        assert self.source_metadata["dataset"]["training"]["y_train_datatype"] == self.y_train.dtype.name
+        assert self.source_metadata["dataset"]["training"]["y_train_md5_digest"] == hashlib.md5(self.y_train).hexdigest()
+        assert tuple(self.source_metadata["dataset"]["testing"]["X_test_shape"]) == self.X_test.shape
+        assert self.source_metadata["dataset"]["testing"]["X_test_datatype"] == self.X_test.dtype.name
+        assert self.source_metadata["dataset"]["testing"]["X_test_md5_digest"] == hashlib.md5(self.X_test).hexdigest()
+        assert tuple(self.source_metadata["dataset"]["testing"]["y_test_shape"]) == self.y_test.shape
+        assert self.source_metadata["dataset"]["testing"]["y_test_datatype"] == self.y_test.dtype.name
+        assert self.source_metadata["dataset"]["testing"]["y_test_md5_digest"] == hashlib.md5(self.y_test).hexdigest()
 
-def _compare_data(reference_metadata):
-    (X_train, y_train), (X_test, y_test) = _load_data()
-    assert tuple(reference_metadata["dataset"]["training"]["X_train_shape"]) == X_train.shape
-    assert reference_metadata["dataset"]["training"]["X_train_datatype"] == X_train.dtype.name
-    assert reference_metadata["dataset"]["training"]["X_train_md5_digest"] == hashlib.md5(X_train).hexdigest()
-    assert tuple(reference_metadata["dataset"]["training"]["y_train_shape"]) == y_train.shape
-    assert reference_metadata["dataset"]["training"]["y_train_datatype"] == y_train.dtype.name
-    assert reference_metadata["dataset"]["training"]["y_train_md5_digest"] == hashlib.md5(y_train).hexdigest()
-    assert tuple(reference_metadata["dataset"]["testing"]["X_test_shape"]) == X_test.shape
-    assert reference_metadata["dataset"]["testing"]["X_test_datatype"] == X_test.dtype.name
-    assert reference_metadata["dataset"]["testing"]["X_test_md5_digest"] == hashlib.md5(X_test).hexdigest()
-    assert tuple(reference_metadata["dataset"]["testing"]["y_test_shape"]) == y_test.shape
-    assert reference_metadata["dataset"]["testing"]["y_test_datatype"] == y_test.dtype.name
-    assert reference_metadata["dataset"]["testing"]["y_test_md5_digest"] == hashlib.md5(y_test).hexdigest()
-    return (X_train, y_train), (X_test, y_test)
+    def _create_generators(self):
+        ## training image generator
+        self.train_generator = deepcell.ImageFullyConvDataGenerator()
+        ## validation image generator
+        self.validation_generator = deepcell.ImageFullyConvDataGenerator()
+        #train_iterator = deepcell.ImageFullyConvIterator(
+        #                    train_dict = train_dict,
+        #                    image_data_generator = train_generator)
+        #validation_iterator = deepcell.ImageFullyConvIterator(
+        #                    train_dict = validation_dict,
+        #                    image_data_generator = train_generator)
 
-def _compare_generators(reference_metadata):
-    train_generator, validation_generator = _create_generators()
-    for generator_type in ("train_generator", "validation_generator"):
-        if generator_type == "train_generator":
-            data_generator_name = re.match("<([\w.]+) object at",str(train_generator)).group(1)
-        elif generator_type == "validation_generator":
-            data_generator_name = re.match("<([\w.]+) object at",str(validation_generator)).group(1)
-        assert reference_metadata["generators"][generator_type]["class"] == data_generator_name
-    return train_generator, validation_generator
+        ## read in parameters from metadata
+        for generator_type in ("train_generator", "validation_generator"):
+            if self.source_metadata["generators"][generator_type]["parameters"]["seed"]:
+                self.generator_seed = self.source_metadata["generators"][generator_type]["parameters"]["seed"]
+            else:
+                self.generator_seed = 43
+            if self.source_metadata["generators"][generator_type]["parameters"]["batch_size"]:
+                self.generator_batch_size = self.source_metadata["generators"][generator_type]["parameters"]["batch_size"]
+            else:
+                self.generator_batch_size = 1
+            if self.source_metadata["generators"][generator_type]["parameters"]["transform"]:
+                self.generator_transform = self.source_metadata["generators"][generator_type]["parameters"]["transform"]
+            else:
+                self.generator_transform = None
+            if self.source_metadata["generators"][generator_type]["parameters"]["transform_kwargs"]:
+                self.generator_transform_kwargs = self.source_metadata["generators"][generator_type]["parameters"]["transform_kwargs"]
+            else:
+                self.generator_transform_kwargs = {}
 
-def _compare_deepcell_version(reference_metadata):
-    assert reference_metadata["deepcell_version"] == deepcell.__version__
+    def _compare_generators(self):
+        for generator_type in ("train_generator", "validation_generator"):
+            if generator_type == "train_generator":
+                data_generator_name = re.match("<([\w.]+) object at",str(self.train_generator)).group(1)
+            elif generator_type == "validation_generator":
+                data_generator_name = re.match("<([\w.]+) object at",str(self.validation_generator)).group(1)
+            assert self.source_metadata["generators"][generator_type]["class"] == data_generator_name
+            assert self.source_metadata["generators"][generator_type]["parameters"]["seed"] == self.generator_seed
+            assert self.source_metadata["generators"][generator_type]["parameters"]["batch_size"] == self.generator_batch_size
+            if not self.generator_transform:
+                # I believe this is necessary because Python forces a None key in a JSON object into an empty list, either upon reading from or writing to disk
+                assert self.source_metadata["generators"][generator_type]["parameters"]["transform"] == {}
+            else:
+                assert self.source_metadata["generators"][generator_type]["parameters"]["transform"] == self.generator_transform
+            assert self.source_metadata["generators"][generator_type]["parameters"]["transform_kwargs"] == self.generator_transform_kwargs
 
-def main():
-    # load metadata
-    reference_metadata = _load()
-    
-    # compare deepcell versions
-    _compare_deepcell_version(reference_metadata)
+    def _create_model(self):
+        # create model
+        receptive_field = 61
+        n_skips = 3
 
-    # load data and compare
-    (X_train, y_train), (X_test, y_test) = _compare_data(reference_metadata)
+        model_chosen = "no_skip"
+        if model_chosen == "skip":
+            self.model = deepcell.bn_feature_net_skip_2D(
+                    n_features=22,  # segmentation mask (is_cell, is_not_cell)
+                    n_skips=n_skips,
+                    receptive_field=receptive_field,
+                    n_conv_filters=32,
+                    n_dense_filters=128,
+                    input_shape=tuple(self.X_train.shape[1:]),
+                    last_only=False)
+        elif model_chosen == "no_skip":
+            self.model = deepcell.bn_feature_net_2D(
+                    n_features=22,  # segmentation mask (is_cell, is_not_cell)
+                    receptive_field=receptive_field,
+                    n_conv_filters=32,
+                    n_dense_filters=128,
+                    dilated=True,
+                    input_shape=tuple(self.X_train.shape[1:]))
 
-    # create and compare generators
-    train_generator, validation_generator = _compare_generators(reference_metadata)
+    def compare(self):
+        # compare deepcell versions
+        self._compare_deepcell_version()
 
-    model = _create_model(X_train)
-    training_kwargs = {"n_epochs": 2}
-    trainer = deepcell.training.ModelTrainer(
-            X_train = X_train,
-            y_train = y_train,
-            X_test = X_test,
-            y_test = y_test,
-            model = model,
-            train_generator = train_generator,
-            validation_generator = validation_generator,
-            training_kwargs = training_kwargs)
-    #postprocessing_fn = deepcell_toolbox.retinamask_postprocess,
+        # load data and compare
+        self._load_data()
+        self._compare_data()
 
-    # train model
-    model_name, metadata_name, model_hash = trainer.create_model()
-    import pdb; pdb.set_trace()
-    assert reference_metadata["model"]["trained_model_md5_digest"] == model_hash
+        # create and compare generators
+        self._create_generators()
+        self._compare_generators()
 
-    # Now, try to use metadata to create identical copy of model
+        # create model
+        self._create_model()
 
-    # Finally, compare both models
+        # train model
+        self.training_kwargs = {"n_epochs": 2}
+        trainer = deepcell.training.ModelTrainer(
+                X_train = self.X_train,
+                y_train = self.y_train,
+                X_test = self.X_test,
+                y_test = self.y_test,
+                model = self.model,
+                train_generator = self.train_generator,
+                validation_generator = self.validation_generator,
+                training_kwargs = self.training_kwargs)
+                #generator_seed = self.generator_seed,
+                #generator_batch_size = self.generator_batch_size,
+                #generator_transform = self.generator_transform,
+                #generator_transform_kwargs = self.generator_transform_kwargs,
+        #postprocessing_fn = deepcell_toolbox.retinamask_postprocess,
+
+        # train model
+        model_name, metadata_name, model_hash = trainer.create_model()
+
+        # compare digests for trained models
+        assert self.source_metadata["model"]["trained_model_md5_digest"] == model_hash
 
 if __name__=='__main__':
-    main()
+    parser = argparse.ArgumentParser(description='Compare metadata saved at given location to metadata generated by new ModelTrainer instance.')
+    parser.add_argument("metadata_location", help="This is the location of a previously-created ModelTrainer metadata file.")
+    args = parser.parse_args()
+
+    model_comparison = ModelComparison(args.metadata_location)
+    model_comparison.compare()
+    import pdb; pdb.set_trace()
