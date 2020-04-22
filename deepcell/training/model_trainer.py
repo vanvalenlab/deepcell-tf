@@ -57,6 +57,10 @@ class ModelTrainer(object):
                  model_version=0,
                  log_dir=None,
                  tfserving_path=None,
+                 generator_seed=43,
+                 generator_batch_size=1,
+                 generator_transform=None,
+                 generator_transform_kwargs={},
                  training_callbacks='default',
                  postprocessing_fn=None,
                  postprocessing_kwargs={},
@@ -101,7 +105,15 @@ class ModelTrainer(object):
         # Add generator information
         self.train_generator = train_generator
         self.validation_generator = validation_generator
-
+        if isinstance(self.model.output_shape, list):
+            self.generator_skips = len(self.model.output_shape) - 1
+        else:
+            self.generator_skips = None
+        self.generator_seed = generator_seed
+        self.generator_batch_size = generator_batch_size
+        self.generator_transform = generator_transform
+        self.generator_transform_kwargs = generator_transform_kwargs
+        print(f'Transform kwargs: {self.generator_transform_kwargs}')
         # Add miscellaneous information
         self.dataset_metadata = dataset_metadata
         self.postprocessing_fn = postprocessing_fn
@@ -201,16 +213,6 @@ class ModelTrainer(object):
         self.output_metadata["dataset"]["testing"]["y_test_md5_digest"] = hashlib.md5(self.y_test).hexdigest()
 
     def _data_prep(self):
-        ## parameters
-        # TODO: should be passed into ModelTrainer class
-        if isinstance(self.model.output_shape, list):
-            skip = len(self.model.output_shape) - 1
-        else:
-            skip = None
-        seed = 43
-        batch_size = 1
-        transform = None
-        transform_kwargs = {}
         
         def prep_generator(
                 generator_type,
@@ -223,7 +225,7 @@ class ModelTrainer(object):
                 transform = None,
                 transform_kwargs = {}):
             """
-            Get training or validation data back from data_generator.flow() and document every step of the process
+            Get training and validation data back from data_generator.flow() and document every step of the process
             using output_metadata.
             """
 
@@ -265,10 +267,28 @@ class ModelTrainer(object):
         self.output_metadata["generators"] = {}
         ## training image generator
         train_dict = {"X": self.X_train, "y": self.y_train}
-        self.train_data, self.output_metadata = prep_generator("train", self.output_metadata, self.train_generator, train_dict, skip, seed, batch_size, transform, transform_kwargs)
+        self.train_data, self.output_metadata = prep_generator(
+                generator_type = "train",
+                output_metadata = self.output_metadata,
+                data_generator = self.train_generator,
+                input_data_dict = train_dict,
+                skip = self.generator_skips,
+                seed = self.generator_seed,
+                batch_size = self.generator_batch_size,
+                transform = self.generator_transform,
+                transform_kwargs = self.generator_transform_kwargs)
         ## validation image generator
         validation_dict = {"X": self.X_test, "y": self.y_test}
-        self.validation_data, self.output_metadata = prep_generator("validation", self.output_metadata, self.validation_generator, validation_dict, skip, seed, batch_size, transform, transform_kwargs)
+        self.validation_data, self.output_metadata = prep_generator(
+                generator_type = "validation",
+                output_metadata = self.output_metadata,
+                data_generator = self.validation_generator,
+                input_data_dict = validation_dict,
+                skip = self.generator_skips,
+                seed = self.generator_seed,
+                batch_size = self.generator_batch_size,
+                transform = self.generator_transform,
+                transform_kwargs = self.generator_transform_kwargs)
         print(self.output_metadata)
 
     def _compile_model(self):
@@ -390,7 +410,6 @@ class ModelTrainer(object):
         self.model_hash = create_hash(self.trained, self.model, self.output_metadata)
 
         print(self.output_metadata)
-        import pdb; pdb.set_trace()
 
     def _benchmark(self):
         if not self.trained:
@@ -429,22 +448,12 @@ class ModelTrainer(object):
         # Train model with prepped data generators
         self._train_model()
 
-        # Create model hash
-        #self._create_hash()
-
         # Create benchmarks
         self._benchmark()
 
         # Save model
         model_name = os.path.join(self.model_path, self.model_name + '_' + self.model_hash + '.h5')
         self.model.save(model_name)
-
-        # Save metadata (training and dataset) and benchmarks
-        #metadata = {}
-        #metadata['model_hash'] = self.model_hash
-        #metadata['training_metadata'] = self.training_metadata
-        #metadata['dataset_metadata'] = self.dataset_metadata
-        #metadata['benchmarks'] = self.benchmarks
 
         # TODO: Saving the benchmarking object in this way saves each individual benchmark.
         # This should be refactored to save the sums.
@@ -460,4 +469,4 @@ class ModelTrainer(object):
             self._export_tf_serving()
 
         # return information to calling program
-        return model_name, metadata_name
+        return model_name, metadata_name, self.model_hash
