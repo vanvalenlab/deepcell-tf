@@ -279,7 +279,8 @@ def centroid_transform_continuous_2d(mask, erosion_width=None,
     return inner_distance
 
 
-def centroid_transform_continuous_movie(mask, erosion_width=None, alpha=0.1):
+def centroid_transform_continuous_movie(mask, erosion_width=None,
+                                        alpha=0.1, beta=1):
     """Transform a label mask into a continuous centroid value.
 
     Args:
@@ -309,7 +310,14 @@ def centroid_transform_continuous_movie(mask, erosion_width=None, alpha=0.1):
             coords = prop.coords
             center = prop.weighted_centroid
             distance_to_center = np.sum((coords - center) ** 2, axis=1)
-            center_transform = 1 / (1 + alpha * distance_to_center)
+
+            # Determine alpha to use
+            if str(alpha).lower() == 'auto':
+                _alpha = 1 / np.sqrt(prop.area)
+            else:
+                _alpha = float(alpha)
+
+            center_transform = 1 / (1 + beta * _alpha * distance_to_center)
             coords_x = coords[:, 0]
             coords_y = coords[:, 1]
             inner_distance[coords_x, coords_y] = center_transform
