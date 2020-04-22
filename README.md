@@ -50,7 +50,7 @@ Once `nvidia-docker` is installed, run the following command:
 ```bash
 # Start a GPU enabled container on one GPUs
 docker run --gpus '"device=0"' -it --rm \
-	-p 8888:8888 \
+    -p 8888:8888 \
     -v $PWD/scripts:/notebooks \
     -v $PWD/data:/data \
     vanvalenlab/deepcell-tf:0.4.0-gpu
