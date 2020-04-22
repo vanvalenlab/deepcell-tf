@@ -138,15 +138,28 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2,
     conv = Conv2D if ndim == 2 else Conv3D
     conv_kernel = (3, 3) if ndim == 2 else (1, 3, 3)
     upsampling = UpSampling2D if ndim == 2 else UpSampling3D
-    size = (2, 2) if ndim == 2 else (1, 2, 2)
+
     if n_upsample > 0:
         for i in range(n_upsample):
+            # Define kwargs for upsampling layer
+            if ndim == 2:
+                upsampling_kwargs = {
+                    'size': (2, 2),
+                    'name': 'upsampling_{}_semantic'
+                            '_upsample_{}'.format(i, semantic_id),
+                    'interpolation': interpolation
+                }
+            else:
+                upsampling_kwargs = {
+                    'size': (1, 2, 2),
+                    'name': 'upsampling_{}_semantic'
+                            '_upsample_{}'.format(i, semantic_id)
+                }
+
             x = conv(n_filters, conv_kernel, strides=1,
                      padding='same', data_format='channels_last',
                      name='conv_{}_semantic_upsample_{}'.format(i, semantic_id))(x)
-            x = upsampling(size=size,
-                           name='upsampling_{}_semantic_upsample_{}'.format(i, semantic_id),
-                           interpolation=interpolation)(x)
+            x = upsampling(**upsampling_kwargs)(x)
     else:
         x = conv(n_filters, conv_kernel, strides=1,
                  padding='same', data_format='channels_last',
@@ -396,6 +409,7 @@ def PanopticNet(backbone,
     pyramid_dict = create_pyramid_features(backbone_dict_reduced,
                                            ndim=ndim,
                                            lite=lite,
+                                           interpolation=interpolation,
                                            upsample_type='upsampling2d')
 
     features = [pyramid_dict[key] for key in pyramid_levels]
@@ -414,7 +428,8 @@ def PanopticNet(backbone,
         semantic_head_list.append(create_semantic_head(
             pyramid_dict, n_classes=num_semantic_classes[i],
             input_target=inputs, target_level=target_level,
-            semantic_id=i, ndim=ndim, **kwargs))
+            semantic_id=i, ndim=ndim, interpolation=interpolation,
+            **kwargs))
 
     outputs = semantic_head_list
 
