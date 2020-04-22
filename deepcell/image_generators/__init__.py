@@ -174,6 +174,9 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     elif transform == 'centroid':
         erosion = kwargs.pop('erosion_width', 0)
         disk_size = kwargs.pop('disk_size', 4)
+        alpha = kwargs.pop('alpha', 0.1)
+        beta = kwargs.pop('beta', 1)
+
         if data_format == 'channels_first':
             y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
         else:
@@ -190,7 +193,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             else:
                 mask = y[batch, ..., 0]
 
-            y_transform[batch] = _transform(mask, erosion)
+            y_transform[batch] = _transform(mask, erosion_width=erosion,
+                                            alpha=alpha, beta=beta)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
