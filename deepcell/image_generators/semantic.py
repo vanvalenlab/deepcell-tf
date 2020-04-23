@@ -431,7 +431,7 @@ class SemanticMovieIterator(Iterator):
         if X.ndim != 5:
             raise ValueError('Input data in `SemanticMovieIterator` '
                              'should have rank 5. You passed an array '
-                             'with shape', self.x.shape)
+                             'with shape', X.shape)
 
         if y is None:
             raise ValueError('Instance masks are required for the '
@@ -451,6 +451,11 @@ class SemanticMovieIterator(Iterator):
         self.min_objects = min_objects
 
         self.y_semantic_list = []  # optional semantic segmentation targets
+
+        if X.shape[self.time_axis] - frames_per_batch < 0:
+            raise ValueError(
+                'The number of frames used in each training batch should '
+                'be less than the number of frames in the training data!')
 
         # Create a list of all the semantic targets. We need to be able
         # to have multiple semantic heads
@@ -605,10 +610,11 @@ class SemanticMovieGenerator(ImageDataGenerator):
             when fill_mode = "constant".
         horizontal_flip (bool): Randomly flip inputs horizontally.
         vertical_flip (bool): Randomly flip inputs vertically.
-        rescale (float): rescaling factor. Defaults to None. If None or 0, no rescaling
-            is applied, otherwise we multiply the data by the value provided
-            (before applying any other transformation).
-        preprocessing_function (function): function that will be implied on each input.
+        rescale (float): rescaling factor. Defaults to None. If None or 0, no
+            rescaling is applied, otherwise we multiply the data by the value
+            provided (before applying any other transformation).
+        preprocessing_function (function): function that will be implied on
+            each input.
             The function will run after the image is resized and augmented.
             The function should take one argument:
             one image (Numpy tensor with rank 3),
@@ -677,6 +683,129 @@ class SemanticMovieGenerator(ImageDataGenerator):
             seed=seed,
             data_format=self.data_format)
 
+    def standardize(self, x):
+        """Apply the normalization configuration to a batch of inputs.
+
+        Args:
+            x (tensor): batch of inputs to be normalized.
+
+        Returns:
+            tensor: The normalized inputs.
+        """
+        # TODO: standardize each image, not all frames at once
+        if self.preprocessing_function:
+            x = self.preprocessing_function(x)
+        if self.rescale:
+            x *= self.rescale
+        # x is a single image, so it doesn't have image number at index 0
+        img_channel_axis = self.channel_axis - 1
+        if self.samplewise_center:
+            x -= np.mean(x, axis=img_channel_axis, keepdims=True)
+        if self.samplewise_std_normalization:
+            x /= (np.std(x, axis=img_channel_axis, keepdims=True) + K.epsilon())
+
+        if self.featurewise_center:
+            if self.mean is not None:
+                x -= self.mean
+            else:
+                logging.warning('This ImageDataGenerator specifies '
+                                '`featurewise_std_normalization`, but it '
+                                'hasn\'t been fit on any training data. '
+                                'Fit it first by calling `.fit(numpy_data)`.')
+        if self.featurewise_std_normalization:
+            if self.std is not None:
+                x /= (self.std + K.epsilon())
+            else:
+                logging.warning('This ImageDataGenerator specifies '
+                                '`featurewise_std_normalization`, but it hasn\'t '
+                                'been fit on any training data. Fit it '
+                                'first by calling `.fit(numpy_data)`.')
+        if self.zca_whitening:
+            if self.principal_components is not None:
+                flatx = np.reshape(x, (-1, np.prod(x.shape[-3:])))
+                whitex = np.dot(flatx, self.principal_components)
+                x = np.reshape(whitex, x.shape)
+            else:
+                logging.warning('This ImageDataGenerator specifies '
+                                '`zca_whitening`, but it hasn\'t '
+                                'been fit on any training data. Fit it '
+                                'first by calling `.fit(numpy_data)`.')
+        return x
+
+    def fit(self, x, augment=False, rounds=1, seed=None):
+        """Fits internal statistics to some sample data.
+
+        Required for featurewise_center, featurewise_std_normalization
+        and zca_whitening.
+
+        Args:
+            x (numpy.array): The data to fit on. Should have rank 5.
+            augment (bool): Whether to fit on randomly augmented samples.
+            rounds (bool): If augment,
+                how many augmentation passes to do over the data.
+            seed (int): Random seed for data shuffling.
+
+        Raises:
+            ValueError: If input rank is not 5.
+            ImportError: If zca_whitening is used and scipy is not available.
+        """
+        x = np.asarray(x, dtype=self.dtype)
+        if x.ndim != 5:
+            raise ValueError('Input to `.fit()` should have rank 5. '
+                             'Got array with shape: ' + str(x.shape))
+        if x.shape[self.channel_axis] not in {1, 3, 4}:
+            logging.warning(
+                'Expected input to be images (as Numpy array) '
+                'following the data format convention "' +
+                self.data_format + '" (channels on axis ' +
+                str(self.channel_axis) + '), i.e. expected '
+                'either 1, 3 or 4 channels on axis ' +
+                str(self.channel_axis) + '. '
+                'However, it was passed an array with shape ' +
+                str(x.shape) + ' (' + str(x.shape[self.channel_axis]) +
+                ' channels).')
+
+        if seed is not None:
+            np.random.seed(seed)
+
+        x = np.copy(x)
+        if augment:
+            ax = np.zeros(
+                tuple([rounds * x.shape[0]] + list(x.shape)[1:]),
+                dtype=self.dtype)
+            for r in range(rounds):
+                for i in range(x.shape[0]):
+                    ax[i + r * x.shape[0]] = self.random_transform(x[i])
+            x = ax
+
+        if self.featurewise_center:
+            axis = (0, self.time_axis, self.row_axis, self.col_axis)
+            self.mean = np.mean(x, axis=axis)
+            broadcast_shape = [1, 1, 1, 1]
+            broadcast_shape[self.channel_axis - 1] = x.shape[self.channel_axis]
+            self.mean = np.reshape(self.mean, broadcast_shape)
+            x -= self.mean
+
+        if self.featurewise_std_normalization:
+            axis = (0, self.time_axis, self.row_axis, self.col_axis)
+            self.std = np.std(x, axis=axis)
+            broadcast_shape = [1, 1, 1, 1]
+            broadcast_shape[self.channel_axis - 1] = x.shape[self.channel_axis]
+            self.std = np.reshape(self.std, broadcast_shape)
+            x /= (self.std + K.epsilon())
+
+        if self.zca_whitening:
+            if scipy is None:
+                raise ImportError('Using zca_whitening requires SciPy. '
+                                  'Install SciPy.')
+            flat_x = np.reshape(
+                x, (x.shape[0],
+                    x.shape[1] * x.shape[2] * x.shape[3] * x.shape[4]))
+            sigma = np.dot(flat_x.T, flat_x) / flat_x.shape[0]
+            u, s, _ = scipy.linalg.svd(sigma)
+            s_inv = 1. / np.sqrt(s[np.newaxis] + self.zca_epsilon)
+            self.principal_components = (u * s_inv).dot(u.T)
+
     def random_transform(self, x, y=None, seed=None):
         """Applies a random transformation to an image.
 
@@ -696,17 +825,29 @@ class SemanticMovieGenerator(ImageDataGenerator):
         self.time_axis -= 1
         self.channel_axis -= 1
 
-        params = self.get_random_transform(x.shape, seed)
+        if isinstance(x, list):
+            params = self.get_random_transform(x[0].shape, seed)
+        else:
+            params = self.get_random_transform(x.shape, seed)
 
         if isinstance(x, list):
             for i in range(len(x)):
                 x_i = x[i]
                 for frame in range(x_i.shape[self.time_axis]):
-                    x_i[frame] = self.apply_transform(x_i[frame], params)
+                    if self.data_format == 'channels_first':
+                        x_trans = self.apply_transform(x_i[:, frame], params)
+                        x_i[:, frame] = np.rollaxis(x_trans, -1, 0)
+                    else:
+                        x_i[frame] = self.apply_transform(x_i[frame], params)
                 x[i] = x_i
         else:
             for frame in range(x.shape[self.time_axis]):
-                x[frame] = self.apply_transform(x[frame], params)
+                if self.data_format == 'channels_first':
+                    x_trans = self.apply_transform(x[:, frame], params)
+                    x[:, frame] = np.rollaxis(x_trans, -1, 0)
+                else:
+                    temp = self.apply_transform(x[frame], params)
+                    x[frame] = self.apply_transform(x[frame], params)
 
         if y is not None:
             params['brightness'] = None
@@ -724,7 +865,13 @@ class SemanticMovieGenerator(ImageDataGenerator):
                         self.interpolation_order = _interpolation_order
 
                     for frame in range(y_i.shape[self.time_axis]):
-                        y_i[frame] = self.apply_transform(y_i[frame], params)
+                        if self.data_format == 'channels_first':
+                            y_trans = self.apply_transform(y_i[:, frame],
+                                                           params)
+                            y_i[:, frame] = np.rollaxis(y_trans, 1, 0)
+                        else:
+                            y_i[frame] = self.apply_transform(y_i[frame],
+                                                              params)
 
                     y[i] = y_i
 
@@ -737,7 +884,11 @@ class SemanticMovieGenerator(ImageDataGenerator):
                     self.interpolation_order = _interpolation_order
 
                 for frame in range(y.shape[self.time_axis]):
-                    y[frame] = self.apply_transform(y[frame], params)
+                    if self.data_format == 'channels_first':
+                        y_trans = self.apply_transform(y[:, frame], params)
+                        y[:, frame] = np.rollaxis(y_trans, 1, 0)
+                    else:
+                        y[frame] = self.apply_transform(y[frame], params)
 
                 self.interpolation_order = _interpolation_order
 

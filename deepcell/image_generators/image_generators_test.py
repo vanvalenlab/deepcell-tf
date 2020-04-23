@@ -1902,37 +1902,31 @@ class TestSemanticMovieGenerator(test.TestCase):
                 horizontal_flip=True,
                 vertical_flip=True)
 
-            num_classes = np.random.randint(1, 3)
-
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((8, 11, 10, 10, 3)),
                 'y': np.random.random((8, 11, 10, 10, 1)),
             }
-            generator.flow(train_dict, num_classes=num_classes)
+            generator.flow(train_dict)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
 
             # Fit
             # generator.fit(images, augment=True, seed=1)
-
+            batch_x_shape = tuple([frames_per_batch] + list(images.shape[2:]))
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
-
-            for x, (r, l) in generator.flow(
+            transforms = ['watershed-cont', 'fgbg']
+            for x, y in generator.flow(
                     train_dict,
                     frames_per_batch=frames_per_batch,
-                    num_classes=num_classes,
+                    transforms=transforms,
                     save_to_dir=temp_dir,
                     shuffle=True):
-                expected = list(images.shape)
-                expected[1] = frames_per_batch
-                self.assertEqual(x.shape[1:], tuple(expected)[1:])
-                self.assertEqual(r.shape[:-1], l.shape[:-1])
-                self.assertEqual(r.shape[-1], 5)
-                self.assertEqual(l.shape[-1], num_classes + 1)
+                self.assertEqual(x.shape[1:], batch_x_shape)
+                self.assertEqual(len(y), len(transforms))
                 break
 
     def test_semantic_movie_generator_channels_first(self):
@@ -1971,37 +1965,32 @@ class TestSemanticMovieGenerator(test.TestCase):
                 vertical_flip=True,
                 data_format='channels_first')
 
-            num_classes = np.random.randint(1, 3)
-
             # Basic test before fit
             train_dict = {
                 'X': np.random.random((8, 3, 11, 10, 10)),
                 'y': np.random.random((8, 1, 11, 10, 10)),
             }
-            generator.flow(train_dict, num_classes=num_classes)
+            generator.flow(train_dict)
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
 
             # Fit
             # generator.fit(images, augment=True, seed=1)
-
+            batch_x_shape = tuple([images.shape[1], frames_per_batch] +
+                                  list(images.shape[3:]))
             y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
-
-            for x, (r, l) in generator.flow(
+            transforms = ['watershed-cont', 'fgbg']
+            for x, y in generator.flow(
                     train_dict,
-                    num_classes=num_classes,
                     frames_per_batch=frames_per_batch,
+                    transforms=transforms,
                     save_to_dir=temp_dir,
                     shuffle=True):
-                expected = list(images.shape)
-                expected[2] = frames_per_batch
-                self.assertEqual(x.shape[1:], tuple(expected)[1:])
-                self.assertEqual(r.shape[:-1], l.shape[:-1])
-                self.assertEqual(r.shape[-1], 5)
-                self.assertEqual(l.shape[-1], num_classes + 1)
+                self.assertEqual(x.shape[1:], batch_x_shape)
+                self.assertEqual(len(y), len(transforms))
                 break
 
     def test_semantic_movie_generator_invalid_data(self):
