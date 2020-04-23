@@ -138,23 +138,20 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2,
     conv = Conv2D if ndim == 2 else Conv3D
     conv_kernel = (3, 3) if ndim == 2 else (1, 3, 3)
     upsampling = UpSampling2D if ndim == 2 else UpSampling3D
+    size = (2, 2) if ndim == 2 else (1, 2, 2)
+
 
     if n_upsample > 0:
         for i in range(n_upsample):
             # Define kwargs for upsampling layer
-            if ndim == 2:
-                upsampling_kwargs = {
-                    'size': (2, 2),
-                    'name': 'upsampling_{}_semantic'
-                            '_upsample_{}'.format(i, semantic_id),
-                    'interpolation': interpolation
+            upsampling_kwargs = {
+                'size': size,
+                'name': 'upsampling_{}_semantic'
+                        '_upsample_{}'.format(i, semantic_id),
+                'interpolation': interpolation
                 }
-            else:
-                upsampling_kwargs = {
-                    'size': (1, 2, 2),
-                    'name': 'upsampling_{}_semantic'
-                            '_upsample_{}'.format(i, semantic_id)
-                }
+            if ndim > 2:
+                del upsampling_kwargs['interpolation']
 
             x = conv(n_filters, conv_kernel, strides=1,
                      padding='same', data_format='channels_last',

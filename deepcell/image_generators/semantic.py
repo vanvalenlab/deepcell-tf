@@ -71,6 +71,11 @@ class SemanticIterator(Iterator):
             images (if save_to_dir is set).
         save_format (str): Format to use for saving sample images
             (if save_to_dir is set).
+
+    Returns:
+        Iterator yielding data X and y, where y is a list containing
+        transformed masks. Data is randomly augmented using 
+        image_data_generator.
     """
     def __init__(self,
                  train_dict,
@@ -268,10 +273,10 @@ class SemanticDataGenerator(ImageDataGenerator):
             when fill_mode = "constant".
         horizontal_flip (bool): Randomly flip inputs horizontally.
         vertical_flip (bool): Randomly flip inputs vertically.
-        rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
+        rescale (float): rescaling factor. Defaults to None. If None or 0, no rescaling
             is applied, otherwise we multiply the data by the value provided
             (before applying any other transformation).
-        preprocessing_function: function that will be implied on each input.
+        preprocessing_function (function): function that will be implied on each input.
             The function will run after the image is resized and augmented.
             The function should take one argument:
             one image (Numpy tensor with rank 3),
@@ -312,8 +317,8 @@ class SemanticDataGenerator(ImageDataGenerator):
 
         Returns:
             SemanticMovieIterator: An Iterator yielding tuples of (x, y),
-                where x is a numpy array of image data and y is a numpy array
-                of labels of the same shape.
+                where x is a numpy array of image data and y is list of 
+                numpy arrays of transformed masks of the same shape.
         """
         return SemanticIterator(
             train_dict,
@@ -334,7 +339,7 @@ class SemanticDataGenerator(ImageDataGenerator):
                 single image.
             y: 3D tensor or list of 3D tensors,
                 label mask(s) for x, optional.
-            seed: Random seed.
+            seed (int): Random seed.
 
         Returns:
             A randomly transformed version of the input (same shape).
@@ -381,13 +386,26 @@ class SemanticMovieIterator(Iterator):
     """Iterator yielding data from Numpy arrays (X and y).
 
     Args:
-        train_dict: dictionary consisting of numpy arrays for X and y.
-        image_data_generator: Instance of ImageDataGenerator
+        train_dict (dict): Dictionary consisting of numpy arrays for X and y.
+        movie_data_generator: Instance of SemanticMovieGenerator
             to use for random transformations and normalization.
-        batch_size: Integer, size of a batch.
-        shuffle: Boolean, whether to shuffle the data between epochs.
-        seed: Random seed for data shuffling.
-        data_format: String, one of 'channels_first', 'channels_last'.
+        batch_size (int): Size of a batch.
+        shuffle (boolean): Whether to shuffle the data between epochs.
+        seed (int): Random seed for data shuffling.
+        data_format (str): One of 'channels_first', 'channels_last'.
+        save_to_dir (str): Optional directory where to save the pictures
+            being yielded, in a viewable format. This is useful
+            for visualizing the random transformations being
+            applied, for debugging purposes.
+        save_prefix (str): Prefix to use for saving sample
+            images (if save_to_dir is set).
+        save_format (str): Format to use for saving sample images
+            (if save_to_dir is set).
+
+    Returns:
+        Iterator yielding data X and y, where y is a list containing
+        transformed masks. Data is randomly augmented using 
+        image_data_generator.
     """
 
     def __init__(self,
@@ -400,7 +418,10 @@ class SemanticMovieIterator(Iterator):
                  transforms_kwargs={},
                  seed=None,
                  min_objects=3,
-                 data_format='channels_last'):
+                 data_format='channels_last',
+                 save_to_dir=None,
+                 save_prefix='',
+                 save_format='png'):
         X, y = train_dict['X'], train_dict['y']
         if X.shape[0] != y.shape[0]:
             raise ValueError('Training batches and labels should have the same'
@@ -451,11 +472,6 @@ class SemanticMovieIterator(Iterator):
 
         # Remove images with small numbers of cells
         for b in range(self.x.shape[0]):
-            y_batch = np.squeeze(self.y[b], axis=self.channel_axis - 1)
-            y_batch = np.expand_dims(y_batch, axis=self.channel_axis - 1)
-
-            self.y[b] = y_batch
-
             if len(np.unique(self.y[b])) - 1 < self.min_objects:
                 invalid_batches.append(b)
 
@@ -502,7 +518,6 @@ class SemanticMovieIterator(Iterator):
             last_frame = self.x.shape[self.time_axis] - self.frames_per_batch
             time_start = np.random.randint(0, high=last_frame)
             time_end = time_start + self.frames_per_batch
-            times = list(np.arange(time_start, time_end))
 
             if self.time_axis == 1:
                 x = self.x[j, time_start:time_end, ...]
@@ -551,16 +566,16 @@ class SemanticMovieGenerator(ImageDataGenerator):
     The data will be looped over (in batches).
 
     Args:
-        featurewise_center: boolean, set input mean to 0 over the dataset,
+        featurewise_center (bool): Set input mean to 0 over the dataset,
             feature-wise.
-        samplewise_center: boolean, set each sample mean to 0.
-        featurewise_std_normalization: boolean, divide inputs by std
+        samplewise_center (bool): Set each sample mean to 0.
+        featurewise_std_normalization (bool): Divide inputs by std
             of the dataset, feature-wise.
-        samplewise_std_normalization: boolean, divide each input by its std.
-        zca_epsilon: epsilon for ZCA whitening. Default is 1e-6.
-        zca_whitening: boolean, apply ZCA whitening.
-        rotation_range: int, degree range for random rotations.
-        width_shift_range: float, 1-D array-like or int
+        samplewise_std_normalization (bool): Divide each input by its std.
+        zca_epsilon (float): Epsilon for ZCA whitening. Default is 1e-6.
+        zca_whitening (bool): Apply ZCA whitening.
+        rotation_range (int): Degree range for random rotations.
+        width_shift_range (float): 1-D array-like or int
 
             - float: fraction of total width, if < 1, or pixels if >= 1.
             - 1-D array-like: random elements from the array.
@@ -571,34 +586,34 @@ class SemanticMovieGenerator(ImageDataGenerator):
               width_shift_range=1.0 possible values are floats in the interval
               [-1.0, +1.0).
 
-        shear_range: float, shear Intensity
+        shear_range (float): Shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
-        zoom_range: float or [lower, upper], Range for random zoom.
+        zoom_range (float): float or [lower, upper], Range for random zoom.
             If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
-        channel_shift_range: float, range for random channel shifts.
-        fill_mode: One of {"constant", "nearest", "reflect" or "wrap"}.
+        channel_shift_range (float): range for random channel shifts.
+        fill_mode (str): One of {"constant", "nearest", "reflect" or "wrap"}.
 
             Default is 'nearest'. Points outside the boundaries of the input
             are filled according to the given mode:
+
                 - 'constant': kkkkkkkk|abcd|kkkkkkkk (cval=k)
                 - 'nearest':  aaaaaaaa|abcd|dddddddd
                 - 'reflect':  abcddcba|abcd|dcbaabcd
                 - 'wrap':  abcdabcd|abcd|abcdabcd
 
-        cval: float or int, value used for points outside the boundaries
+        cval (float): Value used for points outside the boundaries
             when fill_mode = "constant".
-        horizontal_flip: boolean, randomly flip inputs horizontally.
-        vertical_flip: boolean, randomly flip inputs vertically.
-        rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
+        horizontal_flip (bool): Randomly flip inputs horizontally.
+        vertical_flip (bool): Randomly flip inputs vertically.
+        rescale (float): rescaling factor. Defaults to None. If None or 0, no rescaling
             is applied, otherwise we multiply the data by the value provided
             (before applying any other transformation).
-        preprocessing_function: function that will be implied on each input.
+        preprocessing_function (function): function that will be implied on each input.
             The function will run after the image is resized and augmented.
             The function should take one argument:
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
-
-        data_format: One of {"channels_first", "channels_last"}.
+        data_format (str): One of {"channels_first", "channels_last"}.
 
             - "channels_last" mode means that the images should have shape
               (samples, height, width, channels),
@@ -608,7 +623,7 @@ class SemanticMovieGenerator(ImageDataGenerator):
               Keras config file at "~/.keras/keras.json".
             - If you never set it, then it will be "channels_last".
 
-        validation_split: float, fraction of images reserved for validation
+        validation_split (float): Fraction of images reserved for validation
             (strictly between 0 and 1).
     """
     def __init__(self, **kwargs):
@@ -633,7 +648,10 @@ class SemanticMovieGenerator(ImageDataGenerator):
              transforms_kwargs={},
              shuffle=True,
              min_objects=3,
-             seed=None):
+             seed=None,
+             save_to_dir=None,
+             save_prefix='',
+             save_format='png'):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
@@ -644,7 +662,8 @@ class SemanticMovieGenerator(ImageDataGenerator):
 
         Returns:
             An Iterator yielding tuples of (x, y) where x is a numpy array
-            of image data and y is a numpy array of labels of the same shape.
+            of image data and y is a list of numpy arrays of transformed
+            masks.
         """
         return SemanticMovieIterator(
             train_dict,
