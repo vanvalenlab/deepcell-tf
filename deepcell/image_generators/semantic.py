@@ -74,7 +74,7 @@ class SemanticIterator(Iterator):
 
     Returns:
         Iterator yielding data X and y, where y is a list containing
-        transformed masks. Data is randomly augmented using 
+        transformed masks. Data is randomly augmented using
         image_data_generator.
     """
     def __init__(self,
@@ -317,7 +317,7 @@ class SemanticDataGenerator(ImageDataGenerator):
 
         Returns:
             SemanticMovieIterator: An Iterator yielding tuples of (x, y),
-                where x is a numpy array of image data and y is list of 
+                where x is a numpy array of image data and y is list of
                 numpy arrays of transformed masks of the same shape.
         """
         return SemanticIterator(
@@ -404,7 +404,7 @@ class SemanticMovieIterator(Iterator):
 
     Returns:
         Iterator yielding data X and y, where y is a list containing
-        transformed masks. Data is randomly augmented using 
+        transformed masks. Data is randomly augmented using
         image_data_generator.
     """
 
