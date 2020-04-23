@@ -148,7 +148,7 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2,
                 'name': 'upsampling_{}_semantic'
                         '_upsample_{}'.format(i, semantic_id),
                 'interpolation': interpolation
-                }
+            }
             if ndim > 2:
                 del upsampling_kwargs['interpolation']
 
