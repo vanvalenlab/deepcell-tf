@@ -102,7 +102,8 @@ class SemanticIterator(Iterator):
                              'with shape', X.shape)
 
         if y is None:
-            raise ValueError('Instance masks are required for the SemanticIterator')
+            raise ValueError('Instance masks are required for the '
+                             'SemanticIterator')
 
         self.x = np.asarray(X, dtype=K.floatx())
         self.y = np.asarray(y, dtype='int32')
@@ -204,8 +205,10 @@ class SemanticIterator(Iterator):
                         if y_sem[i].shape[self.channel_axis - 1] == 1:
                             img_y = y_sem[i]
                         else:
-                            img_y = np.argmax(y_sem[i], axis=self.channel_axis - 1)
-                            img_y = np.expand_dims(img_y, axis=self.channel_axis - 1)
+                            img_y = np.argmax(y_sem[i],
+                                              axis=self.channel_axis - 1)
+                            img_y = np.expand_dims(img_y,
+                                                   axis=self.channel_axis - 1)
                         img = array_to_img(img_y, self.data_format, scale=True)
                         fname = 'y_{sem}_{prefix}_{index}_{hash}.{format}'.format(
                             sem=k,
@@ -273,10 +276,11 @@ class SemanticDataGenerator(ImageDataGenerator):
             when fill_mode = "constant".
         horizontal_flip (bool): Randomly flip inputs horizontally.
         vertical_flip (bool): Randomly flip inputs vertically.
-        rescale (float): rescaling factor. Defaults to None. If None or 0, no rescaling
-            is applied, otherwise we multiply the data by the value provided
-            (before applying any other transformation).
-        preprocessing_function (function): function that will be implied on each input.
+        rescale (float): rescaling factor. Defaults to None. If None or 0, no
+            rescaling is applied, otherwise we multiply the data by the value
+            provided (before applying any other transformation).
+        preprocessing_function (function): function that will be implied on
+            each input.
             The function will run after the image is resized and augmented.
             The function should take one argument:
             one image (Numpy tensor with rank 3),
@@ -503,8 +507,9 @@ class SemanticMovieIterator(Iterator):
                                 self.x.shape[3],
                                 self.x.shape[4]))
         else:
-            batch_x = np.zeros(tuple([len(index_array), self.frames_per_batch]
-                                     + list(self.x.shape)[2:]))
+            batch_x = np.zeros(tuple([len(index_array),
+                                     self.frames_per_batch] +
+                                     list(self.x.shape)[2:]))
 
         if self.data_format == 'channels_first':
             batch_y_semantic_list = [np.zeros(tuple([len(index_array),
@@ -702,7 +707,8 @@ class SemanticMovieGenerator(ImageDataGenerator):
         if self.samplewise_center:
             x -= np.mean(x, axis=img_channel_axis, keepdims=True)
         if self.samplewise_std_normalization:
-            x /= (np.std(x, axis=img_channel_axis, keepdims=True) + K.epsilon())
+            x /= (np.std(x, axis=img_channel_axis, keepdims=True) +
+                  K.epsilon())
 
         if self.featurewise_center:
             if self.mean is not None:
@@ -717,9 +723,9 @@ class SemanticMovieGenerator(ImageDataGenerator):
                 x /= (self.std + K.epsilon())
             else:
                 logging.warning('This ImageDataGenerator specifies '
-                                '`featurewise_std_normalization`, but it hasn\'t '
-                                'been fit on any training data. Fit it '
-                                'first by calling `.fit(numpy_data)`.')
+                                '`featurewise_std_normalization`, but it '
+                                'hasn\'t been fit on any training data. Fit '
+                                'it first by calling `.fit(numpy_data)`.')
         if self.zca_whitening:
             if self.principal_components is not None:
                 flatx = np.reshape(x, (-1, np.prod(x.shape[-3:])))
