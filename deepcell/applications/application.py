@@ -71,6 +71,8 @@ class Application(object):
         # Require dimension 1 larger than model_input_shape due to addition of batch dimension
         self.required_rank = len(self.model_image_shape) + 1
 
+        self.required_channels = self.model_image_shape[-1]
+
         self.model_mpp = model_mpp
         self.preprocessing_fn = preprocessing_fn
         self.postprocessing_fn = postprocessing_fn
@@ -247,7 +249,7 @@ class Application(object):
             # Flip order of shape axes to prevent transpose of data
             new_shape = new_shape[::-1]
             image = resize(image.astype('float32'),
-                           new_shape, data_format='channels_last')
+                           new_shape, data_format='channels_last', data_type='y')
             image = image.astype(intype)
 
         return image
@@ -283,9 +285,14 @@ class Application(object):
 
         # Check input size of image
         if len(image.shape) != self.required_rank:
-            raise ValueError('Input data must have {} dimensions'
+            raise ValueError('Input data must have {} dimensions. '
                              'Input data only has {} dimensions'.format(
                                  self.required_rank, len(image.shape)))
+
+        if image.shape[-1] != self.required_channels:
+            raise ValueError('Input data must have {} channels. '
+                             'Input data only has {} channels'.format(
+                                 self.required_channels, image.shape[-1]))
 
         # Resize image, returns unmodified if appropriate
         image, original_shape = self._resize_input(image, image_mpp)
@@ -300,10 +307,11 @@ class Application(object):
         output_tiles = self.model.predict(tiles, batch_size=batch_size)
 
         # Untile images
-        output_images = self._untile_output(output_tiles, tiles_info)
+        self.output_images = self._untile_output(output_tiles, tiles_info)
+        print('self output images is {}'.format(self.output_images.shape))
 
         # Postprocess predictions to create label image
-        label_image = self._postprocess(output_images, **postprocess_kwargs)
+        label_image = self._postprocess(self.output_images, **postprocess_kwargs)
 
         # Resize label_image back to original resolution if necessary
         label_image = self._resize_output(label_image, original_shape)

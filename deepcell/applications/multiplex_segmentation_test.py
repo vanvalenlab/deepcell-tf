@@ -23,20 +23,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Deepcell Applications - Pre-trained models for specific functions"""
+"""Tests for MultiplexSegmentationApplication"""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.applications.application import Application
-from deepcell.applications.cytoplasm_segmentation import CytoplasmSegmentation
-from deepcell.applications.multiplex_segmentation import MultiplexSegmentation
-from deepcell.applications.nuclear_segmentation import NuclearSegmentation
-from deepcell.applications.cell_tracking import CellTrackingModel
-from deepcell.applications.label_detection import LabelDetectionModel
-from deepcell.applications.scale_detection import ScaleDetectionModel
+from tensorflow.python.platform import test
+import numpy as np
 
-del absolute_import
-del division
-del print_function
+from deepcell.applications import MultiplexSegmentation
+
+
+class TestMultiplexSegmentation(test.TestCase):
+
+    def setUp(self):
+
+        self.app = MultiplexSegmentation(use_pretrained_weights=False)
+
+    def test_nuclear_app(self):
+
+        # Check shape parameters
+        shape = self.app.model.output_shape
+
+        self.assertIsInstance(shape, list)
+        self.assertEqual(len(shape), 4)
+
+    def test_predict(self):
+
+        x = np.random.rand(1, 500, 500, 2)
+        y_label, y_output = self.app.predict(x)
+
+        self.assertEqual(x.shape[:-1], y_label.shape[:-1])
