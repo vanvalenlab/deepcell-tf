@@ -249,7 +249,7 @@ class Application(object):
             # Flip order of shape axes to prevent transpose of data
             new_shape = new_shape[::-1]
             image = resize(image.astype('float32'),
-                           new_shape, data_format='channels_last', data_type='y')
+                           new_shape, data_format='channels_last')
             image = image.astype(intype)
 
         return image
@@ -308,7 +308,7 @@ class Application(object):
 
         # Untile images
         self.output_images = self._untile_output(output_tiles, tiles_info)
-        print('self output images is {}'.format(self.output_images.shape))
+        #print('self output images is {}'.format(self.output_images.shape))
 
         # Postprocess predictions to create label image
         label_image = self._postprocess(self.output_images, **postprocess_kwargs)

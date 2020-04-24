@@ -52,6 +52,6 @@ class TestMultiplexSegmentation(test.TestCase):
     def test_predict(self):
 
         x = np.random.rand(1, 500, 500, 2)
-        y_label, y_output = self.app.predict(x)
+        y_label, y_output = app.predict(x)
 
         self.assertEqual(x.shape[:-1], y_label.shape[:-1])
