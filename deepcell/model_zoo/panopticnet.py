@@ -309,6 +309,7 @@ def PanopticNet(backbone,
 
     Raises:
         ValueError: temporal_mode not 'conv', 'lstm', 'gru'  or None
+        ValueError: input_shape not a square power of 2
 
     Returns:
         tensorflow.keras.Model: Panoptic model with a backbone.
@@ -325,6 +326,14 @@ def PanopticNet(backbone,
             raise ValueError('Mode {} not supported. Please choose '
                              'from {}.'.format(temporal_mode,
                                                str(acceptable_modes)))
+
+    # TODO only works for 2D: do we check for 3D as well? What are the requirements for 3D data?
+    img_shape = input_shape[1:] if channel_axis == 1 else input_shape[:-1]
+    if img_shape[0] != img_shape[1]:
+        raise ValueError('Input data must be square, got dimensions {}'.format(img_shape))
+
+    if img_shape[0] not in [2 ** x for x in range(5, 12)]:
+        raise ValueError('Input data dimensions must be a power of 2, got {}'.format(img_shape[0]))
 
     # Check input to interpolation
     acceptable_interpolation = {'bilinear', 'nearest'}
