@@ -326,7 +326,7 @@ def PanopticNet(backbone,
             raise ValueError('Mode {} not supported. Please choose '
                              'from {}.'.format(temporal_mode,
                                                str(acceptable_modes)))
-    
+
     # TODO only works for 2D: do we check for 3D as well? What are the requirements for 3D data?
     img_shape = input_shape[1:] if channel_axis == 1 else input_shape[:-1]
     if img_shape[0] != img_shape[1]:
