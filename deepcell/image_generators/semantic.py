@@ -350,7 +350,7 @@ class SemanticDataGenerator(ImageDataGenerator):
             seed=seed,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
-            data_format=data_format)
+            data_format=self.data_format)
 
     def random_transform(self, x, y=None, seed=None):
         """Applies a random transformation to an image.
