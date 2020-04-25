@@ -603,10 +603,10 @@ class SemanticMovieIterator(Iterator):
                                 img_y = np.argmax(batch_y[0][i, :, frame],
                                                   axis=0)
                                 img_channel_axis = 0
-                                img_y = batch_y[i, :, frame]
+                                img_y = batch_y[0][i, :, frame]
                             else:
                                 img_channel_axis = -1
-                                img_y = batch_y[i, frame]
+                                img_y = batch_y[0][i, frame]
                             img_y = np.argmax(img_y, axis=img_channel_axis)
                             img_y = np.expand_dims(img_y,
                                                    axis=img_channel_axis)
