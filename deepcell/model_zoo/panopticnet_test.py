@@ -140,17 +140,17 @@ class PanopticNetTest(keras_parameterized.TestCase):
                 use_imagenet=False,
             )
 
-            # non power of 2 input
-            input_shape = (257, 257, 1)
-            with self.assertRaises(ValueError):
-                model = PanopticNet(
-                    backbone=backbone,
-                    input_shape=input_shape,
-                    backbone_levels=['C3', 'C4', 'C5'],
-                    norm_method=norm_method,
-                    location=True,
-                    pooling='avg',
-                    num_semantic_heads=len(num_semantic_classes),
-                    num_semantic_classes=num_semantic_classes,
-                    use_imagenet=False,
-                )
+        # non power of 2 input
+        input_shape = (257, 257, 1)
+        with self.assertRaises(ValueError):
+            model = PanopticNet(
+                backbone=backbone,
+                input_shape=input_shape,
+                backbone_levels=['C3', 'C4', 'C5'],
+                norm_method=norm_method,
+                location=True,
+                pooling='avg',
+                num_semantic_heads=len(num_semantic_classes),
+                num_semantic_classes=num_semantic_classes,
+                use_imagenet=False,
+            )
