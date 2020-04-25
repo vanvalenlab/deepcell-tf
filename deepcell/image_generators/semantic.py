@@ -164,9 +164,7 @@ class SemanticIterator(Iterator):
                                 for y in self.y_semantic_list]
 
         super(SemanticIterator, self).__init__(
-            self.x.shape[0], batch_size, shuffle, seed,
-            save_to_dir=save_to_dir, save_prefix=save_prefix,
-            save_format=save_format)
+            self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
@@ -522,9 +520,7 @@ class SemanticMovieIterator(Iterator):
                                 for y in self.y_semantic_list]
 
         super(SemanticMovieIterator, self).__init__(
-            self.x.shape[0], batch_size, shuffle, seed,
-            save_to_dir=save_to_dir, save_prefix=save_prefix,
-            save_format=save_format)
+            self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.data_format == 'channels_first':
@@ -582,7 +578,46 @@ class SemanticMovieIterator(Iterator):
             for k, y_sem in enumerate(y_semantic_list):
                 batch_y_semantic_list[k][i] = y_sem
 
-        batch_y = batch_y_semantic_list
+            batch_y = batch_y_semantic_list
+
+            if self.save_to_dir:
+                time_axis = 2 if self.data_format == 'channels_first' else 1
+                for i, j in enumerate(index_array):
+                    for frame in range(batch_x.shape[time_axis]):
+                        if time_axis == 2:
+                            img = array_to_img(batch_x[i, :, frame],
+                                               self.data_format, scale=True)
+                        else:
+                            img = array_to_img(batch_x[i, frame],
+                                               self.data_format, scale=True)
+                        fname = '{prefix}_{index}_{hash}.{format}'.format(
+                            prefix=self.save_prefix,
+                            index=j,
+                            hash=np.random.randint(1e4),
+                            format=self.save_format)
+                        img.save(os.path.join(self.save_to_dir, fname))
+
+                        if self.y is not None:
+                            # Save argmax of y batch
+                            if self.time_axis == 2:
+                                img_y = np.argmax(batch_y[0][i, :, frame],
+                                                  axis=0)
+                                img_channel_axis = 0
+                                img_y = batch_y[i, :, frame]
+                            else:
+                                img_channel_axis = -1
+                                img_y = batch_y[i, frame]
+                            img_y = np.argmax(img_y, axis=img_channel_axis)
+                            img_y = np.expand_dims(img_y,
+                                                   axis=img_channel_axis)
+                            img = array_to_img(img_y, self.data_format,
+                                               scale=True)
+                            fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
+                                prefix=self.save_prefix,
+                                index=j,
+                                hash=np.random.randint(1e4),
+                                format=self.save_format)
+                            img.save(os.path.join(self.save_to_dir, fname))
 
         return batch_x, batch_y
 
