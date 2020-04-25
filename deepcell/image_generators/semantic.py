@@ -90,7 +90,16 @@ class SemanticIterator(Iterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
+        # Load data
+        if 'X' not in train_dict.keys():
+            raise ValueError('No training data found in train_dict')
+
+        if 'y' not in train_dict.keys():
+            raise ValueError('Instance masks are required for the '
+                             'SemanticIterator')
+
         X, y = train_dict['X'], train_dict['y']
+
         if X.shape[0] != y.shape[0]:
             raise ValueError('Training batches and labels should have the same'
                              'length. Found X.shape: {} y.shape: {}'.format(
@@ -100,10 +109,6 @@ class SemanticIterator(Iterator):
             raise ValueError('Input data in `SemanticIterator` '
                              'should have rank 4. You passed an array '
                              'with shape', X.shape)
-
-        if y is None:
-            raise ValueError('Instance masks are required for the '
-                             'SemanticIterator')
 
         self.x = np.asarray(X, dtype=K.floatx())
         self.y = np.asarray(y, dtype='int32')
@@ -159,7 +164,9 @@ class SemanticIterator(Iterator):
                                 for y in self.y_semantic_list]
 
         super(SemanticIterator, self).__init__(
-            self.x.shape[0], batch_size, shuffle, seed)
+            self.x.shape[0], batch_size, shuffle, seed,
+            save_to_dir=save_to_dir, save_prefix=save_prefix,
+            save_format=save_format)
 
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
@@ -318,9 +325,17 @@ class SemanticDataGenerator(ImageDataGenerator):
                 Defaults to True
             seed (int): Random seed for data shuffling.
             min_objects (int): Minumum number of objects allowed per image
+            save_to_dir (str): Optional directory where to save the pictures
+                being yielded, in a viewable format. This is useful
+                for visualizing the random transformations being
+                applied, for debugging purposes.
+            save_prefix (str): Prefix to use for saving sample
+                images (if save_to_dir is set).
+            save_format (str): Format to use for saving sample images
+                (if save_to_dir is set).
 
         Returns:
-            SemanticMovieIterator: An Iterator yielding tuples of (x, y),
+            SemanticIterator: An Iterator yielding tuples of (x, y),
                 where x is a numpy array of image data and y is list of
                 numpy arrays of transformed masks of the same shape.
         """
@@ -333,7 +348,9 @@ class SemanticDataGenerator(ImageDataGenerator):
             shuffle=shuffle,
             min_objects=min_objects,
             seed=seed,
-            data_format=self.data_format)
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            data_format=data_format)
 
     def random_transform(self, x, y=None, seed=None):
         """Applies a random transformation to an image.
@@ -409,7 +426,7 @@ class SemanticMovieIterator(Iterator):
     Returns:
         Iterator yielding data X and y, where y is a list containing
         transformed masks. Data is randomly augmented using
-        image_data_generator.
+        movie_data_generator.
     """
 
     def __init__(self,
@@ -426,7 +443,16 @@ class SemanticMovieIterator(Iterator):
                  save_to_dir=None,
                  save_prefix='',
                  save_format='png'):
+        # Load data
+        if 'X' not in train_dict.keys():
+            raise ValueError('No training data found in train_dict')
+
+        if 'y' not in train_dict.keys():
+            raise ValueError('Instance masks are required for the '
+                             'SemanticMovieIterator')
+
         X, y = train_dict['X'], train_dict['y']
+
         if X.shape[0] != y.shape[0]:
             raise ValueError('Training batches and labels should have the same'
                              'length. Found X.shape: {} y.shape: {}'.format(
@@ -436,10 +462,6 @@ class SemanticMovieIterator(Iterator):
             raise ValueError('Input data in `SemanticMovieIterator` '
                              'should have rank 5. You passed an array '
                              'with shape', X.shape)
-
-        if y is None:
-            raise ValueError('Instance masks are required for the '
-                             'SemanticIterator')
 
         self.x = np.asarray(X, dtype=K.floatx())
         self.y = np.asarray(y, dtype='int32')
@@ -453,6 +475,9 @@ class SemanticMovieIterator(Iterator):
         self.movie_data_generator = movie_data_generator
         self.data_format = data_format
         self.min_objects = min_objects
+        self.save_to_dir = save_to_dir
+        self.save_prefix = save_prefix
+        self.save_format = save_format
 
         self.y_semantic_list = []  # optional semantic segmentation targets
 
@@ -497,7 +522,9 @@ class SemanticMovieIterator(Iterator):
                                 for y in self.y_semantic_list]
 
         super(SemanticMovieIterator, self).__init__(
-            self.x.shape[0], batch_size, shuffle, seed)
+            self.x.shape[0], batch_size, shuffle, seed,
+            save_to_dir=save_to_dir, save_prefix=save_prefix,
+            save_format=save_format)
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.data_format == 'channels_first':
@@ -670,11 +697,19 @@ class SemanticMovieGenerator(ImageDataGenerator):
             batch_size: int (default: 1).
             shuffle: boolean (default: True).
             seed: int (default: None).
+            save_to_dir (str): Optional directory where to save the pictures
+                being yielded, in a viewable format. This is useful
+                for visualizing the random transformations being
+                applied, for debugging purposes.
+            save_prefix (str): Prefix to use for saving sample
+                images (if save_to_dir is set).
+            save_format (str): Format to use for saving sample images
+                (if save_to_dir is set).
 
         Returns:
-            An Iterator yielding tuples of (x, y) where x is a numpy array
-            of image data and y is a list of numpy arrays of transformed
-            masks.
+            A SemanticMovieIterator yielding tuples of (x, y) where x is a
+            numpy array of image data and y is a list of numpy arrays of
+            transformed masks.
         """
         return SemanticMovieIterator(
             train_dict,
@@ -686,7 +721,10 @@ class SemanticMovieGenerator(ImageDataGenerator):
             shuffle=shuffle,
             min_objects=min_objects,
             seed=seed,
-            data_format=self.data_format)
+            data_format=self.data_format,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format)
 
     def standardize(self, x):
         """Apply the normalization configuration to a batch of inputs.
