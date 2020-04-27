@@ -28,6 +28,13 @@ deepcell.applications.nuclear_segmentation module
     :undoc-members:
     :show-inheritance:
 
+deepcell.applications.multiplex_segmentation
+--------------------------------------------
+.. automodule:: deepcell.applications.multiplex_segmentation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 deepcell.applications.cell_tracking module
 ------------------------------------------
 .. automodule:: deepcell.applications.cell_tracking
