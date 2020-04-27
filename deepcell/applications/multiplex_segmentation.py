@@ -164,8 +164,8 @@ class MultiplexSegmentation(Application):
             ValueError: Input data must match required number of channels of application
 
         Returns:
-            np.array: Model output
             np.array: Labeled image
+            np.array: Model output
         """
         return self._predict_segmentation(image,
                                           batch_size=batch_size,

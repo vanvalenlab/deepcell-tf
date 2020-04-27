@@ -242,17 +242,13 @@ class Application(object):
 
         # Resize if same is false
         if not same:
-            # cv2.resize only supports float so change dtype and cast back after resize
-            intype = image.dtype
             # Resize function only takes the x,y dimensions for shape
             new_shape = original_shape[1:-1]
             # Flip order of shape axes to prevent transpose of data
             new_shape = new_shape[::-1]
-            image = resize(image.astype('float32'),
+            image = resize(image,
                            new_shape, data_format='channels_last',
-                           data_type='y')
-            image = image.astype(intype)
-
+                           labeled_image=True)
         return image
 
     def _predict_segmentation(self,
@@ -279,6 +275,8 @@ class Application(object):
         Raises:
             ValueError: Input data must match required rank of the application, calculated as
                 one dimension more (batch dimension) than expected by the model
+
+            ValueError: Input data must match required number of channels of application
 
         Returns:
             np.array: Labeled image

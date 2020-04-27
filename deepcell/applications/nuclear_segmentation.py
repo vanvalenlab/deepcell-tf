@@ -161,6 +161,8 @@ class NuclearSegmentation(Application):
             ValueError: Input data must match required rank of the application, calculated as
                 one dimension more (batch dimension) than expected by the model
 
+            ValueError: Input data must match required number of channels of application
+
         Returns:
             np.array: Labeled image
         """
