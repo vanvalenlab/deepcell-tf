@@ -55,3 +55,5 @@ class TestMultiplexSegmentation(test.TestCase):
         y_label, y_output = self.app.predict(x)
 
         self.assertEqual(x.shape[:-1], y_label.shape[:-1])
+        self.assertEqual(len(y_output), 4)
+        self.assertEqual(y_output[0].shape[:-1], x.shape[:-1])
