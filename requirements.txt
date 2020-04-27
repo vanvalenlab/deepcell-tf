@@ -12,4 +12,4 @@ opencv-python>=3.4.2.17,<4
 cython>=0.28
 pathlib==1.0.1
 deepcell-tracking>=0.2.4
-deepcell-toolbox>=0.3.0
+git+https://github.com/vanvalenlab/deepcell-toolbox.git@resize_labels

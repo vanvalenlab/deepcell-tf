@@ -249,7 +249,8 @@ class Application(object):
             # Flip order of shape axes to prevent transpose of data
             new_shape = new_shape[::-1]
             image = resize(image.astype('float32'),
-                           new_shape, data_format='channels_last')
+                           new_shape, data_format='channels_last',
+                           data_type='y')
             image = image.astype(intype)
 
         return image
