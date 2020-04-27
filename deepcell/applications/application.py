@@ -309,7 +309,6 @@ class Application(object):
 
         # Untile images
         self.output_images = self._untile_output(output_tiles, tiles_info)
-        #print('self output images is {}'.format(self.output_images.shape))
 
         # Postprocess predictions to create label image
         label_image = self._postprocess(self.output_images, **postprocess_kwargs)

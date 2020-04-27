@@ -33,7 +33,7 @@ import os
 
 from tensorflow.python.keras.utils.data_utils import get_file
 
-from deepcell_toolbox.deep_watershed import deep_watershed
+from deepcell_toolbox.deep_watershed import deep_watershed_mibi
 
 from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
@@ -132,7 +132,7 @@ class MultiplexSegmentation(Application):
                                                     model_image_shape=model_image_shape,
                                                     model_mpp=2.0,
                                                     preprocessing_fn=None,
-                                                    postprocessing_fn=deep_watershed,
+                                                    postprocessing_fn=deep_watershed_mibi,
                                                     dataset_metadata=self.dataset_metadata,
                                                     model_metadata=self.model_metadata)
 
