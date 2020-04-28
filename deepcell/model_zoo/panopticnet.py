@@ -36,8 +36,8 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D, Conv3D
 from tensorflow.python.keras.layers import TimeDistributed, ConvLSTM2D
-from tensorflow.python.keras.layers import Input, Concatenate
-from tensorflow.python.keras.layers import Activation, BatchNormalization, Softmax
+from tensorflow.python.keras.layers import Input, Concatenate, Softmax
+from tensorflow.python.keras.layers import Activation, BatchNormalization
 from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
 
 from deepcell.layers import ConvGRU2D
@@ -140,18 +140,29 @@ def semantic_upsample(x, n_upsample, n_filters=64, ndim=2,
     conv_kernel = (3, 3) if ndim == 2 else (1, 3, 3)
     upsampling = UpSampling2D if ndim == 2 else UpSampling3D
     size = (2, 2) if ndim == 2 else (1, 2, 2)
+
     if n_upsample > 0:
         for i in range(n_upsample):
+            # Define kwargs for upsampling layer
+            upsampling_kwargs = {
+                'size': size,
+                'name': 'upsampling_{}_semantic'
+                        '_upsample_{}'.format(i, semantic_id),
+                'interpolation': interpolation
+            }
+            if ndim > 2:
+                del upsampling_kwargs['interpolation']
+
             x = conv(n_filters, conv_kernel, strides=1,
                      padding='same', data_format='channels_last',
-                     name='conv_{}_semantic_upsample_{}'.format(i, semantic_id))(x)
-            x = upsampling(size=size,
-                           name='upsampling_{}_semantic_upsample_{}'.format(i, semantic_id),
-                           interpolation=interpolation)(x)
+                     name='conv_{}_semantic_'
+                          'upsample_{}'.format(i, semantic_id))(x)
+            x = upsampling(**upsampling_kwargs)(x)
     else:
         x = conv(n_filters, conv_kernel, strides=1,
                  padding='same', data_format='channels_last',
-                 name='conv_final_semantic_upsample_{}'.format(semantic_id))(x)
+                 name='conv_final_semantic_'
+                      'upsample_{}'.format(semantic_id))(x)
     return x
 
 
@@ -175,8 +186,8 @@ def __create_semantic_head(pyramid_dict,
         semantic_id (int): Defaults to 0.
         ndim (int): Defaults to 2, 3d supported.
         include_top (bool): Defaults to False.
-        target_level (int, optional): Defaults to 2. The level we need to reach.
-            Performs 2x upsampling until we're at the target level.
+        target_level (int, optional): The level we need to reach. Performs
+            2x upsampling until we're at the target level. Defaults to 2.
         interpolation (str): Choice of interpolation mode for upsampling
             layers from ['bilinear', 'nearest']. Defaults to bilinear.
 
@@ -238,7 +249,8 @@ def __create_semantic_head(pyramid_dict,
              name='conv_1_semantic_{}'.format(semantic_id))(x)
 
     if include_top:
-        x = Softmax(axis=channel_axis, name='semantic_{}'.format(semantic_id))(x)
+        x = Softmax(axis=channel_axis,
+                    name='semantic_{}'.format(semantic_id))(x)
     else:
         x = Activation('relu', name='semantic_{}'.format(semantic_id))(x)
 
@@ -405,6 +417,7 @@ def PanopticNet(backbone,
     pyramid_dict = create_pyramid_features(backbone_dict_reduced,
                                            ndim=ndim,
                                            lite=lite,
+                                           interpolation=interpolation,
                                            upsample_type='upsampling2d')
 
     features = [pyramid_dict[key] for key in pyramid_levels]
@@ -423,7 +436,8 @@ def PanopticNet(backbone,
         semantic_head_list.append(create_semantic_head(
             pyramid_dict, n_classes=num_semantic_classes[i],
             input_target=inputs, target_level=target_level,
-            semantic_id=i, ndim=ndim, **kwargs))
+            semantic_id=i, ndim=ndim, interpolation=interpolation,
+            **kwargs))
 
     outputs = semantic_head_list
 
