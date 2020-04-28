@@ -341,23 +341,24 @@ class SemanticDataGenerator(ImageDataGenerator):
             shuffle=shuffle,
             min_objects=min_objects,
             seed=seed,
+            data_format=self.data_format,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
-            data_format=self.data_format)
+            save_format=save_format)
 
     def random_transform(self, x, y=None, seed=None):
         """Applies a random transformation to an image.
 
         Args:
-            x: 3D tensor or list of 3D tensors,
+            x (numpy.array): 3D tensor or list of 3D tensors,
                 single image.
-            y: 3D tensor or list of 3D tensors,
+            y (numpy.array): 3D tensor or list of 3D tensors,
                 label mask(s) for x, optional.
             seed (int): Random seed.
 
         Returns:
-            A randomly transformed version of the input (same shape).
-            If y is passed, it is transformed if necessary and returned.
+            numpy.array: A randomly transformed copy of the input (same shape).
+                If y is passed, it is transformed if necessary and returned.
         """
         params = self.get_random_transform(x.shape, seed)
 
@@ -401,9 +402,10 @@ class SemanticMovieIterator(Iterator):
 
     Args:
         train_dict (dict): Dictionary consisting of numpy arrays for X and y.
-        movie_data_generator: Instance of SemanticMovieGenerator
+        movie_data_generator (SemanticMovieGenerator): SemanticMovieGenerator
             to use for random transformations and normalization.
         batch_size (int): Size of a batch.
+        frames_per_batch (int): Size of z axis in generated batches.
         shuffle (boolean): Whether to shuffle the data between epochs.
         seed (int): Random seed for data shuffling.
         min_objects (int): Minumum number of objects allowed per image.
@@ -721,6 +723,7 @@ class SemanticMovieGenerator(ImageDataGenerator):
         Args:
             train_dict (dict): Consists of numpy arrays for X and y.
             batch_size (int): Size of a batch.
+            frames_per_batch (int): Size of z axis in generated batches.
             shuffle (bool): Whether to shuffle the data between epochs.
             seed (int): Random seed for data shuffling.
             min_objects (int): Images with fewer than 'min_objects' are ignored.
@@ -735,8 +738,8 @@ class SemanticMovieGenerator(ImageDataGenerator):
 
         Returns:
             SemanticMovieIterator: An Iterator yielding tuples of (x, y)
-            where x is a numpy array of image data and y is a list of
-            numpy arrays of transformed masks.
+                where x is a numpy array of image data and y is a list of
+                numpy arrays of transformed masks.
         """
         return SemanticMovieIterator(
             train_dict,
@@ -757,10 +760,10 @@ class SemanticMovieGenerator(ImageDataGenerator):
         """Apply the normalization configuration to a batch of inputs.
 
         Args:
-            x (tensor): batch of inputs to be normalized.
+            x (numpy.array): batch of inputs to be normalized.
 
         Returns:
-            tensor: The normalized inputs.
+            numpy.array: The normalized inputs.
         """
         # TODO: standardize each image, not all frames at once
         if self.preprocessing_function:
@@ -881,13 +884,13 @@ class SemanticMovieGenerator(ImageDataGenerator):
         """Applies a random transformation to an image.
 
         Args:
-            x (tensor): 4D tensor or list of 4D tensors.
-            y (tensor): 4D tensor or list of 4D tensors,
+            x (numpy.array): 4D tensor or list of 4D tensors.
+            y (numpy.array): 4D tensor or list of 4D tensors,
                 label mask(s) for x, optional.
             seed (int): Random seed.
 
         Returns:
-            tensor:  A randomly transformed version of the input (same shape).
+            numpy.array: A randomly transformed copy of the input (same shape).
                 If y is passed, it is transformed if necessary and returned.
         """
         self.row_axis -= 1
