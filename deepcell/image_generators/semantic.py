@@ -71,11 +71,6 @@ class SemanticIterator(Iterator):
             images (if save_to_dir is set).
         save_format (str): Format to use for saving sample images
             (if save_to_dir is set).
-
-    Returns:
-        Iterator yielding data X and y, where y is a list containing
-        transformed masks. Data is randomly augmented using
-        image_data_generator.
     """
     def __init__(self,
                  train_dict,
@@ -91,10 +86,10 @@ class SemanticIterator(Iterator):
                  save_prefix='',
                  save_format='png'):
         # Load data
-        if 'X' not in train_dict.keys():
+        if 'X' not in train_dict:
             raise ValueError('No training data found in train_dict')
 
-        if 'y' not in train_dict.keys():
+        if 'y' not in train_dict:
             raise ValueError('Instance masks are required for the '
                              'SemanticIterator')
 
@@ -411,6 +406,7 @@ class SemanticMovieIterator(Iterator):
         batch_size (int): Size of a batch.
         shuffle (boolean): Whether to shuffle the data between epochs.
         seed (int): Random seed for data shuffling.
+        min_objects (int): Minumum number of objects allowed per image.
         data_format (str): One of 'channels_first', 'channels_last'.
         save_to_dir (str): Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
@@ -420,11 +416,6 @@ class SemanticMovieIterator(Iterator):
             images (if save_to_dir is set).
         save_format (str): Format to use for saving sample images
             (if save_to_dir is set).
-
-    Returns:
-        Iterator yielding data X and y, where y is a list containing
-        transformed masks. Data is randomly augmented using
-        movie_data_generator.
     """
 
     def __init__(self,
@@ -442,10 +433,10 @@ class SemanticMovieIterator(Iterator):
                  save_prefix='',
                  save_format='png'):
         # Load data
-        if 'X' not in train_dict.keys():
+        if 'X' not in train_dict:
             raise ValueError('No training data found in train_dict')
 
-        if 'y' not in train_dict.keys():
+        if 'y' not in train_dict:
             raise ValueError('Instance masks are required for the '
                              'SemanticMovieIterator')
 
@@ -728,10 +719,11 @@ class SemanticMovieGenerator(ImageDataGenerator):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
-            train_dict: dictionary of X and y tensors. Both should be rank 4.
-            batch_size: int (default: 1).
-            shuffle: boolean (default: True).
-            seed: int (default: None).
+            train_dict (dict): Consists of numpy arrays for X and y.
+            batch_size (int): Size of a batch.
+            shuffle (bool): Whether to shuffle the data between epochs.
+            seed (int): Random seed for data shuffling.
+            min_objects (int): Images with fewer than 'min_objects' are ignored.
             save_to_dir (str): Optional directory where to save the pictures
                 being yielded, in a viewable format. This is useful
                 for visualizing the random transformations being
@@ -742,9 +734,9 @@ class SemanticMovieGenerator(ImageDataGenerator):
                 (if save_to_dir is set).
 
         Returns:
-            A SemanticMovieIterator yielding tuples of (x, y) where x is a
-            numpy array of image data and y is a list of numpy arrays of
-            transformed masks.
+            SemanticMovieIterator: An Iterator yielding tuples of (x, y)
+            where x is a numpy array of image data and y is a list of
+            numpy arrays of transformed masks.
         """
         return SemanticMovieIterator(
             train_dict,
@@ -889,15 +881,14 @@ class SemanticMovieGenerator(ImageDataGenerator):
         """Applies a random transformation to an image.
 
         Args:
-            x: 4D tensor or list of 4D tensors,
-                single image.
-            y: 4D tensor or list of 4D tensors,
+            x (tensor): 4D tensor or list of 4D tensors.
+            y (tensor): 4D tensor or list of 4D tensors,
                 label mask(s) for x, optional.
-            seed: Random seed.
+            seed (int): Random seed.
 
         Returns:
-            A randomly transformed version of the input (same shape).
-            If y is passed, it is transformed if necessary and returned.
+            tensor:  A randomly transformed version of the input (same shape).
+                If y is passed, it is transformed if necessary and returned.
         """
         self.row_axis -= 1
         self.col_axis -= 1
