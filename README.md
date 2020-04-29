@@ -51,12 +51,12 @@ Once `nvidia-docker` is installed, run the following command:
 # Start a GPU enabled container on one GPUs
 docker run --gpus '"device=0"' -it --rm \
     -p 8888:8888 \
-    -v $PWD/scripts:/notebooks \
+    -v $PWD/notebooks:/notebooks \
     -v $PWD/data:/data \
     vanvalenlab/deepcell-tf:0.4.0-gpu
 ```
 
-This will spin up a docker container with `deepcell-tf` installed and start a jupyter session using the default port 8888. This command also mounts a data folder ($PWD/data) and a scripts folder ($PWD/scripts) to the docker container so it can access data and Juyter notebooks stored on the host workstation. For any saved data or models to persist once the container is shut down, or be accessible outside of the container in general, it must be saved in these mounted directories. "The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 81:8888`. If you run across any errors getting started, you should either refer to the `deepcell-tf` for developers section or raise an issue on GitHub.
+This will spin up a docker container with `deepcell-tf` installed and start a jupyter session using the default port 8888. This command also mounts a data folder ($PWD/data) and a notebooks folder ($PWD/notebooks) to the docker container so it can access data and Juyter notebooks stored on the host workstation. For any saved data or models to persist once the container is shut down, or be accessible outside of the container in general, it must be saved in these mounted directories. "The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 81:8888`. If you run across any errors getting started, you should either refer to the `deepcell-tf` for developers section or raise an issue on GitHub.
 
 For examples of how to train models with the 'deepcell-tf' library, check out the following notebooks:
 
@@ -88,7 +88,7 @@ docker run --gpus '"device=0"' -it \
 $USER/deepcell-tf:latest
 ```
 
-It can also be helpful to mount the local copy of the repository and the scripts to speed up local development. However, if you are going to mount a local version of the repository, you must first run the docker image without the local repository mounted so that the C extensions can be compiled and then copied over to your local version.
+It can also be helpful to mount the local copy of the repository and the notebooks to speed up local development. However, if you are going to mount a local version of the repository, you must first run the docker image without the local repository mounted so that the C extensions can be compiled and then copied over to your local version.
 
 ```bash
 # First run the docker image without mounting externally
@@ -111,7 +111,7 @@ docker kill $container_id
 docker run --gpus '"device=0"' -it \
     -p 8888:8888 \
     -v $PWD/deepcell:/usr/local/lib/python3.6/dist-packages/deepcell/ \
-    -v $PWD/scripts:/notebooks \
+    -v $PWD/notebooks:/notebooks \
     -v /$PWD:/data \
     $USER/deepcell-tf:latest
 ```

@@ -39,7 +39,7 @@ import nbformat as nbf
 
 # Create Visual Notebook
 def make_notebook(model_output,
-                  output_dir=os.path.join('scripts', 'generated_notebooks')):
+                  output_dir=os.path.join('notebooks', 'generated_notebooks')):
     """Create a notebook that will help visualize the output of a
     deep learning model.
 

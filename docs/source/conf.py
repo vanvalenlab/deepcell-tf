@@ -236,7 +236,7 @@ nbsphinx_execute = 'never'
 exclude_patterns = ['_build', '**.ipynb_checkpoints']
 
 nbsphinx_prolog = r"""
-{% set docname = 'scripts/' + env.doc2path(env.docname, base=None)|replace("nblink", "ipynb") %}
+{% set docname = 'notebooks/' + env.doc2path(env.docname, base=None)|replace("nblink", "ipynb") %}
 {% set doclink = "https://github.com/vanvalenlab/deepcell-tf/blob/master/{{ docname }}" %}
 
 .. raw:: html
