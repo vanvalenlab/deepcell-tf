@@ -251,23 +251,18 @@ class Application(object):
     def _run_model(self,
                    image,
                    batch_size=4,
-                   image_mpp=None,
                    preprocess_kwargs={}):
         """Run the model to generate output probabilities on the data.
 
         Args:
             image (np.array): Input image with shape `[batch, x, y, channel]`
             batch_size (int, optional): Number of images to predict on per batch. Defaults to 4.
-            image_mpp (float, optional): Microns per pixel for the input image. Defaults to None.
             preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
                 Defaults to {}.
 
         Returns:
             np.array: Model outputs
         """
-
-        # Resize image, returns unmodified if appropriate
-        image = self._resize_input(image, image_mpp)
 
         # Preprocess image if function is defined
         image = self._preprocess(image, **preprocess_kwargs)
@@ -325,8 +320,11 @@ class Application(object):
                              'Input data only has {} channels'.format(
                                  self.required_channels, image.shape[-1]))
 
+        # Resize image, returns unmodified if appropriate
+        image = self._resize_input(image, image_mpp)
+
         # Generate model outputs
-        output_images = self._run_model(image=image, batch_size=batch_size, image_mpp=image_mpp,
+        output_images = self._run_model(image=image, batch_size=batch_size,
                                         preprocess_kwargs=preprocess_kwargs)
 
         # Postprocess predictions to create label image
