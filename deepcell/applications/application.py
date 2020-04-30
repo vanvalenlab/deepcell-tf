@@ -251,6 +251,41 @@ class Application(object):
                            labeled_image=True)
         return image
 
+    def _run_model(self,
+                   image,
+                   batch_size=4,
+                   image_mpp=None,
+                   preprocess_kwargs={}):
+        """Run the model to generate output probabilities on the data.
+
+            Args:
+                image (np.array): Input image with shape `[batch, x, y, channel]`
+                batch_size (int, optional): Number of images to predict on per batch. Defaults to 4.
+                image_mpp (float, optional): Microns per pixel for the input image. Defaults to None.
+                preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
+                    Defaults to {}.
+
+            Returns:
+                np.array: Model outputs
+            """
+
+        # Resize image, returns unmodified if appropriate
+        image, original_shape = self._resize_input(image, image_mpp)
+
+        # Preprocess image if function is defined
+        image = self._preprocess(image, **preprocess_kwargs)
+
+        # Tile images, raises error if the image is not 4d
+        tiles, tiles_info = self._tile_input(image)
+
+        # Run images through model
+        output_tiles = self.model.predict(tiles, batch_size=batch_size)
+
+        # Untile images
+        output_images = self._untile_output(output_tiles, tiles_info)
+
+        return output_images
+
     def _predict_segmentation(self,
                               image,
                               batch_size=4,
@@ -293,23 +328,12 @@ class Application(object):
                              'Input data only has {} channels'.format(
                                  self.required_channels, image.shape[-1]))
 
-        # Resize image, returns unmodified if appropriate
-        image, original_shape = self._resize_input(image, image_mpp)
-
-        # Preprocess image if function is defined
-        image = self._preprocess(image, **preprocess_kwargs)
-
-        # Tile images, raises error if the image is not 4d
-        tiles, tiles_info = self._tile_input(image)
-
-        # Run images through model
-        output_tiles = self.model.predict(tiles, batch_size=batch_size)
-
-        # Untile images
-        self.output_images = self._untile_output(output_tiles, tiles_info)
+        # Generate model outputs
+        output_images = self._run_model(image=image, batch_size=batch_size, image_mpp=image_mpp,
+                                        preprocess_kwargs=preprocess_kwargs)
 
         # Postprocess predictions to create label image
-        label_image = self._postprocess(self.output_images, **postprocess_kwargs)
+        label_image = self._postprocess(output_images, **postprocess_kwargs)
 
         # Resize label_image back to original resolution if necessary
         label_image = self._resize_output(label_image, original_shape)

@@ -220,6 +220,14 @@ class TestApplication(test.TestCase):
         y = app._resize_output(x, original_shape)
         self.assertEqual(original_shape, y.shape)
 
+    def test_run_model(self):
+        model = DummyModel()
+        app = Application(model)
+
+        x = np.random.rand(1, 128, 128, 1)
+        y = app._run_model(x)
+        self.assertEqual(x.shape, y.shape)
+
     def test_predict_segmentation(self):
 
         model = DummyModel()
