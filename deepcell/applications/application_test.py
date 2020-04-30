@@ -226,7 +226,7 @@ class TestApplication(test.TestCase):
 
         x = np.random.rand(1, 128, 128, 1)
         y = app._run_model(x)
-        self.assertEqual(x.shape, y.shape)
+        self.assertEqual(x.shape, y[0].shape)
 
     def test_predict_segmentation(self):
 
