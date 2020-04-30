@@ -255,16 +255,16 @@ class Application(object):
                    preprocess_kwargs={}):
         """Run the model to generate output probabilities on the data.
 
-            Args:
-                image (np.array): Input image with shape `[batch, x, y, channel]`
-                batch_size (int, optional): Number of images to predict on per batch. Defaults to 4.
-                image_mpp (float, optional): Microns per pixel for the input image. Defaults to None.
-                preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
-                    Defaults to {}.
+        Args:
+            image (np.array): Input image with shape `[batch, x, y, channel]`
+            batch_size (int, optional): Number of images to predict on per batch. Defaults to 4.
+            image_mpp (float, optional): Microns per pixel for the input image. Defaults to None.
+            preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
+                Defaults to {}.
 
-            Returns:
-                np.array: Model outputs
-            """
+        Returns:
+            np.array: Model outputs
+        """
 
         # Resize image, returns unmodified if appropriate
         image = self._resize_input(image, image_mpp)
