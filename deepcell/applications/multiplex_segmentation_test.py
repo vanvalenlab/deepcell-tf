@@ -41,7 +41,7 @@ class TestMultiplexSegmentation(test.TestCase):
 
         self.app = MultiplexSegmentation(use_pretrained_weights=False)
 
-    def test_nuclear_app(self):
+    def test_multiplex_app(self):
 
         # Check shape parameters
         shape = self.app.model.output_shape
@@ -50,10 +50,7 @@ class TestMultiplexSegmentation(test.TestCase):
         self.assertEqual(len(shape), 4)
 
     def test_predict(self):
-
         x = np.random.rand(1, 500, 500, 2)
-        y_label, y_output = self.app.predict(x)
+        y = self.app.predict(x)
 
-        self.assertEqual(x.shape[:-1], y_label.shape[:-1])
-        self.assertEqual(len(y_output), 4)
-        self.assertEqual(y_output[0].shape[:-1], x.shape[:-1])
+        self.assertEqual(x.shape[:-1], y.shape[:-1])

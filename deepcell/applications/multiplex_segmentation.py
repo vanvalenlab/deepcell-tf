@@ -171,5 +171,4 @@ class MultiplexSegmentation(Application):
                                           batch_size=batch_size,
                                           image_mpp=image_mpp,
                                           preprocess_kwargs=preprocess_kwargs,
-                                          postprocess_kwargs=postprocess_kwargs), \
-            self.output_images
+                                          postprocess_kwargs=postprocess_kwargs)
