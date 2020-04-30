@@ -243,8 +243,8 @@ class Application(object):
             new_shape = original_shape[1:-1]
             # Flip order of shape axes to prevent transpose of data
             new_shape = new_shape[::-1]
-            image = resize(image,
-                           new_shape, data_format='channels_last',
+            image = resize(image, new_shape,
+                           data_format='channels_last',
                            labeled_image=True)
         return image
 
