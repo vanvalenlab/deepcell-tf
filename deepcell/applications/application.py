@@ -100,9 +100,6 @@ class Application(object):
             array: Input image resized if necessary to match `model_mpp`
         """
 
-        # Store original image size for use later
-        original_shape = image.shape
-
         # Don't scale the image if mpp is the same or not defined
         if image_mpp not in {None, self.model_mpp}:
             scale_factor = image_mpp / self.model_mpp
@@ -110,7 +107,7 @@ class Application(object):
                          int(image.shape[2] / scale_factor))
             image = resize(image, new_shape, data_format='channels_last')
 
-        return image, original_shape
+        return image
 
     def _preprocess(self, image, **kwargs):
         """Preprocess image if `preprocessing_fn` is defined.
@@ -270,7 +267,7 @@ class Application(object):
             """
 
         # Resize image, returns unmodified if appropriate
-        image, original_shape = self._resize_input(image, image_mpp)
+        image = self._resize_input(image, image_mpp)
 
         # Preprocess image if function is defined
         image = self._preprocess(image, **preprocess_kwargs)
