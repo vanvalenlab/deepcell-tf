@@ -85,12 +85,12 @@ class TestApplication(test.TestCase):
 
         # image_mpp > model_mpp --> resize
         y, original_shape = app._resize_input(x, image_mpp=2.1 * kwargs['model_mpp'])
-        self.assertEqual(2.1, np.round(x.shape[1] / y.shape[1], decimals=1))
+        self.assertEqual(2.1, np.round(y.shape[1] / x.shape[1], decimals=1))
         self.assertEqual(x.shape, original_shape)
 
         # image_mpp < model_mpp --> resize
         y, original_shape = app._resize_input(x, image_mpp=0.7 * kwargs['model_mpp'])
-        self.assertEqual(0.7, np.round(x.shape[1] / y.shape[1], decimals=1))
+        self.assertEqual(0.7, np.round(y.shape[1] / x.shape[1], decimals=1))
         self.assertEqual(x.shape, original_shape)
 
     def test_preprocess(self):
