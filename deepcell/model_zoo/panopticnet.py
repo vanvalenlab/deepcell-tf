@@ -43,6 +43,7 @@ from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
 from deepcell.layers import ConvGRU2D
 from deepcell.layers import ImageNormalization2D, Location2D
 from deepcell.model_zoo.fpn import __create_pyramid_features
+from deepcell.model_zoo.fpn import __create_semantic_head
 from deepcell.utils.backbone_utils import get_backbone
 from deepcell.utils.misc_utils import get_sorted_keys
 
@@ -274,6 +275,7 @@ def PanopticNet(backbone,
                 location=True,
                 use_imagenet=True,
                 lite=False,
+                upsample_type='upsampling2d',
                 interpolation='bilinear',
                 name='panopticnet',
                 **kwargs):
@@ -301,6 +303,9 @@ def PanopticNet(backbone,
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
         lite (bool): Whether to use a depthwise conv in the feature pyramid
             rather than regular conv. Defaults to False.
+        upsample_type (str): Choice of upsampling layer to use from
+            ['upsamplelike', 'upsampling2d', 'upsampling3d']. Defaults to
+            'upsampling2d'.
         interpolation (str): Choice of interpolation mode for upsampling
             layers from ['bilinear', 'nearest']. Defaults to bilinear.
         pooling (str): optional pooling mode for feature extraction
@@ -418,7 +423,7 @@ def PanopticNet(backbone,
                                            ndim=ndim,
                                            lite=lite,
                                            interpolation=interpolation,
-                                           upsample_type='upsampling2d')
+                                           upsample_type=upsample_type)
 
     features = [pyramid_dict[key] for key in pyramid_levels]
 
@@ -436,8 +441,8 @@ def PanopticNet(backbone,
         semantic_head_list.append(create_semantic_head(
             pyramid_dict, n_classes=num_semantic_classes[i],
             input_target=inputs, target_level=target_level,
-            semantic_id=i, ndim=ndim, interpolation=interpolation,
-            **kwargs))
+            semantic_id=i, ndim=ndim, upsample_type=upsample_type,
+            interpolation=interpolation, **kwargs))
 
     outputs = semantic_head_list
 
