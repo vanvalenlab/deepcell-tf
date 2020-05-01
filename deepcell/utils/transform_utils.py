@@ -228,18 +228,29 @@ def distance_transform_continuous_movie(mask, erosion_width=None):
     return distances  # minimum distance should be 0, not 1
 
 
-def centroid_transform_continuous_2d(mask, erosion_width=None, alpha=0.1):
+def centroid_transform_continuous_2d(mask, erosion_width=None,
+                                     alpha=0.1, beta=1):
     """Transform a label mask into a continuous centroid value.
 
     Args:
         mask (numpy.array): a label mask (y data)
         erosion_width (int): number of pixels to erode edges of each labels
-        alpha (float): coefficent to reduce the magnitude of the distance value.
+        alpha (float, str): coefficent to reduce the magnitude of the distance
+            value. If 'auto', determines alpha for each cell based on the cell
+            area. Defaults to 0.1.
+        beta (float): scale parameter that is used when alpha is set to auto.
+            Defaults to 1.
 
     Returns:
         numpy.array: a mask of same shape as input mask,
             with each label being a distance class from 1 to bins
     """
+
+    # Check input to alpha
+    if isinstance(alpha, str):
+        if alpha.lower() != 'auto':
+            raise ValueError('alpha must be set to "auto"')
+
     mask = np.squeeze(mask)
     mask = erode_edges(mask, erosion_width)
 
@@ -253,7 +264,14 @@ def centroid_transform_continuous_2d(mask, erosion_width=None, alpha=0.1):
         coords = prop.coords
         center = prop.weighted_centroid
         distance_to_center = np.sum((coords - center) ** 2, axis=1)
-        center_transform = 1 / (1 + alpha * distance_to_center)
+
+        # Determine alpha to use
+        if str(alpha).lower() == 'auto':
+            _alpha = 1 / np.sqrt(prop.area)
+        else:
+            _alpha = float(alpha)
+
+        center_transform = 1 / (1 + beta * _alpha * distance_to_center)
         coords_x = coords[:, 0]
         coords_y = coords[:, 1]
         inner_distance[coords_x, coords_y] = center_transform
@@ -261,13 +279,15 @@ def centroid_transform_continuous_2d(mask, erosion_width=None, alpha=0.1):
     return inner_distance
 
 
-def centroid_transform_continuous_movie(mask, erosion_width=None, alpha=0.1):
+def centroid_transform_continuous_movie(mask, erosion_width=None,
+                                        alpha=0.1, beta=1):
     """Transform a label mask into a continuous centroid value.
 
     Args:
         mask (numpy.array): a label mask (y data)
         erosion_width (int): number of pixels to erode edges of each labels
-        alpha (float): coefficent to reduce the magnitude of the distance value.
+        alpha (float): coefficent to reduce the magnitude of the distance
+            value.
 
     Returns:
         numpy.array: a mask of same shape as input mask,
@@ -290,7 +310,14 @@ def centroid_transform_continuous_movie(mask, erosion_width=None, alpha=0.1):
             coords = prop.coords
             center = prop.weighted_centroid
             distance_to_center = np.sum((coords - center) ** 2, axis=1)
-            center_transform = 1 / (1 + alpha * distance_to_center)
+
+            # Determine alpha to use
+            if str(alpha).lower() == 'auto':
+                _alpha = 1 / np.sqrt(prop.area)
+            else:
+                _alpha = float(alpha)
+
+            center_transform = 1 / (1 + beta * _alpha * distance_to_center)
             coords_x = coords[:, 0]
             coords_y = coords[:, 1]
             inner_distance[coords_x, coords_y] = center_transform

@@ -133,8 +133,14 @@ def create_pyramid_level(backbone_input,
         else:
             upsampling = UpSampling2D if ndim == 2 else UpSampling3D
             size = (2, 2) if ndim == 2 else (1, 2, 2)
-            pyramid_upsample = upsampling(size=size, name=upsample_name,
-                                          interpolation=interpolation)(pyramid)
+            upsampling_kwargs = {
+                'size': size,
+                'name': upsample_name,
+                'interpolation': interpolation
+            }
+            if ndim > 2:
+                del upsampling_kwargs['interpolation']
+            pyramid_upsample = upsampling(**upsampling_kwargs)(pyramid)
     else:
         pyramid_upsample = None
 

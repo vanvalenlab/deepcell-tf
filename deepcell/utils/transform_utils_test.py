@@ -243,12 +243,17 @@ class TransformUtilsTest(test.TestCase):
         # pylint: disable=E1136
         K.set_image_data_format('channels_last')
         centroids = transform_utils.centroid_transform_continuous_movie(img)
-        print(centroids.shape)
+        self.assertEqual(str(centroids.dtype), str(K.floatx()))
+        self.assertEqual(centroids.shape, img.shape[:-1])
+
+        centroids = transform_utils.centroid_transform_continuous_movie(
+            img, alpha='auto')
         self.assertEqual(str(centroids.dtype), str(K.floatx()))
         self.assertEqual(centroids.shape, img.shape[:-1])
 
         K.set_image_data_format('channels_first')
-        centroids = transform_utils.centroid_transform_continuous_movie(img)
+        centroids = transform_utils.centroid_transform_continuous_movie(
+            img, alpha='auto')
         self.assertEqual(str(centroids.dtype), str(K.floatx()))
         self.assertEqual(centroids.shape, img.shape[:-1])
 
