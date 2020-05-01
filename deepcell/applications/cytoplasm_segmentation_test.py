@@ -47,7 +47,7 @@ class TestCytoplasmSegmentation(test.TestCase):
         shape = self.app.model.output_shape
 
         self.assertIsInstance(shape, list)
-        self.assertEqual(len(shape), 3)
+        self.assertEqual(len(shape), 2)
         self.assertEqual(len(shape[0]), 4)
         self.assertEqual(len(shape[1]), 4)
         self.assertEqual(len(shape[2]), 4)
