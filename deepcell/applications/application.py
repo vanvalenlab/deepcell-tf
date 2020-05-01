@@ -207,8 +207,8 @@ class Application(object):
         # Otherwise untile
         else:
             def _process(im, tiles_info):
-                out = untile_image(im, tiles_info, model_input_shape=self.model_image_shape,
-                                   dtype=im.dtype)
+                out = untile_image(im, tiles_info,
+                                   model_input_shape=self.model_image_shape)
                 return out
 
         if isinstance(output_tiles, list):
