@@ -112,3 +112,45 @@ class PanopticNetTest(keras_parameterized.TestCase):
             self.assertEqual(len(model.output_shape), len(num_semantic_classes))
             for i, s in enumerate(num_semantic_classes):
                 self.assertEqual(model.output_shape[i][axis], s)
+
+    def test_panopticnet_bad_input(self):
+
+        norm_method = None
+
+        # not all backbones work with channels_first
+        backbone = 'featurenet'
+
+        # TODO: RetinaMask fails with channels_first
+        data_format = 'channels_last'
+
+        num_semantic_classes = [1, 3]
+
+        # non-square input
+        input_shape = (256, 512, 1)
+        with self.assertRaises(ValueError):
+            model = PanopticNet(
+                backbone=backbone,
+                input_shape=input_shape,
+                backbone_levels=['C3', 'C4', 'C5'],
+                norm_method=norm_method,
+                location=True,
+                pooling='avg',
+                num_semantic_heads=len(num_semantic_classes),
+                num_semantic_classes=num_semantic_classes,
+                use_imagenet=False,
+            )
+
+        # non power of 2 input
+        input_shape = (257, 257, 1)
+        with self.assertRaises(ValueError):
+            model = PanopticNet(
+                backbone=backbone,
+                input_shape=input_shape,
+                backbone_levels=['C3', 'C4', 'C5'],
+                norm_method=norm_method,
+                location=True,
+                pooling='avg',
+                num_semantic_heads=len(num_semantic_classes),
+                num_semantic_classes=num_semantic_classes,
+                use_imagenet=False,
+            )
