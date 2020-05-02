@@ -104,8 +104,8 @@ class Application(object):
         # Don't scale the image if mpp is the same or not defined
         if image_mpp not in {None, self.model_mpp}:
             scale_factor = image_mpp / self.model_mpp
-            new_shape = (int(image.shape[1] / scale_factor),
-                         int(image.shape[2] / scale_factor))
+            new_shape = (int(image.shape[1] * scale_factor),
+                         int(image.shape[2] * scale_factor))
             image = resize(image, new_shape, data_format='channels_last')
 
         return image, original_shape
@@ -207,8 +207,8 @@ class Application(object):
         # Otherwise untile
         else:
             def _process(im, tiles_info):
-                out = untile_image(im, tiles_info, model_input_shape=self.model_image_shape,
-                                   dtype=im.dtype)
+                out = untile_image(im, tiles_info,
+                                   model_input_shape=self.model_image_shape)
                 return out
 
         if isinstance(output_tiles, list):
