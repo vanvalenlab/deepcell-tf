@@ -74,24 +74,20 @@ class TestApplication(test.TestCase):
         x = np.random.rand(1, 500, 500, 1)
 
         # image_mpp = None --> No resize
-        y, original_shape = app._resize_input(x, image_mpp=None)
+        y = app._resize_input(x, image_mpp=None)
         self.assertEqual(x.shape, y.shape)
-        self.assertEqual(x.shape, original_shape)
 
         # image_mpp = model_mpp --> No resize
-        y, original_shape = app._resize_input(x, image_mpp=kwargs['model_mpp'])
+        y = app._resize_input(x, image_mpp=kwargs['model_mpp'])
         self.assertEqual(x.shape, y.shape)
-        self.assertEqual(x.shape, original_shape)
 
         # image_mpp > model_mpp --> resize
-        y, original_shape = app._resize_input(x, image_mpp=2.1 * kwargs['model_mpp'])
+        y = app._resize_input(x, image_mpp=2.1 * kwargs['model_mpp'])
         self.assertEqual(2.1, np.round(y.shape[1] / x.shape[1], decimals=1))
-        self.assertEqual(x.shape, original_shape)
 
         # image_mpp < model_mpp --> resize
-        y, original_shape = app._resize_input(x, image_mpp=0.7 * kwargs['model_mpp'])
+        y = app._resize_input(x, image_mpp=0.7 * kwargs['model_mpp'])
         self.assertEqual(0.7, np.round(y.shape[1] / x.shape[1], decimals=1))
-        self.assertEqual(x.shape, original_shape)
 
     def test_preprocess(self):
 
@@ -219,6 +215,14 @@ class TestApplication(test.TestCase):
         original_shape = (1, 500, 500, 1)
         y = app._resize_output(x, original_shape)
         self.assertEqual(original_shape, y.shape)
+
+    def test_run_model(self):
+        model = DummyModel()
+        app = Application(model)
+
+        x = np.random.rand(1, 128, 128, 1)
+        y = app._run_model(x)
+        self.assertEqual(x.shape, y[0].shape)
 
     def test_predict_segmentation(self):
 
