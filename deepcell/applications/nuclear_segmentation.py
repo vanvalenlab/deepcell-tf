@@ -40,8 +40,8 @@ from deepcell.model_zoo import PanopticNet
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/general_nuclear_train_batch_size_82800_resnet50_'
-                '8_epochs_c4b2167eb754923856bc84fb29074413.h5')
+                'model-weights/nuclear_0_82800_resnet50_watershed_'
+                '076bb10d832089b6a77faed1e63ad375.h5')
 
 
 class NuclearSegmentation(Application):
@@ -114,14 +114,16 @@ class NuclearSegmentation(Application):
                             num_semantic_heads=3,
                             num_semantic_classes=[1, 1, 2],
                             location=True,
-                            include_top=True)
+                            include_top=True,
+                            lite=True,
+                            interpolation='bilinear')
 
         if use_pretrained_weights:
             weights_path = get_file(
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='eb29808ef2f662fb3bcda6986e47f91a'
+                md5_hash='62b6ac21807d34dd42734f43ed20756f'
             )
 
             model.load_weights(weights_path)
