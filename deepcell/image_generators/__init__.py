@@ -67,8 +67,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     valid_transforms = {
         'pixelwise',
         'disc',
-        'watershed',
-        'watershed-cont',
+        'inner-distance',
+        'outer-distance',
         'centroid',
         'fgbg'
     }
@@ -116,9 +116,10 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask, dilation_radius, data_format=data_format,
                 separate_edge_classes=separate_edge_classes)
 
-    elif transform == 'watershed':
-        distance_bins = kwargs.pop('distance_bins', 4)
+    elif transform == 'outer-distance':
+        bins = kwargs.pop('distance_bins', None)
         erosion = kwargs.pop('erosion_width', 0)
+        by_frame = kwargs.pop('by_frame', True)
 
         if data_format == 'channels_first':
             y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
@@ -126,9 +127,12 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.zeros(y.shape[0:-1])
 
         if y.ndim == 5:
-            _distance_transform = transform_utils.distance_transform_3d
+            if by_frame:
+                _distance_transform = transform_utils.outer_distance_transform_movie
+            else:
+                _distance_transform = transform_utils.outer_distance_transform_3d
         else:
-            _distance_transform = transform_utils.distance_transform_2d
+            _distance_transform = transform_utils.outer_distance_transform_2d
 
         for batch in range(y_transform.shape[0]):
             if data_format == 'channels_first':
@@ -137,43 +141,22 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask = y[batch, ..., 0]
 
             y_transform[batch] = _distance_transform(
-                mask, distance_bins, erosion)
-
-        # convert to one hot notation
-        y_transform = np.expand_dims(y_transform, axis=-1)
-        y_transform = to_categorical(y_transform, num_classes=distance_bins)
-        if data_format == 'channels_first':
-            y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
-
-    elif transform == 'watershed-cont':
-        erosion = kwargs.pop('erosion_width', 0)
-
-        if data_format == 'channels_first':
-            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
-        else:
-            y_transform = np.zeros(y.shape[0:-1])
-
-        if y.ndim == 5:
-            _distance_transform = transform_utils.distance_transform_continuous_movie
-        else:
-            _distance_transform = transform_utils.distance_transform_continuous_2d
-
-        for batch in range(y_transform.shape[0]):
-            if data_format == 'channels_first':
-                mask = y[batch, 0, ...]
-            else:
-                mask = y[batch, ..., 0]
-
-            y_transform[batch] = _distance_transform(mask, erosion)
+                mask, bins=bins, erosion_width=erosion)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
+        if bins is None:
+            pass
+        else:
+            # convert to one hot notation
+            y_transform = to_categorical(y_transform, num_classes=distance_bins)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
-    elif transform == 'centroid':
+    elif transform == 'inner-distance':
+        bins = kwargs.pop('distance_bins', None)
         erosion = kwargs.pop('erosion_width', 0)
-        disk_size = kwargs.pop('disk_size', 4)
+        by_frame = kwargs.pop('by_frame', True)
         alpha = kwargs.pop('alpha', 0.1)
         beta = kwargs.pop('beta', 1)
 
@@ -183,9 +166,12 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.zeros(y.shape[0:-1])
 
         if y.ndim == 5:
-            _transform = transform_utils.centroid_transform_continuous_movie
+            if by_frame:
+                _distance_transform = transform_utils.inner_distance_transform_movie
+            else:
+                _distance_transform = transform_utils.inner_distance_transform_3d
         else:
-            _transform = transform_utils.centroid_transform_continuous_2d
+            _distance_transform = transform_utils.inner_distance_transform_2d
 
         for batch in range(y_transform.shape[0]):
             if data_format == 'channels_first':
@@ -193,7 +179,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             else:
                 mask = y[batch, ..., 0]
 
-            y_transform[batch] = _transform(mask, erosion_width=erosion,
+            y_transform[batch] = _transform(mask, bins=bins,
+                                            erosion_width=erosion,
                                             alpha=alpha, beta=beta)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
