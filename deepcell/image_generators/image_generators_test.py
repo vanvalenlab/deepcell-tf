@@ -135,14 +135,25 @@ class TestTransformMasks(test.TestCase):
             separate_edge_classes=True)
         self.assertEqual(mask_transform.shape, (5, 4, 10, 30, 30))
 
-    def test_watershed_transform(self):
-        distance_bins = 4
-        erosion_width = 1
+    def test_outer_distance_transform(self):
         # test 2D masks
+        distance_bins = None
+        erosion_width = 1
         mask = np.random.randint(3, size=(5, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask,
-            transform='watershed',
+            transform='outer-distance',
+            distance_bins=distance_bins,
+            erosion_width=erosion_width,
+            data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 30, 30, 1))
+
+        distance_bins = 4
+        erosion_width = 1
+        mask = np.random.randint(3, size=(5, 30, 30, 1))
+        mask_transform = image_generators._transform_masks(
+            mask,
+            transform='outer-distance',
             distance_bins=distance_bins,
             erosion_width=erosion_width,
             data_format='channels_last')
@@ -152,18 +163,28 @@ class TestTransformMasks(test.TestCase):
         mask = np.random.randint(3, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask,
-            transform='watershed',
+            transform='outer-distance',
             distance_bins=distance_bins,
             erosion_width=erosion_width,
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, distance_bins, 30, 30))
 
         # test 3D masks
+        distance_bins = None
+        mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
+        mask_transform = image_generators._transform_masks(
+            mask,
+            transform='outer-distance',
+            distance_bins=distance_bins,
+            erosion_width=erosion_width,
+            data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, 1))
+
         distance_bins = 5
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask,
-            transform='watershed',
+            transform='outer-distance',
             distance_bins=distance_bins,
             erosion_width=erosion_width,
             data_format='channels_last')
@@ -173,12 +194,77 @@ class TestTransformMasks(test.TestCase):
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask,
-            transform='watershed',
+            transform='outer-distance',
             distance_bins=distance_bins,
             erosion_width=erosion_width,
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, distance_bins, 10, 30, 30))
 
+    def test_inner_distance_transform(self):
+        # test 2D masks
+        distance_bins = None
+        erosion_width = 1
+        mask = np.random.randint(3, size=(5, 30, 30, 1))
+        mask_transform = image_generators._transform_masks(
+            mask,
+            transform='inner-distance',
+            distance_bins=distance_bins,
+            erosion_width=erosion_width,
+            data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 30, 30, 1))
+
+        distance_bins = 4
+        erosion_width = 1
+        mask = np.random.randint(3, size=(5, 30, 30, 1))
+        mask_transform = image_generators._transform_masks(
+            mask,
+            transform='inner-distance',
+            distance_bins=distance_bins,
+            erosion_width=erosion_width,
+            data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 30, 30, distance_bins))
+
+        distance_bins = 6
+        mask = np.random.randint(3, size=(5, 1, 30, 30))
+        mask_transform = image_generators._transform_masks(
+            mask,
+            transform='inner-distance',
+            distance_bins=distance_bins,
+            erosion_width=erosion_width,
+            data_format='channels_first')
+        self.assertEqual(mask_transform.shape, (5, distance_bins, 30, 30))
+
+        # test 3D masks
+        distance_bins = None
+        mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
+        mask_transform = image_generators._transform_masks(
+            mask,
+            transform='inner-distance',
+            distance_bins=distance_bins,
+            erosion_width=erosion_width,
+            data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, 1))
+
+        distance_bins = 5
+        mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
+        mask_transform = image_generators._transform_masks(
+            mask,
+            transform='inner-distance',
+            distance_bins=distance_bins,
+            erosion_width=erosion_width,
+            data_format='channels_last')
+        self.assertEqual(mask_transform.shape, (5, 10, 30, 30, distance_bins))
+
+        distance_bins = 4
+        mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
+        mask_transform = image_generators._transform_masks(
+            mask,
+            transform='inner-distance',
+            distance_bins=distance_bins,
+            erosion_width=erosion_width,
+            data_format='channels_first')
+        self.assertEqual(mask_transform.shape, (5, distance_bins, 10, 30, 30))
+        
     def test_disc_transform(self):
         classes = np.random.randint(5, size=1)[0]
         # test 2D masks
@@ -1761,7 +1847,7 @@ class TestSemanticDataGenerator(test.TestCase):
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
-            transforms = ['watershed-cont', 'fgbg']
+            transforms = ['outer-distance', 'fgbg']
             for x, y in generator.flow(
                     train_dict,
                     transforms=transforms,
@@ -1813,7 +1899,7 @@ class TestSemanticDataGenerator(test.TestCase):
             y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
-            transforms = ['watershed-cont', 'fgbg']
+            transforms = ['outer-distance', 'fgbg']
             for x, y in generator.flow(
                     train_dict,
                     transforms=transforms,
@@ -1918,7 +2004,7 @@ class TestSemanticMovieGenerator(test.TestCase):
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
-            transforms = ['watershed-cont', 'fgbg']
+            transforms = ['outer-distance', 'fgbg']
             for x, y in generator.flow(
                     train_dict,
                     frames_per_batch=frames_per_batch,
@@ -1982,7 +2068,7 @@ class TestSemanticMovieGenerator(test.TestCase):
             y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
-            transforms = ['watershed-cont', 'fgbg']
+            transforms = ['outer-distance', 'fgbg']
             for x, y in generator.flow(
                     train_dict,
                     frames_per_batch=frames_per_batch,

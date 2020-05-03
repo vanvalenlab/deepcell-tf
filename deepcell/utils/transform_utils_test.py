@@ -209,7 +209,6 @@ class TransformUtilsTest(test.TestCase):
         bins = None
         distance = transform_utils.outer_distance_transform_3d(unique,
                                                                bins=bins)
-        distance = np.expand_dims(distance, axis=-1)
         self.assertEqual(np.expand_dims(distance, axis=-1).shape, unique.shape)
 
         bins = 3
@@ -232,7 +231,6 @@ class TransformUtilsTest(test.TestCase):
         bins = None
         distance = transform_utils.outer_distance_transform_3d(unique,
                                                                bins=bins)
-        distance = np.expand_dims(distance, axis=-1)
         self.assertEqual(np.expand_dims(distance, axis=1).shape, unique.shape)
 
         bins = 3
@@ -261,7 +259,6 @@ class TransformUtilsTest(test.TestCase):
         bins = None
         distance = transform_utils.outer_distance_transform_movie(unique,
                                                                   bins=bins)
-        distance = np.expand_dims(distance, axis=-1)
         self.assertEqual(np.expand_dims(distance, axis=-1).shape, unique.shape)
 
         bins = 3
@@ -284,7 +281,6 @@ class TransformUtilsTest(test.TestCase):
         bins = None
         distance = transform_utils.outer_distance_transform_movie(unique,
                                                                   bins=bins)
-        distance = np.expand_dims(distance, axis=-1)
         self.assertEqual(np.expand_dims(distance, axis=1).shape, unique.shape)
 
         bins = 3
@@ -356,7 +352,6 @@ class TransformUtilsTest(test.TestCase):
         bins = None
         distance = transform_utils.inner_distance_transform_3d(unique,
                                                                bins=bins)
-        distance = np.expand_dims(distance, axis=-1)
         self.assertEqual(np.expand_dims(distance, axis=-1).shape, unique.shape)
 
         bins = 3
@@ -379,7 +374,6 @@ class TransformUtilsTest(test.TestCase):
         bins = None
         distance = transform_utils.inner_distance_transform_3d(unique,
                                                                bins=bins)
-        distance = np.expand_dims(distance, axis=-1)
         self.assertEqual(np.expand_dims(distance, axis=1).shape, unique.shape)
 
         bins = 3
@@ -408,7 +402,6 @@ class TransformUtilsTest(test.TestCase):
         bins = None
         distance = transform_utils.inner_distance_transform_movie(unique,
                                                                   bins=bins)
-        distance = np.expand_dims(distance, axis=-1)
         self.assertEqual(np.expand_dims(distance, axis=-1).shape, unique.shape)
 
         bins = 3
@@ -431,7 +424,6 @@ class TransformUtilsTest(test.TestCase):
         bins = None
         distance = transform_utils.inner_distance_transform_movie(unique,
                                                                   bins=bins)
-        distance = np.expand_dims(distance, axis=-1)
         self.assertEqual(np.expand_dims(distance, axis=1).shape, unique.shape)
 
         bins = 3

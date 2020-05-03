@@ -149,7 +149,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             pass
         else:
             # convert to one hot notation
-            y_transform = to_categorical(y_transform, num_classes=distance_bins)
+            y_transform = to_categorical(y_transform, num_classes=bins)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
@@ -179,12 +179,17 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             else:
                 mask = y[batch, ..., 0]
 
-            y_transform[batch] = _transform(mask, bins=bins,
+            y_transform[batch] = _distance_transform(mask, bins=bins,
                                             erosion_width=erosion,
                                             alpha=alpha, beta=beta)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
+        if bins is None:
+            pass
+        else:
+            # convert to one hot notation
+            y_transform = to_categorical(y_transform, num_classes=bins)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
