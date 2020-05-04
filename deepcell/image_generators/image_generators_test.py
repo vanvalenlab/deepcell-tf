@@ -264,7 +264,7 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, distance_bins, 10, 30, 30))
-        
+
     def test_disc_transform(self):
         classes = np.random.randint(5, size=1)[0]
         # test 2D masks

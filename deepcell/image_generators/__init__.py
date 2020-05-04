@@ -180,8 +180,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask = y[batch, ..., 0]
 
             y_transform[batch] = _distance_transform(mask, bins=bins,
-                                            erosion_width=erosion,
-                                            alpha=alpha, beta=beta)
+                                                     erosion_width=erosion,
+                                                     alpha=alpha, beta=beta)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
