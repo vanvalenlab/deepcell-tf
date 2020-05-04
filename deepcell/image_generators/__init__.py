@@ -71,7 +71,6 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         'outer-distance',
         'fgbg'
     }
-    print(transform)
     if data_format is None:
         data_format = K.image_data_format()
 
