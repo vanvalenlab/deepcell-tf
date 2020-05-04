@@ -339,8 +339,10 @@ def inner_distance_transform_2d(mask, bins=None, erosion_width=None,
         return inner_distance  # minimum distance should be 0, not 1
 
 
-def inner_distance_transform_3d(mask, bins=None, erosion_width=None,
-                                alpha=0.1, beta=1):
+def inner_distance_transform_3d(mask, bins=None,
+                                erosion_width=None,
+                                alpha=0.1, beta=1,
+                                sampling=[0.5, 0.217, 0.217]):
     """Transform a label mask for a z-stack with an inner distance transform.
     inner_distance = 1 / (1 + beta * alpha * distance_to_center)
 
@@ -368,7 +370,7 @@ def inner_distance_transform_3d(mask, bins=None, erosion_width=None,
     mask = np.squeeze(mask)
     mask = erode_edges(mask, erosion_width)
 
-    distance = ndimage.distance_transform_edt(mask)
+    distance = ndimage.distance_transform_edt(mask, sampling=sampling)
     distance = distance.astype(K.floatx())
 
     label_matrix = label(mask)
@@ -377,7 +379,8 @@ def inner_distance_transform_3d(mask, bins=None, erosion_width=None,
     for prop in regionprops(label_matrix, distance):
         coords = prop.coords
         center = prop.weighted_centroid
-        distance_to_center = np.sum((coords - center) ** 2, axis=1)
+        distance_to_center = (coords - center) * np.array(sampling)
+        distance_to_center = np.sum(distance_to_center ** 2, axis=1)
 
         # Determine alpha to use
         if str(alpha).lower() == 'auto':
