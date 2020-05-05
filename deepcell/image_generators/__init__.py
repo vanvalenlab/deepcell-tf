@@ -65,10 +65,14 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         ValueError: Transform is invalid value.
     """
     valid_transforms = {
+        'deepcell',  # deprecated for "pixelwise"
         'pixelwise',
         'disc',
+        'watershed',  # deprecated for "outer-distance"
+        'watershed-cont',  # deprecated for "outer-distance"
         'inner-distance',
         'outer-distance',
+        'centroid',  # deprecated for "inner-distance"
         'fgbg'
     }
     if data_format is None:
@@ -85,15 +89,15 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
     if isinstance(transform, str):
         transform = transform.lower()
-        if transform == 'deepcell':
-            warnings.warn('The `deepcell` transform is deprecated. '
-                          'Please use the`pixelwise` transform insetad.',
-                          DeprecationWarning)
-            transform = 'pixelwise'
-        if transform not in valid_transforms:
-            raise ValueError('`{}` is not a valid transform'.format(transform))
 
-    if transform == 'pixelwise':
+    if transform not in valid_transforms:
+        raise ValueError('`{}` is not a valid transform'.format(transform))
+
+    if transform in {'pixelwise', 'deepcell'}:
+        if transform == 'deepcell':
+            warnings.warn('The `{}` transform is deprecated. Please use the '
+                          '`pixelwise` transform insetad.'.format(transform),
+                          DeprecationWarning)
         dilation_radius = kwargs.pop('dilation_radius', None)
         separate_edge_classes = kwargs.pop('separate_edge_classes', False)
 
@@ -114,7 +118,12 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask, dilation_radius, data_format=data_format,
                 separate_edge_classes=separate_edge_classes)
 
-    elif transform == 'outer-distance':
+    elif transform in {'outer-distance', 'watershed', 'watershed-cont'}:
+        if transform in {'watershed', 'watershed-cont'}:
+            warnings.warn('The `{}` transform is deprecated. Please use the '
+                          '`outer-distance` transform insetad.'.format(transform),
+                          DeprecationWarning)
+
         bins = kwargs.pop('distance_bins', None)
         erosion = kwargs.pop('erosion_width', 0)
         by_frame = kwargs.pop('by_frame', True)
@@ -152,6 +161,11 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
     elif transform == 'inner-distance':
+        if transform == 'centroid':
+            warnings.warn('The `{}` transform is deprecated. Please use the '
+                          '`inner-distance` transform insetad.'.format(transform),
+                          DeprecationWarning)
+
         bins = kwargs.pop('distance_bins', None)
         erosion = kwargs.pop('erosion_width', 0)
         by_frame = kwargs.pop('by_frame', True)
@@ -214,6 +228,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
 
 # Globally-importable utils.
+# pylint: disable=wrong-import-position
 from deepcell.image_generators.fully_convolutional import ImageFullyConvDataGenerator
 from deepcell.image_generators.fully_convolutional import ImageFullyConvIterator
 from deepcell.image_generators.fully_convolutional import MovieDataGenerator
@@ -239,6 +254,7 @@ from deepcell.image_generators.scale import ScaleDataGenerator
 
 from deepcell.image_generators.tracking import SiameseDataGenerator
 from deepcell.image_generators.tracking import SiameseIterator
+# pylint: enable=wrong-import-position
 
 del absolute_import
 del division
