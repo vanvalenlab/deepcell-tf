@@ -338,6 +338,7 @@ def semantic_upsample(x,
             the 3x3 convolution.
         ndim (int): The spatial dimensions of the input data.
             Default is 2, but it also works with 3.
+        semantic_id (int): ID of the semantic head. Defaults to 0.
         upsample_type (str): Choice of upsampling layer to use from
         ['upsamplelike', 'upsampling2d', 'upsampling3d']. Defaults to
             "upsamplelike".
@@ -441,7 +442,7 @@ def __create_semantic_head(pyramid_dict,
         n_classes (int): Defaults to 3.  The number of classes to be predicted.
         n_filters (int): Defaults to 64. The number of convolutional filters.
         n_dense (int): Defaults to 128. Number of dense filters.
-        semantic_id (int): Defaults to 0.
+        semantic_id (int): ID of the semantic head. Defaults to 0.
         ndim (int): Defaults to 2, 3d supported.
         include_top (bool): Defaults to False.
         target_level (int, optional): The level we need to reach. Performs
@@ -455,7 +456,7 @@ def __create_semantic_head(pyramid_dict,
     Raises:
         ValueError: ndim must be 2 or 3
         ValueError: interpolation not in ['bilinear', 'nearest']
-        ValueError: upsample_type not  in ['upsamplelike','upsampling2d',
+        ValueError: upsample_type not in ['upsamplelike','upsampling2d',
             'upsampling3d']
 
     Returns:
