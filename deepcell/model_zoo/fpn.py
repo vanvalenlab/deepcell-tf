@@ -302,16 +302,7 @@ def __create_pyramid_features(backbone_dict,
         pyramid_names.insert(0, P_minus_1_name)
         pyramid_finals.insert(0, P_minus_1)
 
-    pyramid_names.reverse()
-    pyramid_finals.reverse()
-
-    # Reverse lists
-    backbone_names.reverse()
-    backbone_features.reverse()
-
-    pyramid_dict = {}
-    for name, feature in zip(pyramid_names, pyramid_finals):
-        pyramid_dict[name] = feature
+    pyramid_dict = dict(zip(pyramid_names, pyramid_finals))
 
     return pyramid_dict
 
