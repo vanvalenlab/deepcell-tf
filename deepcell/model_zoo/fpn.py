@@ -411,7 +411,6 @@ def semantic_upsample(x,
 def __create_semantic_head(pyramid_dict,
                            input_target=None,
                            n_classes=3,
-                           n_filters=64,
                            n_dense=128,
                            semantic_id=0,
                            ndim=2,
@@ -426,7 +425,6 @@ def __create_semantic_head(pyramid_dict,
         pyramid_dict (dict): dict of pyramid names and features.
         input_target (tensor): Optional tensor with the input image.
         n_classes (int): Defaults to 3.  The number of classes to be predicted.
-        n_filters (int): Defaults to 64. The number of convolutional filters.
         n_dense (int): Defaults to 128. Number of dense filters.
         semantic_id (int): ID of the semantic head. Defaults to 0.
         ndim (int): Defaults to 2, 3d supported.
