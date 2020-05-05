@@ -102,7 +102,7 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
                 local_name,
                 MOBILENETV2_WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='b9943554a86096fb66608ec66078aa46')
+                md5_hash='aa78e6b9a4551289dd967f1f5ca83fed')
         else:
             raise ValueError('Backbone %s does not have a weights file.' %
                              backbone)
