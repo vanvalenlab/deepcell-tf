@@ -231,8 +231,7 @@ def __create_pyramid_features(backbone_dict,
 
     for i, N in enumerate(backbone_names):
         level = int(re.findall(r'\d+', N)[0])
-        p_name = 'P{}'.format(level)
-        pyramid_names.append(p_name)
+        pyramid_names.append('P{}'.format(level))
 
         backbone_input = backbone_features[i]
 
@@ -290,7 +289,7 @@ def __create_pyramid_features(backbone_dict,
         # followed by a 3x3 stride-2 conv on second to last layer"
         level = int(re.findall(r'\d+', N)[0]) + 2
         P_minus_1_name = 'P{}'.format(level)
-        P_minus_1 = Activation('relu', name=N + '_relu')(P_minus_2)
+        P_minus_1 = Activation('relu', name='{}_relu'.format(N))(P_minus_2)
 
         if ndim == 2:
             P_minus_1 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
