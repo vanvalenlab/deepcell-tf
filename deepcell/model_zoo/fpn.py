@@ -229,9 +229,7 @@ def __create_pyramid_features(backbone_dict,
     backbone_names.reverse()
     backbone_features.reverse()
 
-    for i in range(len(backbone_names)):
-
-        N = backbone_names[i]
+    for i, N in enumerate(backbone_names):
         level = int(re.findall(r'\d+', N)[0])
         p_name = 'P{}'.format(level)
         pyramid_names.append(p_name)
