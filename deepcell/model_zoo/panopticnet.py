@@ -36,16 +36,14 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.layers import Conv2D, Conv3D
 from tensorflow.python.keras.layers import TimeDistributed, ConvLSTM2D
-from tensorflow.python.keras.layers import Input, Concatenate, Softmax
+from tensorflow.python.keras.layers import Input, Concatenate
 from tensorflow.python.keras.layers import Activation, BatchNormalization
-from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
 
 from deepcell.layers import ConvGRU2D
 from deepcell.layers import ImageNormalization2D, Location2D
 from deepcell.model_zoo.fpn import __create_pyramid_features
 from deepcell.model_zoo.fpn import __create_semantic_head
 from deepcell.utils.backbone_utils import get_backbone
-from deepcell.utils.misc_utils import get_sorted_keys
 
 
 def __merge_temporal_features(feature, mode='conv', feature_size=256,
@@ -56,7 +54,7 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256,
     Output: y = x + x'
 
     Args:
-        feature: Input layer
+        feature (tensorflow.keras.layers.Layer): Input layer
         mode (str, optional): Mode of temporal convolution. Choose from
             {'conv','lstm','gru', None}. Defaults to 'conv'.
         feature_size (int, optional): Defaults to 256.
@@ -66,8 +64,9 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256,
         ValueError: Mode not 'conv', 'lstm', 'gru' or None
 
     Returns:
-        Input feature merged with its residual from a temporal convolution.
-            If mode=None, the output is exactly the input.
+        tensorflow.keras.layers.Layer: Input feature merged with its residual
+            from a temporal convolution. If mode is None,
+                the output is exactly the input.
     """
     # Check inputs to mode
     acceptable_modes = {'conv', 'lstm', 'gru', None}
@@ -137,8 +136,8 @@ def PanopticNet(backbone,
             ['P3','P4','P5','P6','P7']
         create_pyramid_features (function): Function to get the pyramid
             features from the backbone.
-        create_semantic_head (function): Function to get to build a
-            semantic head submodel.
+        create_semantic_head (function): Function to build a semantic head
+            submodel.
         frames_per_batch (int): Defaults to 1.
         temporal_mode: Mode of temporal convolution. Choose from
             {'conv','lstm','gru', None}. Defaults to None.
@@ -187,23 +186,26 @@ def PanopticNet(backbone,
     if temporal_mode is not None:
         temporal_mode = str(temporal_mode).lower()
         if temporal_mode not in acceptable_modes:
-            raise ValueError('Mode {} not supported. Please choose '
-                             'from {}.'.format(temporal_mode,
-                                               str(acceptable_modes)))
+            raise ValueError('temporal_mode {} not supported. Please choose '
+                             'from {}.'.format(temporal_mode, acceptable_modes))
 
-    # TODO only works for 2D: do we check for 3D as well? What are the requirements for 3D data?
+    # TODO only works for 2D: do we check for 3D as well?
+    # What are the requirements for 3D data?
     img_shape = input_shape[1:] if channel_axis == 1 else input_shape[:-1]
     if img_shape[0] != img_shape[1]:
-        raise ValueError('Input data must be square, got dimensions {}'.format(img_shape))
+        raise ValueError('Input data must be square, got dimensions {}'.format(
+            img_shape))
 
     if not math.log(img_shape[0], 2).is_integer():
-        raise ValueError('Input data dimensions must be a power of 2, got {}'.format(img_shape[0]))
+        raise ValueError('Input data dimensions must be a power of 2, '
+                         'got {}'.format(img_shape[0]))
 
     # Check input to interpolation
     acceptable_interpolation = {'bilinear', 'nearest'}
     if interpolation not in acceptable_interpolation:
-        raise ValueError('Interpolation mode not supported. Choose from '
-                         '["bilinear", "nearest"]')
+        raise ValueError('Interpolation mode "{}" not supported. '
+                         'Choose from {}.'.format(
+                             upsample_type, list(acceptable_interpolation)))
 
     if inputs is None:
         if frames_per_batch > 1:
@@ -261,11 +263,14 @@ def PanopticNet(backbone,
     _, backbone_dict = get_backbone(backbone, fixed_inputs,
                                     use_imagenet=use_imagenet,
                                     frames_per_batch=frames_per_batch,
-                                    return_dict=True, **model_kwargs)
+                                    return_dict=True,
+                                    **model_kwargs)
 
     backbone_dict_reduced = {k: backbone_dict[k] for k in backbone_dict
                              if k in backbone_levels}
+
     ndim = 2 if frames_per_batch == 1 else 3
+
     pyramid_dict = create_pyramid_features(backbone_dict_reduced,
                                            ndim=ndim,
                                            lite=lite,
@@ -275,8 +280,8 @@ def PanopticNet(backbone,
     features = [pyramid_dict[key] for key in pyramid_levels]
 
     if frames_per_batch > 1:
-        temporal_features = [__merge_temporal_features(
-            feature, mode=temporal_mode) for feature in features]
+        temporal_features = [__merge_temporal_features(f, mode=temporal_mode)
+                             for f in features]
         for f, k in zip(temporal_features, pyramid_dict.keys()):
             pyramid_dict[k] = f
 
