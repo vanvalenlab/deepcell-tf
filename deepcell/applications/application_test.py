@@ -167,14 +167,6 @@ class TestApplication(test.TestCase):
         y = app._postprocess([x])
         self.assertAllEqual(np.ones(x.shape), y)
 
-        # deep watershed
-        model_outputs = [np.zeros((3, 30, 30, 1)), np.zeros((3, 30, 30, 1)),
-                         np.zeros((3, 30, 30, 1))]
-        kwargs = {'postprocessing_fn': deep_watershed}
-        app = Application(model, **kwargs)
-        y = app._postprocess(model_outputs)
-        self.assertEqual(y.shape, model_outputs[0].shape)
-
         # Bad input
         kwargs = {'postprocessing_fn': 'x'}
         with self.assertRaises(ValueError):
