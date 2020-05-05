@@ -164,15 +164,15 @@ def outer_distance_transform_2d(mask, bins=None, erosion_width=None,
 
     if bins is None:
         return distance
-    else:
-        # bin each distance value into a class from 1 to bins
-        min_dist = np.amin(distance)
-        max_dist = np.amax(distance)
-        distance_bins = np.linspace(min_dist - K.epsilon(),
-                                    max_dist + K.epsilon(),
-                                    num=bins + 1)
-        distance = np.digitize(distance, distance_bins, right=True) - 1
-        return distance  # minimum distance should be 0, not 1
+
+    # bin each distance value into a class from 1 to bins
+    min_dist = np.amin(distance)
+    max_dist = np.amax(distance)
+    distance_bins = np.linspace(min_dist - K.epsilon(),
+                                max_dist + K.epsilon(),
+                                num=bins + 1)
+    distance = np.digitize(distance, distance_bins, right=True)
+    return distance - 1  # minimum distance should be 0, not 1
 
 
 def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
@@ -209,15 +209,15 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
 
     if bins is None:
         return distance
-    else:
-        # divide into bins
-        min_dist = np.amin(distance.flatten())
-        max_dist = np.amax(distance.flatten())
-        distance_bins = np.linspace(min_dist - K.epsilon(),
-                                    max_dist + K.epsilon(),
-                                    num=bins + 1)
-        distance = np.digitize(distance, distance_bins, right=True) - 1
-        return distance  # minimum distance should be 0, not 1
+
+    # divide into bins
+    min_dist = np.amin(distance.flatten())
+    max_dist = np.amax(distance.flatten())
+    distance_bins = np.linspace(min_dist - K.epsilon(),
+                                max_dist + K.epsilon(),
+                                num=bins + 1)
+    distance = np.digitize(distance, distance_bins, right=True)
+    return distance - 1  # minimum distance should be 0, not 1
 
 
 def outer_distance_transform_movie(mask, bins=None, erosion_width=None,
@@ -329,16 +329,15 @@ def inner_distance_transform_2d(mask, bins=None, erosion_width=None,
 
     if bins is None:
         return inner_distance
-    else:
-        # divide into bins
-        min_dist = np.amin(inner_distance.flatten())
-        max_dist = np.amax(inner_distance.flatten())
-        distance_bins = np.linspace(min_dist - K.epsilon(),
-                                    max_dist + K.epsilon(),
-                                    num=bins + 1)
-        inner_distance = np.digitize(inner_distance, distance_bins,
-                                     right=True) - 1
-        return inner_distance  # minimum distance should be 0, not 1
+
+    # divide into bins
+    min_dist = np.amin(inner_distance.flatten())
+    max_dist = np.amax(inner_distance.flatten())
+    distance_bins = np.linspace(min_dist - K.epsilon(),
+                                max_dist + K.epsilon(),
+                                num=bins + 1)
+    inner_distance = np.digitize(inner_distance, distance_bins, right=True)
+    return inner_distance - 1  # minimum distance should be 0, not 1
 
 
 def inner_distance_transform_3d(mask, bins=None,
@@ -402,15 +401,15 @@ def inner_distance_transform_3d(mask, bins=None,
 
     if bins is None:
         return inner_distance
-    else:
-        # divide into bins
-        min_dist = np.amin(inner_distance.flatten())
-        max_dist = np.amax(inner_distance.flatten())
-        distance_bins = np.linspace(min_dist - K.epsilon(),
-                                    max_dist + K.epsilon(),
-                                    num=bins + 1)
-        inner_distance = np.digitize(inner_distance, distance_bins, right=True)
-        return inner_distance - 1  # minimum distance should be 0, not 1
+
+    # divide into bins
+    min_dist = np.amin(inner_distance.flatten())
+    max_dist = np.amax(inner_distance.flatten())
+    distance_bins = np.linspace(min_dist - K.epsilon(),
+                                max_dist + K.epsilon(),
+                                num=bins + 1)
+    inner_distance = np.digitize(inner_distance, distance_bins, right=True)
+    return inner_distance - 1  # minimum distance should be 0, not 1
 
 
 def inner_distance_transform_movie(mask, bins=None, erosion_width=None,
