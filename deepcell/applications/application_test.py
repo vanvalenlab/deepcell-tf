@@ -36,6 +36,8 @@ from tensorflow.python.platform import test
 
 from deepcell.applications import Application
 
+from deepcell_toolbox.deep_watershed import deep_watershed
+
 
 class DummyModel():
 
@@ -165,6 +167,14 @@ class TestApplication(test.TestCase):
         y = app._postprocess([x])
         self.assertAllEqual(np.ones(x.shape), y)
 
+        # deep watershed
+        model_outputs = [np.zeros((3, 30, 30, 1)), np.zeros((3, 30, 30, 1)),
+                         np.zeros((3, 30, 30, 1))]
+        kwargs = {'postprocessing_fn': deep_watershed}
+        app = Application(model, **kwargs)
+        y = app._postprocess(model_outputs)
+        self.assertEqual(y.shape, model_outputs[0].shape)
+
         # Bad input
         kwargs = {'postprocessing_fn': 'x'}
         with self.assertRaises(ValueError):
@@ -231,4 +241,12 @@ class TestApplication(test.TestCase):
 
         x = np.random.rand(1, 128, 128, 1)
         y = app._predict_segmentation(x)
+        self.assertEqual(x.shape, y.shape)
+
+        # test with different MPP
+        model = DummyModel()
+        app = Application(model)
+
+        x = np.random.rand(1, 128, 128, 1)
+        y = app._predict_segmentation(x, image_mpp=1.3)
         self.assertEqual(x.shape, y.shape)
