@@ -391,11 +391,11 @@ def semantic_upsample(x,
 
             # Define kwargs for upsampling layer
             upsampling_kwargs = {
-                    'size': size,
-                    'name': 'upsampling_{}_semantic'
-                            '_upsample_{}'.format(i, semantic_id),
-                    'interpolation': interpolation
-                }
+                'size': size,
+                'name': 'upsampling_{}_semantic_upsample_{}'.format(
+                    i, semantic_id),
+                'interpolation': interpolation
+            }
 
             if ndim > 2:
                 del upsampling_kwargs['interpolation']
@@ -413,8 +413,9 @@ def semantic_upsample(x,
                       'upsample_{}'.format(semantic_id))(x)
 
         if upsample_type == 'upsamplelike' and target is not None:
-            upsampling_kwargs = {'name': 'upsampling_{}_semantic'
-                                 'upsample_{}'.format(0, semantic_id)}
+            upsampling_kwargs = {
+                'name': 'upsampling_{}_semanticupsample_{}'.format(
+                    0, semantic_id)}
             x = UpsampleLike(upsampling_kwargs)([x, target])
 
     return x
