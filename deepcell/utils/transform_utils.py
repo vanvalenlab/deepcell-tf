@@ -153,11 +153,10 @@ def outer_distance_transform_2d(mask, bins=None, erosion_width=None,
     distance = ndimage.distance_transform_edt(mask)
     distance = distance.astype(K.floatx())  # normalized distances are floats
 
-    # uniquely label each cell and normalize the distance values
-    # by that cells maximum distance value
-    label_matrix = label(mask)
-
     if normalize:
+        # uniquely label each cell and normalize the distance values
+        # by that cells maximum distance value
+        label_matrix = label(mask)
         for prop in regionprops(label_matrix):
             labeled_distance = distance[label_matrix == prop.label]
             normalized_distance = labeled_distance / np.amax(labeled_distance)
@@ -201,11 +200,12 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
     distance = ndimage.distance_transform_edt(maskstack, sampling=sampling)
 
     # normalize by maximum distance
-    for cell_label in np.unique(maskstack):
-        if cell_label == 0:  # distance is only found for non-zero regions
-            continue
-        index = np.nonzero(maskstack == cell_label)
-        distance[index] = distance[index] / np.amax(distance[index])
+    if normalize:
+        for cell_label in np.unique(maskstack):
+            if cell_label == 0:  # distance is only found for non-zero regions
+                continue
+            index = np.nonzero(maskstack == cell_label)
+            distance[index] = distance[index] / np.amax(distance[index])
 
     if bins is None:
         return distance
