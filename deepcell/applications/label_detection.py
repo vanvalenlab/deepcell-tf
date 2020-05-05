@@ -103,7 +103,7 @@ def LabelDetectionModel(input_shape=(None, None, 1),
                 local_name,
                 MOBILENETV2_WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='b8231f32f01c1cd6448d06e276dd5949')
+                md5_hash='14d4b2f7c77d334c958d2dde79972e6e')
         else:
             raise ValueError('Backbone %s does not have a weights file.' %
                              backbone)
