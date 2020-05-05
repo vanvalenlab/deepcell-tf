@@ -36,8 +36,6 @@ from tensorflow.python.platform import test
 
 from deepcell.applications import Application
 
-from deepcell_toolbox.deep_watershed import deep_watershed
-
 
 class DummyModel():
 
