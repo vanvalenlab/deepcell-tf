@@ -373,8 +373,7 @@ def semantic_upsample(x,
 
     if n_upsample > 0:
         for i in range(n_upsample):
-            x = conv(n_filters, conv_kernel, strides=1,
-                     padding='same', data_format='channels_last',
+            x = conv(n_filters, conv_kernel, strides=1, padding='same',
                      name='conv_{}_semantic_upsample_{}'.format(
                          i, semantic_id))(x)
 
@@ -396,8 +395,7 @@ def semantic_upsample(x,
             else:
                 x = upsampling(**upsampling_kwargs)(x)
     else:
-        x = conv(n_filters, conv_kernel, strides=1,
-                 padding='same', data_format='channels_last',
+        x = conv(n_filters, conv_kernel, strides=1, padding='same',
                  name='conv_final_semantic_upsample_{}'.format(semantic_id))(x)
 
         if upsample_type == 'upsamplelike' and target is not None:
@@ -492,22 +490,21 @@ def __create_semantic_head(pyramid_dict,
     semantic_name = pyramid_names[-1]
 
     # Final upsampling
-    n_upsample = int(re.findall(r'\d+', semantic_name[-1])[0])
+    min_level = int(re.findall(r'\d+', semantic_name)[0])
+    n_upsample = min_level - target_level
     x = semantic_upsample(semantic_feature, n_upsample, ndim=ndim,
                           upsample_type=upsample_type, target=input_target,
                           interpolation=interpolation, semantic_id=semantic_id)
 
     # Apply conv in place of previous tensor product
-    x = conv(n_dense, conv_kernel, strides=1,
-             padding='same', data_format='channels_last',
+    x = conv(n_dense, conv_kernel, strides=1, padding='same',
              name='conv_0_semantic_{}'.format(semantic_id))(x)
     x = BatchNormalization(axis=channel_axis)(x)
     x = Activation('relu', name='relu_0_semantic_{}'.format(semantic_id))(x)
 
     # Apply conv and softmax layer
     x = conv(n_classes, conv_kernel, strides=1,
-             padding='same', data_format='channels_last',
-             name='conv_1_semantic_{}'.format(semantic_id))(x)
+             padding='same', name='conv_1_semantic_{}'.format(semantic_id))(x)
 
     if include_top:
         x = Softmax(axis=channel_axis,
