@@ -232,3 +232,11 @@ class TestApplication(test.TestCase):
         x = np.random.rand(1, 128, 128, 1)
         y = app._predict_segmentation(x)
         self.assertEqual(x.shape, y.shape)
+
+        # test with different MPP
+        model = DummyModel()
+        app = Application(model)
+
+        x = np.random.rand(1, 128, 128, 1)
+        y = app._predict_segmentation(x, image_mpp=1.3)
+        self.assertEqual(x.shape, y.shape)

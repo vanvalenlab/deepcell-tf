@@ -320,10 +320,10 @@ class Application(object):
                                  self.required_channels, image.shape[-1]))
 
         # Resize image, returns unmodified if appropriate
-        image = self._resize_input(image, image_mpp)
+        resized_image = self._resize_input(image, image_mpp)
 
         # Generate model outputs
-        output_images = self._run_model(image=image, batch_size=batch_size,
+        output_images = self._run_model(image=resized_image, batch_size=batch_size,
                                         preprocess_kwargs=preprocess_kwargs)
 
         # Postprocess predictions to create label image
