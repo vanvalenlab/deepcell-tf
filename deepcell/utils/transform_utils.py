@@ -153,11 +153,10 @@ def outer_distance_transform_2d(mask, bins=None, erosion_width=None,
     distance = ndimage.distance_transform_edt(mask)
     distance = distance.astype(K.floatx())  # normalized distances are floats
 
-    # uniquely label each cell and normalize the distance values
-    # by that cells maximum distance value
-    label_matrix = label(mask)
-
     if normalize:
+        # uniquely label each cell and normalize the distance values
+        # by that cells maximum distance value
+        label_matrix = label(mask)
         for prop in regionprops(label_matrix):
             labeled_distance = distance[label_matrix == prop.label]
             normalized_distance = labeled_distance / np.amax(labeled_distance)
@@ -165,15 +164,15 @@ def outer_distance_transform_2d(mask, bins=None, erosion_width=None,
 
     if bins is None:
         return distance
-    else:
-        # bin each distance value into a class from 1 to bins
-        min_dist = np.amin(distance)
-        max_dist = np.amax(distance)
-        distance_bins = np.linspace(min_dist - K.epsilon(),
-                                    max_dist + K.epsilon(),
-                                    num=bins + 1)
-        distance = np.digitize(distance, distance_bins, right=True) - 1
-        return distance  # minimum distance should be 0, not 1
+
+    # bin each distance value into a class from 1 to bins
+    min_dist = np.amin(distance)
+    max_dist = np.amax(distance)
+    distance_bins = np.linspace(min_dist - K.epsilon(),
+                                max_dist + K.epsilon(),
+                                num=bins + 1)
+    distance = np.digitize(distance, distance_bins, right=True)
+    return distance - 1  # minimum distance should be 0, not 1
 
 
 def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
@@ -182,7 +181,7 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
     Uses scipy's distance_transform_edt
 
     Args:
-        maskstack (numpy.array): A z-stack of label masks (y data).
+        mask (numpy.array): A z-stack of label masks (y data).
         bins (int): The number of transformed distance classes.
             Defaults to None.
         erosion_width (int): Number of pixels to erode edges of each labels.
@@ -201,23 +200,24 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
     distance = ndimage.distance_transform_edt(maskstack, sampling=sampling)
 
     # normalize by maximum distance
-    for cell_label in np.unique(maskstack):
-        if cell_label == 0:  # distance is only found for non-zero regions
-            continue
-        index = np.nonzero(maskstack == cell_label)
-        distance[index] = distance[index] / np.amax(distance[index])
+    if normalize:
+        for cell_label in np.unique(maskstack):
+            if cell_label == 0:  # distance is only found for non-zero regions
+                continue
+            index = np.nonzero(maskstack == cell_label)
+            distance[index] = distance[index] / np.amax(distance[index])
 
     if bins is None:
         return distance
-    else:
-        # divide into bins
-        min_dist = np.amin(distance.flatten())
-        max_dist = np.amax(distance.flatten())
-        distance_bins = np.linspace(min_dist - K.epsilon(),
-                                    max_dist + K.epsilon(),
-                                    num=bins + 1)
-        distance = np.digitize(distance, distance_bins, right=True) - 1
-        return distance  # minimum distance should be 0, not 1
+
+    # divide into bins
+    min_dist = np.amin(distance.flatten())
+    max_dist = np.amax(distance.flatten())
+    distance_bins = np.linspace(min_dist - K.epsilon(),
+                                max_dist + K.epsilon(),
+                                num=bins + 1)
+    distance = np.digitize(distance, distance_bins, right=True)
+    return distance - 1  # minimum distance should be 0, not 1
 
 
 def outer_distance_transform_movie(mask, bins=None, erosion_width=None,
@@ -240,38 +240,17 @@ def outer_distance_transform_movie(mask, bins=None, erosion_width=None,
     distances = []
     for frame in range(mask.shape[0]):
         mask_frame = mask[frame]
-        mask_frame = np.squeeze(mask_frame)  # squeeze the channels
-        mask_frame = erode_edges(mask_frame, erosion_width)
 
-        distance = ndimage.distance_transform_edt(mask_frame)
-        distance = distance.astype(K.floatx())  # normalized distances are floats
-
-        if normalize:
-            # uniquely label each cell and normalize the distance values
-            # by that cells maximum distance value
-            label_matrix = label(mask_frame)
-            for prop in regionprops(label_matrix):
-                labeled_distance = distance[label_matrix == prop.label]
-                normalized_distance = labeled_distance / np.amax(labeled_distance)
-                distance[label_matrix == prop.label] = normalized_distance
-
-        if bins is None:
-            pass
-        else:
-            # divide into bins
-            min_dist = np.amin(distance.flatten())
-            max_dist = np.amax(distance.flatten())
-            distance_bins = np.linspace(min_dist - K.epsilon(),
-                                        max_dist + K.epsilon(),
-                                        num=bins + 1)
-            distance = np.digitize(distance, distance_bins,
-                                   right=True) - 1
+        distance = outer_distance_transform_2d(
+            mask_frame, bins=bins,
+            erosion_width=erosion_width,
+            normalize=normalize)
 
         distances.append(distance)
 
     distances = np.stack(distances, axis=0)
 
-    return distances  # minimum distance should be 0, not 1
+    return distances
 
 
 def inner_distance_transform_2d(mask, bins=None, erosion_width=None,
@@ -292,9 +271,11 @@ def inner_distance_transform_2d(mask, bins=None, erosion_width=None,
 
     Returns:
         numpy.array: a mask of same shape as input mask,
-            with each label being a distance class from 1 to bins
-    """
+            with each label being a distance class from 1 to bins.
 
+    Raises:
+        ValueError: alpha is a string but not set to "auto".
+    """
     # Check input to alpha
     if isinstance(alpha, str):
         if alpha.lower() != 'auto':
@@ -327,16 +308,15 @@ def inner_distance_transform_2d(mask, bins=None, erosion_width=None,
 
     if bins is None:
         return inner_distance
-    else:
-        # divide into bins
-        min_dist = np.amin(inner_distance.flatten())
-        max_dist = np.amax(inner_distance.flatten())
-        distance_bins = np.linspace(min_dist - K.epsilon(),
-                                    max_dist + K.epsilon(),
-                                    num=bins + 1)
-        inner_distance = np.digitize(inner_distance, distance_bins,
-                                     right=True) - 1
-        return inner_distance  # minimum distance should be 0, not 1
+
+    # divide into bins
+    min_dist = np.amin(inner_distance.flatten())
+    max_dist = np.amax(inner_distance.flatten())
+    distance_bins = np.linspace(min_dist - K.epsilon(),
+                                max_dist + K.epsilon(),
+                                num=bins + 1)
+    inner_distance = np.digitize(inner_distance, distance_bins, right=True)
+    return inner_distance - 1  # minimum distance should be 0, not 1
 
 
 def inner_distance_transform_3d(mask, bins=None,
@@ -356,12 +336,16 @@ def inner_distance_transform_3d(mask, bins=None,
             area. Defaults to 0.1.
         beta (float): Scale parameter that is used when alpha is set to auto.
             Defaults to 1.
+        sampling (list): Spacing of pixels along each dimension.
+            Defaults to [0.5, 0.217, 0.217].
 
     Returns:
         numpy.array: A mask of same shape as input mask,
             with each label being a distance class from 1 to bins.
-    """
 
+    Raises:
+        ValueError: alpha is a string but not set to "auto".
+    """
     # Check input to alpha
     if isinstance(alpha, str):
         if alpha.lower() != 'auto':
@@ -396,15 +380,15 @@ def inner_distance_transform_3d(mask, bins=None,
 
     if bins is None:
         return inner_distance
-    else:
-        # divide into bins
-        min_dist = np.amin(inner_distance.flatten())
-        max_dist = np.amax(inner_distance.flatten())
-        distance_bins = np.linspace(min_dist - K.epsilon(),
-                                    max_dist + K.epsilon(),
-                                    num=bins + 1)
-        inner_distance = np.digitize(inner_distance, distance_bins, right=True)
-        return inner_distance - 1  # minimum distance should be 0, not 1
+
+    # divide into bins
+    min_dist = np.amin(inner_distance.flatten())
+    max_dist = np.amax(inner_distance.flatten())
+    distance_bins = np.linspace(min_dist - K.epsilon(),
+                                max_dist + K.epsilon(),
+                                num=bins + 1)
+    inner_distance = np.digitize(inner_distance, distance_bins, right=True)
+    return inner_distance - 1  # minimum distance should be 0, not 1
 
 
 def inner_distance_transform_movie(mask, bins=None, erosion_width=None,
@@ -416,54 +400,34 @@ def inner_distance_transform_movie(mask, bins=None, erosion_width=None,
         mask (numpy.array): A label mask (y data).
         bins (int): The number of transformed distance classes.
             Defaults to None.
-        erosion_width (int): Number of pixels to erode edges of each labels
-        alpha (float): Coefficent to reduce the magnitude of the distance
-            value.
+        erosion_width (int): Number of pixels to erode edges of each labels.
+        alpha (float, str): Coefficent to reduce the magnitude of the distance
+            value. If 'auto', determines alpha for each cell based on the cell
+            area. Defaults to 0.1.
+        beta (float): Scale parameter that is used when alpha is set to auto.
+            Defaults to 1.
 
     Returns:
         numpy.array: A mask of same shape as input mask,
-            with each label being a distance class from 1 to bins
+            with each label being a distance class from 1 to bins.
+
+    Raises:
+        ValueError: alpha is a string but not set to "auto".
     """
+    # Check input to alpha
+    if isinstance(alpha, str):
+        if alpha.lower() != 'auto':
+            raise ValueError('alpha must be set to "auto"')
+
     inner_distances = []
 
     for frame in range(mask.shape[0]):
         mask_frame = mask[frame]
-        mask_frame = np.squeeze(mask_frame)
-        mask_frame = erode_edges(mask_frame, erosion_width)
 
-        distance = ndimage.distance_transform_edt(mask_frame)
-        distance = distance.astype(K.floatx())
-
-        label_matrix = label(mask_frame)
-
-        inner_distance = np.zeros(distance.shape, dtype=K.floatx())
-        for prop in regionprops(label_matrix, distance):
-            coords = prop.coords
-            center = prop.weighted_centroid
-            distance_to_center = np.sum((coords - center) ** 2, axis=1)
-
-            # Determine alpha to use
-            if str(alpha).lower() == 'auto':
-                _alpha = 1 / np.sqrt(prop.area)
-            else:
-                _alpha = float(alpha)
-
-            center_transform = 1 / (1 + beta * _alpha * distance_to_center)
-            coords_x = coords[:, 0]
-            coords_y = coords[:, 1]
-            inner_distance[coords_x, coords_y] = center_transform
-
-            if bins is None:
-                pass
-            else:
-                # divide into bins
-                min_dist = np.amin(inner_distance.flatten())
-                max_dist = np.amax(inner_distance.flatten())
-                distance_bins = np.linspace(min_dist - K.epsilon(),
-                                            max_dist + K.epsilon(),
-                                            num=bins + 1)
-                inner_distance = np.digitize(inner_distance, distance_bins,
-                                             right=True) - 1
+        inner_distance = inner_distance_transform_2d(
+            mask_frame, bins=bins,
+            erosion_width=erosion_width,
+            alpha=alpha, beta=beta)
 
         inner_distances.append(inner_distance)
 
