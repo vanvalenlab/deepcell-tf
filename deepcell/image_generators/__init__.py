@@ -90,7 +90,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     if isinstance(transform, str):
         transform = transform.lower()
 
-    if transform not in valid_transforms:
+    if transform not in valid_transforms and transform is not None:
         raise ValueError('`{}` is not a valid transform'.format(transform))
 
     if transform in {'pixelwise', 'deepcell'}:
