@@ -375,8 +375,8 @@ def semantic_upsample(x,
         for i in range(n_upsample):
             x = conv(n_filters, conv_kernel, strides=1,
                      padding='same', data_format='channels_last',
-                     name='conv_{}_semantic_'
-                          'upsample_{}'.format(i, semantic_id))(x)
+                     name='conv_{}_semantic_upsample_{}'.format(
+                         i, semantic_id))(x)
 
             # Define kwargs for upsampling layer
             upsampling_kwargs = {
@@ -398,14 +398,12 @@ def semantic_upsample(x,
     else:
         x = conv(n_filters, conv_kernel, strides=1,
                  padding='same', data_format='channels_last',
-                 name='conv_final_semantic_'
-                      'upsample_{}'.format(semantic_id))(x)
+                 name='conv_final_semantic_upsample_{}'.format(semantic_id))(x)
 
         if upsample_type == 'upsamplelike' and target is not None:
-            upsampling_kwargs = {
-                'name': 'upsampling_{}_semanticupsample_{}'.format(
-                    0, semantic_id)}
-            x = UpsampleLike(upsampling_kwargs)([x, target])
+            upsample_name = 'upsampling_{}_semanticupsample_{}'.format(
+                0, semantic_id)
+            x = UpsampleLike(name=upsample_name)([x, target])
 
     return x
 
@@ -496,8 +494,7 @@ def __create_semantic_head(pyramid_dict,
     semantic_name = pyramid_names[-1]
 
     # Final upsampling
-    min_level = int(re.findall(r'\d+', semantic_name[-1])[0])
-    n_upsample = min_level
+    n_upsample = int(re.findall(r'\d+', semantic_name[-1])[0])
     x = semantic_upsample(semantic_feature, n_upsample, ndim=ndim,
                           upsample_type=upsample_type, target=input_target,
                           interpolation=interpolation, semantic_id=semantic_id)
