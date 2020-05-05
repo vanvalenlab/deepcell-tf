@@ -97,7 +97,7 @@ def create_pyramid_level(backbone_input,
     if interpolation not in acceptable_interpolation:
         raise ValueError('Interpolation mode "{}" not supported. '
                          'Choose from {}.'.format(
-                             upsample_type, list(acceptable_interpolation)))
+                             interpolation, list(acceptable_interpolation)))
 
     # Check input to upsample_type
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
@@ -208,7 +208,7 @@ def __create_pyramid_features(backbone_dict,
     if interpolation not in acceptable_interpolation:
         raise ValueError('Interpolation mode "{}" not supported. '
                          'Choose from {}.'.format(
-                             upsample_type, list(acceptable_interpolation)))
+                             interpolation, list(acceptable_interpolation)))
 
     # Check input to upsample_type
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
@@ -353,7 +353,7 @@ def semantic_upsample(x,
     if interpolation not in acceptable_interpolation:
         raise ValueError('Interpolation mode "{}" not supported. '
                          'Choose from {}.'.format(
-                             upsample_type, list(acceptable_interpolation)))
+                             interpolation, list(acceptable_interpolation)))
 
     # Check input to upsample_type
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
@@ -458,7 +458,7 @@ def __create_semantic_head(pyramid_dict,
     if interpolation not in acceptable_interpolation:
         raise ValueError('Interpolation mode "{}" not supported. '
                          'Choose from {}.'.format(
-                             upsample_type, list(acceptable_interpolation)))
+                             interpolation, list(acceptable_interpolation)))
 
     # Check input to upsample_type
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}

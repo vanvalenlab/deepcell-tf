@@ -205,7 +205,7 @@ def PanopticNet(backbone,
     if interpolation not in acceptable_interpolation:
         raise ValueError('Interpolation mode "{}" not supported. '
                          'Choose from {}.'.format(
-                             upsample_type, list(acceptable_interpolation)))
+                             interpolation, list(acceptable_interpolation)))
 
     if inputs is None:
         if frames_per_batch > 1:
