@@ -181,7 +181,7 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
     Uses scipy's distance_transform_edt
 
     Args:
-        maskstack (numpy.array): A z-stack of label masks (y data).
+        mask (numpy.array): A z-stack of label masks (y data).
         bins (int): The number of transformed distance classes.
             Defaults to None.
         erosion_width (int): Number of pixels to erode edges of each labels.
@@ -292,9 +292,11 @@ def inner_distance_transform_2d(mask, bins=None, erosion_width=None,
 
     Returns:
         numpy.array: a mask of same shape as input mask,
-            with each label being a distance class from 1 to bins
-    """
+            with each label being a distance class from 1 to bins.
 
+    Raises:
+        ValueError: alpha is a string but not set to "auto".
+    """
     # Check input to alpha
     if isinstance(alpha, str):
         if alpha.lower() != 'auto':
@@ -356,12 +358,16 @@ def inner_distance_transform_3d(mask, bins=None,
             area. Defaults to 0.1.
         beta (float): Scale parameter that is used when alpha is set to auto.
             Defaults to 1.
+        sampling (list): Spacing of pixels along each dimension.
+            Defaults to [0.5, 0.217, 0.217].
 
     Returns:
         numpy.array: A mask of same shape as input mask,
             with each label being a distance class from 1 to bins.
-    """
 
+    Raises:
+        ValueError: alpha is a string but not set to "auto".
+    """
     # Check input to alpha
     if isinstance(alpha, str):
         if alpha.lower() != 'auto':
@@ -416,13 +422,19 @@ def inner_distance_transform_movie(mask, bins=None, erosion_width=None,
         mask (numpy.array): A label mask (y data).
         bins (int): The number of transformed distance classes.
             Defaults to None.
-        erosion_width (int): Number of pixels to erode edges of each labels
-        alpha (float): Coefficent to reduce the magnitude of the distance
-            value.
+        erosion_width (int): Number of pixels to erode edges of each labels.
+        alpha (float, str): Coefficent to reduce the magnitude of the distance
+            value. If 'auto', determines alpha for each cell based on the cell
+            area. Defaults to 0.1.
+        beta (float): Scale parameter that is used when alpha is set to auto.
+            Defaults to 1.
 
     Returns:
         numpy.array: A mask of same shape as input mask,
-            with each label being a distance class from 1 to bins
+            with each label being a distance class from 1 to bins.
+
+    Raises:
+        ValueError: alpha is a string but not set to "auto".
     """
     inner_distances = []
 
