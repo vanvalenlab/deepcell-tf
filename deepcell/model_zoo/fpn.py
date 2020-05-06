@@ -124,23 +124,22 @@ def create_pyramid_level(backbone_input,
         pyramid = Add(name=addition_name)([pyramid, addition_input])
 
     # Upsample pyramid input
-    if upsamplelike_input is not None:
-        if upsample_type == 'upsamplelike':
-            pyramid_upsample = UpsampleLike(name=upsample_name)(
-                [pyramid, upsamplelike_input])
-        else:
-            upsampling = UpSampling2D if ndim == 2 else UpSampling3D
-            size = (2, 2) if ndim == 2 else (1, 2, 2)
-            upsampling_kwargs = {
-                'size': size,
-                'name': upsample_name,
-                'interpolation': interpolation
-            }
-            if ndim > 2:
-                del upsampling_kwargs['interpolation']
-            pyramid_upsample = upsampling(**upsampling_kwargs)(pyramid)
-    else:
+    if upsamplelike_input is not None and upsample_type == 'upsamplelike':
+        pyramid_upsample = UpsampleLike(name=upsample_name)(
+            [pyramid, upsamplelike_input])
+    elif upsample_type == 'upsamplelike':
         pyramid_upsample = None
+    else:
+        upsampling = UpSampling2D if ndim == 2 else UpSampling3D
+        size = (2, 2) if ndim == 2 else (1, 2, 2)
+        upsampling_kwargs = {
+            'size': size,
+            'name': upsample_name,
+            'interpolation': interpolation
+        }
+        if ndim > 2:
+            del upsampling_kwargs['interpolation']
+        pyramid_upsample = upsampling(**upsampling_kwargs)(pyramid)
 
     if ndim == 2:
         if lite:
