@@ -50,6 +50,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'class_specific_filter': True,
             'frames': 1,
             'pyramid_levels': ['P3'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinamask_basic_td',
@@ -60,6 +61,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'class_specific_filter': True,
             'frames': 32,
             'pyramid_levels': ['P3'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinamask_avgnorm',
@@ -70,6 +72,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'class_specific_filter': False,
             'frames': 1,
             'pyramid_levels': ['P3', 'P4', 'P5'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinamask_panoptic_maxnorm',
@@ -80,6 +83,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'class_specific_filter': True,
             'frames': 1,
             'pyramid_levels': ['P5', 'P6', 'P7'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinamask_panoptic_maxnorm_td',
@@ -90,6 +94,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'class_specific_filter': True,
             'frames': 32,
             'pyramid_levels': ['P5', 'P6', 'P7'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinamask_location',
@@ -100,6 +105,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'class_specific_filter': True,
             'frames': 1,
             'pyramid_levels': ['P3', 'P7'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinamask_location_td',
@@ -110,6 +116,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'class_specific_filter': True,
             'frames': 32,
             'pyramid_levels': ['P3', 'P7'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinamask_panoptic_location',
@@ -120,6 +127,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'class_specific_filter': False,
             'frames': 1,
             'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+            'data_format': 'channels_last',
         },
         {
             'testcase_name': 'retinamask_panoptic_location_td',
@@ -130,10 +138,110 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             'class_specific_filter': False,
             'frames': 32,
             'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+            'data_format': 'channels_last',
+        },
+        {
+            'testcase_name': 'retinamask_basic_cf',
+            'pooling': None,
+            'panoptic': False,
+            'location': False,
+            'nms': True,
+            'class_specific_filter': True,
+            'frames': 1,
+            'pyramid_levels': ['P3'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinamask_basic_td_cf',
+            'pooling': None,
+            'panoptic': False,
+            'location': False,
+            'nms': True,
+            'class_specific_filter': True,
+            'frames': 32,
+            'pyramid_levels': ['P3'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinamask_avgnorm_cf',
+            'pooling': 'avg',
+            'panoptic': False,
+            'location': False,
+            'nms': False,
+            'class_specific_filter': False,
+            'frames': 1,
+            'pyramid_levels': ['P3', 'P4', 'P5'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinamask_panoptic_maxnorm_cf',
+            'pooling': 'max',
+            'panoptic': True,
+            'location': False,
+            'nms': True,
+            'class_specific_filter': True,
+            'frames': 1,
+            'pyramid_levels': ['P5', 'P6', 'P7'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinamask_panoptic_maxnorm_td_cf',
+            'pooling': 'max',
+            'panoptic': True,
+            'location': False,
+            'nms': True,
+            'class_specific_filter': True,
+            'frames': 32,
+            'pyramid_levels': ['P5', 'P6', 'P7'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinamask_location_cf',
+            'pooling': 'max',
+            'panoptic': False,
+            'location': True,
+            'nms': False,
+            'class_specific_filter': True,
+            'frames': 1,
+            'pyramid_levels': ['P3', 'P7'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinamask_location_td_cf',
+            'pooling': 'max',
+            'panoptic': False,
+            'location': True,
+            'nms': False,
+            'class_specific_filter': True,
+            'frames': 32,
+            'pyramid_levels': ['P3', 'P7'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinamask_panoptic_location_cf',
+            'pooling': 'max',
+            'panoptic': True,
+            'location': True,
+            'nms': True,
+            'class_specific_filter': False,
+            'frames': 1,
+            'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+            'data_format': 'channels_first',
+        },
+        {
+            'testcase_name': 'retinamask_panoptic_location_td_cf',
+            'pooling': 'max',
+            'panoptic': True,
+            'location': True,
+            'nms': True,
+            'class_specific_filter': False,
+            'frames': 32,
+            'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+            'data_format': 'channels_first',
         }
     ])
     def test_retinamask(self, pooling, panoptic, location, frames,
-                        pyramid_levels, nms, class_specific_filter):
+                        pyramid_levels, nms, class_specific_filter, data_format):
         num_classes = 3
         crop_size = (14, 14)
         mask_size = (28, 28)
@@ -144,8 +252,9 @@ class RetinaMaskTest(keras_parameterized.TestCase):
         # not all backbones work with channels_first
         backbone = 'featurenet'
 
-        # TODO: RetinaMask fails with channels_first
-        data_format = 'channels_last'
+        # TODO: RetinaMask fails with channels_first and frames_per_batch > 1
+        if frames > 1 and data_format == 'channels_first':
+            return
 
         with self.cached_session():
             K.set_image_data_format(data_format)
@@ -195,8 +304,9 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             self.assertEqual(model.output_shape[3 + delta][-1], 4)
             self.assertEqual(model.output_shape[4 + delta][-1], max_detections)
             self.assertEqual(model.output_shape[5 + delta][-1], max_detections)
-
-            self.assertEqual(model.output_shape[6 + delta][axis], num_classes)
+            # max_detections is in axis == 1
+            _axis = axis + int(K.image_data_format() == 'channels_first')
+            self.assertEqual(model.output_shape[6 + delta][_axis], num_classes)
 
             if panoptic:
                 for i, n in enumerate(num_semantic_classes):
