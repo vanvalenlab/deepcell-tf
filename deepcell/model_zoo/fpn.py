@@ -510,7 +510,7 @@ def __create_semantic_head(pyramid_dict,
     semantic_sum = pyramid_features[-1]
 
     # Final upsampling
-    min_level = int(re.findall(r'\d+', semantic_name)[0])
+    min_level = int(re.findall(r'\d+', pyramid_names[-1])[0])
     n_upsample = min_level - target_level
     x = semantic_upsample(semantic_feature, n_upsample, ndim=ndim,
                           upsample_type=upsample_type, target=input_target,
