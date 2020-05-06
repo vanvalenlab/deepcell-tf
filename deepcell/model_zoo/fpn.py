@@ -498,7 +498,9 @@ def __create_semantic_head(pyramid_dict,
     #
     #     # Use semantic upsample to get semantic map
     #     semantic_features.append(semantic_upsample(
-    #         P, n_upsample, n_filters=n_filters, target=target, ndim=ndim))
+    #         P, n_upsample, n_filters=n_filters, target=target, ndim=ndim,
+    #         upsample_type=upsample_type, interpolation=interpolation,
+    #         semantic_id=semantic_id))
     #     semantic_names.append('Q{}'.format(level))
 
     # Add all the semantic features
@@ -512,9 +514,10 @@ def __create_semantic_head(pyramid_dict,
     min_level = int(re.findall(r'\d+', pyramid_names[-1])[0])
     # n_upsample = min_level - target_level
     n_upsample = min_level
-    x = semantic_upsample(semantic_sum, n_upsample=n_upsample, ndim=ndim,
-                          upsample_type=upsample_type, target=input_target,
-                          interpolation=interpolation, semantic_id=semantic_id)
+    x = semantic_upsample(semantic_sum, n_upsample,
+                          n_filters=n_filters, target=input_target, ndim=ndim,
+                          upsample_type=upsample_type, semantic_id=semantic_id,
+                          interpolation=interpolation)
 
     # Apply conv in place of previous tensor product
     x = conv(n_dense, conv_kernel, strides=1, padding='same',
