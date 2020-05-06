@@ -45,38 +45,76 @@ class PanopticNetTest(keras_parameterized.TestCase):
             'testcase_name': 'panopticnet_basic',
             'pooling': None,
             'location': False,
+            'frames_per_batch': 1,
         },
         {
             'testcase_name': 'panopticnet_location',
             'pooling': None,
             'location': True,
+            'frames_per_batch': 1,
         },
         {
             'testcase_name': 'panopticnet_avgpool',
             'pooling': 'avg',
             'location': False,
+            'frames_per_batch': 1,
         },
         {
             'testcase_name': 'panopticnet_maxpool',
             'pooling': 'max',
             'location': False,
+            'frames_per_batch': 1,
         },
         {
             'testcase_name': 'panopticnet_location_maxpool',
             'pooling': 'max',
             'location': True,
+            'frames_per_batch': 1,
         },
         {
             'testcase_name': 'panopticnet_location_avgpool',
             'pooling': 'avg',
             'location': True,
+            'frames_per_batch': 1,
+        },
+        {
+            'testcase_name': 'panopticnet_basic_td',
+            'pooling': None,
+            'location': False,
+            'frames_per_batch': 3,
+        },
+        {
+            'testcase_name': 'panopticnet_location_td',
+            'pooling': None,
+            'location': True,
+            'frames_per_batch': 3,
+        },
+        {
+            'testcase_name': 'panopticnet_avgpool_td',
+            'pooling': 'avg',
+            'location': False,
+            'frames_per_batch': 3,
+        },
+        {
+            'testcase_name': 'panopticnet_maxpool_td',
+            'pooling': 'max',
+            'location': False,
+            'frames_per_batch': 3,
+        },
+        {
+            'testcase_name': 'panopticnet_location_maxpool_td',
+            'pooling': 'max',
+            'location': True,
+            'frames_per_batch': 3,
+        },
+        {
+            'testcase_name': 'panopticnet_location_avgpool_td',
+            'pooling': 'avg',
+            'location': True,
+            'frames_per_batch': 3,
         }
     ])
-    def test_panopticnet(self, pooling, location):
-        num_classes = 3
-        crop_size = (14, 14)
-        mask_size = (28, 28)
-
+    def test_panopticnet(self, pooling, location, frames_per_batch):
         norm_method = None
 
         # not all backbones work with channels_first
@@ -99,6 +137,7 @@ class PanopticNetTest(keras_parameterized.TestCase):
             model = PanopticNet(
                 backbone=backbone,
                 input_shape=input_shape,
+                frames_per_batch=frames_per_batch,
                 backbone_levels=['C3', 'C4', 'C5'],
                 norm_method=norm_method,
                 location=location,
