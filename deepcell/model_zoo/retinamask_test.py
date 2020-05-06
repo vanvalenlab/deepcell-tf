@@ -157,9 +157,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
                 input_shape = (32, 32, 1)
 
             num_semantic_classes = [3, 4]
-            if frames > 1:
-                # TODO: 3D and semantic heads is not implemented.
-                num_semantic_classes = []
+
             model = RetinaMask(
                 backbone=backbone,
                 num_classes=num_classes,
@@ -180,11 +178,12 @@ class RetinaMaskTest(keras_parameterized.TestCase):
                 pyramid_levels=pyramid_levels,
             )
 
-            expected_size = 7 + panoptic * len(num_semantic_classes)
+            # TODO: What are the extra 2 for panoptic models?
+            expected_size = 7 + panoptic * (len(num_semantic_classes) + 2)
 
             # TODO: What are these new outputs?
             if frames > 1:
-                expected_size += 2 + panoptic * 2
+                expected_size += 2
 
             self.assertIsInstance(model.output_shape, list)
             self.assertEqual(len(model.output_shape), expected_size)
@@ -201,4 +200,5 @@ class RetinaMaskTest(keras_parameterized.TestCase):
 
             if panoptic:
                 for i, n in enumerate(num_semantic_classes):
-                    self.assertEqual(model.output_shape[i + 7 + delta][axis], n)
+                    index = expected_size - len(num_semantic_classes) + i
+                    self.assertEqual(model.output_shape[index][axis], n)
