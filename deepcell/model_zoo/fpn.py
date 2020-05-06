@@ -409,6 +409,7 @@ def semantic_upsample(x,
 def __create_semantic_head(pyramid_dict,
                            input_target=None,
                            n_classes=3,
+                           n_filters=128,
                            n_dense=128,
                            semantic_id=0,
                            ndim=2,
@@ -423,6 +424,7 @@ def __create_semantic_head(pyramid_dict,
         pyramid_dict (dict): dict of pyramid names and features.
         input_target (tensor): Optional tensor with the input image.
         n_classes (int): Defaults to 3.  The number of classes to be predicted.
+        n_filters (int): The number of convolutional filters.
         n_dense (int): Defaults to 128. Number of dense filters.
         semantic_id (int): ID of the semantic head. Defaults to 0.
         ndim (int): Defaults to 2, 3d supported.
@@ -486,8 +488,26 @@ def __create_semantic_head(pyramid_dict,
     pyramid_names.reverse()
     pyramid_features.reverse()
 
-    semantic_feature = pyramid_features[-1]
-    semantic_name = pyramid_names[-1]
+    # Previous method of building feature pyramids
+    # semantic_features, semantic_names = [], []
+    # for N, P in zip(pyramid_names, pyramid_features):
+    #     # Get level and determine how much to upsample
+    #     level = int(re.findall(r'\d+', N)[0])
+    #
+    #     n_upsample = level - target_level
+    #     target = semantic_features[-1] if len(semantic_features) > 0 else None
+    #
+    #     # Use semantic upsample to get semantic map
+    #     semantic_features.append(semantic_upsample(
+    #         P, n_upsample, n_filters=n_filters, target=target, ndim=ndim))
+    #     semantic_names.append('Q{}'.format(level))
+
+    # Add all the semantic features
+    # semantic_sum = semantic_features[0]
+    # for semantic_feature in semantic_features[1:]:
+    #     semantic_sum = Add()([semantic_sum, semantic_feature])
+
+    semantic_sum = pyramid_features[-1]
 
     # Final upsampling
     min_level = int(re.findall(r'\d+', semantic_name)[0])
