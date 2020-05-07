@@ -31,7 +31,7 @@ from __future__ import print_function
 import numpy as np
 from skimage.measure import label
 from tensorflow.python.platform import test
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 
 from deepcell.utils import transform_utils
 

@@ -35,7 +35,7 @@ from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.morphology import ball, disk
 from skimage.morphology import binary_erosion, binary_dilation
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 
 from deepcell_toolbox import erode_edges
 

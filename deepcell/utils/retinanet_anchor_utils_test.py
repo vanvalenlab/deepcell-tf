@@ -30,9 +30,9 @@ from __future__ import division
 
 import numpy as np
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import Sequential
-from tensorflow.python.keras.layers import Conv2D
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.platform import test
 

@@ -33,10 +33,10 @@ import os
 
 import numpy as np
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.preprocessing.image import array_to_img
-from tensorflow.python.keras.preprocessing.image import Iterator
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import backend as K
+from tensorflow.keras.preprocessing.image import array_to_img
+from tensorflow.keras.preprocessing.image import Iterator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.python.platform import tf_logging as logging
 
 try:

@@ -33,7 +33,7 @@ import itertools
 import numpy as np
 import skimage as sk
 import tensorflow as tf
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 from tensorflow.python.framework import tensor_shape
 # from cv2 import resize
 from skimage.transform import resize

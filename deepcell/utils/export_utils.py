@@ -33,7 +33,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 from tensorflow.python.saved_model import tag_constants
 from tensorflow.python.saved_model import signature_constants
 from tensorflow.python.saved_model.builder import SavedModelBuilder

@@ -31,18 +31,18 @@ from __future__ import division
 
 import numpy as np
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import Sequential, Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D, LSTM, ConvLSTM2D
-from tensorflow.python.keras.layers import Input, Concatenate, InputLayer
-from tensorflow.python.keras.layers import Add, Flatten, Dense, Reshape
-from tensorflow.python.keras.layers import MaxPool2D, MaxPool3D
-from tensorflow.python.keras.layers import Cropping2D, Cropping3D
-from tensorflow.python.keras.layers import Activation, Softmax
-from tensorflow.python.keras.layers import BatchNormalization
-from tensorflow.python.keras.layers import ZeroPadding2D, ZeroPadding3D
-from tensorflow.python.keras.regularizers import l2
-from tensorflow.python.keras import utils as keras_utils
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import Conv2D, Conv3D, LSTM, ConvLSTM2D
+from tensorflow.keras.layers import Input, Concatenate, InputLayer
+from tensorflow.keras.layers import Add, Flatten, Dense, Reshape
+from tensorflow.keras.layers import MaxPool2D, MaxPool3D
+from tensorflow.keras.layers import Cropping2D, Cropping3D
+from tensorflow.keras.layers import Activation, Softmax
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import ZeroPadding2D, ZeroPadding3D
+from tensorflow.keras.regularizers import l2
+from tensorflow.keras import utils as keras_utils
 
 from deepcell.layers import ConvGRU2D
 from deepcell.layers import DilatedMaxPool2D, DilatedMaxPool3D

@@ -32,8 +32,8 @@ import os
 import shutil
 
 import numpy as np
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.preprocessing.image import array_to_img
+from tensorflow.keras import backend as K
+from tensorflow.keras.preprocessing.image import array_to_img
 from tensorflow.python.platform import test
 from skimage.external import tifffile as tiff
 

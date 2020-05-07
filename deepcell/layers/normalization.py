@@ -32,12 +32,12 @@ from __future__ import division
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import activations
-from tensorflow.python.keras import constraints
-from tensorflow.python.keras import initializers
-from tensorflow.python.keras import regularizers
-from tensorflow.python.keras.layers import Layer, InputSpec
+from tensorflow.keras import backend as K
+from tensorflow.keras import activations
+from tensorflow.keras import constraints
+from tensorflow.keras import initializers
+from tensorflow.keras import regularizers
+from tensorflow.keras.layers import Layer, InputSpec
 from tensorflow.python.keras.utils import conv_utils
 
 

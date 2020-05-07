@@ -35,7 +35,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 
 
 def get_js_video(images, batch=0, channel=0, cmap='jet', vmin=0, vmax=30):

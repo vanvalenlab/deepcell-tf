@@ -7,7 +7,7 @@ from __future__ import division
 from absl.testing import parameterized
 import numpy as np
 
-from tensorflow.python.keras import keras_parameterized
+from tensorflow.keras import keras_parameterized
 
 from tensorflow.python import keras
 

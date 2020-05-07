@@ -30,12 +30,12 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.layers import Input, Concatenate
-from tensorflow.python.keras.layers import TimeDistributed, Conv2D
-from tensorflow.python.keras.layers import MaxPool2D, Lambda
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.initializers import normal
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Input, Concatenate
+from tensorflow.keras.layers import TimeDistributed, Conv2D
+from tensorflow.keras.layers import MaxPool2D, Lambda
+from tensorflow.keras.models import Model
+from tensorflow.keras.initializers import RandomNormal
 
 from deepcell.layers import Cast, Shape, UpsampleLike
 from deepcell.layers import Upsample, RoiAlign, ConcatenateBoxes
@@ -76,7 +76,7 @@ def default_mask_model(num_classes,
         'kernel_size': 3,
         'strides': 1,
         'padding': 'same',
-        'kernel_initializer': normal(mean=0.0, stddev=0.01, seed=None),
+        'kernel_initializer': RandomNormal(mean=0.0, stddev=0.01, seed=None),
         'bias_initializer': 'zeros',
         'activation': 'relu',
     }
@@ -144,7 +144,7 @@ def default_final_detection_model(pyramid_feature_size=256,
         'kernel_size': 3,
         'strides': 1,
         'padding': 'same',
-        'kernel_initializer': normal(mean=0.0, stddev=0.01, seed=None),
+        'kernel_initializer': RandomNormal(mean=0.0, stddev=0.01, seed=None),
         'bias_initializer': 'zeros',
         'activation': 'relu'
     }
@@ -167,7 +167,7 @@ def default_final_detection_model(pyramid_feature_size=256,
     outputs = TimeDistributed(Conv2D(filters=final_detection_feature_size,
                                      kernel_size=3,
                                      padding='valid',
-                                     kernel_initializer=normal(mean=0.0, stddev=0.01, seed=None),
+                                     kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None),
                                      bias_initializer='zeros',
                                      activation='relu'))(outputs)
 

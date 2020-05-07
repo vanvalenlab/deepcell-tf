@@ -38,12 +38,12 @@ import os
 
 import numpy as np
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.utils import to_categorical
+from tensorflow.keras import backend as K
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import array_to_img
+from tensorflow.keras.preprocessing.image import Iterator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.python.keras.utils import conv_utils
-from tensorflow.python.keras.preprocessing.image import array_to_img
-from tensorflow.python.keras.preprocessing.image import Iterator
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 
 from deepcell.image_generators import _transform_masks
 

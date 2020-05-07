@@ -31,7 +31,7 @@ from __future__ import print_function
 
 import numpy as np
 
-from tensorflow.python.keras.layers import Input
+from tensorflow.keras.layers import Input
 from tensorflow.python.platform import test
 
 from deepcell.applications import Application

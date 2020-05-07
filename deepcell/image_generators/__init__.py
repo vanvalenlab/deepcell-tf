@@ -37,8 +37,8 @@ import warnings
 
 import numpy as np
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.utils import to_categorical
+from tensorflow.keras import backend as K
+from tensorflow.keras.utils import to_categorical
 
 from deepcell.utils import transform_utils
 

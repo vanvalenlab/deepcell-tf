@@ -33,10 +33,10 @@ import numpy as np
 from skimage.measure import regionprops
 from skimage.transform import resize
 
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 from tensorflow.python.platform import tf_logging as logging
-from tensorflow.python.keras.preprocessing.image import Iterator
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import Iterator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
 class SiameseDataGenerator(ImageDataGenerator):

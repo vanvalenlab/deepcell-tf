@@ -29,8 +29,8 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import keras_parameterized
+from tensorflow.keras import backend as K
+from tensorflow.keras import keras_parameterized
 from tensorflow.python.platform import test
 
 from deepcell import layers

@@ -30,8 +30,8 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import Model
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
 
 from deepcell.utils.data_utils import trim_padding
 

@@ -29,7 +29,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from tensorflow.python.keras.callbacks import Callback
+from tensorflow.keras.callbacks import Callback
 
 from deepcell.utils.retinanet_anchor_utils import evaluate, evaluate_mask
 

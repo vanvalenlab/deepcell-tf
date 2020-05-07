@@ -32,13 +32,13 @@ from __future__ import division
 import math
 import re
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D
-from tensorflow.python.keras.layers import TimeDistributed, ConvLSTM2D
-from tensorflow.python.keras.layers import Input, Concatenate, Softmax
-from tensorflow.python.keras.layers import Activation, BatchNormalization
-from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Conv2D, Conv3D
+from tensorflow.keras.layers import TimeDistributed, ConvLSTM2D
+from tensorflow.keras.layers import Input, Concatenate, Softmax
+from tensorflow.keras.layers import Activation, BatchNormalization
+from tensorflow.keras.layers import UpSampling2D, UpSampling3D
 
 from deepcell.layers import ConvGRU2D
 from deepcell.layers import ImageNormalization2D, Location2D

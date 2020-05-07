@@ -31,13 +31,13 @@ from __future__ import print_function
 
 import re
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D, TimeDistributed
-from tensorflow.python.keras.layers import Input, Concatenate
-from tensorflow.python.keras.layers import Permute, Reshape
-from tensorflow.python.keras.layers import Activation, Lambda
-from tensorflow.python.keras.initializers import RandomNormal
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Conv2D, Conv3D, TimeDistributed
+from tensorflow.keras.layers import Input, Concatenate
+from tensorflow.keras.layers import Permute, Reshape
+from tensorflow.keras.layers import Activation, Lambda
+from tensorflow.keras.initializers import RandomNormal
 
 from deepcell.initializers import PriorProbability
 from deepcell.layers import TensorProduct

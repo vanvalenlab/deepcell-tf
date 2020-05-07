@@ -31,14 +31,14 @@ from __future__ import division
 
 import re
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D, DepthwiseConv2D
-from tensorflow.python.keras.layers import Softmax
-from tensorflow.python.keras.layers import Input, Add
-from tensorflow.python.keras.layers import Activation
-from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
-from tensorflow.python.keras.layers import BatchNormalization
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Conv2D, Conv3D, DepthwiseConv2D
+from tensorflow.keras.layers import Softmax
+from tensorflow.keras.layers import Input, Add
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import UpSampling2D, UpSampling3D
+from tensorflow.keras.layers import BatchNormalization
 
 from deepcell.layers import UpsampleLike
 from deepcell.layers import TensorProduct, ImageNormalization2D

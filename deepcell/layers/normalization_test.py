@@ -30,7 +30,7 @@ from __future__ import division
 
 import numpy as np
 from tensorflow.python import keras
-from tensorflow.python.keras import keras_parameterized
+from tensorflow.keras import keras_parameterized
 from tensorflow.python.platform import test
 
 from deepcell.utils import testing_utils

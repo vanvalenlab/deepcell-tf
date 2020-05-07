@@ -34,7 +34,7 @@ import shutil
 
 import numpy as np
 
-from tensorflow.python import keras
+from tensorflow import keras
 from tensorflow.python.platform import test
 
 from deepcell import losses

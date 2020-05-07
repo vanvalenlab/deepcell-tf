@@ -30,7 +30,7 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 
 from deepcell.utils.retinanet_anchor_utils import overlap
 
@@ -97,7 +97,7 @@ def weighted_categorical_crossentropy(y_true, y_pred,
     total_sum = K.sum(y_true_cast)
     class_sum = K.sum(y_true_cast, axis=reduce_axis, keepdims=True)
     class_weights = 1.0 / K.cast_to_floatx(n_classes) * tf.divide(total_sum, class_sum + 1.)
-    return - K.sum((y_true * K.log(y_pred) * class_weights), axis=axis)
+    return - K.sum((y_true_cast * K.log(y_pred) * class_weights), axis=axis)
 
 
 def sample_categorical_crossentropy(y_true,

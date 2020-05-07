@@ -31,8 +31,8 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import keras_parameterized
+from tensorflow.keras import backend as K
+from tensorflow.keras import keras_parameterized
 
 from deepcell.model_zoo import RetinaMask
 

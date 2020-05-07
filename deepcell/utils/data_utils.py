@@ -36,7 +36,7 @@ from fnmatch import fnmatch
 
 import numpy as np
 from sklearn.model_selection import train_test_split
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 from tensorflow.python.keras.utils import conv_utils
 
 from deepcell.utils.io_utils import get_image

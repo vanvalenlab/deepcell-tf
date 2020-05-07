@@ -34,7 +34,7 @@ import tarfile
 import tempfile
 
 import numpy as np
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 from tensorflow.python.platform import test
 
 from deepcell.utils import data_utils
