@@ -65,14 +65,16 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         ValueError: Transform is invalid value.
     """
     valid_transforms = {
+        'deepcell',  # deprecated for "pixelwise"
         'pixelwise',
         'disc',
-        'watershed',
-        'watershed-cont',
-        'centroid',
+        'watershed',  # deprecated for "outer-distance"
+        'watershed-cont',  # deprecated for "outer-distance"
+        'inner-distance',
+        'outer-distance',
+        'centroid',  # deprecated for "inner-distance"
         'fgbg'
     }
-
     if data_format is None:
         data_format = K.image_data_format()
 
@@ -87,15 +89,15 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
     if isinstance(transform, str):
         transform = transform.lower()
-        if transform == 'deepcell':
-            warnings.warn('The `deepcell` transform is deprecated. '
-                          'Please use the`pixelwise` transform insetad.',
-                          DeprecationWarning)
-            transform = 'pixelwise'
-        if transform not in valid_transforms:
-            raise ValueError('`{}` is not a valid transform'.format(transform))
 
-    if transform == 'pixelwise':
+    if transform not in valid_transforms and transform is not None:
+        raise ValueError('`{}` is not a valid transform'.format(transform))
+
+    if transform in {'pixelwise', 'deepcell'}:
+        if transform == 'deepcell':
+            warnings.warn('The `{}` transform is deprecated. Please use the '
+                          '`pixelwise` transform insetad.'.format(transform),
+                          DeprecationWarning)
         dilation_radius = kwargs.pop('dilation_radius', None)
         separate_edge_classes = kwargs.pop('separate_edge_classes', False)
 
@@ -116,9 +118,15 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask, dilation_radius, data_format=data_format,
                 separate_edge_classes=separate_edge_classes)
 
-    elif transform == 'watershed':
-        distance_bins = kwargs.pop('distance_bins', 4)
+    elif transform in {'outer-distance', 'watershed', 'watershed-cont'}:
+        if transform in {'watershed', 'watershed-cont'}:
+            warnings.warn('The `{}` transform is deprecated. Please use the '
+                          '`outer-distance` transform insetad.'.format(transform),
+                          DeprecationWarning)
+
+        bins = kwargs.pop('distance_bins', None)
         erosion = kwargs.pop('erosion_width', 0)
+        by_frame = kwargs.pop('by_frame', True)
 
         if data_format == 'channels_first':
             y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
@@ -126,9 +134,12 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.zeros(y.shape[0:-1])
 
         if y.ndim == 5:
-            _distance_transform = transform_utils.distance_transform_3d
+            if by_frame:
+                _distance_transform = transform_utils.outer_distance_transform_movie
+            else:
+                _distance_transform = transform_utils.outer_distance_transform_3d
         else:
-            _distance_transform = transform_utils.distance_transform_2d
+            _distance_transform = transform_utils.outer_distance_transform_2d
 
         for batch in range(y_transform.shape[0]):
             if data_format == 'channels_first':
@@ -137,43 +148,27 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask = y[batch, ..., 0]
 
             y_transform[batch] = _distance_transform(
-                mask, distance_bins, erosion)
-
-        # convert to one hot notation
-        y_transform = np.expand_dims(y_transform, axis=-1)
-        y_transform = to_categorical(y_transform, num_classes=distance_bins)
-        if data_format == 'channels_first':
-            y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
-
-    elif transform == 'watershed-cont':
-        erosion = kwargs.pop('erosion_width', 0)
-
-        if data_format == 'channels_first':
-            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
-        else:
-            y_transform = np.zeros(y.shape[0:-1])
-
-        if y.ndim == 5:
-            raise ValueError('3D images not supported')
-        else:
-            _distance_transform = transform_utils.distance_transform_continuous_2d
-
-        for batch in range(y_transform.shape[0]):
-            if data_format == 'channels_first':
-                mask = y[batch, 0, ...]
-            else:
-                mask = y[batch, ..., 0]
-
-            y_transform[batch] = _distance_transform(mask, erosion)
+                mask, bins=bins, erosion_width=erosion)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
+        if bins is None:
+            pass
+        else:
+            # convert to one hot notation
+            y_transform = to_categorical(y_transform, num_classes=bins)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
-    elif transform == 'centroid':
+    elif transform == 'inner-distance':
+        if transform == 'centroid':
+            warnings.warn('The `{}` transform is deprecated. Please use the '
+                          '`inner-distance` transform insetad.'.format(transform),
+                          DeprecationWarning)
+
+        bins = kwargs.pop('distance_bins', None)
         erosion = kwargs.pop('erosion_width', 0)
-        disk_size = kwargs.pop('disk_size', 4)
+        by_frame = kwargs.pop('by_frame', True)
         alpha = kwargs.pop('alpha', 0.1)
         beta = kwargs.pop('beta', 1)
 
@@ -183,9 +178,12 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.zeros(y.shape[0:-1])
 
         if y.ndim == 5:
-            raise ValueError('3D images not supported')
+            if by_frame:
+                _distance_transform = transform_utils.inner_distance_transform_movie
+            else:
+                _distance_transform = transform_utils.inner_distance_transform_3d
         else:
-            _transform = transform_utils.centroid_transform_continuous_2d
+            _distance_transform = transform_utils.inner_distance_transform_2d
 
         for batch in range(y_transform.shape[0]):
             if data_format == 'channels_first':
@@ -193,11 +191,17 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             else:
                 mask = y[batch, ..., 0]
 
-            y_transform[batch] = _transform(mask, erosion_width=erosion,
-                                            alpha=alpha, beta=beta)
+            y_transform[batch] = _distance_transform(mask, bins=bins,
+                                                     erosion_width=erosion,
+                                                     alpha=alpha, beta=beta)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
+        if bins is None:
+            pass
+        else:
+            # convert to one hot notation
+            y_transform = to_categorical(y_transform, num_classes=bins)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
@@ -224,6 +228,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
 
 # Globally-importable utils.
+# pylint: disable=wrong-import-position
 from deepcell.image_generators.fully_convolutional import ImageFullyConvDataGenerator
 from deepcell.image_generators.fully_convolutional import ImageFullyConvIterator
 from deepcell.image_generators.fully_convolutional import MovieDataGenerator
@@ -236,6 +241,8 @@ from deepcell.image_generators.retinanet import RetinaMovieDataGenerator
 
 from deepcell.image_generators.semantic import SemanticDataGenerator
 from deepcell.image_generators.semantic import SemanticIterator
+from deepcell.image_generators.semantic import SemanticMovieGenerator
+from deepcell.image_generators.semantic import SemanticMovieIterator
 
 from deepcell.image_generators.sample import SampleDataGenerator
 from deepcell.image_generators.sample import ImageSampleArrayIterator
@@ -247,6 +254,7 @@ from deepcell.image_generators.scale import ScaleDataGenerator
 
 from deepcell.image_generators.tracking import SiameseDataGenerator
 from deepcell.image_generators.tracking import SiameseIterator
+# pylint: enable=wrong-import-position
 
 del absolute_import
 del division

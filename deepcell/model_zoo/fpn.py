@@ -133,8 +133,14 @@ def create_pyramid_level(backbone_input,
         else:
             upsampling = UpSampling2D if ndim == 2 else UpSampling3D
             size = (2, 2) if ndim == 2 else (1, 2, 2)
-            pyramid_upsample = upsampling(size=size, name=upsample_name,
-                                          interpolation=interpolation)(pyramid)
+            upsampling_kwargs = {
+                'size': size,
+                'name': upsample_name,
+                'interpolation': interpolation
+            }
+            if ndim > 2:
+                del upsampling_kwargs['interpolation']
+            pyramid_upsample = upsampling(**upsampling_kwargs)(pyramid)
     else:
         pyramid_upsample = None
 
@@ -282,8 +288,9 @@ def __create_pyramid_features(backbone_dict,
         P_minus_1 = Activation('relu', name=N + '_relu')(P_minus_2)
 
         if ndim == 2:
-            P_minus_1 = Conv2D(feature_size, kernel_size=(3, 3), strides=(2, 2),
-                               padding='same', name=P_minus_1_name)(P_minus_1)
+            P_minus_1 = Conv2D(feature_size, kernel_size=(3, 3),
+                               strides=(2, 2), padding='same',
+                               name=P_minus_1_name)(P_minus_1)
         else:
             P_minus_1 = Conv3D(feature_size, kernel_size=(1, 3, 3),
                                strides=(1, 2, 2), padding='same',
