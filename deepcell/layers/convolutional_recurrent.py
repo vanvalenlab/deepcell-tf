@@ -114,14 +114,15 @@ class ConvGRU2DCell(DropoutRNNCellMixin, Layer):
         return (self.filters,)
 
     def build(self, input_shape):
+        input_shape = tensor_shape.TensorShape(input_shape)
         if self.data_format == 'channels_first':
             channel_axis = 1
         else:
             channel_axis = -1
-        if input_shape[channel_axis] is None:
+        if input_shape.dims[channel_axis].value is None:
             raise ValueError('The channel dimension of the inputs '
                              'should be defined. Found `None`.')
-        input_dim = input_shape[channel_axis]
+        input_dim = input_shape.dims[channel_axis].value
         kernel_shape = self.kernel_size + (input_dim, self.filters * 3)
         self.kernel_shape = kernel_shape
         recurrent_kernel_shape = self.kernel_size + (self.filters, self.filters * 3)

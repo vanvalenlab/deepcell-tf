@@ -130,7 +130,7 @@ class TensorProduct(Layer):
         else:
             channel_axis = -1
         input_shape = tensor_shape.TensorShape(input_shape)
-        if input_shape[channel_axis].value is None:
+        if input_shape.dims[channel_axis].value is None:
             raise ValueError('The channel dimension of the inputs to '
                              '`TensorProduct` should be defined. '
                              'Found `None`.')

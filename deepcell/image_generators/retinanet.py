@@ -40,10 +40,10 @@ import numpy as np
 from skimage.measure import regionprops
 from skimage.segmentation import clear_border
 
-from tensorflow.keras import backend as K
-from tensorflow.keras.preprocessing.image import array_to_img
-from tensorflow.keras.preprocessing.image import Iterator
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.preprocessing.image import array_to_img
+from tensorflow.python.keras.preprocessing.image import Iterator
+from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.python.platform import tf_logging as logging
 
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
@@ -430,7 +430,8 @@ class RetinaNetIterator(Iterator):
         return annotations
 
     def _get_batches_of_transformed_samples(self, index_array):
-        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]),
+                           dtype=K.floatx())
 
         batch_y_semantic_list = []
         for y_sem in self.y_semantic_list:
@@ -530,7 +531,7 @@ class RetinaNetIterator(Iterator):
         if self.semantic_only:
             batch_outputs = batch_y_semantic_list
 
-        return batch_x, batch_outputs
+        return batch_x, tuple(batch_outputs)
 
     def next(self):
         """For python 2.x. Returns the next batch.
