@@ -40,18 +40,15 @@ class TestNuclearSegmentation(test.TestCase):
     def test_nuclear_app(self):
         with self.cached_session():
             app = NuclearSegmentation(use_pretrained_weights=False)
-            # Check shape parameters
-            shape = app.model.output_shape
 
+            # test output shape
+            shape = app.model.output_shape
             self.assertIsInstance(shape, list)
             self.assertEqual(len(shape), 2)
             self.assertEqual(len(shape[0]), 4)
             self.assertEqual(len(shape[1]), 4)
 
-    def test_predict(self):
-        with self.cached_session():
-            app = NuclearSegmentation(use_pretrained_weights=False)
+            # test predict
             x = np.random.rand(1, 500, 500, 1)
             y = app.predict(x)
-
             self.assertEqual(x.shape, y.shape)
