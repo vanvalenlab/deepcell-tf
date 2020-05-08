@@ -14,15 +14,20 @@
 #
 import os
 import sys
-import shlex
+from datetime import datetime
+import mock
+from sphinx.builders.html import StandaloneHTMLBuilder
 sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
 
+# pylint: disable=line-too-long
 
 # -- Project information -----------------------------------------------------
 
 project = 'DeepCell'
-copyright = '2016-2018, Van Valen Lab at the California Institute of Technology (Caltech)'
+copyright = ('2016-{currentyear}, Van Valen Lab at the '
+             'California Institute of Technology (Caltech)').format(
+                 currentyear=datetime.now().year)
 author = 'Van Valen Lab at Caltech'
 
 # The short X.Y version
@@ -30,12 +35,21 @@ version = '2.0'
 # The full version, including alpha/beta/rc tags
 release = '2.0.0'
 
+# -- RTD configuration ------------------------------------------------
+
+# on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
+on_rtd = os.environ.get("READTHEDOCS", None) == "True"
+
+# This is used for linking and such so we link to the thing we're building
+rtd_version = os.environ.get("READTHEDOCS_VERSION", "latest")
+if rtd_version not in ["stable", "latest"]:
+    rtd_version = "stable"
 
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-# needs_sphinx = '1.0'
+needs_sphinx = '2.3.1'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -49,6 +63,10 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'm2r',
+    'IPython.sphinxext.ipython_console_highlighting',
+    'nbsphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.autosectionlabel'
 ]
 
 napoleon_google_docstring = True
@@ -193,6 +211,7 @@ epub_exclude_files = ['search.html']
 autodoc_mock_imports = [
     'tensorflow',
     'scipy',
+    'numpy',
     'sklearn',
     'skimage',
     'pandas',
@@ -201,14 +220,42 @@ autodoc_mock_imports = [
     'cv2',
     'cython',
     'keras-preprocessing',
+    'keras_retinanet',
+    'deepcell_tracking',
+    'deepcell_toolbox',
+    'keras_applications',
+    'matplotlib'
 ]
+
+sys.modules['deepcell.utils.compute_overlap'] = mock.Mock()
+sys.modules['tensorflow.python.keras.layers.convolutional_recurrent.ConvRNN2D'] = mock.Mock()
+
+# Disable nbsphinx extension from running notebooks
+nbsphinx_execute = 'never'
+exclude_patterns = ['_build', '**.ipynb_checkpoints']
+
+nbsphinx_prolog = r"""
+{% set docname = 'scripts/' + env.doc2path(env.docname, base=None)|replace("nblink", "ipynb") %}
+{% set doclink = "https://github.com/vanvalenlab/deepcell-tf/blob/master/{{ docname }}" %}
+
+.. raw:: html
+
+    <div class="admonition note">
+        <p>This page was generated from
+            <a class="reference external" href="https://github.com/vanvalenlab/deepcell-tf/blob/master/{{ docname }}">{{ docname|e }}</a>.
+            Download the notebook from <a class="reference external" href="https://github.com/vanvalenlab/deepcell-tf/blob/master/{{ docname }}">Github</a>.
+        </p>
+    </div>
+"""
 
 # -- Options for intersphinx extension ---------------------------------------
 
 intersphinx_mapping = {
-    'kiosk': ('https://deepcell-kiosk.readthedocs.io/en/latest/', None),
     'python': ('https://docs.python.org/3.7', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'kiosk': ('https://deepcell-kiosk.readthedocs.io/en/{}/'.format(rtd_version), None),
+    'kiosk-redis-consumer': (('https://deepcell-kiosk.readthedocs.io/'
+                              'projects/kiosk-redis-consumer/en/{}/').format(rtd_version), None),
 }
 
 intersphinx_cache_limit = 0
@@ -227,4 +274,11 @@ nitpick_ignore = [
     ('py:class', 'tensorflow.python.keras.layers.ZeroPadding3D'),
     ('py:class', 'tensorflow.python.keras.preprocessing.image.Iterator'),
     ('py:class', 'tensorflow.python.keras.preprocessing.image.ImageDataGenerator'),
+]
+
+StandaloneHTMLBuilder.supported_image_types = [
+    'image/svg+xml',
+    'image/gif',
+    'image/png',
+    'image/jpeg'
 ]

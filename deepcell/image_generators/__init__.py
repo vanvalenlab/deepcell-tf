@@ -46,7 +46,8 @@ from deepcell.utils import transform_utils
 def _transform_masks(y, transform, data_format=None, **kwargs):
     """Based on the transform key, apply a transform function to the masks.
 
-    More detailed description. Caution for unknown transform keys.
+    Refer to :mod:`deepcell.utils.transform_utils` for more information about
+    available transforms. Caution for unknown transform keys.
 
     Args:
         y (numpy.array): Labels of ndim 4 or 5
@@ -153,7 +154,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.zeros(y.shape[0:-1])
 
         if y.ndim == 5:
-            raise ValueError('3D images not supported')
+            _distance_transform = transform_utils.distance_transform_continuous_movie
         else:
             _distance_transform = transform_utils.distance_transform_continuous_2d
 
@@ -173,13 +174,16 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     elif transform == 'centroid':
         erosion = kwargs.pop('erosion_width', 0)
         disk_size = kwargs.pop('disk_size', 4)
+        alpha = kwargs.pop('alpha', 0.1)
+        beta = kwargs.pop('beta', 1)
+
         if data_format == 'channels_first':
             y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
         else:
             y_transform = np.zeros(y.shape[0:-1])
 
         if y.ndim == 5:
-            raise ValueError('3D images not supported')
+            _transform = transform_utils.centroid_transform_continuous_movie
         else:
             _transform = transform_utils.centroid_transform_continuous_2d
 
@@ -189,7 +193,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             else:
                 mask = y[batch, ..., 0]
 
-            y_transform[batch] = _transform(mask, erosion)
+            y_transform[batch] = _transform(mask, erosion_width=erosion,
+                                            alpha=alpha, beta=beta)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
@@ -231,6 +236,8 @@ from deepcell.image_generators.retinanet import RetinaMovieDataGenerator
 
 from deepcell.image_generators.semantic import SemanticDataGenerator
 from deepcell.image_generators.semantic import SemanticIterator
+from deepcell.image_generators.semantic import SemanticMovieGenerator
+from deepcell.image_generators.semantic import SemanticMovieIterator
 
 from deepcell.image_generators.sample import SampleDataGenerator
 from deepcell.image_generators.sample import ImageSampleArrayIterator

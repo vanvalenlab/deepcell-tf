@@ -29,13 +29,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from deepcell.applications.application import Application
+from deepcell.applications.cytoplasm_segmentation import CytoplasmSegmentation
+from deepcell.applications.multiplex_segmentation import MultiplexSegmentation
+from deepcell.applications.nuclear_segmentation import NuclearSegmentation
 from deepcell.applications.cell_tracking import CellTrackingModel
-from deepcell.applications.nuclear_segmentation import NuclearSegmentationModel
 from deepcell.applications.label_detection import LabelDetectionModel
 from deepcell.applications.scale_detection import ScaleDetectionModel
-from deepcell.applications.phase_segmentation import PhaseSegmentationModel
-from deepcell.applications.fluorescent_cytoplasm_segmentation import \
-    FluorCytoplasmSegmentationModel
 
 del absolute_import
 del division

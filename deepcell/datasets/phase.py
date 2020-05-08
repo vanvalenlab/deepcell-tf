@@ -23,7 +23,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Built-in Datasets"""
+"""Phase datasets including
+the raw images and ground truth segmentation masks"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -53,7 +54,7 @@ methods = {
         'images.'
 }
 
-
+#:
 all_cells = Dataset(
     path='all_phase_fixed.npz',
     url='https://deepcell-data.s3-us-west-1.amazonaws.com/cytoplasm/brightfield/20190813_all_phase_512_contrast_adjusted_curated.npz',
@@ -61,7 +62,7 @@ all_cells = Dataset(
     metadata={'methods': methods}
 )
 
-
+#:
 nih_3t3 = Dataset(
     path='nih_3t3-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/nih_3t3-phase_fixed.npz',
@@ -69,7 +70,7 @@ nih_3t3 = Dataset(
     metadata={'methods': methods}
 )
 
-
+#:
 a549 = Dataset(
     path='A549-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/A549-phase_fixed.npz',
@@ -77,7 +78,7 @@ a549 = Dataset(
     metadata={'methods': methods}
 )
 
-
+#:
 cho = Dataset(
     path='CHO-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/CHO-phase_fixed.npz',
@@ -85,7 +86,7 @@ cho = Dataset(
     metadata={'methods': methods}
 )
 
-
+#:
 hela_s3 = Dataset(
     path='HeLa_S3-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/HeLa_S3-phase_fixed.npz',
@@ -93,7 +94,7 @@ hela_s3 = Dataset(
     metadata={'methods': methods}
 )
 
-
+#:
 hela = Dataset(
     path='HeLa-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/HeLa-phase_fixed.npz',
@@ -101,7 +102,7 @@ hela = Dataset(
     metadata={'methods': methods}
 )
 
-
+#:
 pc3 = Dataset(
     path='PC3-phase.npz',
     url='https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/PC3-phase_fixed.npz',
