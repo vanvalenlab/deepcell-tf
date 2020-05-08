@@ -40,20 +40,16 @@ from deepcell.applications import Application
 class DummyModel():
 
     def __init__(self, n_out=1):
-
         self.n_out = n_out
 
     def predict(self, x, batch_size=4):
-
         y = np.random.rand(*x.shape)
-
         return [y] * self.n_out
 
 
 class TestApplication(test.TestCase):
 
     def test_predict_notimplemented(self):
-
         model = DummyModel()
         kwargs = {'model_mpp': 0.65,
                   'model_image_shape': (128, 128, 1)}
@@ -65,7 +61,6 @@ class TestApplication(test.TestCase):
             app.predict(x)
 
     def test_resize(self):
-
         model = DummyModel()
         kwargs = {'model_mpp': 0.65,
                   'model_image_shape': (128, 128, 1)}
@@ -115,7 +110,6 @@ class TestApplication(test.TestCase):
             app = Application(model, **kwargs)
 
     def test_tile_input(self):
-
         model = DummyModel()
         kwargs = {'model_mpp': 0.65,
                   'model_image_shape': (128, 128, 1)}
@@ -200,7 +194,6 @@ class TestApplication(test.TestCase):
         self.assertEqual(x.shape, y.shape)
 
     def test_resize_output(self):
-
         model = DummyModel()
         kwargs = {'model_image_shape': (128, 128, 1)}
         app = Application(model, **kwargs)
@@ -225,7 +218,6 @@ class TestApplication(test.TestCase):
         self.assertEqual(x.shape, y[0].shape)
 
     def test_predict_segmentation(self):
-
         model = DummyModel()
         app = Application(model)
 
