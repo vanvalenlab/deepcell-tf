@@ -60,8 +60,12 @@ from deepcell.utils.io_utils import get_image_sizes
 from deepcell.utils.io_utils import get_images_from_directory
 from deepcell.utils.misc_utils import sorted_nicely
 from deepcell.utils.train_utils import rate_scheduler
-from deepcell.utils.transform_utils import distance_transform_2d
-from deepcell.utils.transform_utils import distance_transform_3d
+from deepcell.utils.transform_utils import outer_distance_transform_2d
+from deepcell.utils.transform_utils import outer_distance_transform_3d
+from deepcell.utils.transform_utils import outer_distance_transform_movie
+from deepcell.utils.transform_utils import inner_distance_transform_2d
+from deepcell.utils.transform_utils import inner_distance_transform_3d
+from deepcell.utils.transform_utils import inner_distance_transform_movie
 from deepcell.utils.transform_utils import pixelwise_transform
 
 del warnings
