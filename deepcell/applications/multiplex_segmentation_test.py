@@ -37,20 +37,19 @@ from deepcell.applications import MultiplexSegmentation
 
 class TestMultiplexSegmentation(test.TestCase):
 
-    def setUp(self):
-
-        self.app = MultiplexSegmentation(use_pretrained_weights=False)
-
     def test_multiplex_app(self):
+        with self.cached_session():
+            app = MultiplexSegmentation(use_pretrained_weights=False)
+            # Check shape parameters
+            shape = app.model.output_shape
 
-        # Check shape parameters
-        shape = self.app.model.output_shape
-
-        self.assertIsInstance(shape, list)
-        self.assertEqual(len(shape), 4)
+            self.assertIsInstance(shape, list)
+            self.assertEqual(len(shape), 4)
 
     def test_predict(self):
-        x = np.random.rand(1, 500, 500, 2)
-        y = self.app.predict(x)
+        with self.cached_session():
+            app = MultiplexSegmentation(use_pretrained_weights=False)
+            x = np.random.rand(1, 500, 500, 2)
+            y = app.predict(x)
 
-        self.assertEqual(x.shape[:-1], y.shape[:-1])
+            self.assertEqual(x.shape[:-1], y.shape[:-1])
