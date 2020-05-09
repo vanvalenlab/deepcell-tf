@@ -509,6 +509,8 @@ def __create_semantic_head(pyramid_dict,
     # for semantic_feature in semantic_features[1:]:
     #     semantic_sum = Add()([semantic_sum, semantic_feature])
 
+    # TODO: bad name but using the same name more clearly indicates
+    # how to integrate the previous version
     semantic_sum = pyramid_features[-1]
 
     # Final upsampling
