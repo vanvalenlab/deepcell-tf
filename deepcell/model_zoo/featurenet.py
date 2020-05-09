@@ -214,7 +214,7 @@ def bn_feature_net_2D(receptive_field=61,
         if not dilated:
             x.append(Flatten()(x[-1]))
 
-        x.append(Softmax(axis=channel_axis)(x[-1]))
+        x.append(Softmax(axis=channel_axis, dtype=K.floatx())(x[-1]))
 
     if inputs is not None:
         real_inputs = keras_utils.get_source_inputs(x[0])
@@ -501,7 +501,7 @@ def bn_feature_net_3D(receptive_field=61,
         x.append(Flatten()(x[-1]))
 
     if include_top:
-        x.append(Softmax(axis=channel_axis)(x[-1]))
+        x.append(Softmax(axis=channel_axis, dtype=K.floatx())(x[-1]))
 
     model = Model(inputs=x[0], outputs=x[-1])
 
@@ -719,7 +719,7 @@ def siamese_model(input_shape=None,
     dense2 = Dense(128)(relu1)
     bn2 = BatchNormalization(axis=channel_axis)(dense2)
     relu2 = Activation('relu')(bn2)
-    dense3 = Dense(3, activation='softmax')(relu2)
+    dense3 = Dense(3, activation='softmax', dtype=K.floatx())(relu2)
 
     # Instantiate model
     final_layer = dense3
