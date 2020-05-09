@@ -149,7 +149,11 @@ def default_final_detection_model(pyramid_feature_size=256,
         'activation': 'relu'
     }
 
-    inputs = Input(shape=(None, roi_size[0], roi_size[1], pyramid_feature_size))
+    if K.image_data_format() == 'channels_first':
+        input_shape = (None, pyramid_feature_size, roi_size[0], roi_size[1])
+    else:
+        input_shape = (None, roi_size[0], roi_size[1], pyramid_feature_size)
+    inputs = Input(shape=input_shape)
     outputs = inputs
 
     for i in range(2):
