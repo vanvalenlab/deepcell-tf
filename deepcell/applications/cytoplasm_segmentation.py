@@ -111,8 +111,8 @@ class CytoplasmSegmentation(Application):
         model = PanopticNet('resnet50',
                             input_shape=model_image_shape,
                             norm_method='whole_image',
-                            num_semantic_heads=3,
-                            num_semantic_classes=[1, 1, 2],
+                            num_semantic_heads=2,
+                            num_semantic_classes=[1, 1],
                             location=True,
                             include_top=True,
                             lite=True,
@@ -126,7 +126,7 @@ class CytoplasmSegmentation(Application):
                 md5_hash='50614f04d5dbc4b3eadd897fa5fb0e23'
             )
 
-            model.load_weights(weights_path)
+            model.load_weights(weights_path, by_name=True)
         else:
             weights_path = None
 
