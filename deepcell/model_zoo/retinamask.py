@@ -232,6 +232,7 @@ def retinanet_mask(inputs,
                    retinanet_model=None,
                    anchor_params=None,
                    nms=True,
+                   training=True,
                    panoptic=False,
                    class_specific_filter=True,
                    crop_size=(14, 14),
@@ -341,23 +342,27 @@ def retinanet_mask(inputs,
     boxes = ClipBoxes(name='clipped_boxes')([image, boxes])
 
     # filter detections (apply NMS / score threshold / select top-k)
-    detections = FilterDetections(
-        nms=nms,
-        nms_threshold=nms_threshold,
-        score_threshold=score_threshold,
-        class_specific_filter=class_specific_filter,
-        max_detections=max_detections,
-        name='filtered_detections'
-    )([boxes, classification] + other)
+    if training:
+      detections = []
+      inputs = [image, boxes]
 
-    # split up in known outputs and "other"
-    boxes = detections[0]
-    scores = detections[1]
+      if frames_per_batch == 1:
+        boxes = Input(shape=(None, 4), name='boxes_input')
+      else:
+        boxes = Input(shape=(None, None, 4), name='boxes_input')
 
-    # get the region of interest features
-    #
-    # roi_input = [image_shape, boxes, classification] + features
-    # rois = _RoiAlign(crop_size=crop_size)(roi_input)
+    else:
+      detections = FilterDetections(
+          nms=nms,
+          nms_threshold=nms_threshold,
+          score_threshold=score_threshold,
+          class_specific_filter=class_specific_filter,
+          max_detections=max_detections,
+          name='filtered_detections'
+      )([boxes, classification] + other)
+
+      # split up in known outputs and "other"
+      boxes = detections[0]
 
     fpn = features[0]
     fpn = UpsampleLike()([fpn, image])
@@ -378,10 +383,13 @@ def retinanet_mask(inputs,
     if panoptic:
         outputs += list(semantic)
 
-    model = Model(inputs=inputs, outputs=outputs, name=name)
+    if training:
+      model = Model(inputs=inputs, outputs=outputs, name=name)
+    else:
+      model = Model(inputs=image, outputs=outputs, name=name)
+
     model.backbone_levels = backbone_levels
     model.pyramid_levels = pyramid_levels
-
     return model
 
 

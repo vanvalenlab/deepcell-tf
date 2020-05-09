@@ -764,6 +764,7 @@ def train_model_retinanet(model,
     train_data = datagen.flow(
         train_dict,
         seed=seed,
+        include_bbox=include_masks,
         include_masks=include_masks,
         panoptic=panoptic,
         transforms=transforms,
@@ -778,6 +779,7 @@ def train_model_retinanet(model,
     val_data = datagen_val.flow(
         test_dict,
         seed=seed,
+        include_bbox=include_masks,
         include_masks=include_masks,
         panoptic=panoptic,
         transforms=transforms,
@@ -792,8 +794,8 @@ def train_model_retinanet(model,
     image_shape = train_data.x.shape
 
     if include_masks:
-        output_types = (tf.float32, (tf.float32, tf.float32, tf.float32))
-        output_shapes = (tuple([None] + list(image_shape[1:])),
+        output_types = ((tf.float32, tf.float32), (tf.float32, tf.float32, tf.float32))
+        output_shapes = ((tuple([None] + list(image_shape[1:])),(None, None, 4)),
                          ((None, None, None), (None, None, None), (None, None, None))
                         )
     else:
