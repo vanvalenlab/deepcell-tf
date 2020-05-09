@@ -535,8 +535,11 @@ def __create_semantic_head(pyramid_dict,
 
     if include_top:
         x = Softmax(axis=channel_axis,
+                    dtype=K.floatx(),
                     name='semantic_{}'.format(semantic_id))(x)
     else:
-        x = Activation('relu', name='semantic_{}'.format(semantic_id))(x)
+        x = Activation('relu',
+                       dtype=K.floatx(),
+                       name='semantic_{}'.format(semantic_id))(x)
 
     return x
