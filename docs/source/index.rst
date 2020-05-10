@@ -5,8 +5,8 @@
    :hidden:
    :caption: Start Here:
 
-   nblinks/Training-Segmentation
-   nblinks/Training-Tracking
+   notebooks/Training-Segmentation
+   notebooks/Training-Tracking
 
 .. toctree::
    :maxdepth: 2
