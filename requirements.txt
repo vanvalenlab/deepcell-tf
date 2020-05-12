@@ -1,12 +1,13 @@
 pandas>=0.23.3,<1
 numpy>=1.16.4,<2
 scipy>=1.1.0,<2
-scikit-image>=0.14.1,<1
+scikit-image>=0.14.1,<=0.16.2
 scikit-learn>=0.19.1,<1
 tensorflow>=1.14.0,<2
 jupyter>=1.0.0,<2
 nbformat>=4.4.0,<5
 keras-applications==1.0.8
+keras-preprocessing<=1.1.0
 networkx>=2.1
 opencv-python>=3.4.2.17,<4
 cython>=0.28
