@@ -35,6 +35,17 @@ version = '2.0'
 # The full version, including alpha/beta/rc tags
 release = '2.0.0'
 
+import subprocess
+try:
+    git_rev = subprocess.check_output(['git', 'describe', '--exact-match', 'HEAD'], universal_newlines=True)
+except subprocess.CalledProcessError:
+    try:
+        git_rev = subprocess.check_output(['git', 'rev-parse', 'HEAD'], universal_newlines=True)
+    except subprocess.CalledProcessError:
+        git_rev = ''
+if git_rev:
+    git_rev = git_rev.splitlines()[0] + '/'
+
 # -- RTD configuration ------------------------------------------------
 
 # on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
@@ -65,6 +76,7 @@ extensions = [
     'm2r',
     'IPython.sphinxext.ipython_console_highlighting',
     'nbsphinx',
+    'nbsphinx_link',
     'sphinx.ext.todo',
     'sphinx.ext.autosectionlabel'
 ]
@@ -234,19 +246,22 @@ sys.modules['tensorflow.python.keras.layers.convolutional_recurrent.ConvRNN2D'] 
 nbsphinx_execute = 'never'
 exclude_patterns = ['_build', '**.ipynb_checkpoints']
 
-nbsphinx_prolog = r"""
-{% set docname = 'scripts/' + env.doc2path(env.docname, base=None)|replace("nblink", "ipynb") %}
-{% set doclink = "https://github.com/vanvalenlab/deepcell-tf/blob/master/{{ docname }}" %}
-
+# TODO: fix relative URL for notebooks, using replace() is not perfect.
+nbsphinx_prolog = (
+r"""
+{% if env.metadata[env.docname]['nbsphinx-link-target'] %}
+{% set docpath = env.metadata[env.docname]['nbsphinx-link-target'].replace('../', '') %}
+{% else %}
+{% set docpath = env.doc2path(env.docname, base='docs/source') %}
+{% endif %}
 .. raw:: html
 
     <div class="admonition note">
-        <p>This page was generated from
-            <a class="reference external" href="https://github.com/vanvalenlab/deepcell-tf/blob/master/{{ docname }}">{{ docname|e }}</a>.
-            Download the notebook from <a class="reference external" href="https://github.com/vanvalenlab/deepcell-tf/blob/master/{{ docname }}">Github</a>.
+        <p>This page was generated from <a href="https://github.com/vanvalenlab/deepcell-tf/blob/""" + git_rev + r"""{{ docpath }}">{{ docpath }}</a>
         </p>
     </div>
 """
+)
 
 # -- Options for intersphinx extension ---------------------------------------
 
