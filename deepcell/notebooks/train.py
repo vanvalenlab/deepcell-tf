@@ -50,7 +50,7 @@ def make_notebook(data,
                   model_name=None,
                   log_dir=None,
                   export_dir=None,
-                  output_dir=os.path.join('scripts', 'generated_notebooks'),
+                  output_dir=os.path.join('notebooks', 'generated_notebooks'),
                   **kwargs):
     """Create a training notebook that will step through the training
     process from making an npz file to creating and training a model.
