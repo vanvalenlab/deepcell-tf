@@ -51,7 +51,7 @@ Once `nvidia-docker` is installed, run the following command:
 # Start a GPU enabled container on one GPUs
 docker run --gpus '"device=0"' -it --rm \
     -p 8888:8888 \
-    -v $PWD/scripts:/notebooks \
+    -v $PWD/notebooks:/notebooks \
     -v $PWD/data:/data \
     vanvalenlab/deepcell-tf:0.4.0-gpu
 ```
@@ -88,7 +88,7 @@ docker run --gpus '"device=0"' -it \
 $USER/deepcell-tf:latest
 ```
 
-It can also be helpful to mount the local copy of the repository and the scripts to speed up local development. However, if you are going to mount a local version of the repository, you must first run the docker image without the local repository mounted so that the C extensions can be compiled and then copied over to your local version.
+It can also be helpful to mount the local copy of the repository and the notebooks to speed up local development. However, if you are going to mount a local version of the repository, you must first run the docker image without the local repository mounted so that the C extensions can be compiled and then copied over to your local version.
 
 ```bash
 # First run the docker image without mounting externally
@@ -111,7 +111,7 @@ docker kill $container_id
 docker run --gpus '"device=0"' -it \
     -p 8888:8888 \
     -v $PWD/deepcell:/usr/local/lib/python3.6/dist-packages/deepcell/ \
-    -v $PWD/scripts:/notebooks \
+    -v $PWD/notebooks:/notebooks \
     -v /$PWD:/data \
     $USER/deepcell-tf:latest
 ```

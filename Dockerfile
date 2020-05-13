@@ -37,6 +37,6 @@ RUN if [ -n "$(find /notebooks/ -prune)" ] ; then \
     fi
 
 # Copy over deepcell notebooks
-COPY scripts/ /notebooks/
+COPY notebooks/ /notebooks/
 
 CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--allow-root"]

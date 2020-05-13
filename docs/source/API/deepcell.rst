@@ -11,7 +11,6 @@ Subpackages
     deepcell.image_generators
     deepcell.layers
     deepcell.model_zoo
-    deepcell.notebooks
     deepcell.utils
 
 Submodules
