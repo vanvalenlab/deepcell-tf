@@ -23,15 +23,21 @@
 import deepcell
 import deepcell_toolbox
 
+import os
+import random
+import numpy as np
+import tensorflow as tf
+
+seed_value = 13 # value for all random seeds
+
 def _load_data():
     # take in dataset
     filename = 'HeLa_S3.npz'
     test_size = 0.1 # % of data saved as test
-    seed = 0 # seed for random train-test split
     (X_train, y_train), (X_test, y_test) = deepcell.datasets.hela_s3.load_data(
                                                 filename,
                                                 test_size = test_size,
-                                                seed = seed)
+                                                seed = seed_value)
     #import pdb; pdb.set_trace()
     return (X_train, y_train), (X_test, y_test)
 
@@ -73,8 +79,15 @@ def _create_model(X_train):
                 input_shape=tuple(X_train.shape[1:]))
     return model
 
+def _set_random_seeds():
+    os.environ['PYTHONHASHSEED']=str(seed_value)
+    random.seed(seed_value)
+    np.random.seed(seed_value)
+    tf.set_random_seed(seed_value)
+
 def main():
     # create model_trainer
+    _set_random_seeds()
     (X_train, y_train), (X_test, y_test) = _load_data()
     train_generator, validation_generator = _create_generators()
     model = _create_model(X_train)
@@ -87,11 +100,12 @@ def main():
             model = model,
             train_generator = train_generator,
             validation_generator = validation_generator,
-            training_kwargs = training_kwargs)
+            training_kwargs = training_kwargs,
+            random_seed = seed_value)
     #postprocessing_fn = deepcell_toolbox.retinamask_postprocess,
 
     # train model
-    model_name, metadata_name = trainer.create_model()
+    model_name, metadata_name, model_hash = trainer.create_model()
 
     # Now, try to use metadata to create identical copy of model
 
