@@ -1,5 +1,4 @@
 # Application generated files
-notebooks/generated_notebooks/
 deepcell/utils/compute_overlap.cypthon-*
 deepcell/utils/compute_overlap.c
 
