@@ -41,7 +41,7 @@ from deepcell.utils.train_utils import rate_scheduler, get_callbacks
 from deepcell.metrics import Metrics
 
 from tensorflow.keras.optimizers import SGD
-
+import tensorflow as tf
 
 class ModelTrainer(object):
     def __init__(self,
@@ -66,7 +66,8 @@ class ModelTrainer(object):
                  postprocessing_kwargs={},
                  predict_batch_size=4,
                  dataset_metadata={},
-                 training_kwargs={}):
+                 training_kwargs={},
+                 random_seed=13):
 
         """
         Model trainer class for segmentation models. This class eases model development by
@@ -90,6 +91,10 @@ class ModelTrainer(object):
             training_kwargs (dict):
         """
 
+        # set random seeds
+        self.random_seed = random_seed
+        self._set_random_seeds()
+        
         # Add model information
         self.model = model
         self.model_name = model_name
@@ -179,6 +184,13 @@ class ModelTrainer(object):
         self.trained = False
 
         self._init_output_metadata()
+
+    def _set_random_seeds(self):
+        pass
+        #os.environ['PYTHONHASHSEED']=str(seed_value)
+        #random.seed(seed_value)
+        #np.random.seed(self.random_seed)
+        #tf.set_random_seed(self.random_seed)
 
     def _init_output_metadata(self):
         """
@@ -388,6 +400,7 @@ class ModelTrainer(object):
                 summed_weights = sum(summed_weights_list)
                 model_hash = hashlib.md5(str(summed_weights).encode()).hexdigest()
                 output_metadata["model"]["trained_model_md5_digest"] = model_hash
+                output_metadata["model"]["model_config"] = model.get_config()
                 return model_hash
 
         loss_history = train_model(
@@ -462,6 +475,7 @@ class ModelTrainer(object):
             self.model_name, self.model_hash))
 
         with open(metadata_name, 'w') as json_file:
+            import pdb; pdb.set_trace()
             json.dump(self.output_metadata, json_file)
 
         # Export tf serving model
