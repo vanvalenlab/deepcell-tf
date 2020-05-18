@@ -40,7 +40,7 @@ from deepcell.model_zoo import PanopticNet
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/nuclear_0_82800_resnet50_watershed_'
+                'model-weights/nuclear_0_82800_resnet50_watershed_named_'
                 '076bb10d832089b6a77faed1e63ad375.h5')
 
 
@@ -123,7 +123,7 @@ class NuclearSegmentation(Application):
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='62b6ac21807d34dd42734f43ed20756f'
+                md5_hash='42ca0ebe4b7b0f782eaa4733cdddad88'
             )
 
             model.load_weights(weights_path, by_name=True)

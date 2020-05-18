@@ -526,7 +526,8 @@ def __create_semantic_head(pyramid_dict,
     # Apply conv in place of previous tensor product
     x = conv(n_dense, conv_kernel, strides=1, padding='same',
              name='conv_0_semantic_{}'.format(semantic_id))(x)
-    x = BatchNormalization(axis=channel_axis)(x)
+    x = BatchNormalization(axis=channel_axis,
+                           name='batch_normalization_0_semantic_{}'.format(semantic_id))(x)
     x = Activation('relu', name='relu_0_semantic_{}'.format(semantic_id))(x)
 
     # Apply conv and softmax layer

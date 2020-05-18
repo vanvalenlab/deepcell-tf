@@ -40,7 +40,7 @@ from deepcell.model_zoo import PanopticNet
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/Multiplexed_Segmentation_V6.h5')
+                'model-weights/Multiplexed_Segmentation_V6_named.h5')
 
 
 class MultiplexSegmentation(Application):
@@ -121,7 +121,7 @@ class MultiplexSegmentation(Application):
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='685c4df646abab594b8906919fc31e25'
+                md5_hash='66fec859eacc5222b5e7d2baa105f3e3'
             )
 
             model.load_weights(weights_path)
