@@ -16,4 +16,3 @@ omit =
     **/*_test.py
     deepcell/utils/testing_utils.py
     deepcell/datasets/*
-    deepcell/notebooks/*
