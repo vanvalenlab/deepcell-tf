@@ -60,8 +60,8 @@ This will spin up a docker container with `deepcell-tf` installed and start a ju
 
 For examples of how to train models with the `deepcell-tf` library, check out the following notebooks:
 
-- [Training a segmentation model](https://deepcell.readthedocs.io/en/master/Training-Segmentation.html)
-- [Training a tracking model](https://deepcell.readthedocs.io/en/master/Training-Tracking.html)
+- [Training a segmentation model](https://deepcell.readthedocs.io/en/master/notebooks/Training-Segmentation.html)
+- [Training a tracking model](https://deepcell.readthedocs.io/en/master/notebooks/Training-Tracking.html)
 
 ## DeepCell Applications and DeepCell Datasets
 
