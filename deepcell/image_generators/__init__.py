@@ -96,7 +96,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     if transform in {'pixelwise', 'deepcell'}:
         if transform == 'deepcell':
             warnings.warn('The `{}` transform is deprecated. Please use the '
-                          '`pixelwise` transform insetad.'.format(transform),
+                          '`pixelwise` transform instead.'.format(transform),
                           DeprecationWarning)
         dilation_radius = kwargs.pop('dilation_radius', None)
         separate_edge_classes = kwargs.pop('separate_edge_classes', False)
@@ -121,7 +121,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     elif transform in {'outer-distance', 'watershed', 'watershed-cont'}:
         if transform in {'watershed', 'watershed-cont'}:
             warnings.warn('The `{}` transform is deprecated. Please use the '
-                          '`outer-distance` transform insetad.'.format(transform),
+                          '`outer-distance` transform instead.'.format(transform),
                           DeprecationWarning)
 
         bins = kwargs.pop('distance_bins', None)
@@ -160,10 +160,10 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
-    elif transform == 'inner-distance':
+    elif transform in {'inner-distance', 'centroid'}:
         if transform == 'centroid':
             warnings.warn('The `{}` transform is deprecated. Please use the '
-                          '`inner-distance` transform insetad.'.format(transform),
+                          '`inner-distance` transform instead.'.format(transform),
                           DeprecationWarning)
 
         bins = kwargs.pop('distance_bins', None)

@@ -41,7 +41,7 @@ from deepcell.model_zoo import PanopticNet
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/general_cyto.h5')
+                'model-weights/general_cyto_named.h5')
 
 
 class CytoplasmSegmentation(Application):
@@ -123,7 +123,7 @@ class CytoplasmSegmentation(Application):
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='50614f04d5dbc4b3eadd897fa5fb0e23'
+                md5_hash='104a7d7884c80c37d2bce6d1c3a17c7a'
             )
 
             model.load_weights(weights_path, by_name=True)
