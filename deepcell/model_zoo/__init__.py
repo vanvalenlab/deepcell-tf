@@ -41,7 +41,8 @@ from deepcell.model_zoo.retinanet import retinanet
 from deepcell.model_zoo.retinanet import retinanet_bbox
 
 from deepcell.model_zoo.retinamask import RetinaMask
-from deepcell.model_zoo.retinamask import retinanet_mask
+from deepcell.model_zoo.retinamask import retinamask
+from deepcell.model_zoo.retinamask import retinamask_bbox
 
 from deepcell.model_zoo.panopticnet import PanopticNet
 

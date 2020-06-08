@@ -721,7 +721,7 @@ def _get_detections(generator,
             image = generator.x[i]
 
             # run network
-            results = model.predict_on_batch(np.expand_dims(image, axis=0))
+            results = model.predict(np.expand_dims(image, axis=0))
 
             if generator.panoptic:
                 num_semantic_outputs = len(generator.y_semantic_list)

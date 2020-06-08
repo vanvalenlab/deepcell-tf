@@ -227,27 +227,27 @@ def default_roi_submodels(num_classes,
     ]
 
 
-def retinanet_mask(inputs,
-                   backbone_dict,
-                   num_classes,
-                   frames_per_batch=1,
-                   backbone_levels=['C3', 'C4', 'C5'],
-                   pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
-                   retinanet_model=None,
-                   anchor_params=None,
-                   nms=True,
-                   training=True,
-                   panoptic=False,
-                   class_specific_filter=True,
-                   crop_size=(14, 14),
-                   mask_size=(28, 28),
-                   name='retinanet-mask',
-                   roi_submodels=None,
-                   max_detections=100,
-                   score_threshold=0.05,
-                   nms_threshold=0.5,
-                   mask_dtype=K.floatx(),
-                   **kwargs):
+def retinamask(inputs,
+               backbone_dict,
+               num_classes,
+               frames_per_batch=1,
+               backbone_levels=['C3', 'C4', 'C5'],
+               pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
+               retinanet_model=None,
+               anchor_params=None,
+               nms=True,
+               training=True,
+               panoptic=False,
+               class_specific_filter=True,
+               crop_size=(14, 14),
+               mask_size=(28, 28),
+               name='retinanet-mask',
+               roi_submodels=None,
+               max_detections=100,
+               score_threshold=0.05,
+               nms_threshold=0.5,
+               mask_dtype=K.floatx(),
+               **kwargs):
     """Construct a RetinaNet mask model on top of a retinanet bbox model.
     Uses the retinanet bbox model and appends layers to compute masks.
 
@@ -347,26 +347,24 @@ def retinanet_mask(inputs,
 
     # filter detections (apply NMS / score threshold / select top-k)
     if training:
-      detections = []
-      inputs = [image, boxes]
-
-      if frames_per_batch == 1:
-        boxes = Input(shape=(None, 4), name='boxes_input')
-      else:
-        boxes = Input(shape=(None, None, 4), name='boxes_input')
+        if frames_per_batch == 1:
+            boxes = Input(shape=(None, 4), name='boxes_input')
+        else:
+            boxes = Input(shape=(None, None, 4), name='boxes_input')
+        detections = []
+        inputs = [image, boxes]
 
     else:
-      detections = FilterDetections(
-          nms=nms,
-          nms_threshold=nms_threshold,
-          score_threshold=score_threshold,
-          class_specific_filter=class_specific_filter,
-          max_detections=max_detections,
-          name='filtered_detections'
-      )([boxes, classification] + other)
+        detections = FilterDetections(nms=nms,
+                                      nms_threshold=nms_threshold,
+                                      score_threshold=score_threshold,
+                                      class_specific_filter=class_specific_filter,
+                                      max_detections=max_detections,
+                                      name='filtered_detections'
+                                      )([boxes, classification] + other)
 
-      # split up in known outputs and "other"
-      boxes = detections[0]
+        # split up in known outputs and "other"
+        boxes = detections[0]
 
     fpn = features[0]
     fpn = UpsampleLike()([fpn, image])
@@ -388,13 +386,130 @@ def retinanet_mask(inputs,
         outputs += list(semantic)
 
     if training:
-      model = Model(inputs=inputs, outputs=outputs, name=name)
+        model = Model(inputs=inputs, outputs=outputs, name=name)
     else:
-      model = Model(inputs=image, outputs=outputs, name=name)
+        model = Model(inputs=image, outputs=outputs, name=name)
 
     model.backbone_levels = backbone_levels
     model.pyramid_levels = pyramid_levels
     return model
+
+
+def retinamask_bbox(model=None,
+                    nms=True,
+                    panoptic=False,
+                    num_semantic_heads=1,
+                    class_specific_filter=True,
+                    name='retinanet-bbox',
+                    anchor_params=None,
+                    max_detections=300,
+                    frames_per_batch=1,
+                    crop_size=(14, 14),
+                    **kwargs):
+    """Construct a RetinaNet model on top of a backbone and adds convenience
+    functions to output boxes directly.
+    This model uses the minimum retinanet model and appends a few layers
+    to compute boxes within the graph. These layers include applying the
+    regression values to the anchors and performing NMS.
+    Args:
+        model (tensorflow.keras.Model): RetinaNet model to append bbox
+            layers to. If None, it will create a RetinaNet model using kwargs.
+        nms (bool): Whether to use non-maximum suppression
+            for the filtering step.
+        backbone_levels (list): Backbone levels to use for
+            constructing retinanet.
+        pyramid_levels (list): Pyramid levels to attach
+            the object detection heads to.
+        class_specific_filter (bool): Whether to use class specific filtering
+            or filter for the best scoring class only.
+        name (str): Name of the model.
+        anchor_params (AnchorParameters): Struct containing anchor parameters.
+            If None, default values are used.
+        kwargs (dict): Additional kwargs to pass to the minimal retinanet model.
+    Returns:
+        tensorflow.keras.Model: A Model which takes an image as input and
+            outputs the detections on the image.
+            The order is defined as follows:
+            ```
+            [
+                boxes, scores, labels, other[0], other[1], ...
+            ]
+            ```
+    Raises:
+        ValueError: the given model does not have a regression or
+            classification submodel.
+    """
+
+    # if no anchor parameters are passed, use default values
+    if anchor_params is None:
+        anchor_params = AnchorParameters.default
+
+    # create RetinaNet model
+    names = ('regression', 'classification')
+    if not all(output in model.output_names for output in names):
+        raise ValueError('Input is not a training model (no `regression` '
+                         'and `classification` outputs were found, '
+                         'outputs are: {}).'.format(model.output_names))
+
+    # compute the anchors
+    features = [model.get_layer(l).output for l in model.pyramid_levels]
+    anchors = __build_anchors(anchor_params, features,
+                              frames_per_batch=frames_per_batch)
+
+    # we expect anchors, regression. and classification values as first output
+    regression = model.outputs[0]
+    classification = model.outputs[1]
+
+    # "other" can be any additional output from custom submodels, by default []
+    if panoptic:
+        # The last output is the panoptic output, which should not be
+        # sent to filter detections
+        other = model.outputs[2:-num_semantic_heads]
+        semantic = model.outputs[-num_semantic_heads:]
+    else:
+        other = model.outputs[2:]
+
+    # apply predicted regression to anchors
+    boxes = RegressBoxes(name='boxes')([anchors, regression])
+    boxes = ClipBoxes(name='clipped_boxes')([model.inputs[0], boxes])
+
+    # filter detections (apply NMS / score threshold / select top-k)
+    detections = FilterDetections(
+        nms=nms,
+        class_specific_filter=class_specific_filter,
+        max_detections=max_detections,
+        name='filtered_detections'
+    )([boxes, classification])
+
+    # apply submodels to detections
+    image = model.layers[0].output
+    boxes = detections[0]
+
+    fpn = features[0]
+    fpn = UpsampleLike()([fpn, image])
+    rois = RoiAlign(crop_size=crop_size)([boxes, fpn])
+
+    mask_submodel = model.get_layer('mask_submodel')
+    masks = [mask_submodel(rois)]
+
+    # add the semantic head's output if needed
+    if panoptic:
+        outputs = detections + list(masks) + list(semantic)
+    else:
+        outputs = detections + list(masks)
+
+    # construct the model
+    new_model = Model(inputs=model.inputs, outputs=outputs, name=name)
+
+    image_input = model.inputs[0]
+    if frames_per_batch == 1:
+        temp_boxes = tf.zeros([1, 1, 4])
+    else:
+        temp_boxes = tf.zeros([1, 1, 1, 4])
+    new_inputs = [image_input, temp_boxes]
+
+    final_model = new_model(new_inputs)
+    return Model(inputs=image_input, outputs=final_model)
 
 
 def RetinaMask(backbone,
@@ -501,7 +616,7 @@ def RetinaMask(backbone,
                                     return_dict=True, **model_kwargs)
 
     # create the full model
-    return retinanet_mask(
+    return retinamask(
         inputs=inputs,
         num_classes=num_classes,
         backbone_dict=backbone_dict,
