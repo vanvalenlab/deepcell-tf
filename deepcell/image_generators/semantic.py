@@ -84,7 +84,8 @@ class SemanticIterator(Iterator):
                  data_format='channels_last',
                  save_to_dir=None,
                  save_prefix='',
-                 save_format='png'):
+                 save_format='png',
+                 crop_size=None):
         # Load data
         if 'X' not in train_dict:
             raise ValueError('No training data found in train_dict')
@@ -118,6 +119,11 @@ class SemanticIterator(Iterator):
 
         self.y_semantic_list = []  # optional semantic segmentation targets
 
+        # set crop size based on current image if not specified
+        if crop_size is None:
+            crop_size = self.x.shape[1:3] if self.channel_axis == 3 else self.x.shape[2:4]
+
+        self.crop_size = crop_size
         # Create a list of all the semantic targets. We need to be able
         # to have multiple semantic heads
         # Add all the keys that contain y_semantic
@@ -162,12 +168,22 @@ class SemanticIterator(Iterator):
             self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
+        # set output shape based on crop shape and image shape
+        if self.channel_axis == 3:
+            x_shape = tuple([len(index_array)] + list(self.crop_size) + [self.x.shape[3]])
+        else:
+            x_shape = tuple([len(index_array)] + [self.x.shape[1]] + list(self.crop_size))
 
+        batch_x = np.zeros(x_shape)
         batch_y = []
         for y_sem in self.y_semantic_list:
-            shape = tuple([len(index_array)] + list(y_sem.shape[1:]))
-            batch_y.append(np.zeros(shape, dtype=y_sem.dtype))
+            # set output shape based on crop shape and transformed label shape
+            if self.channel_axis == 3:
+                y_shape = tuple([len(index_array)] + list(self.crop_size) + [y_sem.shape[3]])
+            else:
+                y_shape = tuple([len(index_array)] + [y_sem.shape[1]] + list(self.crop_size))
+
+            batch_y.append(np.zeros(y_shape, dtype=y_sem.dtype))
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -298,6 +314,64 @@ class SemanticDataGenerator(ImageDataGenerator):
         validation_split (float): Fraction of images reserved for validation
             (strictly between 0 and 1).
     """
+
+    def __init__(self,
+                 featurewise_center=False,
+                 samplewise_center=False,
+                 featurewise_std_normalization=False,
+                 samplewise_std_normalization=False,
+                 zca_whitening=False,
+                 zca_epsilon=1e-6,
+                 rotation_range=0,
+                 width_shift_range=0.,
+                 height_shift_range=0.,
+                 brightness_range=None,
+                 shear_range=0.,
+                 zoom_range=0.,
+                 channel_shift_range=0.,
+                 fill_mode='nearest',
+                 cval=0.,
+                 horizontal_flip=False,
+                 vertical_flip=False,
+                 rescale=None,
+                 preprocessing_function=None,
+                 data_format='channels_last',
+                 validation_split=0.0,
+                 #interpolation_order=1,
+                 crop_size=None,
+                 dtype='float32'):
+
+        if crop_size is not None:
+            if not isinstance(crop_size, (tuple, list)):
+                raise ValueError("Crop size must be a list or tuple of row/col dimensions")
+
+        self.crop_size = crop_size
+
+        ImageDataGenerator.__init__(self,
+                                    featurewise_center=featurewise_center,
+                                    samplewise_center=samplewise_center,
+                                    featurewise_std_normalization=featurewise_std_normalization,
+                                    samplewise_std_normalization=samplewise_std_normalization,
+                                    zca_whitening=zca_whitening,
+                                    zca_epsilon=zca_epsilon,
+                                    rotation_range=rotation_range,
+                                    width_shift_range=width_shift_range,
+                                    height_shift_range=height_shift_range,
+                                    brightness_range=brightness_range,
+                                    shear_range=shear_range,
+                                    zoom_range=zoom_range,
+                                    channel_shift_range=channel_shift_range,
+                                    fill_mode=fill_mode,
+                                    cval=cval,
+                                    horizontal_flip=horizontal_flip,
+                                    vertical_flip=vertical_flip,
+                                    rescale=rescale,
+                                    preprocessing_function=preprocessing_function,
+                                    data_format=data_format,
+                                    validation_split=validation_split,
+                                    #interpolation_order=interpolation_order,
+                                    dtype=dtype)
+
     def flow(self,
              train_dict,
              batch_size=1,
@@ -344,7 +418,34 @@ class SemanticDataGenerator(ImageDataGenerator):
             data_format=self.data_format,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
-            save_format=save_format)
+            save_format=save_format,
+            crop_size=self.crop_size)
+
+    def get_random_transform(self, img_shape, seed=None):
+        transform_parameters = ImageDataGenerator.get_random_transform(self, img_shape=img_shape,
+                                                                       seed=seed)
+
+        crop_indices = None
+        if self.crop_size is not None:
+            row_start = np.random.randint(0, img_shape[0] - self.crop_size[0])
+            col_start = np.random.randint(0, img_shape[1] - self.crop_size[1])
+            crop_indices = ([row_start, row_start + self.crop_size[0]],
+                            [col_start, col_start + self.crop_size[1]])
+
+        transform_parameters['crop_indices'] = crop_indices
+
+        return transform_parameters
+
+    def apply_transform(self, x, transform_parameters):
+
+        if transform_parameters['crop_indices'] is not None:
+            row_indices, col_indices = transform_parameters['crop_indices']
+            x = x[row_indices[0]:row_indices[1], col_indices[0]:col_indices[1]]
+
+        x = ImageDataGenerator.apply_transform(self,
+                                               x=x,
+                                               transform_parameters=transform_parameters)
+        return x
 
     def random_transform(self, x, y=None, seed=None):
         """Applies a random transformation to an image.
