@@ -35,7 +35,7 @@ import numpy as np
 
 from tensorflow.python import keras
 from tensorflow.python.platform import test
-from tensorflow.keras import keras_parameterized
+from tensorflow.python.keras import keras_parameterized
 from tensorflow.keras import testing_utils
 
 from deepcell.callbacks import RedirectModel
