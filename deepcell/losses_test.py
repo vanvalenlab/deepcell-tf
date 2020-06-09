@@ -57,6 +57,20 @@ ALL_LOSSES = [
 ]
 
 
+class _MSEMAELoss(object):
+    """Loss function with internal state, for testing serialization code."""
+
+    def __init__(self, mse_fraction):
+        self.mse_fraction = mse_fraction
+
+    def __call__(self, y_true, y_pred, sample_weight=None):
+        return (self.mse_fraction * keras.losses.mean_squared_error(y_true, y_pred) +
+                (1 - self.mse_fraction) * keras.losses.mean_absolute_error(y_true, y_pred))
+
+    def get_config(self):
+        return {'mse_fraction': self.mse_fraction}
+
+
 class KerasLossesTest(test.TestCase):
 
     def test_objective_shapes_3d(self):
