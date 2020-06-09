@@ -144,10 +144,6 @@ def train_model_sample(model,
     if num_gpus is None:
         num_gpus = train_utils.count_gpus()
 
-    if num_gpus >= 2:
-        batch_size = batch_size * num_gpus
-        model = train_utils.MultiGpuModel(model, num_gpus)
-
     print('Training on {} GPUs'.format(num_gpus))
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
@@ -304,10 +300,6 @@ def train_model_conv(model,
 
     if num_gpus is None:
         num_gpus = train_utils.count_gpus()
-
-    if num_gpus >= 2:
-        batch_size = batch_size * num_gpus
-        model = train_utils.MultiGpuModel(model, num_gpus)
 
     print('Training on {} GPUs'.format(num_gpus))
 
@@ -475,10 +467,6 @@ def train_model_siamese_daughter(model,
 
     if num_gpus is None:
         num_gpus = train_utils.count_gpus()
-
-    if num_gpus >= 2:
-        batch_size = batch_size * num_gpus
-        model = train_utils.MultiGpuModel(model, num_gpus)
 
     print('Training on {} GPUs'.format(num_gpus))
 
@@ -673,10 +661,6 @@ def train_model_retinanet(model,
 
     if num_gpus is None:
         num_gpus = train_utils.count_gpus()
-
-    if num_gpus >= 1e6:
-        batch_size = batch_size * num_gpus
-        model = train_utils.MultiGpuModel(model, num_gpus)
 
     print('Training on {} GPUs'.format(num_gpus))
 

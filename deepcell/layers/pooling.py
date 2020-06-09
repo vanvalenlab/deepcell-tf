@@ -93,7 +93,7 @@ class DilatedMaxPool2D(Layer):
                                  window_shape=self.pool_size,
                                  pooling_type='MAX',
                                  padding=self.padding.upper(),
-                                 dilation_rate=self.dilation_rate,
+                                 dilations=self.dilation_rate,
                                  strides=self.strides,
                                  data_format='NHWC')
 
@@ -130,7 +130,7 @@ class DilatedMaxPool2D(Layer):
                                  window_shape=self.pool_size,
                                  pooling_type='MAX',
                                  padding='VALID',
-                                 dilation_rate=self.dilation_rate,
+                                 dilations=self.dilation_rate,
                                  strides=self.strides,
                                  data_format='NHWC')
 
@@ -216,7 +216,7 @@ class DilatedMaxPool3D(Layer):
                                  window_shape=self.pool_size,
                                  pooling_type='MAX',
                                  padding=padding_input,
-                                 dilation_rate=self.dilation_rate,
+                                 dilations=self.dilation_rate,
                                  strides=self.strides,
                                  data_format='NDHWC')
         elif self.padding == 'same':
@@ -261,7 +261,7 @@ class DilatedMaxPool3D(Layer):
                                  window_shape=self.pool_size,
                                  pooling_type='MAX',
                                  padding='VALID',
-                                 dilation_rate=self.dilation_rate,
+                                 dilations=self.dilation_rate,
                                  strides=self.strides,
                                  data_format='NDHWC')
 
