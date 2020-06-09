@@ -61,8 +61,8 @@ class CallbacksTest(keras_parameterized.TestCase):
                 input_shape=(INPUT_DIM,),
                 num_classes=NUM_CLASSES)
 
-            y_test = keras.utils.to_categorical(y_test)
-            y_train = keras.utils.to_categorical(y_train)
+            y_test = keras.utils.np_utils.to_categorical(y_test)
+            y_train = keras.utils.np_utils.to_categorical(y_train)
             model = keras.models.Sequential()
             model.add(
                 keras.layers.Dense(
