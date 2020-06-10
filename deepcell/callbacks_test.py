@@ -35,8 +35,8 @@ import numpy as np
 
 from tensorflow.python import keras
 from tensorflow.python.platform import test
-from tensorflow.keras import keras_parameterized
-from tensorflow.keras import testing_utils
+from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.keras import testing_utils
 
 from deepcell.callbacks import RedirectModel
 
@@ -61,8 +61,8 @@ class CallbacksTest(keras_parameterized.TestCase):
                 input_shape=(INPUT_DIM,),
                 num_classes=NUM_CLASSES)
 
-            y_test = keras.utils.to_categorical(y_test)
-            y_train = keras.utils.to_categorical(y_train)
+            y_test = keras.utils.np_utils.to_categorical(y_test)
+            y_train = keras.utils.np_utils.to_categorical(y_train)
             model = keras.models.Sequential()
             model.add(
                 keras.layers.Dense(

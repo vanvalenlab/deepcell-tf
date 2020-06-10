@@ -30,7 +30,7 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow.keras import backend as K
-from tensorflow.keras import keras_parameterized
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.initializers import PriorProbability
 

@@ -79,8 +79,7 @@ class KerasLossesTest(test.TestCase):
             y_b = keras.backend.variable(np.random.random((5, 6, 7)))
             for obj in ALL_LOSSES:
                 objective_output = obj(y_a, y_b)
-                print(obj)
-                self.assertListEqual(objective_output.get_shape().as_list(), [5, 6])
+                self.assertListEqual(objective_output.shape.as_list(), [5, 6])
 
     def test_objective_shapes_2d(self):
         with self.cached_session():
@@ -88,66 +87,7 @@ class KerasLossesTest(test.TestCase):
             y_b = keras.backend.variable(np.random.random((6, 7)))
             for obj in ALL_LOSSES:
                 objective_output = obj(y_a, y_b)
-                print(obj)
-                self.assertListEqual(objective_output.get_shape().as_list(), [6])
-
-    def test_cce_one_hot(self):
-        with self.cached_session():
-            y_a = keras.backend.variable(np.random.randint(0, 7, (5, 6)))
-            y_b = keras.backend.variable(np.random.random((5, 6, 7)))
-            objective_output = keras.losses.sparse_categorical_crossentropy(y_a, y_b)
-            self.assertEqual(keras.backend.eval(objective_output).shape, (5, 6))
-
-            y_a = keras.backend.variable(np.random.randint(0, 7, (6,)))
-            y_b = keras.backend.variable(np.random.random((6, 7)))
-            objective_output = keras.losses.sparse_categorical_crossentropy(y_a, y_b)
-            self.assertEqual(keras.backend.eval(objective_output).shape, (6,))
-
-    def test_serialization(self):
-        fn = keras.losses.get('mse')
-        config = keras.losses.serialize(fn)
-        new_fn = keras.losses.deserialize(config)
-        self.assertEqual(fn, new_fn)
-
-    def test_categorical_hinge(self):
-        y_pred = keras.backend.variable(np.array([[0.3, 0.2, 0.1], [0.1, 0.2, 0.7]]))
-        y_true = keras.backend.variable(np.array([[0, 1, 0], [1, 0, 0]]))
-        expected_loss = ((0.3 - 0.2 + 1) + (0.7 - 0.1 + 1)) / 2.0
-        loss = keras.backend.eval(keras.losses.categorical_hinge(y_true, y_pred))
-        self.assertAllClose(expected_loss, np.mean(loss))
-
-    def test_serializing_loss_class(self):
-        orig_loss_class = _MSEMAELoss(0.3)
-        with keras.utils.custom_object_scope({'_MSEMAELoss': _MSEMAELoss}):
-            serialized = keras.losses.serialize(orig_loss_class)
-
-        with keras.utils.custom_object_scope({'_MSEMAELoss': _MSEMAELoss}):
-            deserialized = keras.losses.deserialize(serialized)
-        self.assertIsInstance(deserialized, _MSEMAELoss)
-        self.assertEqual(deserialized.mse_fraction, 0.3)
-
-    def test_serializing_model_with_loss_class(self):
-        tmpdir = self.get_temp_dir()
-        self.addCleanup(shutil.rmtree, tmpdir)
-        model_filename = os.path.join(tmpdir, 'custom_loss.h5')
-
-        with self.cached_session():
-            with keras.utils.custom_object_scope({'_MSEMAELoss': _MSEMAELoss}):
-                loss = _MSEMAELoss(0.3)
-                inputs = keras.layers.Input((2,))
-                outputs = keras.layers.Dense(1, name='model_output')(inputs)
-                model = keras.models.Model(inputs, outputs)
-                model.compile(optimizer='sgd', loss={'model_output': loss})
-                model.fit(np.random.rand(256, 2), np.random.rand(256, 1))
-
-                if h5py is None:
-                    return
-
-                model.save(model_filename)
-
-            with keras.utils.custom_object_scope({'_MSEMAELoss': _MSEMAELoss}):
-                loaded_model = keras.models.load_model(model_filename)
-                loaded_model.predict(np.random.rand(128, 2))
+                self.assertListEqual(objective_output.shape.as_list(), [6])
 
 
 if __name__ == '__main__':
