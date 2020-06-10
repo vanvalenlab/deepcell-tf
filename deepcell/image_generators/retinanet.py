@@ -491,7 +491,7 @@ class RetinaNetIterator(Iterator):
             self.num_classes)
 
         max_shape = tuple(max_shape)  # was a list for max shape indexing
-        
+
         if self.include_bbox:
             max_annotations = max(len(a['masks']) for a in annotations_list)
             batch_x_bbox_shape = (len(index_array), max_annotations, 4)
@@ -947,7 +947,9 @@ class RetinaMovieIterator(Iterator):
                         format=self.save_format)
                     img.save(os.path.join(self.save_to_dir, fname))
 
+        batch_inputs = batch_x
         batch_outputs = [regressions, labels]
+        
         if self.include_bbox:
             batch_inputs = (batch_x, batch_x_bbox)
         if self.include_masks:

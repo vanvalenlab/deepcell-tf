@@ -44,6 +44,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
+from tensorflow.python.framework import tensor_shape
 from tensorflow.keras import activations
 from tensorflow.keras import backend as K
 from tensorflow.keras import constraints
