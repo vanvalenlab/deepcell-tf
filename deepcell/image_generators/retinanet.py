@@ -533,7 +533,7 @@ class RetinaNetIterator(Iterator):
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
-        batch_inputs = batch_x
+        batch_inputs = (batch_x)
         batch_outputs = [regressions, labels]
 
         if self.include_bbox:
@@ -947,7 +947,7 @@ class RetinaMovieIterator(Iterator):
                         format=self.save_format)
                     img.save(os.path.join(self.save_to_dir, fname))
 
-        batch_inputs = batch_x
+        batch_inputs = (batch_x)
         batch_outputs = [regressions, labels]
         
         if self.include_bbox:

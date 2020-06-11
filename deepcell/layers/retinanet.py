@@ -107,13 +107,9 @@ class Anchors(Layer):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if None not in input_shape[1:]:
             if self.data_format == "channels_first":
-                total = K.prod(input_shape[2:4]) * self.num_anchors
+                total = np.prod(input_shape[2:4]) * self.num_anchors
             else:
-                total = K.prod(input_shape[1:3]) * self.num_anchors
-
-            # TODO: fails time_distributed tests for RetinaMask
-            # AttributeError: 'Tensor' object has no attribute 'numpy'
-            total = K.get_value(total)
+                total = np.prod(input_shape[1:3]) * self.num_anchors
 
             return tensor_shape.TensorShape((input_shape[0], total, 4))
         return tensor_shape.TensorShape((input_shape[0], None, 4))

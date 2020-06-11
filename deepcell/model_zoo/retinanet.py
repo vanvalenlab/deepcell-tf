@@ -232,8 +232,7 @@ def __build_model_pyramid(name, model, features):
         tensor: The response from the submodel on the FPN features.
     """
     if len(features) == 1:
-        # TODO: Lambda layer has no compute_output_shape in eager mode
-        identity = Lambda(lambda x: x, name=name)
+        identity = Activation('linear', name=name)
         return identity(model(features[0]))
     else:
         concat = Concatenate(axis=-2, name=name)
