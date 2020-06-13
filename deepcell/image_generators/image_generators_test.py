@@ -1916,7 +1916,7 @@ class TestSemanticDataGenerator(test.TestCase):
                 img_list.append(img_to_array(im)[None, ...])
 
             images = np.vstack(img_list)
-            crop_size = (8, 8)
+            crop_size = (17, 17)
             generator = image_generators.SemanticDataGenerator(
                 featurewise_center=False,
                 samplewise_center=True,
@@ -1938,8 +1938,8 @@ class TestSemanticDataGenerator(test.TestCase):
 
             # Basic test before fit
             train_dict = {
-                'X': np.random.random((8, 10, 10, 3)),
-                'y': np.random.random((8, 10, 10, 1)),
+                'X': np.random.random((8, 21, 21, 3)),
+                'y': np.random.random((8, 21, 21, 1)),
             }
             generator.flow(train_dict)
 
@@ -2002,6 +2002,24 @@ class TestSemanticDataGenerator(test.TestCase):
         with self.assertRaises(ValueError):
             generator = image_generators.SemanticDataGenerator(
                 zoom_range=(2, 2, 2))
+
+        # invalid data with cropping
+        cropping_generator = image_generators.SemanticDataGenerator(
+            featurewise_center=True,
+            samplewise_center=True,
+            featurewise_std_normalization=True,
+            samplewise_std_normalization=True,
+            zca_whitening=True,
+            data_format='channels_last',
+            crop_size=(11, 11))
+
+        train_dict = {
+            'X': np.random.random((8, 10, 10, 3)),
+            'y': np.random.randint(0, 9, size=(8, 10, 10, 1))
+        }
+
+        with self.assertRaises(ValueError):
+            cropping_generator.flow(train_dict).next()
 
 
 class TestSemanticMovieGenerator(test.TestCase):

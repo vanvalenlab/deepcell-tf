@@ -72,6 +72,7 @@ class SemanticIterator(Iterator):
             images (if save_to_dir is set).
         save_format (str): Format to use for saving sample images
             (if save_to_dir is set).
+        crop_size (tuple): Optional parameter specifying size of crop to take from image
     """
     def __init__(self,
                  train_dict,
@@ -120,18 +121,14 @@ class SemanticIterator(Iterator):
 
         self.y_semantic_list = []  # optional semantic segmentation targets
 
-        # set crop size based on current image if not specified
+        # set output size based on cropping or not
         if crop_size is not None:
-            img_dims = X.shape[1:3] if self.data_format == 'channels_last' else X.shape[2:4]
-            print(img_dims, crop_size)
-
-            if img_dims[0] < crop_size[0] or img_dims[1] < crop_size[1]:
-                raise ValueError('Crop dimensions must be smaller than image dimensions')
+            output_size = crop_size
 
         else:
-            crop_size = self.x.shape[1:3] if self.channel_axis == 3 else self.x.shape[2:4]
+            output_size = self.x.shape[1:3] if self.channel_axis == 3 else self.x.shape[2:4]
 
-        self.crop_size = crop_size
+        self.output_size = output_size
         # Create a list of all the semantic targets. We need to be able
         # to have multiple semantic heads
         # Add all the keys that contain y_semantic
@@ -176,20 +173,20 @@ class SemanticIterator(Iterator):
             self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-        # set output shape based on crop shape and image shape
+        # set output size based on output shape and # of channels
         if self.channel_axis == 3:
-            x_shape = tuple([len(index_array)] + list(self.crop_size) + [self.x.shape[3]])
+            x_shape = tuple([len(index_array)] + list(self.output_size) + [self.x.shape[3]])
         else:
-            x_shape = tuple([len(index_array)] + [self.x.shape[1]] + list(self.crop_size))
+            x_shape = tuple([len(index_array)] + [self.x.shape[1]] + list(self.output_size))
 
         batch_x = np.zeros(x_shape)
         batch_y = []
         for y_sem in self.y_semantic_list:
-            # set output shape based on crop shape and transformed label shape
+            # set output shape based on output shape and transformed label shape
             if self.channel_axis == 3:
-                y_shape = tuple([len(index_array)] + list(self.crop_size) + [y_sem.shape[3]])
+                y_shape = tuple([len(index_array)] + list(self.output_size) + [y_sem.shape[3]])
             else:
-                y_shape = tuple([len(index_array)] + [y_sem.shape[1]] + list(self.crop_size))
+                y_shape = tuple([len(index_array)] + [y_sem.shape[1]] + list(self.output_size))
 
             batch_y.append(np.zeros(y_shape, dtype=y_sem.dtype))
 
@@ -349,12 +346,6 @@ class SemanticDataGenerator(ImageDataGenerator):
                  crop_size=None,
                  dtype='float32'):
 
-        if crop_size is not None:
-            if not isinstance(crop_size, (tuple, list)):
-                raise ValueError("Crop size must be a list or tuple of row/col dimensions")
-
-        self.crop_size = crop_size
-
         ImageDataGenerator.__init__(self,
                                     featurewise_center=featurewise_center,
                                     samplewise_center=samplewise_center,
@@ -379,6 +370,12 @@ class SemanticDataGenerator(ImageDataGenerator):
                                     validation_split=validation_split,
                                     # interpolation_order=interpolation_order,
                                     dtype=dtype)
+
+        if crop_size is not None:
+            if not isinstance(crop_size, (tuple, list)):
+                raise ValueError("Crop size must be a list or tuple of row/col dimensions")
+
+        self.crop_size = crop_size
 
     def flow(self,
              train_dict,
@@ -435,10 +432,21 @@ class SemanticDataGenerator(ImageDataGenerator):
 
         crop_indices = None
         if self.crop_size is not None:
-            row_start = np.random.randint(0, img_shape[0] - self.crop_size[0])
-            col_start = np.random.randint(0, img_shape[1] - self.crop_size[1])
-            crop_indices = ([row_start, row_start + self.crop_size[0]],
-                            [col_start, col_start + self.crop_size[1]])
+
+            img_dims = img_shape[1:] if self.channel_axis == 1 else img_shape[:2]
+            if img_dims == self.crop_size:
+                # don't need to crop
+                pass
+            elif img_dims[0] == self.crop_size[0] or img_dims[1] == self.crop_size[1]:
+                raise ValueError('crop_size must be a subset of both axes or exactly '
+                                 ' equal to image dims')
+            elif img_dims[0] < self.crop_size[0] or img_dims[1] < self.crop_size[1]:
+                raise ValueError('Crop dimensions must be smaller than image dimensions')
+            else:
+                row_start = np.random.randint(0, img_shape[0] - self.crop_size[0])
+                col_start = np.random.randint(0, img_shape[1] - self.crop_size[1])
+                crop_indices = ([row_start, row_start + self.crop_size[0]],
+                                [col_start, col_start + self.crop_size[1]])
 
         transform_parameters['crop_indices'] = crop_indices
 
