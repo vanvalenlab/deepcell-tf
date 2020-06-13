@@ -30,6 +30,7 @@ from __future__ import print_function
 from __future__ import division
 
 import os
+import warnings
 
 import numpy as np
 
@@ -120,7 +121,14 @@ class SemanticIterator(Iterator):
         self.y_semantic_list = []  # optional semantic segmentation targets
 
         # set crop size based on current image if not specified
-        if crop_size is None:
+        if crop_size is not None:
+            img_dims = X.shape[1:3] if self.data_format == 'channels_last' else X.shape[2:4]
+            print(img_dims, crop_size)
+
+            if img_dims[0] < crop_size[0] or img_dims[1] < crop_size[1]:
+                raise ValueError('Crop dimensions must be smaller than image dimensions')
+
+        else:
             crop_size = self.x.shape[1:3] if self.channel_axis == 3 else self.x.shape[2:4]
 
         self.crop_size = crop_size
@@ -337,7 +345,7 @@ class SemanticDataGenerator(ImageDataGenerator):
                  preprocessing_function=None,
                  data_format='channels_last',
                  validation_split=0.0,
-                 #interpolation_order=1,
+                 # interpolation_order=1,
                  crop_size=None,
                  dtype='float32'):
 
@@ -369,7 +377,7 @@ class SemanticDataGenerator(ImageDataGenerator):
                                     preprocessing_function=preprocessing_function,
                                     data_format=data_format,
                                     validation_split=validation_split,
-                                    #interpolation_order=interpolation_order,
+                                    # interpolation_order=interpolation_order,
                                     dtype=dtype)
 
     def flow(self,
@@ -496,6 +504,97 @@ class SemanticDataGenerator(ImageDataGenerator):
 
         self.interpolation_order = _interpolation_order
         return x, y
+
+    def fit(self, x, augment=False, rounds=1, seed=None):
+        """Fits the data generator to some sample data.
+        This computes the internal data stats related to the
+        data-dependent transformations, based on an array of sample data.
+        Only required if `featurewise_center` or
+        `featurewise_std_normalization` or `zca_whitening` are set to True.
+        When `rescale` is set to a value, rescaling is applied to
+        sample data before computing the internal data stats.
+        # Arguments
+            x: Sample data. Should have rank 4.
+             In case of grayscale data,
+             the channels axis should have value 1, in case
+             of RGB data, it should have value 3, and in case
+             of RGBA data, it should have value 4.
+            augment: Boolean (default: False).
+                Whether to fit on randomly augmented samples.
+            rounds: Int (default: 1).
+                If using data augmentation (`augment=True`),
+                this is how many augmentation passes over the data to use.
+            seed: Int (default: None). Random seed.
+       """
+        x = np.asarray(x, dtype=self.dtype)
+        if x.ndim != 4:
+            raise ValueError('Input to `.fit()` should have rank 4. '
+                             'Got array with shape: ' + str(x.shape))
+        if x.shape[self.channel_axis] not in {1, 3, 4}:
+            warnings.warn(
+                'Expected input to be images (as Numpy array) '
+                'following the data format convention "' +
+                self.data_format + '" (channels on axis ' +
+                str(self.channel_axis) + '), i.e. expected '
+                                         'either 1, 3 or 4 channels on axis ' +
+                str(self.channel_axis) + '. '
+                                         'However, it was passed an array with shape ' +
+                str(x.shape) + ' (' + str(x.shape[self.channel_axis]) +
+                ' channels).')
+
+        if seed is not None:
+            np.random.seed(seed)
+
+        x = np.copy(x)
+        if self.rescale:
+            x *= self.rescale
+
+        if augment:
+            # adjust output shape to account for cropping in generator
+            if self.crop_size is not None:
+                if self.channel_axis == 1:
+                    x_crop_shape = [x.shape[1]] + list(self.crop_size)
+                else:
+                    x_crop_shape = list(self.crop_size) + [x.shape[3]]
+
+                ax = np.zeros(
+                    tuple([rounds * x.shape[0]] + x_crop_shape),
+                    dtype=self.dtype)
+            else:
+                ax = np.zeros(
+                    tuple([rounds * x.shape[0]] + list(x.shape)[1:]),
+                    dtype=self.dtype)
+
+            for r in range(rounds):
+                for i in range(x.shape[0]):
+                    ax[i + r * x.shape[0]] = self.random_transform(x[i])
+            x = ax
+
+        # TODO: Determine if we want to just call Super__fit() or keep the code below here
+        if self.featurewise_center:
+            self.mean = np.mean(x, axis=(0, self.row_axis, self.col_axis))
+            broadcast_shape = [1, 1, 1]
+            broadcast_shape[self.channel_axis - 1] = x.shape[self.channel_axis]
+            self.mean = np.reshape(self.mean, broadcast_shape)
+            x -= self.mean
+
+        if self.featurewise_std_normalization:
+            self.std = np.std(x, axis=(0, self.row_axis, self.col_axis))
+            broadcast_shape = [1, 1, 1]
+            broadcast_shape[self.channel_axis - 1] = x.shape[self.channel_axis]
+            self.std = np.reshape(self.std, broadcast_shape)
+            x /= (self.std + 1e-6)
+
+        if self.zca_whitening:
+            if scipy is None:
+                raise ImportError('Using zca_whitening requires SciPy. '
+                                  'Install SciPy.')
+            flat_x = np.reshape(
+                x, (x.shape[0], x.shape[1] * x.shape[2] * x.shape[3]))
+            sigma = np.dot(flat_x.T, flat_x) / flat_x.shape[0]
+            u, s, _ = linalg.svd(sigma)
+            s_inv = 1. / np.sqrt(s[np.newaxis] + self.zca_epsilon)
+            self.principal_components = (u * s_inv).dot(u.T)
 
 
 class SemanticMovieIterator(Iterator):

@@ -1916,7 +1916,7 @@ class TestSemanticDataGenerator(test.TestCase):
                 img_list.append(img_to_array(im)[None, ...])
 
             images = np.vstack(img_list)
-            crop_size = (15, 15)
+            crop_size = (8, 8)
             generator = image_generators.SemanticDataGenerator(
                 featurewise_center=False,
                 samplewise_center=True,
@@ -1947,7 +1947,7 @@ class TestSemanticDataGenerator(test.TestCase):
             temp_dir = self.get_temp_dir()
 
             # Fit
-            # generator.fit(images, augment=True, seed=1)
+            generator.fit(images, augment=True, seed=1)
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
