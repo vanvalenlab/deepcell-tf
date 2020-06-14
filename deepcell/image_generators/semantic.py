@@ -342,7 +342,7 @@ class SemanticDataGenerator(ImageDataGenerator):
                  preprocessing_function=None,
                  data_format='channels_last',
                  validation_split=0.0,
-                 # interpolation_order=1,
+                 interpolation_order=1,
                  crop_size=None,
                  dtype='float32'):
 
@@ -376,6 +376,7 @@ class SemanticDataGenerator(ImageDataGenerator):
                 raise ValueError("Crop size must be a list or tuple of row/col dimensions")
 
         self.crop_size = crop_size
+        self.interpolation_order = interpolation_order
 
     def flow(self,
              train_dict,
