@@ -368,7 +368,7 @@ class SemanticDataGenerator(ImageDataGenerator):
                                     preprocessing_function=preprocessing_function,
                                     data_format=data_format,
                                     validation_split=validation_split,
-                                    # interpolation_order=interpolation_order,
+                                    interpolation_order=interpolation_order,
                                     dtype=dtype)
 
         if crop_size is not None:
