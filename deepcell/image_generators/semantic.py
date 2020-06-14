@@ -368,7 +368,6 @@ class SemanticDataGenerator(ImageDataGenerator):
                                     preprocessing_function=preprocessing_function,
                                     data_format=data_format,
                                     validation_split=validation_split,
-                                    interpolation_order=interpolation_order,
                                     dtype=dtype)
 
         if crop_size is not None:
@@ -376,6 +375,8 @@ class SemanticDataGenerator(ImageDataGenerator):
                 raise ValueError("Crop size must be a list or tuple of row/col dimensions")
 
         self.crop_size = crop_size
+
+        # tensorflow does not initialize interpolation_order, so we'll do it here
         self.interpolation_order = interpolation_order
 
     def flow(self,
