@@ -34,13 +34,14 @@ import os
 from tensorflow.python.keras.utils.data_utils import get_file
 
 from deepcell_toolbox.deep_watershed import deep_watershed_mibi
+from deepcell_toolbox.processing import phase_preprocess
 
 from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/Multiplexed_Segmentation_V6_named.h5')
+                'model-weights/Multiplex_Segmentation_20200610_Adapt_Hist.h5')
 
 
 class MultiplexSegmentation(Application):
@@ -110,11 +111,12 @@ class MultiplexSegmentation(Application):
 
         model = PanopticNet('resnet50',
                             input_shape=model_image_shape,
-                            norm_method='std',
+                            norm_method=None,
                             num_semantic_heads=4,
                             num_semantic_classes=[1, 1, 2, 3],
                             location=True,
-                            include_top=True)
+                            include_top=True,
+                            use_imagenet=False)
 
         if use_pretrained_weights:
             weights_path = get_file(
@@ -131,7 +133,7 @@ class MultiplexSegmentation(Application):
         super(MultiplexSegmentation, self).__init__(model,
                                                     model_image_shape=model_image_shape,
                                                     model_mpp=2.0,
-                                                    preprocessing_fn=None,
+                                                    preprocessing_fn=phase_preprocess,
                                                     postprocessing_fn=deep_watershed_mibi,
                                                     dataset_metadata=self.dataset_metadata,
                                                     model_metadata=self.model_metadata)
