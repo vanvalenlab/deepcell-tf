@@ -36,7 +36,7 @@ from tensorflow.python.framework import tensor_shape
 # from cv2 import resize
 from skimage.transform import resize
 
-from deepcell.utils.compute_overlap import compute_overlap
+from deepcell.utils import compute_overlap
 
 
 class AnchorParameters:
