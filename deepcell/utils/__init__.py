@@ -31,6 +31,10 @@ from __future__ import print_function
 
 import warnings
 
+# compute_overlap has been moved to deepcell_toolbox
+# leaving here for backwards compatibility
+from deepcell_toolbox import compute_overlap
+
 from deepcell.utils import backbone_utils
 from deepcell.utils import data_utils
 from deepcell.utils import export_utils
@@ -61,10 +65,6 @@ from deepcell.utils.transform_utils import inner_distance_transform_2d
 from deepcell.utils.transform_utils import inner_distance_transform_3d
 from deepcell.utils.transform_utils import inner_distance_transform_movie
 from deepcell.utils.transform_utils import pixelwise_transform
-
-# compute_overlap has been moved to deepcell_toolbox
-# leaving here for backwards compatibility
-from deepcell_toolbox import compute_overlap
 
 del warnings
 
