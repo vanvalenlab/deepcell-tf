@@ -282,7 +282,7 @@ def PanopticNet(backbone,
     if frames_per_batch > 1:
         temporal_features = [__merge_temporal_features(f, mode=temporal_mode)
                              for f in features]
-        for f, k in zip(temporal_features, pyramid_dict.keys()):
+        for f, k in zip(temporal_features, pyramid_levels):
             pyramid_dict[k] = f
 
     semantic_levels = [int(re.findall(r'\d+', k)[0]) for k in pyramid_dict]
