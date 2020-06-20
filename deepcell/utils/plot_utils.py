@@ -38,7 +38,7 @@ from matplotlib import animation
 from tensorflow.python.keras import backend as K
 
 
-def get_js_video(images, batch=0, channel=0, cmap='jet', vmin=0, vmax=30):
+def get_js_video(images, batch=0, channel=0, cmap='jet', vmin=0, vmax=30, interval=200):
     """Create a JavaScript video as HTML for visualizing 3D data as a movie
 
     Args:
