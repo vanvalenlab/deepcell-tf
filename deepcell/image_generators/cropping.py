@@ -1,3 +1,30 @@
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# All rights reserved.
+#
+# Licensed under a modified Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
+#
+# The Work provided may be used for non-commercial academic purposes only.
+# For any other use of the Work, including commercial use, please contact:
+# vanvalenlab@gmail.com
+#
+# Neither the name of Caltech nor the names of its contributors may be used
+# to endorse or promote products derived from this software without specific
+# prior written permission.
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+"""Semantic segmentation data generators with cropping."""
+
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -9,7 +36,6 @@ import numpy as np
 
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.preprocessing.image import array_to_img
-from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.python.platform import tf_logging as logging
 
@@ -27,7 +53,7 @@ except ImportError:
 from deepcell.image_generators import _transform_masks
 
 
-class CropperIterator(SemanticIterator):
+class CroppingIterator(SemanticIterator):
     """Iterator yielding data from Numpy arrays (X and y).
 
     Args:
@@ -63,40 +89,23 @@ class CropperIterator(SemanticIterator):
                  save_prefix='',
                  save_format='png',
                  crop_size=None):
-        # Load data
-        if 'X' not in train_dict:
-            raise ValueError('No training data found in train_dict')
 
-        if 'y' not in train_dict:
-            raise ValueError('Instance masks are required for the '
-                             'SemanticIterator')
+        super(CroppingIterator, self).__init__(
+            train_dict=train_dict,
+            image_data_generator=image_data_generator,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            transforms=transforms,
+            transforms_kwargs=transforms_kwargs,
+            seed=seed,
+            min_objects=min_objects,
+            data_format=data_format,
+            save_to_dir=save_to_dir,
+            save_prefix=save_prefix,
+            save_format=save_format,
+        )
 
-        X, y = train_dict['X'], train_dict['y']
-
-        if X.shape[0] != y.shape[0]:
-            raise ValueError('Training batches and labels should have the same'
-                             'length. Found X.shape: {} y.shape: {}'.format(
-                                 X.shape, y.shape))
-
-        if X.ndim != 4:
-            raise ValueError('Input data in `SemanticIterator` '
-                             'should have rank 4. You passed an array '
-                             'with shape', X.shape)
-
-        self.x = np.asarray(X, dtype=K.floatx())
-        self.y = np.asarray(y, dtype='int32')
-
-        self.channel_axis = 3 if data_format == 'channels_last' else 1
-        self.image_data_generator = image_data_generator
-        self.data_format = data_format
-        self.save_to_dir = save_to_dir
-        self.save_prefix = save_prefix
-        self.save_format = save_format
-        self.min_objects = min_objects
-
-        self.y_semantic_list = []  # optional semantic segmentation targets
-
-        # set output size based on cropping or not
+        # set output size of image based on crop_size
         if crop_size is not None:
             output_size = crop_size
 
@@ -104,48 +113,6 @@ class CropperIterator(SemanticIterator):
             output_size = self.x.shape[1:3] if self.channel_axis == 3 else self.x.shape[2:4]
 
         self.output_size = output_size
-        # Create a list of all the semantic targets. We need to be able
-        # to have multiple semantic heads
-        # Add all the keys that contain y_semantic
-
-        # Add transformed masks
-        for transform in transforms:
-            transform_kwargs = transforms_kwargs.get(transform, dict())
-            y_transform = _transform_masks(y, transform,
-                                           data_format=data_format,
-                                           **transform_kwargs)
-            if y_transform.shape[self.channel_axis] > 1:
-                y_transform = np.asarray(y_transform, dtype='int32')
-            elif y_transform.shape[self.channel_axis] == 1:
-                y_transform = np.asarray(y_transform, dtype=K.floatx())
-            self.y_semantic_list.append(y_transform)
-
-        invalid_batches = []
-
-        # Remove images with small numbers of cells
-        for b in range(self.x.shape[0]):
-            y_batch = np.squeeze(self.y[b], axis=self.channel_axis - 1)
-            y_batch = np.expand_dims(y_batch, axis=self.channel_axis - 1)
-
-            self.y[b] = y_batch
-
-            if len(np.unique(self.y[b])) - 1 < self.min_objects:
-                invalid_batches.append(b)
-
-        invalid_batches = np.array(invalid_batches, dtype='int')
-
-        if invalid_batches.size > 0:
-            logging.warning('Removing %s of %s images with fewer than %s '
-                            'objects.', invalid_batches.size, self.x.shape[0],
-                            self.min_objects)
-
-        self.x = np.delete(self.x, invalid_batches, axis=0)
-        self.y = np.delete(self.y, invalid_batches, axis=0)
-        self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
-                                for y in self.y_semantic_list]
-
-        super(SemanticIterator, self).__init__(
-            self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         # set output size based on output shape and # of channels
@@ -310,29 +277,29 @@ class CroppingDataGenerator(SemanticDataGenerator):
                  crop_size=None,
                  dtype='float32'):
 
-        ImageDataGenerator.__init__(self,
-                                    featurewise_center=featurewise_center,
-                                    samplewise_center=samplewise_center,
-                                    featurewise_std_normalization=featurewise_std_normalization,
-                                    samplewise_std_normalization=samplewise_std_normalization,
-                                    zca_whitening=zca_whitening,
-                                    zca_epsilon=zca_epsilon,
-                                    rotation_range=rotation_range,
-                                    width_shift_range=width_shift_range,
-                                    height_shift_range=height_shift_range,
-                                    brightness_range=brightness_range,
-                                    shear_range=shear_range,
-                                    zoom_range=zoom_range,
-                                    channel_shift_range=channel_shift_range,
-                                    fill_mode=fill_mode,
-                                    cval=cval,
-                                    horizontal_flip=horizontal_flip,
-                                    vertical_flip=vertical_flip,
-                                    rescale=rescale,
-                                    preprocessing_function=preprocessing_function,
-                                    data_format=data_format,
-                                    validation_split=validation_split,
-                                    dtype=dtype)
+        super(CroppingDataGenerator, self).__init__(
+            featurewise_center=featurewise_center,
+            samplewise_center=samplewise_center,
+            featurewise_std_normalization=featurewise_std_normalization,
+            samplewise_std_normalization=samplewise_std_normalization,
+            zca_whitening=zca_whitening,
+            zca_epsilon=zca_epsilon,
+            rotation_range=rotation_range,
+            width_shift_range=width_shift_range,
+            height_shift_range=height_shift_range,
+            brightness_range=brightness_range,
+            shear_range=shear_range,
+            zoom_range=zoom_range,
+            channel_shift_range=channel_shift_range,
+            fill_mode=fill_mode,
+            cval=cval,
+            horizontal_flip=horizontal_flip,
+            vertical_flip=vertical_flip,
+            rescale=rescale,
+            preprocessing_function=preprocessing_function,
+            data_format=data_format,
+            validation_split=validation_split,
+            dtype=dtype)
 
         if crop_size is not None:
             if not isinstance(crop_size, (tuple, list)):
@@ -377,7 +344,7 @@ class CroppingDataGenerator(SemanticDataGenerator):
                 where x is a numpy array of image data and y is list of
                 numpy arrays of transformed masks of the same shape.
         """
-        return CropperIterator(
+        return CroppingIterator(
             train_dict,
             self,
             batch_size=batch_size,
@@ -393,8 +360,9 @@ class CroppingDataGenerator(SemanticDataGenerator):
             crop_size=self.crop_size)
 
     def get_random_transform(self, img_shape, seed=None):
-        transform_parameters = ImageDataGenerator.get_random_transform(self, img_shape=img_shape,
-                                                                       seed=seed)
+        transform_parameters = \
+            super(CroppingDataGenerator, self).get_random_transform(img_shape=img_shape,
+                                                                    seed=seed)
 
         crop_indices = None
         if self.crop_size is not None:
@@ -427,60 +395,9 @@ class CroppingDataGenerator(SemanticDataGenerator):
             else:
                 x = x[row_indices[0]:row_indices[1], col_indices[0]:col_indices[1], :]
 
-        x = ImageDataGenerator.apply_transform(self,
-                                               x=x,
-                                               transform_parameters=transform_parameters)
+        x = super(CroppingDataGenerator,
+                  self).apply_transform(x=x, transform_parameters=transform_parameters)
         return x
-
-    def random_transform(self, x, y=None, seed=None):
-        """Applies a random transformation to an image.
-
-        Args:
-            x (numpy.array): 3D tensor or list of 3D tensors,
-                single image.
-            y (numpy.array): 3D tensor or list of 3D tensors,
-                label mask(s) for x, optional.
-            seed (int): Random seed.
-
-        Returns:
-            numpy.array: A randomly transformed copy of the input (same shape).
-                If y is passed, it is transformed if necessary and returned.
-        """
-        params = self.get_random_transform(x.shape, seed)
-
-        if isinstance(x, list):
-            x = [self.apply_transform(x_i, params) for x_i in x]
-        else:
-            x = self.apply_transform(x, params)
-
-        if y is None:
-            return x
-
-        # Nullify the transforms that don't affect `y`
-        params['brightness'] = None
-        params['channel_shift_intensity'] = None
-        _interpolation_order = self.interpolation_order
-        self.interpolation_order = 0
-
-        if isinstance(y, list):
-            y_new = []
-            for y_i in y:
-                if y_i.shape[self.channel_axis - 1] > 1:
-                    y_t = self.apply_transform(y_i, params)
-
-                # Keep original interpolation order if it is a
-                # regression task
-                elif y_i.shape[self.channel_axis - 1] == 1:
-                    self.interpolation_order = _interpolation_order
-                    y_t = self.apply_transform(y_i, params)
-                    self.interpolation_order = 0
-                y_new.append(y_t)
-            y = y_new
-        else:
-            y = self.apply_transform(y, params)
-
-        self.interpolation_order = _interpolation_order
-        return x, y
 
     def fit(self, x, augment=False, rounds=1, seed=None):
         """Fits the data generator to some sample data.
