@@ -30,7 +30,6 @@ from __future__ import print_function
 from __future__ import division
 
 import os
-import warnings
 
 import numpy as np
 
@@ -72,7 +71,6 @@ class SemanticIterator(Iterator):
             images (if save_to_dir is set).
         save_format (str): Format to use for saving sample images
             (if save_to_dir is set).
-        crop_size (tuple): Optional parameter specifying size of crop to take from image
     """
     def __init__(self,
                  train_dict,
@@ -86,8 +84,7 @@ class SemanticIterator(Iterator):
                  data_format='channels_last',
                  save_to_dir=None,
                  save_prefix='',
-                 save_format='png',
-                 crop_size=None):
+                 save_format='png'):
         # Load data
         if 'X' not in train_dict:
             raise ValueError('No training data found in train_dict')
@@ -121,14 +118,6 @@ class SemanticIterator(Iterator):
 
         self.y_semantic_list = []  # optional semantic segmentation targets
 
-        # set output size based on cropping or not
-        if crop_size is not None:
-            output_size = crop_size
-
-        else:
-            output_size = self.x.shape[1:3] if self.channel_axis == 3 else self.x.shape[2:4]
-
-        self.output_size = output_size
         # Create a list of all the semantic targets. We need to be able
         # to have multiple semantic heads
         # Add all the keys that contain y_semantic
@@ -173,22 +162,12 @@ class SemanticIterator(Iterator):
             self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-        # set output size based on output shape and # of channels
-        if self.channel_axis == 3:
-            x_shape = tuple([len(index_array)] + list(self.output_size) + [self.x.shape[3]])
-        else:
-            x_shape = tuple([len(index_array)] + [self.x.shape[1]] + list(self.output_size))
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
 
-        batch_x = np.zeros(x_shape)
         batch_y = []
         for y_sem in self.y_semantic_list:
-            # set output shape based on output shape and transformed label shape
-            if self.channel_axis == 3:
-                y_shape = tuple([len(index_array)] + list(self.output_size) + [y_sem.shape[3]])
-            else:
-                y_shape = tuple([len(index_array)] + [y_sem.shape[1]] + list(self.output_size))
-
-            batch_y.append(np.zeros(y_shape, dtype=y_sem.dtype))
+            shape = tuple([len(index_array)] + list(y_sem.shape[1:]))
+            batch_y.append(np.zeros(shape, dtype=y_sem.dtype))
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -319,66 +298,6 @@ class SemanticDataGenerator(ImageDataGenerator):
         validation_split (float): Fraction of images reserved for validation
             (strictly between 0 and 1).
     """
-
-    def __init__(self,
-                 featurewise_center=False,
-                 samplewise_center=False,
-                 featurewise_std_normalization=False,
-                 samplewise_std_normalization=False,
-                 zca_whitening=False,
-                 zca_epsilon=1e-6,
-                 rotation_range=0,
-                 width_shift_range=0.,
-                 height_shift_range=0.,
-                 brightness_range=None,
-                 shear_range=0.,
-                 zoom_range=0.,
-                 channel_shift_range=0.,
-                 fill_mode='nearest',
-                 cval=0.,
-                 horizontal_flip=False,
-                 vertical_flip=False,
-                 rescale=None,
-                 preprocessing_function=None,
-                 data_format='channels_last',
-                 validation_split=0.0,
-                 interpolation_order=1,
-                 crop_size=None,
-                 dtype='float32'):
-
-        ImageDataGenerator.__init__(self,
-                                    featurewise_center=featurewise_center,
-                                    samplewise_center=samplewise_center,
-                                    featurewise_std_normalization=featurewise_std_normalization,
-                                    samplewise_std_normalization=samplewise_std_normalization,
-                                    zca_whitening=zca_whitening,
-                                    zca_epsilon=zca_epsilon,
-                                    rotation_range=rotation_range,
-                                    width_shift_range=width_shift_range,
-                                    height_shift_range=height_shift_range,
-                                    brightness_range=brightness_range,
-                                    shear_range=shear_range,
-                                    zoom_range=zoom_range,
-                                    channel_shift_range=channel_shift_range,
-                                    fill_mode=fill_mode,
-                                    cval=cval,
-                                    horizontal_flip=horizontal_flip,
-                                    vertical_flip=vertical_flip,
-                                    rescale=rescale,
-                                    preprocessing_function=preprocessing_function,
-                                    data_format=data_format,
-                                    validation_split=validation_split,
-                                    dtype=dtype)
-
-        if crop_size is not None:
-            if not isinstance(crop_size, (tuple, list)):
-                raise ValueError("Crop size must be a list or tuple of row/col dimensions")
-
-        self.crop_size = crop_size
-
-        # tensorflow does not initialize interpolation_order, so we'll do it here
-        self.interpolation_order = interpolation_order
-
     def flow(self,
              train_dict,
              batch_size=1,
@@ -425,45 +344,7 @@ class SemanticDataGenerator(ImageDataGenerator):
             data_format=self.data_format,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
-            save_format=save_format,
-            crop_size=self.crop_size)
-
-    def get_random_transform(self, img_shape, seed=None):
-        transform_parameters = ImageDataGenerator.get_random_transform(self, img_shape=img_shape,
-                                                                       seed=seed)
-
-        crop_indices = None
-        if self.crop_size is not None:
-
-            img_dims = img_shape[1:] if self.channel_axis == 1 else img_shape[:2]
-            if img_dims == self.crop_size:
-                # don't need to crop
-                pass
-            elif img_dims[0] == self.crop_size[0] or img_dims[1] == self.crop_size[1]:
-                raise ValueError('crop_size must be a subset of both axes or exactly '
-                                 ' equal to image dims')
-            elif img_dims[0] < self.crop_size[0] or img_dims[1] < self.crop_size[1]:
-                raise ValueError('Crop dimensions must be smaller than image dimensions')
-            else:
-                row_start = np.random.randint(0, img_shape[0] - self.crop_size[0])
-                col_start = np.random.randint(0, img_shape[1] - self.crop_size[1])
-                crop_indices = ([row_start, row_start + self.crop_size[0]],
-                                [col_start, col_start + self.crop_size[1]])
-
-        transform_parameters['crop_indices'] = crop_indices
-
-        return transform_parameters
-
-    def apply_transform(self, x, transform_parameters):
-
-        if transform_parameters['crop_indices'] is not None:
-            row_indices, col_indices = transform_parameters['crop_indices']
-            x = x[row_indices[0]:row_indices[1], col_indices[0]:col_indices[1]]
-
-        x = ImageDataGenerator.apply_transform(self,
-                                               x=x,
-                                               transform_parameters=transform_parameters)
-        return x
+            save_format=save_format)
 
     def random_transform(self, x, y=None, seed=None):
         """Applies a random transformation to an image.
@@ -514,97 +395,6 @@ class SemanticDataGenerator(ImageDataGenerator):
 
         self.interpolation_order = _interpolation_order
         return x, y
-
-    def fit(self, x, augment=False, rounds=1, seed=None):
-        """Fits the data generator to some sample data.
-        This computes the internal data stats related to the
-        data-dependent transformations, based on an array of sample data.
-        Only required if `featurewise_center` or
-        `featurewise_std_normalization` or `zca_whitening` are set to True.
-        When `rescale` is set to a value, rescaling is applied to
-        sample data before computing the internal data stats.
-        # Arguments
-            x: Sample data. Should have rank 4.
-             In case of grayscale data,
-             the channels axis should have value 1, in case
-             of RGB data, it should have value 3, and in case
-             of RGBA data, it should have value 4.
-            augment: Boolean (default: False).
-                Whether to fit on randomly augmented samples.
-            rounds: Int (default: 1).
-                If using data augmentation (`augment=True`),
-                this is how many augmentation passes over the data to use.
-            seed: Int (default: None). Random seed.
-       """
-        x = np.asarray(x, dtype=self.dtype)
-        if x.ndim != 4:
-            raise ValueError('Input to `.fit()` should have rank 4. '
-                             'Got array with shape: ' + str(x.shape))
-        if x.shape[self.channel_axis] not in {1, 3, 4}:
-            warnings.warn(
-                'Expected input to be images (as Numpy array) '
-                'following the data format convention "' +
-                self.data_format + '" (channels on axis ' +
-                str(self.channel_axis) + '), i.e. expected '
-                                         'either 1, 3 or 4 channels on axis ' +
-                str(self.channel_axis) + '. '
-                                         'However, it was passed an array with shape ' +
-                str(x.shape) + ' (' + str(x.shape[self.channel_axis]) +
-                ' channels).')
-
-        if seed is not None:
-            np.random.seed(seed)
-
-        x = np.copy(x)
-        if self.rescale:
-            x *= self.rescale
-
-        if augment:
-            # adjust output shape to account for cropping in generator
-            if self.crop_size is not None:
-                if self.channel_axis == 1:
-                    x_crop_shape = [x.shape[1]] + list(self.crop_size)
-                else:
-                    x_crop_shape = list(self.crop_size) + [x.shape[3]]
-
-                ax = np.zeros(
-                    tuple([rounds * x.shape[0]] + x_crop_shape),
-                    dtype=self.dtype)
-            else:
-                ax = np.zeros(
-                    tuple([rounds * x.shape[0]] + list(x.shape)[1:]),
-                    dtype=self.dtype)
-
-            for r in range(rounds):
-                for i in range(x.shape[0]):
-                    ax[i + r * x.shape[0]] = self.random_transform(x[i])
-            x = ax
-
-        # TODO: Determine if we want to just call Super__fit() or keep the code below here
-        if self.featurewise_center:
-            self.mean = np.mean(x, axis=(0, self.row_axis, self.col_axis))
-            broadcast_shape = [1, 1, 1]
-            broadcast_shape[self.channel_axis - 1] = x.shape[self.channel_axis]
-            self.mean = np.reshape(self.mean, broadcast_shape)
-            x -= self.mean
-
-        if self.featurewise_std_normalization:
-            self.std = np.std(x, axis=(0, self.row_axis, self.col_axis))
-            broadcast_shape = [1, 1, 1]
-            broadcast_shape[self.channel_axis - 1] = x.shape[self.channel_axis]
-            self.std = np.reshape(self.std, broadcast_shape)
-            x /= (self.std + 1e-6)
-
-        if self.zca_whitening:
-            if scipy is None:
-                raise ImportError('Using zca_whitening requires SciPy. '
-                                  'Install SciPy.')
-            flat_x = np.reshape(
-                x, (x.shape[0], x.shape[1] * x.shape[2] * x.shape[3]))
-            sigma = np.dot(flat_x.T, flat_x) / flat_x.shape[0]
-            u, s, _ = linalg.svd(sigma)
-            s_inv = 1. / np.sqrt(s[np.newaxis] + self.zca_epsilon)
-            self.principal_components = (u * s_inv).dot(u.T)
 
 
 class SemanticMovieIterator(Iterator):
