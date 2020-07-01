@@ -454,7 +454,6 @@ class CroppingDataGenerator(SemanticDataGenerator):
                 ax = np.zeros(
                     tuple([rounds * x.shape[0]] + x_crop_shape),
                     dtype=self.dtype)
-                print("ax shape is {}".format(ax.shape))
             else:
                 ax = np.zeros(
                     tuple([rounds * x.shape[0]] + list(x.shape)[1:]),
@@ -462,11 +461,9 @@ class CroppingDataGenerator(SemanticDataGenerator):
 
             for r in range(rounds):
                 for i in range(x.shape[0]):
-                    print("X shape is {}".format(x.shape))
                     ax[i + r * x.shape[0]] = self.random_transform(x[i])
             x = ax
 
-        # TODO: Determine if we want to just call Super__fit() or keep the code below here
         if self.featurewise_center:
             self.mean = np.mean(x, axis=(0, self.row_axis, self.col_axis))
             broadcast_shape = [1, 1, 1]

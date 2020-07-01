@@ -1963,11 +1963,11 @@ class TestCroppingDataGenerator(test.TestCase):
             images = np.vstack(img_list)
             crop_size = (17, 17)
             generator = image_generators.CroppingDataGenerator(
-                featurewise_center=False,
+                featurewise_center=True,
                 samplewise_center=True,
-                featurewise_std_normalization=False,
+                featurewise_std_normalization=True,
                 samplewise_std_normalization=True,
-                zca_whitening=False,
+                zca_whitening=True,
                 rotation_range=90.,
                 width_shift_range=0.1,
                 height_shift_range=0.1,
@@ -1979,6 +1979,7 @@ class TestCroppingDataGenerator(test.TestCase):
                 cval=0.5,
                 horizontal_flip=True,
                 vertical_flip=True,
+                rescale=2,
                 crop_size=crop_size)
 
             # Basic test before fit
@@ -2006,6 +2007,36 @@ class TestCroppingDataGenerator(test.TestCase):
                 self.assertEqual(x.shape[1:3], crop_size)
                 break
 
+            # test with no cropping
+            generator = image_generators.CroppingDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True,
+                rescale=2,
+                crop_size=None)
+
+            for x, y in generator.flow(
+                    train_dict,
+                    transforms=transforms,
+                    save_to_dir=temp_dir,
+                    shuffle=True):
+                self.assertEqual(y[0].shape[1:3], train_dict['y'].shape[1:3])
+                self.assertEqual(x.shape[1:3], train_dict['X'].shape[1:3])
+                break
+
     def test_cropping_data_generator_channels_first(self):
         for test_images in _generate_test_images(21, 21):
             img_list = []
@@ -2016,11 +2047,11 @@ class TestCroppingDataGenerator(test.TestCase):
             images = np.rollaxis(images, 3, 1)
             crop_size = (17, 17)
             generator = image_generators.CroppingDataGenerator(
-                featurewise_center=False,
+                featurewise_center=True,
                 samplewise_center=True,
-                featurewise_std_normalization=False,
+                featurewise_std_normalization=True,
                 samplewise_std_normalization=True,
-                zca_whitening=False,
+                zca_whitening=True,
                 rotation_range=90.,
                 width_shift_range=0.1,
                 height_shift_range=0.1,
@@ -2032,6 +2063,7 @@ class TestCroppingDataGenerator(test.TestCase):
                 cval=0.5,
                 horizontal_flip=True,
                 vertical_flip=True,
+                rescale=2,
                 crop_size=crop_size,
                 data_format='channels_first')
 
@@ -2058,6 +2090,37 @@ class TestCroppingDataGenerator(test.TestCase):
                     shuffle=True):
                 self.assertEqual(y[0].shape[2:4], crop_size)
                 self.assertEqual(x.shape[2:4], crop_size)
+                break
+
+            # test with no cropping
+            generator = image_generators.CroppingDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                # brightness_range=(1, 5),  # TODO: `channels_first` conflict
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True,
+                rescale=2,
+                crop_size=None,
+                data_format='channels_first')
+
+            for x, y in generator.flow(
+                    train_dict,
+                    transforms=transforms,
+                    save_to_dir=temp_dir,
+                    shuffle=True):
+                self.assertEqual(y[0].shape[2:4], train_dict['y'].shape[2:4])
+                self.assertEqual(x.shape[2:4], train_dict['X'].shape[2:4])
                 break
 
     def test_cropping_data_generator_invalid_data(self):
