@@ -360,9 +360,8 @@ class CroppingDataGenerator(SemanticDataGenerator):
             crop_size=self.crop_size)
 
     def get_random_transform(self, img_shape, seed=None):
-        transform_parameters = \
-            super(CroppingDataGenerator, self).get_random_transform(img_shape=img_shape,
-                                                                    seed=seed)
+        transform_parameters = super(CroppingDataGenerator, self).get_random_transform(
+            img_shape=img_shape, seed=seed)
 
         crop_indices = None
         if self.crop_size is not None:
@@ -395,8 +394,8 @@ class CroppingDataGenerator(SemanticDataGenerator):
             else:
                 x = x[row_indices[0]:row_indices[1], col_indices[0]:col_indices[1], :]
 
-        x = super(CroppingDataGenerator,
-                  self).apply_transform(x=x, transform_parameters=transform_parameters)
+        x = super(CroppingDataGenerator, self).apply_transform(
+            x=x, transform_parameters=transform_parameters)
         return x
 
     def fit(self, x, augment=False, rounds=1, seed=None):
@@ -407,7 +406,8 @@ class CroppingDataGenerator(SemanticDataGenerator):
         `featurewise_std_normalization` or `zca_whitening` are set to True.
         When `rescale` is set to a value, rescaling is applied to
         sample data before computing the internal data stats.
-        # Arguments
+
+        Args:
             x: Sample data. Should have rank 4.
              In case of grayscale data,
              the channels axis should have value 1, in case
