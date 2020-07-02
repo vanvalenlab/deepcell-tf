@@ -1967,7 +1967,7 @@ class TestCroppingDataGenerator(test.TestCase):
                 samplewise_center=True,
                 featurewise_std_normalization=True,
                 samplewise_std_normalization=True,
-                zca_whitening=True,
+                zca_whitening=False,
                 rotation_range=90.,
                 width_shift_range=0.1,
                 height_shift_range=0.1,
@@ -2027,6 +2027,36 @@ class TestCroppingDataGenerator(test.TestCase):
                 vertical_flip=True,
                 rescale=2,
                 crop_size=None)
+
+            for x, y in generator.flow(
+                    train_dict,
+                    transforms=transforms,
+                    save_to_dir=temp_dir,
+                    shuffle=True):
+                self.assertEqual(y[0].shape[1:3], train_dict['y'].shape[1:3])
+                self.assertEqual(x.shape[1:3], train_dict['X'].shape[1:3])
+                break
+
+            # test cropsize=image_size
+            generator = image_generators.CroppingDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True,
+                rescale=2,
+                crop_size=(21, 21))
 
             for x, y in generator.flow(
                     train_dict,
@@ -2151,6 +2181,17 @@ class TestCroppingDataGenerator(test.TestCase):
             }
 
             cropping_generator.flow(train_dict).next()
+
+        with self.assertRaises(ValueError):
+            # crop size is not a list/tuple
+            cropping_generator = image_generators.CroppingDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                data_format='channels_last',
+                crop_size=11)
 
 
 class TestSemanticMovieGenerator(test.TestCase):
