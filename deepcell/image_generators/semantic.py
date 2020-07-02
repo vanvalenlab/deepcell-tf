@@ -132,8 +132,6 @@ class SemanticIterator(Iterator):
             else:
                 y_current = y[..., label_num:(label_num + 1)]
 
-            print('shape of y_current is {}'.format(y_current.shape))
-
             for transform in transforms:
                 transform_kwargs = transforms_kwargs.get(transform, dict())
                 y_transform = _transform_masks(y_current, transform,
