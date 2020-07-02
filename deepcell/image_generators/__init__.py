@@ -104,9 +104,10 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         edge_class_shape = 4 if separate_edge_classes else 3
 
         if data_format == 'channels_first':
-            y_transform = np.zeros(tuple([y.shape[0]] + [edge_class_shape] + list(y.shape[2:])))
+            y_transform = np.zeros(tuple([y.shape[0]] + [edge_class_shape] + list(y.shape[2:])),
+                                   dtype='uint8')
         else:
-            y_transform = np.zeros(tuple(list(y.shape[0:-1]) + [edge_class_shape]))
+            y_transform = np.zeros(tuple(list(y.shape[0:-1]) + [edge_class_shape]), dtype='uint8')
 
         for batch in range(y_transform.shape[0]):
             if data_format == 'channels_first':
@@ -129,9 +130,9 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         by_frame = kwargs.pop('by_frame', True)
 
         if data_format == 'channels_first':
-            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
+            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])), dtype='float16')
         else:
-            y_transform = np.zeros(y.shape[0:-1])
+            y_transform = np.zeros(y.shape[0:-1], dtype='float16')
 
         if y.ndim == 5:
             if by_frame:
@@ -156,7 +157,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             pass
         else:
             # convert to one hot notation
-            y_transform = to_categorical(y_transform, num_classes=bins)
+            y_transform = to_categorical(y_transform, num_classes=bins, dtype='uint8')
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
@@ -173,9 +174,9 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         beta = kwargs.pop('beta', 1)
 
         if data_format == 'channels_first':
-            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
+            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])), dtype='float16')
         else:
-            y_transform = np.zeros(y.shape[0:-1])
+            y_transform = np.zeros(y.shape[0:-1], dtype='float16')
 
         if y.ndim == 5:
             if by_frame:
@@ -201,12 +202,12 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             pass
         else:
             # convert to one hot notation
-            y_transform = to_categorical(y_transform, num_classes=bins)
+            y_transform = to_categorical(y_transform, num_classes=bins, dtype='uint8')
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
     elif transform == 'disc':
-        y_transform = to_categorical(y.squeeze(channel_axis))
+        y_transform = to_categorical(y.squeeze(channel_axis), dtype='uint8')
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
@@ -215,7 +216,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         # convert to one hot notation
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, 1, y.ndim)
-        y_transform = to_categorical(y_transform)
+        y_transform = to_categorical(y_transform, dtype='uint8')
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
