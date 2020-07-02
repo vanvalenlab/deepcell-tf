@@ -40,8 +40,8 @@ from deepcell.model_zoo import PanopticNet
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/general_nuclear_train_batch_size_82800_resnet50_'
-                '8_epochs_c4b2167eb754923856bc84fb29074413.h5')
+                'model-weights/nuclear_0_82800_resnet50_watershed_named_'
+                '076bb10d832089b6a77faed1e63ad375.h5')
 
 
 class NuclearSegmentation(Application):
@@ -111,20 +111,22 @@ class NuclearSegmentation(Application):
         model = PanopticNet('resnet50',
                             input_shape=model_image_shape,
                             norm_method='whole_image',
-                            num_semantic_heads=3,
-                            num_semantic_classes=[1, 1, 2],
+                            num_semantic_heads=2,
+                            num_semantic_classes=[1, 1],
                             location=True,
-                            include_top=True)
+                            include_top=True,
+                            lite=True,
+                            interpolation='bilinear')
 
         if use_pretrained_weights:
             weights_path = get_file(
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='eb29808ef2f662fb3bcda6986e47f91a'
+                md5_hash='42ca0ebe4b7b0f782eaa4733cdddad88'
             )
 
-            model.load_weights(weights_path)
+            model.load_weights(weights_path, by_name=True)
         else:
             weights_path = None
 
@@ -160,6 +162,8 @@ class NuclearSegmentation(Application):
         Raises:
             ValueError: Input data must match required rank of the application, calculated as
                 one dimension more (batch dimension) than expected by the model
+
+            ValueError: Input data must match required number of channels of application
 
         Returns:
             np.array: Labeled image

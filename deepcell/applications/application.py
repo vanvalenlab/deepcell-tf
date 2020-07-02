@@ -71,6 +71,8 @@ class Application(object):
         # Require dimension 1 larger than model_input_shape due to addition of batch dimension
         self.required_rank = len(self.model_image_shape) + 1
 
+        self.required_channels = self.model_image_shape[-1]
+
         self.model_mpp = model_mpp
         self.preprocessing_fn = preprocessing_fn
         self.postprocessing_fn = postprocessing_fn
@@ -98,17 +100,14 @@ class Application(object):
             array: Input image resized if necessary to match `model_mpp`
         """
 
-        # Store original image size for use later
-        original_shape = image.shape
-
         # Don't scale the image if mpp is the same or not defined
         if image_mpp not in {None, self.model_mpp}:
             scale_factor = image_mpp / self.model_mpp
-            new_shape = (int(image.shape[1] / scale_factor),
-                         int(image.shape[2] / scale_factor))
+            new_shape = (int(image.shape[1] * scale_factor),
+                         int(image.shape[2] * scale_factor))
             image = resize(image, new_shape, data_format='channels_last')
 
-        return image, original_shape
+        return image
 
     def _preprocess(self, image, **kwargs):
         """Preprocess image if `preprocessing_fn` is defined.
@@ -207,8 +206,7 @@ class Application(object):
         # Otherwise untile
         else:
             def _process(im, tiles_info):
-                out = untile_image(im, tiles_info, model_input_shape=self.model_image_shape,
-                                   dtype=im.dtype)
+                out = untile_image(im, tiles_info, model_input_shape=self.model_image_shape)
                 return out
 
         if isinstance(output_tiles, list):
@@ -240,17 +238,42 @@ class Application(object):
 
         # Resize if same is false
         if not same:
-            # cv2.resize only supports float so change dtype and cast back after resize
-            intype = image.dtype
             # Resize function only takes the x,y dimensions for shape
             new_shape = original_shape[1:-1]
-            # Flip order of shape axes to prevent transpose of data
-            new_shape = new_shape[::-1]
-            image = resize(image.astype('float32'),
-                           new_shape, data_format='channels_last')
-            image = image.astype(intype)
-
+            image = resize(image, new_shape,
+                           data_format='channels_last',
+                           labeled_image=True)
         return image
+
+    def _run_model(self,
+                   image,
+                   batch_size=4,
+                   preprocess_kwargs={}):
+        """Run the model to generate output probabilities on the data.
+
+        Args:
+            image (np.array): Input image with shape `[batch, x, y, channel]`
+            batch_size (int, optional): Number of images to predict on per batch. Defaults to 4.
+            preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
+                Defaults to {}.
+
+        Returns:
+            np.array: Model outputs
+        """
+
+        # Preprocess image if function is defined
+        image = self._preprocess(image, **preprocess_kwargs)
+
+        # Tile images, raises error if the image is not 4d
+        tiles, tiles_info = self._tile_input(image)
+
+        # Run images through model
+        output_tiles = self.model.predict(tiles, batch_size=batch_size)
+
+        # Untile images
+        output_images = self._untile_output(output_tiles, tiles_info)
+
+        return output_images
 
     def _predict_segmentation(self,
                               image,
@@ -277,35 +300,34 @@ class Application(object):
             ValueError: Input data must match required rank of the application, calculated as
                 one dimension more (batch dimension) than expected by the model
 
+            ValueError: Input data must match required number of channels of application
+
         Returns:
             np.array: Labeled image
         """
 
         # Check input size of image
         if len(image.shape) != self.required_rank:
-            raise ValueError('Input data must have {} dimensions'
+            raise ValueError('Input data must have {} dimensions. '
                              'Input data only has {} dimensions'.format(
                                  self.required_rank, len(image.shape)))
 
+        if image.shape[-1] != self.required_channels:
+            raise ValueError('Input data must have {} channels. '
+                             'Input data only has {} channels'.format(
+                                 self.required_channels, image.shape[-1]))
+
         # Resize image, returns unmodified if appropriate
-        image, original_shape = self._resize_input(image, image_mpp)
+        resized_image = self._resize_input(image, image_mpp)
 
-        # Preprocess image if function is defined
-        image = self._preprocess(image, **preprocess_kwargs)
-
-        # Tile images, raises error if the image is not 4d
-        tiles, tiles_info = self._tile_input(image)
-
-        # Run images through model
-        output_tiles = self.model.predict(tiles, batch_size=batch_size)
-
-        # Untile images
-        output_images = self._untile_output(output_tiles, tiles_info)
+        # Generate model outputs
+        output_images = self._run_model(image=resized_image, batch_size=batch_size,
+                                        preprocess_kwargs=preprocess_kwargs)
 
         # Postprocess predictions to create label image
         label_image = self._postprocess(output_images, **postprocess_kwargs)
 
         # Resize label_image back to original resolution if necessary
-        label_image = self._resize_output(label_image, original_shape)
+        label_image = self._resize_output(label_image, image.shape)
 
         return label_image

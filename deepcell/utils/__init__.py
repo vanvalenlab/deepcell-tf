@@ -31,6 +31,10 @@ from __future__ import print_function
 
 import warnings
 
+# compute_overlap has been moved to deepcell_toolbox
+# leaving here for backwards compatibility
+from deepcell_toolbox import compute_overlap
+
 from deepcell.utils import backbone_utils
 from deepcell.utils import data_utils
 from deepcell.utils import export_utils
@@ -43,12 +47,6 @@ from deepcell.utils import train_utils
 from deepcell.utils import transform_utils
 from deepcell.utils import retinanet_anchor_utils
 
-try:
-    from deepcell.utils import compute_overlap
-except ImportError:
-    warnings.warn('To use `compute_overlap`, the C extensions must be built '
-                  'using `python setup.py build_ext --inplace`')
-
 # Globally-importable utils.
 from deepcell.utils.data_utils import get_data
 from deepcell.utils.data_utils import make_training_data
@@ -60,8 +58,12 @@ from deepcell.utils.io_utils import get_image_sizes
 from deepcell.utils.io_utils import get_images_from_directory
 from deepcell.utils.misc_utils import sorted_nicely
 from deepcell.utils.train_utils import rate_scheduler
-from deepcell.utils.transform_utils import distance_transform_2d
-from deepcell.utils.transform_utils import distance_transform_3d
+from deepcell.utils.transform_utils import outer_distance_transform_2d
+from deepcell.utils.transform_utils import outer_distance_transform_3d
+from deepcell.utils.transform_utils import outer_distance_transform_movie
+from deepcell.utils.transform_utils import inner_distance_transform_2d
+from deepcell.utils.transform_utils import inner_distance_transform_3d
+from deepcell.utils.transform_utils import inner_distance_transform_movie
 from deepcell.utils.transform_utils import pixelwise_transform
 
 del warnings

@@ -41,7 +41,7 @@ from deepcell.model_zoo import PanopticNet
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/general_cyto_9c7b79e6238d72c14ea8f87023ac3af9.h5')
+                'model-weights/general_cyto_named.h5')
 
 
 class CytoplasmSegmentation(Application):
@@ -96,7 +96,7 @@ class CytoplasmSegmentation(Application):
     #: Metadata for the model and training process
     model_metadata = {
         'batch_size': 2,
-        'lr': 1e-5,
+        'lr': 1e-4,
         'lr_decay': 0.95,
         'training_seed': 0,
         'n_epochs': 8,
@@ -111,20 +111,22 @@ class CytoplasmSegmentation(Application):
         model = PanopticNet('resnet50',
                             input_shape=model_image_shape,
                             norm_method='whole_image',
-                            num_semantic_heads=3,
-                            num_semantic_classes=[1, 1, 2],
+                            num_semantic_heads=2,
+                            num_semantic_classes=[1, 1],
                             location=True,
-                            include_top=True)
+                            include_top=True,
+                            lite=True,
+                            interpolation='bilinear')
 
         if use_pretrained_weights:
             weights_path = get_file(
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='4e9136df5071930a66365b2229fc358b'
+                md5_hash='104a7d7884c80c37d2bce6d1c3a17c7a'
             )
 
-            model.load_weights(weights_path)
+            model.load_weights(weights_path, by_name=True)
         else:
             weights_path = None
 
@@ -160,6 +162,8 @@ class CytoplasmSegmentation(Application):
         Raises:
             ValueError: Input data must match required rank of the application, calculated as
                 one dimension more (batch dimension) than expected by the model
+
+            ValueError: Input data must match required number of channels of application
 
         Returns:
             np.array: Labeled image

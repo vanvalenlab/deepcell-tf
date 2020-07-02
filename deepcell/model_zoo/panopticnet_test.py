@@ -39,51 +39,308 @@ from deepcell.model_zoo import PanopticNet
 
 class PanopticNetTest(keras_parameterized.TestCase):
 
-    # @keras_parameterized.run_all_keras_modes
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         {
             'testcase_name': 'panopticnet_basic',
             'pooling': None,
             'location': False,
+            'frames_per_batch': 1,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
         },
         {
             'testcase_name': 'panopticnet_location',
             'pooling': None,
             'location': True,
+            'frames_per_batch': 1,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
         },
         {
             'testcase_name': 'panopticnet_avgpool',
             'pooling': 'avg',
             'location': False,
+            'frames_per_batch': 1,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
         },
         {
             'testcase_name': 'panopticnet_maxpool',
             'pooling': 'max',
             'location': False,
+            'frames_per_batch': 1,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
         },
         {
-            'testcase_name': 'panopticnet_location_maxpool',
-            'pooling': 'max',
+            'testcase_name': 'panopticnet_basic_td',
+            'pooling': None,
+            'location': False,
+            'frames_per_batch': 3,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_location_td',
+            'pooling': None,
             'location': True,
+            'frames_per_batch': 3,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
         },
         {
-            'testcase_name': 'panopticnet_location_avgpool',
+            'testcase_name': 'panopticnet_avgpool_td',
             'pooling': 'avg',
+            'location': False,
+            'frames_per_batch': 3,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_maxpool_td',
+            'pooling': 'max',
+            'location': False,
+            'frames_per_batch': 3,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_basic_cf',
+            'pooling': None,
+            'location': False,
+            'frames_per_batch': 1,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_location_cf',
+            'pooling': None,
             'location': True,
-        }
-    ])
-    def test_panopticnet(self, pooling, location):
-        num_classes = 3
-        crop_size = (14, 14)
-        mask_size = (28, 28)
+            'frames_per_batch': 1,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_avgpool_cf',
+            'pooling': 'avg',
+            'location': False,
+            'frames_per_batch': 1,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_maxpool_cf',
+            'pooling': 'max',
+            'location': False,
+            'frames_per_batch': 1,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+        },
+        {
+            'testcase_name': 'panopticnet_basic_td_cf',
+            'pooling': None,
+            'location': False,
+            'frames_per_batch': 3,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_location_td_cf',
+            'pooling': None,
+            'location': True,
+            'frames_per_batch': 3,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_avgpool_td_cf',
+            'pooling': 'avg',
+            'location': False,
+            'frames_per_batch': 3,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_maxpool_td_cf',
+            'pooling': 'max',
+            'location': False,
+            'frames_per_batch': 3,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsamplelike',
+            'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+        },
+        {
+            'testcase_name': 'panopticnet_basic_upsampling2d',
+            'pooling': None,
+            'location': False,
+            'frames_per_batch': 1,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_location_upsampling2d',
+            'pooling': None,
+            'location': True,
+            'frames_per_batch': 1,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_avgpool_upsampling2d',
+            'pooling': 'avg',
+            'location': False,
+            'frames_per_batch': 1,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_maxpool_upsampling2d',
+            'pooling': 'max',
+            'location': False,
+            'frames_per_batch': 1,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_basic_td_upsampling2d',
+            'pooling': None,
+            'location': False,
+            'frames_per_batch': 3,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+        },
+        {
+            'testcase_name': 'panopticnet_location_td_upsampling2d',
+            'pooling': None,
+            'location': True,
+            'frames_per_batch': 3,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_avgpool_td_upsampling2d',
+            'pooling': 'avg',
+            'location': False,
+            'frames_per_batch': 3,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+        },
+        {
+            'testcase_name': 'panopticnet_maxpool_td_upsampling2d',
+            'pooling': 'max',
+            'location': False,
+            'frames_per_batch': 3,
+            'data_format': 'channels_last',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_basic_cf_upsampling2d',
+            'pooling': None,
+            'location': False,
+            'frames_per_batch': 1,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_location_cf_upsampling2d',
+            'pooling': None,
+            'location': True,
+            'frames_per_batch': 1,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_avgpool_cf_upsampling2d',
+            'pooling': 'avg',
+            'location': False,
+            'frames_per_batch': 1,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_maxpool_cf_upsampling2d',
+            'pooling': 'max',
+            'location': False,
+            'frames_per_batch': 1,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_basic_td_cf_upsampling2d',
+            'pooling': None,
+            'location': False,
+            'frames_per_batch': 3,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_location_td_cf_upsampling2d',
+            'pooling': None,
+            'location': True,
+            'frames_per_batch': 3,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3', 'P4', 'P5', 'P6', 'P7'],
+        },
+        {
+            'testcase_name': 'panopticnet_avgpool_td_cf_upsampling2d',
+            'pooling': 'avg',
+            'location': False,
+            'frames_per_batch': 3,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
+        {
+            'testcase_name': 'panopticnet_maxpool_td_cf_upsampling2d',
+            'pooling': 'max',
+            'location': False,
+            'frames_per_batch': 3,
+            'data_format': 'channels_first',
+            'upsample_type': 'upsampling2d',
+            'pyramid_levels': ['P3'],
+        },
 
+    ])
+    def test_panopticnet(self, pooling, location, frames_per_batch,
+                         data_format, upsample_type, pyramid_levels):
         norm_method = None
 
         # not all backbones work with channels_first
         backbone = 'featurenet'
 
-        # TODO: RetinaMask fails with channels_first
-        data_format = 'channels_last'
+        # TODO: PanopticNet fails with channels_first and frames_per_batch > 1
+        if frames_per_batch > 1 and data_format == 'channels_first':
+            return
 
         with self.cached_session():
             K.set_image_data_format(data_format)
@@ -96,13 +353,19 @@ class PanopticNetTest(keras_parameterized.TestCase):
 
             num_semantic_classes = [1, 3]
 
+            # temporal_mode=None,
+            # lite=False,
+            # interpolation='bilinear',
+
             model = PanopticNet(
                 backbone=backbone,
                 input_shape=input_shape,
-                backbone_levels=['C3', 'C4', 'C5'],
+                frames_per_batch=frames_per_batch,
+                pyramid_levels=pyramid_levels,
                 norm_method=norm_method,
                 location=location,
                 pooling=pooling,
+                upsample_type=upsample_type,
                 num_semantic_heads=len(num_semantic_classes),
                 num_semantic_classes=num_semantic_classes,
                 use_imagenet=False,
@@ -112,3 +375,42 @@ class PanopticNetTest(keras_parameterized.TestCase):
             self.assertEqual(len(model.output_shape), len(num_semantic_classes))
             for i, s in enumerate(num_semantic_classes):
                 self.assertEqual(model.output_shape[i][axis], s)
+
+    def test_panopticnet_bad_input(self):
+
+        norm_method = None
+
+        # not all backbones work with channels_first
+        backbone = 'featurenet'
+
+        num_semantic_classes = [1, 3]
+
+        # non-square input
+        input_shape = (256, 512, 1)
+        with self.assertRaises(ValueError):
+            model = PanopticNet(
+                backbone=backbone,
+                input_shape=input_shape,
+                backbone_levels=['C3', 'C4', 'C5'],
+                norm_method=norm_method,
+                location=True,
+                pooling='avg',
+                num_semantic_heads=len(num_semantic_classes),
+                num_semantic_classes=num_semantic_classes,
+                use_imagenet=False,
+            )
+
+        # non power of 2 input
+        input_shape = (257, 257, 1)
+        with self.assertRaises(ValueError):
+            model = PanopticNet(
+                backbone=backbone,
+                input_shape=input_shape,
+                backbone_levels=['C3', 'C4', 'C5'],
+                norm_method=norm_method,
+                location=True,
+                pooling='avg',
+                num_semantic_heads=len(num_semantic_classes),
+                num_semantic_classes=num_semantic_classes,
+                use_imagenet=False,
+            )
