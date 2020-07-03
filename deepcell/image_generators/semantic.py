@@ -38,6 +38,7 @@ from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.python.platform import tf_logging as logging
+from memory_profiler import profile
 
 try:
     import scipy
@@ -72,6 +73,7 @@ class SemanticIterator(Iterator):
         save_format (str): Format to use for saving sample images
             (if save_to_dir is set).
     """
+    @profile
     def __init__(self,
                  train_dict,
                  image_data_generator,
