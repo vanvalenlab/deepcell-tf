@@ -38,7 +38,6 @@ from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import Iterator
 from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.python.platform import tf_logging as logging
-from memory_profiler import profile
 
 try:
     import scipy
@@ -73,7 +72,6 @@ class SemanticIterator(Iterator):
         save_format (str): Format to use for saving sample images
             (if save_to_dir is set).
     """
-    @profile
     def __init__(self,
                  train_dict,
                  image_data_generator,
@@ -113,7 +111,7 @@ class SemanticIterator(Iterator):
 
         if y.dtype in ['float32', 'int32', 'float64', 'int64']:
             logging.warning('y data dtype is {}: this will increase memory use during '
-                            'preprocessing. Consider using a smaller dtype'.format(y.dtype))
+                            'preprocessing. Consider using a smaller dtype.'.format(y.dtype))
 
         self.x = np.asarray(X, dtype='float16')
         self.y = np.asarray(y, dtype='int16')
@@ -372,10 +370,11 @@ class SemanticDataGenerator(ImageDataGenerator):
         """
         params = self.get_random_transform(x.shape, seed)
 
+        # temporarily convert to float32 so enable scipy.nd_image functions to work
         if isinstance(x, list):
-            x = [self.apply_transform(x_i, params) for x_i in x]
+            x = [self.apply_transform(x_i.astype('float32'), params) for x_i in x]
         else:
-            x = self.apply_transform(x, params)
+            x = self.apply_transform(x.astype('float32'), params)
 
         if y is None:
             return x
@@ -396,7 +395,7 @@ class SemanticDataGenerator(ImageDataGenerator):
                 # regression task
                 elif y_i.shape[self.channel_axis - 1] == 1:
                     self.interpolation_order = _interpolation_order
-                    y_t = self.apply_transform(y_i, params)
+                    y_t = self.apply_transform(y_i.astype('float32'), params)
                     self.interpolation_order = 0
                 y_new.append(y_t)
             y = y_new

@@ -41,9 +41,8 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.utils import to_categorical
 
 from deepcell.utils import transform_utils
-from memory_profiler import profile
 
-@profile
+
 def _transform_masks(y, transform, data_format=None, **kwargs):
     """Based on the transform key, apply a transform function to the masks.
 
@@ -257,8 +256,8 @@ from deepcell.image_generators.scale import ScaleDataGenerator
 from deepcell.image_generators.tracking import SiameseDataGenerator
 from deepcell.image_generators.tracking import SiameseIterator
 
-# from deepcell.image_generators.cropping import CroppingDataGenerator
-# from deepcell.image_generators.cropping import CroppingIterator
+from deepcell.image_generators.cropping import CroppingDataGenerator
+from deepcell.image_generators.cropping import CroppingIterator
 # pylint: enable=wrong-import-position
 
 del absolute_import
@@ -282,7 +281,7 @@ __all__ = [
     'ScaleIterator',
     'ScaleDataGenerator',
     'SiameseDataGenerator',
-    'SiameseIterator',]
-    #'CroppingDataGenerator',
-    #'CroppingIterator'
-#]
+    'SiameseIterator',
+    'CroppingDataGenerator',
+    'CroppingIterator'
+]
