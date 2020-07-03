@@ -107,8 +107,16 @@ class SemanticIterator(Iterator):
                              'should have rank 4. You passed an array '
                              'with shape', X.shape)
 
-        self.x = np.asarray(X, dtype=K.floatx())
-        self.y = np.asarray(y, dtype='int32')
+        if X.dtype in ['float32', 'int32', 'float64', 'int64']:
+            logging.warning('X data dtype is {}: this will increase memory use during '
+                            'preprocessing. Consider using a smaller dtype'.format(X.dtype))
+
+        if y.dtype in ['float32', 'int32', 'float64', 'int64']:
+            logging.warning('y data dtype is {}: this will increase memory use during '
+                            'preprocessing. Consider using a smaller dtype'.format(y.dtype))
+
+        self.x = np.asarray(X, dtype='float16')
+        self.y = np.asarray(y, dtype='int16')
 
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
@@ -131,9 +139,9 @@ class SemanticIterator(Iterator):
                                            data_format=data_format,
                                            **transform_kwargs)
             if y_transform.shape[self.channel_axis] > 1:
-                y_transform = np.asarray(y_transform, dtype='int32')
+                y_transform = np.asarray(y_transform, dtype='int16')
             elif y_transform.shape[self.channel_axis] == 1:
-                y_transform = np.asarray(y_transform, dtype=K.floatx())
+                y_transform = np.asarray(y_transform, dtype='float16')
             self.y_semantic_list.append(y_transform)
 
         invalid_batches = []
