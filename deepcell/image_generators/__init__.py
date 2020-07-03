@@ -41,6 +41,7 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.utils import to_categorical
 
 from deepcell.utils import transform_utils
+from memory_profiler import profile
 
 @profile
 def _transform_masks(y, transform, data_format=None, **kwargs):
