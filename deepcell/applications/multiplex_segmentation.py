@@ -40,6 +40,75 @@ from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
 
 
+import numpy as np
+
+
+def deep_watershed_subcellular(outputs, compartment='cell', min_distance=10, maxima_threshold=0.1,
+                               cell_threshold=0.1, exclude_border=False,
+                               small_objects_threshold=0):
+    """Postprocess model output to generate predictions for distinct cellular compartments
+
+    Args:
+        outputs (list): DeepWatershed model output. A list of
+            [inner_distance, outer_distance, fgbg, pixelwise], repeated for each compartment.
+            - inner_distance: Prediction for the inner distance transform.
+            - outer_distance: Prediction for the outer distance transform.
+            - fgbg: Prediction for the foregound/background transform.
+            - pixelwise: Prediction for the interior/border/background transform.
+        compartment: which cellular compartments to generate predictions for.
+            must be one of 'cell', 'nucleus', 'both'
+        min_distance (int): Minimum allowable distance between two maxima to seed cells.
+        maxima_threshold (float): Threshold for maxima used to define watershed seeds.
+        cell_threshold (float): Threshold for mask used to define allowable area for watershed.
+        exclude_border (bool): Whether to include centroid detections at the border.
+        small_objects_threshold (int): Removes objects smaller than this size.
+
+    Returns:
+        numpy.array: Uniquely labeled mask for each compartment
+
+    Raises:
+        ValueError: for invalid compartment flag
+    """
+
+    valid_compartments = ['cell', 'nucleus', 'both']
+
+    if compartment not in valid_compartments:
+        raise ValueError('Invalid compartment supplied: {}. '
+                         'Must be one of {}'.format(compartment, valid_compartments))
+
+    if compartment == 'cell':
+        label_images = deep_watershed_mibi(outputs=outputs[:4],
+                                           min_distance=min_distance,
+                                           detection_threshold=maxima_threshold,
+                                           distance_threshold=cell_threshold,
+                                           exclude_border=exclude_border,
+                                           small_objects_threshold=small_objects_threshold)
+    elif compartment == 'nucleus':
+        label_images = deep_watershed_mibi(outputs=outputs[4:],
+                                           min_distance=min_distance,
+                                           detection_threshold=maxima_threshold,
+                                           distance_threshold=cell_threshold,
+                                           exclude_border=exclude_border,
+                                           small_objects_threshold=small_objects_threshold)
+    else:
+        label_images_cell = deep_watershed_mibi(outputs=outputs[:4],
+                                                min_distance=min_distance,
+                                                detection_threshold=maxima_threshold,
+                                                distance_threshold=cell_threshold,
+                                                exclude_border=exclude_border,
+                                                small_objects_threshold=small_objects_threshold)
+
+        label_images_nucleus = deep_watershed_mibi(outputs=outputs[4:],
+                                                   min_distance=min_distance,
+                                                   detection_threshold=maxima_threshold,
+                                                   distance_threshold=cell_threshold,
+                                                   exclude_border=exclude_border,
+                                                   small_objects_threshold=small_objects_threshold)
+        label_images = np.stack((label_images_cell, label_images_nucleus), axis=-1)
+
+    return label_images
+
+
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
                 'model-weights/Multiplex_Segmentation_20200610_Adapt_Hist.h5')
 
@@ -112,8 +181,8 @@ class MultiplexSegmentation(Application):
         model = PanopticNet('resnet50',
                             input_shape=model_image_shape,
                             norm_method=None,
-                            num_semantic_heads=4,
-                            num_semantic_classes=[1, 1, 2, 3],
+                            num_semantic_heads=8,
+                            num_semantic_classes=[1, 1, 2, 3, 1, 1, 2, 3],
                             location=True,
                             include_top=True,
                             use_imagenet=False)
@@ -134,7 +203,7 @@ class MultiplexSegmentation(Application):
                                                     model_image_shape=model_image_shape,
                                                     model_mpp=2.0,
                                                     preprocessing_fn=phase_preprocess,
-                                                    postprocessing_fn=deep_watershed_mibi,
+                                                    postprocessing_fn=deep_watershed_subcellular,
                                                     dataset_metadata=self.dataset_metadata,
                                                     model_metadata=self.model_metadata)
 
