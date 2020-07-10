@@ -50,6 +50,8 @@ class Application(object):
             postprocessing_fn (function, optional): Postprocessing function to apply
                 to data after prediction. Defaults to None.
                 Must accept an input of a list of arrays and then return a single array.
+            format_model_output_fn (function, optional): Convert model output from a list
+                of matrices to a dictionary with keys for each semantic head
 
         Raises:
             ValueError: `Preprocessing_fn` must be a callable function

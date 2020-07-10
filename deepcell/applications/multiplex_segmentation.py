@@ -203,11 +203,16 @@ class MultiplexSegmentation(Application):
                  use_pretrained_weights=True,
                  model_image_shape=(256, 256, 2)):
 
+        whole_cell_classes = [1, 1, 2, 3]
+        nuclear_classes = [1, 1, 2, 3]
+        num_semantic_classes = whole_cell_classes + nuclear_classes
+        num_semantic_heads = len(num_semantic_classes)
+
         model = PanopticNet('resnet50',
                             input_shape=model_image_shape,
                             norm_method=None,
-                            num_semantic_heads=8,
-                            num_semantic_classes=[1, 1, 2, 3, 1, 1, 2, 3],
+                            num_semantic_heads=num_semantic_heads,
+                            num_semantic_classes=num_semantic_classes,
                             location=True,
                             include_top=True,
                             use_imagenet=False)
