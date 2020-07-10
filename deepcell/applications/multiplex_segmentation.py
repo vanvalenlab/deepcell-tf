@@ -94,21 +94,14 @@ def deep_watershed_subcellular(model_output, compartment='whole_cell', min_dista
         ValueError: for invalid compartment flag
     """
 
-    valid_compartments = ['whole_cell', 'nuclear', 'both']
+    valid_compartments = {'whole_cell', 'nuclear', 'both'}
 
     if compartment not in valid_compartments:
         raise ValueError('Invalid compartment supplied: {}. '
                          'Must be one of {}'.format(compartment, valid_compartments))
 
-    if compartment == 'whole_cell':
-        label_images = deep_watershed_mibi(outputs=model_output['whole_cell'],
-                                           min_distance=min_distance,
-                                           detection_threshold=maxima_threshold,
-                                           distance_threshold=cell_threshold,
-                                           exclude_border=exclude_border,
-                                           small_objects_threshold=small_objects_threshold)
-    elif compartment == 'nuclear':
-        label_images = deep_watershed_mibi(outputs=model_output['nuclear'],
+    if compartment in {'whole_cell', 'nuclear'}:
+        label_images = deep_watershed_mibi(outputs=model_output[compartment],
                                            min_distance=min_distance,
                                            detection_threshold=maxima_threshold,
                                            distance_threshold=cell_threshold,
