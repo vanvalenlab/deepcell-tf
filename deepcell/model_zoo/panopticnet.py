@@ -82,8 +82,6 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256,
     bnorm_name = 'bnorm_mtf_{}'.format(f_name)
     acti_name = 'acti_mtf_{}'.format(f_name)
 
-    print('conv name is: ', conv_name)
-
     if mode == 'conv':
         x = Conv3D(feature_size,
                    (frames_per_batch, 3, 3),
