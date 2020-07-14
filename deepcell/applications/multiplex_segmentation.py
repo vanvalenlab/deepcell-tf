@@ -33,105 +33,13 @@ import os
 
 from tensorflow.python.keras.utils.data_utils import get_file
 
-from deepcell_toolbox.deep_watershed import deep_watershed_mibi
+from deepcell_toolbox.deep_watershed import deep_watershed_subcellular, format_output_multiplex
 from deepcell_toolbox.processing import phase_preprocess
 
 from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
 
-
 import numpy as np
-
-
-def format_output_multiplex(output_list):
-    """Takes list of model outputs and formats into a dictionary for better readability
-
-    Args:
-        output_list: list of predictions from semantic heads
-
-    Returns:
-        formatted_dict: dictionary with predictions
-    """
-
-    formatted_dict = {'whole_cell': {'inner-distance': output_list[0],
-                                     'outer-distance': output_list[1],
-                                     'fgbg': output_list[2],
-                                     'pixelwise': output_list[3]},
-                      'nuclear': {'inner-distance': output_list[4],
-                                  'outer-distance': output_list[5],
-                                  'fgbg': output_list[6],
-                                  'pixelwise': output_list[7]}
-                      }
-
-    return formatted_dict
-
-
-def deep_watershed_subcellular(model_output, compartment='whole_cell', min_distance=10,
-                               maxima_threshold=0.1, cell_threshold=0.1, exclude_border=False,
-                               small_objects_threshold=0):
-    """Postprocess model output to generate predictions for distinct cellular compartments
-
-    Args:
-        model_output (dict): Output from deep watershed model. A dict with a key corresponding to
-            each cellular compartment with a model prediction. Each key maps to a subsequent dict
-            with the following keys entries
-            - inner-distance: Prediction for the inner distance transform.
-            - outer-distance: Prediction for the outer distance transform
-            - fgbg: prediction for the foreground/background transform
-            - pixelwise: Prediction for the interior/border/background transform.
-        compartment: which cellular compartments to generate predictions for.
-            must be one of 'whole_cell', 'nuclear', 'both'
-        min_distance (int): Minimum allowable distance between two maxima to seed cells.
-        maxima_threshold (float): Threshold for maxima used to define watershed seeds.
-        cell_threshold (float): Threshold for mask used to define allowable area for watershed.
-        exclude_border (bool): Whether to include centroid detections at the border.
-        small_objects_threshold (int): Removes objects smaller than this size.
-
-    Returns:
-        numpy.array: Uniquely labeled mask for each compartment
-
-    Raises:
-        ValueError: for invalid compartment flag
-    """
-
-    valid_compartments = ['whole_cell', 'nuclear', 'both']
-
-    if compartment not in valid_compartments:
-        raise ValueError('Invalid compartment supplied: {}. '
-                         'Must be one of {}'.format(compartment, valid_compartments))
-
-    if compartment == 'whole_cell':
-        label_images = deep_watershed_mibi(outputs=model_output['whole_cell'],
-                                           min_distance=min_distance,
-                                           detection_threshold=maxima_threshold,
-                                           distance_threshold=cell_threshold,
-                                           exclude_border=exclude_border,
-                                           small_objects_threshold=small_objects_threshold)
-    elif compartment == 'nuclear':
-        label_images = deep_watershed_mibi(outputs=model_output['nuclear'],
-                                           min_distance=min_distance,
-                                           detection_threshold=maxima_threshold,
-                                           distance_threshold=cell_threshold,
-                                           exclude_border=exclude_border,
-                                           small_objects_threshold=small_objects_threshold)
-    else:
-        label_images_cell = deep_watershed_mibi(outputs=model_output['whole_cell'],
-                                                min_distance=min_distance,
-                                                detection_threshold=maxima_threshold,
-                                                distance_threshold=cell_threshold,
-                                                exclude_border=exclude_border,
-                                                small_objects_threshold=small_objects_threshold)
-
-        label_images_nucleus = deep_watershed_mibi(outputs=model_output['nuclear'],
-                                                   min_distance=min_distance,
-                                                   detection_threshold=maxima_threshold,
-                                                   distance_threshold=cell_threshold,
-                                                   exclude_border=exclude_border,
-                                                   small_objects_threshold=small_objects_threshold)
-
-        label_images = np.stack((label_images_cell, label_images_nucleus), axis=-1)
-
-    return label_images
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
@@ -243,7 +151,9 @@ class MultiplexSegmentation(Application):
                 batch_size=4,
                 image_mpp=None,
                 preprocess_kwargs={},
-                postprocess_kwargs={}):
+                compartment='whole-cell',
+                postprocess_kwargs_whole_cell={},
+                postprocess_kwargs_nuclear={}):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
@@ -256,8 +166,12 @@ class MultiplexSegmentation(Application):
             image_mpp (float, optional): Microns per pixel for the input image. Defaults to None.
             preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
                 Defaults to {}.
-            postprocess_kwargs (dict, optional): Kwargs to pass to postprocessing function.
-                Defaults to {}.
+            compartment (string): Specify type of segmentation to predict. Must be one of
+                [whole-cell, nuclear, both]
+            postprocess_kwargs_whole_cell (dict, optional): Kwargs to pass to postprocessing
+                function for whole_cell prediction. Defaults to {}.
+           postprocess_kwargs_nuclear (dict, optional): Kwargs to pass to postprocessing
+                function for nuclear prediction. Defaults to {}.
 
         Raises:
             ValueError: Input data must match required rank of the application, calculated as
@@ -269,6 +183,12 @@ class MultiplexSegmentation(Application):
             np.array: Labeled image
             np.array: Model output
         """
+
+        # create dict to hold all of the post-processing kwargs
+        postprocess_kwargs = {'whole_cell_kwargs': postprocess_kwargs_whole_cell,
+                              'nuclear_kwargs': postprocess_kwargs_nuclear,
+                              'compartment': compartment}
+
         return self._predict_segmentation(image,
                                           batch_size=batch_size,
                                           image_mpp=image_mpp,

@@ -53,19 +53,19 @@ class TestMultiplexSegmentation(test.TestCase):
 
             # test predict with nuclear compartment only
             x = np.random.rand(1, 500, 500, 2)
-            y = app.predict(x, postprocess_kwargs={'compartment': 'nucleus'})
+            y = app.predict(x, compartment='nuclear')
             self.assertEqual(x.shape[:-1], y.shape[:-1])
             self.assertEqual(y.shape[-1], 1)
 
             # test predict with cell compartment only
             x = np.random.rand(1, 500, 500, 2)
-            y = app.predict(x, postprocess_kwargs={'compartment': 'cell'})
+            y = app.predict(x, compartment='whole-cell')
             self.assertEqual(x.shape[:-1], y.shape[:-1])
             self.assertEqual(y.shape[-1], 1)
 
             # test predict with both cell and nuclear compartments
             x = np.random.rand(1, 500, 500, 2)
-            y = app.predict(x, postprocess_kwargs={'compartment': 'both'})
+            y = app.predict(x, compartment='both')
             print("x shape is {}, y shape is {}".format(x.shape, y.shape))
             self.assertEqual(x.shape[:-1], y.shape[:-1])
             self.assertEqual(y.shape[-1], 2)
