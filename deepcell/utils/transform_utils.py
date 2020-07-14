@@ -217,7 +217,6 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
                                 max_dist + K.epsilon(),
                                 num=bins + 1)
     distance = np.digitize(distance, distance_bins, right=True)
-
     return distance - 1  # minimum distance should be 0, not 1
 
 
@@ -389,7 +388,6 @@ def inner_distance_transform_3d(mask, bins=None,
                                 max_dist + K.epsilon(),
                                 num=bins + 1)
     inner_distance = np.digitize(inner_distance, distance_bins, right=True)
-
     return inner_distance - 1  # minimum distance should be 0, not 1
 
 
