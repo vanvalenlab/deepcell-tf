@@ -907,9 +907,6 @@ class SemanticMovieGenerator(ImageDataGenerator):
         else:
             params = self.get_random_transform(x.shape, seed)
 
-        #print('self.transforms are ', self.transforms)
-        print(vars(self))
-
         if isinstance(x, list):
             for i in range(len(x)):
                 x_i = x[i]
@@ -929,9 +926,6 @@ class SemanticMovieGenerator(ImageDataGenerator):
                     temp = self.apply_transform(x[frame], params)
                     x[frame] = self.apply_transform(x[frame], params)
                     print(x.shape)
-
-  #          for row im range(x.shape[self.row_axis]):
-  #              if self.data_format == 'channels_first'
 
         if y is not None:
             params['brightness'] = None
