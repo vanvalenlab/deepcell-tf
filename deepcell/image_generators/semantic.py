@@ -925,7 +925,6 @@ class SemanticMovieGenerator(ImageDataGenerator):
                 else:
                     temp = self.apply_transform(x[frame], params)
                     x[frame] = self.apply_transform(x[frame], params)
-                    print(x.shape)
 
         if y is not None:
             params['brightness'] = None
