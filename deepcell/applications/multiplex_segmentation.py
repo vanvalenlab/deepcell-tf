@@ -43,7 +43,7 @@ import numpy as np
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/Multiplex_Segmentation_20200610_Adapt_Hist.h5')
+                'model-weights/Multiplex_Segmentation_20200714_subcellular.h5')
 
 
 class MultiplexSegmentation(Application):
