@@ -130,7 +130,7 @@ class MultiplexSegmentation(Application):
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='66fec859eacc5222b5e7d2baa105f3e3'
+                md5_hash='a2f26a7b5cc9a86d68e65a7bd27c32d0'
             )
 
             model.load_weights(weights_path)
@@ -170,7 +170,7 @@ class MultiplexSegmentation(Application):
                 [whole-cell, nuclear, both]
             postprocess_kwargs_whole_cell (dict, optional): Kwargs to pass to postprocessing
                 function for whole_cell prediction. Defaults to {}.
-           postprocess_kwargs_nuclear (dict, optional): Kwargs to pass to postprocessing
+            postprocess_kwargs_nuclear (dict, optional): Kwargs to pass to postprocessing
                 function for nuclear prediction. Defaults to {}.
 
         Raises:
