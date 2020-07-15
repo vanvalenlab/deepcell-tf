@@ -39,8 +39,6 @@ from deepcell_toolbox.processing import phase_preprocess
 from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
 
-import numpy as np
-
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
                 'model-weights/Multiplex_Segmentation_20200714_subcellular.h5')
