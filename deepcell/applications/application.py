@@ -50,10 +50,13 @@ class Application(object):
             postprocessing_fn (function, optional): Postprocessing function to apply
                 to data after prediction. Defaults to None.
                 Must accept an input of a list of arrays and then return a single array.
+            format_model_output_fn (function, optional): Convert model output from a list
+                of matrices to a dictionary with keys for each semantic head
 
         Raises:
             ValueError: `Preprocessing_fn` must be a callable function
             ValueError: `Postprocessing_fn` must be a callable function
+            ValueError: `Model_output_fn` must be a callable function
         """
 
     def __init__(self,
@@ -62,6 +65,7 @@ class Application(object):
                  model_mpp=0.65,
                  preprocessing_fn=None,
                  postprocessing_fn=None,
+                 format_model_output_fn=None,
                  dataset_metadata=None,
                  model_metadata=None):
 
@@ -76,6 +80,7 @@ class Application(object):
         self.model_mpp = model_mpp
         self.preprocessing_fn = preprocessing_fn
         self.postprocessing_fn = postprocessing_fn
+        self.format_model_output_fn = format_model_output_fn
         self.dataset_metadata = dataset_metadata
         self.model_metadata = model_metadata
 
@@ -84,6 +89,8 @@ class Application(object):
             raise ValueError('Preprocessing_fn must be a callable function.')
         if self.postprocessing_fn is not None and not callable(self.postprocessing_fn):
             raise ValueError('Postprocessing_fn must be a callable function.')
+        if self.format_model_output_fn is not None and not callable(self.format_model_output_fn):
+            raise ValueError('Format_model_output_fn must be a callable function.')
 
     def predict(self, x):
         raise NotImplementedError
@@ -216,6 +223,24 @@ class Application(object):
 
         return output_images
 
+    def _format_model_output(self, output_images):
+        """Applies formatting function the output from the model if one was provided.
+        Otherwise, returns the model output unmodified
+
+        Args:
+            output_images: stack of untiled images to be reformatted
+
+        Returns:
+            dict or list: reformatted images stored as a dict, or input images stored as list
+                if no formatting function is specified
+        """
+
+        if self.format_model_output_fn is not None:
+            formatted_images = self.format_model_output_fn(output_images)
+            return formatted_images
+        else:
+            return output_images
+
     def _resize_output(self, image, original_shape):
         """Rescales input if the shape does not match the original shape
         excluding the batch and channel dimensions
@@ -273,7 +298,10 @@ class Application(object):
         # Untile images
         output_images = self._untile_output(output_tiles, tiles_info)
 
-        return output_images
+        # restructure outputs into a dict if function provided
+        formatted_images = self._format_model_output(output_images)
+
+        return formatted_images
 
     def _predict_segmentation(self,
                               image,
