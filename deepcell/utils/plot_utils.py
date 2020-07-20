@@ -38,15 +38,15 @@ from matplotlib import animation
 from tensorflow.python.keras import backend as K
 
 
-def get_js_video(images, batch=0, channel=0, cmap='jet', vmin=0, vmax=None, interval=200):
+def get_js_video(images, batch=0, channel=0, cmap='jet', vmin=0, vmax=0, interval=200):
     """Create a JavaScript video as HTML for visualizing 3D data as a movie
 
     Args:
         images (numpy.array): images to display as video
         batch (int): batch number of images to plot
         channel (int): channel index to plot
-        vmin (int): first frame value
-        vmax (int): last frame value
+        vmin (int): lower end of data range covered by colormap
+        vmax (int): upper end of data range covered by colormap
 
     Returns:
         str: JS HTML to display video
@@ -59,7 +59,7 @@ def get_js_video(images, batch=0, channel=0, cmap='jet', vmin=0, vmax=None, inte
         'cmap': cmap,
     }
 
-    if vmax == None:
+    if vmax == 0:
         vmax = images.max()
 
     # TODO: do these not work for other cmaps?
