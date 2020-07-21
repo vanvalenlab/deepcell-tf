@@ -189,7 +189,6 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
     maskstack = np.squeeze(mask)  # squeeze the channels
     maskstack = erode_edges(maskstack, erosion_width)
 
-    print("Outer distance sampling is {}".format(sampling))
 
     distance = ndimage.distance_transform_edt(maskstack, sampling=sampling)
 
@@ -347,8 +346,6 @@ def inner_distance_transform_3d(mask, bins=None,
 
     mask = np.squeeze(mask)
     mask = erode_edges(mask, erosion_width)
-
-    print("Inner distance sampling is {}".format(sampling))
 
     distance = ndimage.distance_transform_edt(mask, sampling=sampling)
     distance = distance.astype(K.floatx())
