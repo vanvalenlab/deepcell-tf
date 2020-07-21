@@ -465,10 +465,11 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
 
         time_distributed_outputs = []
         for i, out in enumerate(layer_outputs):
-            td_name = 'td{}'.format(i)
-            md_name = 'md{}'.format(i)
+            td_name = 'td_{}'.format(i)
+            model_name = 'model_{}'.format(i)
             time_distributed_outputs.append(
-                TimeDistributed(Model(model.input, out, name=md_name), name=td_name)(input_tensor))
+                TimeDistributed(Model(model.input, out, name=model_name),
+                                name=td_name)(input_tensor))
 
         if time_distributed_outputs:
             layer_outputs = time_distributed_outputs

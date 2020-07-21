@@ -138,6 +138,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 _distance_transform = transform_utils.outer_distance_transform_movie
             else:
                 _distance_transform = transform_utils.outer_distance_transform_3d
+                sampling = kwargs.pop('sampling', [0.5, 0.217, 0.217])
         else:
             _distance_transform = transform_utils.outer_distance_transform_2d
 
@@ -147,8 +148,13 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             else:
                 mask = y[batch, ..., 0]
 
-            y_transform[batch] = _distance_transform(
-                mask, bins=bins, erosion_width=erosion)
+            # If using 3d transform, pass in scale arg
+            if y.ndim == 5 and not by_frame:
+                y_transform[batch] = _distance_transform(
+                    mask, bins=bins, erosion_width=erosion, sampling=sampling)
+            else:
+                y_transform[batch] = _distance_transform(
+                    mask, bins=bins, erosion_width=erosion)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
@@ -182,6 +188,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 _distance_transform = transform_utils.inner_distance_transform_movie
             else:
                 _distance_transform = transform_utils.inner_distance_transform_3d
+                sampling = kwargs.pop('sampling', [0.5, 0.217, 0.217])
         else:
             _distance_transform = transform_utils.inner_distance_transform_2d
 
@@ -191,9 +198,16 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             else:
                 mask = y[batch, ..., 0]
 
-            y_transform[batch] = _distance_transform(mask, bins=bins,
-                                                     erosion_width=erosion,
-                                                     alpha=alpha, beta=beta)
+            # If using 3d transform, pass in scale arg
+            if y.ndim == 5 and not by_frame:
+                y_transform[batch] = _distance_transform(mask, bins=bins,
+                                                         erosion_width=erosion,
+                                                         alpha=alpha, beta=beta,
+                                                         sampling=sampling)
+            else:
+                y_transform[batch] = _distance_transform(mask, bins=bins,
+                                                         erosion_width=erosion,
+                                                         alpha=alpha, beta=beta)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
@@ -243,6 +257,9 @@ from deepcell.image_generators.semantic import SemanticDataGenerator
 from deepcell.image_generators.semantic import SemanticIterator
 from deepcell.image_generators.semantic import SemanticMovieGenerator
 from deepcell.image_generators.semantic import SemanticMovieIterator
+
+#from deepcell.image_generators.semantic3D import Semantic3DGenerator
+#from deepcell.image_generators.semantic3D import Semantic3DIterator
 
 from deepcell.image_generators.sample import SampleDataGenerator
 from deepcell.image_generators.sample import ImageSampleArrayIterator

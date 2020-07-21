@@ -211,9 +211,6 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
                                 max_dist + K.epsilon(),
                                 num=bins + 1)
     distance = np.digitize(distance, distance_bins, right=True)
-
-    print('Distance shape in outer_dist is {}'.format(distance.shape))
-
     return distance - 1  # minimum distance should be 0, not 1
 
 
@@ -377,9 +374,6 @@ def inner_distance_transform_3d(mask, bins=None,
         coords_y = coords[:, 2]
         inner_distance[coords_z, coords_x, coords_y] = center_transform
 
-    # Undo padding
-#    inner_distance = inner_distance[1:num_frames+1, ...]
-
     if bins is None:
         return inner_distance
 
@@ -390,7 +384,6 @@ def inner_distance_transform_3d(mask, bins=None,
                                 max_dist + K.epsilon(),
                                 num=bins + 1)
     inner_distance = np.digitize(inner_distance, distance_bins, right=True)
-
     return inner_distance - 1  # minimum distance should be 0, not 1
 
 
