@@ -51,7 +51,8 @@ def create_pyramid_level(backbone_input,
                          ndim=2,
                          lite=False,
                          interpolation='bilinear',
-                         feature_size=256):
+                         feature_size=256,
+                         z_axis_convolutions=False):
     """Create a pyramid layer from a particular backbone input layer.
 
     Args:
@@ -150,8 +151,13 @@ def create_pyramid_level(backbone_input,
             pyramid_final = Conv2D(feature_size, (3, 3), strides=(1, 1),
                                    padding='same', name=final_name)(pyramid)
     else:
-        pyramid_final = Conv3D(feature_size, (1, 3, 3), strides=(1, 1, 1),
-                               padding='same', name=final_name)(pyramid)
+        if z_axis_convolutions:
+            pyramid_final = Conv3D(feature_size, (3, 3, 3), strides=(1, 1, 1),
+                                   padding='same', name=final_name)(pyramid)
+            print('Using convolutions across the z-axis')
+        else:
+            pyramid_final = Conv3D(feature_size, (1, 3, 3), strides=(1, 1, 1),
+                                   padding='same', name=final_name)(pyramid)
 
     return pyramid_final, pyramid_upsample
 
@@ -162,7 +168,8 @@ def __create_pyramid_features(backbone_dict,
                               include_final_layers=True,
                               lite=False,
                               upsample_type='upsamplelike',
-                              interpolation='bilinear'):
+                              interpolation='bilinear',
+                              z_axis_convolutions=False):
     """Creates the FPN layers on top of the backbone features.
 
     Args:
