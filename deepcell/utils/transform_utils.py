@@ -189,8 +189,6 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
     maskstack = np.squeeze(mask)  # squeeze the channels
     maskstack = erode_edges(maskstack, erosion_width)
 
-#    print('Maskstack shape in outer_dist is {}'.format(maskstack.shape))
-
     distance = ndimage.distance_transform_edt(maskstack, sampling=sampling)
 
     # normalize by maximum distance
@@ -211,9 +209,6 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
                                 max_dist + K.epsilon(),
                                 num=bins + 1)
     distance = np.digitize(distance, distance_bins, right=True)
-
-    print('Distance shape in outer_dist is {}'.format(distance.shape))
-
     return distance - 1  # minimum distance should be 0, not 1
 
 
@@ -230,7 +225,7 @@ def outer_distance_transform_movie(mask, bins=None, erosion_width=None,
         normalize (boolean): Normalize the transform of each cell by that
             cell's largest distance. Defaults to True.
 
-    Returns: 
+    Returns:
         numpy.array: a mask of same shape as input mask,
             with each label being a distance class from 1 to bins
     """
@@ -351,10 +346,6 @@ def inner_distance_transform_3d(mask, bins=None,
     mask = np.squeeze(mask)
     mask = erode_edges(mask, erosion_width)
 
-    # Pad along z axis
-#    num_frames = mask.shape[0]
-#    mask = np.pad(mask, ((1,1), (0,0), (0,0)))
-
     distance = ndimage.distance_transform_edt(mask, sampling=sampling)
     distance = distance.astype(K.floatx())
 
@@ -379,9 +370,6 @@ def inner_distance_transform_3d(mask, bins=None,
         coords_y = coords[:, 2]
         inner_distance[coords_z, coords_x, coords_y] = center_transform
 
-    # Undo padding
-#    inner_distance = inner_distance[1:num_frames+1, ...]
-
     if bins is None:
         return inner_distance
 
@@ -392,7 +380,6 @@ def inner_distance_transform_3d(mask, bins=None,
                                 max_dist + K.epsilon(),
                                 num=bins + 1)
     inner_distance = np.digitize(inner_distance, distance_bins, right=True)
-
     return inner_distance - 1  # minimum distance should be 0, not 1
 
 
