@@ -189,7 +189,7 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
     maskstack = np.squeeze(mask)  # squeeze the channels
     maskstack = erode_edges(maskstack, erosion_width)
 
-#    print('Maskstack shape in outer_dist is {}'.format(maskstack.shape))
+    print("Outer distance sampling is {}".format(sampling))
 
     distance = ndimage.distance_transform_edt(maskstack, sampling=sampling)
 
@@ -230,7 +230,7 @@ def outer_distance_transform_movie(mask, bins=None, erosion_width=None,
         normalize (boolean): Normalize the transform of each cell by that
             cell's largest distance. Defaults to True.
 
-    Returns: 
+    Returns:
         numpy.array: a mask of same shape as input mask,
             with each label being a distance class from 1 to bins
     """
@@ -351,9 +351,7 @@ def inner_distance_transform_3d(mask, bins=None,
     mask = np.squeeze(mask)
     mask = erode_edges(mask, erosion_width)
 
-    # Pad along z axis
-#    num_frames = mask.shape[0]
-#    mask = np.pad(mask, ((1,1), (0,0), (0,0)))
+    print("Inner distance sampling is {}".format(sampling))
 
     distance = ndimage.distance_transform_edt(mask, sampling=sampling)
     distance = distance.astype(K.floatx())
