@@ -164,14 +164,10 @@ def get_images_from_directory(data_location, channel_names):
         for j in range(n_channels):
             img_path = os.path.join(data_location, img_list_channels[j][stack_iteration])
             channel_img = get_image(img_path)
-            if (data_format == 'channels_first') and (channel_img.ndim > 2):
-                all_channels[0, j, :, :, :] = channel_img
-            elif data_format == 'channels_first':
-                all_channels[0, j, :, :] = channel_img
-            elif channel_img.ndim > 2:
-                all_channels[0, :, :, :, j] = channel_img
-            else:
-                all_channels[0, :, :, j] = channel_img
+            if data_format == 'channels_first':
+                all_channels[0, j, ...] = channel_img
+            else
+                all_channels[0, ..., j] = channel_img
 
         all_images.append(all_channels)
 
