@@ -267,7 +267,8 @@ def __create_pyramid_features(backbone_dict,
                                       level=level,
                                       ndim=ndim,
                                       lite=lite,
-                                      interpolation=interpolation)
+                                      interpolation=interpolation,
+                                      z_axis_convolutions=z_axis_convolutions)
         pyramid_finals.append(pf)
         pyramid_upsamples.append(pu)
 
