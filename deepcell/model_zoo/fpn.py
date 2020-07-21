@@ -158,6 +158,7 @@ def create_pyramid_level(backbone_input,
         else:
             pyramid_final = Conv3D(feature_size, (1, 3, 3), strides=(1, 1, 1),
                                    padding='same', name=final_name)(pyramid)
+            print('Not using convolutions across the z-axis')
 
     return pyramid_final, pyramid_upsample
 
