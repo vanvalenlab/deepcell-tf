@@ -166,7 +166,7 @@ def get_images_from_directory(data_location, channel_names):
             channel_img = get_image(img_path)
             if data_format == 'channels_first':
                 all_channels[0, j, ...] = channel_img
-            else
+            else:
                 all_channels[0, ..., j] = channel_img
 
         all_images.append(all_channels)
