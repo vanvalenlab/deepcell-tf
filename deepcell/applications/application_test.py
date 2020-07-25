@@ -209,6 +209,24 @@ class TestApplication(test.TestCase):
         y = app._resize_output(x, original_shape)
         self.assertEqual(original_shape, y.shape)
 
+    def test_format_model_output(self):
+        def _format_model_output(Lx):
+            return {'inner-distance': Lx}
+
+        model = DummyModel()
+        x = np.random.rand(1, 30, 30, 1)
+
+        # No function
+        app = Application(model)
+        y = app._format_model_output(x)
+        self.assertAllEqual(x, y)
+
+        # single image
+        kwargs = {'format_model_output_fn': _format_model_output}
+        app = Application(model, **kwargs)
+        y = app._format_model_output(x)
+        self.assertAllEqual(x, y['inner-distance'])
+
     def test_run_model(self):
         model = DummyModel()
         app = Application(model)

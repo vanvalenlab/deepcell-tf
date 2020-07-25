@@ -28,8 +28,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import itertools
-
 import numpy as np
 import skimage as sk
 import tensorflow as tf
@@ -38,10 +36,7 @@ from tensorflow.python.framework import tensor_shape
 # from cv2 import resize
 from skimage.transform import resize
 
-try:
-    from deepcell.utils.compute_overlap import compute_overlap
-except ImportError:
-    compute_overlap = None
+from deepcell.utils import compute_overlap
 
 
 class AnchorParameters:
@@ -253,9 +248,6 @@ def compute_gt_annotations(anchors,
             ignore_indices: indices of ignored anchors
             argmax_overlaps_inds: ordered overlaps indices
     """
-    if compute_overlap is None:
-        raise ImportError('To use `compute_overlap`, the C extensions must be '
-                          'built using `python setup.py build_ext --inplace`')
     overlaps = compute_overlap(
         anchors.astype('float64'), annotations.astype('float64'))
     argmax_overlaps_inds = np.argmax(overlaps, axis=1)

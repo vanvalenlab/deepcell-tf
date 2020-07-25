@@ -254,6 +254,9 @@ from deepcell.image_generators.scale import ScaleDataGenerator
 
 from deepcell.image_generators.tracking import SiameseDataGenerator
 from deepcell.image_generators.tracking import SiameseIterator
+
+from deepcell.image_generators.cropping import CroppingDataGenerator
+from deepcell.image_generators.cropping import CroppingIterator
 # pylint: enable=wrong-import-position
 
 del absolute_import
@@ -278,4 +281,6 @@ __all__ = [
     'ScaleDataGenerator',
     'SiameseDataGenerator',
     'SiameseIterator',
+    'CroppingDataGenerator',
+    'CroppingIterator'
 ]

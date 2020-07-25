@@ -35,6 +35,8 @@ from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.morphology import ball, disk
 from skimage.morphology import binary_erosion, binary_dilation
+from skimage.morphology import binary_dilation
+from skimage.segmentation import find_boundaries
 from tensorflow.keras import backend as K
 
 from deepcell_toolbox import erode_edges
@@ -66,19 +68,10 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
         channel_axis = -1
 
     # Detect the edges and interiors
-    new_mask = np.zeros(mask.shape)
+    edge = find_boundaries(mask, mode='inner').astype('int')
+    interior = np.logical_and(edge == 0, mask > 0).astype('int')
+
     strel = ball(1) if mask.ndim > 2 else disk(1)
-    for cell_label in np.unique(mask):
-        if cell_label != 0:
-            # get the cell interior
-            img = mask == cell_label
-            img = binary_erosion(img, strel)
-            new_mask += img
-
-    interior = np.multiply(new_mask, mask)
-    edge = (mask - interior > 0).astype('int')
-    interior = (interior > 0).astype('int')
-
     if not separate_edge_classes:
         if dilation_radius:
             dil_strel = ball(dilation_radius) if mask.ndim > 2 else disk(dilation_radius)

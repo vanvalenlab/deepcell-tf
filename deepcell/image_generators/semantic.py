@@ -123,26 +123,30 @@ class SemanticIterator(Iterator):
         # Add all the keys that contain y_semantic
 
         # Add transformed masks
-        for transform in transforms:
-            transform_kwargs = transforms_kwargs.get(transform, dict())
-            y_transform = _transform_masks(y, transform,
-                                           data_format=data_format,
-                                           **transform_kwargs)
-            if y_transform.shape[self.channel_axis] > 1:
-                y_transform = np.asarray(y_transform, dtype='int32')
-            elif y_transform.shape[self.channel_axis] == 1:
-                y_transform = np.asarray(y_transform, dtype=K.floatx())
-            self.y_semantic_list.append(y_transform)
+
+        # loop over channels axis of labels in case there are multiple label types
+        for label_num in range(y.shape[self.channel_axis]):
+
+            if self.channel_axis == 1:
+                y_current = y[:, label_num:(label_num + 1), ...]
+            else:
+                y_current = y[..., label_num:(label_num + 1)]
+
+            for transform in transforms:
+                transform_kwargs = transforms_kwargs.get(transform, dict())
+                y_transform = _transform_masks(y_current, transform,
+                                               data_format=data_format,
+                                               **transform_kwargs)
+                if y_transform.shape[self.channel_axis] > 1:
+                    y_transform = np.asarray(y_transform, dtype='int32')
+                elif y_transform.shape[self.channel_axis] == 1:
+                    y_transform = np.asarray(y_transform, dtype=K.floatx())
+                self.y_semantic_list.append(y_transform)
 
         invalid_batches = []
 
         # Remove images with small numbers of cells
         for b in range(self.x.shape[0]):
-            y_batch = np.squeeze(self.y[b], axis=self.channel_axis - 1)
-            y_batch = np.expand_dims(y_batch, axis=self.channel_axis - 1)
-
-            self.y[b] = y_batch
-
             if len(np.unique(self.y[b])) - 1 < self.min_objects:
                 invalid_batches.append(b)
 

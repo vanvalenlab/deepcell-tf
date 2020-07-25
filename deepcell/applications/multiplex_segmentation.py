@@ -33,14 +33,15 @@ import os
 
 from tensorflow.python.keras.utils.data_utils import get_file
 
-from deepcell_toolbox.deep_watershed import deep_watershed_mibi
+from deepcell_toolbox.deep_watershed import deep_watershed_subcellular, format_output_multiplex
+from deepcell_toolbox.processing import phase_preprocess
 
 from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/Multiplexed_Segmentation_V6_named.h5')
+                'model-weights/Multiplex_Segmentation_20200714_subcellular.h5')
 
 
 class MultiplexSegmentation(Application):
@@ -108,20 +109,26 @@ class MultiplexSegmentation(Application):
                  use_pretrained_weights=True,
                  model_image_shape=(256, 256, 2)):
 
+        whole_cell_classes = [1, 1, 2, 3]
+        nuclear_classes = [1, 1, 2, 3]
+        num_semantic_classes = whole_cell_classes + nuclear_classes
+        num_semantic_heads = len(num_semantic_classes)
+
         model = PanopticNet('resnet50',
                             input_shape=model_image_shape,
-                            norm_method='std',
-                            num_semantic_heads=4,
-                            num_semantic_classes=[1, 1, 2, 3],
+                            norm_method=None,
+                            num_semantic_heads=num_semantic_heads,
+                            num_semantic_classes=num_semantic_classes,
                             location=True,
-                            include_top=True)
+                            include_top=True,
+                            use_imagenet=False)
 
         if use_pretrained_weights:
             weights_path = get_file(
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='66fec859eacc5222b5e7d2baa105f3e3'
+                md5_hash='a2f26a7b5cc9a86d68e65a7bd27c32d0'
             )
 
             model.load_weights(weights_path)
@@ -130,9 +137,10 @@ class MultiplexSegmentation(Application):
 
         super(MultiplexSegmentation, self).__init__(model,
                                                     model_image_shape=model_image_shape,
-                                                    model_mpp=2.0,
-                                                    preprocessing_fn=None,
-                                                    postprocessing_fn=deep_watershed_mibi,
+                                                    model_mpp=0.5,
+                                                    preprocessing_fn=phase_preprocess,
+                                                    postprocessing_fn=deep_watershed_subcellular,
+                                                    format_model_output_fn=format_output_multiplex,
                                                     dataset_metadata=self.dataset_metadata,
                                                     model_metadata=self.model_metadata)
 
@@ -141,7 +149,9 @@ class MultiplexSegmentation(Application):
                 batch_size=4,
                 image_mpp=None,
                 preprocess_kwargs={},
-                postprocess_kwargs={}):
+                compartment='whole-cell',
+                postprocess_kwargs_whole_cell={},
+                postprocess_kwargs_nuclear={}):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
@@ -154,8 +164,12 @@ class MultiplexSegmentation(Application):
             image_mpp (float, optional): Microns per pixel for the input image. Defaults to None.
             preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
                 Defaults to {}.
-            postprocess_kwargs (dict, optional): Kwargs to pass to postprocessing function.
-                Defaults to {}.
+            compartment (string): Specify type of segmentation to predict. Must be one of
+                [whole-cell, nuclear, both]
+            postprocess_kwargs_whole_cell (dict, optional): Kwargs to pass to postprocessing
+                function for whole_cell prediction. Defaults to {}.
+            postprocess_kwargs_nuclear (dict, optional): Kwargs to pass to postprocessing
+                function for nuclear prediction. Defaults to {}.
 
         Raises:
             ValueError: Input data must match required rank of the application, calculated as
@@ -167,6 +181,12 @@ class MultiplexSegmentation(Application):
             np.array: Labeled image
             np.array: Model output
         """
+
+        # create dict to hold all of the post-processing kwargs
+        postprocess_kwargs = {'whole_cell_kwargs': postprocess_kwargs_whole_cell,
+                              'nuclear_kwargs': postprocess_kwargs_nuclear,
+                              'compartment': compartment}
+
         return self._predict_segmentation(image,
                                           batch_size=batch_size,
                                           image_mpp=image_mpp,
