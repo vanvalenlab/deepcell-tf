@@ -1335,7 +1335,7 @@ class Semantic3DIterator(Iterator):
 
 
         if self.rotate_3d:
-            scale = tuple([1/z_scale, 1, 1])
+            scale = tuple([1/self.z_scale, 1, 1])
             out_shape = tuple([self.output_frames, self.frame_shape[0], self.frame_shape[1]])
 
 
