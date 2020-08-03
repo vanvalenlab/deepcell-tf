@@ -573,7 +573,6 @@ def train_model_retinanet(model,
                           zoom_range=0,
                           compute_map=True,
                           seed=0,
-                          semantic_only=False,
                           **kwargs):
     """Train a RetinaNet model from the given backbone.
 
@@ -744,11 +743,6 @@ def train_model_retinanet(model,
         horizontal_flip=0,
         vertical_flip=0)
 
-    # if 'vgg' in backbone or 'densenet' in backbone:
-    #     compute_shapes = make_shapes_callback(model)
-    # else:
-    #     compute_shapes = guess_shapes
-
     compute_shapes = guess_shapes
 
     train_data = datagen.flow(
@@ -763,7 +757,6 @@ def train_model_retinanet(model,
         min_objects=min_objects,
         anchor_params=anchor_params,
         compute_shapes=compute_shapes,
-        semantic_only=semantic_only,
         batch_size=batch_size)
 
     val_data = datagen_val.flow(
@@ -778,24 +771,35 @@ def train_model_retinanet(model,
         min_objects=min_objects,
         anchor_params=anchor_params,
         compute_shapes=compute_shapes,
-        semantic_only=semantic_only,
         batch_size=batch_size)
-    
+
     image_shape = train_data.x.shape
 
     if include_masks:
-        output_types = ((tf.float32, tf.float32), (tf.float32, tf.float32, tf.float32))
-        output_shapes = ((tuple([None] + list(image_shape[1:])), (None, None, 4)),
-                         ((None, None, None), (None, None, None), (None, None, None))
-                        )
+        output_types = ({'input': tf.float32,
+                         'boxes_input': tf.float32},
+                        {'regression': tf.float32,
+                         'classification': tf.float32,
+                         'masks': tf.float32})
+        output_shapes = ({'input': tuple([None] + list(image_shape[1:])),
+                          'boxes_input': (None, None, 4)},
+                         {'regression': (None, None, None),
+                          'classification': (None, None, None),
+                          'masks': (None, None, None)})
     else:
-        output_types = (tf.float32, (tf.float32, tf.float32))
-        output_shapes = (tuple([None] + list(image_shape[1:])),
-                         ((None, None, None), (None, None, None))
-                        )
+        output_types = ({'input': tf.float32,
+                         'boxes_input': tf.float32},
+                        {'regression': tf.float32,
+                         'classification': tf.float32})
+        output_shapes = ({'input': tuple([None] + list(image_shape[1:])),
+                          'boxes_input': (None, None, 4)},
+                         {'regression': (None, None, None),
+                          'classification': (None, None, None)})
 
-    train_dataset = Dataset.from_generator(lambda: train_data, output_types, output_shapes=output_shapes)
-    val_dataset = Dataset.from_generator(lambda: val_data, output_types, output_shapes=output_shapes)
+    train_dataset = Dataset.from_generator(lambda: train_data, output_types,
+                                           output_shapes=output_shapes)
+    val_dataset = Dataset.from_generator(lambda: val_data, output_types,
+                                         output_shapes=output_shapes)
 
     train_callbacks = get_callbacks(
         model_path, lr_sched=lr_sched,

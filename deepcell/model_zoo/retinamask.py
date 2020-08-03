@@ -214,9 +214,13 @@ def default_roi_submodels(num_classes,
                                    roi_size=roi_size,
                                    mask_size=mask_size,
                                    mask_dtype=mask_dtype,
-                                   retinanet_dtype=retinanet_dtype))),
+                                   retinanet_dtype=retinanet_dtype,
+                                   name='mask_submodel_single_frame'),
+                name='mask_submodel')),
             ('final_detection', TimeDistributed(
-                default_final_detection_model(roi_size=roi_size)))
+                default_final_detection_model(roi_size=roi_size,
+                                              name='final_detection_submodel_single_frame'),
+                name='final_detection_submodel'))
         ]
     return [
         ('masks', default_mask_model(num_classes,
@@ -575,9 +579,9 @@ def RetinaMask(backbone,
             else:
                 input_shape_with_time = tuple(
                     [frames_per_batch] + list(input_shape))
-            inputs = Input(shape=input_shape_with_time)
+            inputs = Input(shape=input_shape_with_time, name='input')
         else:
-            inputs = Input(shape=input_shape)
+            inputs = Input(shape=input_shape, name='input')
 
     if location:
         if frames_per_batch > 1:

@@ -136,7 +136,6 @@ class RetinaNetGenerator(ImageDataGenerator):
              pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
              batch_size=32,
              shuffle=False,
-             semantic_only=False,
              seed=None,
              save_to_dir=None,
              save_prefix='',
@@ -183,7 +182,6 @@ class RetinaNetGenerator(ImageDataGenerator):
             pyramid_levels=pyramid_levels,
             batch_size=batch_size,
             shuffle=shuffle,
-            semantic_only=semantic_only,
             seed=seed,
             data_format=self.data_format,
             save_to_dir=save_to_dir,
@@ -275,7 +273,6 @@ class RetinaNetIterator(Iterator):
                  panoptic=False,
                  transforms=['watershed'],
                  transforms_kwargs={},
-                 semantic_only=False,
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -315,7 +312,6 @@ class RetinaNetIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        self.semantic_only = semantic_only
 
         self.y_semantic_list = []  # optional semantic segmentation targets
 
@@ -533,21 +529,23 @@ class RetinaNetIterator(Iterator):
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
-        batch_inputs = (batch_x)
-        batch_outputs = [regressions, labels]
+        # Create dictionary outputs
+        batch_inputs = {'input': batch_x}
+        batch_outputs = {'regression': regressions,
+                         'classification': labels}
 
         if self.include_bbox:
-            batch_inputs = (batch_x, batch_x_bbox)
+            batch_inputs = {'input': batch_x,
+                            'boxes_input': batch_x_bbox}
 
         if self.include_masks:
-            batch_outputs.append(masks_batch)
+            batch_outputs['masks'] = masks_batch
 
-        batch_outputs.extend(batch_y_semantic_list)
+        if self.panoptic:
+            for i, batch_y_semantic in enumerate(batch_y_semantic_list):
+                batch_outputs['semantic_{}'.format(i)] = batch_y_semantic
 
-        if self.semantic_only:
-            batch_outputs = batch_y_semantic_list
-
-        return batch_inputs, tuple(batch_outputs)
+        return batch_inputs, batch_outputs
 
     def next(self):
         """For python 2.x. Returns the next batch.
@@ -959,8 +957,28 @@ class RetinaMovieIterator(Iterator):
         if self.panoptic:
             batch_outputs += batch_y_semantic_list
         batch_outputs = tuple(batch_outputs)
+
+        # Create dictionary outputs 
+        batch_inputs = {'input': batch_x}
+        batch_outputs = {'regression': regressions,
+                         'classification': labels}
+
+        if self.include_bbox:
+            batch_inputs = {'input': batch_x,
+                            'boxes_input': batch_x_bbox}
+
+        if self.include_masks:
+            batch_outputs['masks'] = masks_batch
+
+        if self.include_final_detection_layer:
+            batch_outputs['final_detection'] = masks_batch        
         
+        if self.panoptic:
+            for i, by in enumerate(batch_y_semantic_list):
+                batch_outputs['semantic_{}'.format(i)] = by
+
         return batch_inputs, batch_outputs
+
 
     def next(self):
         """For python 2.x. Returns the next batch.

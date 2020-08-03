@@ -573,9 +573,9 @@ def RetinaNet(backbone,
             else:
                 input_shape_with_time = tuple(
                     [frames_per_batch] + list(input_shape))
-            inputs = Input(shape=input_shape_with_time)
+            inputs = Input(shape=input_shape_with_time, name='input')
         else:
-            inputs = Input(shape=input_shape)
+            inputs = Input(shape=input_shape, name='input')
 
     if location:
         if frames_per_batch > 1:
