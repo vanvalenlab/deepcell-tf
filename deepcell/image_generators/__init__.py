@@ -258,8 +258,8 @@ from deepcell.image_generators.semantic import SemanticIterator
 from deepcell.image_generators.semantic import SemanticMovieGenerator
 from deepcell.image_generators.semantic import SemanticMovieIterator
 
-#from deepcell.image_generators.semantic3D import Semantic3DGenerator
-#from deepcell.image_generators.semantic3D import Semantic3DIterator
+from deepcell.image_generators.semantic import Semantic3DGenerator
+from deepcell.image_generators.semantic import Semantic3DIterator
 
 from deepcell.image_generators.sample import SampleDataGenerator
 from deepcell.image_generators.sample import ImageSampleArrayIterator
