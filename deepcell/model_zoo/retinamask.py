@@ -122,68 +122,6 @@ def default_mask_model(num_classes,
     return Model(inputs=inputs, outputs=outputs, name=name)
 
 
-def default_final_detection_model(pyramid_feature_size=256,
-                                  final_detection_feature_size=256,
-                                  roi_size=(14, 14),
-                                  name='final_detection_submodel'):
-    """Creates a final detection model for 3D RetinaMask models.
-
-    Args:
-        pyramid_feature_size (int): Number of features for the input to the
-            final detection model.
-        final_detection_feature_size (int): Number of filters used in the 2D
-            convolution layers.
-        roi_size (tuple): Size of the region of interest, serves as the
-            x and y dimensions of the input to the final detection model.
-        name (str): Name of the model.
-
-    Returns:
-        tensorflow.keras.Model: a FinalDetection submodel for 3D RetinaMask.
-    """
-    options = {
-        'kernel_size': 3,
-        'strides': 1,
-        'padding': 'same',
-        'kernel_initializer': RandomNormal(mean=0.0, stddev=0.01, seed=None),
-        'bias_initializer': 'zeros',
-        'activation': 'relu'
-    }
-
-    if K.image_data_format() == 'channels_first':
-        input_shape = (None, pyramid_feature_size, roi_size[0], roi_size[1])
-    else:
-        input_shape = (None, roi_size[0], roi_size[1], pyramid_feature_size)
-    inputs = Input(shape=input_shape)
-    outputs = inputs
-
-    for i in range(2):
-        outputs = TimeDistributed(Conv2D(
-            filters=final_detection_feature_size,
-            **options
-        ), name='final_detection_submodel_conv1_block{}'.format(i))(outputs)
-        outputs = TimeDistributed(Conv2D(
-            filters=final_detection_feature_size,
-            **options
-        ), name='final_detection_submodel_conv2_block{}'.format(i))(outputs)
-        outputs = TimeDistributed(MaxPool2D(
-        ), name='final_detection_submodel_pool1_block{}'.format(i))(outputs)
-
-    outputs = TimeDistributed(Conv2D(filters=final_detection_feature_size,
-                                     kernel_size=3,
-                                     padding='valid',
-                                     kernel_initializer=RandomNormal(mean=0.0, stddev=0.01, seed=None),
-                                     bias_initializer='zeros',
-                                     activation='relu'))(outputs)
-
-    outputs = TimeDistributed(Conv2D(filters=1,
-                                     kernel_size=1,
-                                     activation='sigmoid'))(outputs)
-
-    outputs = Lambda(lambda x: tf.squeeze(x, axis=[2, 3]))(outputs)
-
-    return Model(inputs=inputs, outputs=outputs, name=name)
-
-
 def default_roi_submodels(num_classes,
                           roi_size=(14, 14),
                           mask_size=(28, 28),
@@ -216,18 +154,14 @@ def default_roi_submodels(num_classes,
                                    mask_dtype=mask_dtype,
                                    retinanet_dtype=retinanet_dtype,
                                    name='mask_submodel_single_frame'),
-                name='mask_submodel')),
-            ('final_detection', TimeDistributed(
-                default_final_detection_model(roi_size=roi_size,
-                                              name='final_detection_submodel_single_frame'),
-                name='final_detection_submodel'))
+                name='mask_submodel'))
         ]
     return [
         ('masks', default_mask_model(num_classes,
                                      roi_size=roi_size,
                                      mask_size=mask_size,
                                      mask_dtype=mask_dtype,
-                                     retinanet_dtype=retinanet_dtype)),
+                                     retinanet_dtype=retinanet_dtype))
     ]
 
 

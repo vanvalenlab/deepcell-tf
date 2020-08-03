@@ -772,6 +772,7 @@ def _get_detections(generator,
         boxes_list = []
         scores_list = []
         labels_list = []
+        masks_list = []
 
         for i in range(generator.y.shape[0]):
             for j in range(0, generator.y.shape[1], frames_per_batch):
@@ -782,19 +783,11 @@ def _get_detections(generator,
                     # Add logic for networks that have semantic heads
                     pass
                 else:
-                    if (generator.include_masks and
-                            not generator.include_final_detection_layer):
+                    if generator.include_masks:
                         boxes = results[-4]
                         scores = results[-3]
                         labels = results[-2]
                         masks = results[-1]
-                    elif (generator.include_masks and
-                          generator.include_final_detection_layer):
-                        boxes = results[-5]
-                        scores = results[-4]
-                        labels = results[-3]
-                        masks = results[-2]
-                        final_scores = results[-1]
                     else:
                         boxes, scores, labels = results[0:3]
 
@@ -802,10 +795,12 @@ def _get_detections(generator,
                         boxes_list.append(boxes[0, k])
                         scores_list.append(scores[0, k])
                         labels_list.append(labels[0, k])
+                        masks_list.append(masks[0, k])
 
         batch_boxes = np.stack(boxes_list, axis=0)
         batch_scores = np.stack(scores_list, axis=0)
         batch_labels = np.stack(labels_list, axis=0)
+        batch_masks = np.stack(masks_list, axis=0)
 
         all_detections = [[None for i in range(generator.num_classes)]
                           for j in range(batch_boxes.shape[0])]
@@ -817,6 +812,7 @@ def _get_detections(generator,
             boxes = batch_boxes[[i]]
             scores = batch_scores[[i]]
             labels = batch_labels[[i]]
+            masks = batch_masks[[i]]
 
             # select indices which have a score above the threshold
             indices = np.where(scores[0, :] > score_threshold)[0]
@@ -844,7 +840,7 @@ def _get_detections(generator,
                 all_detections[i][label] = imd
 
             if generator.include_masks:
-                image_masks = masks[0, :, indices[scores_sort], :, :, image_labels]
+                image_masks = masks[0, indices[scores_sort], :, :, image_labels]
                 for label in range(generator.num_classes):
                     imm = image_masks[image_detections[:, -1] == label, ...]
                     all_masks[i][label] = imm
@@ -941,11 +937,6 @@ def evaluate(generator, model,
         max_detections=max_detections)
     all_annotations, _ = _get_annotations(generator, frames_per_batch)
     average_precisions = {}
-
-    # all_detections = pickle.load(open('all_detections.pkl', 'rb'))
-    # all_annotations = pickle.load(open('all_annotations.pkl', 'rb'))
-    # pickle.dump(all_detections, open('all_detections.pkl', 'wb'))
-    # pickle.dump(all_annotations, open('all_annotations.pkl', 'wb'))
 
     # process detections and annotations
     for label in range(generator.num_classes):

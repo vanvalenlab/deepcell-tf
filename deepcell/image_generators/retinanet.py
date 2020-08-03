@@ -600,7 +600,6 @@ class RetinaMovieIterator(Iterator):
                  clear_borders=False,
                  include_bbox=False,
                  include_masks=False,
-                 include_final_detection_layer=False,
                  panoptic=False,
                  transforms=['watershed'],
                  transforms_kwargs={},
@@ -635,7 +634,6 @@ class RetinaMovieIterator(Iterator):
         self.frames_per_batch = frames_per_batch
         self.include_bbox = include_bbox
         self.include_masks = include_masks
-        self.include_final_detection_layer = include_final_detection_layer
         self.panoptic = panoptic
         self.transforms = transforms
         self.transforms_kwargs = transforms_kwargs
@@ -945,20 +943,7 @@ class RetinaMovieIterator(Iterator):
                         format=self.save_format)
                     img.save(os.path.join(self.save_to_dir, fname))
 
-        batch_inputs = (batch_x)
-        batch_outputs = [regressions, labels]
-        
-        if self.include_bbox:
-            batch_inputs = (batch_x, batch_x_bbox)
-        if self.include_masks:
-            batch_outputs.append(masks_batch)
-        if self.include_final_detection_layer:
-            batch_outputs.append(masks_batch)
-        if self.panoptic:
-            batch_outputs += batch_y_semantic_list
-        batch_outputs = tuple(batch_outputs)
-
-        # Create dictionary outputs 
+        # Create dictionary outputs
         batch_inputs = {'input': batch_x}
         batch_outputs = {'regression': regressions,
                          'classification': labels}
@@ -970,15 +955,11 @@ class RetinaMovieIterator(Iterator):
         if self.include_masks:
             batch_outputs['masks'] = masks_batch
 
-        if self.include_final_detection_layer:
-            batch_outputs['final_detection'] = masks_batch        
-        
         if self.panoptic:
             for i, by in enumerate(batch_y_semantic_list):
                 batch_outputs['semantic_{}'.format(i)] = by
 
         return batch_inputs, batch_outputs
-
 
     def next(self):
         """For python 2.x. Returns the next batch.
@@ -1068,7 +1049,6 @@ class RetinaMovieDataGenerator(MovieDataGenerator):
              clear_borders=False,
              include_bbox=False,
              include_masks=False,
-             include_final_detection_layer=False,
              panoptic=False,
              transforms=['watershed'],
              transforms_kwargs={},
@@ -1113,7 +1093,6 @@ class RetinaMovieDataGenerator(MovieDataGenerator):
             clear_borders=clear_borders,
             include_bbox=include_bbox,
             include_masks=include_masks,
-            include_final_detection_layer=include_final_detection_layer,
             panoptic=panoptic,
             transforms=transforms,
             transforms_kwargs=transforms_kwargs,
