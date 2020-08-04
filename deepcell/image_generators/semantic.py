@@ -1660,8 +1660,6 @@ class Semantic3DGenerator(ImageDataGenerator):
             else:
                 params_3d = gen_3d.get_random_transform(np.moveaxis(x, 0, 1).shape, seed)
 
-            print(params_3d)
-
         if isinstance(x, list):
             for i in range(len(x)):
                 x_i = x[i]
