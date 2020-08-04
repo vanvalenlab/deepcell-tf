@@ -120,10 +120,8 @@ class SemanticIterator(Iterator):
 
         # Create a list of all the semantic targets. We need to be able
         # to have multiple semantic heads
-        # Add all the keys that contain y_semantic
 
         # Add transformed masks
-
         # loop over channels axis of labels in case there are multiple label types
         for label_num in range(y.shape[self.channel_axis]):
 
@@ -142,6 +140,11 @@ class SemanticIterator(Iterator):
                 elif y_transform.shape[self.channel_axis] == 1:
                     y_transform = np.asarray(y_transform, dtype=K.floatx())
                 self.y_semantic_list.append(y_transform)
+
+        # Add all the keys that contain y_semantic
+        for key in train_dict.keys():
+            if key.startswith('y_semantic'):
+                self.y_semantic_list.extend(train_dict[key])
 
         invalid_batches = []
 
