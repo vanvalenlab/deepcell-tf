@@ -2481,7 +2481,7 @@ class TestSemantic3DGenerator(test.TestCase):
         frame_shape = (12, 12, 1)
         output_shape = (frames_per_batch, frame_shape[0], frame_shape[1])
         aug_3d = False
-        rotate_3d = False
+        rotation_3d = 0
 
         for test_images in _generate_test_images(21, 21):
             img_list = []
@@ -2539,7 +2539,7 @@ class TestSemantic3DGenerator(test.TestCase):
                     transforms=transforms,
                     frame_shape=frame_shape,
                     aug_3d=aug_3d,
-                    rotate_3d=rotate_3d,
+                    rotation_3d=rotation_3d,
                     save_to_dir=temp_dir,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], output_shape + (x.shape[-1],))
@@ -2553,7 +2553,7 @@ class TestSemantic3DGenerator(test.TestCase):
         z_scale = 2
         output_shape = (frames_per_batch, frame_shape[0], frame_shape[1])
         aug_3d = True
-        rotate_3d = True
+        rotation_3d = 90
 
         for test_images in _generate_test_images(21, 21):
             img_list = []
@@ -2610,7 +2610,7 @@ class TestSemantic3DGenerator(test.TestCase):
                     transforms=transforms,
                     frame_shape=frame_shape,
                     aug_3d=aug_3d,
-                    rotate_3d=rotate_3d,
+                    rotation_3d=rotation_3d,
                     z_scale=z_scale,
                     save_to_dir=temp_dir,
                     shuffle=True):
@@ -2624,7 +2624,7 @@ class TestSemantic3DGenerator(test.TestCase):
         frame_shape = (12, 12, 1)
         output_shape = (frames_per_batch, frame_shape[0], frame_shape[1])
         aug_3d = True
-        rotate_3d = False
+        rotation_3d = 0
 
         for test_images in _generate_test_images(21, 21):
             img_list = []
@@ -2683,7 +2683,7 @@ class TestSemantic3DGenerator(test.TestCase):
                     transforms=transforms,
                     frame_shape=frame_shape,
                     aug_3d=aug_3d,
-                    rotate_3d=rotate_3d,
+                    rotation_3d=rotation_3d,
                     save_to_dir=temp_dir,
                     shuffle=True):
                 self.assertEqual(x.shape[1:], (x.shape[1],) + output_shape)
@@ -2697,7 +2697,7 @@ class TestSemantic3DGenerator(test.TestCase):
         z_scale = 2
         output_shape = (frames_per_batch, frame_shape[0], frame_shape[1])
         aug_3d = True
-        rotate_3d = True
+        rotation_3d = 90
 
         for test_images in _generate_test_images(21, 21):
             img_list = []
@@ -2756,7 +2756,7 @@ class TestSemantic3DGenerator(test.TestCase):
                     transforms=transforms,
                     frame_shape=frame_shape,
                     aug_3d=aug_3d,
-                    rotate_3d=rotate_3d,
+                    rotation_3d=rotation_3d,
                     z_scale=z_scale,
                     save_to_dir=temp_dir,
                     shuffle=True):

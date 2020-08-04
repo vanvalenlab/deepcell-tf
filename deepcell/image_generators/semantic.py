@@ -982,6 +982,60 @@ class SemanticMovieGenerator(ImageDataGenerator):
         return x, y
 
 
+# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Technology (Caltech), with support from the Paul Allen Family Foundation,
+# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
+# All rights reserved.
+#
+# Licensed under a modified Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
+#
+# The Work provided may be used for non-commercial academic purposes only.
+# For any other use of the Work, including commercial use, please contact:
+# vanvalenlab@gmail.com
+#
+# Neither the name of Caltech nor the names of its contributors may be used
+# to endorse or promote products derived from this software without specific
+# prior written permission.
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+"""Semantic segmentation data generators."""
+
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+
+import os
+
+import numpy as np
+
+from skimage.transform import rescale, resize
+
+from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.preprocessing.image import array_to_img
+from tensorflow.python.keras.preprocessing.image import Iterator
+from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.python.platform import tf_logging as logging
+
+try:
+    import scipy
+    # scipy.linalg cannot be accessed until explicitly imported
+    from scipy import linalg
+    # scipy.ndimage cannot be accessed until explicitly imported
+    from scipy import ndimage
+except ImportError:
+    scipy = None
+
+from deepcell.image_generators import _transform_masks
+
 class Semantic3DIterator(Iterator):
     """Iterator yielding data from Numpy arrays (X and y).
 
@@ -1015,7 +1069,7 @@ class Semantic3DIterator(Iterator):
                  transforms=['outer-distance'],
                  transforms_kwargs={},
                  aug_3d=False,
-                 rotate_3d=False,
+                 rotation_3d=0,
                  sampling=None,
                  z_scale=None,
                  seed=None,
@@ -1045,7 +1099,7 @@ class Semantic3DIterator(Iterator):
                              'should have rank 5. You passed an array '
                              'with shape', X.shape)
 
-        if rotate_3d and not z_scale:
+        if rotation_3d > 0 and not z_scale:
             raise ValueError('z_scaling factor required to rotate in 3d')
 
         def _scale_im(input_im, scale, order):
@@ -1068,7 +1122,7 @@ class Semantic3DIterator(Iterator):
                 batch_list.append(rescaled)
             return np.stack(batch_list, axis=0).astype(dtype)
 
-        if rotate_3d:
+        if aug_3d and rotation_3d > 0:
             scale = tuple([z_scale, 1, 1])
             X = _scale_im(X, scale, order=1)
             y = _scale_im(y, scale, order=0)
@@ -1084,7 +1138,7 @@ class Semantic3DIterator(Iterator):
         self.transforms = transforms
         self.transforms_kwargs = transforms_kwargs
         self.aug_3d = aug_3d
-        self.rotate_3d = rotate_3d
+        self.rotation_3d = rotation_3d
         self.z_scale = z_scale
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
@@ -1259,8 +1313,10 @@ class Semantic3DIterator(Iterator):
                                        for y_semantic in self.y_semantic_list]
 
             # Apply transformation
-            x, y_list = self.data_generator_3d.random_transform(x, [y] + y_semantic_list,
-                                                                   aug_3d=self.aug_3d, rotate_3d=self.rotate_3d)
+            x, y_list = self.data_generator_3d.random_transform(x,
+                                                                [y] + y_semantic_list,
+                                                                aug_3d=self.aug_3d,
+                                                                rotation_3d=self.rotation_3d)
             y = y_list[0]
             y_semantic_list = y_list[1:]
 
@@ -1324,8 +1380,14 @@ class Semantic3DIterator(Iterator):
                     resized = resize(batch, shape, order=order, preserve_range=True)
                     resized = np.moveaxis(resized, -1, 0)
 
+                    if resized.shape[0] > 1:
+                        resized = np.around(resized, decimals=0)
+
                 else:
                     resized = resize(batch, shape, order=order, preserve_range=True)
+
+                    if resized.shape[-1] > 1:
+                        resized = np.around(resized, decimals=0)
 
 
 
@@ -1334,26 +1396,14 @@ class Semantic3DIterator(Iterator):
             return np.stack(batch_list, axis=0).astype(dtype)
 
 
-        if self.rotate_3d:
+        if self.aug_3d and self.rotation_3d > 0:
             scale = tuple([1/self.z_scale, 1, 1])
             out_shape = tuple([self.output_frames, self.frame_shape[0], self.frame_shape[1]])
 
-
-            #batch_x = _scale_im(batch_x, scale, order=1)
             batch_x = _resize_im(batch_x, out_shape, order=1)
 
             for y in range(len(batch_y)):
-
-                #if batch_y[y][channel_axis] == 1:
-                ##batch_y[y] = _scale_im(batch_y[y], scale, order=0)
                 batch_y[y] = _resize_im(batch_y[y], out_shape, order=0)
-
-                # elif batch_y[y][channel_axis] == 2:
-
-                #    chan = np.expand_dims(batch_y[y][..., 0], -1)
-
-                #    batch_y[y][..., 0] = _scale_im(chan, scale, order=0)
-
 
         return batch_x, batch_y
 
@@ -1458,7 +1508,7 @@ class Semantic3DGenerator(ImageDataGenerator):
              transforms=['outer-distance'],
              transforms_kwargs={},
              aug_3d=False,
-             rotate_3d=False,
+             rotation_3d=0,
              z_scale=None,
              shuffle=True,
              min_objects=3,
@@ -1498,7 +1548,7 @@ class Semantic3DGenerator(ImageDataGenerator):
             transforms=transforms,
             transforms_kwargs=transforms_kwargs,
             aug_3d=aug_3d,
-            rotate_3d=rotate_3d,
+            rotation_3d=rotation_3d,
             z_scale=z_scale,
             shuffle=shuffle,
             min_objects=min_objects,
@@ -1630,7 +1680,7 @@ class Semantic3DGenerator(ImageDataGenerator):
             s_inv = 1. / np.sqrt(s[np.newaxis] + self.zca_epsilon)
             self.principal_components = (u * s_inv).dot(u.T)
 
-    def random_transform(self, x, y=None, seed=None, aug_3d=False, rotate_3d=False):
+    def random_transform(self, x, y=None, seed=None, aug_3d=False, rotation_3d=0):
         """Applies a random transformation to an image.
 
         Args:
@@ -1654,36 +1704,17 @@ class Semantic3DGenerator(ImageDataGenerator):
             params = self.get_random_transform(x.shape, seed)
 
         if aug_3d:
+            gen_3d = ImageDataGenerator(rotation_range=rotation_3d,
+                                        vertical_flip=True,
+                                        horizontal_flip=True,
+                                        fill_mode=self.fill_mode,
+                                        cval=self.cval)
+            if isinstance(x, list):
+                params_3d = gen_3d.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
+            else:
+                params_3d = gen_3d.get_random_transform(np.moveaxis(x, 0, 1).shape, seed)
 
-            # Don't want to brighten or zoom multiple times
-            _brightness_range = self.brightness_range
-            _zoom_range = self.zoom_range
-            self.brightness_range = None
-            self.zoom_range = (1, 1)
-
-            # Set params for 3d_augmentation with rotation set to 0
-            # Compatible with anisotropic data (with sampling not 1:1:1)
-            if not rotate_3d:
-                _rotation_range = self.rotation_range
-                self.rotation_range = 0
-
-                if isinstance(x, list):
-                    params_3d = self.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
-                else:
-                    params_3d = self.get_random_transform(np.moveaxis(x, 0, 1).shape, seed)
-
-                self.rotation_range = _rotation_range
-
-            # Set params for full 3d_augmentation - requires sampling with a ratio of 1:1:1
-            elif rotate_3d:
-
-                if isinstance(x, list):
-                    params_3d = self.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
-                else:
-                    params_3d = self.get_random_transform(np.moveaxis(x, 0, 1).shape, seed)
-
-            self.brightness_range = _brightness_range
-            self.zoom_range = _zoom_range
+            print(params_3d)
 
         if isinstance(x, list):
             for i in range(len(x)):
