@@ -535,8 +535,7 @@ class RetinaNetIterator(Iterator):
                          'classification': labels}
 
         if self.include_bbox:
-            batch_inputs = {'input': batch_x,
-                            'boxes_input': batch_x_bbox}
+            batch_inputs['boxes_input'] = batch_x_bbox
 
         if self.include_masks:
             batch_outputs['masks'] = masks_batch
@@ -949,8 +948,7 @@ class RetinaMovieIterator(Iterator):
                          'classification': labels}
 
         if self.include_bbox:
-            batch_inputs = {'input': batch_x,
-                            'boxes_input': batch_x_bbox}
+            batch_inputs['boxes_input'] = batch_x_bbox
 
         if self.include_masks:
             batch_outputs['masks'] = masks_batch
