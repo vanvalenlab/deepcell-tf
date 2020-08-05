@@ -201,7 +201,7 @@ class FeatureNetTest(keras_parameterized.TestCase):
             axis = 1 if data_format == 'channels_first' else -1
             self.assertEqual(model.output_shape[axis], output)
 
-    # @keras_parameterized.run_all_keras_modes
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters(
         *tf_test_util.generate_combinations_with_testcase_name(
             data_format=['channels_first', 'channels_last']))
@@ -543,7 +543,7 @@ class FeatureNetTest(keras_parameterized.TestCase):
             channel_axis = 1 if data_format == 'channels_first' else -1
             self.assertEqual(model.output_shape[channel_axis], n_features)
 
-    # @keras_parameterized.run_all_keras_modes
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters(
         *tf_test_util.generate_combinations_with_testcase_name(
             data_format=['channels_first', 'channels_last']))
