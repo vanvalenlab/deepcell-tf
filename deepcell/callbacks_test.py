@@ -49,6 +49,7 @@ NUM_HIDDEN = 5
 BATCH_SIZE = 5
 
 
+@keras_parameterized.run_with_all_model_types
 @keras_parameterized.run_all_keras_modes
 class CallbacksTest(keras_parameterized.TestCase):
 

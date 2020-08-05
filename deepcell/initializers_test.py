@@ -35,6 +35,7 @@ from tensorflow.python.keras import keras_parameterized
 from deepcell.initializers import PriorProbability
 
 
+@keras_parameterized.run_with_all_model_types
 @keras_parameterized.run_all_keras_modes
 class InitializersTest(keras_parameterized.TestCase):
 
