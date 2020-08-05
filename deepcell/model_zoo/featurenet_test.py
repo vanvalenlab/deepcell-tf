@@ -32,6 +32,7 @@ from __future__ import print_function
 from absl.testing import parameterized
 
 from tensorflow.keras import backend as K
+from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.keras import keras_parameterized
 
 from deepcell.model_zoo import featurenet
@@ -201,10 +202,9 @@ class FeatureNetTest(keras_parameterized.TestCase):
             self.assertEqual(model.output_shape[axis], output)
 
     # @keras_parameterized.run_all_keras_modes
-    @parameterized.named_parameters([
-        ('channels_last',) * 2,
-        ('channels_first',) * 2,
-    ])
+    @parameterized.named_parameters(
+        *tf_test_util.generate_combinations_with_testcase_name(
+            data_format=['channels_first', 'channels_last']))
     def test_bn_feature_net_2D_skip(self, data_format):
         receptive_field = 61
         n_features = 3
@@ -544,10 +544,9 @@ class FeatureNetTest(keras_parameterized.TestCase):
             self.assertEqual(model.output_shape[channel_axis], n_features)
 
     # @keras_parameterized.run_all_keras_modes
-    @parameterized.named_parameters([
-        ('channels_last',) * 2,
-        ('channels_first',) * 2,
-    ])
+    @parameterized.named_parameters(
+        *tf_test_util.generate_combinations_with_testcase_name(
+            data_format=['channels_first', 'channels_last']))
     def test_bn_feature_net_3D_skip(self, data_format):
         receptive_field = 61
         n_features = 3
