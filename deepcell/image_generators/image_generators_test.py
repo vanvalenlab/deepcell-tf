@@ -1362,12 +1362,22 @@ class TestRetinaNetDataGenerator(test.TestCase):
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
-            for x, (r, l) in generator.flow(
+            for x, y in generator.flow(
                     train_dict,
                     num_classes=num_classes,
+                    include_bbox=True,
+                    include_masks=True,
                     save_to_dir=temp_dir,
                     shuffle=True):
-                self.assertEqual(x.shape[1:], images.shape[1:])
+                self.assertIsInstance(x, dict)
+                self.assertEqual('input' in x, True)
+                self.assertEqual('boxes_input' in x, True)
+                self.assertEqual(x['input'].shape[1:], images.shape[1:])
+                self.assertIsInstance(y, dict)
+                self.assertEqual('regression' in y, True)
+                self.assertEqual('classification' in y, True)
+                r = y['regression']
+                l = y['classification']
                 self.assertEqual(r.shape[:-1], l.shape[:-1])
                 self.assertEqual(r.shape[-1], 5)
                 self.assertEqual(l.shape[-1], num_classes + 1)
@@ -1418,12 +1428,22 @@ class TestRetinaNetDataGenerator(test.TestCase):
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
 
-            for x, (r, l) in generator.flow(
+            for x, y in generator.flow(
                     train_dict,
                     num_classes=num_classes,
+                    include_bbox=True,
+                    include_masks=True,
                     save_to_dir=temp_dir,
                     shuffle=True):
-                self.assertEqual(x.shape[1:], images.shape[1:])
+                self.assertIsInstance(x, dict)
+                self.assertEqual('input' in x, True)
+                self.assertEqual('boxes_input' in x, True)
+                self.assertEqual(x['input'].shape[1:], images.shape[1:])
+                self.assertIsInstance(y, dict)
+                self.assertEqual('regression' in y, True)
+                self.assertEqual('classification' in y, True)
+                r = y['regression']
+                l = y['classification']
                 self.assertEqual(r.shape[:-1], l.shape[:-1])
                 self.assertEqual(r.shape[-1], 5)
                 self.assertEqual(l.shape[-1], num_classes + 1)
@@ -1527,15 +1547,26 @@ class TestRetinaMovieDataGenerator(test.TestCase):
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
 
-            for x, (r, l) in generator.flow(
+            for x, y in generator.flow(
                     train_dict,
                     frames_per_batch=frames_per_batch,
                     num_classes=num_classes,
+                    include_bbox=True,
+                    include_masks=True,
                     save_to_dir=temp_dir,
                     shuffle=True):
                 expected = list(images.shape)
                 expected[1] = frames_per_batch
-                self.assertEqual(x.shape[1:], tuple(expected)[1:])
+                expected = tuple(expected)
+                self.assertIsInstance(x, dict)
+                self.assertEqual('input' in x, True)
+                self.assertEqual('boxes_input' in x, True)
+                self.assertEqual(x['input'].shape[1:], expected[1:])
+                self.assertIsInstance(y, dict)
+                self.assertEqual('regression' in y, True)
+                self.assertEqual('classification' in y, True)
+                r = y['regression']
+                l = y['classification']
                 self.assertEqual(r.shape[:-1], l.shape[:-1])
                 self.assertEqual(r.shape[-1], 5)
                 self.assertEqual(l.shape[-1], num_classes + 1)
@@ -1596,15 +1627,27 @@ class TestRetinaMovieDataGenerator(test.TestCase):
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
 
-            for x, (r, l) in generator.flow(
+            for x, y in generator.flow(
                     train_dict,
                     num_classes=num_classes,
+                    include_bbox=True,
+                    include_masks=True,
                     frames_per_batch=frames_per_batch,
                     save_to_dir=temp_dir,
                     shuffle=True):
                 expected = list(images.shape)
                 expected[2] = frames_per_batch
-                self.assertEqual(x.shape[1:], tuple(expected)[1:])
+                expected = tuple(expected)
+                self.assertIsInstance(x, dict)
+                self.assertEqual('input' in x, True)
+                self.assertEqual('boxes_input' in x, True)
+                self.assertEqual(x['input'].shape[1:], expected[1:])
+
+                self.assertIsInstance(y, dict)
+                self.assertEqual('regression' in y, True)
+                self.assertEqual('classification' in y, True)
+                r = y['regression']
+                l = y['classification']
                 self.assertEqual(r.shape[:-1], l.shape[:-1])
                 self.assertEqual(r.shape[-1], 5)
                 self.assertEqual(l.shape[-1], num_classes + 1)
