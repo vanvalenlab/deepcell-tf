@@ -1673,7 +1673,7 @@ class Semantic3DGenerator(ImageDataGenerator):
             # Set params for full 3d_augmentation - requires sampling with a ratio of 1:1:1
             else:
                 _rotation_range = self.rotation_range
-                self.rotation_range = self.rotation_3d
+                self.rotation_range = rotation_3d
 
                 if isinstance(x, list):
                     params_3d = self.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
