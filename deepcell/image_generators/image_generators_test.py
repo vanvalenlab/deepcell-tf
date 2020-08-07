@@ -2473,6 +2473,7 @@ class TestSemanticMovieGenerator(test.TestCase):
             generator = image_generators.SemanticMovieGenerator(
                 zoom_range=(2, 2, 2))
 
+
 class TestSemantic3DGenerator(test.TestCase):
 
     def test_semantic_3d_generator(self):

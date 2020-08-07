@@ -1058,12 +1058,19 @@ class Semantic3DIterator(Iterator):
                 if data_format == 'channels_first':
 
                     batch = np.moveaxis(batch, 0, -1)
-                    rescaled = rescale(batch, scale, order=order, preserve_range=True, multichannel=True)
+                    rescaled = rescale(batch,
+                                       scale,
+                                       order=order,
+                                       preserve_range=True,
+                                       multichannel=True)
                     rescaled = np.moveaxis(rescaled, -1, 0)
 
                 else:
-                    rescaled = rescale(batch, scale, order=order, preserve_range=True, multichannel=True)
-
+                    rescaled = rescale(batch,
+                                       scale,
+                                       order=order,
+                                       preserve_range=True,
+                                       multichannel=True)
 
                 batch_list.append(rescaled)
             return np.stack(batch_list, axis=0).astype(dtype)
@@ -1075,7 +1082,6 @@ class Semantic3DIterator(Iterator):
 
             self.output_frames = frames_per_batch
             frames_per_batch = round(frames_per_batch * z_scale)
-
 
         self.x = np.asarray(X, dtype=K.floatx())
         self.y = np.asarray(y, dtype='int32')
@@ -1169,10 +1175,10 @@ class Semantic3DIterator(Iterator):
             else:
                 batch_y_semantic_list = [
                     np.zeros((len(index_array),
-                                    self.frames_per_batch,
-                                    self.frame_shape[0],
-                                    self.frame_shape[1],
-                                    y_semantic.shape[4]))
+                              self.frames_per_batch,
+                              self.frame_shape[0],
+                              self.frame_shape[1],
+                              y_semantic.shape[4]))
                     for y_semantic in self.y_semantic_list
                 ]
 
@@ -1185,8 +1191,8 @@ class Semantic3DIterator(Iterator):
                                     self.x.shape[4]))
             else:
                 batch_x = np.zeros(tuple([len(index_array),
-                                         self.frames_per_batch] +
-                                         list(self.x.shape)[2:]))
+                                          self.frames_per_batch] +
+                                          list(self.x.shape)[2:]))
 
             if self.data_format == 'channels_first':
                 batch_y_semantic_list = [np.zeros(tuple([len(index_array),
@@ -1230,17 +1236,25 @@ class Semantic3DIterator(Iterator):
                 col_end = col_start + self.frame_shape[1]
 
                 if self.time_axis == 1:
-                    x = np.copy(self.x[j, time_start:time_end, row_start:row_end, col_start:col_end, :])
-                    y = np.copy(self.y[j, time_start:time_end, row_start:row_end, col_start:col_end, :])
+                    x = np.copy(self.x[j, time_start:time_end, row_start:row_end,
+                                       col_start:col_end, :])
+                    y = np.copy(self.y[j, time_start:time_end, row_start:row_end,
+                                       col_start:col_end, :])
                 elif self.time_axis == 2:
-                    x = np.copy(self.x[j, :, time_start:time_end, row_start:row_end, col_start:col_end])
-                    y = np.copy(self.y[j, :, time_start:time_end, row_start:row_end, col_start:col_end])
+                    x = np.copy(self.x[j, :, time_start:time_end, row_start:row_end,
+                                       col_start:col_end])
+                    y = np.copy(self.y[j, :, time_start:time_end, row_start:row_end,
+                                       col_start:col_end])
 
                 if self.time_axis == 1:
-                    y_semantic_list = [np.copy(y_semantic[j, time_start:time_end, row_start:row_end, col_start:col_end, :])
+                    y_semantic_list = [np.copy(y_semantic[j, time_start:time_end,
+                                                          row_start:row_end,
+                                                          col_start:col_end, :])
                                        for y_semantic in self.y_semantic_list]
                 elif self.time_axis == 2:
-                    y_semantic_list = [np.copy(y_semantic[j, :, time_start:time_end, row_start:row_end, col_start:col_end])
+                    y_semantic_list = [np.copy(y_semantic[j, :, time_start:time_end,
+                                                          row_start:row_end,
+                                                          col_start:col_end])
                                        for y_semantic in self.y_semantic_list]
 
             else:
@@ -1335,15 +1349,11 @@ class Semantic3DIterator(Iterator):
                     if resized.shape[-1] > 1:
                         resized = np.around(resized, decimals=0)
 
-
-
-
                 batch_list.append(resized)
             return np.stack(batch_list, axis=0).astype(dtype)
 
-
         if self.aug_3d and self.rotation_3d > 0:
-            scale = tuple([1/self.z_scale, 1, 1])
+            scale = tuple([1 / self.z_scale, 1, 1])
             out_shape = tuple([self.output_frames, self.frame_shape[0], self.frame_shape[1]])
 
             batch_x = _resize_im(batch_x, out_shape, order=1)
@@ -1740,7 +1750,6 @@ class Semantic3DGenerator(ImageDataGenerator):
                         temp = self.apply_transform(x[:, :, frame], params_3d)
                         x[:, :, frame] = self.apply_transform(x[:, :, frame], params_3d)
 
-
         if y is not None:
             params['brightness'] = None
             params['channel_shift_intensity'] = None
@@ -1804,7 +1813,7 @@ class Semantic3DGenerator(ImageDataGenerator):
                                 y_i[:, :, frame] = np.moveaxis(y_trans, -1, 0)
                             else:
                                 y_i[:, frame] = self.apply_transform(y_i[:, frame],
-                                                                  params_3d)
+                                                                     params_3d)
                         for frame in range(y_i.shape[self.col_axis]):
                             if self.data_format == 'channels_first':
                                 y_trans = self.apply_transform(y_i[..., frame],
@@ -1812,7 +1821,7 @@ class Semantic3DGenerator(ImageDataGenerator):
                                 y_i[..., frame] = np.moveaxis(y_trans, -1, 0)
                             else:
                                 y_i[:, :, frame] = self.apply_transform(y_i[:, :, frame],
-                                                                  params_3d)
+                                                                        params_3d)
                         y[i] = y_i
 
                         self.interpolation_order = _interpolation_order
@@ -1838,7 +1847,6 @@ class Semantic3DGenerator(ImageDataGenerator):
                             y[:, :, frame] = self.apply_transform(y[:, :, frame], params_3d)
 
                     self.interpolation_order = _interpolation_order
-
 
         # Note: Undo workaround
         self.row_axis += 1

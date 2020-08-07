@@ -189,7 +189,6 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
     maskstack = np.squeeze(mask)  # squeeze the channels
     maskstack = erode_edges(maskstack, erosion_width)
 
-
     distance = ndimage.distance_transform_edt(maskstack, sampling=sampling)
 
     # normalize by maximum distance
