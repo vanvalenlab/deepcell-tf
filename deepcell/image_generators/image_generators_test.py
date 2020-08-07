@@ -2496,12 +2496,13 @@ class TestSemantic3DGenerator(test.TestCase):
             batches = images.shape[0] // frames
             images = np.reshape(images, tuple([batches, frames] +
                                               list(images.shape[1:])))
+            # TODO - figure out why zca whitening isn't working with 3d datagen
             generator = image_generators.Semantic3DGenerator(
                 featurewise_center=True,
                 samplewise_center=True,
                 featurewise_std_normalization=True,
                 samplewise_std_normalization=True,
-                zca_whitening=False,      # TODO - figure out why zca whitening isn't working with 3d datagen
+                zca_whitening=False,
                 rotation_range=90.,
                 width_shift_range=0.1,
                 height_shift_range=0.1,
@@ -2763,7 +2764,6 @@ class TestSemantic3DGenerator(test.TestCase):
                 self.assertEqual(x.shape[1:], (x.shape[1],) + output_shape)
                 self.assertEqual(len(y), len(transforms))
                 break
-
 
     def test_semantic_3d_generator_invalid_data(self):
         generator = image_generators.Semantic3DGenerator(
