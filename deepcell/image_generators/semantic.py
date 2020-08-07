@@ -1191,8 +1191,7 @@ class Semantic3DIterator(Iterator):
                                     self.x.shape[4]))
             else:
                 batch_x = np.zeros(tuple([len(index_array),
-                                          self.frames_per_batch] +
-                                          list(self.x.shape)[2:]))
+                                          self.frames_per_batch] + list(self.x.shape)[2:]))
 
             if self.data_format == 'channels_first':
                 batch_y_semantic_list = [np.zeros(tuple([len(index_array),
@@ -1363,7 +1362,6 @@ class Semantic3DIterator(Iterator):
 
         return batch_x, batch_y
 
-
     def next(self):
         """For python 2.x. Returns the next batch.
         """
@@ -1513,7 +1511,6 @@ class Semantic3DGenerator(ImageDataGenerator):
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
             save_format=save_format)
-
 
     def standardize(self, x):
         """Apply the normalization configuration to a batch of inputs.
