@@ -1650,15 +1650,40 @@ class Semantic3DGenerator(ImageDataGenerator):
             params = self.get_random_transform(x.shape, seed)
 
         if aug_3d:
-            gen_3d = ImageDataGenerator(rotation_range=rotation_3d,
-                                        vertical_flip=True,
-                                        horizontal_flip=True,
-                                        fill_mode=self.fill_mode,
-                                        cval=self.cval)
-            if isinstance(x, list):
-                params_3d = gen_3d.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
+
+            # Don't want to brighten or zoom multiple times
+            _brightness_range = self.brightness_range
+            _zoom_range = self.zoom_range
+            self.brightness_range = None
+            self.zoom_range = (1, 1)
+
+            # Set params for 3d_augmentation with rotation set to 0
+            # Compatible with anisotropic data (with sampling not 1:1:1)
+            if rotation_3d == 0:
+                _rotation_range = self.rotation_range
+                self.rotation_range = 0
+
+                if isinstance(x, list):
+                    params_3d = self.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
+                else:
+                    params_3d = self.get_random_transform(np.moveaxis(x, 0, 1).shape, seed)
+
+                self.rotation_range = _rotation_range
+
+            # Set params for full 3d_augmentation - requires sampling with a ratio of 1:1:1
             else:
-                params_3d = gen_3d.get_random_transform(np.moveaxis(x, 0, 1).shape, seed)
+                _rotation_range = self.rotation_range
+                self.rotation_range = self.rotation_3d
+
+                if isinstance(x, list):
+                    params_3d = self.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
+                else:
+                    params_3d = self.get_random_transform(np.moveaxis(x, 0, 1).shape, seed)
+
+                self.rotation_range = _rotation_range
+
+            self.brightness_range = _brightness_range
+            self.zoom_range = _zoom_range
 
         if isinstance(x, list):
             for i in range(len(x)):
@@ -1686,14 +1711,14 @@ class Semantic3DGenerator(ImageDataGenerator):
                     for frame in range(x_i.shape[self.row_axis]):
                         if self.data_format == 'channels_first':
                             x_trans = self.apply_transform(x_i[:, :, frame], params_3d)
-                            x_i[:, :, frame] = np.moveaxis(x_trans, -1, 0)
+                            x_i[:, :, frame] = np.rollaxis(x_trans, -1, 0)
                         else:
                             x_i[:, frame] = self.apply_transform(x_i[:, frame], params_3d)
 
                     for frame in range(x_i.shape[self.col_axis]):
                         if self.data_format == 'channels_first':
                             x_trans = self.apply_transform(x_i[..., frame], params_3d)
-                            x_i[..., frame] = np.moveaxis(x_trans, -1, 0)
+                            x_i[..., frame] = np.rollaxis(x_trans, -1, 0)
                         else:
                             x_i[:, :, frame] = self.apply_transform(x_i[:, :, frame], params_3d)
                     x[i] = x_i
