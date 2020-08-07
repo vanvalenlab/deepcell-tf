@@ -149,10 +149,11 @@ def get_images_from_directory(data_location, channel_names):
     all_images = []
 
     for stack_iteration in range(len(img_list_channels[0])):
+
         if data_format == 'channels_first':
-            shape = (1, n_channels, img_temp.shape[0], img_temp.shape[1])
+            shape = tuple([1, n_channels] + list(img_temp.shape))
         else:
-            shape = (1, img_temp.shape[0], img_temp.shape[1], n_channels)
+            shape = tuple([1] + list(img_temp.shape) + [n_channels])
 
         all_channels = np.zeros(shape, dtype=K.floatx())
 
@@ -160,9 +161,9 @@ def get_images_from_directory(data_location, channel_names):
             img_path = os.path.join(data_location, img_list_channels[j][stack_iteration])
             channel_img = get_image(img_path)
             if data_format == 'channels_first':
-                all_channels[0, j, :, :] = channel_img
+                all_channels[0, j, ...] = channel_img
             else:
-                all_channels[0, :, :, j] = channel_img
+                all_channels[0, ..., j] = channel_img
 
         all_images.append(all_channels)
 
