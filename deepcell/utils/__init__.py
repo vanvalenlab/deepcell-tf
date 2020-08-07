@@ -46,7 +46,6 @@ from deepcell.utils import tracking_utils
 from deepcell.utils import train_utils
 from deepcell.utils import transform_utils
 from deepcell.utils import retinanet_anchor_utils
-from deepcell.utils import utils_3D
 
 # Globally-importable utils.
 from deepcell.utils.data_utils import get_data
