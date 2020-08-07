@@ -1686,14 +1686,14 @@ class Semantic3DGenerator(ImageDataGenerator):
                     for frame in range(x_i.shape[self.row_axis]):
                         if self.data_format == 'channels_first':
                             x_trans = self.apply_transform(x_i[:, :, frame], params_3d)
-                            x_i[:, :, frame] = np.rollaxis(x_trans, -1, 0)
+                            x_i[:, :, frame] = np.moveaxis(x_trans, -1, 0)
                         else:
                             x_i[:, frame] = self.apply_transform(x_i[:, frame], params_3d)
 
                     for frame in range(x_i.shape[self.col_axis]):
                         if self.data_format == 'channels_first':
                             x_trans = self.apply_transform(x_i[..., frame], params_3d)
-                            x_i[..., frame] = np.rollaxis(x_trans, -1, 0)
+                            x_i[..., frame] = np.moveaxis(x_trans, -1, 0)
                         else:
                             x_i[:, :, frame] = self.apply_transform(x_i[:, :, frame], params_3d)
                     x[i] = x_i
