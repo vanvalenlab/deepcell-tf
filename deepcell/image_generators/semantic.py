@@ -1081,7 +1081,7 @@ class Semantic3DIterator(Iterator):
             y = _scale_im(y, scale, order=0)
 
             self.output_frames = frames_per_batch
-            frames_per_batch = round(frames_per_batch * z_scale)
+            frames_per_batch = round(frames_per_batch * z_scale).astype('uint16')
 
         self.x = np.asarray(X, dtype=K.floatx())
         self.y = np.asarray(y, dtype='int32')
