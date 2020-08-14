@@ -9,7 +9,7 @@ nbformat>=4.4.0,<5
 keras-applications==1.0.8
 keras-preprocessing<=1.1.0
 networkx>=2.1
-opencv-python>=3.4.2.17,<4
+opencv-python<=3.4.9.31
 pathlib==1.0.1
 deepcell-tracking>=0.2.4
 deepcell-toolbox>=0.6.0
