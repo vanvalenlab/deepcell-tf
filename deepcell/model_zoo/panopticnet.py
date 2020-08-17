@@ -76,26 +76,31 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256,
             raise ValueError('Mode {} not supported. Please choose '
                              'from {}.'.format(mode, str(acceptable_modes)))
 
+    f_name = str(feature.name)[:2]
+
     if mode == 'conv':
         x = Conv3D(feature_size,
                    (frames_per_batch, 3, 3),
                    strides=(1, 1, 1),
                    padding='same',
+                   name='conv3D_mtf_{}'.format(f_name),
                    )(feature)
-        x = BatchNormalization(axis=-1)(x)
-        x = Activation('relu')(x)
+        x = BatchNormalization(axis=-1, name='bnorm_mtf_{}'.format(f_name))(x)
+        x = Activation('relu', name='acti_mtf_{}'.format(f_name))(x)
     elif mode == 'lstm':
         x = ConvLSTM2D(feature_size,
                        (3, 3),
                        padding='same',
                        activation='relu',
-                       return_sequences=True)(feature)
+                       return_sequences=True,
+                       name='convLSTM_mtf_{}'.format(f_name))(feature)
     elif mode == 'gru':
         x = ConvGRU2D(feature_size,
                       (3, 3),
                       padding='same',
                       activation='relu',
-                      return_sequences=True)(feature)
+                      return_sequences=True,
+                      name='convGRU_mtf_{}'.format(f_name))(feature)
     else:
         x = feature
 
@@ -225,7 +230,7 @@ def PanopticNet(backbone,
     else:
         if frames_per_batch > 1:
             norm = TimeDistributed(ImageNormalization2D(
-                norm_method=norm_method, name='norm'))(inputs)
+                norm_method=norm_method, name='norm'), name='td_norm')(inputs)
         else:
             norm = ImageNormalization2D(norm_method=norm_method,
                                         name='norm')(inputs)
@@ -235,7 +240,7 @@ def PanopticNet(backbone,
         if frames_per_batch > 1:
             # TODO: TimeDistributed is incompatible with channels_first
             loc = TimeDistributed(Location2D(in_shape=input_shape,
-                                             name='location'))(norm)
+                                             name='location'), name='td_location')(norm)
         else:
             loc = Location2D(in_shape=input_shape, name='location')(norm)
         concat = Concatenate(axis=channel_axis,
@@ -280,9 +285,11 @@ def PanopticNet(backbone,
     features = [pyramid_dict[key] for key in pyramid_levels]
 
     if frames_per_batch > 1:
-        temporal_features = [__merge_temporal_features(f, mode=temporal_mode)
+        temporal_features = [__merge_temporal_features(f, mode=temporal_mode,
+                                                       frames_per_batch=frames_per_batch)
+
                              for f in features]
-        for f, k in zip(temporal_features, pyramid_dict.keys()):
+        for f, k in zip(temporal_features, pyramid_levels):
             pyramid_dict[k] = f
 
     semantic_levels = [int(re.findall(r'\d+', k)[0]) for k in pyramid_dict]

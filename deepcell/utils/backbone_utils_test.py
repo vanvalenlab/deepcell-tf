@@ -31,6 +31,7 @@ from __future__ import division
 
 from absl.testing import parameterized
 
+from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.layers import Input
 from tensorflow.python.keras.models import Model
@@ -42,11 +43,13 @@ from deepcell.utils import backbone_utils
 
 class TestBackboneUtils(keras_parameterized.TestCase):
 
+    @keras_parameterized.run_with_all_model_types
     @keras_parameterized.run_all_keras_modes
-    @parameterized.named_parameters([
-        ('channels_last',) * 2,
-        # ('channels_first',) * 2,
-    ])
+    @parameterized.named_parameters(
+        *tf_test_util.generate_combinations_with_testcase_name(
+            data_format=[
+                # 'channels_first',
+                'channels_last']))
     def test_get_featurenet_backbone(self, data_format):
         backbone = 'featurenet'
         input_shape = (256, 256, 3)
@@ -64,10 +67,11 @@ class TestBackboneUtils(keras_parameterized.TestCase):
                 backbone_utils.get_backbone(backbone, inputs, use_imagenet=True)
 
     # @keras_parameterized.run_all_keras_modes
-    @parameterized.named_parameters([
-        ('channels_last',) * 2,
-        # ('channels_first',) * 2,
-    ])
+    @parameterized.named_parameters(
+        *tf_test_util.generate_combinations_with_testcase_name(
+            data_format=[
+                # 'channels_first',
+                'channels_last']))
     def test_get_featurenet3d_backbone(self, data_format):
         backbone = 'featurenet3d'
         input_shape = (40, 256, 256, 3)
@@ -84,26 +88,28 @@ class TestBackboneUtils(keras_parameterized.TestCase):
             with self.assertRaises(ValueError):
                 backbone_utils.get_backbone(backbone, inputs, use_imagenet=True)
 
+    # @keras_parameterized.run_with_all_model_types
     # @keras_parameterized.run_all_keras_modes
-    @parameterized.named_parameters([
-        ('resnet50',) * 2,
-        ('resnet101',) * 2,
-        ('resnet152',) * 2,
-        ('resnet50v2',) * 2,
-        ('resnet101v2',) * 2,
-        ('resnet152v2',) * 2,
-        ('resnext50',) * 2,
-        ('resnext101',) * 2,
-        ('vgg16',) * 2,
-        ('vgg19',) * 2,
-        ('densenet121',) * 2,
-        ('densenet169',) * 2,
-        ('densenet201',) * 2,
-        ('mobilenet',) * 2,
-        ('mobilenetv2',) * 2,
-        ('nasnet_large',) * 2,
-        ('nasnet_mobile',) * 2,
-    ])
+    @parameterized.named_parameters(
+        *tf_test_util.generate_combinations_with_testcase_name(
+            backbone=[
+                'resnet50',
+                'resnet101',
+                'resnet152',
+                'resnet50v2',
+                'resnet101v2',
+                'resnet152v2',
+                'resnext50',
+                'resnext101',
+                'vgg16',
+                'vgg19',
+                'densenet121',
+                'densenet169',
+                'densenet201',
+                'mobilenet',
+                'mobilenetv2',
+                'nasnet_large',
+                'nasnet_mobile']))
     def test_get_backbone(self, backbone):
         with self.cached_session():
             K.set_image_data_format('channels_last')

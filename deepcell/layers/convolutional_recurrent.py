@@ -107,23 +107,20 @@ class ConvGRU2DCell(DropoutRNNCellMixin, Layer):
 
         self.dropout = min(1., max(0., dropout))
         self.recurrent_dropout = min(1., max(0., recurrent_dropout))
-        self._dropout_mask = None
-        self._recurrent_dropout_mask = None
 
     @property
     def state_size(self):
         return (self.filters,)
 
     def build(self, input_shape):
-        input_shape = tensor_shape.TensorShape(input_shape)
         if self.data_format == 'channels_first':
             channel_axis = 1
         else:
             channel_axis = -1
-        if input_shape.dims[channel_axis].value is None:
+        if input_shape[channel_axis] is None:
             raise ValueError('The channel dimension of the inputs '
                              'should be defined. Found `None`.')
-        input_dim = input_shape.dims[channel_axis].value
+        input_dim = input_shape[channel_axis]
         kernel_shape = self.kernel_size + (input_dim, self.filters * 3)
         self.kernel_shape = kernel_shape
         recurrent_kernel_shape = self.kernel_size + (self.filters, self.filters * 3)
@@ -300,7 +297,8 @@ class ConvGRU2D(ConvRNN2D):
                              recurrent_constraint=recurrent_constraint,
                              bias_constraint=bias_constraint,
                              dropout=dropout,
-                             recurrent_dropout=recurrent_dropout)
+                             recurrent_dropout=recurrent_dropout,
+                             dtype=kwargs.get('dtype'))
 
         super(ConvGRU2D, self).__init__(cell,
                                         return_sequences=return_sequences,
@@ -312,6 +310,7 @@ class ConvGRU2D(ConvRNN2D):
         self.activity_regularizer = regularizers.get(activity_regularizer)
 
     def call(self, inputs, mask=None, training=None, initial_state=None):
+        self._maybe_reset_cell_dropout_mask(self.cell)
         result = super(ConvGRU2D, self).call(inputs,
                                              mask=mask,
                                              training=training,

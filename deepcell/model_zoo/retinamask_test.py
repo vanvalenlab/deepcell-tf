@@ -39,7 +39,7 @@ from deepcell.model_zoo import RetinaMask
 
 class RetinaMaskTest(keras_parameterized.TestCase):
 
-    # @keras_parameterized.run_all_keras_modes
+    @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters([
         {
             'testcase_name': 'retinamask_basic',
@@ -288,11 +288,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             )
 
             # TODO: What are the extra 2 for panoptic models?
-            expected_size = 7 + panoptic * (len(num_semantic_classes) + 2)
-
-            # TODO: What are these new outputs?
-            if frames > 1:
-                expected_size += 2
+            expected_size = 4 + panoptic * (len(num_semantic_classes) + 2)
 
             self.assertIsInstance(model.output_shape, list)
             self.assertEqual(len(model.output_shape), expected_size)
@@ -300,13 +296,12 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             self.assertEqual(model.output_shape[0][-1], 4)
             self.assertEqual(model.output_shape[1][-1], num_classes)
 
-            delta = (frames > 1)  # TODO: New output?
-            self.assertEqual(model.output_shape[3 + delta][-1], 4)
-            self.assertEqual(model.output_shape[4 + delta][-1], max_detections)
-            self.assertEqual(model.output_shape[5 + delta][-1], max_detections)
             # max_detections is in axis == 1
-            _axis = axis + int(K.image_data_format() == 'channels_first')
-            self.assertEqual(model.output_shape[6 + delta][_axis], num_classes)
+            if K.image_data_format() == 'channels_first':
+                expected_shape = tuple([num_classes] + list(mask_size))
+            else:
+                expected_shape = tuple(list(mask_size) + [num_classes])
+            self.assertEqual(model.output_shape[3][-3:], expected_shape)
 
             if panoptic:
                 for i, n in enumerate(num_semantic_classes):

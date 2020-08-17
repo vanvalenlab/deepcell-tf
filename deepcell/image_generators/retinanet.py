@@ -307,6 +307,8 @@ class RetinaNetIterator(Iterator):
         self.transforms = transforms
         self.transforms_kwargs = transforms_kwargs
         self.channel_axis = 3 if data_format == 'channels_last' else 1
+        self.row_axis = 1 if data_format == 'channels_last' else 2
+        self.col_axis = 2 if data_format == 'channels_last' else 3
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -486,7 +488,9 @@ class RetinaNetIterator(Iterator):
             annotations_list,
             self.num_classes)
 
-        max_shape = tuple(max_shape)  # was a list for max shape indexing
+        # was a list for max shape indexing
+        max_shape = tuple([max_shape[self.row_axis - 1],
+                           max_shape[self.col_axis - 1]])
 
         if self.include_bbox:
             max_annotations = max(len(a['masks']) for a in annotations_list)
@@ -535,8 +539,7 @@ class RetinaNetIterator(Iterator):
                          'classification': labels}
 
         if self.include_bbox:
-            batch_inputs = {'input': batch_x,
-                            'boxes_input': batch_x_bbox}
+            batch_inputs['boxes_input'] = batch_x_bbox
 
         if self.include_masks:
             batch_outputs['masks'] = masks_batch
@@ -949,8 +952,7 @@ class RetinaMovieIterator(Iterator):
                          'classification': labels}
 
         if self.include_bbox:
-            batch_inputs = {'input': batch_x,
-                            'boxes_input': batch_x_bbox}
+            batch_inputs['boxes_input'] = batch_x_bbox
 
         if self.include_masks:
             batch_outputs['masks'] = masks_batch
