@@ -141,11 +141,11 @@ class SemanticIterator(Iterator):
                 y_current = y[..., label_num:(label_num + 1)]
 
             for transform in transforms:
+                transform_kwargs = transforms_kwargs.get(transform, dict())
                 # add default dtype to kwargs
                 transform_kwargs['float_dtype'] = self.float_dtype
                 transform_kwargs['int_dtype'] = self.int_dtype
 
-                transform_kwargs = transforms_kwargs.get(transform, dict())
                 y_transform = _transform_masks(y_current, transform,
                                                data_format=data_format,
                                                **transform_kwargs)
