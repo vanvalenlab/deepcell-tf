@@ -129,12 +129,13 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         bins = kwargs.pop('distance_bins', None)
         erosion = kwargs.pop('erosion_width', 0)
         by_frame = kwargs.pop('by_frame', True)
-        dtype = kwargs.pop('float_dtype', 'float32')
+        float_dtype = kwargs.pop('float_dtype', 'float32')
+        int_dtype = kwargs.pop('int_dtype', 'int32')
 
         if data_format == 'channels_first':
-            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])), dtype=dtype)
+            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])), dtype=float_dtype)
         else:
-            y_transform = np.zeros(y.shape[0:-1], dtype=dtype)
+            y_transform = np.zeros(y.shape[0:-1], dtype=float_dtype)
 
         if y.ndim == 5:
             if by_frame:
@@ -159,7 +160,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             pass
         else:
             # convert to one hot notation
-            y_transform = to_categorical(y_transform, num_classes=bins, dtype='uint8')
+            y_transform = to_categorical(y_transform, num_classes=bins, dtype=int_dtype)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
@@ -219,11 +220,11 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     elif transform == 'fgbg':
         dtype = kwargs.pop('int_dtype', 'int32')
 
-        y_transform = np.where(y > 1, 1, y).astype(dtype)
+        y_transform = np.where(y > 1, 1, y)
         # convert to one hot notation
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, 1, y.ndim)
-        y_transform = to_categorical(y_transform, dtype='uint8')
+        y_transform = to_categorical(y_transform, dtype=dtype)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
