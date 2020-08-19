@@ -123,7 +123,7 @@ class CytoplasmSegmentation(Application):
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='104a7d7884c80c37d2bce6d1c3a17c7a'
+                file_hash='104a7d7884c80c37d2bce6d1c3a17c7a'
             )
 
             model.load_weights(weights_path, by_name=True)

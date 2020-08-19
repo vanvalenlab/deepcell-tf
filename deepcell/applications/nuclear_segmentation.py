@@ -123,7 +123,7 @@ class NuclearSegmentation(Application):
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='42ca0ebe4b7b0f782eaa4733cdddad88'
+                file_hash='42ca0ebe4b7b0f782eaa4733cdddad88'
             )
 
             model.load_weights(weights_path, by_name=True)
