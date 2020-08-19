@@ -128,7 +128,7 @@ class MultiplexSegmentation(Application):
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                md5_hash='ff24e821c6056cf847e58e8e52916814'
+                file_hash='ff24e821c6056cf847e58e8e52916814'
             )
 
             model.load_weights(weights_path)
