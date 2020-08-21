@@ -13,3 +13,4 @@ opencv-python<=3.4.9.31
 pathlib==1.0.1
 deepcell-tracking>=0.2.4
 deepcell-toolbox>=0.6.0
+optuna
