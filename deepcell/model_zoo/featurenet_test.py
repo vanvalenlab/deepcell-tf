@@ -31,9 +31,10 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 
-from tensorflow.keras import backend as K
 from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.keras import keras_parameterized
+
+from tensorflow.keras import backend as K
 
 from deepcell.model_zoo import featurenet
 

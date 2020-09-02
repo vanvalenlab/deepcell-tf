@@ -6,11 +6,9 @@ from __future__ import division
 
 from absl.testing import parameterized
 import numpy as np
+import tensorflow as tf
 
 from tensorflow.python.keras import keras_parameterized
-
-from tensorflow.python import keras
-
 from tensorflow.python.framework import test_util as tf_test_util
 
 from deepcell.utils import testing_utils
@@ -46,7 +44,7 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
                                     input_channel)
 
         # test for return state:
-        x = keras.layers.Input(batch_shape=inputs.shape)
+        x = tf.keras.layers.Input(batch_shape=inputs.shape)
         kwargs = {'data_format': data_format,
                   'return_sequences': return_sequences,
                   'return_state': True,
@@ -60,11 +58,11 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
         outputs = layer(x)
         _, states = outputs[0], outputs[1:]
         self.assertEqual(len(states), len(layer.cell.state_size))
-        model = keras.models.Model(x, states[0])
+        model = tf.keras.models.Model(x, states[0])
         state = model.predict(inputs)
 
         self.assertAllClose(
-            keras.backend.eval(layer.states[0]), state, atol=1e-4)
+            tf.keras.backend.eval(layer.states[0]), state, atol=1e-4)
 
         # test for output shape:
         testing_utils.layer_test(
@@ -92,7 +90,7 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
                                 input_channel)
 
         with self.cached_session():
-            model = keras.models.Sequential()
+            model = tf.keras.models.Sequential()
             kwargs = {'data_format': 'channels_last',
                       'return_sequences': False,
                       'filters': filters,
@@ -150,8 +148,8 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
                       'stateful': True,
                       'filters': filters,
                       'batch_input_shape': inputs.shape,
-                      'kernel_regularizer': keras.regularizers.L1L2(l1=0.01),
-                      'recurrent_regularizer': keras.regularizers.L1L2(l1=0.01),
+                      'kernel_regularizer': tf.keras.regularizers.L1L2(l1=0.01),
+                      'recurrent_regularizer': tf.keras.regularizers.L1L2(l1=0.01),
                       'activity_regularizer': 'l2',
                       'bias_regularizer': 'l2',
                       'kernel_constraint': 'max_norm',
@@ -162,7 +160,7 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
             layer = layers.ConvGRU2D(**kwargs)
             layer.build(inputs.shape)
             self.assertEqual(len(layer.losses), 3)
-            layer(keras.backend.variable(np.ones(inputs.shape)))
+            layer(tf.keras.backend.variable(np.ones(inputs.shape)))
             self.assertEqual(len(layer.losses), 4)
 
     def test_conv_gru_2d_dropout(self):
@@ -182,7 +180,7 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
 
     def test_conv_gru_2d_cloning(self):
         with self.cached_session():
-            model = keras.models.Sequential()
+            model = tf.keras.models.Sequential()
             model.add(layers.ConvGRU2D(5, 3, input_shape=(None, 5, 5, 3)))
 
             test_inputs = np.random.random((2, 4, 5, 5, 3))
@@ -191,7 +189,7 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
 
         # Use a new graph to clone the model
         with self.cached_session():
-            clone = keras.models.clone_model(model)
+            clone = tf.keras.models.clone_model(model)
             clone.set_weights(weights)
 
             outputs = clone.predict(test_inputs)

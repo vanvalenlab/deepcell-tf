@@ -31,7 +31,7 @@ from __future__ import print_function
 
 import os
 
-from tensorflow.python.keras.utils.data_utils import get_file
+from tensorflow.keras.utils import get_file
 
 from deepcell.utils.data_utils import get_data
 

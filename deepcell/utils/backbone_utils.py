@@ -39,8 +39,8 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.keras.layers import Activation, MaxPool2D, MaxPool3D
 from tensorflow.keras.layers import TimeDistributed
-from tensorflow.python.keras.utils.data_utils import get_file
-from tensorflow.python.keras.utils.layer_utils import get_source_inputs
+from tensorflow.keras.utils import get_file
+from tensorflow.keras.utils import get_source_inputs
 
 
 def featurenet_block(x, n_filters):
