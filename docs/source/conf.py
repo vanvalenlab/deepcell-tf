@@ -274,15 +274,14 @@ nitpick_ignore = [
     ('py:class', 'function'),  # TODO: set type for "function" properly
     ('py:class', 'tensor'),  # TODO: set type for "tensor" properly
     ('py:class', 'numpy.array'),
-    ('py:class', 'pandas.DataFrame'),
     ('py:class', 'tensorflow.keras.Model'),
-    ('py:class', 'tensorflow.python.keras.Model'),
+    ('py:class', 'tensorflow.keras.Model'),
     ('py:class', 'tensorflow.keras.layers.Layer'),
-    ('py:class', 'tensorflow.python.keras.layers.Layer'),
-    ('py:class', 'tensorflow.python.keras.layers.ZeroPadding2D'),
-    ('py:class', 'tensorflow.python.keras.layers.ZeroPadding3D'),
-    ('py:class', 'tensorflow.python.keras.preprocessing.image.Iterator'),
-    ('py:class', 'tensorflow.python.keras.preprocessing.image.ImageDataGenerator'),
+    ('py:class', 'tensorflow.keras.layers.Layer'),
+    ('py:class', 'tensorflow.keras.layers.ZeroPadding2D'),
+    ('py:class', 'tensorflow.keras.layers.ZeroPadding3D'),
+    ('py:class', 'tensorflow.keras.preprocessing.image.Iterator'),
+    ('py:class', 'tensorflow.keras.preprocessing.image.ImageDataGenerator'),
 ]
 
 StandaloneHTMLBuilder.supported_image_types = [
