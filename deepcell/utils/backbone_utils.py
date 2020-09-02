@@ -38,7 +38,7 @@ from tensorflow.keras.backend import is_keras_tensor
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
 from tensorflow.keras.layers import Activation, MaxPool2D, MaxPool3D
-from tensorflow.keras.layers import TimeDistributed, Lambda
+from tensorflow.keras.layers import TimeDistributed
 from tensorflow.python.keras.utils.data_utils import get_file
 from tensorflow.python.keras.utils.layer_utils import get_source_inputs
 

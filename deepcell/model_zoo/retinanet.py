@@ -36,7 +36,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Conv2D, Conv3D, TimeDistributed
 from tensorflow.keras.layers import Input, Concatenate
 from tensorflow.keras.layers import Permute, Reshape
-from tensorflow.keras.layers import Activation, Lambda
+from tensorflow.keras.layers import Activation
 from tensorflow.keras.initializers import RandomNormal
 
 from deepcell.initializers import PriorProbability
