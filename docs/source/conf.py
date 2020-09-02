@@ -226,13 +226,8 @@ autodoc_mock_imports = [
     'numpy',
     'sklearn',
     'skimage',
-    'pandas',
-    'networkx',
-    'nbformat',
     'cv2',
     'cython',
-    'keras-preprocessing',
-    'keras_retinanet',
     'deepcell_tracking',
     'deepcell_toolbox',
     'matplotlib'
