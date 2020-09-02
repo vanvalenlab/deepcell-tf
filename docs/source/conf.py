@@ -235,7 +235,6 @@ autodoc_mock_imports = [
     'keras_retinanet',
     'deepcell_tracking',
     'deepcell_toolbox',
-    'keras_applications',
     'matplotlib'
 ]
 

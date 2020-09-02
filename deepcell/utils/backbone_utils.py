@@ -31,9 +31,9 @@ from __future__ import division
 
 import copy
 
-import keras_applications as applications
 import tensorflow as tf
 from tensorflow.keras import backend as K
+from tensorflow.keras import applications
 from tensorflow.keras.backend import is_keras_tensor
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
