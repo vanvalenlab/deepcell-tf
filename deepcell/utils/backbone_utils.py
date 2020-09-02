@@ -248,23 +248,23 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         'resnet101v2': applications.resnet_v2.ResNet101V2,
         'resnet152v2': applications.resnet_v2.ResNet152V2,
     }
-    resnext_backbones = {
-        'resnext50': applications.resnext.ResNeXt50,
-        'resnext101': applications.resnext.ResNeXt101,
-    }
+    # resnext_backbones = {
+    #     'resnext50': applications.resnext.ResNeXt50,
+    #     'resnext101': applications.resnext.ResNeXt101,
+    # }
     nasnet_backbones = {
         'nasnet_large': applications.nasnet.NASNetLarge,
         'nasnet_mobile': applications.nasnet.NASNetMobile,
     }
     efficientnet_backbones = {
-        # 'efficientnetb0': applications.efficientnet.EfficientNetB0,
-        # 'efficientnetb1': applications.efficientnet.EfficientNetB1,
-        # 'efficientnetb2': applications.efficientnet.EfficientNetB2,
-        # 'efficientnetb3': applications.efficientnet.EfficientNetB3,
-        # 'efficientnetb4': applications.efficientnet.EfficientNetB4,
-        # 'efficientnetb5': applications.efficientnet.EfficientNetB5,
-        # 'efficientnetb6': applications.efficientnet.EfficientNetB6,
-        # 'efficientnetb7': applications.efficientnet.EfficientNetB7,
+        'efficientnetb0': applications.efficientnet.EfficientNetB0,
+        'efficientnetb1': applications.efficientnet.EfficientNetB1,
+        'efficientnetb2': applications.efficientnet.EfficientNetB2,
+        'efficientnetb3': applications.efficientnet.EfficientNetB3,
+        'efficientnetb4': applications.efficientnet.EfficientNetB4,
+        'efficientnetb5': applications.efficientnet.EfficientNetB5,
+        'efficientnetb6': applications.efficientnet.EfficientNetB6,
+        'efficientnetb7': applications.efficientnet.EfficientNetB7,
     }
 
     # TODO: Check and make sure **kwargs is in the right format.
@@ -379,24 +379,24 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
 
         layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
-    elif _backbone in resnext_backbones:
-        model_cls = resnext_backbones[_backbone]
-        model = model_cls(input_tensor=img_input, **kwargs)
-
-        # Set the weights of the model if requested
-        if use_imagenet:
-            model_with_weights = model_cls(**kwargs_with_weights)
-            model_with_weights.save_weights('model_weights.h5')
-            model.load_weights('model_weights.h5', by_name=True)
-
-        if _backbone == 'resnext50':
-            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
-                           'conv4_block6_out', 'conv5_block3_out']
-        elif _backbone == 'resnext101':
-            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
-                           'conv4_block23_out', 'conv5_block3_out']
-
-        layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
+    # elif _backbone in resnext_backbones:
+    #     model_cls = resnext_backbones[_backbone]
+    #     model = model_cls(input_tensor=img_input, **kwargs)
+    #
+    #     # Set the weights of the model if requested
+    #     if use_imagenet:
+    #         model_with_weights = model_cls(**kwargs_with_weights)
+    #         model_with_weights.save_weights('model_weights.h5')
+    #         model.load_weights('model_weights.h5', by_name=True)
+    #
+    #     if _backbone == 'resnext50':
+    #         layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+    #                        'conv4_block6_out', 'conv5_block3_out']
+    #     elif _backbone == 'resnext101':
+    #         layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+    #                        'conv4_block23_out', 'conv5_block3_out']
+    #
+    #     layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     elif _backbone in mobilenet_backbones:
         model_cls = mobilenet_backbones[_backbone]
@@ -454,10 +454,9 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
     else:
         join = lambda x: [v for y in x for v in list(y.keys())]
         backbones = join([featurenet_backbones, densenet_backbones,
-                          resnet_backbones, resnext_backbones,
-                          resnet_v2_backbones, vgg_backbones,
-                          nasnet_backbones, mobilenet_backbones,
-                          efficientnet_backbones])
+                          resnet_backbones, resnet_v2_backbones,
+                          vgg_backbones, nasnet_backbones,
+                          mobilenet_backbones, efficientnet_backbones])
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
                          ', '.join(backbones))
 
