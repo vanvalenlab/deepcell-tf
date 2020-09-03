@@ -204,21 +204,6 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
     """
     _backbone = str(backbone).lower()
 
-    # set up general Utils class to deal with different tf versions
-    class Utils(object):  # pylint: disable=useless-object-inheritance
-        pass
-
-    utils = Utils()
-    utils.get_file = get_file
-    utils.get_source_inputs = get_source_inputs
-
-    K.is_keras_tensor = is_keras_tensor
-
-    kwargs['backend'] = K
-    kwargs['layers'] = tf.keras.layers
-    kwargs['models'] = tf.keras.models
-    kwargs['utils'] = utils
-
     featurenet_backbones = {
         'featurenet': featurenet_backbone,
         'featurenet3d': featurenet_3D_backbone,
