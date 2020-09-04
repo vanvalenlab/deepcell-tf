@@ -32,11 +32,12 @@ from __future__ import division
 from absl.testing import parameterized
 
 from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.layers import Input
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras import keras_parameterized
 from tensorflow.python.platform import test
+
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Input
+from tensorflow.keras.models import Model
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.utils import backbone_utils
 
@@ -99,8 +100,8 @@ class TestBackboneUtils(keras_parameterized.TestCase):
                 'resnet50v2',
                 'resnet101v2',
                 'resnet152v2',
-                'resnext50',
-                'resnext101',
+                # 'resnext50',
+                # 'resnext101',
                 'vgg16',
                 'vgg19',
                 'densenet121',
@@ -108,6 +109,14 @@ class TestBackboneUtils(keras_parameterized.TestCase):
                 'densenet201',
                 'mobilenet',
                 'mobilenetv2',
+                # 'efficientnetb0',
+                # 'efficientnetb1',
+                # 'efficientnetb2',
+                # 'efficientnetb3',
+                # 'efficientnetb4',
+                # 'efficientnetb5',
+                # 'efficientnetb6',
+                # 'efficientnetb7',
                 'nasnet_large',
                 'nasnet_mobile']))
     def test_get_backbone(self, backbone):

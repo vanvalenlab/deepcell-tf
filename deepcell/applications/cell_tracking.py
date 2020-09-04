@@ -29,7 +29,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.python.keras.utils.data_utils import get_file
+from tensorflow.keras.utils import get_file
 
 from deepcell import model_zoo
 
