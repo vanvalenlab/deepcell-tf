@@ -108,7 +108,6 @@ class TestTransformMasks(test.TestCase):
         self.assertEqual(mask_transform.shape, (5, num_classes, 10, 30, 30))
 
     def test_pixelwise_transform(self):
-        num_classes = 3
         # test 2D masks
         mask = np.random.randint(3, size=(5, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
