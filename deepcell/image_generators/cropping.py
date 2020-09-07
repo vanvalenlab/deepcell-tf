@@ -275,6 +275,8 @@ class CroppingDataGenerator(SemanticDataGenerator):
                  validation_split=0.0,
                  interpolation_order=1,
                  crop_size=None,
+                 int_dtype='int32',
+                 float_dtype='float32',
                  dtype='float32'):
 
         super(CroppingDataGenerator, self).__init__(
@@ -298,6 +300,8 @@ class CroppingDataGenerator(SemanticDataGenerator):
             rescale=rescale,
             preprocessing_function=preprocessing_function,
             data_format=data_format,
+            float_dtype=float_dtype,
+            int_dtype=int_dtype,
             validation_split=validation_split,
             dtype=dtype)
 
