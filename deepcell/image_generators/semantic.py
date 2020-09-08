@@ -108,6 +108,9 @@ class SemanticIterator(Iterator):
         self.x = np.asarray(X, dtype=K.floatx())
         self.y = np.asarray(y, dtype='int32')
 
+        self.transforms = transforms
+        self.transforms_kwargs = transforms_kwargs
+
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
         self.data_format = data_format
@@ -120,28 +123,6 @@ class SemanticIterator(Iterator):
 
         # Create a list of all the semantic targets. We need to be able
         # to have multiple semantic heads
-        # Add all the keys that contain y_semantic
-
-        # Add transformed masks
-
-        # loop over channels axis of labels in case there are multiple label types
-        for label_num in range(y.shape[self.channel_axis]):
-
-            if self.channel_axis == 1:
-                y_current = y[:, label_num:(label_num + 1), ...]
-            else:
-                y_current = y[..., label_num:(label_num + 1)]
-
-            for transform in transforms:
-                transform_kwargs = transforms_kwargs.get(transform, dict())
-                y_transform = _transform_masks(y_current, transform,
-                                               data_format=data_format,
-                                               **transform_kwargs)
-                if y_transform.shape[self.channel_axis] > 1:
-                    y_transform = np.asarray(y_transform, dtype='int32')
-                elif y_transform.shape[self.channel_axis] == 1:
-                    y_transform = np.asarray(y_transform, dtype=K.floatx())
-                self.y_semantic_list.append(y_transform)
 
         invalid_batches = []
 
@@ -159,24 +140,45 @@ class SemanticIterator(Iterator):
 
         self.x = np.delete(self.x, invalid_batches, axis=0)
         self.y = np.delete(self.y, invalid_batches, axis=0)
-        self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
-                                for y in self.y_semantic_list]
 
         super(SemanticIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
 
+    def _transform_labels(self, y):
+        y_semantic_list = []
+        # loop over channels axis of labels in case there are multiple label types
+        for label_num in range(self.y.shape[self.channel_axis - 1]):
+
+            if self.channel_axis == 1:
+                y_current = self.y[:, label_num:label_num + 1, ...]
+            else:
+                y_current = self.y[..., label_num:label_num + 1]
+
+            for transform in self.transforms:
+                transform_kwargs = self.transforms_kwargs.get(transform, dict())
+                y_transform = _transform_masks(y_current, transform,
+                                               data_format=self.data_format,
+                                               **transform_kwargs)
+                if y_transform.shape[self.channel_axis - 1] > 1:
+                    y_transform = np.asarray(y_transform, dtype='int32')
+                elif y_transform.shape[self.channel_axis - 1] == 1:
+                    y_transform = np.asarray(y_transform, dtype=K.floatx())
+                y_semantic_list.append(y_transform)
+        return y_semantic_list
+
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
-
         batch_y = []
-        for y_sem in self.y_semantic_list:
-            shape = tuple([len(index_array)] + list(y_sem.shape[1:]))
-            batch_y.append(np.zeros(shape, dtype=y_sem.dtype))
 
         for i, j in enumerate(index_array):
             x = self.x[j]
+            y_semantic_list = self._transform_labels(self.y[j:j+1])
 
-            y_semantic_list = [y_sem[j] for y_sem in self.y_semantic_list]
+            # initialize batch_y
+            if len(batch_y) == 0:
+                for ys in y_semantic_list:
+                    shape = tuple([len(index_array)] + list(ys.shape[1:]))
+                    batch_y.append(np.zeros(shape, dtype=ys.dtype))
 
             # Apply transformation
             x, y_semantic_list = self.image_data_generator.random_transform(
@@ -186,8 +188,8 @@ class SemanticIterator(Iterator):
 
             batch_x[i] = x
 
-            for k, y_sem in enumerate(y_semantic_list):
-                batch_y[k][i] = y_sem
+            for k, ys in enumerate(y_semantic_list):
+                batch_y[k][i] = ys[0]
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
