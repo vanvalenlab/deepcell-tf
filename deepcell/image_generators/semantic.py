@@ -119,8 +119,6 @@ class SemanticIterator(Iterator):
         self.save_format = save_format
         self.min_objects = min_objects
 
-        self.y_semantic_list = []  # optional semantic segmentation targets
-
         # Create a list of all the semantic targets. We need to be able
         # to have multiple semantic heads
 
@@ -147,12 +145,12 @@ class SemanticIterator(Iterator):
     def _transform_labels(self, y):
         y_semantic_list = []
         # loop over channels axis of labels in case there are multiple label types
-        for label_num in range(self.y.shape[self.channel_axis - 1]):
+        for label_num in range(y.shape[self.channel_axis - 1]):
 
             if self.channel_axis == 1:
-                y_current = self.y[:, label_num:label_num + 1, ...]
+                y_current = y[:, label_num:label_num + 1, ...]
             else:
-                y_current = self.y[..., label_num:label_num + 1]
+                y_current = y[..., label_num:label_num + 1]
 
             for transform in self.transforms:
                 transform_kwargs = self.transforms_kwargs.get(transform, dict())
