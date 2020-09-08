@@ -145,7 +145,7 @@ class SemanticIterator(Iterator):
     def _transform_labels(self, y):
         y_semantic_list = []
         # loop over channels axis of labels in case there are multiple label types
-        for label_num in range(y.shape[self.channel_axis - 1]):
+        for label_num in range(y.shape[self.channel_axis]):
 
             if self.channel_axis == 1:
                 y_current = y[:, label_num:label_num + 1, ...]
