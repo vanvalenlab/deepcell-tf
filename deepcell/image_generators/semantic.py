@@ -162,6 +162,8 @@ class SemanticIterator(Iterator):
                 elif y_transform.shape[self.channel_axis - 1] == 1:
                     y_transform = np.asarray(y_transform, dtype=K.floatx())
                 y_semantic_list.append(y_transform)
+        for ys in y_semantic_list:
+            print(ys.shape)
         return y_semantic_list
 
     def _get_batches_of_transformed_samples(self, index_array):
@@ -170,13 +172,18 @@ class SemanticIterator(Iterator):
 
         for i, j in enumerate(index_array):
             x = self.x[j]
-            y_semantic_list = self._transform_labels(self.y[j:j+1])
+
+            # _transform_labels expects batch dimension
+            y_semantic_list = self._transform_labels(self.y[j:j + 1])
 
             # initialize batch_y
             if len(batch_y) == 0:
                 for ys in y_semantic_list:
                     shape = tuple([len(index_array)] + list(ys.shape[1:]))
                     batch_y.append(np.zeros(shape, dtype=ys.dtype))
+
+            # random_transform does not expect batch dimension
+            y_semantic_list = [ys[0] for ys in y_semantic_list]
 
             # Apply transformation
             x, y_semantic_list = self.image_data_generator.random_transform(
@@ -187,7 +194,7 @@ class SemanticIterator(Iterator):
             batch_x[i] = x
 
             for k, ys in enumerate(y_semantic_list):
-                batch_y[k][i] = ys[0]
+                batch_y[k][i] = ys
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
