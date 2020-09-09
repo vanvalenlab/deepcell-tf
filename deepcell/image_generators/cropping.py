@@ -34,10 +34,7 @@ import warnings
 
 import numpy as np
 
-from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.preprocessing.image import array_to_img
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.python.platform import tf_logging as logging
 
 from deepcell.image_generators import SemanticDataGenerator, SemanticIterator
 
@@ -133,7 +130,10 @@ class CroppingIterator(SemanticIterator):
             # initialize batch_y
             if len(batch_y) == 0:
                 for ys in y_semantic_list:
-                    shape = tuple([len(index_array)] + list(ys.shape[1:]))
+                    if self.data_format == 'channels_first':
+                        shape = tuple([len(index_array), ys.shape[1]] + list(self.output_size))
+                    else:
+                        shape = tuple([len(index_array)] + list(self.output_size) + [ys.shape[-1]])
                     batch_y.append(np.zeros(shape, dtype=ys.dtype))
 
             # random_transform does not expect batch dimension

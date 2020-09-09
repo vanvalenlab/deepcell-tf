@@ -162,8 +162,7 @@ class SemanticIterator(Iterator):
                 elif y_transform.shape[self.channel_axis - 1] == 1:
                     y_transform = np.asarray(y_transform, dtype=K.floatx())
                 y_semantic_list.append(y_transform)
-        for ys in y_semantic_list:
-            print(ys.shape)
+
         return y_semantic_list
 
     def _get_batches_of_transformed_samples(self, index_array):
