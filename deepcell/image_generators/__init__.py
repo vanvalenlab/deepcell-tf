@@ -124,9 +124,16 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                           '`outer-distance` transform instead.'.format(transform),
                           DeprecationWarning)
 
-        bins = kwargs.pop('distance_bins', None)
-        erosion = kwargs.pop('erosion_width', 0)
         by_frame = kwargs.pop('by_frame', True)
+
+        distance_kwargs = {
+            'bins': kwargs.pop('distance_bins', None),
+            'erosion_width': kwargs.pop('erosion_width', 0),
+        }
+
+        # If using 3d transform, pass in scale arg
+        if y.ndim == 5 and not by_frame:
+            distance_kwargs['sampling'] = kwargs.pop('sampling', [0.5, 0.217, 0.217])
 
         if data_format == 'channels_first':
             y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
@@ -138,7 +145,6 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 _distance_transform = transform_utils.outer_distance_transform_movie
             else:
                 _distance_transform = transform_utils.outer_distance_transform_3d
-                sampling = kwargs.pop('sampling', [0.5, 0.217, 0.217])
         else:
             _distance_transform = transform_utils.outer_distance_transform_2d
 
@@ -147,14 +153,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask = y[batch, 0, ...]
             else:
                 mask = y[batch, ..., 0]
-
-            # If using 3d transform, pass in scale arg
-            if y.ndim == 5 and not by_frame:
-                y_transform[batch] = _distance_transform(
-                    mask, bins=bins, erosion_width=erosion, sampling=sampling)
-            else:
-                y_transform[batch] = _distance_transform(
-                    mask, bins=bins, erosion_width=erosion)
+            y_transform[batch] = _distance_transform(mask, **distance_kwargs)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
@@ -172,11 +171,18 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                           '`inner-distance` transform instead.'.format(transform),
                           DeprecationWarning)
 
-        bins = kwargs.pop('distance_bins', None)
-        erosion = kwargs.pop('erosion_width', 0)
         by_frame = kwargs.pop('by_frame', True)
-        alpha = kwargs.pop('alpha', 0.1)
-        beta = kwargs.pop('beta', 1)
+
+        distance_kwargs = {
+            'bins': kwargs.pop('distance_bins', None),
+            'erosion_width': kwargs.pop('erosion_width', 0),
+            'alpha': kwargs.pop('alpha', 0.1),
+            'beta': kwargs.pop('beta', 1)
+        }
+
+        # If using 3d transform, pass in scale arg
+        if y.ndim == 5 and not by_frame:
+            distance_kwargs['sampling'] = kwargs.pop('sampling', [0.5, 0.217, 0.217])
 
         if data_format == 'channels_first':
             y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
@@ -188,7 +194,6 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 _distance_transform = transform_utils.inner_distance_transform_movie
             else:
                 _distance_transform = transform_utils.inner_distance_transform_3d
-                sampling = kwargs.pop('sampling', [0.5, 0.217, 0.217])
         else:
             _distance_transform = transform_utils.inner_distance_transform_2d
 
@@ -197,17 +202,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask = y[batch, 0, ...]
             else:
                 mask = y[batch, ..., 0]
-
-            # If using 3d transform, pass in scale arg
-            if y.ndim == 5 and not by_frame:
-                y_transform[batch] = _distance_transform(mask, bins=bins,
-                                                         erosion_width=erosion,
-                                                         alpha=alpha, beta=beta,
-                                                         sampling=sampling)
-            else:
-                y_transform[batch] = _distance_transform(mask, bins=bins,
-                                                         erosion_width=erosion,
-                                                         alpha=alpha, beta=beta)
+            y_transform[batch] = _distance_transform(mask, **distance_kwargs)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
