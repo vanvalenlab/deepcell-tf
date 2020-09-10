@@ -1222,15 +1222,8 @@ class Semantic3DIterator(Iterator):
                 last_row = self.x.shape[self.row_axis] - self.frame_shape[0]
                 last_col = self.x.shape[self.col_axis] - self.frame_shape[1]
 
-                if last_row == 0:
-                    row_start = 0
-                else:
-                    row_start = np.random.randint(0, high=last_row)
-
-                if last_col == 0:
-                    col_start = 0
-                else:
-                    col_start = np.random.randint(0, high=last_col)
+                row_start = 0 if last_row == 0 else np.random.randint(0, high=last_row)
+                col_start = 0 if last_col == 0 else np.random.randint(0, high=last_col)
 
                 row_end = row_start + self.frame_shape[0]
                 col_end = col_start + self.frame_shape[1]
