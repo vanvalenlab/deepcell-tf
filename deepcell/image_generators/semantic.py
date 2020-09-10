@@ -1574,26 +1574,28 @@ class Semantic3DGenerator(ImageDataGenerator):
         if x.ndim != 5:
             raise ValueError('Input to `.fit()` should have rank 5. '
                              'Got array with shape: ' + str(x.shape))
+
         if x.shape[self.channel_axis] not in {1, 3, 4}:
             logging.warning(
-                'Expected input to be images (as Numpy array) '
-                'following the data format convention "' +
-                self.data_format + '" (channels on axis ' +
-                str(self.channel_axis) + '), i.e. expected '
-                'either 1, 3 or 4 channels on axis ' +
-                str(self.channel_axis) + '. '
-                'However, it was passed an array with shape ' +
-                str(x.shape) + ' (' + str(x.shape[self.channel_axis]) +
-                ' channels).')
+                'Expected input to be images (as Numpy array) following the '
+                'data format convention "{0}" (channels on axis {1}), i.e. '
+                'expected either 1, 3, or 4 channels on axis {1}. '
+                'However, it was passed an array with shape {2} ({3}) '
+                'channels.'.format(
+                    self.data_format,
+                    self.channel_axis,
+                    x.shape,
+                    x.shape[self.channel_axis]
+                ))
 
         if seed is not None:
             np.random.seed(seed)
 
         x = np.copy(x)
         if augment:
-            ax = np.zeros(
-                tuple([rounds * x.shape[0]] + list(x.shape)[1:]),
-                dtype=self.dtype)
+            ax = np.zeros(tuple([rounds * x.shape[0]] + list(x.shape)[1:]),
+                          dtype=self.dtype)
+
             for r in range(rounds):
                 for i in range(x.shape[0]):
                     ax[i + r * x.shape[0]] = self.random_transform(x[i])
@@ -1619,9 +1621,8 @@ class Semantic3DGenerator(ImageDataGenerator):
             if scipy is None:
                 raise ImportError('Using zca_whitening requires SciPy. '
                                   'Install SciPy.')
-            flat_x = np.reshape(
-                x, (x.shape[0],
-                    x.shape[1] * x.shape[2] * x.shape[3] * x.shape[4]))
+            shape = (x.shape[0], x.shape[1] * x.shape[2] * x.shape[3] * x.shape[4])
+            flat_x = np.reshape(x, shape)
             sigma = np.dot(flat_x.T, flat_x) / flat_x.shape[0]
             u, s, _ = scipy.linalg.svd(sigma)
             s_inv = 1. / np.sqrt(s[np.newaxis] + self.zca_epsilon)
@@ -1651,7 +1652,6 @@ class Semantic3DGenerator(ImageDataGenerator):
             params = self.get_random_transform(x.shape, seed)
 
         if aug_3d:
-
             # Don't want to brighten or zoom multiple times
             _brightness_range = self.brightness_range
             _zoom_range = self.zoom_range
@@ -1724,7 +1724,6 @@ class Semantic3DGenerator(ImageDataGenerator):
                             x_i[:, :, frame] = self.apply_transform(x_i[:, :, frame], params_3d)
                     x[i] = x_i
             else:
-
                 for frame in range(x.shape[self.row_axis]):
                     if self.data_format == 'channels_first':
                         x_trans = self.apply_transform(x[:, :, frame], params_3d)
