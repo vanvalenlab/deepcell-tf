@@ -150,14 +150,10 @@ def get_images_from_directory(data_location, channel_names):
 
     for stack_iteration in range(len(img_list_channels[0])):
 
-        if (data_format == 'channels_first') and (img_temp.ndim > 2):
-            shape = (1, n_channels, img_temp.shape[0], img_temp.shape[1], img_temp.shape[2])
-        elif data_format == 'channels_first':
-            shape = (1, n_channels, img_temp.shape[0], img_temp.shape[1])
-        elif img_temp.ndim > 2:
-            shape = (1, img_temp.shape[0], img_temp.shape[1], img_temp.shape[2], n_channels)
+        if data_format == 'channels_first':
+            shape = tuple([1, n_channels] + list(img_temp.shape))
         else:
-            shape = (1, img_temp.shape[0], img_temp.shape[1], n_channels)
+            shape = tuple([1] + list(img_temp.shape) + [n_channels])
 
         all_channels = np.zeros(shape, dtype=K.floatx())
 
