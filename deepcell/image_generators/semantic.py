@@ -991,7 +991,8 @@ class Semantic3DIterator(Iterator):
             to use for random transformations and normalization.
         batch_size (int): Size of a batch.
         frames_per_batch (int): Size of z axis in generated batches.
-        shuffle (boolean): Whether to shuffle the data between epochs.
+        frame_shape (tuple): Shape of the cropped frames.
+        shuffle (bool): Whether to shuffle the data between epochs.
         seed (int): Random seed for data shuffling.
         min_objects (int): Minumum number of objects allowed per image.
         data_format (str): One of 'channels_first', 'channels_last'.
@@ -1089,9 +1090,9 @@ class Semantic3DIterator(Iterator):
         self.frame_shape = frame_shape
         self.transforms = transforms
         self.transforms_kwargs = transforms_kwargs
-        self.aug_3d = aug_3d
-        self.rotation_3d = rotation_3d
-        self.z_scale = z_scale
+        self.aug_3d = aug_3d  # TODO: Add documentation
+        self.rotation_3d = rotation_3d  # TODO: Add documentation
+        self.z_scale = z_scale  # TODO: Add documentation
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
         self.row_axis = 2 if data_format == 'channels_last' else 3
