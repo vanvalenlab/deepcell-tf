@@ -125,9 +125,10 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                           DeprecationWarning)
 
         by_frame = kwargs.pop('by_frame', True)
+        bins = kwargs.pop('distance_bins', None)
 
         distance_kwargs = {
-            'bins': kwargs.pop('distance_bins', None),
+            'bins': bins,
             'erosion_width': kwargs.pop('erosion_width', 0),
         }
 
@@ -172,9 +173,10 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                           DeprecationWarning)
 
         by_frame = kwargs.pop('by_frame', True)
+        bins = kwargs.pop('distance_bins', None)
 
         distance_kwargs = {
-            'bins': kwargs.pop('distance_bins', None),
+            'bins': bins,
             'erosion_width': kwargs.pop('erosion_width', 0),
             'alpha': kwargs.pop('alpha', 0.1),
             'beta': kwargs.pop('beta', 1)
@@ -206,7 +208,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
-        if bins is None:
+        if distance_kwargs['bins'] is None:
             pass
         else:
             # convert to one hot notation
