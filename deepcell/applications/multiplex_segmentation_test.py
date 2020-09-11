@@ -89,13 +89,11 @@ def test_format_output_multiplex():
     # create output list, each with a different constant value across image
     base_array = np.ones((1, 20, 20, 1))
 
-    whole_cell_list = [base_array * mult for mult in range(1, 8)]
+    whole_cell_list = [base_array * mult for mult in range(1, 5)]
     whole_cell_list = [whole_cell_list[0],
-                       whole_cell_list[1],
-                       np.concatenate(whole_cell_list[2:4], axis=-1),
-                       np.concatenate(whole_cell_list[4:7], axis=-1)]
+                       np.concatenate(whole_cell_list[1:4], axis=-1)]
 
-    # cre
+    # create output list for nuclear predictions
     nuclear_list = [img * 2 for img in whole_cell_list]
 
     combined_list = whole_cell_list + nuclear_list
@@ -107,28 +105,24 @@ def test_format_output_multiplex():
     assert np.array_equal(output['whole-cell']['inner-distance'], base_array)
     assert np.array_equal(output['nuclear']['inner-distance'], base_array * 2)
 
-    assert np.array_equal(output['whole-cell']['pixelwise-interior'], base_array * 6)
-    assert np.array_equal(output['nuclear']['pixelwise-interior'], base_array * 12)
+    assert np.array_equal(output['whole-cell']['pixelwise-interior'], base_array * 3)
+    assert np.array_equal(output['nuclear']['pixelwise-interior'], base_array * 6)
 
     with pytest.raises(ValueError):
-        output = multiplex_segmentation.format_output_multiplex(combined_list[:7])
+        output = multiplex_segmentation.format_output_multiplex(combined_list[:3])
 
 
 def test_multiplex_postprocess(mocker):
     # create dict, with each image having a different constant value
     base_array = np.ones((1, 20, 20, 1))
 
-    whole_cell_list = [base_array * mult for mult in range(1, 5)]
+    whole_cell_list = [base_array * mult for mult in range(1, 3)]
     whole_cell_dict = {'inner-distance': whole_cell_list[0],
-                       'outer-distance': whole_cell_list[1],
-                       'fgbg-fg': whole_cell_list[2],
-                       'pixelwise-interior': whole_cell_list[3]}
+                       'pixelwise-interior': whole_cell_list[1]}
 
-    nuclear_list = [base_array * mult for mult in range(5, 9)]
+    nuclear_list = [base_array * mult for mult in range(3, 5)]
     nuclear_dict = {'inner-distance': nuclear_list[0],
-                    'outer-distance': nuclear_list[1],
-                    'fgbg-fg': nuclear_list[2],
-                    'pixelwise-interior': nuclear_list[3]}
+                    'pixelwise-interior': nuclear_list[1]}
 
     model_output = {'whole-cell': whole_cell_dict, 'nuclear': nuclear_dict}
 
@@ -181,7 +175,7 @@ class TestMultiplexSegmentation(test.TestCase):
             # test output shape
             shape = app.model.output_shape
             self.assertIsInstance(shape, list)
-            self.assertEqual(len(shape), 8)
+            self.assertEqual(len(shape), 4)
 
             # test predict with default
             x = np.random.rand(1, 500, 500, 2)
