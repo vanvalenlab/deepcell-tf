@@ -42,12 +42,7 @@ from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
 
 
-WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/Multiplex_Segmentation_20200816_compartment.h5')
-
 # processing functions
-
-
 def multiplex_preprocess(image, **kwargs):
     """Preprocess input data for multiplex model
 
@@ -83,21 +78,17 @@ def format_output_multiplex(output_list):
     Raises: ValueError if model output list is not len(8)
     """
 
-    if len(output_list) != 8:
+    if len(output_list) != 4:
         raise ValueError('output_list was length {}, expecting length 8'.format(len(output_list)))
 
     formatted_dict = {
         'whole-cell': {
             'inner-distance': output_list[0],
-            'outer-distance': output_list[1],
-            'fgbg-fg': output_list[2][..., :1],
-            'pixelwise-interior': output_list[3][..., 1:2]
+            'pixelwise-interior': output_list[1][..., 1:2]
         },
         'nuclear': {
-            'inner-distance': output_list[4],
-            'outer-distance': output_list[5],
-            'fgbg-fg': output_list[6][..., :1],
-            'pixelwise-interior': output_list[7][..., 1:2]
+            'inner-distance': output_list[2],
+            'pixelwise-interior': output_list[3][..., 1:2]
         }
     }
 
@@ -160,6 +151,10 @@ def multiplex_postprocess(model_output, compartment='whole-cell', whole_cell_kwa
                          'Must be one of {}'.format(compartment, valid_compartments))
 
     return label_images
+
+
+WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+                'model-weights/Multiplex_Segmentation_20200908_2_head.h5')
 
 
 class MultiplexSegmentation(Application):
@@ -227,8 +222,8 @@ class MultiplexSegmentation(Application):
                  use_pretrained_weights=True,
                  model_image_shape=(256, 256, 2)):
 
-        whole_cell_classes = [1, 1, 2, 3]
-        nuclear_classes = [1, 1, 2, 3]
+        whole_cell_classes = [1, 3]
+        nuclear_classes = [1, 3]
         num_semantic_classes = whole_cell_classes + nuclear_classes
         num_semantic_heads = len(num_semantic_classes)
 
@@ -246,7 +241,7 @@ class MultiplexSegmentation(Application):
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                file_hash='ff24e821c6056cf847e58e8e52916814'
+                file_hash='3a81cdbc856630901609b0a3669d059f'
             )
 
             model.load_weights(weights_path)
@@ -261,8 +256,6 @@ class MultiplexSegmentation(Application):
                                                     format_model_output_fn=format_output_multiplex,
                                                     dataset_metadata=self.dataset_metadata,
                                                     model_metadata=self.model_metadata)
-    cell_defaults = {'interior_smooth': 1}
-    nuc_defaults = {'interior_smooth': 1}
 
     def predict(self,
                 image,
@@ -270,8 +263,8 @@ class MultiplexSegmentation(Application):
                 image_mpp=None,
                 preprocess_kwargs={},
                 compartment='whole-cell',
-                postprocess_kwargs_whole_cell={},
-                postprocess_kwargs_nuclear={}):
+                postprocess_kwargs_whole_cell=None,
+                postprocess_kwargs_nuclear=None):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
@@ -301,6 +294,18 @@ class MultiplexSegmentation(Application):
             np.array: Labeled image
             np.array: Model output
         """
+
+        if postprocess_kwargs_whole_cell is None:
+            postprocess_kwargs_whole_cell = {'maxima_threshold': 0.05, 'maxima_model_smooth': 0,
+                                             'interior_model_smooth': 2, 'interior_threshold': 0.2,
+                                             'small_objects_threshold': 10,
+                                             'fill_holes_threshold': 10}
+
+        if postprocess_kwargs_nuclear is None:
+            postprocess_kwargs_nuclear = {'maxima_threshold': 0.05, 'maxima_model_smooth': 0,
+                                          'interior_model_smooth': 2, 'interior_threshold': 0.3,
+                                          'small_objects_threshold': 10,
+                                          'fill_holes_threshold': 10}
 
         # create dict to hold all of the post-processing kwargs
         postprocess_kwargs = {'whole_cell_kwargs': postprocess_kwargs_whole_cell,
