@@ -7,12 +7,13 @@ git:
 language: python
 
 python:
-  - 3.6
+  # - 3.6
   - 3.7
 
 env:
   - TF_VERSION=2.1.1
   - TF_VERSION=2.2.0
+  - TF_VERSION=2.3.0
 
 install:
   # code below is taken from https://github.com/keras-team/keras/blob/master/.travis.yml
