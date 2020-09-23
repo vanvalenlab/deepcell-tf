@@ -26,7 +26,7 @@ except Exception:
 
 setup(
     name='DeepCell',
-    version='0.5.0',
+    version='0.6.0',
     packages=find_packages(),
     install_requires=install_reqs,
     extras_require={

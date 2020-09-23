@@ -67,7 +67,7 @@ def CellTrackingModel(input_shape=(32, 32, 1),
             'CellTrackingModel.h5',
             WEIGHTS_PATH,
             cache_subdir='models',
-            md5_hash='3349b363fdad0266a1845ba785e057a6')
+            file_hash='3349b363fdad0266a1845ba785e057a6')
 
         model.load_weights(weights_path)
 
