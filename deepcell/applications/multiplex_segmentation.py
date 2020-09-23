@@ -185,16 +185,18 @@ class MultiplexSegmentation(Application):
         """
 
         if postprocess_kwargs_whole_cell is None:
-            postprocess_kwargs_whole_cell = {'maxima_threshold': 0.05, 'maxima_model_smooth': 0,
-                                             'interior_model_smooth': 2, 'interior_threshold': 0.2,
-                                             'small_objects_threshold': 10,
-                                             'fill_holes_threshold': 10}
+            postprocess_kwargs_whole_cell = {'maxima_threshold': 0.1, 'maxima_model_smooth': 0,
+                                             'interior_threshold': 0.3, 'interior_model_smooth': 2,
+                                             'small_objects_threshold': 15,
+                                             'fill_holes_threshold': 15,
+                                             'radius': 2}
 
         if postprocess_kwargs_nuclear is None:
-            postprocess_kwargs_nuclear = {'maxima_threshold': 0.05, 'maxima_model_smooth': 0,
-                                          'interior_model_smooth': 2, 'interior_threshold': 0.3,
-                                          'small_objects_threshold': 10,
-                                          'fill_holes_threshold': 10}
+            postprocess_kwargs_nuclear = {'maxima_threshold': 0.1, 'maxima_model_smooth': 0,
+                                          'interior_threshold': 0.3, 'interior_model_smooth': 2,
+                                          'small_objects_threshold': 15,
+                                          'fill_holes_threshold': 15,
+                                          'radius': 2}
 
         # create dict to hold all of the post-processing kwargs
         postprocess_kwargs = {'whole_cell_kwargs': postprocess_kwargs_whole_cell,
