@@ -1,9 +1,9 @@
 # Use tensorflow/tensorflow as the base image
 # Change the build arg to edit the tensorflow version.
 # Only supporting python3.
-ARG TF_VERSION=2.1.0-gpu
+ARG TF_VERSION=2.1.1-gpu
 
-FROM tensorflow/tensorflow:${TF_VERSION}-py3
+FROM tensorflow/tensorflow:${TF_VERSION}
 
 # System maintenance
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
