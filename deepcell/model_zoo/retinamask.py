@@ -264,7 +264,8 @@ def retinamask(inputs,
 
     if panoptic:
         # Determine the number of semantic heads
-        n_semantic_heads = len([1 for layer in retinanet_model.layers if 'semantic' in layer.name])
+        n_semantic_heads = len([1 for layer in retinanet_model.layers
+                                if layer.name.startswith('semantic')])
 
         # The  panoptic output should not be sent to filter detections
         other = retinanet_model.outputs[2:-n_semantic_heads]

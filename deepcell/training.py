@@ -642,8 +642,8 @@ def train_model_retinanet(model,
     channel_axis = 1 if is_channels_first else -1
     n_classes = model.layers[-1].output_shape[channel_axis]
 
-    n_semantic_classes = [lyr.output_shape[channel_axis] for lyr in model.layers
-                          if 'semantic' in lyr.name and panoptic]
+    n_semantic_classes = [layer.output_shape[channel_axis] for layer in model.layers
+                          if layer.name.startswith('semantic') and panoptic]
 
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
@@ -692,7 +692,7 @@ def train_model_retinanet(model,
     if panoptic:
         # Give losses for all of the semantic heads
         for layer in model.layers:
-            if 'semantic' in layer.name:
+            if layer.name.startswith('semantic'):
                 n_classes = layer.output_shape[channel_axis]
                 loss[layer.name] = semantic_loss(n_classes)
 
