@@ -349,6 +349,7 @@ def retinamask_bbox(model=None,
     This model uses the minimum retinanet model and appends a few layers
     to compute boxes within the graph. These layers include applying the
     regression values to the anchors and performing NMS.
+
     Args:
         model (tensorflow.keras.Model): RetinaNet model to append bbox
             layers to. If None, it will create a RetinaNet model using kwargs.
@@ -364,6 +365,7 @@ def retinamask_bbox(model=None,
         anchor_params (AnchorParameters): Struct containing anchor parameters.
             If None, default values are used.
         kwargs (dict): Additional kwargs to pass to the minimal retinanet model.
+
     Returns:
         tensorflow.keras.Model: A Model which takes an image as input and
             outputs the detections on the image.
