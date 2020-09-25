@@ -777,8 +777,7 @@ def train_model_retinanet(model,
     input_shape_dict = {'input': tuple([None] + list(image_shape[1:]))}
     output_type_dict = {
         'regression': tf.float32,
-        'classification': tf.float32,
-        'masks': tf.float32
+        'classification': tf.float32
     }
     output_shape_dict = {
         'regression': (None, None, None),
