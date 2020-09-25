@@ -33,11 +33,10 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input, Concatenate
 from tensorflow.keras.layers import TimeDistributed, Conv2D
-from tensorflow.keras.layers import MaxPool2D, Lambda
 from tensorflow.keras.models import Model
 from tensorflow.keras.initializers import RandomNormal
 
-from deepcell.layers import Cast, Shape, UpsampleLike
+from deepcell.layers import Cast, UpsampleLike
 from deepcell.layers import Upsample, RoiAlign, ConcatenateBoxes
 from deepcell.layers import ClipBoxes, RegressBoxes, FilterDetections
 from deepcell.layers import TensorProduct, ImageNormalization2D, Location2D
@@ -261,17 +260,19 @@ def retinamask(inputs,
     # parse outputs
     regression = retinanet_model.outputs[0]
     classification = retinanet_model.outputs[1]
+    semantic_classes = [1 for layer in retinanet_model.layers
+                        if layer.name.startswith('semantic')]
 
     if panoptic:
         # Determine the number of semantic heads
-        n_semantic_heads = len([1 for layer in retinanet_model.layers
-                                if layer.name.startswith('semantic')])
+        n_semantic_heads = len(semantic_classes)
 
         # The  panoptic output should not be sent to filter detections
         other = retinanet_model.outputs[2:-n_semantic_heads]
         semantic = retinanet_model.outputs[-n_semantic_heads:]
     else:
         other = retinanet_model.outputs[2:]
+        semantic = []
 
     features = [retinanet_model.get_layer(name).output
                 for name in pyramid_levels]
@@ -289,7 +290,6 @@ def retinamask(inputs,
         else:
             boxes = Input(shape=(None, None, 4), name='boxes_input')
         detections = []
-        inputs = [image, boxes]
 
     else:
         detections = FilterDetections(
@@ -318,15 +318,10 @@ def retinamask(inputs,
 
     # reconstruct the new output
     outputs = [regression, classification] + other + trainable_outputs + \
-        detections + maskrcnn_outputs
+        detections + maskrcnn_outputs + list(semantic)
 
-    if panoptic:
-        outputs += list(semantic)
-
-    if training:
-        model = Model(inputs=inputs, outputs=outputs, name=name)
-    else:
-        model = Model(inputs=image, outputs=outputs, name=name)
+    inputs = [image, boxes] if training else image
+    model = Model(inputs=inputs, outputs=outputs, name=name)
 
     model.backbone_levels = backbone_levels
     model.pyramid_levels = pyramid_levels
@@ -399,15 +394,19 @@ def retinamask_bbox(model=None,
     # we expect anchors, regression. and classification values as first output
     regression = model.outputs[0]
     classification = model.outputs[1]
+    semantic_classes = [1 for layer in model.layers
+                        if layer.name.startswith('semantic')]
 
     # "other" can be any additional output from custom submodels, by default []
     if panoptic:
         # The last output is the panoptic output, which should not be
         # sent to filter detections
+        num_semantic_heads = len(semantic_classes)
         other = model.outputs[2:-num_semantic_heads]
         semantic = model.outputs[-num_semantic_heads:]
     else:
         other = model.outputs[2:]
+        semantic = []
 
     # apply predicted regression to anchors
     boxes = RegressBoxes(name='boxes')([anchors, regression])
@@ -433,10 +432,7 @@ def retinamask_bbox(model=None,
     masks = [mask_submodel(rois)]
 
     # add the semantic head's output if needed
-    if panoptic:
-        outputs = detections + list(masks) + list(semantic)
-    else:
-        outputs = detections + list(masks)
+    outputs = detections + list(masks) + list(semantic)
 
     # construct the model
     new_model = Model(inputs=model.inputs, outputs=outputs, name=name)
