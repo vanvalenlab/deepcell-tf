@@ -644,7 +644,7 @@ def train_model_retinanet(model,
 
     if panoptic:
         n_semantic_classes = [layer.output_shape[channel_axis]
-                            for layer in model.layers if 'semantic' in layer.name]
+                              for layer in model.layers if 'semantic' in layer.name]
     else:
         n_semantic_classes = []
 
@@ -680,8 +680,8 @@ def train_model_retinanet(model,
             class_specific_filter=False)
 
     retinanet_losses = losses.RetinaNetLosses(sigma=sigma, alpha=alpha, gamma=gamma,
-                                            iou_threshold=iou_threshold,
-                                            mask_size=mask_size)
+                                              iou_threshold=iou_threshold,
+                                              mask_size=mask_size)
 
     def semantic_loss(n_classes):
         def _semantic_loss(y_pred, y_true):
@@ -713,7 +713,7 @@ def train_model_retinanet(model,
         # Each GPU must have at least one validation example
         if test_dict['y'].shape[0] < num_gpus:
             raise ValueError('Not enough validation data for {} GPUs. '
-                            'Received {} validation sample.'.format(
+                             'Received {} validation sample.'.format(
                                 test_dict['y'].shape[0], num_gpus))
 
         # When using multiple GPUs and skip_connections,
@@ -842,7 +842,7 @@ def train_model_retinanet(model,
         precisions = []
         for label, (average_precision, num_annotations) in average_precisions.items():
             print('{:.0f} instances of class'.format(num_annotations),
-                label, 'with average precision: {:.4f}'.format(average_precision))
+                  label, 'with average precision: {:.4f}'.format(average_precision))
             total_instances.append(num_annotations)
             precisions.append(average_precision)
 
