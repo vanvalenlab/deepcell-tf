@@ -55,29 +55,29 @@ from deepcell.utils.train_utils import get_callbacks
 
 
 def train_model_sample(model,
-                    dataset,
-                    expt='',
-                    test_size=.2,
-                    n_epoch=10,
-                    batch_size=32,
-                    num_gpus=None,
-                    transform=None,
-                    window_size=None,
-                    balance_classes=True,
-                    max_class_samples=None,
-                    log_dir='/data/tensorboard_logs',
-                    model_dir='/data/models',
-                    model_name=None,
-                    focal=False,
-                    gamma=0.5,
-                    optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
-                    lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-                    rotation_range=0,
-                    flip=False,
-                    shear=0,
-                    zoom_range=0,
-                    seed=0,
-                    **kwargs):
+                       dataset,
+                       expt='',
+                       test_size=.2,
+                       n_epoch=10,
+                       batch_size=32,
+                       num_gpus=None,
+                       transform=None,
+                       window_size=None,
+                       balance_classes=True,
+                       max_class_samples=None,
+                       log_dir='/data/tensorboard_logs',
+                       model_dir='/data/models',
+                       model_name=None,
+                       focal=False,
+                       gamma=0.5,
+                       optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
+                       lr_sched=rate_scheduler(lr=0.01, decay=0.95),
+                       rotation_range=0,
+                       flip=False,
+                       shear=0,
+                       zoom_range=0,
+                       seed=0,
+                       **kwargs):
     """Train a model using sample mode.
 
     Args:
@@ -156,7 +156,7 @@ def train_model_sample(model,
         window_size = window_size if window_size else (30, 30, 3)
     else:
         raise ValueError('Expected `X` to have ndim 4 or 5. Got',
-                        train_dict['X'].ndim)
+                         train_dict['X'].ndim)
 
     # this will do preprocessing and realtime data augmentation
     datagen = DataGenerator(
@@ -215,27 +215,27 @@ def train_model_sample(model,
 
 
 def train_model_conv(model,
-                    dataset,
-                    expt='',
-                    test_size=.2,
-                    n_epoch=10,
-                    batch_size=1,
-                    num_gpus=None,
-                    frames_per_batch=5,
-                    transform=None,
-                    optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
-                    log_dir='/data/tensorboard_logs',
-                    model_dir='/data/models',
-                    model_name=None,
-                    focal=False,
-                    gamma=0.5,
-                    lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-                    rotation_range=0,
-                    flip=True,
-                    shear=0,
-                    zoom_range=0,
-                    seed=0,
-                    **kwargs):
+                     dataset,
+                     expt='',
+                     test_size=.2,
+                     n_epoch=10,
+                     batch_size=1,
+                     num_gpus=None,
+                     frames_per_batch=5,
+                     transform=None,
+                     optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
+                     log_dir='/data/tensorboard_logs',
+                     model_dir='/data/models',
+                     model_name=None,
+                     focal=False,
+                     gamma=0.5,
+                     lr_sched=rate_scheduler(lr=0.01, decay=0.95),
+                     rotation_range=0,
+                     flip=True,
+                     shear=0,
+                     zoom_range=0,
+                     seed=0,
+                     **kwargs):
     """Train a model using fully convolutional mode.
 
     Args:
@@ -316,14 +316,14 @@ def train_model_conv(model,
         DataGenerator = image_generators.MovieDataGenerator
     else:
         raise ValueError('Expected `X` to have ndim 4 or 5. Got',
-                        train_dict['X'].ndim)
+                         train_dict['X'].ndim)
 
     if num_gpus >= 2:
         # Each GPU must have at least one validation example
         if test_dict['y'].shape[0] < num_gpus:
             raise ValueError('Not enough validation data for {} GPUs. '
-                            'Received {} validation sample.'.format(
-                                test_dict['y'].shape[0], num_gpus))
+                             'Received {} validation sample.'.format(
+                                 test_dict['y'].shape[0], num_gpus))
 
         # When using multiple GPUs and skip_connections,
         # the training data must be evenly distributed across all GPUs
@@ -404,29 +404,29 @@ def train_model_conv(model,
 
 
 def train_model_siamese_daughter(model,
-                                dataset,
-                                expt='',
-                                test_size=.2,
-                                n_epoch=100,
-                                batch_size=1,
-                                num_gpus=None,
-                                crop_dim=32,
-                                min_track_length=1,
-                                neighborhood_scale_size=10,
-                                features=None,
-                                optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
-                                log_dir='/data/tensorboard_logs',
-                                model_dir='/data/models',
-                                model_name=None,
-                                focal=False,
-                                gamma=0.5,
-                                lr_sched=rate_scheduler(lr=0.01, decay=0.95),
-                                rotation_range=0,
-                                flip=True,
-                                shear=0,
-                                zoom_range=0,
-                                seed=0,
-                                **kwargs):
+                                 dataset,
+                                 expt='',
+                                 test_size=.2,
+                                 n_epoch=100,
+                                 batch_size=1,
+                                 num_gpus=None,
+                                 crop_dim=32,
+                                 min_track_length=1,
+                                 neighborhood_scale_size=10,
+                                 features=None,
+                                 optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
+                                 log_dir='/data/tensorboard_logs',
+                                 model_dir='/data/models',
+                                 model_name=None,
+                                 focal=False,
+                                 gamma=0.5,
+                                 lr_sched=rate_scheduler(lr=0.01, decay=0.95),
+                                 rotation_range=0,
+                                 flip=True,
+                                 shear=0,
+                                 zoom_range=0,
+                                 seed=0,
+                                 **kwargs):
     is_channels_first = K.image_data_format() == 'channels_first'
 
     if model_name is None:
@@ -457,9 +457,9 @@ def train_model_siamese_daughter(model,
     def loss_function(y_true, y_pred):
         if focal:
             return losses.weighted_focal_loss(y_true, y_pred,
-                                            gamma=gamma,
-                                            n_classes=n_classes,
-                                            from_logits=False)
+                                              gamma=gamma,
+                                              n_classes=n_classes,
+                                              from_logits=False)
         return losses.weighted_categorical_crossentropy(y_true, y_pred,
                                                         n_classes=n_classes,
                                                         from_logits=False)
