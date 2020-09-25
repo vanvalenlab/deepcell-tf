@@ -1204,7 +1204,7 @@ class Semantic3DIterator(Iterator):
                 for ys in y_semantic_list:
                     shape = tuple([len(index_array)] + list(ys.shape[1:]))
                     batch_y.append(np.zeros(shape, dtype=ys.dtype))
-            
+
             # random_transform does not expect batch dimension
             y_semantic_list = [ys[0] for ys in y_semantic_list]
 
