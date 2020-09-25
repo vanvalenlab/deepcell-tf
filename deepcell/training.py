@@ -642,11 +642,8 @@ def train_model_retinanet(model,
     channel_axis = 1 if is_channels_first else -1
     n_classes = model.layers[-1].output_shape[channel_axis]
 
-    if panoptic:
-        n_semantic_classes = [layer.output_shape[channel_axis]
-                              for layer in model.layers if 'semantic' in layer.name]
-    else:
-        n_semantic_classes = []
+    n_semantic_classes = [lyr.output_shape[channel_axis] for lyr in model.layers
+                          if 'semantic' in lyr.name and panoptic]
 
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
@@ -662,26 +659,19 @@ def train_model_retinanet(model,
     print('Training on {} GPUs'.format(num_gpus))
 
     # evaluation of model is done on `retinanet_bbox`
-    if include_masks:
-        prediction_model = retinamask_bbox(
-            model,
-            nms=True,
-            anchor_params=anchor_params,
-            num_semantic_heads=len(n_semantic_classes),
-            panoptic=panoptic,
-            class_specific_filter=False)
-    else:
-        prediction_model = retinanet_bbox(
-            model,
-            nms=True,
-            anchor_params=anchor_params,
-            num_semantic_heads=len(n_semantic_classes),
-            panoptic=panoptic,
-            class_specific_filter=False)
+    pred_model_fn = retinamask_bbox if include_masks else retinanet_bbox
+    prediction_model = pred_model_fn(
+        model,
+        nms=True,
+        anchor_params=anchor_params,
+        num_semantic_heads=len(n_semantic_classes),
+        panoptic=panoptic,
+        class_specific_filter=False)
 
-    retinanet_losses = losses.RetinaNetLosses(sigma=sigma, alpha=alpha, gamma=gamma,
-                                              iou_threshold=iou_threshold,
-                                              mask_size=mask_size)
+    retinanet_losses = losses.RetinaNetLosses(
+        sigma=sigma, alpha=alpha, gamma=gamma,
+        iou_threshold=iou_threshold,
+        mask_size=mask_size)
 
     def semantic_loss(n_classes):
         def _semantic_loss(y_pred, y_true):
@@ -706,7 +696,6 @@ def train_model_retinanet(model,
                 n_classes = layer.output_shape[channel_axis]
                 loss[layer.name] = semantic_loss(n_classes)
 
-    print(loss)
     model.compile(loss=loss, optimizer=optimizer)
 
     if num_gpus >= 2:
@@ -714,7 +703,7 @@ def train_model_retinanet(model,
         if test_dict['y'].shape[0] < num_gpus:
             raise ValueError('Not enough validation data for {} GPUs. '
                              'Received {} validation sample.'.format(
-                                test_dict['y'].shape[0], num_gpus))
+                                 test_dict['y'].shape[0], num_gpus))
 
         # When using multiple GPUs and skip_connections,
         # the training data must be evenly distributed across all GPUs
@@ -741,8 +730,6 @@ def train_model_retinanet(model,
         horizontal_flip=0,
         vertical_flip=0)
 
-    compute_shapes = guess_shapes
-
     train_data = datagen.flow(
         train_dict,
         seed=seed,
@@ -754,7 +741,7 @@ def train_model_retinanet(model,
         pyramid_levels=pyramid_levels,
         min_objects=min_objects,
         anchor_params=anchor_params,
-        compute_shapes=compute_shapes,
+        compute_shapes=guess_shapes,
         batch_size=batch_size)
 
     val_data = datagen_val.flow(
@@ -768,13 +755,11 @@ def train_model_retinanet(model,
         pyramid_levels=pyramid_levels,
         min_objects=min_objects,
         anchor_params=anchor_params,
-        compute_shapes=compute_shapes,
+        compute_shapes=guess_shapes,
         batch_size=batch_size)
 
-    image_shape = train_data.x.shape
-
     input_type_dict = {'input': tf.float32}
-    input_shape_dict = {'input': tuple([None] + list(image_shape[1:]))}
+    input_shape_dict = {'input': tuple([None] + list(train_data.x.shape[1:]))}
     output_type_dict = {
         'regression': tf.float32,
         'classification': tf.float32

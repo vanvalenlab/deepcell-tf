@@ -293,13 +293,14 @@ def retinamask(inputs,
         inputs = [image, boxes]
 
     else:
-        detections = FilterDetections(nms=nms,
-                                      nms_threshold=nms_threshold,
-                                      score_threshold=score_threshold,
-                                      class_specific_filter=class_specific_filter,
-                                      max_detections=max_detections,
-                                      name='filtered_detections'
-                                      )([boxes, classification] + other)
+        detections = FilterDetections(
+            nms=nms,
+            nms_threshold=nms_threshold,
+            score_threshold=score_threshold,
+            class_specific_filter=class_specific_filter,
+            max_detections=max_detections,
+            name='filtered_detections'
+        )([boxes, classification] + other)
 
         # split up in known outputs and "other"
         boxes = detections[0]
