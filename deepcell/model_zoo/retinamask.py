@@ -245,8 +245,6 @@ def retinamask(inputs,
         K.set_floatx(retinanet_dtype)
 
     image = inputs
-    image_shape = Shape()(image)
-
     if retinanet_model is None:
         retinanet_model = retinanet(
             inputs=image,
