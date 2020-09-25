@@ -776,6 +776,10 @@ def train_model_retinanet(model,
         input_type_dict['boxes_input'] = tf.float32
         input_shape_dict['boxes_input'] = (None, None, 4)
 
+        for i, n in enumerate(n_semantic_classes):
+            output_type_dict['semantic_{}'.format(i)] = tf.float32
+            output_shape_dict['semantic_{}'.format(i)] = (None, None, None, n)
+
     train_dataset = Dataset.from_generator(
         lambda: train_data,
         (input_type_dict, output_type_dict),
