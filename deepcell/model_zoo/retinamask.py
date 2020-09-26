@@ -328,7 +328,7 @@ def retinamask(inputs,
     return model
 
 
-def retinamask_bbox(model=None,
+def retinamask_bbox(model,
                     nms=True,
                     panoptic=False,
                     num_semantic_heads=1,
