@@ -438,10 +438,8 @@ def retinamask_bbox(model=None,
     new_model = Model(inputs=model.inputs, outputs=outputs, name=name)
 
     image_input = model.inputs[0]
-    if frames_per_batch == 1:
-        temp_boxes = tf.zeros([1, 1, 4])
-    else:
-        temp_boxes = tf.zeros([1, 1, 1, 4])
+    shape = (1, 1, 4) if frames_per_batch == 1 else (1, 1, 1, 4)
+    temp_boxes = K.zeros(shape, name='temp_boxes')
     new_inputs = [image_input, temp_boxes]
 
     final_model = new_model(new_inputs)
