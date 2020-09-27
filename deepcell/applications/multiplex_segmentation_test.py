@@ -44,7 +44,7 @@ class TestMultiplexSegmentation(test.TestCase):
             # test output shape
             shape = app.model.output_shape
             self.assertIsInstance(shape, list)
-            self.assertEqual(len(shape), 8)
+            self.assertEqual(len(shape), 4)
 
             # test predict with default
             x = np.random.rand(1, 500, 500, 2)

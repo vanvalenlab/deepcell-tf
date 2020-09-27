@@ -31,17 +31,19 @@ from __future__ import print_function
 
 import os
 
+import numpy as np
+
 from tensorflow.python.keras.utils.data_utils import get_file
 
-from deepcell_toolbox.deep_watershed import deep_watershed_subcellular, format_output_multiplex
-from deepcell_toolbox.processing import phase_preprocess
+from deepcell_toolbox.multiplex_utils import \
+    multiplex_preprocess, multiplex_postprocess, format_output_multiplex
 
 from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
 
 
 WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/Multiplex_Segmentation_20200816_compartment.h5')
+                'model-weights/Multiplex_Segmentation_20200908_2_head.h5')
 
 
 class MultiplexSegmentation(Application):
@@ -109,8 +111,8 @@ class MultiplexSegmentation(Application):
                  use_pretrained_weights=True,
                  model_image_shape=(256, 256, 2)):
 
-        whole_cell_classes = [1, 1, 2, 3]
-        nuclear_classes = [1, 1, 2, 3]
+        whole_cell_classes = [1, 3]
+        nuclear_classes = [1, 3]
         num_semantic_classes = whole_cell_classes + nuclear_classes
         num_semantic_heads = len(num_semantic_classes)
 
@@ -128,7 +130,7 @@ class MultiplexSegmentation(Application):
                 os.path.basename(WEIGHTS_PATH),
                 WEIGHTS_PATH,
                 cache_subdir='models',
-                file_hash='ff24e821c6056cf847e58e8e52916814'
+                file_hash='4e440b0e329dd5c24c1162efa0a33bc9'
             )
 
             model.load_weights(weights_path)
@@ -138,8 +140,8 @@ class MultiplexSegmentation(Application):
         super(MultiplexSegmentation, self).__init__(model,
                                                     model_image_shape=model_image_shape,
                                                     model_mpp=0.5,
-                                                    preprocessing_fn=phase_preprocess,
-                                                    postprocessing_fn=deep_watershed_subcellular,
+                                                    preprocessing_fn=multiplex_preprocess,
+                                                    postprocessing_fn=multiplex_postprocess,
                                                     format_model_output_fn=format_output_multiplex,
                                                     dataset_metadata=self.dataset_metadata,
                                                     model_metadata=self.model_metadata)
@@ -150,8 +152,8 @@ class MultiplexSegmentation(Application):
                 image_mpp=None,
                 preprocess_kwargs={},
                 compartment='whole-cell',
-                postprocess_kwargs_whole_cell={},
-                postprocess_kwargs_nuclear={}):
+                postprocess_kwargs_whole_cell=None,
+                postprocess_kwargs_nuclear=None):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
@@ -181,6 +183,20 @@ class MultiplexSegmentation(Application):
             np.array: Labeled image
             np.array: Model output
         """
+
+        if postprocess_kwargs_whole_cell is None:
+            postprocess_kwargs_whole_cell = {'maxima_threshold': 0.1, 'maxima_model_smooth': 0,
+                                             'interior_threshold': 0.3, 'interior_model_smooth': 2,
+                                             'small_objects_threshold': 15,
+                                             'fill_holes_threshold': 15,
+                                             'radius': 2}
+
+        if postprocess_kwargs_nuclear is None:
+            postprocess_kwargs_nuclear = {'maxima_threshold': 0.1, 'maxima_model_smooth': 0,
+                                          'interior_threshold': 0.3, 'interior_model_smooth': 2,
+                                          'small_objects_threshold': 15,
+                                          'fill_holes_threshold': 15,
+                                          'radius': 2}
 
         # create dict to hold all of the post-processing kwargs
         postprocess_kwargs = {'whole_cell_kwargs': postprocess_kwargs_whole_cell,
