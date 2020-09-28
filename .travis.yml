@@ -8,12 +8,12 @@ language: python
 
 python:
   - 2.7
+  - 3.5
   - 3.6
   - 3.7
 
 env:
-  - TF_VERSION=1.14.0
-  - TF_VERSION=1.15.0
+  - TF_VERSION=1.15.4
 
 install:
   # code below is taken from https://github.com/keras-team/keras/blob/master/.travis.yml
@@ -73,8 +73,8 @@ jobs:
   include:
     - stage: deploy
       if: tag IS present
-      env: TF_VERSION=1.14.0
-      python: 3.6
+      env: TF_VERSION=1.15.4
+      python: 3.7
       script:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
         # build an image with the CPU TensorFlow base image
