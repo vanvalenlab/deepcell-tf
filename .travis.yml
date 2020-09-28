@@ -7,7 +7,6 @@ git:
 language: python
 
 python:
-  - 2.7
   - 3.5
   - 3.6
   - 3.7
@@ -36,9 +35,6 @@ install:
 
   - travis_retry conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
-
-  # upgrade pip
-  - travis_retry pip install --upgrade pip
 
   # install TensorFlow (CPU version).
   - travis_retry pip install tensorflow==$TF_VERSION --progress-bar off
