@@ -35,7 +35,6 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow.keras import backend as K
-from tensorflow.keras import callbacks
 from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.losses import MSE
 from tensorflow.python.data import Dataset
@@ -44,7 +43,6 @@ from deepcell import losses
 from deepcell import image_generators
 from deepcell.callbacks import RedirectModel, Evaluate
 from deepcell.model_zoo import retinanet_bbox, retinamask_bbox
-from deepcell.utils.retinanet_anchor_utils import make_shapes_callback
 from deepcell.utils.retinanet_anchor_utils import guess_shapes
 from deepcell.utils.retinanet_anchor_utils import evaluate
 from deepcell.utils import train_utils
