@@ -288,7 +288,7 @@ class RetinaMaskTest(keras_parameterized.TestCase):
             )
 
             # TODO: What are the extra 2 for panoptic models?
-            expected_size = 4 + panoptic * (len(num_semantic_classes) + 2)
+            expected_size = 4 + panoptic * len(num_semantic_classes)
 
             self.assertIsInstance(model.output_shape, list)
             self.assertEqual(len(model.output_shape), expected_size)
