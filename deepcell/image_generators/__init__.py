@@ -100,15 +100,17 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                           DeprecationWarning)
         dilation_radius = kwargs.pop('dilation_radius', None)
         separate_edge_classes = kwargs.pop('separate_edge_classes', False)
-        dtype = kwargs.pop('int_dtype', 'int32')
+
+        dtype_bits = kwargs.pop('dtype_bits', '32')
+        int_dtype = 'int' + dtype_bits
 
         edge_class_shape = 4 if separate_edge_classes else 3
 
         if data_format == 'channels_first':
             y_transform = np.zeros(tuple([y.shape[0]] + [edge_class_shape] + list(y.shape[2:])),
-                                   dtype=dtype)
+                                   dtype=int_dtype)
         else:
-            y_transform = np.zeros(tuple(list(y.shape[0:-1]) + [edge_class_shape]), dtype=dtype)
+            y_transform = np.zeros(tuple(list(y.shape[0:-1]) + [edge_class_shape]), dtype=int_dtype)
 
         for batch in range(y_transform.shape[0]):
             if data_format == 'channels_first':
@@ -127,8 +129,9 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                           DeprecationWarning)
 
         by_frame = kwargs.pop('by_frame', True)
-        float_dtype = kwargs.pop('float_dtype', 'float32')
-        int_dtype = kwargs.pop('int_dtype', 'int32')
+        dtype_bits = kwargs.pop('dtype_bits', '32')
+        int_dtype = 'int' + dtype_bits
+        float_dtype = 'float' + dtype_bits
         bins = kwargs.pop('distance_bins', None)
 
         distance_kwargs = {
@@ -177,10 +180,9 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                           DeprecationWarning)
 
         by_frame = kwargs.pop('by_frame', True)
-        alpha = kwargs.pop('alpha', 0.1)
-        beta = kwargs.pop('beta', 1)
-        float_dtype = kwargs.pop('float_dtype', 'float32')
-        int_dtype = kwargs.pop('int_dtype', 'int32')
+        dtype_bits = kwargs.pop('dtype_bits', '32')
+        int_dtype = 'int' + dtype_bits
+        float_dtype = 'float' + dtype_bits
         bins = kwargs.pop('distance_bins', None)
 
         distance_kwargs = {
@@ -225,19 +227,21 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
     elif transform == 'disc':
-        dtype = kwargs.pop('int_dtype', 'int32')
-        y_transform = to_categorical(y.squeeze(channel_axis), dtype=dtype)
+        dtype_bits = kwargs.pop('dtype_bits', '32')
+        int_dtype = 'int' + dtype_bits
+        y_transform = to_categorical(y.squeeze(channel_axis), dtype=int_dtype)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
     elif transform == 'fgbg':
-        dtype = kwargs.pop('int_dtype', 'int32')
+        dtype_bits = kwargs.pop('dtype_bits', '32')
+        int_dtype = 'int' + dtype_bits
 
         y_transform = np.where(y > 1, 1, y)
         # convert to one hot notation
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, 1, y.ndim)
-        y_transform = to_categorical(y_transform, dtype=dtype)
+        y_transform = to_categorical(y_transform, dtype=int_dtype)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 

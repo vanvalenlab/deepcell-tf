@@ -2032,9 +2032,7 @@ class TestSemanticDataGenerator(test.TestCase):
                 fill_mode='nearest',
                 cval=0.5,
                 horizontal_flip=True,
-                vertical_flip=True,
-                float_dtype='float32',
-                int_dtype='int16')
+                vertical_flip=True)
 
             # Basic test before fit
             train_dict = {
@@ -2052,14 +2050,17 @@ class TestSemanticDataGenerator(test.TestCase):
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
             transforms = ['outer-distance', 'fgbg']
+            transform_kwargs = {'outer-distance': {'dtype_bits': '16'},
+                                'fgbg': {'dtype_bits': '64'}}
             for x, y in generator.flow(
                     train_dict,
                     transforms=transforms,
+                    transforms_kwargs=transform_kwargs,
                     save_to_dir=temp_dir,
                     shuffle=True):
                 outer_mask, fgbg_mask = y
                 assert outer_mask.dtype == 'float32'
-                assert fgbg_mask.dtype == 'int16'
+                assert fgbg_mask.dtype == 'int64'
                 break
 
     def test_semantic_data_generator_invalid_data(self):

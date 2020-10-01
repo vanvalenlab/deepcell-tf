@@ -121,11 +121,9 @@ class SemanticIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
         self.min_objects = min_objects
-        self.float_dtype = self.image_data_generator.float_dtype
-        self.int_dtype = self.image_data_generator.int_dtype
 
-        self.x = np.asarray(X, dtype=self.float_dtype)
-        self.y = np.asarray(y, dtype=self.float_dtype)
+        self.x = np.asarray(X)
+        self.y = np.asarray(y)
 
         self.y_semantic_list = []  # optional semantic segmentation targets
 
@@ -144,16 +142,14 @@ class SemanticIterator(Iterator):
             for transform in transforms:
                 transform_kwargs = transforms_kwargs.get(transform, dict())
                 # add default dtype to kwargs
-                transform_kwargs['float_dtype'] = self.float_dtype
-                transform_kwargs['int_dtype'] = self.int_dtype
 
                 y_transform = _transform_masks(y_current, transform,
                                                data_format=data_format,
                                                **transform_kwargs)
                 if y_transform.shape[self.channel_axis] > 1:
-                    y_transform = np.asarray(y_transform, dtype=self.int_dtype)
+                    y_transform = np.asarray(y_transform, dtype=self.y.dtype)
                 elif y_transform.shape[self.channel_axis] == 1:
-                    y_transform = np.asarray(y_transform, dtype=self.float_dtype)
+                    y_transform = np.asarray(y_transform, dtype=K.floatx())
                 self.y_semantic_list.append(y_transform)
 
         invalid_batches = []
@@ -163,7 +159,7 @@ class SemanticIterator(Iterator):
             if len(np.unique(self.y[b])) - 1 < self.min_objects:
                 invalid_batches.append(b)
 
-        invalid_batches = np.array(invalid_batches, dtype=self.int_dtype)
+        invalid_batches = np.array(invalid_batches, dtype='int32')
 
         if invalid_batches.size > 0:
             logging.warning('Removing %s of %s images with fewer than %s '
@@ -315,62 +311,6 @@ class SemanticDataGenerator(ImageDataGenerator):
         validation_split (float): Fraction of images reserved for validation
             (strictly between 0 and 1).
     """
-
-    def __init__(self,
-                 featurewise_center=False,
-                 samplewise_center=False,
-                 featurewise_std_normalization=False,
-                 samplewise_std_normalization=False,
-                 zca_whitening=False,
-                 zca_epsilon=1e-6,
-                 rotation_range=0,
-                 width_shift_range=0.,
-                 height_shift_range=0.,
-                 brightness_range=None,
-                 shear_range=0.,
-                 zoom_range=0.,
-                 channel_shift_range=0.,
-                 fill_mode='nearest',
-                 cval=0.,
-                 horizontal_flip=False,
-                 vertical_flip=False,
-                 rescale=None,
-                 preprocessing_function=None,
-                 data_format='channels_last',
-                 int_dtype='int32',
-                 float_dtype='float32',
-                 validation_split=0.0,
-                 interpolation_order=1,
-                 crop_size=None,
-                 dtype='float32'):
-
-        super(SemanticDataGenerator, self).__init__(
-            featurewise_center=featurewise_center,
-            samplewise_center=samplewise_center,
-            featurewise_std_normalization=featurewise_std_normalization,
-            samplewise_std_normalization=samplewise_std_normalization,
-            zca_whitening=zca_whitening,
-            zca_epsilon=zca_epsilon,
-            rotation_range=rotation_range,
-            width_shift_range=width_shift_range,
-            height_shift_range=height_shift_range,
-            brightness_range=brightness_range,
-            shear_range=shear_range,
-            zoom_range=zoom_range,
-            channel_shift_range=channel_shift_range,
-            fill_mode=fill_mode,
-            cval=cval,
-            horizontal_flip=horizontal_flip,
-            vertical_flip=vertical_flip,
-            rescale=rescale,
-            preprocessing_function=preprocessing_function,
-            data_format=data_format,
-            validation_split=validation_split,
-            dtype=dtype)
-
-        self.float_dtype = float_dtype
-        self.int_dtype = int_dtype
-
     def flow(self,
              train_dict,
              batch_size=1,
