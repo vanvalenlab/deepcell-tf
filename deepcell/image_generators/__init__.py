@@ -110,7 +110,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.zeros(tuple([y.shape[0]] + [edge_class_shape] + list(y.shape[2:])),
                                    dtype=int_dtype)
         else:
-            y_transform = np.zeros(tuple(list(y.shape[0:-1]) + [edge_class_shape]), dtype=int_dtype)
+            y_transform = np.zeros(tuple(list(y.shape[0:-1]) + [edge_class_shape]),
+                                   dtype=int_dtype)
 
         for batch in range(y_transform.shape[0]):
             if data_format == 'channels_first':
