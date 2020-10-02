@@ -126,9 +126,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                           '`outer-distance` transform instead.'.format(transform),
                           DeprecationWarning)
 
-        bins = kwargs.pop('distance_bins', None)
-        erosion = kwargs.pop('erosion_width', 0)
         by_frame = kwargs.pop('by_frame', True)
+
         float_dtype = kwargs.pop('float_dtype', 'float32')
         int_dtype = kwargs.pop('int_dtype', 'int32')
 
@@ -150,9 +149,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask = y[batch, 0, ...]
             else:
                 mask = y[batch, ..., 0]
-
-            y_transform[batch] = _distance_transform(
-                mask, bins=bins, erosion_width=erosion)
+            y_transform[batch] = _distance_transform(mask, **distance_kwargs)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
@@ -170,9 +167,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                           '`inner-distance` transform instead.'.format(transform),
                           DeprecationWarning)
 
-        bins = kwargs.pop('distance_bins', None)
-        erosion = kwargs.pop('erosion_width', 0)
         by_frame = kwargs.pop('by_frame', True)
+
         alpha = kwargs.pop('alpha', 0.1)
         beta = kwargs.pop('beta', 1)
         float_dtype = kwargs.pop('float_dtype', 'float32')
@@ -196,14 +192,11 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask = y[batch, 0, ...]
             else:
                 mask = y[batch, ..., 0]
-
-            y_transform[batch] = _distance_transform(mask, bins=bins,
-                                                     erosion_width=erosion,
-                                                     alpha=alpha, beta=beta)
+            y_transform[batch] = _distance_transform(mask, **distance_kwargs)
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
-        if bins is None:
+        if distance_kwargs['bins'] is None:
             pass
         else:
             # convert to one hot notation
@@ -252,6 +245,9 @@ from deepcell.image_generators.semantic import SemanticDataGenerator
 from deepcell.image_generators.semantic import SemanticIterator
 from deepcell.image_generators.semantic import SemanticMovieGenerator
 from deepcell.image_generators.semantic import SemanticMovieIterator
+
+from deepcell.image_generators.semantic import Semantic3DGenerator
+from deepcell.image_generators.semantic import Semantic3DIterator
 
 from deepcell.image_generators.sample import SampleDataGenerator
 from deepcell.image_generators.sample import ImageSampleArrayIterator
