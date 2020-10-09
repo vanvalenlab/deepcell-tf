@@ -380,8 +380,8 @@ def create_rgb_image(input_data, channel_colors):
         raise ValueError('Input data must be 4D, '
                          'but provided data has shape {}'.format(input_data.shape))
 
-    if input_data.shape[-4] > 2:
-        raise ValueError('Input data must have 1 or channels, '
+    if input_data.shape[3] > 2:
+        raise ValueError('Input data must have 1 or 2 channels, '
                          'but {} channels were provided'.format(input_data.shape[-1]))
 
     valid_channels = ['red', 'green', 'blue']
