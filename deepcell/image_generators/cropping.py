@@ -118,7 +118,7 @@ class CroppingIterator(SemanticIterator):
         else:
             x_shape = tuple([len(index_array)] + [self.x.shape[1]] + list(self.output_size))
 
-        batch_x = np.zeros(x_shape)
+        batch_x = np.zeros(x_shape, dtype=self.x.dtype)
         batch_y = []
 
         for i, j in enumerate(index_array):

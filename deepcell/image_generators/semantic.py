@@ -160,7 +160,8 @@ class SemanticIterator(Iterator):
         return y_semantic_list
 
     def _get_batches_of_transformed_samples(self, index_array):
-        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]),
+                           dtype=self.x.dtype)
         batch_y = []
 
         for i, j in enumerate(index_array):
@@ -521,16 +522,13 @@ class SemanticMovieIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.data_format == 'channels_first':
-            batch_x = np.zeros((len(index_array),
-                                self.x.shape[1],
-                                self.frames_per_batch,
-                                self.x.shape[3],
-                                self.x.shape[4]))
+            shape = (len(index_array), self.x.shape[1], self.frames_per_batch,
+                     self.x.shape[3], self.x.shape[4])
         else:
-            batch_x = np.zeros(tuple([len(index_array),
-                                      self.frames_per_batch] +
-                                     list(self.x.shape)[2:]))
+            shape = tuple([len(index_array), self.frames_per_batch] +
+                          list(self.x.shape)[2:])
 
+        batch_x = np.zeros(shape, dtype=self.x.dtype)
         batch_y = []
 
         for i, j in enumerate(index_array):
@@ -1123,12 +1121,12 @@ class Semantic3DIterator(Iterator):
             cols = self.x.shape[self.col_axis]
 
         if self.data_format == 'channels_first':
-            batch_x = np.zeros((len(index_array), self.x.shape[1],
-                                self.frames_per_batch, rows, cols))
+            shape = (len(index_array), self.x.shape[1], self.frames_per_batch,
+                     rows, cols)
         else:
-            batch_x = np.zeros((len(index_array), self.frames_per_batch,
-                                rows, cols, self.x.shape[4]))
-
+            shape = (len(index_array), self.frames_per_batch,
+                     rows, cols, self.x.shape[4])
+        batch_x = np.zeros(shape, dtype=self.x.dtype)
         batch_y = []
 
         for i, j in enumerate(index_array):
