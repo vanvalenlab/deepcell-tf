@@ -31,7 +31,6 @@ from __future__ import division
 
 import numpy as np
 from tensorflow.keras import callbacks
-from tensorflow.keras import Model
 from tensorflow.python.client import device_lib
 
 

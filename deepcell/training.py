@@ -35,7 +35,6 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow.keras import backend as K
-from tensorflow.keras import callbacks
 from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.losses import MSE
 from tensorflow.python.data import Dataset
@@ -44,7 +43,6 @@ from deepcell import losses
 from deepcell import image_generators
 from deepcell.callbacks import RedirectModel, Evaluate
 from deepcell.model_zoo import retinanet_bbox, retinamask_bbox
-from deepcell.utils.retinanet_anchor_utils import make_shapes_callback
 from deepcell.utils.retinanet_anchor_utils import guess_shapes
 from deepcell.utils.retinanet_anchor_utils import evaluate
 from deepcell.utils import train_utils
@@ -398,7 +396,6 @@ def train_model_conv(model,
         validation_steps=val_data.y.shape[0] // batch_size,
         callbacks=train_callbacks)
 
-    model.save_weights(model_path)
     np.savez(loss_path, loss_history=loss_history.history)
 
     return model
@@ -533,7 +530,6 @@ def train_model_siamese_daughter(model,
         validation_steps=total_test_pairs // batch_size,
         callbacks=train_callbacks)
 
-    model.save_weights(model_path)
     np.savez(loss_path, loss_history=loss_history.history)
 
     return model
@@ -644,11 +640,8 @@ def train_model_retinanet(model,
     channel_axis = 1 if is_channels_first else -1
     n_classes = model.layers[-1].output_shape[channel_axis]
 
-    if panoptic:
-        n_semantic_classes = [layer.output_shape[channel_axis]
-                              for layer in model.layers if 'semantic' in layer.name]
-    else:
-        n_semantic_classes = []
+    n_semantic_classes = [layer.output_shape[channel_axis] for layer in model.layers
+                          if layer.name.startswith('semantic') and panoptic]
 
     # the data, shuffled and split between train and test sets
     print('X_train shape:', train_dict['X'].shape)
@@ -664,33 +657,26 @@ def train_model_retinanet(model,
     print('Training on {} GPUs'.format(num_gpus))
 
     # evaluation of model is done on `retinanet_bbox`
-    if include_masks:
-        prediction_model = retinamask_bbox(
-            model,
-            nms=True,
-            anchor_params=anchor_params,
-            num_semantic_heads=len(n_semantic_classes),
-            panoptic=panoptic,
-            class_specific_filter=False)
-    else:
-        prediction_model = retinanet_bbox(
-            model,
-            nms=True,
-            anchor_params=anchor_params,
-            num_semantic_heads=len(n_semantic_classes),
-            panoptic=panoptic,
-            class_specific_filter=False)
+    pred_model_fn = retinamask_bbox if include_masks else retinanet_bbox
+    prediction_model = pred_model_fn(
+        model,
+        nms=True,
+        anchor_params=anchor_params,
+        num_semantic_heads=len(n_semantic_classes),
+        panoptic=panoptic,
+        class_specific_filter=False)
 
-    retinanet_losses = losses.RetinaNetLosses(sigma=sigma, alpha=alpha, gamma=gamma,
-                                              iou_threshold=iou_threshold,
-                                              mask_size=mask_size)
+    retinanet_losses = losses.RetinaNetLosses(
+        sigma=sigma, alpha=alpha, gamma=gamma,
+        iou_threshold=iou_threshold,
+        mask_size=mask_size)
 
     def semantic_loss(n_classes):
         def _semantic_loss(y_pred, y_true):
             if n_classes > 1:
                 return panoptic_weight * losses.weighted_categorical_crossentropy(
-                    y_pred, y_true, n_classes=n_classes)
-            return panoptic_weight * MSE(y_pred, y_true)
+                    y_true, y_pred, n_classes=n_classes)
+            return panoptic_weight * MSE(y_true, y_pred)
         return _semantic_loss
 
     loss = {
@@ -704,11 +690,10 @@ def train_model_retinanet(model,
     if panoptic:
         # Give losses for all of the semantic heads
         for layer in model.layers:
-            if 'semantic' in layer.name:
+            if layer.name.startswith('semantic'):
                 n_classes = layer.output_shape[channel_axis]
                 loss[layer.name] = semantic_loss(n_classes)
 
-    print(loss)
     model.compile(loss=loss, optimizer=optimizer)
 
     if num_gpus >= 2:
@@ -743,8 +728,6 @@ def train_model_retinanet(model,
         horizontal_flip=0,
         vertical_flip=0)
 
-    compute_shapes = guess_shapes
-
     train_data = datagen.flow(
         train_dict,
         seed=seed,
@@ -756,7 +739,7 @@ def train_model_retinanet(model,
         pyramid_levels=pyramid_levels,
         min_objects=min_objects,
         anchor_params=anchor_params,
-        compute_shapes=compute_shapes,
+        compute_shapes=guess_shapes,
         batch_size=batch_size)
 
     val_data = datagen_val.flow(
@@ -770,36 +753,39 @@ def train_model_retinanet(model,
         pyramid_levels=pyramid_levels,
         min_objects=min_objects,
         anchor_params=anchor_params,
-        compute_shapes=compute_shapes,
+        compute_shapes=guess_shapes,
         batch_size=batch_size)
 
-    image_shape = train_data.x.shape
+    input_type_dict = {'input': tf.float32}
+    input_shape_dict = {'input': tuple([None] + list(train_data.x.shape[1:]))}
+    output_type_dict = {
+        'regression': tf.float32,
+        'classification': tf.float32
+    }
+    output_shape_dict = {
+        'regression': (None, None, None),
+        'classification': (None, None, None)
+    }
 
     if include_masks:
-        output_types = ({'input': tf.float32,
-                         'boxes_input': tf.float32},
-                        {'regression': tf.float32,
-                         'classification': tf.float32,
-                         'masks': tf.float32})
-        output_shapes = ({'input': tuple([None] + list(image_shape[1:])),
-                          'boxes_input': (None, None, 4)},
-                         {'regression': (None, None, None),
-                          'classification': (None, None, None),
-                          'masks': (None, None, None)})
-    else:
-        output_types = ({'input': tf.float32,
-                         'boxes_input': tf.float32},
-                        {'regression': tf.float32,
-                         'classification': tf.float32})
-        output_shapes = ({'input': tuple([None] + list(image_shape[1:])),
-                          'boxes_input': (None, None, 4)},
-                         {'regression': (None, None, None),
-                          'classification': (None, None, None)})
+        output_type_dict['masks'] = tf.float32
+        output_shape_dict['masks'] = (None, None, None)
 
-    train_dataset = Dataset.from_generator(lambda: train_data, output_types,
-                                           output_shapes=output_shapes)
-    val_dataset = Dataset.from_generator(lambda: val_data, output_types,
-                                         output_shapes=output_shapes)
+        input_type_dict['boxes_input'] = tf.float32
+        input_shape_dict['boxes_input'] = (None, None, 4)
+
+        for i, n in enumerate(n_semantic_classes):
+            output_type_dict['semantic_{}'.format(i)] = tf.float32
+            output_shape_dict['semantic_{}'.format(i)] = (None, None, None, n)
+
+    train_dataset = Dataset.from_generator(
+        lambda: train_data,
+        (input_type_dict, output_type_dict),
+        output_shapes=(input_shape_dict, output_shape_dict))
+    val_dataset = Dataset.from_generator(
+        lambda: val_data,
+        (input_type_dict, output_type_dict),
+        output_shapes=(input_shape_dict, output_shape_dict))
 
     train_callbacks = get_callbacks(
         model_path, lr_sched=lr_sched,
@@ -827,7 +813,6 @@ def train_model_retinanet(model,
         validation_steps=val_data.y.shape[0] // batch_size,
         callbacks=train_callbacks)
 
-    model.save_weights(model_path)
     np.savez(loss_path, loss_history=loss_history.history)
 
     if compute_map:

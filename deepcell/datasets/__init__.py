@@ -161,6 +161,14 @@ mousebrain = Dataset(
     metadata={}
 )
 
+#:
+multiplex_tissue = Dataset(
+    path='20200810_tissue_dataset.npz',
+    url='https://deepcell-data.s3.amazonaws.com/multiplex/20200810_tissue_dataset.npz',
+    file_hash='1e573b72123fd86e45433402094bf0d0',
+    metadata={}
+)
+
 # pylint: disable=wrong-import-position
 from deepcell.datasets import cytoplasm
 from deepcell.datasets import phase

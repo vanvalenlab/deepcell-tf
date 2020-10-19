@@ -129,6 +129,7 @@ def PanopticNet(backbone,
                 upsample_type='upsampling2d',
                 interpolation='bilinear',
                 name='panopticnet',
+                z_axis_convolutions=False,
                 **kwargs):
     """Constructs a mrcnn model using a backbone from keras-applications.
 
@@ -161,6 +162,8 @@ def PanopticNet(backbone,
             layers from ['bilinear', 'nearest']. Defaults to bilinear.
         pooling (str): optional pooling mode for feature extraction
             when include_top is False.
+        z_axis_convolutions (bool): Whether or not to do convolutions on 3D data across
+            the z axis.
 
             - None means that the output of the model will be
                 the 4D tensor output of the
@@ -280,7 +283,8 @@ def PanopticNet(backbone,
                                            ndim=ndim,
                                            lite=lite,
                                            interpolation=interpolation,
-                                           upsample_type=upsample_type)
+                                           upsample_type=upsample_type,
+                                           z_axis_convolutions=z_axis_convolutions)
 
     features = [pyramid_dict[key] for key in pyramid_levels]
 

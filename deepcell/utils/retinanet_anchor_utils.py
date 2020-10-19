@@ -795,12 +795,12 @@ def _get_detections(generator,
                         boxes_list.append(boxes[0, k])
                         scores_list.append(scores[0, k])
                         labels_list.append(labels[0, k])
-                        masks_list.append(masks[0, k])
+                        if generator.include_masks:
+                            masks_list.append(masks[0, k])
 
         batch_boxes = np.stack(boxes_list, axis=0)
         batch_scores = np.stack(scores_list, axis=0)
         batch_labels = np.stack(labels_list, axis=0)
-        batch_masks = np.stack(masks_list, axis=0)
 
         all_detections = [[None for i in range(generator.num_classes)]
                           for j in range(batch_boxes.shape[0])]
@@ -812,7 +812,6 @@ def _get_detections(generator,
             boxes = batch_boxes[[i]]
             scores = batch_scores[[i]]
             labels = batch_labels[[i]]
-            masks = batch_masks[[i]]
 
             # select indices which have a score above the threshold
             indices = np.where(scores[0, :] > score_threshold)[0]
@@ -840,6 +839,7 @@ def _get_detections(generator,
                 all_detections[i][label] = imd
 
             if generator.include_masks:
+                masks = np.expand_dims(masks_list[i], axis=0)
                 image_masks = masks[0, indices[scores_sort], :, :, image_labels]
                 for label in range(generator.num_classes):
                     imm = image_masks[image_detections[:, -1] == label, ...]
