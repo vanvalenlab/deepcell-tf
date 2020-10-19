@@ -154,10 +154,7 @@ class SemanticIterator(Iterator):
                 y_transform = _transform_masks(y_current, transform,
                                                data_format=self.data_format,
                                                **transform_kwargs)
-                if y_transform.shape[self.channel_axis] > 1:
-                    y_transform = np.asarray(y_transform, dtype='int32')
-                elif y_transform.shape[self.channel_axis] == 1:
-                    y_transform = np.asarray(y_transform, dtype=K.floatx())
+                y_transform = np.asarray(y_transform, dtype=K.floatx())
                 y_semantic_list.append(y_transform)
 
         return y_semantic_list
@@ -517,10 +514,7 @@ class SemanticMovieIterator(Iterator):
                 y_transform = _transform_masks(y_current, transform,
                                                data_format=self.data_format,
                                                **transform_kwargs)
-                if y_transform.shape[self.channel_axis] > 1:
-                    y_transform = np.asarray(y_transform, dtype='int32')
-                elif y_transform.shape[self.channel_axis] == 1:
-                    y_transform = np.asarray(y_transform, dtype=K.floatx())
+                y_transform = np.asarray(y_transform, dtype=K.floatx())
                 y_semantic_list.append(y_transform)
 
         return y_semantic_list
@@ -1115,10 +1109,7 @@ class Semantic3DIterator(Iterator):
                 y_transform = _transform_masks(y_current, transform,
                                                data_format=self.data_format,
                                                **transform_kwargs)
-                if y_transform.shape[self.channel_axis] > 1:
-                    y_transform = np.asarray(y_transform, dtype='int32')
-                elif y_transform.shape[self.channel_axis] == 1:
-                    y_transform = np.asarray(y_transform, dtype=K.floatx())
+                y_transform = np.asarray(y_transform, dtype=K.floatx())
                 y_semantic_list.append(y_transform)
 
         return y_semantic_list
