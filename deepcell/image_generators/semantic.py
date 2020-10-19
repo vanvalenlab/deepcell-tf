@@ -899,29 +899,20 @@ class SemanticMovieGenerator(ImageDataGenerator):
         self.time_axis -= 1
         self.channel_axis -= 1
 
-        if isinstance(x, list):
-            params = self.get_random_transform(x[0].shape, seed)
-        else:
-            params = self.get_random_transform(x.shape, seed)
+        x = x if isinstance(x, list) else [x]
+        params = self.get_random_transform(x[0].shape, seed)
 
-        if isinstance(x, list):
-            for i in range(len(x)):
-                x_i = x[i]
-                for frame in range(x_i.shape[self.time_axis]):
-                    if self.data_format == 'channels_first':
-                        x_trans = self.apply_transform(x_i[:, frame], params)
-                        x_i[:, frame] = np.rollaxis(x_trans, -1, 0)
-                    else:
-                        x_i[frame] = self.apply_transform(x_i[frame], params)
-                x[i] = x_i
-        else:
-            for frame in range(x.shape[self.time_axis]):
+        for i in range(len(x)):
+            x_i = x[i]
+            for frame in range(x_i.shape[self.time_axis]):
                 if self.data_format == 'channels_first':
-                    x_trans = self.apply_transform(x[:, frame], params)
-                    x[:, frame] = np.rollaxis(x_trans, -1, 0)
+                    x_trans = self.apply_transform(x_i[:, frame], params)
+                    x_i[:, frame] = np.rollaxis(x_trans, -1, 0)
                 else:
-                    temp = self.apply_transform(x[frame], params)
-                    x[frame] = self.apply_transform(x[frame], params)
+                    x_i[frame] = self.apply_transform(x_i[frame], params)
+            x[i] = x_i
+
+        x = x[0] if len(x) == 1 else x
 
         if y is not None:
             params['brightness'] = None
@@ -929,42 +920,26 @@ class SemanticMovieGenerator(ImageDataGenerator):
 
             _interpolation_order = self.interpolation_order
 
-            if isinstance(y, list):
-                for i in range(len(y)):
-                    y_i = y[i]
+            y = y if isinstance(y, list) else [y]
 
-                    if y_i.shape[self.channel_axis] > 1:
-                        self.interpolation_order = 0
-                    else:
-                        self.interpolation_order = _interpolation_order
+            for i in range(len(y)):
+                y_i = y[i]
 
-                    for frame in range(y_i.shape[self.time_axis]):
-                        if self.data_format == 'channels_first':
-                            y_trans = self.apply_transform(y_i[:, frame],
-                                                           params)
-                            y_i[:, frame] = np.rollaxis(y_trans, 1, 0)
-                        else:
-                            y_i[frame] = self.apply_transform(y_i[frame],
-                                                              params)
+                order = 0 if y_i.shape[self.channel_axis] > 1 else _interpolation_order
+                self.interpolation_order = order
 
-                    y[i] = y_i
-
-                    self.interpolation_order = _interpolation_order
-
-            else:
-                if y.shape[self.channel_axis] > 1:
-                    self.interpolation_order = 0
-                else:
-                    self.interpolation_order = _interpolation_order
-
-                for frame in range(y.shape[self.time_axis]):
+                for frame in range(y_i.shape[self.time_axis]):
                     if self.data_format == 'channels_first':
-                        y_trans = self.apply_transform(y[:, frame], params)
-                        y[:, frame] = np.rollaxis(y_trans, 1, 0)
+                        y_trans = self.apply_transform(y_i[:, frame], params)
+                        y_i[:, frame] = np.rollaxis(y_trans, 1, 0)
                     else:
-                        y[frame] = self.apply_transform(y[frame], params)
+                        y_i[frame] = self.apply_transform(y_i[frame], params)
+
+                y[i] = y_i
 
                 self.interpolation_order = _interpolation_order
+
+            y = y[0] if len(y) == 1 else y
 
         # Note: Undo workaround
         self.row_axis += 1
@@ -1055,16 +1030,14 @@ class Semantic3DIterator(Iterator):
                 if data_format == 'channels_first':
 
                     batch = np.moveaxis(batch, 0, -1)
-                    rescaled = rescale(batch,
-                                       scale,
+                    rescaled = rescale(batch, scale,
                                        order=order,
                                        preserve_range=True,
                                        multichannel=True)
                     rescaled = np.moveaxis(rescaled, -1, 0)
 
                 else:
-                    rescaled = rescale(batch,
-                                       scale,
+                    rescaled = rescale(batch, scale,
                                        order=order,
                                        preserve_range=True,
                                        multichannel=True)
@@ -1585,197 +1558,94 @@ class Semantic3DGenerator(ImageDataGenerator):
         self.time_axis -= 1
         self.channel_axis -= 1
 
-        if isinstance(x, list):
-            params = self.get_random_transform(x[0].shape, seed)
-        else:
-            params = self.get_random_transform(x.shape, seed)
+        x = x if isinstance(x, list) else [x]
+        params = self.get_random_transform(x[0].shape, seed)
 
-        if aug_3d:
-            # Don't want to brighten or zoom multiple times
-            _brightness_range = self.brightness_range
-            _zoom_range = self.zoom_range
-            self.brightness_range = None
-            self.zoom_range = (1, 1)
+        # Don't want to brighten or zoom multiple times
+        _brightness_range = self.brightness_range
+        _zoom_range = self.zoom_range
+        _rotation_range = self.rotation_range
+        self.brightness_range = None
+        self.zoom_range = (1, 1)
+        self.rotation_range = rotation_3d
 
-            # Set params for 3d_augmentation with rotation set to 0
-            # Compatible with anisotropic data (with sampling not 1:1:1)
-            if rotation_3d == 0:
-                _rotation_range = self.rotation_range
-                self.rotation_range = 0
+        # Set params for 3d_augmentation with rotation set to 0
+        # Compatible with anisotropic data (with sampling not 1:1:1)
+        params_3d = self.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
 
-                if isinstance(x, list):
-                    params_3d = self.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
-                else:
-                    params_3d = self.get_random_transform(np.moveaxis(x, 0, 1).shape, seed)
+        self.brightness_range = _brightness_range
+        self.zoom_range = _zoom_range
+        self.rotation_range = _rotation_range
 
-                self.rotation_range = _rotation_range
-
-            # Set params for full 3d_augmentation - requires sampling with a ratio of 1:1:1
-            else:
-                _rotation_range = self.rotation_range
-                self.rotation_range = rotation_3d
-
-                if isinstance(x, list):
-                    params_3d = self.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
-                else:
-                    params_3d = self.get_random_transform(np.moveaxis(x, 0, 1).shape, seed)
-
-                self.rotation_range = _rotation_range
-
-            self.brightness_range = _brightness_range
-            self.zoom_range = _zoom_range
-
-        if isinstance(x, list):
-            for i in range(len(x)):
-                x_i = x[i]
-                for frame in range(x_i.shape[self.time_axis]):
-                    if self.data_format == 'channels_first':
-                        x_trans = self.apply_transform(x_i[:, frame], params)
-                        x_i[:, frame] = np.rollaxis(x_trans, -1, 0)
-                    else:
-                        x_i[frame] = self.apply_transform(x_i[frame], params)
-                x[i] = x_i
-        else:
-            for frame in range(x.shape[self.time_axis]):
+        for i in range(len(x)):
+            x_i = x[i]
+            for frame in range(x_i.shape[self.time_axis]):
                 if self.data_format == 'channels_first':
-                    x_trans = self.apply_transform(x[:, frame], params)
-                    x[:, frame] = np.rollaxis(x_trans, -1, 0)
+                    x_trans = self.apply_transform(x_i[:, frame], params)
+                    x_i[:, frame] = np.rollaxis(x_trans, -1, 0)
                 else:
-                    temp = self.apply_transform(x[frame], params)
-                    x[frame] = self.apply_transform(x[frame], params)
+                    x_i[frame] = self.apply_transform(x_i[frame], params)
 
-        if aug_3d:
-            if isinstance(x, list):
-                for i in range(len(x)):
-                    x_i = x[i]
-                    for frame in range(x_i.shape[self.row_axis]):
-                        if self.data_format == 'channels_first':
-                            x_trans = self.apply_transform(x_i[:, :, frame], params_3d)
-                            x_i[:, :, frame] = np.rollaxis(x_trans, -1, 0)
-                        else:
-                            x_i[:, frame] = self.apply_transform(x_i[:, frame], params_3d)
-
-                    for frame in range(x_i.shape[self.col_axis]):
-                        if self.data_format == 'channels_first':
-                            x_trans = self.apply_transform(x_i[..., frame], params_3d)
-                            x_i[..., frame] = np.rollaxis(x_trans, -1, 0)
-                        else:
-                            x_i[:, :, frame] = self.apply_transform(x_i[:, :, frame], params_3d)
-                    x[i] = x_i
-            else:
-                for frame in range(x.shape[self.row_axis]):
+            if aug_3d:
+                for frame in range(x_i.shape[self.row_axis]):
                     if self.data_format == 'channels_first':
-                        x_trans = self.apply_transform(x[:, :, frame], params_3d)
-                        x[:, :, frame] = np.rollaxis(x_trans, -1, 0)
+                        x_trans = self.apply_transform(x_i[:, :, frame], params_3d)
+                        x_i[:, :, frame] = np.rollaxis(x_trans, -1, 0)
                     else:
-                        temp = self.apply_transform(x[:, frame], params_3d)
-                        x[:, frame] = self.apply_transform(x[:, frame], params_3d)
+                        x_i[:, frame] = self.apply_transform(x_i[:, frame], params_3d)
 
-                for frame in range(x.shape[self.col_axis]):
+                for frame in range(x_i.shape[self.col_axis]):
                     if self.data_format == 'channels_first':
-                        x_trans = self.apply_transform(x[..., frame], params_3d)
-                        x[..., frame] = np.rollaxis(x_trans, -1, 0)
+                        x_trans = self.apply_transform(x_i[..., frame], params_3d)
+                        x_i[..., frame] = np.rollaxis(x_trans, -1, 0)
                     else:
-                        temp = self.apply_transform(x[:, :, frame], params_3d)
-                        x[:, :, frame] = self.apply_transform(x[:, :, frame], params_3d)
+                        x_i[:, :, frame] = self.apply_transform(x_i[:, :, frame], params_3d)
+
+            x[i] = x_i
+
+        x = x[0] if len(x) == 1 else x
 
         if y is not None:
             params['brightness'] = None
             params['channel_shift_intensity'] = None
 
             _interpolation_order = self.interpolation_order
+            y = y if isinstance(y, list) else [y]
 
-            if isinstance(y, list):
-                for i in range(len(y)):
-                    y_i = y[i]
+            for i in range(len(y)):
+                y_i = y[i]
 
-                    if y_i.shape[self.channel_axis] > 1:
-                        self.interpolation_order = 0
-                    else:
-                        self.interpolation_order = _interpolation_order
+                order = 0 if y_i.shape[self.channel_axis] > 1 else _interpolation_order
+                self.interpolation_order = order
 
-                    for frame in range(y_i.shape[self.time_axis]):
-                        if self.data_format == 'channels_first':
-                            y_trans = self.apply_transform(y_i[:, frame],
-                                                           params)
-                            y_i[:, frame] = np.rollaxis(y_trans, 1, 0)
-                        else:
-                            y_i[frame] = self.apply_transform(y_i[frame],
-                                                              params)
-
-                    y[i] = y_i
-
-                    self.interpolation_order = _interpolation_order
-
-            else:
-                if y.shape[self.channel_axis] > 1:
-                    self.interpolation_order = 0
-                else:
-                    self.interpolation_order = _interpolation_order
-
-                for frame in range(y.shape[self.time_axis]):
+                for frame in range(y_i.shape[self.time_axis]):
                     if self.data_format == 'channels_first':
-                        y_trans = self.apply_transform(y[:, frame], params)
-                        y[:, frame] = np.rollaxis(y_trans, 1, 0)
+                        y_trans = self.apply_transform(y_i[:, frame], params)
+                        y_i[:, frame] = np.rollaxis(y_trans, 1, 0)
                     else:
-                        y[frame] = self.apply_transform(y[frame], params)
+                        y_i[frame] = self.apply_transform(y_i[frame], params)
+
+                # Augment masks in 3D
+                if aug_3d:
+                    for frame in range(y_i.shape[self.row_axis]):
+                        if self.data_format == 'channels_first':
+                            y_trans = self.apply_transform(y_i[:, :, frame], params_3d)
+                            y_i[:, :, frame] = np.moveaxis(y_trans, -1, 0)
+                        else:
+                            y_i[:, frame] = self.apply_transform(y_i[:, frame], params_3d)
+
+                    for frame in range(y_i.shape[self.col_axis]):
+                        if self.data_format == 'channels_first':
+                            y_trans = self.apply_transform(y_i[..., frame], params_3d)
+                            y_i[..., frame] = np.moveaxis(y_trans, -1, 0)
+                        else:
+                            y_i[:, :, frame] = self.apply_transform(y_i[:, :, frame], params_3d)
+
+                y[i] = y_i
 
                 self.interpolation_order = _interpolation_order
 
-            # Augment masks in 3D
-            if aug_3d:
-                _interpolation_order = self.interpolation_order
-
-                if isinstance(y, list):
-                    for i in range(len(y)):
-                        y_i = y[i]
-
-                        if y_i.shape[self.channel_axis] > 1:
-                            self.interpolation_order = 0
-                        else:
-                            self.interpolation_order = _interpolation_order
-
-                        for frame in range(y_i.shape[self.row_axis]):
-                            if self.data_format == 'channels_first':
-                                y_trans = self.apply_transform(y_i[:, :, frame],
-                                                               params_3d)
-                                y_i[:, :, frame] = np.moveaxis(y_trans, -1, 0)
-                            else:
-                                y_i[:, frame] = self.apply_transform(y_i[:, frame],
-                                                                     params_3d)
-                        for frame in range(y_i.shape[self.col_axis]):
-                            if self.data_format == 'channels_first':
-                                y_trans = self.apply_transform(y_i[..., frame],
-                                                               params_3d)
-                                y_i[..., frame] = np.moveaxis(y_trans, -1, 0)
-                            else:
-                                y_i[:, :, frame] = self.apply_transform(y_i[:, :, frame],
-                                                                        params_3d)
-                        y[i] = y_i
-
-                        self.interpolation_order = _interpolation_order
-
-                else:
-                    if y.shape[self.channel_axis] > 1:
-                        self.interpolation_order = 0
-                    else:
-                        self.interpolation_order = _interpolation_order
-
-                    for frame in range(y.shape[self.row_axis]):
-                        if self.data_format == 'channels_first':
-                            y_trans = self.apply_transform(y[:, :, frame], params_3d)
-                            y[:, :, frame] = np.rollaxis(y_trans, 1, 0)
-                        else:
-                            y[:, frame] = self.apply_transform(y[:, frame], params_3d)
-
-                    for frame in range(y.shape[self.col_axis]):
-                        if self.data_format == 'channels_first':
-                            y_trans = self.apply_transform(y[..., frame], params_3d)
-                            y[..., frame] = np.rollaxis(y_trans, 1, 0)
-                        else:
-                            y[:, :, frame] = self.apply_transform(y[:, :, frame], params_3d)
-
-                    self.interpolation_order = _interpolation_order
+            y = y[0] if len(y) == 1 else y
 
         # Note: Undo workaround
         self.row_axis += 1
