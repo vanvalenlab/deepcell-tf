@@ -164,7 +164,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
         if bins is not None:
             # convert to one hot notation
-            y_transform = to_categorical(y_transform, num_classes=bins, dtype=np.int32)
+            # uint8's max value of255 seems like a generous limit for binning.
+            y_transform = to_categorical(y_transform, num_classes=bins, dtype=np.uint8)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
@@ -213,7 +214,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
         if distance_kwargs['bins'] is not None:
             # convert to one hot notation
-            y_transform = to_categorical(y_transform, num_classes=bins, dtype=np.int32)
+            # uint8's max value of255 seems like a generous limit for binning.
+            y_transform = to_categorical(y_transform, num_classes=bins, dtype=np.uint8)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
