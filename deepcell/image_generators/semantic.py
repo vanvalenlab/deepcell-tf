@@ -109,6 +109,9 @@ class SemanticIterator(Iterator):
         self.x = np.asarray(X, dtype=K.floatx())
         self.y = np.asarray(y, dtype='int32')
 
+        self.transforms = transforms
+        self.transforms_kwargs = transforms_kwargs
+
         self.channel_axis = 3 if data_format == 'channels_last' else 1
         self.image_data_generator = image_data_generator
         self.data_format = data_format
@@ -117,36 +120,8 @@ class SemanticIterator(Iterator):
         self.save_format = save_format
         self.min_objects = min_objects
 
-        self.y_semantic_list = []  # optional semantic segmentation targets
-
-        # Create a list of all the semantic targets. We need to be able
-        # to have multiple semantic heads
-        # Add all the keys that contain y_semantic
-
-        # Add transformed masks
-
-        # loop over channels axis of labels in case there are multiple label types
-        for label_num in range(y.shape[self.channel_axis]):
-
-            if self.channel_axis == 1:
-                y_current = y[:, label_num:(label_num + 1), ...]
-            else:
-                y_current = y[..., label_num:(label_num + 1)]
-
-            for transform in transforms:
-                transform_kwargs = transforms_kwargs.get(transform, dict())
-                y_transform = _transform_masks(y_current, transform,
-                                               data_format=data_format,
-                                               **transform_kwargs)
-                if y_transform.shape[self.channel_axis] > 1:
-                    y_transform = np.asarray(y_transform, dtype='int32')
-                elif y_transform.shape[self.channel_axis] == 1:
-                    y_transform = np.asarray(y_transform, dtype=K.floatx())
-                self.y_semantic_list.append(y_transform)
-
-        invalid_batches = []
-
         # Remove images with small numbers of cells
+        invalid_batches = []
         for b in range(self.x.shape[0]):
             if len(np.unique(self.y[b])) - 1 < self.min_objects:
                 invalid_batches.append(b)
@@ -160,24 +135,48 @@ class SemanticIterator(Iterator):
 
         self.x = np.delete(self.x, invalid_batches, axis=0)
         self.y = np.delete(self.y, invalid_batches, axis=0)
-        self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
-                                for y in self.y_semantic_list]
 
         super(SemanticIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
 
-    def _get_batches_of_transformed_samples(self, index_array):
-        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
+    def _transform_labels(self, y):
+        y_semantic_list = []
+        # loop over channels axis of labels in case there are multiple label types
+        for label_num in range(y.shape[self.channel_axis]):
 
+            if self.channel_axis == 1:
+                y_current = y[:, label_num:label_num + 1, ...]
+            else:
+                y_current = y[..., label_num:label_num + 1]
+
+            for transform in self.transforms:
+                transform_kwargs = self.transforms_kwargs.get(transform, dict())
+                y_transform = _transform_masks(y_current, transform,
+                                               data_format=self.data_format,
+                                               **transform_kwargs)
+                y_semantic_list.append(y_transform)
+
+        return y_semantic_list
+
+    def _get_batches_of_transformed_samples(self, index_array):
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]),
+                           dtype=self.x.dtype)
         batch_y = []
-        for y_sem in self.y_semantic_list:
-            shape = tuple([len(index_array)] + list(y_sem.shape[1:]))
-            batch_y.append(np.zeros(shape, dtype=y_sem.dtype))
 
         for i, j in enumerate(index_array):
             x = self.x[j]
 
-            y_semantic_list = [y_sem[j] for y_sem in self.y_semantic_list]
+            # _transform_labels expects batch dimension
+            y_semantic_list = self._transform_labels(self.y[j:j + 1])
+
+            # initialize batch_y
+            if len(batch_y) == 0:
+                for ys in y_semantic_list:
+                    shape = tuple([len(index_array)] + list(ys.shape[1:]))
+                    batch_y.append(np.zeros(shape, dtype=ys.dtype))
+
+            # random_transform does not expect batch dimension
+            y_semantic_list = [ys[0] for ys in y_semantic_list]
 
             # Apply transformation
             x, y_semantic_list = self.image_data_generator.random_transform(
@@ -187,8 +186,8 @@ class SemanticIterator(Iterator):
 
             batch_x[i] = x
 
-            for k, y_sem in enumerate(y_semantic_list):
-                batch_y[k][i] = y_sem
+            for k, ys in enumerate(y_semantic_list):
+                batch_y[k][i] = ys
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):
@@ -475,32 +474,13 @@ class SemanticMovieIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        self.y_semantic_list = []  # optional semantic segmentation targets
-
         if X.shape[self.time_axis] - frames_per_batch < 0:
             raise ValueError(
                 'The number of frames used in each training batch should '
                 'be less than the number of frames in the training data!')
 
-        # Create a list of all the semantic targets. We need to be able
-        # to have multiple semantic heads
-        # Add all the keys that contain y_semantic
-
-        # Add transformed masks
-        for transform in transforms:
-            transform_kwargs = transforms_kwargs.get(transform, dict())
-            y_transform = _transform_masks(y, transform,
-                                           data_format=data_format,
-                                           **transform_kwargs)
-            if y_transform.shape[self.channel_axis] > 1:
-                y_transform = np.asarray(y_transform, dtype='int32')
-            elif y_transform.shape[self.channel_axis] == 1:
-                y_transform = np.asarray(y_transform, dtype=K.floatx())
-            self.y_semantic_list.append(y_transform)
-
-        invalid_batches = []
-
         # Remove images with small numbers of cells
+        invalid_batches = []
         for b in range(self.x.shape[0]):
             if len(np.unique(self.y[b])) - 1 < self.min_objects:
                 invalid_batches.append(b)
@@ -514,37 +494,41 @@ class SemanticMovieIterator(Iterator):
 
         self.x = np.delete(self.x, invalid_batches, axis=0)
         self.y = np.delete(self.y, invalid_batches, axis=0)
-        self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
-                                for y in self.y_semantic_list]
 
         super(SemanticMovieIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
 
+    def _transform_labels(self, y):
+        y_semantic_list = []
+
+        # loop over channels axis of labels in case there are multiple label types
+        for label_num in range(y.shape[self.channel_axis]):
+
+            if self.channel_axis == 1:
+                y_current = y[:, label_num:label_num + 1, ...]
+            else:
+                y_current = y[..., label_num:label_num + 1]
+
+            for transform in self.transforms:
+                transform_kwargs = self.transforms_kwargs.get(transform, dict())
+                y_transform = _transform_masks(y_current, transform,
+                                               data_format=self.data_format,
+                                               **transform_kwargs)
+                y_semantic_list.append(y_transform)
+
+        return y_semantic_list
+
     def _get_batches_of_transformed_samples(self, index_array):
         if self.data_format == 'channels_first':
-            batch_x = np.zeros((len(index_array),
-                                self.x.shape[1],
-                                self.frames_per_batch,
-                                self.x.shape[3],
-                                self.x.shape[4]))
+            shape = (len(index_array), self.x.shape[1], self.frames_per_batch,
+                     self.x.shape[3], self.x.shape[4])
         else:
-            batch_x = np.zeros(tuple([len(index_array),
-                                     self.frames_per_batch] +
-                                     list(self.x.shape)[2:]))
+            shape = tuple([len(index_array), self.frames_per_batch] +
+                          list(self.x.shape)[2:])
 
-        if self.data_format == 'channels_first':
-            batch_y_semantic_list = [np.zeros(tuple([len(index_array),
-                                                     y_semantic.shape[1],
-                                                     self.frames_per_batch,
-                                                     y_semantic.shape[3],
-                                                     y_semantic.shape[4]]))
-                                     for y_semantic in self.y_semantic_list]
-        else:
-            batch_y_semantic_list = [
-                np.zeros(tuple([len(index_array), self.frames_per_batch] +
-                               list(y_semantic.shape[2:])))
-                for y_semantic in self.y_semantic_list
-            ]
+        batch_x = np.zeros(shape, dtype=self.x.dtype)
+        batch_y = []
+
         for i, j in enumerate(index_array):
             last_frame = self.x.shape[self.time_axis] - self.frames_per_batch
             time_start = np.random.randint(0, high=last_frame)
@@ -552,31 +536,33 @@ class SemanticMovieIterator(Iterator):
 
             if self.time_axis == 1:
                 x = self.x[j, time_start:time_end, ...]
-                y = self.y[j, time_start:time_end, ...]
-            elif self.time_axis == 2:
+                y = self.y[j:j + 1, time_start:time_end, ...]
+            else:
                 x = self.x[j, :, time_start:time_end, ...]
-                y = self.y[j, :, time_start:time_end, ...]
+                y = self.y[j:j + 1, :, time_start:time_end, ...]
 
-            if self.time_axis == 1:
-                y_semantic_list = [y_semantic[j, time_start:time_end, ...]
-                                   for y_semantic in self.y_semantic_list]
-            elif self.time_axis == 2:
-                y_semantic_list = [y_semantic[j, :, time_start:time_end, ...]
-                                   for y_semantic in self.y_semantic_list]
+            # _transform_labels expects batch dimension
+            y_semantic_list = self._transform_labels(y)
+
+            # initialize batch_y
+            if len(batch_y) == 0:
+                for ys in y_semantic_list:
+                    shape = tuple([len(index_array)] + list(ys.shape[1:]))
+                    batch_y.append(np.zeros(shape, dtype=ys.dtype))
+
+            # random_transform does not expect batch dimension
+            y_semantic_list = [ys[0] for ys in y_semantic_list]
 
             # Apply transformation
-            x, y_list = self.movie_data_generator.random_transform(x, [y] + y_semantic_list)
-            y = y_list[0]
-            y_semantic_list = y_list[1:]
+            x, y_semantic_list = self.movie_data_generator.random_transform(
+                x, y_semantic_list)
 
             x = self.movie_data_generator.standardize(x)
 
             batch_x[i] = x
 
-            for k, y_sem in enumerate(y_semantic_list):
-                batch_y_semantic_list[k][i] = y_sem
-
-            batch_y = batch_y_semantic_list
+            for k, ys in enumerate(y_semantic_list):
+                batch_y[k][i] = ys
 
             if self.save_to_dir:
                 time_axis = 2 if self.data_format == 'channels_first' else 1
@@ -903,29 +889,20 @@ class SemanticMovieGenerator(ImageDataGenerator):
         self.time_axis -= 1
         self.channel_axis -= 1
 
-        if isinstance(x, list):
-            params = self.get_random_transform(x[0].shape, seed)
-        else:
-            params = self.get_random_transform(x.shape, seed)
+        x = x if isinstance(x, list) else [x]
+        params = self.get_random_transform(x[0].shape, seed)
 
-        if isinstance(x, list):
-            for i in range(len(x)):
-                x_i = x[i]
-                for frame in range(x_i.shape[self.time_axis]):
-                    if self.data_format == 'channels_first':
-                        x_trans = self.apply_transform(x_i[:, frame], params)
-                        x_i[:, frame] = np.rollaxis(x_trans, -1, 0)
-                    else:
-                        x_i[frame] = self.apply_transform(x_i[frame], params)
-                x[i] = x_i
-        else:
-            for frame in range(x.shape[self.time_axis]):
+        for i in range(len(x)):
+            x_i = x[i]
+            for frame in range(x_i.shape[self.time_axis]):
                 if self.data_format == 'channels_first':
-                    x_trans = self.apply_transform(x[:, frame], params)
-                    x[:, frame] = np.rollaxis(x_trans, -1, 0)
+                    x_trans = self.apply_transform(x_i[:, frame], params)
+                    x_i[:, frame] = np.rollaxis(x_trans, -1, 0)
                 else:
-                    temp = self.apply_transform(x[frame], params)
-                    x[frame] = self.apply_transform(x[frame], params)
+                    x_i[frame] = self.apply_transform(x_i[frame], params)
+            x[i] = x_i
+
+        x = x[0] if len(x) == 1 else x
 
         if y is not None:
             params['brightness'] = None
@@ -933,42 +910,26 @@ class SemanticMovieGenerator(ImageDataGenerator):
 
             _interpolation_order = self.interpolation_order
 
-            if isinstance(y, list):
-                for i in range(len(y)):
-                    y_i = y[i]
+            y = y if isinstance(y, list) else [y]
 
-                    if y_i.shape[self.channel_axis] > 1:
-                        self.interpolation_order = 0
-                    else:
-                        self.interpolation_order = _interpolation_order
+            for i in range(len(y)):
+                y_i = y[i]
 
-                    for frame in range(y_i.shape[self.time_axis]):
-                        if self.data_format == 'channels_first':
-                            y_trans = self.apply_transform(y_i[:, frame],
-                                                           params)
-                            y_i[:, frame] = np.rollaxis(y_trans, 1, 0)
-                        else:
-                            y_i[frame] = self.apply_transform(y_i[frame],
-                                                              params)
+                order = 0 if y_i.shape[self.channel_axis] > 1 else _interpolation_order
+                self.interpolation_order = order
 
-                    y[i] = y_i
-
-                    self.interpolation_order = _interpolation_order
-
-            else:
-                if y.shape[self.channel_axis] > 1:
-                    self.interpolation_order = 0
-                else:
-                    self.interpolation_order = _interpolation_order
-
-                for frame in range(y.shape[self.time_axis]):
+                for frame in range(y_i.shape[self.time_axis]):
                     if self.data_format == 'channels_first':
-                        y_trans = self.apply_transform(y[:, frame], params)
-                        y[:, frame] = np.rollaxis(y_trans, 1, 0)
+                        y_trans = self.apply_transform(y_i[:, frame], params)
+                        y_i[:, frame] = np.rollaxis(y_trans, 1, 0)
                     else:
-                        y[frame] = self.apply_transform(y[frame], params)
+                        y_i[frame] = self.apply_transform(y_i[frame], params)
+
+                y[i] = y_i
 
                 self.interpolation_order = _interpolation_order
+
+            y = y[0] if len(y) == 1 else y
 
         # Note: Undo workaround
         self.row_axis += 1
@@ -1059,16 +1020,14 @@ class Semantic3DIterator(Iterator):
                 if data_format == 'channels_first':
 
                     batch = np.moveaxis(batch, 0, -1)
-                    rescaled = rescale(batch,
-                                       scale,
+                    rescaled = rescale(batch, scale,
                                        order=order,
                                        preserve_range=True,
                                        multichannel=True)
                     rescaled = np.moveaxis(rescaled, -1, 0)
 
                 else:
-                    rescaled = rescale(batch,
-                                       scale,
+                    rescaled = rescale(batch, scale,
                                        order=order,
                                        preserve_range=True,
                                        multichannel=True)
@@ -1104,28 +1063,11 @@ class Semantic3DIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        self.y_semantic_list = []  # optional semantic segmentation targets
-
         if X.shape[self.time_axis] - frames_per_batch < 0:
             raise ValueError(
                 'The number of frames used in each training batch should '
                 'be less than the number of frames in the training data!'
                 'fpb is {} and timeaxis is {}'.format(frames_per_batch, X.shape[self.time_axis]))
-
-        # Create a list of all the semantic targets. We need to be able
-        # to have multiple semantic heads
-        # Add all the keys that contain y_semantic
-        # Add transformed masks
-        for transform in transforms:
-            transform_kwargs = transforms_kwargs.get(transform, dict())
-            y_transform = _transform_masks(y, transform,
-                                           data_format=data_format,
-                                           **transform_kwargs)
-            if y_transform.shape[self.channel_axis] > 1:
-                y_transform = np.asarray(y_transform, dtype='int32')
-            elif y_transform.shape[self.channel_axis] == 1:
-                y_transform = np.asarray(y_transform, dtype=K.floatx())
-            self.y_semantic_list.append(y_transform)
 
         invalid_batches = []
 
@@ -1144,73 +1086,48 @@ class Semantic3DIterator(Iterator):
 
         self.x = np.delete(self.x, invalid_batches, axis=0)
         self.y = np.delete(self.y, invalid_batches, axis=0)
-        self.y_semantic_list = [np.delete(y, invalid_batches, axis=0)
-                                for y in self.y_semantic_list]
 
         super(Semantic3DIterator, self).__init__(
             self.x.shape[0], batch_size, shuffle, seed)
 
+    def _transform_labels(self, y):
+        y_semantic_list = []
+        # loop over channels axis of labels in case there are multiple label types
+        for label_num in range(y.shape[self.channel_axis]):
+
+            if self.channel_axis == 1:
+                y_current = y[:, label_num:label_num + 1, ...]
+            else:
+                y_current = y[..., label_num:label_num + 1]
+
+            for transform in self.transforms:
+                transform_kwargs = self.transforms_kwargs.get(transform, dict())
+                y_transform = _transform_masks(y_current, transform,
+                                               data_format=self.data_format,
+                                               **transform_kwargs)
+                y_semantic_list.append(y_transform)
+
+        return y_semantic_list
+
     def _get_batches_of_transformed_samples(self, index_array):
-
         if self.frame_shape:
-            if self.data_format == 'channels_first':
-                batch_x = np.zeros((len(index_array),
-                                    self.x.shape[1],
-                                    self.frames_per_batch,
-                                    self.frame_shape[0],
-                                    self.frame_shape[1]))
-            else:
-                batch_x = np.zeros((len(index_array),
-                                    self.frames_per_batch,
-                                    self.frame_shape[0],
-                                    self.frame_shape[1],
-                                    self.x.shape[4]))
-
-            if self.data_format == 'channels_first':
-                batch_y_semantic_list = [np.zeros(tuple([len(index_array),
-                                                         y_semantic.shape[1],
-                                                         self.frames_per_batch,
-                                                         self.frame_shape[0],
-                                                         self.frame_shape[1]]))
-                                         for y_semantic in self.y_semantic_list]
-            else:
-                batch_y_semantic_list = [
-                    np.zeros((len(index_array),
-                              self.frames_per_batch,
-                              self.frame_shape[0],
-                              self.frame_shape[1],
-                              y_semantic.shape[4]))
-                    for y_semantic in self.y_semantic_list
-                ]
-
+            rows = self.frame_shape[0]
+            cols = self.frame_shape[1]
         else:
-            if self.data_format == 'channels_first':
-                batch_x = np.zeros((len(index_array),
-                                    self.x.shape[1],
-                                    self.frames_per_batch,
-                                    self.x.shape[3],
-                                    self.x.shape[4]))
-            else:
-                batch_x = np.zeros(tuple([len(index_array),
-                                          self.frames_per_batch] + list(self.x.shape)[2:]))
+            rows = self.x.shape[self.row_axis]
+            cols = self.x.shape[self.col_axis]
 
-            if self.data_format == 'channels_first':
-                batch_y_semantic_list = [np.zeros(tuple([len(index_array),
-                                                         y_semantic.shape[1],
-                                                         self.frames_per_batch,
-                                                         y_semantic.shape[3],
-                                                         y_semantic.shape[4]]))
-                                         for y_semantic in self.y_semantic_list]
-            else:
-                batch_y_semantic_list = [
-                    np.zeros(tuple([len(index_array), self.frames_per_batch] +
-                                   list(y_semantic.shape[2:])))
-                    for y_semantic in self.y_semantic_list
-                ]
+        if self.data_format == 'channels_first':
+            shape = (len(index_array), self.x.shape[1], self.frames_per_batch,
+                     rows, cols)
+        else:
+            shape = (len(index_array), self.frames_per_batch,
+                     rows, cols, self.x.shape[4])
+        batch_x = np.zeros(shape, dtype=self.x.dtype)
+        batch_y = []
 
         for i, j in enumerate(index_array):
             last_frame = self.x.shape[self.time_axis] - self.frames_per_batch
-
             if last_frame == 0:
                 time_start = 0
             else:
@@ -1227,60 +1144,41 @@ class Semantic3DIterator(Iterator):
 
                 row_end = row_start + self.frame_shape[0]
                 col_end = col_start + self.frame_shape[1]
-
-                if self.time_axis == 1:
-                    x = np.copy(self.x[j, time_start:time_end, row_start:row_end,
-                                       col_start:col_end, :])
-                    y = np.copy(self.y[j, time_start:time_end, row_start:row_end,
-                                       col_start:col_end, :])
-                elif self.time_axis == 2:
-                    x = np.copy(self.x[j, :, time_start:time_end, row_start:row_end,
-                                       col_start:col_end])
-                    y = np.copy(self.y[j, :, time_start:time_end, row_start:row_end,
-                                       col_start:col_end])
-
-                if self.time_axis == 1:
-                    y_semantic_list = [np.copy(y_semantic[j, time_start:time_end,
-                                                          row_start:row_end,
-                                                          col_start:col_end, :])
-                                       for y_semantic in self.y_semantic_list]
-                elif self.time_axis == 2:
-                    y_semantic_list = [np.copy(y_semantic[j, :, time_start:time_end,
-                                                          row_start:row_end,
-                                                          col_start:col_end])
-                                       for y_semantic in self.y_semantic_list]
-
             else:
-                if self.time_axis == 1:
-                    x = self.x[j, time_start:time_end, ...]
-                    y = self.y[j, time_start:time_end, ...]
-                elif self.time_axis == 2:
-                    x = self.x[j, :, time_start:time_end, ...]
-                    y = self.y[j, :, time_start:time_end, ...]
+                row_start, row_end = 0, self.x.shape[self.row_axis]
+                col_start, col_end = 0, self.x.shape[self.col_axis]
 
-                if self.time_axis == 1:
-                    y_semantic_list = [y_semantic[j, time_start:time_end, ...]
-                                       for y_semantic in self.y_semantic_list]
-                elif self.time_axis == 2:
-                    y_semantic_list = [y_semantic[j, :, time_start:time_end, ...]
-                                       for y_semantic in self.y_semantic_list]
+            if self.time_axis == 1:
+                x = self.x[j, time_start:time_end, row_start:row_end, col_start:col_end, :]
+                y = self.y[j:j + 1, time_start:time_end, row_start:row_end, col_start:col_end, :]
+            else:
+                x = self.x[j, :, time_start:time_end, row_start:row_end, col_start:col_end]
+                y = self.y[j:j + 1, :, time_start:time_end, row_start:row_end, col_start:col_end]
+
+            # _transform_labels expects batch dimension
+            y_semantic_list = self._transform_labels(y)
+
+            # initialize batch_y
+            if len(batch_y) == 0:
+                for ys in y_semantic_list:
+                    shape = tuple([len(index_array)] + list(ys.shape[1:]))
+                    batch_y.append(np.zeros(shape, dtype=ys.dtype))
+
+            # random_transform does not expect batch dimension
+            y_semantic_list = [ys[0] for ys in y_semantic_list]
 
             # Apply transformation
-            x, y_list = self.data_generator_3d.random_transform(x,
-                                                                [y] + y_semantic_list,
-                                                                aug_3d=self.aug_3d,
-                                                                rotation_3d=self.rotation_3d)
-            y = y_list[0]
-            y_semantic_list = y_list[1:]
+            x, y_semantic_list = self.data_generator_3d.random_transform(
+                x, y_semantic_list,
+                aug_3d=self.aug_3d,
+                rotation_3d=self.rotation_3d)
 
             x = self.data_generator_3d.standardize(x)
 
             batch_x[i] = x
 
             for k, y_sem in enumerate(y_semantic_list):
-                batch_y_semantic_list[k][i] = y_sem
-
-            batch_y = batch_y_semantic_list
+                batch_y[k][i] = y_sem
 
             if self.save_to_dir:
                 time_axis = 2 if self.data_format == 'channels_first' else 1
@@ -1646,197 +1544,94 @@ class Semantic3DGenerator(ImageDataGenerator):
         self.time_axis -= 1
         self.channel_axis -= 1
 
-        if isinstance(x, list):
-            params = self.get_random_transform(x[0].shape, seed)
-        else:
-            params = self.get_random_transform(x.shape, seed)
+        x = x if isinstance(x, list) else [x]
+        params = self.get_random_transform(x[0].shape, seed)
 
-        if aug_3d:
-            # Don't want to brighten or zoom multiple times
-            _brightness_range = self.brightness_range
-            _zoom_range = self.zoom_range
-            self.brightness_range = None
-            self.zoom_range = (1, 1)
+        # Don't want to brighten or zoom multiple times
+        _brightness_range = self.brightness_range
+        _zoom_range = self.zoom_range
+        _rotation_range = self.rotation_range
+        self.brightness_range = None
+        self.zoom_range = (1, 1)
+        self.rotation_range = rotation_3d
 
-            # Set params for 3d_augmentation with rotation set to 0
-            # Compatible with anisotropic data (with sampling not 1:1:1)
-            if rotation_3d == 0:
-                _rotation_range = self.rotation_range
-                self.rotation_range = 0
+        # Set params for 3d_augmentation with rotation set to 0
+        # Compatible with anisotropic data (with sampling not 1:1:1)
+        params_3d = self.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
 
-                if isinstance(x, list):
-                    params_3d = self.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
-                else:
-                    params_3d = self.get_random_transform(np.moveaxis(x, 0, 1).shape, seed)
+        self.brightness_range = _brightness_range
+        self.zoom_range = _zoom_range
+        self.rotation_range = _rotation_range
 
-                self.rotation_range = _rotation_range
-
-            # Set params for full 3d_augmentation - requires sampling with a ratio of 1:1:1
-            else:
-                _rotation_range = self.rotation_range
-                self.rotation_range = rotation_3d
-
-                if isinstance(x, list):
-                    params_3d = self.get_random_transform(np.moveaxis(x[0], 0, 1).shape, seed)
-                else:
-                    params_3d = self.get_random_transform(np.moveaxis(x, 0, 1).shape, seed)
-
-                self.rotation_range = _rotation_range
-
-            self.brightness_range = _brightness_range
-            self.zoom_range = _zoom_range
-
-        if isinstance(x, list):
-            for i in range(len(x)):
-                x_i = x[i]
-                for frame in range(x_i.shape[self.time_axis]):
-                    if self.data_format == 'channels_first':
-                        x_trans = self.apply_transform(x_i[:, frame], params)
-                        x_i[:, frame] = np.rollaxis(x_trans, -1, 0)
-                    else:
-                        x_i[frame] = self.apply_transform(x_i[frame], params)
-                x[i] = x_i
-        else:
-            for frame in range(x.shape[self.time_axis]):
+        for i in range(len(x)):
+            x_i = x[i]
+            for frame in range(x_i.shape[self.time_axis]):
                 if self.data_format == 'channels_first':
-                    x_trans = self.apply_transform(x[:, frame], params)
-                    x[:, frame] = np.rollaxis(x_trans, -1, 0)
+                    x_trans = self.apply_transform(x_i[:, frame], params)
+                    x_i[:, frame] = np.rollaxis(x_trans, -1, 0)
                 else:
-                    temp = self.apply_transform(x[frame], params)
-                    x[frame] = self.apply_transform(x[frame], params)
+                    x_i[frame] = self.apply_transform(x_i[frame], params)
 
-        if aug_3d:
-            if isinstance(x, list):
-                for i in range(len(x)):
-                    x_i = x[i]
-                    for frame in range(x_i.shape[self.row_axis]):
-                        if self.data_format == 'channels_first':
-                            x_trans = self.apply_transform(x_i[:, :, frame], params_3d)
-                            x_i[:, :, frame] = np.rollaxis(x_trans, -1, 0)
-                        else:
-                            x_i[:, frame] = self.apply_transform(x_i[:, frame], params_3d)
-
-                    for frame in range(x_i.shape[self.col_axis]):
-                        if self.data_format == 'channels_first':
-                            x_trans = self.apply_transform(x_i[..., frame], params_3d)
-                            x_i[..., frame] = np.rollaxis(x_trans, -1, 0)
-                        else:
-                            x_i[:, :, frame] = self.apply_transform(x_i[:, :, frame], params_3d)
-                    x[i] = x_i
-            else:
-                for frame in range(x.shape[self.row_axis]):
+            if aug_3d:
+                for frame in range(x_i.shape[self.row_axis]):
                     if self.data_format == 'channels_first':
-                        x_trans = self.apply_transform(x[:, :, frame], params_3d)
-                        x[:, :, frame] = np.rollaxis(x_trans, -1, 0)
+                        x_trans = self.apply_transform(x_i[:, :, frame], params_3d)
+                        x_i[:, :, frame] = np.rollaxis(x_trans, -1, 0)
                     else:
-                        temp = self.apply_transform(x[:, frame], params_3d)
-                        x[:, frame] = self.apply_transform(x[:, frame], params_3d)
+                        x_i[:, frame] = self.apply_transform(x_i[:, frame], params_3d)
 
-                for frame in range(x.shape[self.col_axis]):
+                for frame in range(x_i.shape[self.col_axis]):
                     if self.data_format == 'channels_first':
-                        x_trans = self.apply_transform(x[..., frame], params_3d)
-                        x[..., frame] = np.rollaxis(x_trans, -1, 0)
+                        x_trans = self.apply_transform(x_i[..., frame], params_3d)
+                        x_i[..., frame] = np.rollaxis(x_trans, -1, 0)
                     else:
-                        temp = self.apply_transform(x[:, :, frame], params_3d)
-                        x[:, :, frame] = self.apply_transform(x[:, :, frame], params_3d)
+                        x_i[:, :, frame] = self.apply_transform(x_i[:, :, frame], params_3d)
+
+            x[i] = x_i
+
+        x = x[0] if len(x) == 1 else x
 
         if y is not None:
             params['brightness'] = None
             params['channel_shift_intensity'] = None
 
             _interpolation_order = self.interpolation_order
+            y = y if isinstance(y, list) else [y]
 
-            if isinstance(y, list):
-                for i in range(len(y)):
-                    y_i = y[i]
+            for i in range(len(y)):
+                y_i = y[i]
 
-                    if y_i.shape[self.channel_axis] > 1:
-                        self.interpolation_order = 0
-                    else:
-                        self.interpolation_order = _interpolation_order
+                order = 0 if y_i.shape[self.channel_axis] > 1 else _interpolation_order
+                self.interpolation_order = order
 
-                    for frame in range(y_i.shape[self.time_axis]):
-                        if self.data_format == 'channels_first':
-                            y_trans = self.apply_transform(y_i[:, frame],
-                                                           params)
-                            y_i[:, frame] = np.rollaxis(y_trans, 1, 0)
-                        else:
-                            y_i[frame] = self.apply_transform(y_i[frame],
-                                                              params)
-
-                    y[i] = y_i
-
-                    self.interpolation_order = _interpolation_order
-
-            else:
-                if y.shape[self.channel_axis] > 1:
-                    self.interpolation_order = 0
-                else:
-                    self.interpolation_order = _interpolation_order
-
-                for frame in range(y.shape[self.time_axis]):
+                for frame in range(y_i.shape[self.time_axis]):
                     if self.data_format == 'channels_first':
-                        y_trans = self.apply_transform(y[:, frame], params)
-                        y[:, frame] = np.rollaxis(y_trans, 1, 0)
+                        y_trans = self.apply_transform(y_i[:, frame], params)
+                        y_i[:, frame] = np.rollaxis(y_trans, 1, 0)
                     else:
-                        y[frame] = self.apply_transform(y[frame], params)
+                        y_i[frame] = self.apply_transform(y_i[frame], params)
+
+                # Augment masks in 3D
+                if aug_3d:
+                    for frame in range(y_i.shape[self.row_axis]):
+                        if self.data_format == 'channels_first':
+                            y_trans = self.apply_transform(y_i[:, :, frame], params_3d)
+                            y_i[:, :, frame] = np.moveaxis(y_trans, -1, 0)
+                        else:
+                            y_i[:, frame] = self.apply_transform(y_i[:, frame], params_3d)
+
+                    for frame in range(y_i.shape[self.col_axis]):
+                        if self.data_format == 'channels_first':
+                            y_trans = self.apply_transform(y_i[..., frame], params_3d)
+                            y_i[..., frame] = np.moveaxis(y_trans, -1, 0)
+                        else:
+                            y_i[:, :, frame] = self.apply_transform(y_i[:, :, frame], params_3d)
+
+                y[i] = y_i
 
                 self.interpolation_order = _interpolation_order
 
-            # Augment masks in 3D
-            if aug_3d:
-                _interpolation_order = self.interpolation_order
-
-                if isinstance(y, list):
-                    for i in range(len(y)):
-                        y_i = y[i]
-
-                        if y_i.shape[self.channel_axis] > 1:
-                            self.interpolation_order = 0
-                        else:
-                            self.interpolation_order = _interpolation_order
-
-                        for frame in range(y_i.shape[self.row_axis]):
-                            if self.data_format == 'channels_first':
-                                y_trans = self.apply_transform(y_i[:, :, frame],
-                                                               params_3d)
-                                y_i[:, :, frame] = np.moveaxis(y_trans, -1, 0)
-                            else:
-                                y_i[:, frame] = self.apply_transform(y_i[:, frame],
-                                                                     params_3d)
-                        for frame in range(y_i.shape[self.col_axis]):
-                            if self.data_format == 'channels_first':
-                                y_trans = self.apply_transform(y_i[..., frame],
-                                                               params_3d)
-                                y_i[..., frame] = np.moveaxis(y_trans, -1, 0)
-                            else:
-                                y_i[:, :, frame] = self.apply_transform(y_i[:, :, frame],
-                                                                        params_3d)
-                        y[i] = y_i
-
-                        self.interpolation_order = _interpolation_order
-
-                else:
-                    if y.shape[self.channel_axis] > 1:
-                        self.interpolation_order = 0
-                    else:
-                        self.interpolation_order = _interpolation_order
-
-                    for frame in range(y.shape[self.row_axis]):
-                        if self.data_format == 'channels_first':
-                            y_trans = self.apply_transform(y[:, :, frame], params_3d)
-                            y[:, :, frame] = np.rollaxis(y_trans, 1, 0)
-                        else:
-                            y[:, frame] = self.apply_transform(y[:, frame], params_3d)
-
-                    for frame in range(y.shape[self.col_axis]):
-                        if self.data_format == 'channels_first':
-                            y_trans = self.apply_transform(y[..., frame], params_3d)
-                            y[..., frame] = np.rollaxis(y_trans, 1, 0)
-                        else:
-                            y[:, :, frame] = self.apply_transform(y[:, :, frame], params_3d)
-
-                    self.interpolation_order = _interpolation_order
+            y = y[0] if len(y) == 1 else y
 
         # Note: Undo workaround
         self.row_axis += 1

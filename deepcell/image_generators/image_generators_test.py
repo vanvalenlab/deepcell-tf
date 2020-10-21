@@ -66,22 +66,26 @@ class TestTransformMasks(test.TestCase):
         mask_transform = image_generators._transform_masks(
             mask, transform=None, data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 30, 30, num_classes))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         mask = np.random.randint(num_classes, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask, transform=None, data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, num_classes, 30, 30))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         # test 3D masks
         mask = np.random.randint(num_classes, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask, transform=None, data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, num_classes))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         mask = np.random.randint(num_classes, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask, transform=None, data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, num_classes, 10, 30, 30))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
     def test_fgbg_transform(self):
         num_classes = 2  # always 2 for fg and bg
@@ -90,22 +94,26 @@ class TestTransformMasks(test.TestCase):
         mask_transform = image_generators._transform_masks(
             mask, transform='fgbg', data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 30, 30, num_classes))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         mask = np.random.randint(3, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask, transform='fgbg', data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, num_classes, 30, 30))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         # test 3D masks
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
             mask, transform='fgbg', data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, num_classes))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask, transform='fgbg', data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, num_classes, 10, 30, 30))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
     def test_pixelwise_transform(self):
         num_classes = 3
@@ -115,12 +123,14 @@ class TestTransformMasks(test.TestCase):
             mask, transform='pixelwise', data_format='channels_last',
             separate_edge_classes=True)
         self.assertEqual(mask_transform.shape, (5, 30, 30, 4))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         mask = np.random.randint(3, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask, transform='pixelwise', data_format='channels_first',
             separate_edge_classes=False)
         self.assertEqual(mask_transform.shape, (5, 3, 30, 30))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         # test 3D masks
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
@@ -128,14 +138,17 @@ class TestTransformMasks(test.TestCase):
             mask, transform='pixelwise', data_format='channels_last',
             separate_edge_classes=False)
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, 3))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
             mask, transform='pixelwise', data_format='channels_first',
             separate_edge_classes=True)
         self.assertEqual(mask_transform.shape, (5, 4, 10, 30, 30))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
     def test_outer_distance_transform(self):
+        K.set_floatx('float16')
         # test 2D masks
         distance_bins = None
         erosion_width = 1
@@ -147,6 +160,7 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 30, 30, 1))
+        self.assertEqual(mask_transform.dtype, np.dtype(K.floatx()))
 
         distance_bins = 4
         erosion_width = 1
@@ -158,6 +172,7 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 30, 30, distance_bins))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         distance_bins = 6
         mask = np.random.randint(3, size=(5, 1, 30, 30))
@@ -168,8 +183,10 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, distance_bins, 30, 30))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         # test 3D masks
+        K.set_floatx('float32')
         distance_bins = None
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
@@ -179,6 +196,7 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, 1))
+        self.assertEqual(mask_transform.dtype, np.dtype(K.floatx()))
 
         distance_bins = 5
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
@@ -189,6 +207,7 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, distance_bins))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         distance_bins = 4
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
@@ -199,8 +218,11 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, distance_bins, 10, 30, 30))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
     def test_inner_distance_transform(self):
+        K.set_floatx('float16')
+
         # test 2D masks
         distance_bins = None
         erosion_width = 1
@@ -212,6 +234,7 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 30, 30, 1))
+        self.assertEqual(mask_transform.dtype, np.dtype(K.floatx()))
 
         distance_bins = 4
         erosion_width = 1
@@ -223,6 +246,7 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 30, 30, distance_bins))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         distance_bins = 6
         mask = np.random.randint(3, size=(5, 1, 30, 30))
@@ -233,8 +257,10 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, distance_bins, 30, 30))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         # test 3D masks
+        K.set_floatx('float32')
         distance_bins = None
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
@@ -244,6 +270,7 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, 1))
+        self.assertEqual(mask_transform.dtype, np.dtype(K.floatx()))
 
         distance_bins = 5
         mask = np.random.randint(3, size=(5, 10, 30, 30, 1))
@@ -254,6 +281,7 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, distance_bins))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         distance_bins = 4
         mask = np.random.randint(3, size=(5, 1, 10, 30, 30))
@@ -264,6 +292,7 @@ class TestTransformMasks(test.TestCase):
             erosion_width=erosion_width,
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, distance_bins, 10, 30, 30))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
     def test_disc_transform(self):
         classes = np.random.randint(5, size=1)[0]
@@ -274,6 +303,7 @@ class TestTransformMasks(test.TestCase):
             transform='disc',
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 30, 30, classes))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         mask = np.random.randint(classes, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
@@ -281,6 +311,7 @@ class TestTransformMasks(test.TestCase):
             transform='disc',
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, classes, 30, 30))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         # test 3D masks
         mask = np.random.randint(classes, size=(5, 10, 30, 30, 1))
@@ -289,6 +320,7 @@ class TestTransformMasks(test.TestCase):
             transform='disc',
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, classes))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
         mask = np.random.randint(classes, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
@@ -296,6 +328,7 @@ class TestTransformMasks(test.TestCase):
             transform='disc',
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, classes, 10, 30, 30))
+        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
     def test_bad_mask(self):
         # test bad transform
