@@ -127,9 +127,14 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                           DeprecationWarning)
 
         by_frame = kwargs.pop('by_frame', True)
-
+        bins = kwargs.pop('distance_bins', None)
         float_dtype = kwargs.pop('float_dtype', 'float32')
         int_dtype = kwargs.pop('int_dtype', 'int32')
+        
+        distance_kwargs = {
+            'bins': bins,
+            'erosion_width': kwargs.pop('erosion_width', 0),
+        }
 
         if data_format == 'channels_first':
             y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])), dtype=float_dtype)
@@ -168,9 +173,15 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                           DeprecationWarning)
 
         by_frame = kwargs.pop('by_frame', True)
+        bins = kwargs.pop('distance_bins', None)
 
-        alpha = kwargs.pop('alpha', 0.1)
-        beta = kwargs.pop('beta', 1)
+        distance_kwargs = {
+            'bins': bins,
+            'erosion_width': kwargs.pop('erosion_width', 0),
+            'alpha': kwargs.pop('alpha', 0.1),
+            'beta': kwargs.pop('beta', 1)
+        }
+
         float_dtype = kwargs.pop('float_dtype', 'float32')
         int_dtype = kwargs.pop('int_dtype', 'int32')
 
