@@ -31,8 +31,6 @@ from __future__ import print_function
 
 from tensorflow.python.keras.utils.data_utils import get_file
 
-import numpy as np
-
 import deepcell_tracking
 from deepcell_toolbox.processing import normalize
 
