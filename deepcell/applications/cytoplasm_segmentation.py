@@ -130,13 +130,14 @@ class CytoplasmSegmentation(Application):
         else:
             weights_path = None
 
-        super(CytoplasmSegmentation, self).__init__(model,
-                                                    model_image_shape=model_image_shape,
-                                                    model_mpp=0.65,
-                                                    preprocessing_fn=phase_preprocess,
-                                                    postprocessing_fn=deep_watershed,
-                                                    dataset_metadata=self.dataset_metadata,
-                                                    model_metadata=self.model_metadata)
+        super(CytoplasmSegmentation, self).__init__(
+            model,
+            model_image_shape=model_image_shape,
+            model_mpp=0.65,
+            preprocessing_fn=phase_preprocess,
+            postprocessing_fn=deep_watershed,
+            dataset_metadata=self.dataset_metadata,
+            model_metadata=self.model_metadata)
 
     def predict(self,
                 image,
@@ -147,29 +148,33 @@ class CytoplasmSegmentation(Application):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
-        Input images are required to have 4 dimensions `[batch, x, y, channel]`. Additional
-        empty dimensions can be added using `np.expand_dims`
+        Input images are required to have 4 dimensions `[batch, x, y, channel]`.
+        Additional empty dimensions can be added using `np.expand_dims`
 
         Args:
             image (np.array): Input image with shape `[batch, x, y, channel]`
-            batch_size (int, optional): Number of images to predict on per batch. Defaults to 4.
-            image_mpp (float, optional): Microns per pixel for the input image. Defaults to None.
+            batch_size (int, optional): Number of images to predict on per batch.
+                Defaults to 4.
+            image_mpp (float, optional): Microns per pixel for the input image.
+                Defaults to None.
             preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
                 Defaults to {}.
             postprocess_kwargs (dict, optional): Kwargs to pass to postprocessing function.
                 Defaults to {}.
 
         Raises:
-            ValueError: Input data must match required rank of the application, calculated as
-                one dimension more (batch dimension) than expected by the model
+            ValueError: Input data must match required rank of the application,
+                calculated as one dimension more (batch dimension) than expected
+                by the model.
 
-            ValueError: Input data must match required number of channels of application
+            ValueError: Input data must match required number of channels of application.
 
         Returns:
             np.array: Labeled image
         """
-        return self._predict_segmentation(image,
-                                          batch_size=batch_size,
-                                          image_mpp=image_mpp,
-                                          preprocess_kwargs=preprocess_kwargs,
-                                          postprocess_kwargs=postprocess_kwargs)
+        return self._predict_segmentation(
+            image,
+            batch_size=batch_size,
+            image_mpp=image_mpp,
+            preprocess_kwargs=preprocess_kwargs,
+            postprocess_kwargs=postprocess_kwargs)
