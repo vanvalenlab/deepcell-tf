@@ -116,6 +116,7 @@ class NuclearSegmentation(Application):
                             location=True,
                             include_top=True,
                             lite=True,
+                            use_imagenet=use_pretrained_weights,
                             interpolation='bilinear')
 
         if use_pretrained_weights:
