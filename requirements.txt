@@ -12,4 +12,4 @@ networkx>=2.1
 opencv-python<=3.4.9.31
 pathlib==1.0.1
 deepcell-tracking>=0.2.4
-deepcell-toolbox>=0.8.0
+deepcell-toolbox>=0.8.1
