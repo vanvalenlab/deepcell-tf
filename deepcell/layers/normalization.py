@@ -316,7 +316,7 @@ class ImageNormalization3D(Layer):
         elif self.norm_method == 'whole_image':
             axes = [3, 4] if self.channel_axis == 1 else [2, 3]
             outputs = inputs - K.mean(inputs, axis=axes, keepdims=True)
-            outputs = outputs / K.std(inputs, axis=axes, keepdims=True)
+            outputs = outputs / (K.std(inputs, axis=axes, keepdims=True) + K.epsilon())
 
         elif self.norm_method == 'std':
             outputs = inputs - self._average_filter(inputs)
