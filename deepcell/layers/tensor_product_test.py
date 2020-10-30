@@ -32,9 +32,9 @@ import numpy as np
 
 from tensorflow.python import keras
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.keras import testing_utils
 from tensorflow.python.platform import test
 
-from deepcell.utils import testing_utils
 from deepcell import layers
 
 
@@ -43,53 +43,46 @@ class TensorProdTest(keras_parameterized.TestCase):
 
     def test_tensorproduct(self):
         custom_objects = {'TensorProduct': layers.TensorProduct}
-
-        testing_utils.layer_test(
-            layers.TensorProduct,
-            kwargs={'output_dim': 3},
-            custom_objects=custom_objects,
-            input_shape=(3, 2))
-
-        testing_utils.layer_test(
-            layers.TensorProduct,
-            kwargs={'output_dim': 3},
-            custom_objects=custom_objects,
-            input_shape=(3, 4, 2))
-
-        testing_utils.layer_test(
-            layers.TensorProduct,
-            kwargs={'output_dim': 3},
-            custom_objects=custom_objects,
-            input_shape=(None, None, 2))
-
-        testing_utils.layer_test(
-            layers.TensorProduct,
-            kwargs={'output_dim': 3},
-            custom_objects=custom_objects,
-            input_shape=(3, 4, 5, 2))
-
-        testing_utils.layer_test(
-            layers.TensorProduct,
-            kwargs={'output_dim': 3,
-                    'data_format': 'channels_first'},
-            custom_objects=custom_objects,
-            input_shape=(3, 2, 4, 5))
-
-        # test no bias
-        testing_utils.layer_test(
-            layers.TensorProduct,
-            kwargs={'output_dim': 2,
-                    'use_bias': False},
-            custom_objects=custom_objects,
-            input_shape=(3, 5, 6, 4))
-
-        # test bad input channel
-        with self.assertRaises(ValueError):
+        with keras.utils.custom_object_scope(custom_objects):
             testing_utils.layer_test(
                 layers.TensorProduct,
                 kwargs={'output_dim': 3},
-                custom_objects=custom_objects,
-                input_shape=(3, 5, 6, None))
+                input_shape=(3, 2))
+
+            testing_utils.layer_test(
+                layers.TensorProduct,
+                kwargs={'output_dim': 3},
+                input_shape=(3, 4, 2))
+
+            testing_utils.layer_test(
+                layers.TensorProduct,
+                kwargs={'output_dim': 3},
+                input_shape=(None, None, 2))
+
+            testing_utils.layer_test(
+                layers.TensorProduct,
+                kwargs={'output_dim': 3},
+                input_shape=(3, 4, 5, 2))
+
+            testing_utils.layer_test(
+                layers.TensorProduct,
+                kwargs={'output_dim': 3,
+                        'data_format': 'channels_first'},
+                input_shape=(3, 2, 4, 5))
+
+            # test no bias
+            testing_utils.layer_test(
+                layers.TensorProduct,
+                kwargs={'output_dim': 2,
+                        'use_bias': False},
+                input_shape=(3, 5, 6, 4))
+
+            # test bad input channel
+            with self.assertRaises(ValueError):
+                testing_utils.layer_test(
+                    layers.TensorProduct,
+                    kwargs={'output_dim': 3},
+                    input_shape=(3, 5, 6, None))
 
     def test_tensorproduct_regularization(self):
         layer = layers.TensorProduct(
