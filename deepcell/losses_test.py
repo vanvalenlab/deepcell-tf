@@ -44,7 +44,7 @@ ALL_LOSSES = [
     losses.weighted_focal_loss,
     losses.smooth_l1,
     losses.focal,
-    # losses.dice_coef_loss,
+    # losses.dice_loss,
     # losses.discriminative_instance_loss
 ]
 
