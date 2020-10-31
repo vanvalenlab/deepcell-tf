@@ -189,11 +189,12 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
             Should have channel dimension of size 3
         use_imagenet (bool): Load pre-trained weights for the backbone
         return_dict (bool): Whether to return a dictionary of backbone layers,
-            e.g. {'C1': C1, 'C2': C2, 'C3': C3, 'C4': C4, 'C5': C5}.
+            e.g. ``{'C1': C1, 'C2': C2, 'C3': C3, 'C4': C4, 'C5': C5}``.
             If false, the whole model is returned instead
         kwargs (dict): Keyword dictionary for backbone constructions.
-            Relevant keys include 'include_top', 'weights' (should be set to None),
-            'input_shape', and 'pooling'
+            Relevant keys include ``'include_top'``,
+            ``'weights'`` (should be ``None``),
+            ``'input_shape'``, and ``'pooling'``.
 
     Returns:
         tensorflow.keras.Model: An instantiated backbone

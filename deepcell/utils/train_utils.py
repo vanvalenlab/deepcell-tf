@@ -46,11 +46,11 @@ def get_callbacks(model_path,
     """Returns a list of callbacks used for training
 
     Args:
-        model_path: (str) path for the h5 model file.
+        model_path: (str) path for the ``h5`` model file.
         save_weights_only: (bool) if True, then only the model's weights
             will be saved.
         lr_sched (function): learning rate scheduler per epoch.
-            from deepcell.utils.train_utils.rate_scheduler.
+            from ``deepcell.utils.train_utils.rate_scheduler``.
         tensorboard_log_dir (str): log directory for tensorboard.
         monitor (str): quantity to monitor.
         verbose (int): verbosity mode, 0 or 1.

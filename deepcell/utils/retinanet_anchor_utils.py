@@ -533,14 +533,15 @@ def bbox_transform_inv(boxes, deltas, mean=None, std=None):
     They are unnormalized in this function and then applied to the boxes.
 
     Args:
-        boxes (numpy.array): shape (B, N, 4), where B is the batch size,
-            N the number of boxes and 4 values for (x1, y1, x2, y2).
+        boxes (numpy.array): shape ``(B, N, 4)``, where ``B`` is the batch
+            size, ``N`` the number of boxes and 4 values for
+            ``(x1, y1, x2, y2)``.
         deltas (numpy.array): same shape as boxes. These deltas
-            (d_x1, d_y1, d_x2, d_y2) are a factor of the width/height.
+            ``(d_x1, d_y1, d_x2, d_y2)`` are a factor of the width/height.
         mean (numpy.array): The mean value used when computing deltas
-            (defaults to [0, 0, 0, 0]).
+            (defaults to ``[0, 0, 0, 0]``).
         std (numpy.array): The standard deviation used when computing deltas
-            (defaults to [0.2, 0.2, 0.2, 0.2]).
+            (defaults to ``[0.2, 0.2, 0.2, 0.2]``).
 
     Returns:
         numpy.array: same shape as boxes with deltas applied to each box.
@@ -607,10 +608,11 @@ def shift(shape, stride, anchors):
 def compute_iou(a, b):
     """Computes the IoU overlap of boxes in a and b.
     Args:
-        a (numpy.array): (N, H, W) ndarray of float
-        b (numpy.array): (K, H, W) ndarray of float
+        a (numpy.array): ``(N, H, W)`` ndarray of float
+        b (numpy.array): ``(K, H, W)`` ndarray of float
     Returns
-        numpy.array: (N, K) ndarray of overlap between boxes and query_boxes
+        numpy.array: ``(N, K)`` ndarray of overlap between boxes
+            and query_boxes
     """
     intersection = np.zeros((a.shape[0], b.shape[0]))
     union = np.zeros((a.shape[0], b.shape[0]))
@@ -625,11 +627,11 @@ def overlap(a, b):
     """Computes the IoU overlap of boxes in a and b.
 
     Args:
-        a (numpy.array): np.array of shape (N, 4) of boxes.
-        b (numpy.array): np.array of shape (K, 4) of boxes.
+        a (numpy.array): np.array of shape ``(N, 4)`` of boxes.
+        b (numpy.array): np.array of shape ``(K, 4)`` of boxes.
 
     Returns:
-        numpy.array: shape (N, K) of overlap between boxes from a and b.
+        numpy.array: shape ``(N, K)`` of overlap between boxes from a and b.
     """
     area = (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
 
@@ -688,6 +690,9 @@ def _get_detections(generator,
     """Get the detections from the model using the generator.
 
     The result is a list of lists such that the size is:
+
+    .. nbinput:: ipython3
+
         all_detections[num_images][num_classes] = detections[num_detections, 4 + num_classes]
 
     Args:
@@ -856,13 +861,16 @@ def _get_annotations(generator, frames_per_batch=1):
     """Get the ground truth annotations from the generator.
 
     The result is a list of lists such that the size is:
+
+    .. nbinput:: ipython3
+
         all_detections[num_images][num_classes] = annotations[num_detections, 5]
 
     Args:
         generator: The generator used to retrieve ground truth annotations.
 
     Returns:
-        list: The annotations for each image in the generator.
+        list: The annotations for each image in the ``generator``.
     """
 
     if len(generator.x.shape) == 4:
