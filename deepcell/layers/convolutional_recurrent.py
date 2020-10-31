@@ -28,14 +28,13 @@
 
 References:
 
-Keras GRU
-https://github.com/keras-team/keras/blob/master/keras/layers/recurrent.py#L422
-Keras ConvLSTM2D
-https://github.com/keras-team/keras/blob/master/keras/layers/convolutional_recurrent.py
+[Keras GRU](https://github.com/keras-team/keras/blob/master/keras/layers/recurrent.py#L422)
 
-RFCNN
-https://gitlab.com/sepehr.valipour/RFCNN/blob/master/rfcnn/layers/convolutional.py
-Literature at https://ieeexplore.ieee.org/abstract/document/8296851
+[Keras ConvLSTM2D](https://github.com/keras-team/keras/blob/master/keras/layers/convolutional_recurrent.py)
+
+[RFCNN](https://gitlab.com/sepehr.valipour/RFCNN/blob/master/rfcnn/layers/convolutional.py)
+
+[Literature](https://ieeexplore.ieee.org/abstract/document/8296851)
 """
 
 from __future__ import absolute_import
