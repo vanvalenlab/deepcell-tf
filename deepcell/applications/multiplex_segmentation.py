@@ -47,9 +47,11 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 
 
 class MultiplexSegmentation(Application):
-    """Loads a `deepcell.model_zoo.PanopticNet` model for multiplex segmentation
-    with pretrained weights.
-    The `predict` method handles prep and post processing steps to return a labeled image.
+    """Loads a ``deepcell.model_zoo.PanopticNet`` model for multiplex
+    segmentation with pretrained weights.
+
+    The ``predict`` method handles prep and post processing steps
+    to return a labeled image.
 
     Example:
 
@@ -85,10 +87,8 @@ class MultiplexSegmentation(Application):
     .. nboutput::
 
     Args:
-        use_pretrained_weights (bool, optional): Loads pretrained weights.
-            Defaults to True.
-        model_image_shape (tuple, optional): Shape of input data expected by model.
-            Defaults to `(256, 256, 2)`
+        use_pretrained_weights (bool): Whether to load pretrained weights.
+        model_image_shape (tuple): Shape of input expected by ``model``.
     """
 
     #: Metadata for the dataset used to train the model
@@ -163,25 +163,23 @@ class MultiplexSegmentation(Application):
         Additional empty dimensions can be added using `np.expand_dims`
 
         Args:
-            image (np.array): Input image with shape `[batch, x, y, channel]`
-            batch_size (int, optional): Number of images to predict on per batch.
-                Defaults to 4.
-            image_mpp (float, optional): Microns per pixel for the input image.
-                Defaults to None.
-            preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
-                Defaults to {}.
-            compartment (string): Specify type of segmentation to predict. Must be one of
-                [whole-cell, nuclear, both]
-            postprocess_kwargs_whole_cell (dict, optional): Kwargs to pass to postprocessing
-                function for whole_cell prediction. Defaults to {}.
-            postprocess_kwargs_nuclear (dict, optional): Kwargs to pass to postprocessing
-                function for nuclear prediction. Defaults to {}.
+            image (np.array): Input image with shape
+                ``[batch, x, y, channel]``.
+            batch_size (int): Number of images to predict on per batch.
+            image_mpp (float): Microns per pixel for ``image``.
+            compartment (string): Specify type of segmentation to predict.
+                Must be one of ``"whole-cell"``, ``"nuclear"``, ``"both"``.
+            preprocess_kwargs (dict): Keyword arguments to pass to the
+                pre-processing function.
+            postprocess_kwargs (dict): Keyword arguments to pass to the
+                post-processing function.
 
         Raises:
-            ValueError: Input data must match required rank of the application, calculated as
-                one dimension more (batch dimension) than expected by the model
+            ValueError: Input data must match required rank of the application,
+                calculated as one dimension more (batch dimension) than expected
+                by the model.
 
-            ValueError: Input data must match required number of channels of application
+            ValueError: Input data must match required number of channels.
 
         Returns:
             np.array: Labeled image
