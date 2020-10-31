@@ -158,7 +158,7 @@ class ImageNormalization2D(Layer):
         elif self.norm_method == 'whole_image':
             axes = [2, 3] if self.channel_axis == 1 else [1, 2]
             outputs = inputs - K.mean(inputs, axis=axes, keepdims=True)
-            outputs = outputs / K.std(inputs, axis=axes, keepdims=True)
+            outputs = outputs / (K.std(inputs, axis=axes, keepdims=True) + K.epsilon())
 
         elif self.norm_method == 'std':
             outputs = inputs - self._average_filter(inputs)
@@ -316,7 +316,7 @@ class ImageNormalization3D(Layer):
         elif self.norm_method == 'whole_image':
             axes = [3, 4] if self.channel_axis == 1 else [2, 3]
             outputs = inputs - K.mean(inputs, axis=axes, keepdims=True)
-            outputs = outputs / K.std(inputs, axis=axes, keepdims=True)
+            outputs = outputs / (K.std(inputs, axis=axes, keepdims=True) + K.epsilon())
 
         elif self.norm_method == 'std':
             outputs = inputs - self._average_filter(inputs)
@@ -327,7 +327,8 @@ class ImageNormalization3D(Layer):
             outputs = outputs - self._average_filter(outputs)
 
         else:
-            raise NotImplementedError('"{}" is not a valid norm_method'.format(self.norm_method))
+            raise NotImplementedError('"{}" is not a valid norm_method'.format(
+                self.norm_method))
 
         return outputs
 
