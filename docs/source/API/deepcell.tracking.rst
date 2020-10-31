@@ -1,5 +1,5 @@
-deepcell.tracking module
-========================
+Module: deepcell.tracking
+=========================
 
 .. contents:: Contents
     :local:

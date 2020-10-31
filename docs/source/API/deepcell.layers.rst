@@ -1,4 +1,4 @@
-deepcell.layers package
+Module: deepcell.layers
 =======================
 
 .. automodule:: deepcell.layers
@@ -6,71 +6,71 @@ deepcell.layers package
 .. contents:: Contents
     :local:
 
-deepcell.layers.location module
--------------------------------
+deepcell.layers.location
+------------------------
 .. automodule:: deepcell.layers.location
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.normalization module
-------------------------------------
+deepcell.layers.normalization
+-----------------------------
 .. automodule:: deepcell.layers.normalization
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.pooling module
-------------------------------
+deepcell.layers.pooling
+-----------------------
 .. automodule:: deepcell.layers.pooling
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.resize module
------------------------------
+deepcell.layers.resize
+----------------------
 .. automodule:: deepcell.layers.resize
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.tensor_product module
--------------------------------------
+deepcell.layers.tensor_product
+------------------------------
 .. automodule:: deepcell.layers.tensor_product
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.padding module
-------------------------------
+deepcell.layers.padding
+-----------------------
 .. automodule:: deepcell.layers.padding
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.filter_detections module
-----------------------------------------
+deepcell.layers.filter_detections
+---------------------------------
 .. automodule:: deepcell.layers.filter_detections
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.retinanet module
---------------------------------
+deepcell.layers.retinanet
+-------------------------
 .. automodule:: deepcell.layers.retinanet
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.upsample module
--------------------------------
+deepcell.layers.upsample
+------------------------
 .. automodule:: deepcell.layers.upsample
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.convolutional_recurrent module
-----------------------------------------------
+deepcell.layers.convolutional_recurrent
+---------------------------------------
 .. automodule:: deepcell.layers.convolutional_recurrent
     :members:
     :undoc-members:

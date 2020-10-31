@@ -1,5 +1,5 @@
-deepcell.initializers module
-============================
+Module: deepcell.initializers
+=============================
 
 .. automodule:: deepcell.initializers
     :members:

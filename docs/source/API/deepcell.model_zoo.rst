@@ -1,4 +1,4 @@
-deepcell.model_zoo package
+Module: deepcell.model_zoo
 ==========================
 
 .. automodule:: deepcell.model_zoo
@@ -6,32 +6,32 @@ deepcell.model_zoo package
 .. contents:: Contents
     :local:
 
-deepcell.model_zoo.featurenet module
-------------------------------------
+deepcell.model_zoo.featurenet
+-----------------------------
 
 .. automodule:: deepcell.model_zoo.featurenet
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.model_zoo.maskrcnn module
-----------------------------------
+deepcell.model_zoo.maskrcnn
+---------------------------
 
 .. automodule:: deepcell.model_zoo.maskrcnn
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.model_zoo.retinanet module
------------------------------------
+deepcell.model_zoo.retinanet
+----------------------------
 
 .. automodule:: deepcell.model_zoo.retinanet
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.model_zoo.fpn module
------------------------------
+deepcell.model_zoo.fpn
+----------------------
 .. automodule:: deepcell.model_zoo.fpn
     :members:
     :undoc-members:

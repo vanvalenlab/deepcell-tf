@@ -1,5 +1,5 @@
-deepcell.metrics module
-=======================
+Module: deepcell.metrics
+========================
 
 .. automodule:: deepcell.metrics
     :members:

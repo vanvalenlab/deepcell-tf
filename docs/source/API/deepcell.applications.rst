@@ -1,4 +1,4 @@
-deepcell.applications package
+Module: deepcell.applications
 =============================
 
 .. automodule:: deepcell.applications
@@ -6,23 +6,23 @@ deepcell.applications package
 .. contents:: Contents
     :local:
 
-deepcell.applications.application module
-----------------------------------------
+deepcell.applications.application
+---------------------------------
 .. automodule:: deepcell.applications.application
     :members:
     :undoc-members:
     :show-inheritance:
     :private-members:
 
-deepcell.applications.cytoplasm_segmentation module
----------------------------------------------------
+deepcell.applications.cytoplasm_segmentation
+--------------------------------------------
 .. automodule:: deepcell.applications.cytoplasm_segmentation
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.nuclear_segmentation module
--------------------------------------------------
+deepcell.applications.nuclear_segmentation
+------------------------------------------
 .. automodule:: deepcell.applications.nuclear_segmentation
     :members:
     :undoc-members:
@@ -35,22 +35,22 @@ deepcell.applications.multiplex_segmentation
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.cell_tracking module
-------------------------------------------
+deepcell.applications.cell_tracking
+-----------------------------------
 .. automodule:: deepcell.applications.cell_tracking
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.label_detection module
---------------------------------------------
+deepcell.applications.label_detection
+-------------------------------------
 .. automodule:: deepcell.applications.label_detection
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.scale_detection module
---------------------------------------------
+deepcell.applications.scale_detection
+-------------------------------------
 .. automodule:: deepcell.applications.scale_detection
     :members:
     :undoc-members:

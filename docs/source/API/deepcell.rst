@@ -1,5 +1,5 @@
-deepcell package
-================
+deepcell API
+============
 
 Subpackages
 -----------

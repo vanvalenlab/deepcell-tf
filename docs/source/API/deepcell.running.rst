@@ -1,5 +1,5 @@
-deepcell.running module
-=======================
+Module: deepcell.running
+========================
 
 .. contents:: Contents
     :local:
