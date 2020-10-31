@@ -41,7 +41,6 @@ from deepcell.utils import export_utils
 from deepcell.utils import io_utils
 from deepcell.utils import misc_utils
 from deepcell.utils import plot_utils
-from deepcell.utils import testing_utils
 from deepcell.utils import tracking_utils
 from deepcell.utils import train_utils
 from deepcell.utils import transform_utils
