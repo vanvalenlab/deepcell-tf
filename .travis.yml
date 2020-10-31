@@ -48,7 +48,7 @@ install:
   - travis_retry pip install -r requirements-test.txt --progress-bar off
   # install documentation requirements
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.7" ]]; then
-      travis_retry pip install -r docs/rtd-requirements.txt;
+      travis_retry pip install -r docs/requirements-rtd.txt;
     else
       echo "Invalid python version for testing docs";
     fi
