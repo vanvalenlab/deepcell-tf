@@ -29,7 +29,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
@@ -42,6 +41,38 @@ from tensorflow.python.keras.utils import conv_utils
 
 
 class ImageNormalization2D(Layer):
+    """Image Normalization layer for 2D data.
+
+    Args:
+        norm_method (str): Normalization method to use, one of:
+            "std", "max", "whole_image", None.
+        filter_size (int): The length of the convolution window.
+        data_format (str, optional): One of "channels_last" (default) or
+            "channels_first". The ordering of the dimensions in the inputs.
+            "channels_last" corresponds to inputs with shape
+            (batch, ..., channels) while "channels_first" corresponds to
+            inputs with shape (batch, channels, ...).
+        activation (function): Activation function. Set it to None to maintain
+            a linear activation.
+        use_bias (bool): Whether the layer uses a bias.
+        kernel_initializer (function): Initializer for the convolution kernel.
+        bias_initializer (function): Initializer for the bias vector. If None,
+            the default initializer will be used.
+        kernel_regularizer (function): Optional regularizer for the
+            convolution kernel.
+        bias_regularizer (function): Optional regularizer for the bias vector.
+        activity_regularizer (function): Optional regularizer function
+            for the output.
+        kernel_constraint (function): Optional projection function to be
+            applied to the kernel after being updated by an ``Optimizer``
+            (e.g. used to implement norm constraints or value constraints for
+            layer weights). The function must take as input the unprojected
+            variable and must return the projected variable (which must have
+            the same shape). Constraints are not safe to use when doing
+            asynchronous distributed training.
+        bias_constraint (function): Optional projection function to be applied
+            to the bias after being updated by an ``Optimizer``.
+    """
     def __init__(self,
                  norm_method='std',
                  filter_size=61,
@@ -194,6 +225,38 @@ class ImageNormalization2D(Layer):
 
 
 class ImageNormalization3D(Layer):
+    """Image Normalization layer for 3D data.
+
+    Args:
+        norm_method (str): Normalization method to use, one of:
+            "std", "max", "whole_image", None.
+        filter_size (int): The length of the convolution window.
+        data_format (str, optional): One of "channels_last" (default) or
+            "channels_first". The ordering of the dimensions in the inputs.
+            "channels_last" corresponds to inputs with shape
+            (batch, ..., channels) while "channels_first" corresponds to
+            inputs with shape (batch, channels, ...).
+        activation (function): Activation function. Set it to None to maintain
+            a linear activation.
+        use_bias (bool): Whether the layer uses a bias.
+        kernel_initializer (function): Initializer for the convolution kernel.
+        bias_initializer (function): Initializer for the bias vector. If None,
+            the default initializer will be used.
+        kernel_regularizer (function): Optional regularizer for the
+            convolution kernel.
+        bias_regularizer (function): Optional regularizer for the bias vector.
+        activity_regularizer (function): Optional regularizer function
+            for the output.
+        kernel_constraint (function): Optional projection function to be
+            applied to the kernel after being updated by an ``Optimizer``
+            (e.g. used to implement norm constraints or value constraints for
+            layer weights). The function must take as input the unprojected
+            variable and must return the projected variable (which must have
+            the same shape). Constraints are not safe to use when doing
+            asynchronous distributed training.
+        bias_constraint (function): Optional projection function to be applied
+            to the bias after being updated by an ``Optimizer``.
+    """
     def __init__(self,
                  norm_method='std',
                  filter_size=61,

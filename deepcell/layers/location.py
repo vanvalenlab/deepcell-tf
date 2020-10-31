@@ -37,6 +37,16 @@ from tensorflow.python.keras.utils import conv_utils
 
 
 class Location2D(Layer):
+    """Location Layer for 2D cartesian coordinate locations.
+
+    Args:
+        in_shape (tuple): Shape of each input image in (x, y, c).
+        data_format (str, optional): One of "channels_last" (default) or
+            "channels_first". The ordering of the dimensions in the inputs.
+            "channels_last" corresponds to inputs with shape
+            (batch, ..., channels) while "channels_first" corresponds to
+            inputs with shape (batch, channels, ...).
+    """
     def __init__(self, in_shape, data_format=None, **kwargs):
         super(Location2D, self).__init__(**kwargs)
         self.in_shape = in_shape
@@ -90,6 +100,16 @@ class Location2D(Layer):
 
 
 class Location3D(Layer):
+    """Location Layer for 3D cartesian coordinate locations.
+
+    Args:
+        in_shape (tuple): Shape of each input image in (x, y, c).
+        data_format (str, optional): One of "channels_last" (default) or
+            "channels_first". The ordering of the dimensions in the inputs.
+            "channels_last" corresponds to inputs with shape
+            (batch, ..., channels) while "channels_first" corresponds to
+            inputs with shape (batch, channels, ...).
+    """
     def __init__(self, in_shape, data_format=None, **kwargs):
         super(Location3D, self).__init__(**kwargs)
         self.in_shape = in_shape

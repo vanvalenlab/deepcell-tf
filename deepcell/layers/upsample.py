@@ -29,7 +29,6 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
-import copy
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras import backend as K
@@ -40,6 +39,13 @@ class UpsampleLike(Layer):
     """Layer for upsampling a Tensor to be the same shape as another Tensor.
 
     Adapted from https://github.com/fizyr/keras-retinanet.
+
+    Args:
+        data_format (str, optional): One of "channels_last" (default) or
+            "channels_first". The ordering of the dimensions in the inputs.
+            "channels_last" corresponds to inputs with shape
+            (batch, ..., channels) while "channels_first" corresponds to
+            inputs with shape (batch, channels, ...).
     """
 
     def __init__(self, data_format=None, **kwargs):
@@ -138,7 +144,16 @@ class UpsampleLike(Layer):
 
 
 class Upsample(Layer):
-    """Upsample layer adapted from https://github.com/fizyr/keras-maskrcnn."""
+    """Upsample layer adapted from https://github.com/fizyr/keras-maskrcnn.
+
+    Args:
+        target_size (tuple): 2D tuple for target size (x, y).
+        data_format (str, optional): One of "channels_last" (default) or
+            "channels_first". The ordering of the dimensions in the inputs.
+            "channels_last" corresponds to inputs with shape
+            (batch, ..., channels) while "channels_first" corresponds to
+            inputs with shape (batch, channels, ...).
+    """
 
     def __init__(self, target_size, data_format=None, *args, **kwargs):
         self.target_size = target_size

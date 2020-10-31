@@ -38,6 +38,28 @@ from tensorflow.python.keras.utils import conv_utils
 
 
 class DilatedMaxPool2D(Layer):
+    """Dilated max pooling layer for 2D inputs (e.g. images).
+
+    Args:
+        pool_size (int): An integer or tuple/list of 2 integers:
+            (pool_height, pool_width) specifying the size of the pooling
+            window. Can be a single integer to specify the same value for
+            all spatial dimensions.
+        strides (int): An integer or tuple/list of 2 integers,
+            specifying the strides of the pooling operation.
+            Can be a single integer to specify the same value for
+            all spatial dimensions.
+        dilation_rate (int): An integer or tuple/list of 2 integers,
+            specifying the dilation rate for the pooling.
+        padding: A string. The padding method, either 'valid' or 'same'.
+            Case-insensitive.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
+    """
     def __init__(self, pool_size=(2, 2), strides=None, dilation_rate=1,
                  padding='valid', data_format=None, **kwargs):
         super(DilatedMaxPool2D, self).__init__(**kwargs)
@@ -152,6 +174,28 @@ class DilatedMaxPool2D(Layer):
 
 
 class DilatedMaxPool3D(Layer):
+    """Dilated max pooling layer for 3D inputs.
+
+    Args:
+        pool_size (int): An integer or tuple/list of 2 integers:
+            (pool_height, pool_width) specifying the size of the pooling
+            window. Can be a single integer to specify the same value for
+            all spatial dimensions.
+        strides (int): An integer or tuple/list of 2 integers,
+            specifying the strides of the pooling operation.
+            Can be a single integer to specify the same value for
+            all spatial dimensions.
+        dilation_rate (int): An integer or tuple/list of 2 integers,
+            specifying the dilation rate for the pooling.
+        padding: A string. The padding method, either 'valid' or 'same'.
+            Case-insensitive.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
+    """
     def __init__(self, pool_size=(1, 2, 2), strides=None, dilation_rate=1,
                  padding='valid', data_format=None, **kwargs):
         super(DilatedMaxPool3D, self).__init__(**kwargs)

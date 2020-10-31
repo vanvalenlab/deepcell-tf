@@ -46,31 +46,31 @@ def filter_detections(boxes,
     """Filter detections using the boxes and classification values.
 
     Args:
-        boxes: Tensor of shape (num_boxes, 4) containing the boxes in
+        boxes (tensor): Tensor of shape (num_boxes, 4) containing the boxes in
             (x1, y1, x2, y2) format.
-        classification: Tensor of shape (num_boxes, num_classes) containing
-            the classification scores.
-        other: List of tensors of shape (num_boxes, ...) to filter along
+        classification (tensor): Tensor of shape (num_boxes, num_classes)
+            containing the classification scores.
+        other (list): List of tensors of shape (num_boxes, ...) to filter along
             with the boxes and classification scores.
-        class_specific_filter: Whether to perform filtering per class,
+        class_specific_filter (bool): Whether to perform filtering per class,
             or take the best scoring class and filter those.
-        nms: Flag to enable/disable non maximum suppression.
-        score_threshold: Threshold used to prefilter the boxes with.
-        max_detections: Maximum number of detections to keep.
-        nms_threshold: Threshold for the IoU value to determine when a box
-            should be suppressed.
+        nms (bool): Whether to enable non maximum suppression.
+        score_threshold (float): Threshold used to prefilter the boxes with.
+        max_detections (int): Maximum number of detections to keep.
+        nms_threshold (float): Threshold for the IoU value to determine when a
+            box should be suppressed.
 
     Returns:
-        A list of [boxes, scores, labels, other[0], other[1], ...].
-        boxes is shaped (max_detections, 4) and contains the (x1, y1, x2, y2)
-            of the non-suppressed boxes.
-        scores is shaped (max_detections,) and contains the scores of the
-            predicted class.
-        labels is shaped (max_detections,) and contains the predicted label.
-        other[i] is shaped (max_detections, ...) and contains the filtered
-            other[i] data.
-        In case there are less than max_detections detections,
-            the tensors are padded with -1's.
+        list: A list of [boxes, scores, labels, other[0], other[1], ...].
+            boxes is shaped (max_detections, 4) and contains the (x1, y1, x2, y2)
+                of the non-suppressed boxes.
+            scores is shaped (max_detections,) and contains the scores of the
+                predicted class.
+            labels is shaped (max_detections,) and contains the predicted label.
+            other[i] is shaped (max_detections, ...) and contains the filtered
+                other[i] data.
+            In case there are less than max_detections detections,
+                the tensors are padded with -1's.
     """
     def _filter_detections(scores, labels):
         # threshold based on score
@@ -143,8 +143,23 @@ def filter_detections(boxes,
 
 
 class FilterDetections(Layer):
-    """Keras layer for filtering detections using score threshold and NMS."""
+    """Keras layer for filtering detections using score threshold and NMS.
 
+    Args:
+        nms (bool): Whether to enable non maximum suppression.
+        class_specific_filter (bool): Whether to perform filtering per class,
+            or take the best scoring class and filter those.
+        nms_threshold (float): Threshold for the IoU value to determine when a
+            box should be suppressed.
+        score_threshold (float): Threshold used to prefilter the boxes with.
+        max_detections (int): Maximum number of detections to keep.
+        parallel_iterations (int): Number of batch items to process in parallel.
+        data_format (str, optional): One of "channels_last" (default) or
+            "channels_first". The ordering of the dimensions in the inputs.
+            "channels_last" corresponds to inputs with shape
+            (batch, ..., channels) while "channels_first" corresponds to
+            inputs with shape (batch, channels, ...).
+    """
     def __init__(self,
                  nms=True,
                  class_specific_filter=False,
@@ -154,19 +169,6 @@ class FilterDetections(Layer):
                  parallel_iterations=32,
                  data_format=None,
                  **kwargs):
-        """Filters detections using score threshold,
-        NMS and selecting the top-k detections.
-
-        Args:
-            nms: Flag to enable/disable NMS.
-            class_specific_filter: Whether to perform filtering per class,
-                or take the best scoring class and filter those.
-            nms_threshold: Threshold for the IoU value to determine when
-                a box should be suppressed.
-            score_threshold: Threshold used to prefilter the boxes with.
-            max_detections: Maximum number of detections to keep.
-            parallel_iterations: Number of batch items to process in parallel.
-        """
         self.nms = nms
         self.class_specific_filter = class_specific_filter
         self.nms_threshold = nms_threshold

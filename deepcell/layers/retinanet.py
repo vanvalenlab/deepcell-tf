@@ -194,7 +194,15 @@ class RegressBoxes(Layer):
 
 
 class ClipBoxes(Layer):
-    """Keras layer to clip box values to lie inside a given shape."""
+    """Keras layer to clip box values to lie inside a given shape.
+
+    Args:
+        data_format (str, optional): One of "channels_last" (default) or
+            "channels_first". The ordering of the dimensions in the inputs.
+            "channels_last" corresponds to inputs with shape
+            (batch, ..., channels) while "channels_first" corresponds to
+            inputs with shape (batch, channels, ...).
+    """
 
     def __init__(self, data_format=None, **kwargs):
         super(ClipBoxes, self).__init__(**kwargs)
@@ -246,7 +254,14 @@ class ConcatenateBoxes(Layer):
 
 
 class _RoiAlign(Layer):
-    """Original RoiAlign Layer from https://github.com/fizyr/keras-retinanet"""
+    """Original RoiAlign Layer from https://github.com/fizyr/keras-retinanet
+
+    Args:
+        crop_size (tuple): 2-length tuple of integers,
+            the ROIs get cropped to this size.
+        parallel_iterations (int): Number of parallel mappings to use
+            for ROI.
+    """
     def __init__(self, crop_size=(14, 14), parallel_iterations=32, **kwargs):
         self.crop_size = crop_size
         self.parallel_iterations = parallel_iterations
@@ -452,6 +467,7 @@ class RoiAlign(_RoiAlign):
 
 
 class Shape(Layer):
+    """Layer that returns the shape of the input tensor"""
     def call(self, inputs, **kwargs):
         return K.shape(inputs)
 
@@ -460,6 +476,11 @@ class Shape(Layer):
 
 
 class Cast(Layer):
+    """Layer that casts the the input to another dtype.
+
+    Args:
+        dtype (str): String or ``tf.dtype``, the desired dtype.
+    """
     def __init__(self, dtype=None, *args, **kwargs):
         if dtype is None:
             dtype = K.floatx()
