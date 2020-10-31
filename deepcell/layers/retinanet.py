@@ -45,19 +45,15 @@ class Anchors(Layer):
         size: The base size of the anchors to generate.
         stride: The stride of the anchors to generate.
         ratios: The ratios of the anchors to generate,
-            defaults to AnchorParameters.default.ratios.
+            defaults to ``AnchorParameters.default.ratios``.
         scales: The scales of the anchors to generate,
-            defaults to AnchorParameters.default.scales.
-        data_format: A string,
-            one of "channels_last" (default) or "channels_first".
-            The ordering of the dimensions in the inputs.
-            "channels_last" corresponds to inputs with shape
-            (batch, height, width, channels) while "channels_first"
+            defaults to ``AnchorParameters.default.scales``.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
             corresponds to inputs with shape
-            (batch, channels, height, width).
-            It defaults to the image_data_format value found in your
-            Keras config file at "~/.keras/keras.json".
-            If you never set it, then it will be "channels_last".
+            ``(batch, channels, height, width)``.
     """
 
     def __init__(self,
@@ -138,16 +134,12 @@ class RegressBoxes(Layer):
             which was used for normalization.
         std:  The standard value of the regression values
             which was used for normalization.
-        data_format: A string,
-            one of "channels_last" (default) or "channels_first".
-            The ordering of the dimensions in the inputs.
-            "channels_last" corresponds to inputs with shape
-            (batch, height, width, channels) while "channels_first"
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
             corresponds to inputs with shape
-            (batch, channels, height, width).
-            It defaults to the image_data_format value found in your
-            Keras config file at "~/.keras/keras.json".
-            If you never set it, then it will be "channels_last".
+            ``(batch, channels, height, width)``.
     """
 
     def __init__(self, mean=None, std=None, data_format=None, *args, **kwargs):
@@ -197,11 +189,12 @@ class ClipBoxes(Layer):
     """Keras layer to clip box values to lie inside a given shape.
 
     Args:
-        data_format (str, optional): One of "channels_last" (default) or
-            "channels_first". The ordering of the dimensions in the inputs.
-            "channels_last" corresponds to inputs with shape
-            (batch, ..., channels) while "channels_first" corresponds to
-            inputs with shape (batch, channels, ...).
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
     """
 
     def __init__(self, data_format=None, **kwargs):

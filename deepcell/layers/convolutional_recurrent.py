@@ -59,45 +59,44 @@ class ConvGRU2DCell(DropoutRNNCellMixin, Layer):
     """Cell class for the ConvGRU2D layer.
 
     Args:
-        filters (int): Positive integer, dimensionality of the kernel.
+        filters (int): An integer or tuple/list of n integers, specifying the
+            dimensions of the convolution window.
         strides (int): An integer or tuple/list of 2 integers,
             specifying the strides of the pooling operation.
             Can be a single integer to specify the same value for
             all spatial dimensions.
-        padding: A string. The padding method, either 'valid' or 'same'.
-            Case-insensitive.
-        data_format (str, optional): One of "channels_last" (default) or
-            "channels_first". The ordering of the dimensions in the inputs.
-            "channels_last" corresponds to inputs with shape
-            (batch, ..., channels) while "channels_first" corresponds to
-            inputs with shape (batch, channels, ...).
+        padding (str): The padding method, either ``"valid"`` or ``"same"``
+            (case-insensitive).
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         dilation_rate (int): An integer or tuple/list of 2 integers,
             specifying the dilation rate for the pooling.
-        activation (function): Activation function. Set it to None to maintain
-            a linear activation.
+        activation (function): Activation function to use.
+            If you don't specify anything, no activation is applied
+            (ie. "linear" activation: ``a(x) = x``).
         use_bias (bool): Whether the layer uses a bias.
-        kernel_initializer (function): Initializer for the convolution kernel.
+        kernel_initializer (function): Initializer for the ``kernel`` weights
+            matrix, used for the linear transformation of the inputs.
         bias_initializer (function): Initializer for the bias vector. If None,
             the default initializer will be used.
-        kernel_regularizer (function): Optional regularizer for the
-            convolution kernel.
+        kernel_regularizer (function): Regularizer function applied to the
+            ``kernel`` weights matrix.
         recurrent_initializer (function): Initializer for the
             ``recurrent_kernel`` weights matrix, used for the linear
             transformation of the recurrent state.
-        bias_regularizer (function): Optional regularizer for the bias vector.
-        activity_regularizer (function): Optional regularizer function
-            for the output.
+        bias_regularizer (function): Regularizer function applied to the
+            bias vector.
+        activity_regularizer (function): Regularizer function applied to.
         recurrent_regularizer (function): Regularizer function applied to
             the ``recurrent_kernel`` weights matrix.
-        kernel_constraint (function): Optional projection function to be
-            applied to the kernel after being updated by an ``Optimizer``
-            (e.g. used to implement norm constraints or value constraints for
-            layer weights). The function must take as input the unprojected
-            variable and must return the projected variable (which must have
-            the same shape). Constraints are not safe to use when doing
-            asynchronous distributed training.
-        bias_constraint (function): Optional projection function to be applied
-            to the bias after being updated by an ``Optimizer``.
+        kernel_constraint (function): Constraint function applied to
+            the ``kernel`` weights matrix.
+        bias_constraint (function): Constraint function applied to the
+            bias vector.
         dropout (float): Float between 0 and 1. Fraction of the units to drop
             for the linear transformation of the inputs.
         recurrent_dropout (float): Float between 0 and 1. Fraction of the
@@ -301,45 +300,44 @@ class ConvGRU2D(ConvRNN2D):
     """Cell class for the ConvGRU2D layer.
 
     Args:
-        filters (int): Positive integer, dimensionality of the kernel.
+        filters (int): An integer or tuple/list of n integers, specifying the
+            dimensions of the convolution window.
         strides (int): An integer or tuple/list of 2 integers,
             specifying the strides of the pooling operation.
             Can be a single integer to specify the same value for
             all spatial dimensions.
-        padding: A string. The padding method, either 'valid' or 'same'.
-            Case-insensitive.
-        data_format (str, optional): One of "channels_last" (default) or
-            "channels_first". The ordering of the dimensions in the inputs.
-            "channels_last" corresponds to inputs with shape
-            (batch, ..., channels) while "channels_first" corresponds to
-            inputs with shape (batch, channels, ...).
+        padding (str): The padding method, either ``"valid"`` or ``"same"``
+            (case-insensitive).
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         dilation_rate (int): An integer or tuple/list of 2 integers,
             specifying the dilation rate for the pooling.
-        activation (function): Activation function. Set it to None to maintain
-            a linear activation.
+        activation (function): Activation function to use.
+            If you don't specify anything, no activation is applied
+            (ie. "linear" activation: ``a(x) = x``).
         use_bias (bool): Whether the layer uses a bias.
-        kernel_initializer (function): Initializer for the convolution kernel.
+        kernel_initializer (function): Initializer for the ``kernel`` weights
+            matrix, used for the linear transformation of the inputs.
         bias_initializer (function): Initializer for the bias vector. If None,
             the default initializer will be used.
-        kernel_regularizer (function): Optional regularizer for the
-            convolution kernel.
+        kernel_regularizer (function): Regularizer function applied to the
+            ``kernel`` weights matrix.
         recurrent_initializer (function): Initializer for the
             ``recurrent_kernel`` weights matrix, used for the linear
             transformation of the recurrent state.
-        bias_regularizer (function): Optional regularizer for the bias vector.
-        activity_regularizer (function): Optional regularizer function
-            for the output.
+        bias_regularizer (function): Regularizer function applied to the
+            bias vector.
+        activity_regularizer (function): Regularizer function applied to.
         recurrent_regularizer (function): Regularizer function applied to
             the ``recurrent_kernel`` weights matrix.
-        kernel_constraint (function): Optional projection function to be
-            applied to the kernel after being updated by an ``Optimizer``
-            (e.g. used to implement norm constraints or value constraints for
-            layer weights). The function must take as input the unprojected
-            variable and must return the projected variable (which must have
-            the same shape). Constraints are not safe to use when doing
-            asynchronous distributed training.
-        bias_constraint (function): Optional projection function to be applied
-            to the bias after being updated by an ``Optimizer``.
+        kernel_constraint (function): Constraint function applied to
+            the ``kernel`` weights matrix.
+        bias_constraint (function): Constraint function applied to the
+            bias vector.
         return_sequences (bool): Whether to return the last output in the
             output sequence, or the full sequence.
         return_state (bool): Whether to return the last state

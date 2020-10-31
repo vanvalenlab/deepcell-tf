@@ -41,11 +41,12 @@ class UpsampleLike(Layer):
     Adapted from https://github.com/fizyr/keras-retinanet.
 
     Args:
-        data_format (str, optional): One of "channels_last" (default) or
-            "channels_first". The ordering of the dimensions in the inputs.
-            "channels_last" corresponds to inputs with shape
-            (batch, ..., channels) while "channels_first" corresponds to
-            inputs with shape (batch, channels, ...).
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
     """
 
     def __init__(self, data_format=None, **kwargs):
@@ -147,12 +148,13 @@ class Upsample(Layer):
     """Upsample layer adapted from https://github.com/fizyr/keras-maskrcnn.
 
     Args:
-        target_size (tuple): 2D tuple for target size (x, y).
-        data_format (str, optional): One of "channels_last" (default) or
-            "channels_first". The ordering of the dimensions in the inputs.
-            "channels_last" corresponds to inputs with shape
-            (batch, ..., channels) while "channels_first" corresponds to
-            inputs with shape (batch, channels, ...).
+        target_size (tuple): 2D tuple for target size ``(x, y)``.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
     """
 
     def __init__(self, target_size, data_format=None, *args, **kwargs):

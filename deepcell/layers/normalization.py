@@ -47,31 +47,29 @@ class ImageNormalization2D(Layer):
         norm_method (str): Normalization method to use, one of:
             "std", "max", "whole_image", None.
         filter_size (int): The length of the convolution window.
-        data_format (str, optional): One of "channels_last" (default) or
-            "channels_first". The ordering of the dimensions in the inputs.
-            "channels_last" corresponds to inputs with shape
-            (batch, ..., channels) while "channels_first" corresponds to
-            inputs with shape (batch, channels, ...).
-        activation (function): Activation function. Set it to None to maintain
-            a linear activation.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
+        activation (function): Activation function to use.
+            If you don't specify anything, no activation is applied
+            (ie. "linear" activation: ``a(x) = x``).
         use_bias (bool): Whether the layer uses a bias.
-        kernel_initializer (function): Initializer for the convolution kernel.
+        kernel_initializer (function): Initializer for the ``kernel`` weights
+            matrix, used for the linear transformation of the inputs.
         bias_initializer (function): Initializer for the bias vector. If None,
             the default initializer will be used.
-        kernel_regularizer (function): Optional regularizer for the
-            convolution kernel.
-        bias_regularizer (function): Optional regularizer for the bias vector.
-        activity_regularizer (function): Optional regularizer function
-            for the output.
-        kernel_constraint (function): Optional projection function to be
-            applied to the kernel after being updated by an ``Optimizer``
-            (e.g. used to implement norm constraints or value constraints for
-            layer weights). The function must take as input the unprojected
-            variable and must return the projected variable (which must have
-            the same shape). Constraints are not safe to use when doing
-            asynchronous distributed training.
-        bias_constraint (function): Optional projection function to be applied
-            to the bias after being updated by an ``Optimizer``.
+        kernel_regularizer (function): Regularizer function applied to the
+            ``kernel`` weights matrix.
+        bias_regularizer (function): Regularizer function applied to the
+            bias vector.
+        activity_regularizer (function): Regularizer function applied to.
+        kernel_constraint (function): Constraint function applied to
+            the ``kernel`` weights matrix.
+        bias_constraint (function): Constraint function applied to the
+            bias vector.
     """
     def __init__(self,
                  norm_method='std',
@@ -231,31 +229,29 @@ class ImageNormalization3D(Layer):
         norm_method (str): Normalization method to use, one of:
             "std", "max", "whole_image", None.
         filter_size (int): The length of the convolution window.
-        data_format (str, optional): One of "channels_last" (default) or
-            "channels_first". The ordering of the dimensions in the inputs.
-            "channels_last" corresponds to inputs with shape
-            (batch, ..., channels) while "channels_first" corresponds to
-            inputs with shape (batch, channels, ...).
-        activation (function): Activation function. Set it to None to maintain
-            a linear activation.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
+        activation (function): Activation function to use.
+            If you don't specify anything, no activation is applied
+            (ie. "linear" activation: ``a(x) = x``).
         use_bias (bool): Whether the layer uses a bias.
-        kernel_initializer (function): Initializer for the convolution kernel.
+        kernel_initializer (function): Initializer for the ``kernel`` weights
+            matrix, used for the linear transformation of the inputs.
         bias_initializer (function): Initializer for the bias vector. If None,
             the default initializer will be used.
-        kernel_regularizer (function): Optional regularizer for the
-            convolution kernel.
-        bias_regularizer (function): Optional regularizer for the bias vector.
-        activity_regularizer (function): Optional regularizer function
-            for the output.
-        kernel_constraint (function): Optional projection function to be
-            applied to the kernel after being updated by an ``Optimizer``
-            (e.g. used to implement norm constraints or value constraints for
-            layer weights). The function must take as input the unprojected
-            variable and must return the projected variable (which must have
-            the same shape). Constraints are not safe to use when doing
-            asynchronous distributed training.
-        bias_constraint (function): Optional projection function to be applied
-            to the bias after being updated by an ``Optimizer``.
+        kernel_regularizer (function): Regularizer function applied to the
+            ``kernel`` weights matrix.
+        bias_regularizer (function): Regularizer function applied to the
+            bias vector.
+        activity_regularizer (function): Regularizer function applied to.
+        kernel_constraint (function): Constraint function applied to
+            the ``kernel`` weights matrix.
+        bias_constraint (function): Constraint function applied to the
+            bias vector.
     """
     def __init__(self,
                  norm_method='std',

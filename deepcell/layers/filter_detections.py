@@ -154,11 +154,12 @@ class FilterDetections(Layer):
         score_threshold (float): Threshold used to prefilter the boxes with.
         max_detections (int): Maximum number of detections to keep.
         parallel_iterations (int): Number of batch items to process in parallel.
-        data_format (str, optional): One of "channels_last" (default) or
-            "channels_first". The ordering of the dimensions in the inputs.
-            "channels_last" corresponds to inputs with shape
-            (batch, ..., channels) while "channels_first" corresponds to
-            inputs with shape (batch, channels, ...).
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
     """
     def __init__(self,
                  nms=True,

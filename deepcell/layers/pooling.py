@@ -51,8 +51,8 @@ class DilatedMaxPool2D(Layer):
             all spatial dimensions.
         dilation_rate (int): An integer or tuple/list of 2 integers,
             specifying the dilation rate for the pooling.
-        padding: A string. The padding method, either 'valid' or 'same'.
-            Case-insensitive.
+        padding (str): The padding method, either ``"valid"`` or ``"same"``
+            (case-insensitive).
         data_format (str): A string, one of ``channels_last`` (default)
             or ``channels_first``. The ordering of the dimensions in the
             inputs. ``channels_last`` corresponds to inputs with shape
@@ -187,8 +187,8 @@ class DilatedMaxPool3D(Layer):
             all spatial dimensions.
         dilation_rate (int): An integer or tuple/list of 2 integers,
             specifying the dilation rate for the pooling.
-        padding: A string. The padding method, either 'valid' or 'same'.
-            Case-insensitive.
+        padding (str): The padding method, either ``"valid"`` or ``"same"``
+            (case-insensitive).
         data_format (str): A string, one of ``channels_last`` (default)
             or ``channels_first``. The ordering of the dimensions in the
             inputs. ``channels_last`` corresponds to inputs with shape
