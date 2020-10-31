@@ -331,7 +331,7 @@ class SemanticDataGenerator(ImageDataGenerator):
             train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             batch_size (int): Size of a batch. Defaults to 1.
             shuffle (bool): Whether to shuffle the data between epochs.
-                Defaults to True
+                Defaults to ``True``.
             seed (int): Random seed for data shuffling.
             min_objects (int): Minumum number of objects allowed per image
             save_to_dir (str): Optional directory where to save the pictures
@@ -339,9 +339,9 @@ class SemanticDataGenerator(ImageDataGenerator):
                 for visualizing the random transformations being
                 applied, for debugging purposes.
             save_prefix (str): Prefix to use for saving sample
-                images (if save_to_dir is set).
+                images (if ``save_to_dir`` is set).
             save_format (str): Format to use for saving sample images
-                (if save_to_dir is set).
+                (if ``save_to_dir`` is set).
 
         Returns:
             SemanticIterator: An Iterator yielding tuples of (x, y),
@@ -742,15 +742,16 @@ class SemanticMovieGenerator(ImageDataGenerator):
             frames_per_batch (int): Size of z axis in generated batches.
             shuffle (bool): Whether to shuffle the data between epochs.
             seed (int): Random seed for data shuffling.
-            min_objects (int): Images with fewer than 'min_objects' are ignored.
+            min_objects (int): Images with fewer than ``min_objects``
+                are ignored.
             save_to_dir (str): Optional directory where to save the pictures
                 being yielded, in a viewable format. This is useful
                 for visualizing the random transformations being
                 applied, for debugging purposes.
             save_prefix (str): Prefix to use for saving sample
-                images (if save_to_dir is set).
+                images (if ``save_to_dir`` is set).
             save_format (str): Format to use for saving sample images
-                (if save_to_dir is set).
+                (if ``save_to_dir`` is set).
 
         Returns:
             SemanticMovieIterator: An Iterator yielding tuples of (x, y)
@@ -1407,15 +1408,16 @@ class Semantic3DGenerator(ImageDataGenerator):
             frames_per_batch (int): Size of z axis in generated batches.
             shuffle (bool): Whether to shuffle the data between epochs.
             seed (int): Random seed for data shuffling.
-            min_objects (int): Images with fewer than 'min_objects' are ignored.
+            min_objects (int): Images with fewer than ``min_objects``
+                are ignored.
             save_to_dir (str): Optional directory where to save the pictures
                 being yielded, in a viewable format. This is useful
                 for visualizing the random transformations being
                 applied, for debugging purposes.
             save_prefix (str): Prefix to use for saving sample
-                images (if save_to_dir is set).
+                images (if ``save_to_dir`` is set).
             save_format (str): Format to use for saving sample images
-                (if save_to_dir is set).
+                (if ``save_to_dir`` is set).
 
         Returns:
             Semantic3DIterator: An Iterator yielding tuples of (x, y)

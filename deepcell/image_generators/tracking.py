@@ -164,15 +164,20 @@ class SiameseIterator(Iterator):
         batch_size (int): Size of a batch.
         shuffle (bool): Whether to shuffle the data between epochs.
         seed (int): Random seed for data shuffling.
-        data_format (str): One of 'channels_first', 'channels_last'.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         save_to_dir (str): Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix (str): Prefix to use for saving sample
-            images (if save_to_dir is set).
+            images (if ``save_to_dir`` is set).
         save_format (str): Format to use for saving sample images
-            (if save_to_dir is set).
+            (if ``save_to_dir`` is set).
     """
     def __init__(self,
                  train_dict,

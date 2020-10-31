@@ -58,18 +58,23 @@ class CroppingIterator(SemanticIterator):
         image_data_generator (ImageDataGenerator): For random transformations
             and normalization.
         batch_size (int): Size of a batch.
-        min_objects (int): Images with fewer than 'min_objects' are ignored.
+        min_objects (int): Images with fewer than ``min_objects`` are ignored.
         shuffle (bool): Whether to shuffle the data between epochs.
         seed (int): Random seed for data shuffling.
-        data_format (str): One of 'channels_first', 'channels_last'.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         save_to_dir (str): Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix (str): Prefix to use for saving sample
-            images (if save_to_dir is set).
+            images (if ``save_to_dir`` is set).
         save_format (str): Format to use for saving sample images
-            (if save_to_dir is set).
+            (if ``save_to_dir`` is set).
         crop_size (tuple): Optional parameter specifying size of crop to take from image
     """
     def __init__(self,
@@ -336,7 +341,7 @@ class CroppingDataGenerator(SemanticDataGenerator):
             train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             batch_size (int): Size of a batch. Defaults to 1.
             shuffle (bool): Whether to shuffle the data between epochs.
-                Defaults to True
+                Defaults to ``True``.
             seed (int): Random seed for data shuffling.
             min_objects (int): Minumum number of objects allowed per image
             save_to_dir (str): Optional directory where to save the pictures
@@ -344,9 +349,9 @@ class CroppingDataGenerator(SemanticDataGenerator):
                 for visualizing the random transformations being
                 applied, for debugging purposes.
             save_prefix (str): Prefix to use for saving sample
-                images (if save_to_dir is set).
+                images (if ``save_to_dir`` is set).
             save_format (str): Format to use for saving sample images
-                (if save_to_dir is set).
+                (if ``save_to_dir`` is set).
 
         Returns:
             SemanticIterator: An Iterator yielding tuples of (x, y),

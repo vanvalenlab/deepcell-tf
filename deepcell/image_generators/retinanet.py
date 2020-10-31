@@ -154,10 +154,11 @@ class RetinaNetGenerator(ImageDataGenerator):
         Args:
             train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             compute_shapes: Function to determine the shapes of the anchors.
-            min_objects (int): images with fewer than 'min_objects' are ignored.
+            min_objects (int): images with fewer than ``min_objects`` are
+                ignored.
             num_classes (int): Number of classes to predict.
             clear_borders (bool): Whether to use clear_border on y.
-            include_masks (bool): Train on mask data (MaskRCNN).
+            include_masks (bool): Train on mask data (``MaskRCNN``).
             batch_size (int): Size of a batch.
             shuffle (bool): Whether to shuffle the data between epochs.
             seed (int): Random seed for data shuffling.
@@ -166,9 +167,9 @@ class RetinaNetGenerator(ImageDataGenerator):
                 for visualizing the random transformations being
                 applied, for debugging purposes.
             save_prefix (str): Prefix to use for saving sample
-                images (if save_to_dir is set).
+                images (if ``save_to_dir`` is set).
             save_format (str): Format to use for saving sample images
-                (if save_to_dir is set).
+                (if ``save_to_dir`` is set).
 
         Returns:
             RetinaNetIterator: An Iterator yielding tuples of (x, y),
@@ -1059,7 +1060,7 @@ class RetinaMovieDataGenerator(MovieDataGenerator):
             shuffle (bool): Whether to shuffle the data between epochs.
             compute_shapes: functor for generating shapes, based on the model.
             num_classes (int): Number of classes for classification.
-            clear_borders (bool): Whether to call clear_border on y.
+            clear_borders (bool): Whether to call ``clear_border`` on ``y``.
             include_masks (bool): Whether to yield mask data.
             seed (int): Random seed for data shuffling.
             save_to_dir (str): Optional directory where to save the pictures
@@ -1067,14 +1068,14 @@ class RetinaMovieDataGenerator(MovieDataGenerator):
                 for visualizing the random transformations being
                 applied, for debugging purposes.
             save_prefix (str): Prefix to use for saving sample
-                images (if save_to_dir is set).
+                images (if ``save_to_dir`` is set).
             save_format (str): Format to use for saving sample images
-                (if save_to_dir is set).
+                (if ``save_to_dir`` is set).
 
         Returns:
-            RetinaMovieIterator: An Iterator yielding tuples of (x, y),
-                where x is a numpy array of image data and y is a numpy array
-                of labels of the same shape.
+            RetinaMovieIterator: An Iterator yielding tuples of ``(x, y)``,
+                where ``x`` is a numpy array of image data
+                and ``y`` is a numpy array of labels of the same shape.
         """
         return RetinaMovieIterator(
             train_dict,

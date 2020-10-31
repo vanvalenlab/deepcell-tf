@@ -281,12 +281,12 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
                 for visualizing the random transformations being
                 applied, for debugging purposes.
             save_prefix (str): Prefix to use for saving sample
-                images (if save_to_dir is set).
+                images (if ``save_to_dir`` is set).
             save_format (str): Format to use for saving sample images
-                (if save_to_dir is set).
+                (if ``save_to_dir`` is set).
 
         Returns:
-            ImageFullyConvIterator: An Iterator yielding tuples of (x, y),
+            ImageFullyConvIterator: An Iterator yielding tuples of ``(x, y)``,
                 where x is a numpy array of image data and y is a numpy array
                 of labels of the same shape.
         """
@@ -358,7 +358,7 @@ class MovieDataGenerator(ImageDataGenerator):
     The data will be looped over (in batches).
 
     Args:
-        kwargs (dict): Standard ImageDataGenerator keyword arguments.
+        kwargs (dict): Standard ``ImageDataGenerator`` keyword arguments.
     """
 
     def __init__(self, **kwargs):
@@ -401,12 +401,12 @@ class MovieDataGenerator(ImageDataGenerator):
                 for visualizing the random transformations being
                 applied, for debugging purposes.
             save_prefix (str): Prefix to use for saving sample
-                images (if save_to_dir is set).
+                images (if ``save_to_dir`` is set).
             save_format (str): Format to use for saving sample images
-                (if save_to_dir is set).
+                (if ``save_to_dir`` is set).
 
         Returns:
-            MovieArrayIterator: An Iterator yielding tuples of (x, y),
+            MovieArrayIterator: An Iterator yielding tuples of ``(x, y)``,
                 where x is a numpy array of image data and y is a numpy array
                 of labels of the same shape.
         """
