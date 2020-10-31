@@ -27,7 +27,7 @@
 # pylint:disable=line-too-long
 """Convolutational Recurrent Layers
 
-Based on `Convolutional gated recurrent networks for video segmentation <https://ieeexplore.ieee.org/abstract/document/8296851>`)_.
+Based on `Convolutional gated recurrent networks for video segmentation <https://ieeexplore.ieee.org/abstract/document/8296851>`_.
 
 Also influenced by Keras's
 `GRU <https://github.com/keras-team/keras/blob/master/keras/layers/recurrent.py>`_
