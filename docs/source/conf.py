@@ -31,9 +31,9 @@ copyright = ('2016-{currentyear}, Van Valen Lab at the '
 author = 'Van Valen Lab at Caltech'
 
 # The short X.Y version
-version = '2.0'
+version = '0.6.0'
 # The full version, including alpha/beta/rc tags
-release = '2.0.0'
+release = '0.6.0'
 
 import subprocess
 try:
