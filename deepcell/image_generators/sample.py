@@ -336,7 +336,7 @@ class SampleDataGenerator(ImageDataGenerator):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
-            train_dict (dict): Consists of numpy arrays for X and y.
+            train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             window_size (tuple): The size of the sampled voxels to generate.
             batch_size (int): Size of a batch.
             shuffle (bool): Whether to shuffle the data between epochs.

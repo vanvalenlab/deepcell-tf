@@ -54,7 +54,7 @@ class CroppingIterator(SemanticIterator):
     """Iterator yielding data from Numpy arrays (X and y).
 
     Args:
-        train_dict (dict): Consists of numpy arrays for X and y.
+        train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
         image_data_generator (ImageDataGenerator): For random transformations
             and normalization.
         batch_size (int): Size of a batch.
@@ -333,7 +333,7 @@ class CroppingDataGenerator(SemanticDataGenerator):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
-            train_dict (dict): Consists of numpy arrays for X and y.
+            train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             batch_size (int): Size of a batch. Defaults to 1.
             shuffle (bool): Whether to shuffle the data between epochs.
                 Defaults to True

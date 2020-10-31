@@ -152,7 +152,7 @@ class SiameseIterator(Iterator):
         {"same", "different", or "daughter"}.
 
     Args:
-        train_dict (dict): Consists of numpy arrays for X and y.
+        train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
         image_data_generator (SiameseDataGenerator): For random transformations
             and normalization.
         features (list): Feature names to calculate and yield.

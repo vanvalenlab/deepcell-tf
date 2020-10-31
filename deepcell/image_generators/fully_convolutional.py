@@ -271,7 +271,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
-            train_dict (dict): Consists of numpy arrays for X and y.
+            train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             batch_size (int): Size of a batch.
             skip (int): Number of skip connections to yield data.
             shuffle (bool): Whether to shuffle the data between epochs.
@@ -390,7 +390,7 @@ class MovieDataGenerator(ImageDataGenerator):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
-            train_dict (dict): Consists of numpy arrays for X and y.
+            train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             frames_per_batch (int): Size of z axis in generated batches.
             skip (int): Number of skip connections to yield data.
             batch_size (int): Size of a batch.

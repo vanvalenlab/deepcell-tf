@@ -328,7 +328,7 @@ class SemanticDataGenerator(ImageDataGenerator):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
-            train_dict (dict): Consists of numpy arrays for X and y.
+            train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             batch_size (int): Size of a batch. Defaults to 1.
             shuffle (bool): Whether to shuffle the data between epochs.
                 Defaults to True
@@ -737,7 +737,7 @@ class SemanticMovieGenerator(ImageDataGenerator):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
-            train_dict (dict): Consists of numpy arrays for X and y.
+            train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             batch_size (int): Size of a batch.
             frames_per_batch (int): Size of z axis in generated batches.
             shuffle (bool): Whether to shuffle the data between epochs.
@@ -972,7 +972,7 @@ class Semantic3DIterator(Iterator):
     """Iterator yielding data from Numpy arrays (X and y).
 
     Args:
-        train_dict (dict): Dictionary consisting of numpy arrays for X and y.
+        train_dict (dict): Dictionary consisting of numpy arrays for ``X`` and ``y``.
         3d_data_generator (Semantic3DGenerator): ``Semantic3DGenerator``
             to use for random transformations and normalization.
         batch_size (int): Size of a batch.
@@ -1402,7 +1402,7 @@ class Semantic3DGenerator(ImageDataGenerator):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
-            train_dict (dict): Consists of numpy arrays for X and y.
+            train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             batch_size (int): Size of a batch.
             frames_per_batch (int): Size of z axis in generated batches.
             shuffle (bool): Whether to shuffle the data between epochs.
