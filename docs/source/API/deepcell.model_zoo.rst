@@ -14,10 +14,10 @@ deepcell.model_zoo.featurenet
     :undoc-members:
     :show-inheritance:
 
-deepcell.model_zoo.maskrcnn
+deepcell.model_zoo.retinamask
 ---------------------------
 
-.. automodule:: deepcell.model_zoo.maskrcnn
+.. automodule:: deepcell.model_zoo.retinamask
     :members:
     :undoc-members:
     :show-inheritance:
