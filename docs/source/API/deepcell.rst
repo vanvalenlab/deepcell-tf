@@ -1,27 +1,21 @@
 deepcell API
 ============
 
-Subpackages
------------
+Modules
+-------
 
 .. toctree::
 
     deepcell.applications
+    deepcell.callbacks
     deepcell.datasets
+    deepcell.initializers
     deepcell.image_generators
     deepcell.layers
-    deepcell.model_zoo
-    deepcell.utils
-
-Submodules
-----------
-
-.. toctree::
-
-    deepcell.callbacks
-    deepcell.initializers
     deepcell.losses
     deepcell.metrics
+    deepcell.model_zoo
     deepcell.running
     deepcell.tracking
     deepcell.training
+    deepcell.utils
