@@ -1,5 +1,5 @@
-Module: deepcell.model_zoo
-==========================
+deepcell.model_zoo
+==================
 
 .. automodule:: deepcell.model_zoo
 

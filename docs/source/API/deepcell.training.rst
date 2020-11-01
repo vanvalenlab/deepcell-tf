@@ -1,5 +1,5 @@
-Module: deepcell.training
-=========================
+deepcell.training
+=================
 
 .. contents:: Contents
     :local:

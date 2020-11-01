@@ -1,5 +1,5 @@
-Module: deepcell.applications
-=============================
+deepcell.applications
+=====================
 
 .. automodule:: deepcell.applications
 

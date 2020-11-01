@@ -1,5 +1,5 @@
-Module: deepcell.layers
-=======================
+deepcell.layers
+===============
 
 .. automodule:: deepcell.layers
 

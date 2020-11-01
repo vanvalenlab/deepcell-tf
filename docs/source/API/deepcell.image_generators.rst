@@ -1,5 +1,5 @@
-Module: deepcell.image\_generators
-==================================
+deepcell.image\_generators
+==========================
 
 .. automodule:: deepcell.image_generators
     :members: _transform_masks

@@ -1,5 +1,5 @@
-Module: deepcell.datasets
-=========================
+deepcell.datasets
+=================
 Basic datasets can be loaded according to the following example.
 
 .. code-block:: python
