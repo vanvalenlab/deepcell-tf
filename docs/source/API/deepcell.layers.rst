@@ -27,13 +27,6 @@ deepcell.layers.pooling
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.resize
-----------------------
-.. automodule:: deepcell.layers.resize
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 deepcell.layers.tensor_product
 ------------------------------
 .. automodule:: deepcell.layers.tensor_product
