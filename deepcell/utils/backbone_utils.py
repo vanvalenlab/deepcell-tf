@@ -101,8 +101,7 @@ def featurenet_backbone(input_tensor=None, input_shape=None,
 
     Args:
         input_tensor (tensor): Input tensor to specify input size
-        n_filters (int): Defaults to 32. Number of filters for
-            convolutional layers
+        n_filters (int): Number of filters for convolutional layers
 
     Returns:
         tuple: List of backbone layers, list of backbone names

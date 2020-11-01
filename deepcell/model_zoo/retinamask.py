@@ -64,8 +64,8 @@ def default_mask_model(num_classes,
         mask_feature_size (int): The number of filters to expect from the masks.
         roi_size (tuple): The number of filters to use in the Roi Layers.
         mask_size (tuple): The size of the masks.
-        mask_dtype (str): Dtype to use for mask tensors.
-        retinanet_dtype (str): Dtype retinanet models expect.
+        mask_dtype (str): ``dtype`` to use for mask tensors.
+        retinanet_dtype (str): ``dtype`` retinanet models expect.
         name (str): The name of the submodel.
 
     Returns:
@@ -200,8 +200,8 @@ def default_roi_submodels(num_classes,
         mask_size (tuple): The size of the masks.
         frames_per_batch (int): Size of z axis in generated batches.
             If equal to 1, assumes 2D data.
-        mask_dtype (str): Dtype to use for mask tensors.
-        retinanet_dtype (str): Dtype retinanet models expect.
+        mask_dtype (str): ``dtype`` to use for mask tensors.
+        retinanet_dtype (str): ``dtype`` retinanet models expect.
 
     Returns:
         list: A list of tuple, where the first element is the name of the
@@ -251,7 +251,7 @@ def retinanet_mask(inputs,
     Uses the retinanet bbox model and appends layers to compute masks.
 
     Args:
-        inputs (tensor): List of tensorflow.keras.layers.Input.
+        inputs (tensor): List of ``tensorflow.keras.layers.Input``.
             The first input is the image, the second input the blob of masks.
         backbone_dict (dict): A dictionary with the backbone layers.
         num_classes (int): Integer, number of classes to classify.
@@ -261,13 +261,13 @@ def retinanet_mask(inputs,
             to create the feature pyramid.
         pyramid_levels (list): The pyramid levels to attach regression and
             classification heads to.
-        retinanet_model (tensorflow.keras.Model): RetinaNet model that
+        retinanet_model (tensorflow.keras.Model): ``RetinaNet`` model that
             predicts regression and classification values.
         anchor_params (AnchorParameters): Struct containing anchor parameters.
         nms (bool): Whether to use non-maximum suppression
             for the filtering step.
         panoptic (bool): Flag for adding the semantic head for panoptic
-            segmentation tasks. Defaults to false.
+            segmentation tasks.
         class_specific_filter (bool): Use class specific filtering.
         crop_size (tuple): 2-length tuple for the x-y size of the crops.
             Used to create default roi_submodels.
@@ -280,7 +280,7 @@ def retinanet_mask(inputs,
             ``FilterDetections`` layer.
         nms_threshold (float): Minimimum NMS for the
             ``FilterDetections`` layer.
-        mask_dtype (str): Dtype to use for mask tensors.
+        mask_dtype (str): ``dtype`` to use for mask tensors.
         kwargs (dict): Additional kwargs to pass to the
             ``retinanet_bbox`` model.
 
@@ -436,7 +436,7 @@ def RetinaMask(backbone,
             - 'max' means that global max pooling will
                 be applied.
 
-        mask_dtype (str): Dtype to use for mask tensors.
+        mask_dtype (str): ``dtype`` to use for mask tensors.
         required_channels (int): The required number of channels of the
             backbone.  3 is the default for all current backbones.
         frames_per_batch (int): Size of z axis in generated batches.

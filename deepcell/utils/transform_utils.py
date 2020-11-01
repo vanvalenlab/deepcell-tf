@@ -182,13 +182,10 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
     Args:
         mask (numpy.array): A z-stack of label masks (``y`` data).
         bins (int): The number of transformed distance classes.
-            Defaults to ``None``.
         erosion_width (int): Number of pixels to erode edges of each labels.
-            Defaults to ``None``.
         normalize (boolean): Normalize the transform of each cell by that
-            cell's largest distance. Defaults to ``True``.
+            cell's largest distance.
         sampling (list): Spacing of pixels along each dimension.
-            Defaults to ``[0.5, 0.217, 0.217]``.
 
     Returns:
         numpy.array: 3D Euclidiean Distance Transform
@@ -227,10 +224,9 @@ def outer_distance_transform_movie(mask, bins=None, erosion_width=None,
     Args:
         mask (numpy.array): A label mask (``y`` data).
         bins (int): The number of transformed distance classes.
-            Defaults to ``None``.
         erosion_width (int): number of pixels to erode edges of each labels.
         normalize (boolean): Normalize the transform of each cell by that
-            cell's largest distance. Defaults to ``True``.
+            cell's largest distance.
 
     Returns:
         numpy.array: a mask of same shape as input mask,
@@ -255,28 +251,26 @@ def outer_distance_transform_movie(mask, bins=None, erosion_width=None,
 def inner_distance_transform_2d(mask, bins=None, erosion_width=None,
                                 alpha=0.1, beta=1):
     """Transform a label mask with an inner distance transform.
-    
+
     .. nbinput:: ipython3
 
         inner_distance = 1 / (1 + beta * alpha * distance_to_center)
 
     Args:
-        mask (numpy.array): A label mask (y data).
+        mask (numpy.array): A label mask (``y`` data).
         bins (int): The number of transformed distance classes.
-            Defaults to None.
         erosion_width (int): number of pixels to erode edges of each labels
         alpha (float, str): coefficent to reduce the magnitude of the distance
-            value. If 'auto', determines alpha for each cell based on the cell
-            area. Defaults to 0.1.
-        beta (float): scale parameter that is used when alpha is set to auto.
-            Defaults to 1.
+            value. If "auto", determines ``alpha`` for each cell based on the
+            cell area.
+        beta (float): scale parameter that is used when ``alpha`` is "auto".
 
     Returns:
         numpy.array: a mask of same shape as input mask,
-            with each label being a distance class from 1 to bins.
+            with each label being a distance class from 1 to ``bins``.
 
     Raises:
-        ValueError: alpha is a string but not set to "auto".
+        ValueError: ``alpha`` is a string but not set to "auto".
     """
     # Check input to alpha
     if isinstance(alpha, str):
@@ -334,22 +328,19 @@ def inner_distance_transform_3d(mask, bins=None,
     Args:
         mask (numpy.array): A label mask (``y`` data).
         bins (int): The number of transformed distance classes.
-            Defaults to None.
         erosion_width (int): Number of pixels to erode edges of each labels
         alpha (float, str): Coefficent to reduce the magnitude of the distance
             value. If ``'auto'``, determines alpha for each cell based on the
-            cell area. Defaults to ``0.1``.
-        beta (float): Scale parameter that is used when alpha is set to auto.
-            Defaults to ``1``.
+            cell area.
+        beta (float): Scale parameter that is used when ``alpha`` is "auto".
         sampling (list): Spacing of pixels along each dimension.
-            Defaults to ``[0.5, 0.217, 0.217]``.
 
     Returns:
         numpy.array: A mask of same shape as input mask,
             with each label being a distance class from 1 to ``bins``.
 
     Raises:
-        ValueError: alpha is a string but not set to ``"auto"``.
+        ValueError: ``alpha`` is a string but not set to "auto".
     """
     # Check input to alpha
     if isinstance(alpha, str):
@@ -404,20 +395,18 @@ def inner_distance_transform_movie(mask, bins=None, erosion_width=None,
     Args:
         mask (numpy.array): A label mask (``y`` data).
         bins (int): The number of transformed distance classes.
-            Defaults to ``None``.
         erosion_width (int): Number of pixels to erode edges of each labels.
         alpha (float, str): Coefficent to reduce the magnitude of the distance
-            value. If 'auto', determines alpha for each cell based on the cell
-            area. Defaults to ``0.1``.
-        beta (float): Scale parameter that is used when alpha is set to auto.
-            Defaults to ``1``.
+            value. If "auto", determines ``alpha`` for each cell based on the
+            cell area.
+        beta (float): Scale parameter that is used when ``alpha`` is "auto".
 
     Returns:
         numpy.array: A mask of same shape as input mask,
             with each label being a distance class from 1 to ``bins``.
 
     Raises:
-        ValueError: alpha is a string but not set to "auto".
+        ValueError: ``alpha`` is a string but not set to "auto".
     """
     # Check input to alpha
     if isinstance(alpha, str):

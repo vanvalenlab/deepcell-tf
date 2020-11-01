@@ -327,7 +327,7 @@ def semantic_upsample(x,
             the 3x3 convolution.
         ndim (int): The spatial dimensions of the input data.
             Must be either 2 or 3.
-        semantic_id (int): ID of the semantic head. Defaults to 0.
+        semantic_id (int): ID of the semantic head.
         upsample_type (str): Choice of upsampling layer to use from
             ``['upsamplelike', 'upsampling2d', 'upsampling3d']``.
         interpolation (str): Choice of interpolation mode for upsampling
@@ -432,7 +432,7 @@ def __create_semantic_head(pyramid_dict,
             Must be either 2 or 3.
         include_top (bool): Whether to include the final layer of the model
         target_level (int): The level we need to reach. Performs
-            2x upsampling until we're at the target level. Defaults to 2.
+            2x upsampling until we're at the target level.
         upsample_type (str): Choice of upsampling layer to use from
             ``['upsamplelike', 'upsampling2d', 'upsampling3d']``.
         interpolation (str): Choice of interpolation mode for upsampling

@@ -439,7 +439,7 @@ def retinanet_bbox(model=None,
         nms (bool): Whether to use non-maximum suppression
             for the filtering step.
         panoptic (bool): Flag for adding the semantic head for panoptic
-            segmentation tasks. Defaults to false.
+            segmentation tasks.
         num_semantic_heads (int): The number of semantic segmentation heads.
         class_specific_filter (bool): Whether to use class specific filtering
             or filter for the best scoring class only.

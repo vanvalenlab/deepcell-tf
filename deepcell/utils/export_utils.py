@@ -112,14 +112,13 @@ def export_model_to_tflite(model_file, export_path, calibration_images,
     and the upsampling layers must use ``bilinear`` interpolation.
 
     Args:
-        model_file (str): Path to saved keras model
+        model_file (str): Path to saved model file
         export_path (str): Directory to save the exported tflite model
         calibration_images (numpy array): Array of images used for calibration
             during model quantization
         norm (boolean): Whether to normalize calibration images.
-            Defaults to True.
-        location (boolean): Whether to append a location image to calibration
-            images. Defaults to True.
+        location (boolean): Whether to append a location image
+            to calibration images.
         file_name (str): File name for the exported model. Defaults to
             'model.tflite'
     """

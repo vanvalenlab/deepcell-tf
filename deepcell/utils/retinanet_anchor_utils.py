@@ -360,14 +360,15 @@ def anchors_for_shape(image_shape,
     Args:
         image_shape (tuple): The shape of the image.
         pyramid_levels (int[]): List of ints representing which pyramids to use
-            (defaults to [3, 4, 5, 6, 7]).
+            (defaults to ``[3, 4, 5, 6, 7]``).
         anchor_params (AnchorParameters): Struct containing anchor parameters.
-            If None, default values are used.
+            If ``None``, default values are used.
         shapes_callback (function): Function to call for getting the shape of
             the image at different pyramid levels.
 
     Returns:
-        numpy.array: (N, 4) containing the (x1, y1, x2, y2) anchor coordinates.
+        numpy.array: ``(N, 4)`` containing the ``(x1, y1, x2, y2)``
+            anchor coordinates.
     """
 
     if pyramid_levels is None:
@@ -439,8 +440,8 @@ def generate_anchors(base_size=16, ratios=None, scales=None):
 
     Args:
         base_size (int): base size of anchors
-        ratios (float[]): list of ratios
-        scales (float[]): list of scales
+        ratios (list): list of ratios
+        scales (list): list of scales
 
     Returns:
         numpy.array: generated anchors
@@ -612,7 +613,7 @@ def compute_iou(a, b):
         b (numpy.array): ``(K, H, W)`` ndarray of float
     Returns
         numpy.array: ``(N, K)`` ndarray of overlap between boxes
-            and query_boxes
+            and ``query_boxes``
     """
     intersection = np.zeros((a.shape[0], b.shape[0]))
     union = np.zeros((a.shape[0], b.shape[0]))
@@ -631,7 +632,8 @@ def overlap(a, b):
         b (numpy.array): np.array of shape ``(K, 4)`` of boxes.
 
     Returns:
-        numpy.array: shape ``(N, K)`` of overlap between boxes from a and b.
+        numpy.array: shape ``(N, K)`` of overlap between boxes
+            from ``a`` and ``b``.
     """
     area = (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
 
@@ -702,7 +704,7 @@ def _get_detections(generator,
         max_detections (int): The maximum number of detections to use per image.
 
     Returns:
-        list: The detections for each image in the generator.
+        list: The detections for each image in ``generator``.
     """
     all_detections = [[None for i in range(generator.num_classes)]
                       for j in range(generator.y.shape[0])]
@@ -870,7 +872,7 @@ def _get_annotations(generator, frames_per_batch=1):
         generator: The generator used to retrieve ground truth annotations.
 
     Returns:
-        list: The annotations for each image in the ``generator``.
+        list: The annotations for each image in ``generator``.
     """
 
     if len(generator.x.shape) == 4:
