@@ -48,13 +48,6 @@ deepcell.utils.plot\_utils
     :undoc-members:
     :show-inheritance:
 
-deepcell.utils.testing\_utils
------------------------------
-.. automodule:: deepcell.utils.testing_utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 deepcell.utils.tracking_utils
 -----------------------------
 .. automodule:: deepcell.utils.tracking_utils
