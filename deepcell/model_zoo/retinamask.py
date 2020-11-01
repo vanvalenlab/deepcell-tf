@@ -257,12 +257,12 @@ def retinanet_mask(inputs,
         num_classes (int): Integer, number of classes to classify.
         frames_per_batch (int): Size of z axis in generated batches.
             If equal to 1, assumes 2D data.
-        backbone_levels (list): The backbone levels to be used.
-            to create the feature pyramid. Defaults to ['C3', 'C4', 'C5'].
+        backbone_levels (list): The backbone levels to be used
+            to create the feature pyramid.
         pyramid_levels (list): The pyramid levels to attach regression and
-            classification heads to. Defaults to ['P3', 'P4', 'P5', 'P6', 'P7'].
-        retinanet_model (tensorflow.keras.Model): RetinaNet model that predicts
-            regression and classification values.
+            classification heads to.
+        retinanet_model (tensorflow.keras.Model): RetinaNet model that
+            predicts regression and classification values.
         anchor_params (AnchorParameters): Struct containing anchor parameters.
         nms (bool): Whether to use non-maximum suppression
             for the filtering step.
@@ -276,23 +276,24 @@ def retinanet_mask(inputs,
         name (str): Name of the model.
         roi_submodels (list): Submodels for processing ROIs.
         max_detections (int): The maximum number of detections allowed.
-        score_threshold (float): Minimum score for the FilterDetections layer.
-        nms_threshold (float): Minimimum NMS for the FilterDetections layer.
+        score_threshold (float): Minimum score for the
+            ``FilterDetections`` layer.
+        nms_threshold (float): Minimimum NMS for the
+            ``FilterDetections`` layer.
         mask_dtype (str): Dtype to use for mask tensors.
-        kwargs (dict): Additional kwargs to pass to the retinanet bbox model.
+        kwargs (dict): Additional kwargs to pass to the
+            ``retinanet_bbox`` model.
 
     Returns:
         tensorflow.keras.Model: Model with inputs as input and as output
             the output of each submodel for each pyramid level and the
             detections. The order is as defined in submodels.
 
-            ```
-            [
-                regression, classification, other[0], ...,
-                boxes_masks, boxes, scores, labels, masks, other[0], ...
-            ]
-            ```
-
+            .. nbinput:: ipython3
+                [
+                    regression, classification, other[0], ...,
+                    boxes_masks, boxes, scores, labels, masks, other[0], ...
+                ]
     """
     if anchor_params is None:
         anchor_params = AnchorParameters.default
@@ -412,16 +413,17 @@ def RetinaMask(backbone,
         input_shape (tuple): The shape of the input data.
         inputs (tensor): Optional input tensor, overrides input_shape.
         backbone_levels (list): The backbone levels to be used.
-            to create the feature pyramid. Defaults to ['C3', 'C4', 'C5'].
+            to create the feature pyramid.
         pyramid_levels (list): The pyramid levels to attach regression and
-            classification heads to. Defaults to ['P3', 'P4', 'P5', 'P6', 'P7'].
-        norm_method (str): ImageNormalization mode to use.
+            classification heads to.
+        norm_method (str): ``ImageNormalization`` mode to use.
         location (bool): Whether to include location data.
-        use_imagenet (bool): Whether to load imagenet-based pretrained weights.
+        use_imagenet (bool): Whether to load imagenet-based
+            pretrained weights.
         crop_size (tuple): 2-length tuple for the x-y size of the crops.
-            Used to create default roi_submodels.
+            Used to create default ``roi_submodels``.
         pooling (str): optional pooling mode for feature extraction
-            when include_top is False.
+            when ``include_top`` is ``False``.
 
             - None means that the output of the model will be
                 the 4D tensor output of the
@@ -438,10 +440,10 @@ def RetinaMask(backbone,
             backbone.  3 is the default for all current backbones.
         frames_per_batch (int): Size of z axis in generated batches.
             If equal to 1, assumes 2D data.
-        kwargs (dict): Other standard inputs for retinanet_mask.
+        kwargs (dict): Other standard inputs for ``retinanet_mask``.
 
     Returns:
-        tensorflow.keras.Model: RetinaNet model with a backbone.
+        tensorflow.keras.Model: ``RetinaNet`` model with a backbone.
     """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     if inputs is None:
