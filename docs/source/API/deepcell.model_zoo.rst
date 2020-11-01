@@ -15,7 +15,7 @@ deepcell.model_zoo.featurenet
     :show-inheritance:
 
 deepcell.model_zoo.retinamask
----------------------------
+-----------------------------
 
 .. automodule:: deepcell.model_zoo.retinamask
     :members:
