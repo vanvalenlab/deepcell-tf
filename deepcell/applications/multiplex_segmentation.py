@@ -55,36 +55,24 @@ class MultiplexSegmentation(Application):
 
     Example:
 
-    .. nbinput:: ipython3
+    .. code-block:: python
 
         from skimage.io import imread
         from deepcell.applications import MultiplexSegmentation
 
+        # Load the images
         im1 = imread('TNBC_DNA.tiff')
         im2 = imread('TNBC_Membrane.tiff')
-        im1.shape
-
-    .. nboutput::
-
-        (1024, 1024)
-
-    .. nbinput:: ipython3
 
         # Combined together and expand to 4D
         im = np.stack((im1, im2), axis=-1)
         im = np.expand_dims(im,0)
-        im.shape
 
-    .. nboutput::
-
-        (1, 1024, 1024, 2)
-
-    .. nbinput:: ipython3
-
+        # Create the application
         app = MultiplexSegmentation(use_pretrained_weights=True)
-        labeled_image = app.predict(image)
 
-    .. nboutput::
+        # create the lab
+        labeled_image = app.predict(image)
 
     Args:
         use_pretrained_weights (bool): Whether to load pretrained weights.

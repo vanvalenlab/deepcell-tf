@@ -54,35 +54,23 @@ class NuclearSegmentation(Application):
 
     Example:
 
-    .. nbinput:: ipython3
+    .. code-block:: python
 
         from skimage.io import imread
         from deepcell.applications import NuclearSegmentation
 
+        # Load the image
         im = imread('HeLa_nuclear.png')
-        im.shape
-
-    .. nboutput::
-
-        (1080, 1280)
-
-    .. nbinput:: ipython3
 
         # Expand image dimensions to rank 4
-        im = np.expand_dims(im,-1)
-        im = np.expand_dims(im,0)
-        im.shape
+        im = np.expand_dims(im, axis=-1)
+        im = np.expand_dims(im, axis=0)
 
-    .. nboutput::
-
-        (1, 1080, 1280, 1)
-
-    .. nbinput:: ipython3
-
+        # Create the application
         app = NuclearSegmentation(use_pretrained_weights=True)
-        labeled_image = app.predict(image)
 
-    .. nboutput::
+        # create the lab
+        labeled_image = app.predict(image)
 
     Args:
         use_pretrained_weights (bool): Whether to load pretrained weights.
