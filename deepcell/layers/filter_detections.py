@@ -46,12 +46,12 @@ def filter_detections(boxes,
     """Filter detections using the boxes and classification values.
 
     Args:
-        boxes (tensor): Tensor of shape (num_boxes, 4) containing the boxes in
-            (x1, y1, x2, y2) format.
-        classification (tensor): Tensor of shape (num_boxes, num_classes)
+        boxes (tensor): Tensor of shape ``(num_boxes, 4)`` containing the
+            boxes in ``(x1, y1, x2, y2)`` format.
+        classification (tensor): Tensor of shape ``(num_boxes, num_classes)``
             containing the classification scores.
-        other (list): List of tensors of shape (num_boxes, ...) to filter along
-            with the boxes and classification scores.
+        other (list): List of tensors of shape ``(num_boxes, ...)`` to filter
+            along with the boxes and classification scores.
         class_specific_filter (bool): Whether to perform filtering per class,
             or take the best scoring class and filter those.
         nms (bool): Whether to enable non maximum suppression.
@@ -61,16 +61,17 @@ def filter_detections(boxes,
             box should be suppressed.
 
     Returns:
-        list: A list of [boxes, scores, labels, other[0], other[1], ...].
-            boxes is shaped (max_detections, 4) and contains the (x1, y1, x2, y2)
-                of the non-suppressed boxes.
-            scores is shaped (max_detections,) and contains the scores of the
-                predicted class.
-            labels is shaped (max_detections,) and contains the predicted label.
-            other[i] is shaped (max_detections, ...) and contains the filtered
-                other[i] data.
-            In case there are less than max_detections detections,
-                the tensors are padded with -1's.
+        list: A list of [``boxes, scores, labels, other[0], other[1], ...]``.
+            ``boxes`` is shaped ``(max_detections, 4)`` and contains the
+            ``(x1, y1, x2, y2)`` of the non-suppressed boxes.
+            ``scores`` is shaped ``(max_detections,)`` and contains the scores
+            of the predicted class.
+            ``labels`` is shaped ``(max_detections,)`` and contains the
+            predicted label.
+            ``other[i]`` is shaped ``(max_detections, ...)`` and contains the
+            filtered ``other[i]`` data.
+            In case there are less than ``max_detections`` detections,
+            the tensors are padded with -1's.
     """
     def _filter_detections(scores, labels):
         # threshold based on score
@@ -160,6 +161,7 @@ class FilterDetections(Layer):
             ``(batch, height, width, channels)`` while ``channels_first``
             corresponds to inputs with shape
             ``(batch, channels, height, width)``.
+
     """
     def __init__(self,
                  nms=True,

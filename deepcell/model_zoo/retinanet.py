@@ -336,19 +336,19 @@ def retinanet(inputs,
         inputs (tensor): The inputs to the network.
         backbone_dict (dict): A dictionary with the backbone layers.
         backbone_levels (list): The backbone levels to be used.
-            to create the feature pyramid. Defaults to ['C3', 'C4', 'C5'].
+            to create the feature pyramid.
         pyramid_levels (list): The pyramid levels to attach regression and
-            classification heads to. Defaults to ['P3', 'P4', 'P5', 'P6', 'P7'].
+            classification heads to.
         num_classes (int): Number of classes to classify.
         num_anchors (int): Number of base anchors.
         create_pyramid_features (function): Function to create pyramid features.
         create_semantic_head (function): Function for creating a semantic head,
             which can be used for panoptic segmentation tasks.
         panoptic (bool): Flag for adding the semantic head for panoptic
-            segmentation tasks. Defaults to false.
+            segmentation tasks.
         num_semantic_heads (int): The number of semantic segmentation heads.
         num_semantic_classes (list): The number of classes for the semantic
-            segmentation part of panoptic segmentation tasks. Defaults to 3.
+            segmentation part of panoptic segmentation tasks.
         submodels (list): Submodels to run on each feature map
             (default is regression and classification submodels).
         frames_per_batch (int): Size of z axis in generated batches.
@@ -362,11 +362,12 @@ def retinanet(inputs,
 
             The order of the outputs is as defined in submodels:
 
-            ```
-            [
-                regression, classification, other[0], other[1], ...
-            ]
-            ```
+            .. nbinput:: ipython3
+
+                [
+                    regression, classification, other[0], other[1], ...
+                ]
+
     """
     if num_anchors is None:
         num_anchors = AnchorParameters.default.num_anchors()
@@ -456,11 +457,11 @@ def retinanet_bbox(model=None,
 
             The order is defined as follows:
 
-            ```
-            [
-                boxes, scores, labels, other[0], other[1], ...
-            ]
-            ```
+            .. nbinput:: ipython3
+
+                [
+                    boxes, scores, labels, other[0], other[1], ...
+                ]
 
     Raises:
         ValueError: the given model does not have a regression or

@@ -48,7 +48,6 @@ class ReflectionPadding2D(ZeroPadding2D):
             ``(symmetric_height_pad, symmetric_width_pad)``.
             If tuple of 2 tuples of 2 ints, interpreted as
             ``((top_pad, bottom_pad), (left_pad, right_pad))``.
-
         data_format (str): A string, one of ``channels_last`` (default)
             or ``channels_first``. The ordering of the dimensions in the
             inputs. ``channels_last`` corresponds to inputs with shape
@@ -77,9 +76,8 @@ class ReflectionPadding3D(ZeroPadding3D):
             ``(symmetric_dim1_pad, symmetric_dim2_pad, symmetric_dim3_pad)``.
             If tuple of 3 tuples of 2 ints, interpreted as
             ``((left_dim1_pad, right_dim1_pad),
-               (left_dim2_pad, right_dim2_pad),
-               (left_dim3_pad, right_dim3_pad))``
-
+            (left_dim2_pad, right_dim2_pad),
+            (left_dim3_pad, right_dim3_pad))``
         data_format (str): A string, one of ``channels_last`` (default)
             or ``channels_first``. The ordering of the dimensions in the
             inputs. ``channels_last`` corresponds to inputs with shape
