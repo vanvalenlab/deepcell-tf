@@ -252,7 +252,7 @@ def inner_distance_transform_2d(mask, bins=None, erosion_width=None,
                                 alpha=0.1, beta=1):
     """Transform a label mask with an inner distance transform.
 
-    .. nbinput:: ipython3
+    .. code-block:: python
 
         inner_distance = 1 / (1 + beta * alpha * distance_to_center)
 
@@ -321,7 +321,7 @@ def inner_distance_transform_3d(mask, bins=None,
                                 sampling=[0.5, 0.217, 0.217]):
     """Transform a label mask for a z-stack with an inner distance transform.
 
-    .. nbinput:: ipython3
+    .. code-block:: python
 
         inner_distance = 1 / (1 + beta * alpha * distance_to_center)
 

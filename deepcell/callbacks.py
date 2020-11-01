@@ -37,7 +37,7 @@ from deepcell.utils.retinanet_anchor_utils import evaluate, evaluate_mask
 class RedirectModel(Callback):
     """Callback which wraps another callback, but executed on a different model.
 
-    .. nbinput:: ipython3
+    .. code-block:: python
 
         model = keras.models.load_model('model.h5')
         model_checkpoint = ModelCheckpoint(filepath='snapshot.h5')

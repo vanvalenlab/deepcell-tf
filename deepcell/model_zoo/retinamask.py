@@ -289,8 +289,8 @@ def retinanet_mask(inputs,
             the output of each submodel for each pyramid level and the
             detections. The order is as defined in submodels.
 
-            .. nbinput:: ipython3
-            
+            .. code-block:: python
+
                 [
                     regression, classification, other[0], ...,
                     boxes_masks, boxes, scores, labels, masks, other[0], ...

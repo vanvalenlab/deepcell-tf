@@ -693,7 +693,7 @@ def _get_detections(generator,
 
     The result is a list of lists such that the size is:
 
-    .. nbinput:: ipython3
+    .. code-block:: python
 
         all_detections[num_images][num_classes] = detections[num_detections, 4 + num_classes]
 
@@ -864,7 +864,7 @@ def _get_annotations(generator, frames_per_batch=1):
 
     The result is a list of lists such that the size is:
 
-    .. nbinput:: ipython3
+    .. code-block:: python
 
         all_detections[num_images][num_classes] = annotations[num_detections, 5]
 

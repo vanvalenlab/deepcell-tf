@@ -362,7 +362,7 @@ def retinanet(inputs,
 
             The order of the outputs is as defined in submodels:
 
-            .. nbinput:: ipython3
+            .. code-block:: python
 
                 [
                     regression, classification, other[0], other[1], ...
@@ -457,7 +457,7 @@ def retinanet_bbox(model=None,
 
             The order is defined as follows:
 
-            .. nbinput:: ipython3
+            .. code-block:: python
 
                 [
                     boxes, scores, labels, other[0], other[1], ...
