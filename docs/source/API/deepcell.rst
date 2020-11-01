@@ -1,9 +1,6 @@
 deepcell API
 ============
 
-Modules
--------
-
 .. toctree::
 
     deepcell.applications
