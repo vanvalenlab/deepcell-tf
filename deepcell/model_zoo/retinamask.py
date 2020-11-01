@@ -290,6 +290,7 @@ def retinanet_mask(inputs,
             detections. The order is as defined in submodels.
 
             .. nbinput:: ipython3
+            
                 [
                     regression, classification, other[0], ...,
                     boxes_masks, boxes, scores, labels, masks, other[0], ...
