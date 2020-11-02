@@ -263,10 +263,11 @@ class SiameseIterator(Iterator):
 
     def _create_track_ids(self):
         """Builds the track IDs.
+
         Creates unique cell IDs, as cell labels are NOT unique across batches.
 
         Returns:
-            A dict containing the batch and label of each each track.
+            dict: A dict containing the batch and label of each each track.
         """
         track_counter = 0
         track_ids = {}
@@ -589,16 +590,17 @@ class SiameseIterator(Iterator):
     def _fetch_frames(self, track, division=False):
         """Fetch a random interval of frames given a track:
 
-           If division, grab the last min_track_length frames.
-           Otherwise, grab any interval of frames of length min_track_length
-           that does not include the last tracked frame.
+        If division, grab the last ``min_track_length`` frames.
+        Otherwise, grab any interval of frames of length
+        ``min_track_length`` that does not include the
+        last tracked frame.
 
-           Args:
-               track: integer, used to look up track ID
-               division: boolean, is the event being tracked a division
+        Args:
+            track: integer, used to look up track ID
+            division: boolean, is the event being tracked a division
 
-           Returns:
-               list of interval of frames of length min_track_length
+        Returns:
+            list: interval of frames of length ``min_track_length``
         """
         track_id = self.track_ids[track]
 

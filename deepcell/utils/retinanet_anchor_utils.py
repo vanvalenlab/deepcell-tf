@@ -129,7 +129,7 @@ def generate_anchor_params(pyramid_levels, anchor_size_dict,
 
     Returns:
         AnchorParameters: anchor configuration for the given
-            pyramids and anchors
+        pyramids and anchors
     """
     sizes = [anchor_size_dict[level] for level in pyramid_levels]
     strides = [2 ** int(level[1:]) for level in pyramid_levels]
@@ -160,16 +160,17 @@ def anchor_targets_bbox(anchors,
 
     Returns:
         tuple: (labels_batch, regression_batch)
-            labels_batch: batch that contains labels & anchor states
-                (np.array of shape (batch_size, N, num_classes + 1), where N is
-                the number of anchors for an image and the last column defines
-                the anchor state (-1 for ignore, 0 for bg, 1 for fg).
-            regression_batch: batch that contains bounding-box regression targets
-                for an image & anchor states (np.array of shape
-                (batch_size, N, 4 + 1), where N is the number of anchors for an
-                image, the first 4 columns define regression targets for
-                (x1, y1, x2, y2) and the last column defines anchor states
-                (-1 for ignore, 0 for bg, 1 for fg).
+        labels_batch: batch that contains labels & anchor states
+            (np.array of shape ``(batch_size, N, num_classes + 1)``,
+            where ``N`` is the number of anchors for an image and
+            the last column defines the anchor state
+            (-1 for ignore, 0 for bg, 1 for fg).
+        regression_batch: batch that contains bounding-box regression targets
+            for an image & anchor states (np.array of shape
+            ``(batch_size, N, 4 + 1)``, where N is the number of anchors for
+            an image, the first 4 columns define regression targets for
+            ``(x1, y1, x2, y2)`` and the last column defines anchor states
+            (-1 for ignore, 0 for bg, 1 for fg).
     """
     if len(image_group) != len(annotations_group):
         raise ValueError('Images and annotations must be the same size. '
@@ -244,9 +245,9 @@ def compute_gt_annotations(anchors,
 
     Returns:
         tuple: (positive_indices, ignore_indices, argmax_overlaps_inds)
-            positive_indices: indices of positive anchors
-            ignore_indices: indices of ignored anchors
-            argmax_overlaps_inds: ordered overlaps indices
+        positive_indices: indices of positive anchors
+        ignore_indices: indices of ignored anchors
+        argmax_overlaps_inds: ordered overlaps indices
     """
     overlaps = compute_overlap(
         anchors.astype('float64'), annotations.astype('float64'))
@@ -368,7 +369,7 @@ def anchors_for_shape(image_shape,
 
     Returns:
         numpy.array: ``(N, 4)`` containing the ``(x1, y1, x2, y2)``
-            anchor coordinates.
+        anchor coordinates.
     """
 
     if pyramid_levels is None:
@@ -546,8 +547,8 @@ def bbox_transform_inv(boxes, deltas, mean=None, std=None):
 
     Returns:
         numpy.array: same shape as boxes with deltas applied to each box.
-            The mean and std are used during training to normalize the
-            regression values (networks love normalization).
+        The mean and std are used during training to normalize the
+        regression values (networks love normalization).
     """
     if mean is None:
         mean = [0, 0, 0, 0]
@@ -613,7 +614,7 @@ def compute_iou(a, b):
         b (numpy.array): ``(K, H, W)`` ndarray of float
     Returns
         numpy.array: ``(N, K)`` ndarray of overlap between boxes
-            and ``query_boxes``
+        and ``query_boxes``
     """
     intersection = np.zeros((a.shape[0], b.shape[0]))
     union = np.zeros((a.shape[0], b.shape[0]))
@@ -633,7 +634,7 @@ def overlap(a, b):
 
     Returns:
         numpy.array: shape ``(N, K)`` of overlap between boxes
-            from ``a`` and ``b``.
+        from ``a`` and ``b``.
     """
     area = (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
 

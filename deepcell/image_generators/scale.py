@@ -248,9 +248,9 @@ class ScaleDataGenerator(ImageFullyConvDataGenerator):
                 (if ``save_to_dir`` is set).
 
         Returns:
-            ScaleIterator: An Iterator yielding tuples of ``(x, y)``,
-                where ``x`` is a numpy array of image data and ``y``
-                is a numpy array of labels of the same shape.
+            ScaleIterator: An ``Iterator`` yielding tuples of ``(x, y)``,
+            where ``x`` is a numpy array of image data and ``y``
+            is the transformed scale of ``x``.
         """
         return ScaleIterator(
             train_dict,
@@ -275,7 +275,7 @@ class ScaleDataGenerator(ImageFullyConvDataGenerator):
 
         Returns:
             tensor:  A randomly transformed version of the input (same shape).
-                If ``y`` is passed, it is transformed if necessary and returned.
+            If ``y`` is passed, it is transformed if necessary and returned.
         """
         params = self.get_random_transform(x.shape, seed)
         params['zy'] = params['zx']

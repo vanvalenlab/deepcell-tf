@@ -172,9 +172,9 @@ class RetinaNetGenerator(ImageDataGenerator):
                 (if ``save_to_dir`` is set).
 
         Returns:
-            RetinaNetIterator: An Iterator yielding tuples of (x, y),
-                where x is a numpy array of image data and y is a numpy array
-                of labels of the same shape.
+            RetinaNetIterator: An ``Iterator`` yielding tuples of ``(x, y)``,
+            where ``x`` is a numpy array of image data and ``y`` is list of
+            numpy arrays of transformed masks of the same shape.
         """
         return RetinaNetIterator(
             train_dict,
@@ -208,9 +208,10 @@ class RetinaNetGenerator(ImageDataGenerator):
                 label mask(s) for x, optional.
             seed: Random seed.
 
-        Returns:
-            A randomly transformed version of the input (same shape).
-            If y is passed, it is transformed if necessary and returned.
+        Returns: 
+            numpy.array: A randomly transformed version of the input
+            (same shape). If ``y`` is passed, it is transformed if
+            necessary and returned.
         """
         params = self.get_random_transform(x.shape, seed)
 
@@ -420,7 +421,7 @@ class RetinaNetIterator(Iterator):
             y (tensor): Tensor to annotate
 
         Returns:
-            dict: Annotations of bboxes and labels
+            dict: Annotations of ``bboxes`` and ``labels``
         """
         labels, bboxes, masks = [], [], []
         for prop in regionprops(np.squeeze(y.astype('int'))):
@@ -756,7 +757,7 @@ class RetinaMovieIterator(Iterator):
             y (tensor): tensor to annotate.
 
         Returns:
-            dict: Annotations of bboxes and labels
+            dict: Annotations of ``bboxes`` and ``labels``
         """
         labels, bboxes, masks = [], [], []
         for prop in regionprops(np.squeeze(y.astype('int'))):
@@ -1073,9 +1074,9 @@ class RetinaMovieDataGenerator(MovieDataGenerator):
                 (if ``save_to_dir`` is set).
 
         Returns:
-            RetinaMovieIterator: An Iterator yielding tuples of ``(x, y)``,
-                where ``x`` is a numpy array of image data
-                and ``y`` is a numpy array of labels of the same shape.
+            RetinaMovieIterator: An ``Iterator`` yielding tuples of ``(x, y)``,
+            where ``x`` is a numpy array of image data and ``y`` is list of
+            numpy arrays of transformed masks of the same shape.
         """
         return RetinaMovieIterator(
             train_dict,

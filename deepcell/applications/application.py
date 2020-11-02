@@ -152,7 +152,7 @@ class Application(object):
 
         Returns:
             (numpy.array, dict): Tuple of tiled image and dict of tiling
-                information.
+            information.
         """
 
         if len(image.shape) != 4:
@@ -246,7 +246,7 @@ class Application(object):
 
         Returns:
             dict or list: reformatted images stored as a dict, or input
-                images stored as list if no formatting function is specified.
+            images stored as list if no formatting function is specified.
         """
 
         if self.format_model_output_fn is not None:

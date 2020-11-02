@@ -74,8 +74,7 @@ def default_classification_model(num_classes,
         name (str): The name of the submodel.
 
     Returns:
-        tensorflow.keras.Model: A model that predicts classes for
-            each anchor.
+        tensorflow.keras.Model: A model that predicts classes for each anchor.
     """
     time_distributed = frames_per_batch > 1
 

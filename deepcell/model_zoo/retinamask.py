@@ -204,7 +204,7 @@ def default_roi_submodels(num_classes,
 
     Returns:
         list: A list of tuple, where the first element is the name of the
-            submodel and the second element is the submodel itself.
+        submodel and the second element is the submodel itself.
     """
     if frames_per_batch > 1:
         return [

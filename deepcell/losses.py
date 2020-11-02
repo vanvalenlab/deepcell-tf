@@ -41,9 +41,9 @@ def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from
     Args:
         y_true: A tensor of the same shape as output.
         y_pred: A tensor resulting from a softmax
-            (unless from_logits is True, in which
-            case y_pred is expected to be the logits).
-        from_logits: Boolean, whether y_pred is the
+            (unless ``from_logits`` is ``True``, in which
+            case ``y_pred`` is expected to be the logits).
+        from_logits: Boolean, whether ``y_pred`` is the
             result of a softmax, or is a tensor of logits.
 
     Returns:
@@ -73,11 +73,11 @@ def weighted_categorical_crossentropy(y_true, y_pred,
     them to weight the cross entropy
 
     Args:
-        y_true: A tensor of the same shape as y_pred.
+        y_true: A tensor of the same shape as ``y_pred``.
         y_pred: A tensor resulting from a softmax
-            (unless from_logits is True, in which
-            case y_pred is expected to be the logits).
-        from_logits: Boolean, whether y_pred is the
+            (unless ``from_logits`` is ``True``, in which
+            case ``y_pred`` is expected to be the logits).
+        from_logits: Boolean, whether ``y_pred`` is the
             result of a softmax, or is a tensor of logits.
 
     Returns:
@@ -110,11 +110,11 @@ def sample_categorical_crossentropy(y_true,
     cross entropy.
 
     Args:
-        y_true: A tensor of the same shape as y_pred.
+        y_true: A tensor of the same shape as ``y_pred``.
         y_pred: A tensor resulting from a softmax
-            (unless from_logits is True, in which
-            case y_pred is expected to be the logits).
-        from_logits: Boolean, whether y_pred is the
+            (unless ``from_logits`` is ``True``, in which
+            case ``y_pred`` is expected to be the logits).
+        from_logits: Boolean, whether ``y_pred`` is the
             result of a softmax, or is a tensor of logits.
 
     Returns:
@@ -144,7 +144,7 @@ def dice_loss(y_true, y_pred, smooth=1):
     """Dice coefficient loss between an output tensor and a target tensor.
 
     Args:
-        y_true: A tensor of the same shape as y_pred.
+        y_true: A tensor of the same shape as ``y_pred``.
         y_pred: A tensor resulting from a softmax
 
     Returns:
@@ -163,7 +163,7 @@ def discriminative_instance_loss(y_true, y_pred,
     """Discriminative loss between an output tensor and a target tensor.
 
     Args:
-        y_true: A tensor of the same shape as y_pred.
+        y_true: A tensor of the same shape as ``y_pred``.
         y_pred: A tensor of the vector embedding
 
     Returns:
@@ -217,11 +217,11 @@ def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_l
     them to weight the cross entropy
 
     Args:
-        y_true: A tensor of the same shape as y_pred.
+        y_true: A tensor of the same shape as ``y_pred``.
         y_pred: A tensor resulting from a softmax
-            (unless from_logits is True, in which
-            case y_pred is expected to be the logits).
-        from_logits: Boolean, whether y_pred is the
+            (unless ``from_logits`` is ``True``, in which
+            case ``y_pred`` is expected to be the logits).
+        from_logits: Boolean, whether ``y_pred`` is the
             result of a softmax, or is a tensor of logits.
 
     Returns:
@@ -282,13 +282,13 @@ def focal(y_true, y_pred, alpha=0.25, gamma=2.0, axis=None):
     As defined in https://arxiv.org/abs/1708.02002
 
     Args:
-        y_true: Tensor of target data with shape (B, N, num_classes).
-        y_pred: Tensor of predicted data with shape (B, N, num_classes).
-        alpha: Scale the focal weight with alpha.
-        gamma: Take the power of the focal weight with gamma.
+        y_true: Tensor of target data with shape ``(B, N, num_classes)``.
+        y_pred: Tensor of predicted data with shape ``(B, N, num_classes)``.
+        alpha: Scale the focal weight with ``alpha``.
+        gamma: Take the power of the focal weight with ``gamma``.
 
     Returns:
-        The focal loss of y_pred w.r.t. y_true.
+        float: The focal loss of ``y_pred`` w.r.t. ``y_true``.
     """
     if axis is None:
         axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1

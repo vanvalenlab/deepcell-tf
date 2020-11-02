@@ -62,16 +62,16 @@ def filter_detections(boxes,
 
     Returns:
         list: A list of [``boxes, scores, labels, other[0], other[1], ...]``.
-            ``boxes`` is shaped ``(max_detections, 4)`` and contains the
-            ``(x1, y1, x2, y2)`` of the non-suppressed boxes.
-            ``scores`` is shaped ``(max_detections,)`` and contains the scores
-            of the predicted class.
-            ``labels`` is shaped ``(max_detections,)`` and contains the
-            predicted label.
-            ``other[i]`` is shaped ``(max_detections, ...)`` and contains the
-            filtered ``other[i]`` data.
-            In case there are less than ``max_detections`` detections,
-            the tensors are padded with -1's.
+        ``boxes`` is shaped ``(max_detections, 4)`` and contains the
+        ``(x1, y1, x2, y2)`` of the non-suppressed boxes.
+        ``scores`` is shaped ``(max_detections,)`` and contains the scores
+        of the predicted class.
+        ``labels`` is shaped ``(max_detections,)`` and contains the
+        predicted label.
+        ``other[i]`` is shaped ``(max_detections, ...)`` and contains the
+        filtered ``other[i]`` data.
+        In case there are less than ``max_detections`` detections,
+        the tensors are padded with -1's.
     """
     def _filter_detections(scores, labels):
         # threshold based on score
@@ -185,7 +185,8 @@ class FilterDetections(Layer):
         """Constructs the NMS graph.
 
         Args:
-            inputs: List of [boxes, classification, other[0], other[1], ...] tensors.
+            inputs: List of
+            ``[boxes, classification, other[0], other[1], ...]`` tensors.
         """
         boxes = inputs[0]
         classification = inputs[1]
@@ -275,9 +276,14 @@ class FilterDetections(Layer):
 
         Returns:
             list: List of tuples representing the output shapes:
-                [filtered_boxes.shape, filtered_scores.shape,
-                 filtered_labels.shape, filtered_other[0].shape,
-                 filtered_other[1].shape, ...]
+
+            .. code-block:: python
+
+                [
+                    filtered_boxes.shape, filtered_scores.shape,
+                    filtered_labels.shape, filtered_other[0].shape,
+                    filtered_other[1].shape, ...
+                ]
         """
         input_shape = [tensor_shape.TensorShape(insh) for insh in input_shape]
         # input_shape = tensor_shape.TensorShape(input_shape).as_list()

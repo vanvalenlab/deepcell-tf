@@ -286,9 +286,10 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
                 (if ``save_to_dir`` is set).
 
         Returns:
-            ImageFullyConvIterator: An Iterator yielding tuples of ``(x, y)``,
-                where x is a numpy array of image data and y is a numpy array
-                of labels of the same shape.
+            ImageFullyConvIterator: An ``Iterator`` yielding tuples of
+            ``(x, y)``, where ``x`` is a numpy array of image data and
+            ``y`` is list of numpy arrays of transformed masks
+            of the same shape.
         """
         return ImageFullyConvIterator(
             train_dict,
@@ -316,7 +317,7 @@ class ImageFullyConvDataGenerator(ImageDataGenerator):
 
         Returns:
             tensor:  A randomly transformed version of the input (same shape).
-                If y is passed, it is transformed if necessary and returned.
+            If ``y`` is passed, it is transformed if necessary and returned.
         """
         params = self.get_random_transform(x.shape, seed)
 
@@ -406,9 +407,9 @@ class MovieDataGenerator(ImageDataGenerator):
                 (if ``save_to_dir`` is set).
 
         Returns:
-            MovieArrayIterator: An Iterator yielding tuples of ``(x, y)``,
-                where x is a numpy array of image data and y is a numpy array
-                of labels of the same shape.
+            MovieArrayIterator: An ``Iterator`` yielding tuples of ``(x, y)``,
+            where ``x`` is a numpy array of image data and ``y`` is list of
+            numpy arrays of transformed masks of the same shape.
         """
         return MovieArrayIterator(
             train_dict,
@@ -484,7 +485,7 @@ class MovieDataGenerator(ImageDataGenerator):
 
         Returns:
             tensor: A randomly transformed version of the input (same shape).
-                If y is passed, it is transformed if necessary and returned.
+            If ``y`` is passed, it is transformed if necessary and returned.
         """
         # Note: Workaround to use self.apply_transform on our 4D tensor
         self.row_axis -= 1

@@ -354,9 +354,9 @@ class CroppingDataGenerator(SemanticDataGenerator):
                 (if ``save_to_dir`` is set).
 
         Returns:
-            SemanticIterator: An Iterator yielding tuples of (x, y),
-                where x is a numpy array of image data and y is list of
-                numpy arrays of transformed masks of the same shape.
+            CroppingIterator: An ``Iterator`` yielding tuples of ``(x, y)``,
+            where ``x`` is a numpy array of image data and ``y`` is list of
+            numpy arrays of transformed masks of the same shape.
         """
         return CroppingIterator(
             train_dict,

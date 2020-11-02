@@ -353,9 +353,10 @@ class SampleDataGenerator(ImageDataGenerator):
                 (if ``save_to_dir`` is set).
 
         Returns:
-            ImageSampleArrayIterator: An Iterator yielding tuples of (x, y),
-                where x is a numpy array of image data and y is a numpy array
-                of labels of the same shape.
+            ImageSampleArrayIterator: An ``Iterator`` yielding tuples of
+            ``(x, y)``, where ``x`` is a numpy array of image data and
+            ``y`` is list of numpy arrays of transformed masks of the
+            same shape.
         """
         return ImageSampleArrayIterator(
             train_dict,
@@ -685,8 +686,8 @@ class SampleMovieDataGenerator(MovieDataGenerator):
 
         Returns:
             SampleMovieArrayIterator: An ``Iterator`` yielding tuples of
-                ``(x, y)``, where ``x`` is a numpy array of image data
-                and ``y`` is a numpy array of labels of the same shape.
+            ``(x, y)``, where ``x`` is a numpy array of image data
+            and ``y`` is a numpy array of labels of the same shape.
         """
         return SampleMovieArrayIterator(
             train_dict,

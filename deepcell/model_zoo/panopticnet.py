@@ -68,8 +68,8 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256,
 
     Returns:
         tensorflow.keras.layers.Layer: Input feature merged with its residual
-            from a temporal convolution. If mode is ``None``,
-                the output is exactly the input.
+        from a temporal convolution. If mode is ``None``,
+        the output is exactly the input.
     """
     # Check inputs to mode
     acceptable_modes = {'conv', 'lstm', 'gru', None}

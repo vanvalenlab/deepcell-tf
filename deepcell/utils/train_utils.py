@@ -50,13 +50,13 @@ def get_callbacks(model_path,
         save_weights_only: (bool) if True, then only the model's weights
             will be saved.
         lr_sched (function): learning rate scheduler per epoch.
-            from ``deepcell.utils.train_utils.rate_scheduler``.
+            from `~deepcell.utils.train_utils.rate_scheduler`.
         tensorboard_log_dir (str): log directory for tensorboard.
         monitor (str): quantity to monitor.
         verbose (int): verbosity mode, 0 or 1.
 
     Returns:
-        list: a list of callbacks to be passed to model.fit()
+        list: a list of callbacks to be passed to ``model.fit()``
     """
     cbs = [
         callbacks.ModelCheckpoint(
@@ -92,7 +92,7 @@ def rate_scheduler(lr=.001, decay=0.95):
 
     Returns:
         function: A function that takes in the epoch
-            and returns a learning rate.
+        and returns a learning rate.
     """
     def output_fn(epoch):
         epoch = np.int(epoch)

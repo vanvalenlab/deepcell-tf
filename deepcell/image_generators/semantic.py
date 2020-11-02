@@ -344,9 +344,9 @@ class SemanticDataGenerator(ImageDataGenerator):
                 (if ``save_to_dir`` is set).
 
         Returns:
-            SemanticIterator: An Iterator yielding tuples of (x, y),
-                where x is a numpy array of image data and y is list of
-                numpy arrays of transformed masks of the same shape.
+            SemanticIterator: An ``Iterator`` yielding tuples of ``(x, y)``,
+            where ``x`` is a numpy array of image data and ``y`` is list of
+            numpy arrays of transformed masks of the same shape.
         """
         return SemanticIterator(
             train_dict,
@@ -369,12 +369,12 @@ class SemanticDataGenerator(ImageDataGenerator):
             x (numpy.array): 3D tensor or list of 3D tensors,
                 single image.
             y (numpy.array): 3D tensor or list of 3D tensors,
-                label mask(s) for x, optional.
+                label mask(s) for ``x``, optional.
             seed (int): Random seed.
 
         Returns:
             numpy.array: A randomly transformed copy of the input (same shape).
-                If y is passed, it is transformed if necessary and returned.
+            If ``y`` is passed, it is transformed if necessary and returned.
         """
         params = self.get_random_transform(x.shape, seed)
 
@@ -754,9 +754,10 @@ class SemanticMovieGenerator(ImageDataGenerator):
                 (if ``save_to_dir`` is set).
 
         Returns:
-            SemanticMovieIterator: An Iterator yielding tuples of (x, y)
-                where x is a numpy array of image data and y is a list of
-                numpy arrays of transformed masks.
+            SemanticMovieIterator: An ``Iterator`` yielding tuples of
+            ``(x, y)``, where ``x`` is a numpy array of image data and
+            ``y`` is list of numpy arrays of transformed masks of the
+            same shape.
         """
         return SemanticMovieIterator(
             train_dict,
@@ -908,7 +909,7 @@ class SemanticMovieGenerator(ImageDataGenerator):
 
         Returns:
             numpy.array: A randomly transformed copy of the input (same shape).
-                If y is passed, it is transformed if necessary and returned.
+            If ``y`` is passed, it is transformed if necessary and returned.
         """
         self.row_axis -= 1
         self.col_axis -= 1
@@ -1420,9 +1421,9 @@ class Semantic3DGenerator(ImageDataGenerator):
                 (if ``save_to_dir`` is set).
 
         Returns:
-            Semantic3DIterator: An Iterator yielding tuples of (x, y)
-                where x is a numpy array of image data and y is a list of
-                numpy arrays of transformed masks.
+            Semantic3DIterator: An ``Iterator`` yielding tuples of ``(x, y)``,
+            where ``x`` is a numpy array of image data and ``y`` is list of
+            numpy arrays of transformed masks of the same shape.
         """
         return Semantic3DIterator(
             train_dict,
@@ -1571,12 +1572,12 @@ class Semantic3DGenerator(ImageDataGenerator):
         Args:
             x (numpy.array): 4D tensor or list of 4D tensors.
             y (numpy.array): 4D tensor or list of 4D tensors,
-                label mask(s) for x, optional.
+                label mask(s) for ``x``, optional.
             seed (int): Random seed.
 
         Returns:
             numpy.array: A randomly transformed copy of the input (same shape).
-                If y is passed, it is transformed if necessary and returned.
+            If ``y`` is passed, it is transformed if necessary and returned.
         """
         self.row_axis -= 1
         self.col_axis -= 1

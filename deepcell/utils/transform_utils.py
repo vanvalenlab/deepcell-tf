@@ -60,10 +60,9 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
 
     Returns:
         numpy.array: one-hot encoded tensor of masks:
-            if not separate_edge_classes:
-                ``[cell_edge, cell_interior, background]``
-            otherwise:
-                ``[bg_cell_edge, cell_cell_edge, cell_interior, background]``
+        if ``separate_edge_classes``:
+        ``[bg_cell_edge, cell_cell_edge, cell_interior, background]``
+        otherwise: ``[cell_edge, cell_interior, background]``
     """
     if data_format is None:
         data_format = K.image_data_format()
@@ -136,7 +135,7 @@ def outer_distance_transform_2d(mask, bins=None, erosion_width=None,
 
     Args:
         mask (numpy.array): A label mask (``y`` data).
-        bins (int): The number of transformed distance classes. If none,
+        bins (int): The number of transformed distance classes. If ``None``,
             returns the continuous outer transform.
         erosion_width (int): Number of pixels to erode edges of each labels
         normalize (bool): Normalize the transform of each cell by that
@@ -144,7 +143,7 @@ def outer_distance_transform_2d(mask, bins=None, erosion_width=None,
 
     Returns:
         numpy.array: A mask of same shape as input mask,
-            with each label being a distance class from 1 to bins.
+        with each label being a distance class from 1 to ``bins``.
     """
     mask = np.squeeze(mask)  # squeeze the channels
     mask = erode_edges(mask, erosion_width)
@@ -230,7 +229,7 @@ def outer_distance_transform_movie(mask, bins=None, erosion_width=None,
 
     Returns:
         numpy.array: a mask of same shape as input mask,
-            with each label being a distance class from 1 to ``bins``
+        with each label being a distance class from 1 to ``bins``
     """
     distances = []
     for frame in range(mask.shape[0]):
@@ -267,7 +266,7 @@ def inner_distance_transform_2d(mask, bins=None, erosion_width=None,
 
     Returns:
         numpy.array: a mask of same shape as input mask,
-            with each label being a distance class from 1 to ``bins``.
+        with each label being a distance class from 1 to ``bins``.
 
     Raises:
         ValueError: ``alpha`` is a string but not set to "auto".
@@ -337,7 +336,7 @@ def inner_distance_transform_3d(mask, bins=None,
 
     Returns:
         numpy.array: A mask of same shape as input mask,
-            with each label being a distance class from 1 to ``bins``.
+        with each label being a distance class from 1 to ``bins``.
 
     Raises:
         ValueError: ``alpha`` is a string but not set to "auto".
@@ -403,7 +402,7 @@ def inner_distance_transform_movie(mask, bins=None, erosion_width=None,
 
     Returns:
         numpy.array: A mask of same shape as input mask,
-            with each label being a distance class from 1 to ``bins``.
+        with each label being a distance class from 1 to ``bins``.
 
     Raises:
         ValueError: ``alpha`` is a string but not set to "auto".

@@ -183,9 +183,9 @@ def __create_pyramid_features(backbone_dict,
 
     Returns:
         dict: The feature pyramid names and levels,
-            e.g. ``{'P3': P3, 'P4': P4, ...}``
-            Each backbone layer gets a pyramid level, and two additional levels
-            are added, e.g. ``[C3, C4, C5]`` --> ``[P3, P4, P5, P6, P7]``
+        e.g. ``{'P3': P3, 'P4': P4, ...}``
+        Each backbone layer gets a pyramid level, and two additional levels
+        are added, e.g. ``[C3, C4, C5]`` --> ``[P3, P4, P5, P6, P7]``
 
     Raises:
         ValueError: ``ndim`` is not 2 or 3
@@ -445,7 +445,7 @@ def __create_semantic_head(pyramid_dict,
             ``['upsamplelike','upsampling2d', 'upsampling3d']``
 
     Returns:
-        keras.layers.Layer: The semantic segmentation head
+        tensorflow.keras.layers.Layer: The semantic segmentation head
     """
     # Check input to ndims
     if ndim not in {2, 3}:
