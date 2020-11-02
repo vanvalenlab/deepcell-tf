@@ -30,6 +30,14 @@ deepcell.model_zoo.retinanet
     :undoc-members:
     :show-inheritance:
 
+deepcell.model_zoo.panopticnet
+------------------------------
+
+.. automodule:: deepcell.model_zoo.panopticnet
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 deepcell.model_zoo.fpn
 ----------------------
 .. automodule:: deepcell.model_zoo.fpn
