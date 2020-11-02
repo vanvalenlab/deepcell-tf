@@ -148,7 +148,7 @@ def default_regression_model(num_values,
 
     Returns:
         tensorflow.keras.Model: A model that predicts regression values
-            for each anchor.
+        for each anchor.
     """
     # All new conv layers except the final one in the
     # RetinaNet (classification) subnets are initialized
@@ -210,7 +210,7 @@ def default_submodels(num_classes, num_anchors, frames_per_batch=1):
 
     Returns:
         list: A list of tuples, where the first element is the name of the
-            submodel and the second element is the submodel itself.
+        submodel and the second element is the submodel itself.
     """
     return [
         ('regression', default_regression_model(
@@ -266,10 +266,7 @@ def __build_anchors(anchor_parameters, features, frames_per_batch=1):
 
     Returns:
         tensor: The anchors for the FPN features.
-            The shape is:
-            ```
-            (batch_size, num_anchors, 4)
-            ```
+        The shape is: ``(batch_size, num_anchors, 4)``
     """
 
     if len(features) == 1:
@@ -357,16 +354,16 @@ def retinanet(inputs,
 
     Returns:
         tensorflow.keras.Model: A Model which takes an image as input
-            and outputs generated anchors and the result from each submodel on
-            every pyramid level.
+        and outputs generated anchors and the result from each submodel on
+        every pyramid level.
 
-            The order of the outputs is as defined in submodels:
+        The order of the outputs is as defined in submodels:
 
-            .. code-block:: python
+        .. code-block:: python
 
-                [
-                    regression, classification, other[0], other[1], ...
-                ]
+            [
+                regression, classification, other[0], other[1], ...
+            ]
 
     """
     if num_anchors is None:
@@ -453,15 +450,15 @@ def retinanet_bbox(model=None,
 
     Returns:
         tensorflow.keras.Model: A Model which takes an image as input and
-            outputs the detections on the image.
+        outputs the detections on the image.
 
-            The order is defined as follows:
+        The order is defined as follows:
 
-            .. code-block:: python
+        .. code-block:: python
 
-                [
-                    boxes, scores, labels, other[0], other[1], ...
-                ]
+            [
+                boxes, scores, labels, other[0], other[1], ...
+            ]
 
     Raises:
         ValueError: the given model does not have a regression or

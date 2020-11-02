@@ -69,8 +69,7 @@ def default_mask_model(num_classes,
         name (str): The name of the submodel.
 
     Returns:
-        tensorflow.keras.Model: a Model that predicts classes for
-            each anchor.
+        tensorflow.keras.Model: a Model that predicts classes for each anchor.
     """
     options = {
         'kernel_size': 3,
@@ -286,15 +285,15 @@ def retinanet_mask(inputs,
 
     Returns:
         tensorflow.keras.Model: Model with inputs as input and as output
-            the output of each submodel for each pyramid level and the
-            detections. The order is as defined in submodels.
+        the output of each submodel for each pyramid level and the
+        detections. The order is as defined in submodels.
 
-            .. code-block:: python
+        .. code-block:: python
 
-                [
-                    regression, classification, other[0], ...,
-                    boxes_masks, boxes, scores, labels, masks, other[0], ...
-                ]
+            [
+                regression, classification, other[0], ...,
+                boxes_masks, boxes, scores, labels, masks, other[0], ...
+            ]
     """
     if anchor_params is None:
         anchor_params = AnchorParameters.default
