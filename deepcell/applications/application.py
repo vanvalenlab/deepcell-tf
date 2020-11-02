@@ -127,7 +127,7 @@ class Application(object):
         Args:
             image (np.array): 4D stack of images
             kwargs (dict): Keyword arguments for ``preprocessing_fn``.
-        
+
         Returns:
             np.array: The pre-processed ``image``.
         """

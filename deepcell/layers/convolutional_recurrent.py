@@ -23,18 +23,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
-# pylint:disable=line-too-long
 """Convolutational Recurrent Layers
 
-Based on `Convolutional gated recurrent networks for video segmentation <https://ieeexplore.ieee.org/abstract/document/8296851>`_.
+Based on Convolutional gated recurrent networks for video segmentation
+(`link <https://bit.ly/3ehmpV8>`_).
 
-Also influenced by Keras's
-`GRU <https://github.com/keras-team/keras/blob/master/keras/layers/recurrent.py>`_
-and `ConvLSTM2D <https://github.com/keras-team/keras/blob/master/keras/layers/convolutional_recurrent.py>`_
-Layers.
+Also influenced by Keras's `GRU <https://bit.ly/3ejjBHq>`_
+and  `ConvLSTM2D <https://bit.ly/2HUzJ60>`_ Layers.
 """
-# pylint:enable=line-too-long
 
 from __future__ import absolute_import
 from __future__ import division
