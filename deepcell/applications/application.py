@@ -35,32 +35,33 @@ from deepcell_toolbox.utils import resize, tile_image, untile_image
 
 
 class Application(object):
-    """Application object that takes a model with weights and manages predictions
+    """Application object that takes a model with weights
+    and manages predictions
 
-        Args:
-            model (tensorflow.keras.Model): ``tf.keras.Model``
-                with loaded weights.
-            model_image_shape (tuple): Shape of input expected by ``model``.
-            dataset_metadata (str or dict): Metadata for the data that
-                ``model`` was trained on.
-            model_metadata (str or dict): Training metadata for ``model``.
-            model_mpp (float, optional): Microns per pixel resolution
-                of the training data used for ``model``.
-            preprocessing_fn (function): Pre-processing function to apply
-                to data prior to prediction.
-            postprocessing_fn (function): Post-processing function to apply
-                to data after prediction.
-                Must accept an input of a list of arrays and then
-                return a single array.
-            format_model_output_fn (function, optional): Convert model output
-                from a list of matrices to a dictionary with keys for
-                each semantic head.
+    Args:
+        model (tensorflow.keras.Model): ``tf.keras.Model``
+            with loaded weights.
+        model_image_shape (tuple): Shape of input expected by ``model``.
+        dataset_metadata (str or dict): Metadata for the data that
+            ``model`` was trained on.
+        model_metadata (str or dict): Training metadata for ``model``.
+        model_mpp (float): Microns per pixel resolution of the
+            training data used for ``model``.
+        preprocessing_fn (function): Pre-processing function to apply
+            to data prior to prediction.
+        postprocessing_fn (function): Post-processing function to apply
+            to data after prediction.
+            Must accept an input of a list of arrays and then
+            return a single array.
+        format_model_output_fn (function): Convert model output
+            from a list of matrices to a dictionary with keys for
+            each semantic head.
 
-        Raises:
-            ValueError: ``preprocessing_fn`` must be a callable function
-            ValueError: ``postprocessing_fn`` must be a callable function
-            ValueError: ``model_output_fn`` must be a callable function
-        """
+    Raises:
+        ValueError: ``preprocessing_fn`` must be a callable function
+        ValueError: ``postprocessing_fn`` must be a callable function
+        ValueError: ``model_output_fn`` must be a callable function
+    """
 
     def __init__(self,
                  model,
@@ -291,9 +292,8 @@ class Application(object):
 
         Args:
             image (np.array): Image with shape ``[batch, x, y, channel]``
-            batch_size (int, optional): Number of images to predict on
-                per batch.
-            preprocess_kwargs (dict, optional): Keyword arguments to pass to
+            batch_size (int): Number of images to predict on per batch.
+            preprocess_kwargs (dict): Keyword arguments to pass to
                 the preprocessing function.
 
         Returns:
