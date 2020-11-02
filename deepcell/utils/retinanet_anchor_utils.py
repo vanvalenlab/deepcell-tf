@@ -238,12 +238,14 @@ def compute_gt_annotations(anchors,
     """Obtain indices of gt annotations with the greatest overlap.
 
     Args:
-        anchors (numpy.array): annotations of shape (N, 4) for (x1, y1, x2, y2).
-        annotations (numpy.array): shape (N, 5) for (x1, y1, x2, y2, label).
+        anchors (numpy.array): annotations of shape ``(N, 4)`` for
+            ``(x1, y1, x2, y2)``.
+        annotations (numpy.array): shape ``(N, 5)`` for
+            ``(x1, y1, x2, y2, label)``.
         negative_overlap (float): IoU overlap for negative anchors
-            (all anchors with overlap < negative_overlap are negative).
+            (all anchors with overlap < ``negative_overlap`` are negative).
         positive_overlap (float): IoU overlap or positive anchors
-            (all anchors with overlap > positive_overlap are positive).
+            (all anchors with overlap > ``positive_overlap`` are positive).
 
     Returns:
         tuple: (positive_indices, ignore_indices, argmax_overlaps_inds)
@@ -491,8 +493,8 @@ def bbox_transform(anchors, gt_boxes, mean=None, std=None):
         std (numpy.array): standard deviation
 
     Raises:
-        ValueError: mean is not a np.array
-        ValueError: std is not a np.array
+        ValueError: mean is not a numpy.array
+        ValueError: std is not a numpy.array
     """
 
     if mean is None:
