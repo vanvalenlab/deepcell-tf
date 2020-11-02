@@ -147,11 +147,12 @@ class MultiplexSegmentation(Application):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
-        Input images are required to have 4 dimensions `[batch, x, y, channel]`.
-        Additional empty dimensions can be added using `np.expand_dims`
+        Input images are required to have 4 dimensions
+        ``[batch, x, y, channel]``.
+        Additional empty dimensions can be added using ``np.expand_dims``.
 
         Args:
-            image (np.array): Input image with shape
+            image (numpy.array): Input image with shape
                 ``[batch, x, y, channel]``.
             batch_size (int): Number of images to predict on per batch.
             image_mpp (float): Microns per pixel for ``image``.
@@ -170,8 +171,8 @@ class MultiplexSegmentation(Application):
             ValueError: Input data must match required number of channels.
 
         Returns:
-            np.array: Labeled image
-            np.array: Model output
+            numpy.array: Labeled image
+            numpy.array: Model output
         """
 
         if postprocess_kwargs_whole_cell is None:

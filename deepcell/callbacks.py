@@ -47,7 +47,7 @@ class RedirectModel(Callback):
 
     Args:
         callback (function): callback to wrap.
-        model (keras.Model): model to use when executing callbacks.
+        model (tf.keras.Model): model to use when executing callbacks.
     """
 
     def __init__(self,

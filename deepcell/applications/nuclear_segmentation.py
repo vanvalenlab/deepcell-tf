@@ -145,7 +145,7 @@ class NuclearSegmentation(Application):
         Additional empty dimensions can be added using ``np.expand_dims``.
 
         Args:
-            image (np.array): Input image with shape
+            image (numpy.array): Input image with shape
                 ``[batch, x, y, channel]``.
             batch_size (int): Number of images to predict on per batch.
             image_mpp (float): Microns per pixel for ``image``.
@@ -162,7 +162,7 @@ class NuclearSegmentation(Application):
             ValueError: Input data must match required number of channels.
 
         Returns:
-            np.array: Labeled image
+            numpy.array: Labeled image
         """
         return self._predict_segmentation(
             image,

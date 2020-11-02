@@ -139,7 +139,7 @@ def outer_distance_transform_2d(mask, bins=None, erosion_width=None,
         bins (int): The number of transformed distance classes. If none,
             returns the continuous outer transform.
         erosion_width (int): Number of pixels to erode edges of each labels
-        normalize (boolean): Normalize the transform of each cell by that
+        normalize (bool): Normalize the transform of each cell by that
             cell's largest distance.
 
     Returns:
@@ -183,7 +183,7 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
         mask (numpy.array): A z-stack of label masks (``y`` data).
         bins (int): The number of transformed distance classes.
         erosion_width (int): Number of pixels to erode edges of each labels.
-        normalize (boolean): Normalize the transform of each cell by that
+        normalize (bool): Normalize the transform of each cell by that
             cell's largest distance.
         sampling (list): Spacing of pixels along each dimension.
 
@@ -225,7 +225,7 @@ def outer_distance_transform_movie(mask, bins=None, erosion_width=None,
         mask (numpy.array): A label mask (``y`` data).
         bins (int): The number of transformed distance classes.
         erosion_width (int): number of pixels to erode edges of each labels.
-        normalize (boolean): Normalize the transform of each cell by that
+        normalize (bool): Normalize the transform of each cell by that
             cell's largest distance.
 
     Returns:

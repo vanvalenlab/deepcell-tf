@@ -105,11 +105,11 @@ class Application(object):
         image.
 
         Args:
-            image (np.array): Input image to resize.
+            image (numpy.array): Input image to resize.
             image_mpp (float): Microns per pixel for the ``image``.
 
         Returns:
-            np.array: Input image resized if necessary to match ``model_mpp``
+            numpy.array: Input image resized if necessary to match ``model_mpp``
         """
 
         # Don't scale the image if mpp is the same or not defined
@@ -126,11 +126,11 @@ class Application(object):
         Otherwise return ``image`` unmodified.
 
         Args:
-            image (np.array): 4D stack of images
+            image (numpy.array): 4D stack of images
             kwargs (dict): Keyword arguments for ``preprocessing_fn``.
 
         Returns:
-            np.array: The pre-processed ``image``.
+            numpy.array: The pre-processed ``image``.
         """
 
         if self.preprocessing_fn is not None:
@@ -145,13 +145,13 @@ class Application(object):
         Only supports 4D images.
 
         Args:
-            image (array): Input image to tile
+            image (numpy.array): Input image to tile
 
         Raises:
             ValueError: Input images must have only 4 dimensions
 
         Returns:
-            (np.array, dict): Tuple of tiled image and dict of tiling
+            (numpy.array, dict): Tuple of tiled image and dict of tiling
                 information.
         """
 
@@ -187,11 +187,11 @@ class Application(object):
         Otherwise returns unmodified image.
 
         Args:
-            image (np.array or list): Input to postprocessing function
-                either an ``np.array`` or list of ``np.arrays``.
+            image (numpy.array or list): Input to postprocessing function
+                either an ``numpy.array`` or list of ``numpy.arrays``.
 
         Returns:
-            np.array: labeled image
+            numpy.array: labeled image
         """
 
         if self.postprocessing_fn is not None:
@@ -211,11 +211,11 @@ class Application(object):
         according to a dictionary of tiling specs
 
         Args:
-            output_tiles (np.array or list): Array or list of arrays.
+            output_tiles (numpy.array or list): Array or list of arrays.
             tiles_info (dict): Tiling specs output by the tiling function.
 
         Returns:
-            np.array or list: Array or list according to input with untiled images
+            numpy.array or list: Array or list according to input with untiled images
         """
 
         # If padding was used, remove padding
@@ -260,7 +260,7 @@ class Application(object):
         excluding the batch and channel dimensions
 
         Args:
-            image (array): Image to be rescaled to original shape
+            image (numpy.array): Image to be rescaled to original shape
             original_shape (tuple): Shape of the original input image
 
         Returns:
@@ -291,13 +291,13 @@ class Application(object):
         """Run the model to generate output probabilities on the data.
 
         Args:
-            image (np.array): Image with shape ``[batch, x, y, channel]``
+            image (numpy.array): Image with shape ``[batch, x, y, channel]``
             batch_size (int): Number of images to predict on per batch.
             preprocess_kwargs (dict): Keyword arguments to pass to
                 the preprocessing function.
 
         Returns:
-            np.array: Model outputs
+            numpy.array: Model outputs
         """
 
         # Preprocess image if function is defined
@@ -331,7 +331,7 @@ class Application(object):
         using ``np.expand_dims``.
 
         Args:
-            image (np.array): Input image with shape
+            image (numpy.array): Input image with shape
                 ``[batch, x, y, channel]``.
             batch_size (int): Number of images to predict on per batch.
             image_mpp (float): Microns per pixel for ``image``.
@@ -347,7 +347,7 @@ class Application(object):
             ValueError: Input data must match required number of channels.
 
         Returns:
-            np.array: Labeled image
+            numpy.array: Labeled image
         """
 
         # Check input size of image

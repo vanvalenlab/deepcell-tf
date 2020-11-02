@@ -336,7 +336,7 @@ class ConvGRU2D(ConvRNN2D):
             output sequence, or the full sequence.
         return_state (bool): Whether to return the last state
             in addition to the output.
-        go_backwards (boolean): If True, process the input sequence backwards.
+        go_backwards (bool): If True, process the input sequence backwards.
         stateful (bool): If True, the last state for each sample at index i in
             a batch will be used as initial state for the sample of index i in
             the following batch.

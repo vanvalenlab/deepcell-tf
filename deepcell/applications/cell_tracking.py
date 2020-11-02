@@ -121,8 +121,8 @@ class CellTracking(Application):
         track objects across all frames.
 
         Args:
-            image (np.array): Raw image data.
-            labels (np.array): Labels for ``image``, integer masks.
+            image (numpy.array): Raw image data.
+            labels (numpy.array): Labels for ``image``, integer masks.
 
         Returns:
             dict: Tracked labels and lineage information.

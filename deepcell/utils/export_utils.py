@@ -114,10 +114,10 @@ def export_model_to_tflite(model_file, export_path, calibration_images,
     Args:
         model_file (str): Path to saved model file
         export_path (str): Directory to save the exported tflite model
-        calibration_images (numpy array): Array of images used for calibration
+        calibration_images (numpy.array): Array of images used for calibration
             during model quantization
-        norm (boolean): Whether to normalize calibration images.
-        location (boolean): Whether to append a location image
+        norm (bool): Whether to normalize calibration images.
+        location (bool): Whether to append a location image
             to calibration images.
         file_name (str): File name for the exported model. Defaults to
             'model.tflite'

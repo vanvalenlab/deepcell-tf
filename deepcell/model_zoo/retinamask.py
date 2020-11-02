@@ -261,7 +261,7 @@ def retinanet_mask(inputs,
             to create the feature pyramid.
         pyramid_levels (list): The pyramid levels to attach regression and
             classification heads to.
-        retinanet_model (tensorflow.keras.Model): `~RetinaNet` model that
+        retinanet_model (tensorflow.keras.Model): ``RetinaNet`` model that
             predicts regression and classification values.
         anchor_params (AnchorParameters): Struct containing anchor parameters.
         nms (bool): Whether to use non-maximum suppression
@@ -277,12 +277,12 @@ def retinanet_mask(inputs,
         roi_submodels (list): Submodels for processing ROIs.
         max_detections (int): The maximum number of detections allowed.
         score_threshold (float): Minimum score for the
-            `~FilterDetections` layer.
+            ``FilterDetections`` layer.
         nms_threshold (float): Minimimum NMS for the
-            `~FilterDetections` layer.
+            ``FilterDetections`` layer.
         mask_dtype (str): ``dtype`` to use for mask tensors.
         kwargs (dict): Additional kwargs to pass to the
-            `~retinanet_bbox` model.
+            ``retinanet_bbox`` model.
 
     Returns:
         tensorflow.keras.Model: Model with inputs as input and as output
@@ -441,7 +441,7 @@ def RetinaMask(backbone,
         kwargs (dict): Other standard inputs for `~retinanet_mask`.
 
     Returns:
-        tensorflow.keras.Model: `~RetinaNet` model with a backbone.
+        tensorflow.keras.Model: ``RetinaNet`` model with a backbone.
     """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     if inputs is None:

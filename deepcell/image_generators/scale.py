@@ -180,8 +180,8 @@ class ScaleDataGenerator(ImageFullyConvDataGenerator):
             - 1-D array-like: random elements from the array.
             - int: integer number of pixels from interval
               ``(-height_shift_range, +height_shift_range)``
-            - With `height_shift_range=2` possible values
-              are integers `[-1, 0, +1]`,
+            - With ``height_shift_range=2`` possible values
+              are integers ``[-1, 0, +1]``,
               same as with ``height_shift_range=[-1, 0, +1]``,
               while with ``height_shift_range=1.0`` possible values are floats
               in the interval [-1.0, +1.0).
