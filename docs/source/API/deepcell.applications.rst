@@ -45,11 +45,7 @@ deepcell.applications.CellTracking
 deepcell.applications.LabelDetectionModel
 -----------------------------------------
 .. autofunction:: deepcell.applications.label_detection.LabelDetectionModel
-    :undoc-members:
-    :show-inheritance:
 
 deepcell.applications.ScaleDetectionModel
 -----------------------------------------
 .. autofunction:: deepcell.applications.scale_detection.ScaleDetectionModel
-    :undoc-members:
-    :show-inheritance:
