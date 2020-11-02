@@ -250,14 +250,14 @@ def smooth_l1(y_true, y_pred, sigma=3.0, axis=None):
     """Compute the smooth L1 loss of y_pred w.r.t. y_true.
 
     Args:
-        y_true: Tensor from the generator of shape (B, N, 5).
+        y_true: Tensor from the generator of shape ``(B, N, 5)``.
             The last value for each box is the state of the anchor
             (ignore, negative, positive).
-        y_pred: Tensor from the network of shape (B, N, 4).
+        y_pred: Tensor from the network of shape ``(B, N, 4)``.
         sigma: The point where the loss changes from L2 to L1.
 
     Returns:
-        The smooth L1 loss of y_pred w.r.t. y_true.
+        The smooth L1 loss of ``y_pred`` w.r.t. ``y_true``.
     """
     if axis is None:
         axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
