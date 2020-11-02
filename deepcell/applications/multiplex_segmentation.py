@@ -47,7 +47,7 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 
 
 class MultiplexSegmentation(Application):
-    """Loads a :mod:`deepcell.model_zoo.PanopticNet` model for
+    """Loads a :mod:`deepcell.model_zoo.panopticnet.PanopticNet` model for
     multiplex segmentation with pretrained weights.
 
     The ``predict`` method handles prep and post processing steps

@@ -45,7 +45,7 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 
 
 class CytoplasmSegmentation(Application):
-    """Loads a :mod:`deepcell.model_zoo.PanopticNet` model
+    """Loads a :mod:`deepcell.model_zoo.panopticnet.PanopticNet` model
     for cytoplasm segmentation with pretrained weights.
 
     The ``predict`` method handles prep and post processing steps
