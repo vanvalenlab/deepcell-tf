@@ -246,8 +246,8 @@ def retinanet_mask(inputs,
                    nms_threshold=0.5,
                    mask_dtype=K.floatx(),
                    **kwargs):
-    """Construct a RetinaNet mask model on top of a retinanet bbox model.
-    Uses the retinanet bbox model and appends layers to compute masks.
+    """Construct a masking model by appending layers to compute masks to a
+    :mod:`deepcell.model_zoo.retinanet.retinanet` model.
 
     Args:
         inputs (tensor): List of ``tensorflow.keras.layers.Input``.
@@ -260,7 +260,8 @@ def retinanet_mask(inputs,
             to create the feature pyramid.
         pyramid_levels (list): The pyramid levels to attach regression and
             classification heads to.
-        retinanet_model (tensorflow.keras.Model): ``RetinaNet`` model that
+        retinanet_model (tensorflow.keras.Model):
+            :mod:`deepcell.model_zoo.retinanet.retinanet` model that
             predicts regression and classification values.
         anchor_params (AnchorParameters): Struct containing anchor parameters.
         nms (bool): Whether to use non-maximum suppression
@@ -276,12 +277,12 @@ def retinanet_mask(inputs,
         roi_submodels (list): Submodels for processing ROIs.
         max_detections (int): The maximum number of detections allowed.
         score_threshold (float): Minimum score for the
-            ``FilterDetections`` layer.
+            :mod:`deepcell.layers.FilterDetections` layer.
         nms_threshold (float): Minimimum NMS for the
-            ``FilterDetections`` layer.
+            :mod:`deepcell.layers.FilterDetections` layer.
         mask_dtype (str): ``dtype`` to use for mask tensors.
         kwargs (dict): Additional kwargs to pass to the
-            ``retinanet_bbox`` model.
+            :mod:`deepcell.model_zoo.retinanet.retinanet` model.
 
     Returns:
         tensorflow.keras.Model: Model with inputs as input and as output
@@ -416,7 +417,8 @@ def RetinaMask(backbone,
             to create the feature pyramid.
         pyramid_levels (list): The pyramid levels to attach regression and
             classification heads.
-        norm_method (str): ``ImageNormalization`` mode to use.
+        norm_method (str): Normalization method to use with the
+            :mod:`deepcell.layers.normalization.ImageNormalization2D` layer.
         location (bool): Whether to include location data.
         use_imagenet (bool): Whether to load imagenet-based
             pretrained weights.
@@ -440,7 +442,8 @@ def RetinaMask(backbone,
         kwargs (dict): Other standard inputs for `~retinanet_mask`.
 
     Returns:
-        tensorflow.keras.Model: ``RetinaNet`` model with a backbone.
+        tensorflow.keras.Model: :mod:`deepcell.model_zoo.retinanet.RetinaNet`
+        model with additional mask output.
     """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     if inputs is None:

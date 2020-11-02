@@ -154,7 +154,8 @@ def PanopticNet(backbone,
         num_semantic_heads (int): Total number of semantic heads to build.
         num_semantic_classes (list): Number of semantic classes
             for each semantic head.
-        norm_method (str): ``ImageNormalization`` mode to use.
+        norm_method (str): Normalization method to use with the
+            :mod:`deepcell.layers.normalization.ImageNormalization2D` layer.
         location (bool): Whether to include location data.
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
         lite (bool): Whether to use a depthwise conv in the feature pyramid

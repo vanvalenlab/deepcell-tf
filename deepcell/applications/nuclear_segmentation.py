@@ -46,7 +46,7 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 
 
 class NuclearSegmentation(Application):
-    """Loads a ``deepcell.model_zoo.PanopticNet`` model for nuclear
+    """Loads a :mod:`deepcell.model_zoo.PanopticNet model for nuclear
     segmentation with pretrained weights.
 
     The ``predict`` method handles prep and post processing steps
