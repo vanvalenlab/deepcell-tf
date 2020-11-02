@@ -247,7 +247,7 @@ def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_l
 
 
 def smooth_l1(y_true, y_pred, sigma=3.0, axis=None):
-    """Compute the smooth L1 loss of y_pred w.r.t. y_true.
+    """Compute the smooth L1 loss of ``y_pred`` w.r.t. ``y_true``.
 
     Args:
         y_true: Tensor from the generator of shape ``(B, N, 5)``.
