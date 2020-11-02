@@ -539,7 +539,8 @@ def RetinaNet(backbone,
         inputs (tensor): Optional input tensor, overrides ``input_shape``.
         norm_method (str): Normalization method to use with the
             :mod:`deepcell.layers.normalization.ImageNormalization2D` layer.
-        location (bool): Whether to include location data.
+        location (bool): Whether to include a
+            :mod:`deepcell.layers.location.Location2D` layer.
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
         pooling (str): Pooling mode for feature extraction
             when ``include_top`` is ``False``.

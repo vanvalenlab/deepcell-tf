@@ -85,7 +85,8 @@ def bn_feature_net_2D(receptive_field=61,
         init (str): Method for initalizing weights.
         norm_method (str): Normalization method to use with the
             :mod:`deepcell.layers.normalization.ImageNormalization2D` layer.
-        location (bool): Whether to include location data
+        location (bool): Whether to include a
+            :mod:`deepcell.layers.location.Location2D` layer.
         dilated (bool): Whether to use dilated pooling.
         padding (bool): Whether to use padding.
         padding_mode (str): Type of padding, one of 'reflect' or 'zero'
@@ -337,7 +338,8 @@ def bn_feature_net_3D(receptive_field=61,
         init (str): Method for initalizing weights.
         norm_method (str): Normalization method to use with the
             :mod:`deepcell.layers.normalization.ImageNormalization3D` layer.
-        location (bool): Whether to include location data
+        location (bool): Whether to include a
+            :mod:`deepcell.layers.location.Location3D` layer.
         dilated (bool): Whether to use dilated pooling.
         padding (bool): Whether to use padding.
         padding_mode (str): Type of padding, one of 'reflect' or 'zero'

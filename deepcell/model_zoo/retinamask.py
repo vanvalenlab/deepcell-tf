@@ -419,7 +419,8 @@ def RetinaMask(backbone,
             classification heads.
         norm_method (str): Normalization method to use with the
             :mod:`deepcell.layers.normalization.ImageNormalization2D` layer.
-        location (bool): Whether to include location data.
+        location (bool): Whether to include a
+            :mod:`deepcell.layers.location.Location2D` layer.
         use_imagenet (bool): Whether to load imagenet-based
             pretrained weights.
         crop_size (tuple): 2-length tuple for the x-y size of the crops.

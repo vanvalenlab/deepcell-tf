@@ -156,7 +156,8 @@ def PanopticNet(backbone,
             for each semantic head.
         norm_method (str): Normalization method to use with the
             :mod:`deepcell.layers.normalization.ImageNormalization2D` layer.
-        location (bool): Whether to include location data.
+        location (bool): Whether to include a
+            :mod:`deepcell.layers.location.Location2D` layer.
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
         lite (bool): Whether to use a depthwise conv in the feature pyramid
             rather than regular conv.
