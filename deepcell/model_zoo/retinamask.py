@@ -277,9 +277,9 @@ def retinanet_mask(inputs,
         roi_submodels (list): Submodels for processing ROIs.
         max_detections (int): The maximum number of detections allowed.
         score_threshold (float): Minimum score for the
-            :mod:`deepcell.layers.FilterDetections` layer.
+            :mod:`deepcell.layers.filter_detections.FilterDetections` layer.
         nms_threshold (float): Minimimum NMS for the
-            :mod:`deepcell.layers.FilterDetections` layer.
+            :mod:`deepcell.layers.filter_detections.FilterDetections` layer.
         mask_dtype (str): ``dtype`` to use for mask tensors.
         kwargs (dict): Additional kwargs to pass to the
             :mod:`deepcell.model_zoo.retinanet.retinanet` model.
