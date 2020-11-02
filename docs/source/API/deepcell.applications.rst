@@ -6,52 +6,52 @@ deepcell.applications
 .. contents:: Contents
     :local:
 
-deepcell.applications.application
+deepcell.applications.Application
 ---------------------------------
-.. automodule:: deepcell.applications.application
+.. autoclass:: deepcell.applications.application.Application
     :members:
     :undoc-members:
     :show-inheritance:
     :private-members:
 
-deepcell.applications.cytoplasm_segmentation
---------------------------------------------
-.. automodule:: deepcell.applications.cytoplasm_segmentation
+deepcell.applications.CytoplasmSegmentation
+-------------------------------------------
+.. autoclass:: deepcell.applications.cytoplasm_segmentation.CytoplasmSegmentation
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.nuclear_segmentation
-------------------------------------------
-.. automodule:: deepcell.applications.nuclear_segmentation
+deepcell.applications.NuclearSegmentation
+-----------------------------------------
+.. autoclass:: deepcell.applications.nuclear_segmentation.NuclearSegmentation
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.multiplex_segmentation
---------------------------------------------
-.. automodule:: deepcell.applications.multiplex_segmentation
+deepcell.applications.MultiplexSegmentation
+-------------------------------------------
+.. autoclass:: deepcell.applications.multiplex_segmentation.MultiplexSegmentation
     :members:
     :undoc-members:
     :show-inheritance:
 
 deepcell.applications.cell_tracking
 -----------------------------------
-.. automodule:: deepcell.applications.cell_tracking
+.. autoclass:: deepcell.applications.cell_tracking.CellTracking
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.label_detection
--------------------------------------
-.. automodule:: deepcell.applications.label_detection
+deepcell.applications.LabelDetectionModel
+-----------------------------------------
+.. autoclass:: deepcell.applications.label_detection.LabelDetectionModel
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.scale_detection
--------------------------------------
-.. automodule:: deepcell.applications.scale_detection
+deepcell.applications.ScaleDetectionModel
+-----------------------------------------
+.. autoclass:: deepcell.applications.scale_detection.ScaleDetectionModel
     :members:
     :undoc-members:
     :show-inheritance:
