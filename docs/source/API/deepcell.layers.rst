@@ -6,64 +6,64 @@ deepcell.layers
 .. contents:: Contents
     :local:
 
-deepcell.layers.location
-------------------------
+location
+--------
 .. automodule:: deepcell.layers.location
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.normalization
------------------------------
+normalization
+-------------
 .. automodule:: deepcell.layers.normalization
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.pooling
------------------------
+pooling
+-------
 .. automodule:: deepcell.layers.pooling
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.tensor_product
-------------------------------
+tensor_product
+--------------
 .. automodule:: deepcell.layers.tensor_product
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.padding
------------------------
+padding
+-------
 .. automodule:: deepcell.layers.padding
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.filter_detections
----------------------------------
+filter_detections
+-----------------
 .. automodule:: deepcell.layers.filter_detections
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.retinanet
--------------------------
+retinanet
+---------
 .. automodule:: deepcell.layers.retinanet
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.upsample
-------------------------
+upsample
+--------
 .. automodule:: deepcell.layers.upsample
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.layers.convolutional_recurrent
----------------------------------------
+convolutional_recurrent
+-----------------------
 .. automodule:: deepcell.layers.convolutional_recurrent
     :members:
     :undoc-members:

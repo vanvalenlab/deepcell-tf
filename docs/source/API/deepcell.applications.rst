@@ -6,46 +6,46 @@ deepcell.applications
 .. contents:: Contents
     :local:
 
-deepcell.applications.Application
----------------------------------
+Application
+-----------
 .. autoclass:: deepcell.applications.application.Application
     :members:
     :undoc-members:
     :show-inheritance:
     :private-members:
 
-deepcell.applications.CytoplasmSegmentation
--------------------------------------------
+CytoplasmSegmentation
+---------------------
 .. autoclass:: deepcell.applications.cytoplasm_segmentation.CytoplasmSegmentation
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.NuclearSegmentation
------------------------------------------
+NuclearSegmentation
+-------------------
 .. autoclass:: deepcell.applications.nuclear_segmentation.NuclearSegmentation
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.MultiplexSegmentation
--------------------------------------------
+MultiplexSegmentation
+---------------------
 .. autoclass:: deepcell.applications.multiplex_segmentation.MultiplexSegmentation
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.CellTracking
------------------------------------
+CellTracking
+------------
 .. autoclass:: deepcell.applications.cell_tracking.CellTracking
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.LabelDetectionModel
------------------------------------------
+LabelDetectionModel
+-------------------
 .. autofunction:: deepcell.applications.label_detection.LabelDetectionModel
 
-deepcell.applications.ScaleDetectionModel
------------------------------------------
+ScaleDetectionModel
+-------------------
 .. autofunction:: deepcell.applications.scale_detection.ScaleDetectionModel

@@ -9,36 +9,36 @@ deepcell.image\_generators
 .. contents:: Contents
     :local:
 
-deepcell.image_generators.fully_convolutional
----------------------------------------------
+fully_convolutional
+-------------------
 .. automodule:: deepcell.image_generators.fully_convolutional
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.image_generators.retinanet
------------------------------------
+retinanet
+---------
 .. automodule:: deepcell.image_generators.retinanet
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.image_generators.sample
---------------------------------
+sample
+------
 .. automodule:: deepcell.image_generators.sample
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.image_generators.scale
--------------------------------
+scale
+-----
 .. automodule:: deepcell.image_generators.scale
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.image_generators.tracking
-----------------------------------
+tracking
+--------
 .. automodule:: deepcell.image_generators.tracking
     :members:
     :undoc-members:
