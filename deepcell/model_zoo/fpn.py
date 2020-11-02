@@ -65,7 +65,7 @@ def create_pyramid_level(backbone_input,
         upsample_type (str): Choice of upsampling methods
             from ``['upsamplelike','upsampling2d','upsampling3d']``.
         level (int): Level to use in layer names.
-        feature_size (int):Number of filters for the convolutional layer.
+        feature_size (int): Number of filters for the convolutional layer.
         ndim (int): The spatial dimensions of the input data.
             Must be either 2 or 3.
         lite (bool): Whether to use depthwise conv instead of regular conv for

@@ -126,7 +126,7 @@ def default_final_detection_model(pyramid_feature_size=256,
                                   final_detection_feature_size=256,
                                   roi_size=(14, 14),
                                   name='final_detection_submodel'):
-    """Creates a final detection model for 3D RetinaMask models.
+    """Creates a final detection model for 3D `~RetinaMask` models.
 
     Args:
         pyramid_feature_size (int): Number of features for the input to the
@@ -138,7 +138,7 @@ def default_final_detection_model(pyramid_feature_size=256,
         name (str): Name of the model.
 
     Returns:
-        tensorflow.keras.Model: a FinalDetection submodel for 3D RetinaMask.
+        tensorflow.keras.Model: a FinalDetection submodel for 3D `~RetinaMask`.
     """
     options = {
         'kernel_size': 3,
@@ -261,7 +261,7 @@ def retinanet_mask(inputs,
             to create the feature pyramid.
         pyramid_levels (list): The pyramid levels to attach regression and
             classification heads to.
-        retinanet_model (tensorflow.keras.Model): ``RetinaNet`` model that
+        retinanet_model (tensorflow.keras.Model): `~RetinaNet` model that
             predicts regression and classification values.
         anchor_params (AnchorParameters): Struct containing anchor parameters.
         nms (bool): Whether to use non-maximum suppression
@@ -277,12 +277,12 @@ def retinanet_mask(inputs,
         roi_submodels (list): Submodels for processing ROIs.
         max_detections (int): The maximum number of detections allowed.
         score_threshold (float): Minimum score for the
-            ``FilterDetections`` layer.
+            `~FilterDetections` layer.
         nms_threshold (float): Minimimum NMS for the
-            ``FilterDetections`` layer.
+            `~FilterDetections` layer.
         mask_dtype (str): ``dtype`` to use for mask tensors.
         kwargs (dict): Additional kwargs to pass to the
-            ``retinanet_bbox`` model.
+            `~retinanet_bbox` model.
 
     Returns:
         tensorflow.keras.Model: Model with inputs as input and as output
@@ -406,45 +406,42 @@ def RetinaMask(backbone,
                required_channels=3,
                frames_per_batch=1,
                **kwargs):
-    """Constructs a mrcnn model using a backbone from keras-applications.
+    """Constructs a mrcnn model using a backbone from ``keras-applications``.
 
     Args:
         backbone (str): Name of backbone to use.
         num_classes (int): Number of classes to classify.
         input_shape (tuple): The shape of the input data.
-        inputs (tensor): Optional input tensor, overrides input_shape.
+        inputs (tensor): Optional input tensor, overrides ``input_shape``.
         backbone_levels (list): The backbone levels to be used.
             to create the feature pyramid.
         pyramid_levels (list): The pyramid levels to attach regression and
-            classification heads to.
+            classification heads.
         norm_method (str): ``ImageNormalization`` mode to use.
         location (bool): Whether to include location data.
         use_imagenet (bool): Whether to load imagenet-based
             pretrained weights.
         crop_size (tuple): 2-length tuple for the x-y size of the crops.
             Used to create default ``roi_submodels``.
-        pooling (str): optional pooling mode for feature extraction
+        pooling (str): Pooling mode for feature extraction
             when ``include_top`` is ``False``.
 
             - None means that the output of the model will be
-                the 4D tensor output of the
-                last convolutional layer.
-            - 'avg' means that global average pooling
-                will be applied to the output of the
-                last convolutional layer, and thus
-                the output of the model will be a 2D tensor.
-            - 'max' means that global max pooling will
-                be applied.
+              the 4D tensor output of the last convolutional layer.
+            - 'avg' means that global average pooling will be applied to
+              the output of the last convolutional layer, and thus
+              the output of the model will be a 2D tensor.
+            - 'max' means that global max pooling will be applied.
 
         mask_dtype (str): ``dtype`` to use for mask tensors.
         required_channels (int): The required number of channels of the
             backbone.  3 is the default for all current backbones.
         frames_per_batch (int): Size of z axis in generated batches.
             If equal to 1, assumes 2D data.
-        kwargs (dict): Other standard inputs for ``retinanet_mask``.
+        kwargs (dict): Other standard inputs for `~retinanet_mask`.
 
     Returns:
-        tensorflow.keras.Model: ``RetinaNet`` model with a backbone.
+        tensorflow.keras.Model: `~RetinaNet` model with a backbone.
     """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     if inputs is None:

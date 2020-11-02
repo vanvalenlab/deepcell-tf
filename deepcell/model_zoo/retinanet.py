@@ -327,7 +327,7 @@ def retinanet(inputs,
               frames_per_batch=1,
               semantic_only=False,
               name='retinanet'):
-    """Construct a RetinaNet model on top of a backbone.
+    """Construct a ``RetinaNet`` model on top of a backbone.
 
     This model is the minimum model necessary for training
     (with the unfortunate exception of anchors as output).
@@ -338,7 +338,7 @@ def retinanet(inputs,
         backbone_levels (list): The backbone levels to be used.
             to create the feature pyramid.
         pyramid_levels (list): The pyramid levels to attach regression and
-            classification heads to.
+            classification heads.
         num_classes (int): Number of classes to classify.
         num_anchors (int): Number of base anchors.
         create_pyramid_features (function): Function to create pyramid features.
@@ -533,28 +533,26 @@ def RetinaNet(backbone,
               required_channels=3,
               frames_per_batch=1,
               **kwargs):
-    """Constructs a retinanet model using a backbone from keras-applications.
+    """Constructs a RetinaNet model using a backbone from
+    ``keras-applications``.
 
     Args:
         backbone (str): Name of backbone to use.
         num_classes (int): Number of classes to classify.
         input_shape (tuple): The shape of the input data.
-        inputs (tensor): Optional input tensor, overrides input_shape.
-        norm_method (str): ImageNormalization mode to use.
+        inputs (tensor): Optional input tensor, overrides ``input_shape``.
+        norm_method (str): ``ImageNormalization`` mode to use.
         location (bool): Whether to include location data.
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
         pooling (str): Pooling mode for feature extraction
-            when 'include_top' is False.
+            when ``include_top`` is ``False``.
 
             - None means that the output of the model will be
-                the 4D tensor output of the
-                last convolutional layer.
-            - 'avg' means that global average pooling
-                will be applied to the output of the
-                last convolutional layer, and thus
-                the output of the model will be a 2D tensor.
-            - 'max' means that global max pooling will
-                be applied.
+              the 4D tensor output of the last convolutional layer.
+            - 'avg' means that global average pooling will be applied to
+              the output of the last convolutional layer, and thus
+              the output of the model will be a 2D tensor.
+            - 'max' means that global max pooling will be applied.
 
         required_channels (int): The required number of channels of the
             backbone. 3 is the default for all current backbones.

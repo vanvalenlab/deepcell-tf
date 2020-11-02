@@ -134,7 +134,8 @@ def PanopticNet(backbone,
                 name='panopticnet',
                 z_axis_convolutions=False,
                 **kwargs):
-    """Constructs a Mask-RCNN model using a backbone from keras-applications.
+    """Constructs a Mask-RCNN model using a backbone from
+    ``keras-applications`` with optional semantic segmentation transforms.
 
     Args:
         backbone (str): Name of backbone to use.
@@ -164,22 +165,22 @@ def PanopticNet(backbone,
             layers from ``['bilinear', 'nearest']``.
         pooling (str): optional pooling mode for feature extraction
             when ``include_top`` is ``False``.
-        z_axis_convolutions (bool): Whether or not to do convolutions on
-            3D data across the z axis.
 
             - None means that the output of the model will be
-                the 4D tensor output of the
-                last convolutional layer.
+              the 4D tensor output of the
+              last convolutional layer.
             - 'avg' means that global average pooling
-                will be applied to the output of the
-                last convolutional layer, and thus
-                the output of the model will be a 2D tensor.
+              will be applied to the output of the
+              last convolutional layer, and thus
+              the output of the model will be a 2D tensor.
             - 'max' means that global max pooling will
-                be applied.
+              be applied.
 
+        z_axis_convolutions (bool): Whether or not to do convolutions on
+            3D data across the z axis.
         required_channels (int): The required number of channels of the
             backbone.  3 is the default for all current backbones.
-        kwargs (dict): Other standard inputs for ``retinanet_mask``.
+        kwargs (dict): Other standard inputs for `~retinanet_mask`.
 
     Raises:
         ValueError: ``temporal_mode`` not 'conv', 'lstm', 'gru'  or ``None``
