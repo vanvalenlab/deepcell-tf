@@ -160,11 +160,10 @@ def anchor_targets_bbox(anchors,
             (all anchors with overlap > ``positive_overlap`` are positive).
 
     Returns:
-        tuple: two numpy.arrays for anchor states and bounding box targets.
-
-        The first numpy.array contains labels & anchor states with shape
-        ``(batch_size, N, num_classes + 1)``, where ``N`` is the number
-        of anchors for an image and the last column defines the anchor state
+        (numpy.array, numpy.array): The first numpy.array contains labels
+        & anchor states with shape ``(batch_size, N, num_classes + 1)``,
+        where ``N`` is the number of anchors for an image
+        and the last column defines the anchor state
         (-1 for ignore, 0 for bg, 1 for fg).
 
         The second numpy.array contains bounding-box regression targets for
