@@ -146,21 +146,24 @@ def anchor_targets_bbox(anchors,
     """Generate anchor targets for bbox detection.
 
     Args:
-        anchors (numpy.array): annotations of shape (N, 4) for (x1, y1, x2, y2).
+        anchors (numpy.array): annotations of shape ``(N, 4)`` for
+            ``(x1, y1, x2, y2)``.
         image_group (list): List of BGR images.
         annotations_group (list): List of annotations
-            (np.array of shape (N, 5) for (x1, y1, x2, y2, label)).
+            (np.array of shape ``(N, 5)`` for ``(x1, y1, x2, y2, label)``).
         num_classes (int): Number of classes to predict.
-        mask_shape (numpy.array): If the image is padded with zeros, mask_shape
-            can be used to mark the relevant part of the image.
+        mask_shape (numpy.array): If the image is padded with zeros,
+            ``mask_shape`` can be used to mark the relevant part of the image.
         negative_overlap (float): IoU overlap for negative anchors
-            (all anchors with overlap < negative_overlap are negative).
+            (all anchors with overlap < ``negative_overlap`` are negative).
         positive_overlap (float): IoU overlap or positive anchors
-            (all anchors with overlap > positive_overlap are positive).
+            (all anchors with overlap > ``positive_overlap`` are positive).
 
     Returns:
-        numpy.array: labels & anchor states with shape
-        shape ``(batch_size, N, num_classes + 1)``, where ``N`` is the number
+        tuple: two numpy.arrays for anchor states and bounding box targets.
+
+        The first numpy.array contains labels & anchor states with shape
+        ``(batch_size, N, num_classes + 1)``, where ``N`` is the number
         of anchors for an image and the last column defines the anchor state
         (-1 for ignore, 0 for bg, 1 for fg).
 
