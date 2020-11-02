@@ -59,10 +59,13 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
             into 2 distinct cell-cell edge and cell-background edge classes.
 
     Returns:
-        numpy.array: one-hot encoded tensor of masks:
-        if ``separate_edge_classes``:
-        ``[bg_cell_edge, cell_cell_edge, cell_interior, background]``
-        otherwise: ``[cell_edge, cell_interior, background]``
+        numpy.array: An array with the same shape as ``mask``, except the
+        channel axis will be a one-hot encoded semantic segmentation for
+        3 main features: 
+        ``[cell_edge, cell_interior, background]``.
+        If ``separate_edge_classes`` is ``True``, the ``cell_interior``
+        feature is split into 2 features and the resulting channels are:
+        ``[bg_cell_edge, cell_cell_edge, cell_interior, background]``.
     """
     if data_format is None:
         data_format = K.image_data_format()
