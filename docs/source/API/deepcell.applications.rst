@@ -35,7 +35,7 @@ deepcell.applications.MultiplexSegmentation
     :undoc-members:
     :show-inheritance:
 
-deepcell.applications.cell_tracking
+deepcell.applications.CellTracking
 -----------------------------------
 .. autoclass:: deepcell.applications.cell_tracking.CellTracking
     :members:
@@ -44,14 +44,14 @@ deepcell.applications.cell_tracking
 
 deepcell.applications.LabelDetectionModel
 -----------------------------------------
-.. autoclass:: deepcell.applications.label_detection.LabelDetectionModel
+.. autofunction:: deepcell.applications.label_detection.LabelDetectionModel
     :members:
     :undoc-members:
     :show-inheritance:
 
 deepcell.applications.ScaleDetectionModel
 -----------------------------------------
-.. autoclass:: deepcell.applications.scale_detection.ScaleDetectionModel
+.. autofunction:: deepcell.applications.scale_detection.ScaleDetectionModel
     :members:
     :undoc-members:
     :show-inheritance:
