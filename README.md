@@ -43,7 +43,7 @@ Tracked Image
 
 ## Getting Started
 
-The fastest way to get started with `deepcell-tf` is to run one of our existing images from Docker Hub. While you can run the package without any specialized hardware by omitting the `-gpu` flags in the command below, we recommend the use of hardware acceleration. To  run the library locally on a GPU, you will need to make sure the latest version of [`nvidia-docker`](https://github.com/NVIDIA/nvidia-docker) and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
+The fastest way to get started with `deepcell-tf` is to run one of our existing images from Docker Hub. While you can run the package without any specialized hardware by omitting the `-gpu` flags in the command below, we recommend the use of hardware acceleration. To  run the library locally on a GPU, you will need to make sure the latest version of <tt><a href="https://github.com/NVIDIA/nvidia-docker">nvidia-docker</a></tt> and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
 
 Once `nvidia-docker` is installed, run the following command:
 
