@@ -167,8 +167,8 @@ def anchor_targets_bbox(anchors,
         of anchors for an image and the last column defines the anchor state
         (-1 for ignore, 0 for bg, 1 for fg).
 
-        numpy.array: bounding-box regression targets for an image & anchor
-        states with shape ``(batch_size, N, 4 + 1)``,
+        The second numpy.array contains bounding-box regression targets for
+        an image & anchor states with shape ``(batch_size, N, 4 + 1)``,
         where ``N`` is the number of anchors for an image,
         the first 4 columns define regression targets for ``(x1, y1, x2, y2)``
         and the last column defines anchor states
