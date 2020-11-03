@@ -7,13 +7,11 @@ from __future__ import division
 from absl.testing import parameterized
 import numpy as np
 
-from tensorflow.python.keras import keras_parameterized
-
 from tensorflow.python import keras
-
+from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.keras import testing_utils
 from tensorflow.python.framework import test_util as tf_test_util
 
-from deepcell.utils import testing_utils
 from deepcell import layers
 
 
@@ -33,8 +31,6 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
         input_num_row = 5
         input_num_col = 5
         sequence_len = 2
-
-        custom_objects = {'ConvGRU2D': layers.ConvGRU2D}
 
         if data_format == 'channels_first':
             inputs = np.random.rand(num_samples, sequence_len,
@@ -67,15 +63,15 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
             keras.backend.eval(layer.states[0]), state, atol=1e-4)
 
         # test for output shape:
-        testing_utils.layer_test(
-            layers.ConvGRU2D,
-            kwargs={'data_format': data_format,
-                    'return_sequences': return_sequences,
-                    'filters': filters,
-                    'kernel_size': (num_row, num_col),
-                    'padding': 'valid'},
-            custom_objects=custom_objects,
-            input_shape=inputs.shape)
+        with keras.utils.custom_object_scope({'ConvGRU2D': layers.ConvGRU2D}):
+            testing_utils.layer_test(
+                layers.ConvGRU2D,
+                kwargs={'data_format': data_format,
+                        'return_sequences': return_sequences,
+                        'filters': filters,
+                        'kernel_size': (num_row, num_col),
+                        'padding': 'valid'},
+                input_shape=inputs.shape)
 
     def test_conv_gru_2d_statefulness(self):
         # Tests for statefulness
@@ -168,17 +164,17 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
     def test_conv_gru_2d_dropout(self):
         # check dropout
         with self.cached_session():
-            testing_utils.layer_test(
-                layers.ConvGRU2D,
-                kwargs={'data_format': 'channels_last',
-                        'return_sequences': False,
-                        'filters': 2,
-                        'kernel_size': (3, 3),
-                        'padding': 'same',
-                        'dropout': 0.1,
-                        'recurrent_dropout': 0.1},
-                custom_objects={'ConvGRU2D': layers.ConvGRU2D},
-                input_shape=(1, 2, 5, 5, 2))
+            with keras.utils.custom_object_scope({'ConvGRU2D': layers.ConvGRU2D}):
+                testing_utils.layer_test(
+                    layers.ConvGRU2D,
+                    kwargs={'data_format': 'channels_last',
+                            'return_sequences': False,
+                            'filters': 2,
+                            'kernel_size': (3, 3),
+                            'padding': 'same',
+                            'dropout': 0.1,
+                            'recurrent_dropout': 0.1},
+                    input_shape=(1, 2, 5, 5, 2))
 
     def test_conv_gru_2d_cloning(self):
         with self.cached_session():

@@ -33,6 +33,7 @@ import os
 
 from tensorflow.python.keras.utils.data_utils import get_file
 
+from deepcell_toolbox.processing import normalize
 from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.applications import Application
@@ -116,6 +117,7 @@ class NuclearSegmentation(Application):
                             location=True,
                             include_top=True,
                             lite=True,
+                            use_imagenet=use_pretrained_weights,
                             interpolation='bilinear')
 
         if use_pretrained_weights:
@@ -130,13 +132,14 @@ class NuclearSegmentation(Application):
         else:
             weights_path = None
 
-        super(NuclearSegmentation, self).__init__(model,
-                                                  model_image_shape=model_image_shape,
-                                                  model_mpp=0.65,
-                                                  preprocessing_fn=None,
-                                                  postprocessing_fn=deep_watershed,
-                                                  dataset_metadata=self.dataset_metadata,
-                                                  model_metadata=self.model_metadata)
+        super(NuclearSegmentation, self).__init__(
+            model,
+            model_image_shape=model_image_shape,
+            model_mpp=0.65,
+            preprocessing_fn=normalize,
+            postprocessing_fn=deep_watershed,
+            dataset_metadata=self.dataset_metadata,
+            model_metadata=self.model_metadata)
 
     def predict(self,
                 image,
@@ -147,29 +150,33 @@ class NuclearSegmentation(Application):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
-        Input images are required to have 4 dimensions `[batch, x, y, channel]`. Additional
-        empty dimensions can be added using `np.expand_dims`
+        Input images are required to have 4 dimensions `[batch, x, y, channel]`.
+        Additional empty dimensions can be added using `np.expand_dims`
 
         Args:
             image (np.array): Input image with shape `[batch, x, y, channel]`
-            batch_size (int, optional): Number of images to predict on per batch. Defaults to 4.
-            image_mpp (float, optional): Microns per pixel for the input image. Defaults to None.
+            batch_size (int, optional): Number of images to predict on per batch.
+                Defaults to 4.
+            image_mpp (float, optional): Microns per pixel for the input image.
+                Defaults to None.
             preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
                 Defaults to {}.
             postprocess_kwargs (dict, optional): Kwargs to pass to postprocessing function.
                 Defaults to {}.
 
         Raises:
-            ValueError: Input data must match required rank of the application, calculated as
-                one dimension more (batch dimension) than expected by the model
+            ValueError: Input data must match required rank of the application,
+                calculated as one dimension more (batch dimension) than expected
+                by the model.
 
-            ValueError: Input data must match required number of channels of application
+            ValueError: Input data must match required number of channels.
 
         Returns:
             np.array: Labeled image
         """
-        return self._predict_segmentation(image,
-                                          batch_size=batch_size,
-                                          image_mpp=image_mpp,
-                                          preprocess_kwargs=preprocess_kwargs,
-                                          postprocess_kwargs=postprocess_kwargs)
+        return self._predict_segmentation(
+            image,
+            batch_size=batch_size,
+            image_mpp=image_mpp,
+            preprocess_kwargs=preprocess_kwargs,
+            postprocess_kwargs=postprocess_kwargs)

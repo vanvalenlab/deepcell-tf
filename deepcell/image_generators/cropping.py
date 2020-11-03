@@ -34,10 +34,7 @@ import warnings
 
 import numpy as np
 
-from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.preprocessing.image import array_to_img
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.python.platform import tf_logging as logging
 
 from deepcell.image_generators import SemanticDataGenerator, SemanticIterator
 
@@ -121,21 +118,26 @@ class CroppingIterator(SemanticIterator):
         else:
             x_shape = tuple([len(index_array)] + [self.x.shape[1]] + list(self.output_size))
 
-        batch_x = np.zeros(x_shape)
+        batch_x = np.zeros(x_shape, dtype=self.x.dtype)
         batch_y = []
-        for y_sem in self.y_semantic_list:
-            # set output shape based on output shape and transformed label shape
-            if self.channel_axis == 3:
-                y_shape = tuple([len(index_array)] + list(self.output_size) + [y_sem.shape[3]])
-            else:
-                y_shape = tuple([len(index_array)] + [y_sem.shape[1]] + list(self.output_size))
-
-            batch_y.append(np.zeros(y_shape, dtype=y_sem.dtype))
 
         for i, j in enumerate(index_array):
             x = self.x[j]
 
-            y_semantic_list = [y_sem[j] for y_sem in self.y_semantic_list]
+            # _transform_labels expects batch dimension
+            y_semantic_list = self._transform_labels(self.y[j:j + 1])
+
+            # initialize batch_y
+            if len(batch_y) == 0:
+                for ys in y_semantic_list:
+                    if self.data_format == 'channels_first':
+                        shape = tuple([len(index_array), ys.shape[1]] + list(self.output_size))
+                    else:
+                        shape = tuple([len(index_array)] + list(self.output_size) + [ys.shape[-1]])
+                    batch_y.append(np.zeros(shape, dtype=ys.dtype))
+
+            # random_transform does not expect batch dimension
+            y_semantic_list = [ys[0] for ys in y_semantic_list]
 
             # Apply transformation
             x, y_semantic_list = self.image_data_generator.random_transform(
@@ -145,8 +147,8 @@ class CroppingIterator(SemanticIterator):
 
             batch_x[i] = x
 
-            for k, y_sem in enumerate(y_semantic_list):
-                batch_y[k][i] = y_sem
+            for k, ys in enumerate(y_semantic_list):
+                batch_y[k][i] = ys
 
         if self.save_to_dir:
             for i, j in enumerate(index_array):

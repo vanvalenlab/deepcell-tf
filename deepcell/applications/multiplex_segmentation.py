@@ -85,7 +85,8 @@ class MultiplexSegmentation(Application):
     .. nboutput::
 
     Args:
-        use_pretrained_weights (bool, optional): Loads pretrained weights. Defaults to True.
+        use_pretrained_weights (bool, optional): Loads pretrained weights.
+            Defaults to True.
         model_image_shape (tuple, optional): Shape of input data expected by model.
             Defaults to `(256, 256, 2)`
     """
@@ -137,14 +138,15 @@ class MultiplexSegmentation(Application):
         else:
             weights_path = None
 
-        super(MultiplexSegmentation, self).__init__(model,
-                                                    model_image_shape=model_image_shape,
-                                                    model_mpp=0.5,
-                                                    preprocessing_fn=multiplex_preprocess,
-                                                    postprocessing_fn=multiplex_postprocess,
-                                                    format_model_output_fn=format_output_multiplex,
-                                                    dataset_metadata=self.dataset_metadata,
-                                                    model_metadata=self.model_metadata)
+        super(MultiplexSegmentation, self).__init__(
+            model,
+            model_image_shape=model_image_shape,
+            model_mpp=0.5,
+            preprocessing_fn=multiplex_preprocess,
+            postprocessing_fn=multiplex_postprocess,
+            format_model_output_fn=format_output_multiplex,
+            dataset_metadata=self.dataset_metadata,
+            model_metadata=self.model_metadata)
 
     def predict(self,
                 image,
@@ -157,13 +159,15 @@ class MultiplexSegmentation(Application):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
-        Input images are required to have 4 dimensions `[batch, x, y, channel]`. Additional
-        empty dimensions can be added using `np.expand_dims`
+        Input images are required to have 4 dimensions `[batch, x, y, channel]`.
+        Additional empty dimensions can be added using `np.expand_dims`
 
         Args:
             image (np.array): Input image with shape `[batch, x, y, channel]`
-            batch_size (int, optional): Number of images to predict on per batch. Defaults to 4.
-            image_mpp (float, optional): Microns per pixel for the input image. Defaults to None.
+            batch_size (int, optional): Number of images to predict on per batch.
+                Defaults to 4.
+            image_mpp (float, optional): Microns per pixel for the input image.
+                Defaults to None.
             preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
                 Defaults to {}.
             compartment (string): Specify type of segmentation to predict. Must be one of
@@ -185,21 +189,33 @@ class MultiplexSegmentation(Application):
         """
 
         if postprocess_kwargs_whole_cell is None:
-            postprocess_kwargs_whole_cell = {'maxima_threshold': 0.05, 'maxima_model_smooth': 0,
-                                             'interior_model_smooth': 2, 'interior_threshold': 0.2,
-                                             'small_objects_threshold': 10,
-                                             'fill_holes_threshold': 10}
+            postprocess_kwargs_whole_cell = {
+                'maxima_threshold': 0.1,
+                'maxima_model_smooth': 0,
+                'interior_threshold': 0.3,
+                'interior_model_smooth': 2,
+                'small_objects_threshold': 15,
+                'fill_holes_threshold': 15,
+                'radius': 2
+            }
 
         if postprocess_kwargs_nuclear is None:
-            postprocess_kwargs_nuclear = {'maxima_threshold': 0.05, 'maxima_model_smooth': 0,
-                                          'interior_model_smooth': 2, 'interior_threshold': 0.3,
-                                          'small_objects_threshold': 10,
-                                          'fill_holes_threshold': 10}
+            postprocess_kwargs_nuclear = {
+                'maxima_threshold': 0.1,
+                'maxima_model_smooth': 0,
+                'interior_threshold': 0.3,
+                'interior_model_smooth': 2,
+                'small_objects_threshold': 15,
+                'fill_holes_threshold': 15,
+                'radius': 2
+            }
 
         # create dict to hold all of the post-processing kwargs
-        postprocess_kwargs = {'whole_cell_kwargs': postprocess_kwargs_whole_cell,
-                              'nuclear_kwargs': postprocess_kwargs_nuclear,
-                              'compartment': compartment}
+        postprocess_kwargs = {
+            'whole_cell_kwargs': postprocess_kwargs_whole_cell,
+            'nuclear_kwargs': postprocess_kwargs_nuclear,
+            'compartment': compartment
+        }
 
         return self._predict_segmentation(image,
                                           batch_size=batch_size,
