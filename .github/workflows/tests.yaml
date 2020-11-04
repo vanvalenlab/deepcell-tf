@@ -41,11 +41,11 @@ jobs:
         sed -i "/tensorflow/d" requirements.txt
         pip install tensorflow==${{ matrix.tensorflow-version }}
         pip install -r requirements.txt
+        pip install -r requirements-test.txt
 
     - name: Run PyTest and Coverage
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        pip install -r requirements-test.txt
         pytest --cov deepcell --pep8
         coveralls
