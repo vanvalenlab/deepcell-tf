@@ -5,10 +5,10 @@ from __future__ import print_function
 from __future__ import division
 
 from absl.testing import parameterized
+
 import numpy as np
 import tensorflow as tf
 
-from tensorflow.python import keras
 from tensorflow.python.keras import keras_parameterized
 from tensorflow.python.keras import testing_utils
 from tensorflow.python.framework import test_util as tf_test_util
@@ -64,7 +64,8 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
             tf.keras.backend.eval(layer.states[0]), state, atol=1e-4)
 
         # test for output shape:
-        with keras.utils.custom_object_scope({'ConvGRU2D': layers.ConvGRU2D}):
+        custom_objects = {'ConvGRU2D': layers.ConvGRU2D}
+        with tf.keras.utils.custom_object_scope(custom_objects):
             testing_utils.layer_test(
                 layers.ConvGRU2D,
                 kwargs={'data_format': data_format,
@@ -147,8 +148,10 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
                       'stateful': True,
                       'filters': filters,
                       'batch_input_shape': inputs.shape,
-                      'kernel_regularizer': tf.keras.regularizers.L1L2(l1=0.01),
-                      'recurrent_regularizer': tf.keras.regularizers.L1L2(l1=0.01),
+                      'kernel_regularizer':
+                          tf.keras.regularizers.L1L2(l1=0.01),
+                      'recurrent_regularizer':
+                          tf.keras.regularizers.L1L2(l1=0.01),
                       'activity_regularizer': 'l2',
                       'bias_regularizer': 'l2',
                       'kernel_constraint': 'max_norm',
@@ -165,7 +168,8 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
     def test_conv_gru_2d_dropout(self):
         # check dropout
         with self.cached_session():
-            with keras.utils.custom_object_scope({'ConvGRU2D': layers.ConvGRU2D}):
+            custom_objects = {'ConvGRU2D': layers.ConvGRU2D}
+            with tf.keras.utils.custom_object_scope(custom_objects):
                 testing_utils.layer_test(
                     layers.ConvGRU2D,
                     kwargs={'data_format': 'channels_last',

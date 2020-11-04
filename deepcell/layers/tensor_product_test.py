@@ -29,6 +29,7 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
+import tensorflow as tf
 
 from tensorflow.python import keras
 from tensorflow.python.keras import keras_parameterized
@@ -43,7 +44,7 @@ class TensorProdTest(keras_parameterized.TestCase):
 
     def test_tensorproduct(self):
         custom_objects = {'TensorProduct': layers.TensorProduct}
-        with keras.utils.custom_object_scope(custom_objects):
+        with tf.keras.utils.custom_object_scope(custom_objects):
             testing_utils.layer_test(
                 layers.TensorProduct,
                 kwargs={'output_dim': 3},
@@ -87,21 +88,21 @@ class TensorProdTest(keras_parameterized.TestCase):
     def test_tensorproduct_regularization(self):
         layer = layers.TensorProduct(
             3,
-            kernel_regularizer=keras.regularizers.l1(0.01),
+            kernel_regularizer=tf.keras.regularizers.l1(0.01),
             bias_regularizer='l1',
             activity_regularizer='l2',
             name='tensorproduct_reg')
-        layer(keras.backend.variable(np.ones((2, 4))))
+        layer(tf.keras.backend.variable(np.ones((2, 4))))
         self.assertEqual(3, len(layer.losses))
 
     def test_tensorproduct_constraints(self):
-        k_constraint = keras.constraints.max_norm(0.01)
-        b_constraint = keras.constraints.max_norm(0.01)
+        k_constraint = tf.keras.constraints.max_norm(0.01)
+        b_constraint = tf.keras.constraints.max_norm(0.01)
         layer = layers.TensorProduct(
             3,
             kernel_constraint=k_constraint,
             bias_constraint=b_constraint)
-        layer(keras.backend.variable(np.ones((2, 4))))
+        layer(tf.keras.backend.variable(np.ones((2, 4))))
         self.assertEqual(layer.kernel.constraint, k_constraint)
         self.assertEqual(layer.bias.constraint, b_constraint)
 

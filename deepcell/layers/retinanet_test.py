@@ -32,7 +32,7 @@ import numpy as np
 from tensorflow.keras import backend as K
 from tensorflow.python.keras import keras_parameterized
 from tensorflow.python.keras import testing_utils
-from tensorflow.python.keras.utils import custom_object_scope
+from tensorflow.keras.utils import custom_object_scope
 from tensorflow.python.platform import test
 
 from deepcell import layers
