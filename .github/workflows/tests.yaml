@@ -45,7 +45,7 @@ jobs:
 
     - name: Run PyTest
       env:
-        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         pytest deepcell/layers --cov deepcell/layers --pep8
         coveralls
