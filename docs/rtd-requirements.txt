@@ -4,3 +4,4 @@ Sphinx==2.3.1
 ipython
 nbsphinx
 nbsphinx-link
+sphinx-rtd-theme
