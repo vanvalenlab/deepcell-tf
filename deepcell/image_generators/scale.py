@@ -100,8 +100,10 @@ class ScaleIterator(Iterator):
             self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
-        batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:]))
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]),
+                           dtype=self.x.dtype)
+        batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:]),
+                           dtype=self.y.dtype)
 
         for i, j in enumerate(index_array):
             x = self.x[j]

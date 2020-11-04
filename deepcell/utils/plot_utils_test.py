@@ -28,8 +28,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import pytest
+
 import numpy as np
 from tensorflow.python.platform import test
+from skimage.segmentation import find_boundaries
 
 from deepcell.utils import plot_utils
 
@@ -54,3 +57,66 @@ class PlotUtilsTest(test.TestCase):
 
 if __name__ == '__main__':
     test.main()
+
+
+def test_create_rgb_image():
+    test_input = np.random.rand(2, 50, 50, 2)
+
+    rgb_output = plot_utils.create_rgb_image(input_data=test_input,
+                                             channel_colors=['red', 'green'])
+
+    # blue channel is empty
+    assert np.sum(rgb_output[..., 0]) > 0
+    assert np.sum(rgb_output[..., 1]) > 0
+    assert np.sum(rgb_output[..., 2]) == 0
+
+    rgb_output = plot_utils.create_rgb_image(input_data=test_input[..., :1],
+                                             channel_colors=['blue'])
+
+    assert np.sum(rgb_output[..., 0]) == 0
+    assert np.sum(rgb_output[..., 1]) == 0
+    assert np.sum(rgb_output[..., 2]) > 0
+
+    # invalid input shape
+    with pytest.raises(ValueError):
+        _ = plot_utils.create_rgb_image(input_data=test_input[0], channel_colors=['red', 'green'])
+
+    # too many channels
+    double_input = np.concatenate((test_input, test_input), axis=-1)
+    with pytest.raises(ValueError):
+        _ = plot_utils.create_rgb_image(input_data=double_input,
+                                        channel_colors=['red', 'green'])
+
+    # invalid channel name
+    with pytest.raises(ValueError):
+        _ = plot_utils.create_rgb_image(input_data=test_input,
+                                        channel_colors=['red', 'purple'])
+
+    # not enough channel names
+    with pytest.raises(ValueError):
+        _ = plot_utils.create_rgb_image(input_data=test_input,
+                                        channel_colors=['red'])
+
+
+def test_make_outline_overlay():
+    rgb_data = np.random.rand(2, 50, 50, 3)
+
+    predictions = np.zeros((2, 50, 50, 1), dtype='int')
+    predictions[0, :10, :10, 0] = 1
+    predictions[0, 15:30, 30:45, 0] = 2
+    predictions[1, 10:15, 25:35, 0] = 1
+    predictions[1, 40:50, 0:10, 0] = 2
+
+    overlay = plot_utils.make_outline_overlay(rgb_data=rgb_data, predictions=predictions)
+    for img in range(predictions.shape[0]):
+        outline = find_boundaries(predictions[img, ..., 0], connectivity=1, mode='inner')
+        outline_mask = outline > 0
+        assert np.all(overlay[img, outline_mask, 0] == 1)
+
+    # invalid prediction shape
+    with pytest.raises(ValueError):
+        _ = plot_utils.make_outline_overlay(rgb_data=rgb_data, predictions=predictions[0])
+
+    # more predictions than rgb images
+    with pytest.raises(ValueError):
+        _ = plot_utils.make_outline_overlay(rgb_data=rgb_data[:1], predictions=predictions)

@@ -114,8 +114,10 @@ class ImageFullyConvIterator(Iterator):
             self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
-        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
-        batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:]))
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]),
+                           dtype=self.x.dtype)
+        batch_y = np.zeros(tuple([len(index_array)] + list(self.y.shape)[1:]),
+                           dtype=self.y.dtype)
 
         for i, j in enumerate(index_array):
             x = self.x[j]
@@ -476,9 +478,9 @@ class MovieDataGenerator(ImageDataGenerator):
         self.col_axis -= 1
         self.time_axis -= 1
         self.channel_axis -= 1
-        x_new = np.empty(x.shape)
+        x_new = np.empty(x.shape, dtype=x.dtype)
         if y is not None:
-            y_new = np.empty(y.shape)
+            y_new = np.empty(y.shape, dtype=y.dtype)
         # apply_transform expects ndim=3, but we are ndim=4
         for frame in range(x.shape[self.time_axis]):
             if self.data_format == 'channels_first':
@@ -654,24 +656,22 @@ class MovieArrayIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.data_format == 'channels_first':
-            batch_x = np.zeros((len(index_array),
-                                self.x.shape[1],
-                                self.frames_per_batch,
-                                self.x.shape[3],
-                                self.x.shape[4]))
+            batch_x = np.zeros((len(index_array), self.x.shape[1],
+                                self.frames_per_batch, self.x.shape[3],
+                                self.x.shape[4]),
+                               dtype=self.x.dtype)
             if self.y is not None:
-                batch_y = np.zeros((len(index_array),
-                                    self.y.shape[1],
-                                    self.frames_per_batch,
-                                    self.y.shape[3],
-                                    self.y.shape[4]))
+                batch_y = np.zeros((len(index_array), self.y.shape[1],
+                                    self.frames_per_batch, self.y.shape[3],
+                                    self.y.shape[4]),
+                                   dtype=self.y.dtype)
 
         else:
             batch_x = np.zeros(tuple([len(index_array), self.frames_per_batch] +
-                                     list(self.x.shape)[2:]))
+                                     list(self.x.shape)[2:]), dtype=self.x.dtype)
             if self.y is not None:
                 batch_y = np.zeros(tuple([len(index_array), self.frames_per_batch] +
-                                         list(self.y.shape)[2:]))
+                                         list(self.y.shape)[2:]), dtype=self.y.dtype)
 
         for i, j in enumerate(index_array):
             if self.y is not None:

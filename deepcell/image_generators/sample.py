@@ -195,16 +195,13 @@ class ImageSampleArrayIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
-            batch_x = np.zeros((len(index_array),
-                                self.x.shape[self.channel_axis],
-                                2 * self.win_x + 1,
-                                2 * self.win_y + 1))
+            shape = (len(index_array), self.x.shape[self.channel_axis],
+                     2 * self.win_x + 1, 2 * self.win_y + 1)
         else:
-            batch_x = np.zeros((len(index_array),
-                                2 * self.win_x + 1,
-                                2 * self.win_y + 1,
-                                self.x.shape[self.channel_axis]))
+            shape = (len(index_array), 2 * self.win_x + 1, 2 * self.win_y + 1,
+                     self.x.shape[self.channel_axis])
 
+        batch_x = np.zeros(shape, dtype=self.x.dtype)
         for i, j in enumerate(index_array):
             b, px, py = self.batch[j], self.pixels_x[j], self.pixels_y[j]
             x = self._sample_image(b, px, py)
@@ -514,18 +511,13 @@ class SampleMovieArrayIterator(Iterator):
 
     def _get_batches_of_transformed_samples(self, index_array):
         if self.channel_axis == 1:
-            batch_x = np.zeros((len(index_array),
-                                self.x.shape[self.channel_axis],
-                                2 * self.win_z + 1,
-                                2 * self.win_x + 1,
-                                2 * self.win_y + 1))
+            shape = (len(index_array), self.x.shape[self.channel_axis],
+                     2 * self.win_z + 1, 2 * self.win_x + 1, 2 * self.win_y + 1)
         else:
-            batch_x = np.zeros((len(index_array),
-                                2 * self.win_z + 1,
-                                2 * self.win_x + 1,
-                                2 * self.win_y + 1,
-                                self.x.shape[self.channel_axis]))
+            shape = (len(index_array), 2 * self.win_z + 1, 2 * self.win_x + 1,
+                     2 * self.win_y + 1, self.x.shape[self.channel_axis])
 
+        batch_x = np.zeros(shape, dtype=self.x.dtype)
         for i, j in enumerate(index_array):
             b, pz, px, py = self.batch[j], self.pixels_z[j], self.pixels_x[j], self.pixels_y[j]
             x = self._sample_image(b, pz, px, py)

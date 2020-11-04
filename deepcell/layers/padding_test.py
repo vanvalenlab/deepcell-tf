@@ -31,12 +31,14 @@ from __future__ import print_function
 
 import numpy as np
 
-# from tensorflow import keras
+from absl.testing import parameterized
+
+from tensorflow.python import keras
 # from tensorflow.python.eager import context
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.keras import testing_utils
 from tensorflow.python.platform import test
 
-from deepcell.utils import testing_utils
 from deepcell import layers
 
 
@@ -58,76 +60,75 @@ class ReflectionPaddingTest(keras_parameterized.TestCase):
         ins1 = np.ones((num_samples, input_num_row, input_num_col, stack_size))
         ins2 = np.ones((num_samples, stack_size, input_num_row, input_num_col))
         data_formats = ['channels_first', 'channels_last']
-        for data_format, inputs in zip(data_formats, [ins2, ins1]):
-            # basic test
-            testing_utils.layer_test(
-                layers.ReflectionPadding2D,
-                kwargs={'padding': (2, 2),
-                        'data_format': data_format},
-                custom_objects=custom_objects,
-                input_shape=inputs.shape)
-            testing_utils.layer_test(
-                layers.ReflectionPadding2D,
-                kwargs={'padding': ((1, 2), (3, 4)),
-                        'data_format': data_format},
-                custom_objects=custom_objects,
-                input_shape=inputs.shape)
+        with keras.utils.custom_object_scope(custom_objects):
+            for data_format, inputs in zip(data_formats, [ins2, ins1]):
+                # basic test
+                testing_utils.layer_test(
+                    layers.ReflectionPadding2D,
+                    kwargs={'padding': (2, 2),
+                            'data_format': data_format},
+                    input_shape=inputs.shape)
+                testing_utils.layer_test(
+                    layers.ReflectionPadding2D,
+                    kwargs={'padding': ((1, 2), (3, 4)),
+                            'data_format': data_format},
+                    input_shape=inputs.shape)
 
-            # correctness test
-            # with self.cached_session():
-            #     layer = layers.ReflectionPadding2D(
-            #         padding=(2, 2), data_format=data_format)
-            #     layer.build(inputs.shape)
-            #     output = layer(keras.backend.variable(inputs))
-            #     if context.executing_eagerly():
-            #         np_output = output.numpy()
-            #     else:
-            #         np_output = keras.backend.eval(output)
-            #     if data_format == 'channels_last':
-            #         for offset in [0, 1, -1, -2]:
-            #             np.testing.assert_allclose(np_output[:, offset, :, :], 0.)
-            #             np.testing.assert_allclose(np_output[:, :, offset, :], 0.)
-            #         np.testing.assert_allclose(np_output[:, 2:-2, 2:-2, :], 1.)
-            #     elif data_format == 'channels_first':
-            #         for offset in [0, 1, -1, -2]:
-            #             np.testing.assert_allclose(np_output[:, :, offset, :], 0.)
-            #             np.testing.assert_allclose(np_output[:, :, :, offset], 0.)
-            #         np.testing.assert_allclose(np_output[:, 2:-2, 2:-2, :], 1.)
+        # correctness test
+        # with self.cached_session():
+        #     layer = layers.ReflectionPadding2D(
+        #         padding=(2, 2), data_format=data_format)
+        #     layer.build(inputs.shape)
+        #     output = layer(keras.backend.variable(inputs))
+        #     if context.executing_eagerly():
+        #         np_output = output.numpy()
+        #     else:
+        #         np_output = keras.backend.eval(output)
+        #     if data_format == 'channels_last':
+        #         for offset in [0, 1, -1, -2]:
+        #             np.testing.assert_allclose(np_output[:, offset, :, :], 0.)
+        #             np.testing.assert_allclose(np_output[:, :, offset, :], 0.)
+        #         np.testing.assert_allclose(np_output[:, 2:-2, 2:-2, :], 1.)
+        #     elif data_format == 'channels_first':
+        #         for offset in [0, 1, -1, -2]:
+        #             np.testing.assert_allclose(np_output[:, :, offset, :], 0.)
+        #             np.testing.assert_allclose(np_output[:, :, :, offset], 0.)
+        #         np.testing.assert_allclose(np_output[:, 2:-2, 2:-2, :], 1.)
 
-            #     layer = layers.ReflectionPadding2D(
-            #         padding=((1, 2), (3, 4)), data_format=data_format)
-            #     layer.build(inputs.shape)
-            #     output = layer(keras.backend.variable(inputs))
-            #     if context.executing_eagerly():
-            #         np_output = output.numpy()
-            #     else:
-            #         np_output = keras.backend.eval(output)
-            #     if data_format == 'channels_last':
-            #         for top_offset in [0]:
-            #             np.testing.assert_allclose(np_output[:, top_offset, :, :], 0.)
-            #         for bottom_offset in [-1, -2]:
-            #             np.testing.assert_allclose(np_output[:, bottom_offset, :, :], 0.)
-            #         for left_offset in [0, 1, 2]:
-            #             np.testing.assert_allclose(np_output[:, :, left_offset, :], 0.)
-            #         for right_offset in [-1, -2, -3, -4]:
-            #             np.testing.assert_allclose(np_output[:, :, right_offset, :], 0.)
-            #         np.testing.assert_allclose(np_output[:, 1:-2, 3:-4, :], 1.)
-            #     elif data_format == 'channels_first':
-            #         for top_offset in [0]:
-            #             np.testing.assert_allclose(np_output[:, :, top_offset, :], 0.)
-            #         for bottom_offset in [-1, -2]:
-            #             np.testing.assert_allclose(np_output[:, :, bottom_offset, :], 0.)
-            #         for left_offset in [0, 1, 2]:
-            #             np.testing.assert_allclose(np_output[:, :, :, left_offset], 0.)
-            #         for right_offset in [-1, -2, -3, -4]:
-            #             np.testing.assert_allclose(np_output[:, :, :, right_offset], 0.)
-            #         np.testing.assert_allclose(np_output[:, :, 1:-2, 3:-4], 1.)
+        #     layer = layers.ReflectionPadding2D(
+        #         padding=((1, 2), (3, 4)), data_format=data_format)
+        #     layer.build(inputs.shape)
+        #     output = layer(keras.backend.variable(inputs))
+        #     if context.executing_eagerly():
+        #         np_output = output.numpy()
+        #     else:
+        #         np_output = keras.backend.eval(output)
+        #     if data_format == 'channels_last':
+        #         for top_offset in [0]:
+        #             np.testing.assert_allclose(np_output[:, top_offset, :, :], 0.)
+        #         for bottom_offset in [-1, -2]:
+        #             np.testing.assert_allclose(np_output[:, bottom_offset, :, :], 0.)
+        #         for left_offset in [0, 1, 2]:
+        #             np.testing.assert_allclose(np_output[:, :, left_offset, :], 0.)
+        #         for right_offset in [-1, -2, -3, -4]:
+        #             np.testing.assert_allclose(np_output[:, :, right_offset, :], 0.)
+        #         np.testing.assert_allclose(np_output[:, 1:-2, 3:-4, :], 1.)
+        #     elif data_format == 'channels_first':
+        #         for top_offset in [0]:
+        #             np.testing.assert_allclose(np_output[:, :, top_offset, :], 0.)
+        #         for bottom_offset in [-1, -2]:
+        #             np.testing.assert_allclose(np_output[:, :, bottom_offset, :], 0.)
+        #         for left_offset in [0, 1, 2]:
+        #             np.testing.assert_allclose(np_output[:, :, :, left_offset], 0.)
+        #         for right_offset in [-1, -2, -3, -4]:
+        #             np.testing.assert_allclose(np_output[:, :, :, right_offset], 0.)
+        #         np.testing.assert_allclose(np_output[:, :, 1:-2, 3:-4], 1.)
 
-            # test incorrect use
-            with self.assertRaises(ValueError):
-                layers.ReflectionPadding2D(padding=(1, 1, 1))
-            with self.assertRaises(ValueError):
-                layers.ReflectionPadding2D(padding=None)
+        # test incorrect use
+        with self.assertRaises(ValueError):
+            layers.ReflectionPadding2D(padding=(1, 1, 1))
+        with self.assertRaises(ValueError):
+            layers.ReflectionPadding2D(padding=None)
 
     def test_reflection_padding_3d(self):
         num_samples = 2
@@ -142,14 +143,14 @@ class ReflectionPaddingTest(keras_parameterized.TestCase):
         inputs2 = np.ones((num_samples, stack_size, input_len_dim1,
                            input_len_dim2, input_len_dim3))
         data_formats = ['channels_first', 'channels_last']
-        for data_format, inputs in zip(data_formats, [inputs2, inputs1]):
-            # basic test
-            testing_utils.layer_test(
-                layers.ReflectionPadding3D,
-                kwargs={'padding': (2, 2, 2),
-                        'data_format': data_format},
-                custom_objects=custom_objects,
-                input_shape=inputs.shape)
+        with keras.utils.custom_object_scope(custom_objects):
+            for data_format, inputs in zip(data_formats, [inputs2, inputs1]):
+                # basic test
+                testing_utils.layer_test(
+                    layers.ReflectionPadding3D,
+                    kwargs={'padding': (2, 2, 2),
+                            'data_format': data_format},
+                    input_shape=inputs.shape)
 
         # correctness test
         # with self.cached_session():

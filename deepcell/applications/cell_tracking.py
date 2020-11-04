@@ -31,6 +31,10 @@ from __future__ import print_function
 
 from tensorflow.keras.utils import get_file
 
+import deepcell_tracking
+from deepcell_toolbox.processing import normalize
+
+from deepcell.applications import Application
 from deepcell import model_zoo
 
 
@@ -39,36 +43,102 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
                 'epoch_80split_9tl.h5')
 
 
-def CellTrackingModel(input_shape=(32, 32, 1),
-                      neighborhood_scale_size=30,
-                      use_pretrained_weights=True):
-    """Creates an instance of a siamese_model used for cell tracking.
-
-    Detects whether to input cells are the same cell, different cells, or
-    daughter cells. This can be used along with a cost matrix to track full
-    cell lineages across many frames.
+class CellTracking(Application):
+    """Loads a `deepcell.model_zoo.siamese_model` model for object tracking
+    with pretrained weights using a simple `predict` interface.
 
     Args:
-        input_shape (tuple): a 3-length tuple of the input data shape.
-        neighborhood_scale_size (int): size of resized neighborhood images
-        use_pretrained_weights (bool): whether to load pre-trained weights.
+        use_pretrained_weights (bool, optional): Loads pretrained weights. Defaults to True.
+        model_image_shape (tuple, optional): Shape of input data expected by model.
+            Defaults to `(32, 32, 1)`
+        neighborhood_scale_size (int):
+        birth (float): Cost of new cell in linear assignment matrix. Defaults to `0.99`.
+        death (float): Cost of cell death in linear assignment matrix. Defaults to `0.99`.
+        division (float): Cost of cell division in linear assignment matrix. Defaults to `0.9`.
     """
-    features = {'appearance', 'distance', 'neighborhood', 'regionprop'}
 
-    model = model_zoo.siamese_model(
-        input_shape=input_shape,
-        reg=1e-5,
-        init='he_normal',
-        neighborhood_scale_size=neighborhood_scale_size,
-        features=features)
+    #: Metadata for the dataset used to train the model
+    dataset_metadata = {
+        'name': 'tracked_nuclear_train_large',
+        'other': 'Pooled tracked nuclear data from HEK293, HeLa-S3, NIH-3T3, and RAW264.7 cells.'
+    }
 
-    if use_pretrained_weights:
-        weights_path = get_file(
-            'CellTrackingModel.h5',
-            WEIGHTS_PATH,
-            cache_subdir='models',
-            file_hash='3349b363fdad0266a1845ba785e057a6')
+    #: Metadata for the model and training process
+    model_metadata = {
+        'batch_size': 128,
+        'lr': 1e-2,
+        'lr_decay': 0.99,
+        'training_seed': 1,
+        'n_epochs': 10,
+        'training_steps_per_epoch': 5536,
+        'validation_steps_per_epoch': 1384,
+        'features': {'appearance', 'distance', 'neighborhood', 'regionprop'},
+        'min_track_length': 9,
+        'neighborhood_scale_size': 30,
+        'crop_dim': 32,
+    }
 
-        model.load_weights(weights_path)
+    def __init__(self,
+                 use_pretrained_weights=True,
+                 model_image_shape=(32, 32, 1),
+                 neighborhood_scale_size=30,
+                 birth=0.99,
+                 death=0.99,
+                 division=0.9):
+        self.features = {'appearance', 'distance', 'neighborhood', 'regionprop'}
+        self.birth = birth
+        self.death = death
+        self.division = division
 
-    return model
+        model = model_zoo.siamese_model(
+            input_shape=model_image_shape,
+            reg=1e-5,
+            init='he_normal',
+            neighborhood_scale_size=neighborhood_scale_size,
+            features=self.features)
+
+        if use_pretrained_weights:
+            weights_path = get_file(
+                'CellTrackingModel.h5',
+                WEIGHTS_PATH,
+                cache_subdir='models',
+                file_hash='3349b363fdad0266a1845ba785e057a6')
+
+            model.load_weights(weights_path)
+        else:
+            weights_path = None
+
+        super(CellTracking, self).__init__(
+            model,
+            model_image_shape=model_image_shape,
+            model_mpp=0.65,
+            preprocessing_fn=None,
+            postprocessing_fn=None,
+            dataset_metadata=self.dataset_metadata,
+            model_metadata=self.model_metadata)
+
+    def predict(self, image, labels, **kwargs):
+        """Using both raw image data and segmentation masks,
+        track objects across all frames.
+
+        Args:
+            image (np.array): Raw image data.
+            labels (np.array): Labels for image data, integer masks.
+
+        Returns:
+            dict: Tracked labels and lineage information.
+        """
+        image_norm = normalize(image)
+
+        cell_tracker = deepcell_tracking.CellTracker(
+            image_norm, labels, self.model,
+            birth=self.birth, death=self.death,
+            division=self.division)
+
+        cell_tracker.track_cells()
+
+        return cell_tracker._track_review_dict()
+
+    def track(self, image, labels, **kwargs):
+        """Wrapper around predict() for convenience."""
+        return self.predict(image, labels, **kwargs)

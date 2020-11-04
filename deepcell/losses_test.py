@@ -29,20 +29,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-import shutil
-
 import numpy as np
 
 from tensorflow import keras
 from tensorflow.python.platform import test
 
 from deepcell import losses
-
-try:
-    import h5py  # pylint:disable=wrong-import-position
-except ImportError:
-    h5py = None
 
 
 ALL_LOSSES = [
@@ -52,23 +44,9 @@ ALL_LOSSES = [
     losses.weighted_focal_loss,
     losses.smooth_l1,
     losses.focal,
-    # losses.dice_coef_loss,
+    # losses.dice_loss,
     # losses.discriminative_instance_loss
 ]
-
-
-class _MSEMAELoss(object):
-    """Loss function with internal state, for testing serialization code."""
-
-    def __init__(self, mse_fraction):
-        self.mse_fraction = mse_fraction
-
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        return (self.mse_fraction * keras.losses.mean_squared_error(y_true, y_pred) +
-                (1 - self.mse_fraction) * keras.losses.mean_absolute_error(y_true, y_pred))
-
-    def get_config(self):
-        return {'mse_fraction': self.mse_fraction}
 
 
 class KerasLossesTest(test.TestCase):
