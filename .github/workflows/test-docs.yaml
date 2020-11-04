@@ -24,4 +24,4 @@ jobs:
         pip install -r docs/rtd-requirements.txt
 
     - name: Test sphinx-build
-      run: sphinx-build -nT -b html ./docs/source build/html
+      run: PYTHONPATH=$PWD:$PYTHONPATH sphinx-build -nT -b dummy ./docs/source build/html
