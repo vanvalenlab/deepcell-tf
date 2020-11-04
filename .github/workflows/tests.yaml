@@ -43,9 +43,22 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-test.txt
 
-    - name: Run PyTest and Coverage
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        pytest --cov deepcell --pep8
-        coveralls
+    - name: Run PyTest
+      run: pytest --cov deepcell --pep8
+
+    - name: Coveralls Parallel
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        flag-name: run-py${{ matrix.python-version }}-tf${{ matrix.tensorflow-version }}
+        parallel: true
+
+  finish:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Coveralls Finished
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        parallel-finished: true
