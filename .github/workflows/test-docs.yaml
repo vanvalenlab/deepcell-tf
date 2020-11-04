@@ -22,9 +22,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r docs/rtd-requirements.txt
-        pip install pandoc
 
     - name: Test sphinx-build
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: sphinx-build -nT -b dummy ./docs/source build/html
+      run: sphinx-build -b html ./docs/source build/html
