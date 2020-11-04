@@ -6,7 +6,8 @@ name: Test Docs
 on: [push, pull_request]
 
 jobs:
-  build:
+
+  docs:
 
     runs-on: ubuntu-latest
 
