@@ -106,7 +106,9 @@ class TensorProduct(Layer):
             kwargs['input_shape'] = (kwargs.pop('input_dim'),)
 
         super(TensorProduct, self).__init__(
-            activity_regularizer=regularizers.get(activity_regularizer), **kwargs)
+            activity_regularizer=tf.keras.regularizers.get(
+                activity_regularizer), **kwargs)
+
         self.output_dim = int(output_dim)
         self.data_format = conv_utils.normalize_data_format(data_format)
         self.activation = tf.keras.activations.get(activation)
@@ -195,13 +197,20 @@ class TensorProduct(Layer):
             'data_format': self.data_format,
             'activation': self.activation,
             'use_bias': self.use_bias,
-            'kernel_initializer': initializers.serialize(self.kernel_initializer),
-            'bias_initializer': initializers.serialize(self.bias_initializer),
-            'kernel_regularizer': regularizers.serialize(self.kernel_regularizer),
-            'bias_regularizer': regularizers.serialize(self.bias_regularizer),
-            'activity_regularizer': regularizers.serialize(self.activity_regularizer),
-            'kernel_constraint': constraints.serialize(self.kernel_constraint),
-            'bias_constraint': constraints.serialize(self.bias_constraint)
+            'kernel_initializer': tf.keras.initializers.serialize(
+                self.kernel_initializer),
+            'bias_initializer': tf.keras.initializers.serialize(
+                self.bias_initializer),
+            'kernel_regularizer': tf.keras.regularizers.serialize(
+                self.kernel_regularizer),
+            'bias_regularizer': tf.keras.regularizers.serialize(
+                self.bias_regularizer),
+            'activity_regularizer': tf.keras.regularizers.serialize(
+                self.activity_regularizer),
+            'kernel_constraint': tf.keras.constraints.serialize(
+                self.kernel_constraint),
+            'bias_constraint': tf.keras.constraints.serialize(
+                self.bias_constraint)
         }
         base_config = super(TensorProduct, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

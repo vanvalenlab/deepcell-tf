@@ -172,6 +172,7 @@ def retinamask(inputs,
                retinanet_model=None,
                anchor_params=None,
                nms=True,
+               training=True,
                panoptic=False,
                class_specific_filter=True,
                crop_size=(14, 14),
@@ -203,6 +204,10 @@ def retinamask(inputs,
         anchor_params (AnchorParameters): Struct containing anchor parameters.
         nms (bool): Whether to use non-maximum suppression
             for the filtering step.
+        training (bool): Whether to use the bounding boxes as the detections,
+            during training or to use the
+            :mod:`deepcell.layers.filter_detections.FilterDetections`
+            during inference.
         panoptic (bool): Flag for adding the semantic head for panoptic
             segmentation tasks.
         class_specific_filter (bool): Use class specific filtering.
