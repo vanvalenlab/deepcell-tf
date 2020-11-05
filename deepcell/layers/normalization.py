@@ -29,7 +29,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
 from tensorflow.keras import backend as K
@@ -42,6 +41,36 @@ from tensorflow.python.keras.utils import conv_utils
 
 
 class ImageNormalization2D(Layer):
+    """Image Normalization layer for 2D data.
+
+    Args:
+        norm_method (str): Normalization method to use, one of:
+            "std", "max", "whole_image", None.
+        filter_size (int): The length of the convolution window.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
+        activation (function): Activation function to use.
+            If you don't specify anything, no activation is applied
+            (ie. "linear" activation: ``a(x) = x``).
+        use_bias (bool): Whether the layer uses a bias.
+        kernel_initializer (function): Initializer for the ``kernel`` weights
+            matrix, used for the linear transformation of the inputs.
+        bias_initializer (function): Initializer for the bias vector. If None,
+            the default initializer will be used.
+        kernel_regularizer (function): Regularizer function applied to the
+            ``kernel`` weights matrix.
+        bias_regularizer (function): Regularizer function applied to the
+            bias vector.
+        activity_regularizer (function): Regularizer function applied to.
+        kernel_constraint (function): Constraint function applied to
+            the ``kernel`` weights matrix.
+        bias_constraint (function): Constraint function applied to the
+            bias vector.
+    """
     def __init__(self,
                  norm_method='std',
                  filter_size=61,
@@ -158,7 +187,7 @@ class ImageNormalization2D(Layer):
         elif self.norm_method == 'whole_image':
             axes = [2, 3] if self.channel_axis == 1 else [1, 2]
             outputs = inputs - K.mean(inputs, axis=axes, keepdims=True)
-            outputs = outputs / K.std(inputs, axis=axes, keepdims=True)
+            outputs = outputs / (K.std(inputs, axis=axes, keepdims=True) + K.epsilon())
 
         elif self.norm_method == 'std':
             outputs = inputs - self._average_filter(inputs)
@@ -194,6 +223,36 @@ class ImageNormalization2D(Layer):
 
 
 class ImageNormalization3D(Layer):
+    """Image Normalization layer for 3D data.
+
+    Args:
+        norm_method (str): Normalization method to use, one of:
+            "std", "max", "whole_image", None.
+        filter_size (int): The length of the convolution window.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
+        activation (function): Activation function to use.
+            If you don't specify anything, no activation is applied
+            (ie. "linear" activation: ``a(x) = x``).
+        use_bias (bool): Whether the layer uses a bias.
+        kernel_initializer (function): Initializer for the ``kernel`` weights
+            matrix, used for the linear transformation of the inputs.
+        bias_initializer (function): Initializer for the bias vector. If None,
+            the default initializer will be used.
+        kernel_regularizer (function): Regularizer function applied to the
+            ``kernel`` weights matrix.
+        bias_regularizer (function): Regularizer function applied to the
+            bias vector.
+        activity_regularizer (function): Regularizer function applied to.
+        kernel_constraint (function): Constraint function applied to
+            the ``kernel`` weights matrix.
+        bias_constraint (function): Constraint function applied to the
+            bias vector.
+    """
     def __init__(self,
                  norm_method='std',
                  filter_size=61,
@@ -316,7 +375,7 @@ class ImageNormalization3D(Layer):
         elif self.norm_method == 'whole_image':
             axes = [3, 4] if self.channel_axis == 1 else [2, 3]
             outputs = inputs - K.mean(inputs, axis=axes, keepdims=True)
-            outputs = outputs / K.std(inputs, axis=axes, keepdims=True)
+            outputs = outputs / (K.std(inputs, axis=axes, keepdims=True) + K.epsilon())
 
         elif self.norm_method == 'std':
             outputs = inputs - self._average_filter(inputs)
@@ -327,7 +386,8 @@ class ImageNormalization3D(Layer):
             outputs = outputs - self._average_filter(outputs)
 
         else:
-            raise NotImplementedError('"{}" is not a valid norm_method'.format(self.norm_method))
+            raise NotImplementedError('"{}" is not a valid norm_method'.format(
+                self.norm_method))
 
         return outputs
 

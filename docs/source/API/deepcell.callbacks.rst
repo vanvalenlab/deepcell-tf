@@ -1,5 +1,5 @@
-deepcell.callbacks module
-=========================
+deepcell.callbacks
+==================
 
 .. automodule:: deepcell.callbacks
     :members:

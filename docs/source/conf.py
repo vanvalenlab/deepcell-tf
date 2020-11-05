@@ -31,9 +31,9 @@ copyright = ('2016-{currentyear}, Van Valen Lab at the '
 author = 'Van Valen Lab at Caltech'
 
 # The short X.Y version
-version = '2.0'
+version = '0.6.0'
 # The full version, including alpha/beta/rc tags
-release = '2.0.0'
+release = '0.6.0'
 
 import subprocess
 try:
@@ -129,7 +129,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -261,7 +261,7 @@ r"""
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3.7', None),
-    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
     'kiosk': ('https://deepcell-kiosk.readthedocs.io/en/{}/'.format(rtd_version), None),
     'kiosk-redis-consumer': (('https://deepcell-kiosk.readthedocs.io/'
                               'projects/kiosk-redis-consumer/en/{}/').format(rtd_version), None),

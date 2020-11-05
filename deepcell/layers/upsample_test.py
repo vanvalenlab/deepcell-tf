@@ -31,9 +31,10 @@ from __future__ import division
 import numpy as np
 from tensorflow.keras import backend as K
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.keras import testing_utils
+from tensorflow.keras.utils import custom_object_scope
 from tensorflow.python.platform import test
 
-from deepcell.utils import testing_utils
 from deepcell import layers
 
 
@@ -147,17 +148,16 @@ class TestUpsampleLike(keras_parameterized.TestCase):
 class TestUpsample(keras_parameterized.TestCase):
 
     def test_simple(self):
-        testing_utils.layer_test(
-            layers.Upsample,
-            kwargs={'target_size': (2, 2)},
-            custom_objects={'Upsample': layers.Upsample},
-            input_shape=(3, 5, 6, 4))
-        testing_utils.layer_test(
-            layers.Upsample,
-            kwargs={'target_size': (2, 2),
-                    'data_format': 'channels_first'},
-            custom_objects={'Upsample': layers.Upsample},
-            input_shape=(3, 4, 5, 6))
+        with custom_object_scope({'Upsample': layers.Upsample}):
+            testing_utils.layer_test(
+                layers.Upsample,
+                kwargs={'target_size': (2, 2)},
+                input_shape=(3, 5, 6, 4))
+            testing_utils.layer_test(
+                layers.Upsample,
+                kwargs={'target_size': (2, 2),
+                        'data_format': 'channels_first'},
+                input_shape=(3, 4, 5, 6))
 
 
 if __name__ == '__main__':

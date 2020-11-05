@@ -28,10 +28,11 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+from tensorflow.python.keras import testing_utils
 from tensorflow.python.keras import keras_parameterized
+from tensorflow.keras.utils import custom_object_scope
 from tensorflow.python.platform import test
 
-from deepcell.utils import testing_utils
 from deepcell import layers
 
 
@@ -39,32 +40,30 @@ from deepcell import layers
 class LocationTest(keras_parameterized.TestCase):
 
     def test_location_2d(self):
-        testing_utils.layer_test(
-            layers.Location2D,
-            kwargs={'in_shape': (5, 6, 4),
-                    'data_format': 'channels_last'},
-            custom_objects={'Location2D': layers.Location2D},
-            input_shape=(3, 5, 6, 4))
-        testing_utils.layer_test(
-            layers.Location2D,
-            kwargs={'in_shape': (4, 5, 6),
-                    'data_format': 'channels_first'},
-            custom_objects={'Location2D': layers.Location2D},
-            input_shape=(3, 4, 5, 6))
+        with custom_object_scope({'Location2D': layers.Location2D}):
+            testing_utils.layer_test(
+                layers.Location2D,
+                kwargs={'in_shape': (5, 6, 4),
+                        'data_format': 'channels_last'},
+                input_shape=(3, 5, 6, 4))
+            testing_utils.layer_test(
+                layers.Location2D,
+                kwargs={'in_shape': (4, 5, 6),
+                        'data_format': 'channels_first'},
+                input_shape=(3, 4, 5, 6))
 
     def test_location_3d(self):
-        testing_utils.layer_test(
-            layers.Location3D,
-            kwargs={'in_shape': (11, 12, 10, 4),
-                    'data_format': 'channels_last'},
-            custom_objects={'Location3D': layers.Location3D},
-            input_shape=(3, 11, 12, 10, 4))
-        testing_utils.layer_test(
-            layers.Location3D,
-            kwargs={'in_shape': (4, 11, 12, 10),
-                    'data_format': 'channels_first'},
-            custom_objects={'Location3D': layers.Location3D},
-            input_shape=(3, 4, 11, 12, 10))
+        with custom_object_scope({'Location3D': layers.Location3D}):
+            testing_utils.layer_test(
+                layers.Location3D,
+                kwargs={'in_shape': (11, 12, 10, 4),
+                        'data_format': 'channels_last'},
+                input_shape=(3, 11, 12, 10, 4))
+            testing_utils.layer_test(
+                layers.Location3D,
+                kwargs={'in_shape': (4, 11, 12, 10),
+                        'data_format': 'channels_first'},
+                input_shape=(3, 4, 11, 12, 10))
 
 
 if __name__ == '__main__':

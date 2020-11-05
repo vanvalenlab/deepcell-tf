@@ -30,17 +30,20 @@ from __future__ import print_function
 from __future__ import division
 
 import os
-
 import cv2
+
 import numpy as np
 import matplotlib.pyplot as plt
+
 from matplotlib import animation
-from tensorflow.keras import backend as K
+from tensorflow.python.keras import backend as K
+from skimage.exposure import rescale_intensity
+from skimage.segmentation import find_boundaries
 
 
 def get_js_video(images, batch=0, channel=0, cmap='jet',
                  vmin=0, vmax=0, interval=200, repeat_delay=1000):
-    """Create a JavaScript video as HTML for visualizing 3D data as a movie
+    """Create a JavaScript video as HTML for visualizing 3D data as a movie.
 
     Args:
         images (numpy.array): images to display as video
@@ -84,7 +87,7 @@ def draw_box(image, box, color, thickness=2):
 
     Args:
         image (numpy.array): The image to draw on.
-        box (int[]): A list of 4 elements (x1, y1, x2, y2).
+        box (int[]): A list of 4 elements ``(x1, y1, x2, y2)``.
         color (int[]): The color of the box.
         thickness (int): The thickness of the lines to draw a box with.
     """
@@ -99,7 +102,7 @@ def draw_caption(image, box, caption):
 
     Args:
         image (numpy.array): The image to draw on.
-        box (int[]): A list of 4 elements (x1, y1, x2, y2).
+        box (int[]): A list of 4 elements ``(x1, y1, x2, y2)``.
         caption (str): String containing the text to draw.
     """
     b = np.array(box).astype(int)
@@ -118,11 +121,11 @@ def draw_mask(image,
 
     Args:
         image (numpy.array): Three dimensional image to draw on.
-        box (int[]): Vector of at least 4 values (x1, y1, x2, y2)
+        box (tuple): Vector of at least 4 values ``(x1, y1, x2, y2)``
             representing a box in the image.
         mask (numpy.array): A 2D float mask which will be reshaped to the size
             of the box, binarized and drawn over the image.
-        color (int[]): Color to draw the mask with. If the box has 5 values,
+        color (tuple): Color to draw the mask with. If the box has 5 values,
             the last value is assumed to be the label and used to
             construct a default color.
         binarize_threshold (float): Threshold used for binarizing the mask.
@@ -167,14 +170,14 @@ def draw_masks(image, boxes, scores, masks,
 
     Args:
         image (numpy.array): Three dimensional image to draw on.
-        boxes (int[]): Matrix of shape (N, >=4)
-            (at least 4 values: (x1, y1, x2, y2)) representing boxes
+        boxes (list): Matrix of shape ``(N, >=4)``
+            (at least 4 values: ``(x1, y1, x2, y2)``) representing boxes
             in the image.
-        scores (float[]): A list of N classification scores.
-        masks (numpy.array): Matrix of shape (N, H, W) of N masks of shape (H, W)
-            which will be reshaped to the size of the corresponding box,
-            binarized and drawn over the image.
-        color (int[]): Color or to draw the masks with.
+        scores (list): A list of N classification scores.
+        masks (numpy.array): Matrix of shape ``(N, H, W)`` of N masks of shape
+            ``(H, W)`` which will be reshaped to the size of the corresponding
+            box, binarized and drawn over the image.
+        color (list): Color or to draw the masks with.
         score_threshold (float): Threshold used for determining
             the masks to draw.
         binarize_threshold (float): Threshold used for binarizing the masks.
@@ -200,10 +203,10 @@ def draw_detections(image,
 
     Args:
         image (numpy.array): The image to draw on.
-        boxes (int[]): A [N, 4] matrix (x1, y1, x2, y2).
-        scores (float[]): A list of N classification scores.
-        labels (str[]): A list of N labels.
-        color (int[]): The color of the boxes.
+        boxes (list): A [N, 4] matrix ``(x1, y1, x2, y2)``.
+        scores (list): A list of N classification scores.
+        labels (list): A list of N labels.
+        color (list): The color of the boxes.
         label_to_name (function): (optional) Functor for mapping a
             label to a name.
         score_threshold (float): Threshold used for determining
@@ -230,10 +233,10 @@ def draw_annotations(image,
 
     Args:
         image (numpy.array): The image to draw on.
-        annotations (numpy.array): A [N, 5] matrix (x1, y1, x2, y2, label) or
-            dictionary containing bboxes (shaped [N, 4])
-            and labels (shaped [N]).
-        color (int[]): The color of the boxes.
+        annotations (numpy.array): A [N, 5] matrix ``(x1, y1, x2, y2, label)``
+            or dictionary containing bboxes (shaped ``[N, 4]``)
+            and labels (shaped ``[N]``).
+        color (list): The color of the boxes.
         label_to_name (function): (optional) Functor for mapping a
             label to a name.
     """
@@ -260,7 +263,7 @@ def cf(x_coord, y_coord, sample_image):
         sample_image (numpy.array): Sample image for numpy arrays
 
     Returns:
-        str: formatted coordinates (x, y, and z).
+        str: formatted coordinates ``(x, y, z)``.
     """
     numrows, numcols = sample_image.shape
     col = int(x_coord + 0.5)
@@ -355,3 +358,93 @@ def plot_error(loss_hist_file, saved_direc, plot_name):
 
     filename = os.path.join(saved_direc, plot_name)
     plt.savefig(filename, format='pdf')
+
+
+def create_rgb_image(input_data, channel_colors):
+    """Takes a stack of 1- or 2-channel data and converts it to an RGB image
+
+    Args:
+        input_data: 4D stack of images to be converted to RGB
+        channel_colors: list specifying the color for each channel
+
+    Returns:
+        numpy.array: transformed version of input data into RGB version
+
+    Raises:
+        ValueError: if ``len(channel_colors)`` is not equal
+            to number of channels
+        ValueError: if invalid ``channel_colors`` provided
+        ValueError: if input_data is not 4D, with 1 or 2 channels
+    """
+
+    if len(input_data.shape) != 4:
+        raise ValueError('Input data must be 4D, '
+                         'but provided data has shape {}'.format(input_data.shape))
+
+    if input_data.shape[3] > 2:
+        raise ValueError('Input data must have 1 or 2 channels, '
+                         'but {} channels were provided'.format(input_data.shape[-1]))
+
+    valid_channels = ['red', 'green', 'blue']
+    channel_colors = [x.lower() for x in channel_colors]
+
+    if not np.all(np.isin(channel_colors, valid_channels)):
+        raise ValueError('Only red, green, or blue are valid channel colors')
+
+    if len(channel_colors) != input_data.shape[-1]:
+        raise ValueError('Must provide same number of channel_colors as channels in input_data')
+
+    rgb_data = np.zeros(input_data.shape[:3] + (3,), dtype='float32')
+
+    # rescale channels to aid plotting
+    for img in range(input_data.shape[0]):
+        for channel in range(input_data.shape[-1]):
+            current_img = input_data[img, :, :, channel]
+            non_zero_vals = current_img[np.nonzero(current_img)]
+
+            # if there are non-zero pixels in current channel, we rescale
+            if len(non_zero_vals) > 0:
+
+                percentiles = np.percentile(non_zero_vals, [5, 95])
+                rescaled_intensity = rescale_intensity(current_img,
+                                                       in_range=(percentiles[0], percentiles[1]),
+                                                       out_range='float32')
+
+                # get rgb index of current channel
+                color_idx = np.where(np.isin(valid_channels, channel_colors[channel]))
+                rgb_data[img, :, :, color_idx] = rescaled_intensity
+
+    # create a blank array for red channel
+    return rgb_data
+
+
+def make_outline_overlay(rgb_data, predictions):
+    """Overlay a segmentation mask with image data for easy visualization
+
+    Args:
+        rgb_data: 3 channel array of images, output of ``create_rgb_data``
+        predictions: segmentation predictions to be visualized
+
+    Returns:
+        numpy.array: overlay image of input data and predictions
+
+    Raises:
+        ValueError: If predictions are not 4D
+        ValueError: If there is not matching RGB data for each prediction
+    """
+    if len(predictions.shape) != 4:
+        raise ValueError('Predictions must be 4D, got {}'.format(predictions.shape))
+
+    if predictions.shape[0] > rgb_data.shape[0]:
+        raise ValueError('Must supply an rgb image for each prediction')
+
+    boundaries = np.zeros_like(rgb_data)
+    overlay_data = np.copy(rgb_data)
+
+    for img in range(predictions.shape[0]):
+        boundary = find_boundaries(predictions[img, ..., 0], connectivity=1, mode='inner')
+        boundaries[img, boundary > 0, :] = 1
+
+    overlay_data[boundaries > 0] = 1
+
+    return overlay_data

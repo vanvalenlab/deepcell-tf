@@ -177,7 +177,7 @@ def PanopticNet(backbone,
 
         required_channels (int): The required number of channels of the
             backbone.  3 is the default for all current backbones.
-        kwargs (dict): Other standard inputs for retinanet_mask.
+        kwargs (dict): Other standard inputs for retinamask.
 
     Raises:
         ValueError: temporal_mode not 'conv', 'lstm', 'gru'  or None

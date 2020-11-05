@@ -1,6 +1,5 @@
 # ![DeepCell Banner](https://raw.githubusercontent.com/vanvalenlab/deepcell-tf/master/docs/images/DeepCell_tf_Banner.png)
-
-[![Build Status](https://travis-ci.com/vanvalenlab/deepcell-tf.svg?branch=master)](https://travis-ci.com/vanvalenlab/deepcell-tf)
+[![Build Status](https://github.com/vanvalenlab/deepcell-tf/workflows/build/badge.svg)](https://github.com/vanvalenlab/deepcell-tf/actions)
 [![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/deepcell/badge/?version=master)](https://deepcell.readthedocs.io/en/master/?badge=master)
 [![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE)
@@ -9,7 +8,7 @@
 
 This library allows users to apply pre-existing models to imaging data as well as to develop new deep learning models for single-cell analysis. This library specializes in models for cell segmentation (whole-cell and nuclear) in 2D and 3D images as well as cell tracking in 2D time-lapse datasets. These models are applicable to data ranging from multiplexed images of tissues to dynamic live-cell imaging movies.
 
-`deepcell-tf` is one of several resources created by the [Van Valen lab](http://vanvalen.caltech.edu/) to facilitate the devlopment and application of new deep learning methods to biology. Other projects within our DeepCell ecosystem include the [DeepCell Toolbox](https://github.com/vanvalenlab/deepcell-toolbox) for pre and post-processing the outputs of deep learning models, [DeepCell Tracking](https://github.com/vanvalenlab/deepcell-tracking) for creating cell lineages with deep-learning-based tracking models, and the [DeepCell Kiosk](https://github.com/vanvalenlab/kiosk-console) for deploying workflows on large datasets in the cloud. Additionally, we have developed [Caliban](https://github.com/vanvalenlab/caliban) for annotating high-dimensional biological images to use as training data.
+`deepcell-tf` is one of several resources created by the [Van Valen lab](http://vanvalen.caltech.edu/) to facilitate the development and application of new deep learning methods to biology. Other projects within our DeepCell ecosystem include the [DeepCell Toolbox](https://github.com/vanvalenlab/deepcell-toolbox) for pre and post-processing the outputs of deep learning models, [DeepCell Tracking](https://github.com/vanvalenlab/deepcell-tracking) for creating cell lineages with deep-learning-based tracking models, and the [DeepCell Kiosk](https://github.com/vanvalenlab/kiosk-console) for deploying workflows on large datasets in the cloud. Additionally, we have developed [Caliban](https://github.com/vanvalenlab/caliban) for annotating high-dimensional biological images to use as training data.
 
 Read the documentation at [deepcell.readthedocs.io](https://deepcell.readthedocs.io).
 
@@ -43,7 +42,7 @@ Tracked Image
 
 ## Getting Started
 
-The fastest way to get started with `deepcell-tf` is to run one of our existing images from Docker Hub. While you can run the package without any specialized hardware by omitting the `-gpu` flags in the command below, we recommend the use of hardware acceleration. To  run the library locally on a GPU, you will need to make sure the latest version of [`nvidia-docker`](https://github.com/NVIDIA/nvidia-docker) and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
+The fastest way to get started with `deepcell-tf` is to run one of our existing images from Docker Hub. While you can run the package without any specialized hardware by omitting the `-gpu` flags in the command below, we recommend the use of hardware acceleration. To  run the library locally on a GPU, you will need to make sure the latest version of <tt><a href="https://github.com/NVIDIA/nvidia-docker">nvidia-docker</a></tt> and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
 
 Once `nvidia-docker` is installed, run the following command:
 

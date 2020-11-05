@@ -50,14 +50,23 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
         mask (tensor): tensor of labels
         dilation_radius (int):  width to enlarge the edge feature of
             each instance
-        data_format (str): 'channels_first' or 'channels_last'
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         separate_edge_classes (bool): Whether to separate the cell edge class
             into 2 distinct cell-cell edge and cell-background edge classes.
 
     Returns:
-        numpy.array: one-hot encoded tensor of masks:
-            if not separate_edge_classes: [cell_edge, cell_interior, background]
-            otherwise: [bg_cell_edge, cell_cell_edge, cell_interior, background]
+        numpy.array: An array with the same shape as ``mask``, except the
+        channel axis will be a one-hot encoded semantic segmentation for
+        3 main features:
+        ``[cell_edge, cell_interior, background]``.
+        If ``separate_edge_classes`` is ``True``, the ``cell_interior``
+        feature is split into 2 features and the resulting channels are:
+        ``[bg_cell_edge, cell_cell_edge, cell_interior, background]``.
     """
     if data_format is None:
         data_format = K.image_data_format()
@@ -129,16 +138,16 @@ def outer_distance_transform_2d(mask, bins=None, erosion_width=None,
     """Transform a label mask with an outer distance transform.
 
     Args:
-        mask (numpy.array): A label mask (y data).
-        bins (int): The number of transformed distance classes. If none,
+        mask (numpy.array): A label mask (``y`` data).
+        bins (int): The number of transformed distance classes. If ``None``,
             returns the continuous outer transform.
         erosion_width (int): Number of pixels to erode edges of each labels
-        normalize (boolean): Normalize the transform of each cell by that
+        normalize (bool): Normalize the transform of each cell by that
             cell's largest distance.
 
     Returns:
         numpy.array: A mask of same shape as input mask,
-            with each label being a distance class from 1 to bins.
+        with each label being a distance class from 1 to ``bins``.
     """
     mask = np.squeeze(mask)  # squeeze the channels
     mask = erode_edges(mask, erosion_width)
@@ -174,15 +183,12 @@ def outer_distance_transform_3d(mask, bins=None, erosion_width=None,
     Uses scipy's distance_transform_edt
 
     Args:
-        mask (numpy.array): A z-stack of label masks (y data).
+        mask (numpy.array): A z-stack of label masks (``y`` data).
         bins (int): The number of transformed distance classes.
-            Defaults to None.
         erosion_width (int): Number of pixels to erode edges of each labels.
-            Defaults to None.
-        normalize (boolean): Normalize the transform of each cell by that
-            cell's largest distance. Defaults to True.
+        normalize (bool): Normalize the transform of each cell by that
+            cell's largest distance.
         sampling (list): Spacing of pixels along each dimension.
-            Defaults to [0.5, 0.217, 0.217].
 
     Returns:
         numpy.array: 3D Euclidiean Distance Transform
@@ -219,16 +225,15 @@ def outer_distance_transform_movie(mask, bins=None, erosion_width=None,
     Applies the 2D transform to each frame.
 
     Args:
-        mask (numpy.array): A label mask (y data).
+        mask (numpy.array): A label mask (``y`` data).
         bins (int): The number of transformed distance classes.
-            Defaults to None.
         erosion_width (int): number of pixels to erode edges of each labels.
-        normalize (boolean): Normalize the transform of each cell by that
-            cell's largest distance. Defaults to True.
+        normalize (bool): Normalize the transform of each cell by that
+            cell's largest distance.
 
     Returns:
         numpy.array: a mask of same shape as input mask,
-            with each label being a distance class from 1 to bins
+        with each label being a distance class from 1 to ``bins``
     """
     distances = []
     for frame in range(mask.shape[0]):
@@ -249,25 +254,26 @@ def outer_distance_transform_movie(mask, bins=None, erosion_width=None,
 def inner_distance_transform_2d(mask, bins=None, erosion_width=None,
                                 alpha=0.1, beta=1):
     """Transform a label mask with an inner distance transform.
-    inner_distance = 1 / (1 + beta * alpha * distance_to_center)
+
+    .. code-block:: python
+
+        inner_distance = 1 / (1 + beta * alpha * distance_to_center)
 
     Args:
-        mask (numpy.array): A label mask (y data).
+        mask (numpy.array): A label mask (``y`` data).
         bins (int): The number of transformed distance classes.
-            Defaults to None.
         erosion_width (int): number of pixels to erode edges of each labels
         alpha (float, str): coefficent to reduce the magnitude of the distance
-            value. If 'auto', determines alpha for each cell based on the cell
-            area. Defaults to 0.1.
-        beta (float): scale parameter that is used when alpha is set to auto.
-            Defaults to 1.
+            value. If "auto", determines ``alpha`` for each cell based on the
+            cell area.
+        beta (float): scale parameter that is used when ``alpha`` is "auto".
 
     Returns:
         numpy.array: a mask of same shape as input mask,
-            with each label being a distance class from 1 to bins.
+        with each label being a distance class from 1 to ``bins``.
 
     Raises:
-        ValueError: alpha is a string but not set to "auto".
+        ValueError: ``alpha`` is a string but not set to "auto".
     """
     # Check input to alpha
     if isinstance(alpha, str):
@@ -317,27 +323,27 @@ def inner_distance_transform_3d(mask, bins=None,
                                 alpha=0.1, beta=1,
                                 sampling=[0.5, 0.217, 0.217]):
     """Transform a label mask for a z-stack with an inner distance transform.
-    inner_distance = 1 / (1 + beta * alpha * distance_to_center)
+
+    .. code-block:: python
+
+        inner_distance = 1 / (1 + beta * alpha * distance_to_center)
 
     Args:
-        mask (numpy.array): A label mask (y data).
+        mask (numpy.array): A label mask (``y`` data).
         bins (int): The number of transformed distance classes.
-            Defaults to None.
         erosion_width (int): Number of pixels to erode edges of each labels
         alpha (float, str): Coefficent to reduce the magnitude of the distance
-            value. If 'auto', determines alpha for each cell based on the cell
-            area. Defaults to 0.1.
-        beta (float): Scale parameter that is used when alpha is set to auto.
-            Defaults to 1.
+            value. If ``'auto'``, determines alpha for each cell based on the
+            cell area.
+        beta (float): Scale parameter that is used when ``alpha`` is "auto".
         sampling (list): Spacing of pixels along each dimension.
-            Defaults to [0.5, 0.217, 0.217].
 
     Returns:
         numpy.array: A mask of same shape as input mask,
-            with each label being a distance class from 1 to bins.
+        with each label being a distance class from 1 to ``bins``.
 
     Raises:
-        ValueError: alpha is a string but not set to "auto".
+        ValueError: ``alpha`` is a string but not set to "auto".
     """
     # Check input to alpha
     if isinstance(alpha, str):
@@ -390,22 +396,20 @@ def inner_distance_transform_movie(mask, bins=None, erosion_width=None,
     2D transform to each frame.
 
     Args:
-        mask (numpy.array): A label mask (y data).
+        mask (numpy.array): A label mask (``y`` data).
         bins (int): The number of transformed distance classes.
-            Defaults to None.
         erosion_width (int): Number of pixels to erode edges of each labels.
         alpha (float, str): Coefficent to reduce the magnitude of the distance
-            value. If 'auto', determines alpha for each cell based on the cell
-            area. Defaults to 0.1.
-        beta (float): Scale parameter that is used when alpha is set to auto.
-            Defaults to 1.
+            value. If "auto", determines ``alpha`` for each cell based on the
+            cell area.
+        beta (float): Scale parameter that is used when ``alpha`` is "auto".
 
     Returns:
         numpy.array: A mask of same shape as input mask,
-            with each label being a distance class from 1 to bins.
+        with each label being a distance class from 1 to ``bins``.
 
     Raises:
-        ValueError: alpha is a string but not set to "auto".
+        ValueError: ``alpha`` is a string but not set to "auto".
     """
     # Check input to alpha
     if isinstance(alpha, str):
@@ -487,11 +491,11 @@ def rotate_array_270(arr):
 
 def to_categorical(y, num_classes=None):
     """Converts a class vector (integers) to binary class matrix.
-    E.g. for use with categorical_crossentropy.
+    E.g. for use with ``categorical_crossentropy``.
 
     Args:
         y (numpy.array): class vector to be converted into a matrix
-            (integers from 0 to num_classes).
+            (integers from 0 to ``num_classes``).
         num_classes (int): total number of classes.
 
     Returns:

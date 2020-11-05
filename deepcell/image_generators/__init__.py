@@ -50,19 +50,24 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     available transforms. Caution for unknown transform keys.
 
     Args:
-        y (numpy.array): Labels of ndim 4 or 5
+        y (numpy.array): Labels of ``ndim`` 4 or 5
         transform (str): Name of the transform, one of
-            {"deepcell", "disc", "watershed", None}
-        data_format (str): One of 'channels_first', 'channels_last'.
+            ``{"deepcell", "disc", "watershed", None}``.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         kwargs (dict): Optional transform keyword arguments.
 
     Returns:
-        numpy.array: the output of the given transform function on y
+        numpy.array: the output of the given transform function on ``y``.
 
     Raises:
-        ValueError: Rank of y is not 4 or 5.
-        ValueError: Channel dimension of y is not 1.
-        ValueError: Transform is invalid value.
+        ValueError: Rank of ``y`` is not 4 or 5.
+        ValueError: Channel dimension of ``y`` is not 1.
+        ValueError: ``transform`` is invalid value.
     """
     valid_transforms = {
         'deepcell',  # deprecated for "pixelwise"
@@ -104,9 +109,12 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         edge_class_shape = 4 if separate_edge_classes else 3
 
         if data_format == 'channels_first':
-            y_transform = np.zeros(tuple([y.shape[0]] + [edge_class_shape] + list(y.shape[2:])))
+            shape = tuple([y.shape[0]] + [edge_class_shape] + list(y.shape[2:]))
         else:
-            y_transform = np.zeros(tuple(list(y.shape[0:-1]) + [edge_class_shape]))
+            shape = tuple(list(y.shape[0:-1]) + [edge_class_shape])
+
+        # using uint8 since should only be 4 unique values.
+        y_transform = np.zeros(shape, dtype=np.uint8)
 
         for batch in range(y_transform.shape[0]):
             if data_format == 'channels_first':
@@ -137,9 +145,10 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             distance_kwargs['sampling'] = kwargs.pop('sampling', [0.5, 0.217, 0.217])
 
         if data_format == 'channels_first':
-            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
+            shape = tuple([y.shape[0]] + list(y.shape[2:]))
         else:
-            y_transform = np.zeros(y.shape[0:-1])
+            shape = y.shape[0:-1]
+        y_transform = np.zeros(shape, dtype=K.floatx())
 
         if y.ndim == 5:
             if by_frame:
@@ -158,11 +167,10 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
-        if bins is None:
-            pass
-        else:
+        if bins is not None:
             # convert to one hot notation
-            y_transform = to_categorical(y_transform, num_classes=bins)
+            # uint8's max value of255 seems like a generous limit for binning.
+            y_transform = to_categorical(y_transform, num_classes=bins, dtype=np.uint8)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
@@ -187,9 +195,10 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             distance_kwargs['sampling'] = kwargs.pop('sampling', [0.5, 0.217, 0.217])
 
         if data_format == 'channels_first':
-            y_transform = np.zeros(tuple([y.shape[0]] + list(y.shape[2:])))
+            shape = tuple([y.shape[0]] + list(y.shape[2:]))
         else:
-            y_transform = np.zeros(y.shape[0:-1])
+            shape = y.shape[0:-1]
+        y_transform = np.zeros(shape, dtype=K.floatx())
 
         if y.ndim == 5:
             if by_frame:
@@ -208,16 +217,15 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
         y_transform = np.expand_dims(y_transform, axis=-1)
 
-        if distance_kwargs['bins'] is None:
-            pass
-        else:
+        if distance_kwargs['bins'] is not None:
             # convert to one hot notation
-            y_transform = to_categorical(y_transform, num_classes=bins)
+            # uint8's max value of255 seems like a generous limit for binning.
+            y_transform = to_categorical(y_transform, num_classes=bins, dtype=np.uint8)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
-    elif transform == 'disc':
-        y_transform = to_categorical(y.squeeze(channel_axis))
+    elif transform == 'disc' or transform is None:
+        y_transform = to_categorical(y.squeeze(channel_axis), dtype=np.int32)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
@@ -226,12 +234,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         # convert to one hot notation
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, 1, y.ndim)
-        y_transform = to_categorical(y_transform)
-        if data_format == 'channels_first':
-            y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
-
-    elif transform is None:
-        y_transform = to_categorical(y.squeeze(channel_axis))
+        # using uint8 since should only be 2 unique values.
+        y_transform = to_categorical(y_transform, dtype=np.uint8)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 

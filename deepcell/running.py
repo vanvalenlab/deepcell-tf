@@ -50,7 +50,7 @@ def get_cropped_input_shape(images,
         data_format (str): "channels_first" or "channels_last"
 
     Returns:
-        tuple: new input_shape for model to process sub-images.
+        tuple: new ``input_shape`` for model to process sub-images.
     """
     if data_format is None:
         data_format = K.image_data_format()
