@@ -369,13 +369,14 @@ def retinamask_bbox(model,
 
     Returns:
         tensorflow.keras.Model: A Model which takes an image as input and
-            outputs the detections on the image.
-            The order is defined as follows:
-            ```
+        outputs the detections on the image.
+        The order is defined as follows:
+
+        .. code-block:: python
             [
                 boxes, scores, labels, other[0], other[1], ...
             ]
-            ```
+
     Raises:
         ValueError: the given model does not have a regression or
             classification submodel.
