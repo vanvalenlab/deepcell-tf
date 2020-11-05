@@ -13,8 +13,8 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [2.7, 3.6, 3.7]
-        tensorflow-version: [1.14.0, 1.15.0]
+        python-version: [3.6, 3.7, 3.8]
+        tensorflow-version: [2.2.1, 2.3.1]
 
     steps:
     - uses: actions/checkout@v2
