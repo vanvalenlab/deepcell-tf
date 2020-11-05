@@ -49,7 +49,7 @@ jobs:
         COVERALLS_FLAG_NAME: py${{ matrix.python-version }}-tf${{ matrix.tensorflow-version }}
         COVERALLS_PARALLEL: true
       run: |
-        pytest deepcell/losses_test.py --cov deepcell --pep8
+        pytest --cov deepcell --pep8
         coveralls
 
   coveralls:
