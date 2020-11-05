@@ -1,0 +1,61 @@
+name: Build & Push Docker Image
+
+on:
+  release:
+    types: [created]
+
+jobs:
+
+  docker:
+
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VERSION: 1.14.0
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v1 
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push CPU Image
+      id: docker_build_cpu
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: |
+          {{ github.repository }}:latest
+          {{ github.repository }}:{{ github.ref }}
+        build-args: |
+          TF_VERSION=$TF_VERSION
+    
+    - name: Image digest
+      run: echo ${{ steps.docker_build_cpu.outputs.digest }}
+
+    - name: Build and push GPU Image
+      id: docker_build_gpu
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: |
+          {{ github.repository }}:latest-gpu
+          {{ github.repository }}:{{ github.ref }}
+        build-args: |
+          TF_VERSION=$TF_VERSION-gpu
+
+    - name: Image digest
+      run: echo ${{ steps.docker_build_gpu.outputs.digest }}
