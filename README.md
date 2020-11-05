@@ -1,7 +1,6 @@
 # ![DeepCell Banner](https://raw.githubusercontent.com/vanvalenlab/deepcell-tf/master/docs/images/DeepCell_tf_Banner.png)
-
-[![Build Status](https://travis-ci.com/vanvalenlab/deepcell-tf.svg?branch=master)](https://travis-ci.com/vanvalenlab/deepcell-tf)
-[![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master)
+[![Build Status](https://github.com/vanvalenlab/deepcell-tf/workflows/Unit%20Tests/badge.svg)](https://github.com/vanvalenlab/deepcell-tf/actions)
+[![Coverage Status](https://github.com/vanvalenlab/deepcell-tf/workflows/Unit%20Tests/badge.svg)](https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/deepcell/badge/?version=master)](https://deepcell.readthedocs.io/en/master/?badge=master)
 [![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE)
 
