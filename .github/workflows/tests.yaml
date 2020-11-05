@@ -50,7 +50,9 @@ jobs:
         COVERALLS_FLAG_NAME: py${{ matrix.python-version }}-tf${{ matrix.tensorflow-version }}
         COVERALLS_PARALLEL: true
       run: |
-        pytest --cov deepcell --pep8
+        echo ${GITHUB_TOKEN}
+        echo ${COVERALLS_REPO_TOKEN}
+        pytest deepcell/layers --cov deepcell/layers --pep8
         coveralls
 
   coveralls:
