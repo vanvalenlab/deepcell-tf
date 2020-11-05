@@ -208,7 +208,7 @@ class RetinaNetGenerator(ImageDataGenerator):
                 label mask(s) for x, optional.
             seed: Random seed.
 
-        Returns: 
+        Returns:
             numpy.array: A randomly transformed version of the input
             (same shape). If ``y`` is passed, it is transformed if
             necessary and returned.

@@ -61,7 +61,7 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
     Returns:
         numpy.array: An array with the same shape as ``mask``, except the
         channel axis will be a one-hot encoded semantic segmentation for
-        3 main features: 
+        3 main features:
         ``[cell_edge, cell_interior, background]``.
         If ``separate_edge_classes`` is ``True``, the ``cell_interior``
         feature is split into 2 features and the resulting channels are:
