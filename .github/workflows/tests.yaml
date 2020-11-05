@@ -45,8 +45,7 @@ jobs:
 
     - name: Run PyTest
       env:
-        # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
         COVERALLS_FLAG_NAME: py${{ matrix.python-version }}-tf${{ matrix.tensorflow-version }}
         COVERALLS_PARALLEL: true
       run: |
@@ -61,8 +60,7 @@ jobs:
     steps:
     - name: Finished
       env:
-        # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
       run: |
         pip install --upgrade coveralls
         coveralls --finish
