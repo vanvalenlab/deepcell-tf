@@ -18,7 +18,7 @@
 .. mdinclude:: ../../README.md
 
 For more information on deploying DeepCell in the cloud:
----------------------------------------------------------
+--------------------------------------------------------
 
 :doc:`Refer to the DeepCell Kiosk documentation <kiosk:index>`
 

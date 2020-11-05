@@ -50,19 +50,24 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     available transforms. Caution for unknown transform keys.
 
     Args:
-        y (numpy.array): Labels of ndim 4 or 5
+        y (numpy.array): Labels of ``ndim`` 4 or 5
         transform (str): Name of the transform, one of
-            {"deepcell", "disc", "watershed", None}
-        data_format (str): One of 'channels_first', 'channels_last'.
+            ``{"deepcell", "disc", "watershed", None}``.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         kwargs (dict): Optional transform keyword arguments.
 
     Returns:
-        numpy.array: the output of the given transform function on y
+        numpy.array: the output of the given transform function on ``y``.
 
     Raises:
-        ValueError: Rank of y is not 4 or 5.
-        ValueError: Channel dimension of y is not 1.
-        ValueError: Transform is invalid value.
+        ValueError: Rank of ``y`` is not 4 or 5.
+        ValueError: Channel dimension of ``y`` is not 1.
+        ValueError: ``transform`` is invalid value.
     """
     valid_transforms = {
         'deepcell',  # deprecated for "pixelwise"

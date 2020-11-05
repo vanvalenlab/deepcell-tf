@@ -22,11 +22,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ==============================================================================
-"""Image generators for training RetinaNet based models.
+# =============================================================================
+"""Image generators for training ``RetinaNet`` based models.
 
-The RetinaNetGenerator and RetinaMovieDataGenerator take in a raw image as well
-as a label mask, and extract bounding boxes for all objects in the label mask.
+The ``RetinaNetGenerator`` and ``RetinaMovieDataGenerator`` take in
+a raw image as well as a label mask, and extract bounding boxes
+for all objects in the label mask.
 """
 
 from __future__ import absolute_import
@@ -74,16 +75,28 @@ class RetinaNetGenerator(ImageDataGenerator):
             - float: fraction of total width, if < 1, or pixels if >= 1.
             - 1-D array-like: random elements from the array.
             - int: integer number of pixels from interval
-              (-width_shift_range, +width_shift_range)
-            - With width_shift_range=2 possible values are ints [-1, 0, +1],
-              same as with width_shift_range=[-1, 0, +1], while with
-              width_shift_range=1.0 possible values are floats in the interval
-              [-1.0, +1.0).
+              ``(-width_shift_range, +width_shift_range)``
+            - With ``width_shift_range=2`` possible values are integers
+              ``[-1, 0, +1]``, same as with ``width_shift_range=[-1, 0, +1]``,
+              while with ``width_shift_range=1.0`` possible values are floats
+              in the interval [-1.0, +1.0).
+
+        height_shift_range: Float, 1-D array-like or int
+
+            - float: fraction of total height, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval
+              ``(-height_shift_range, +height_shift_range)``
+            - With ``height_shift_range=2`` possible values
+              are integers ``[-1, 0, +1]``,
+              same as with ``height_shift_range=[-1, 0, +1]``,
+              while with ``height_shift_range=1.0`` possible values are floats
+              in the interval [-1.0, +1.0).
 
         shear_range (float): Shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range (float): float or [lower, upper], Range for random zoom.
-            If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
+            If a float, ``[lower, upper] = [1-zoom_range, 1+zoom_range]``.
         channel_shift_range (float): range for random channel shifts.
         fill_mode (str): One of {"constant", "nearest", "reflect" or "wrap"}.
 
@@ -96,7 +109,7 @@ class RetinaNetGenerator(ImageDataGenerator):
                 - 'wrap':  abcdabcd|abcd|abcdabcd
 
         cval (float): Value used for points outside the boundaries
-            when fill_mode = "constant".
+            when ``fill_mode = "constant"``.
         horizontal_flip (bool): Randomly flip inputs horizontally.
         vertical_flip (bool): Randomly flip inputs vertically.
         rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
@@ -107,16 +120,12 @@ class RetinaNetGenerator(ImageDataGenerator):
             The function should take one argument:
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
-        data_format (str): One of {"channels_first", "channels_last"}.
-
-            - "channels_last" mode means that the images should have shape
-              (samples, height, width, channels),
-            - "channels_first" mode means that the images should have shape
-              (samples, channels, height, width).
-            - It defaults to the image_data_format value found in your
-              Keras config file at "~/.keras/keras.json".
-            - If you never set it, then it will be "channels_last".
-
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         validation_split (float): Fraction of images reserved for validation
             (strictly between 0 and 1).
     """
@@ -143,12 +152,13 @@ class RetinaNetGenerator(ImageDataGenerator):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
-            train_dict (dict): Consists of numpy arrays for X and y.
+            train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             compute_shapes: Function to determine the shapes of the anchors.
-            min_objects (int): images with fewer than 'min_objects' are ignored.
+            min_objects (int): images with fewer than ``min_objects`` are
+                ignored.
             num_classes (int): Number of classes to predict.
             clear_borders (bool): Whether to use clear_border on y.
-            include_masks (bool): Train on mask data (MaskRCNN).
+            include_masks (bool): Train on mask data (``MaskRCNN``).
             batch_size (int): Size of a batch.
             shuffle (bool): Whether to shuffle the data between epochs.
             seed (int): Random seed for data shuffling.
@@ -157,14 +167,14 @@ class RetinaNetGenerator(ImageDataGenerator):
                 for visualizing the random transformations being
                 applied, for debugging purposes.
             save_prefix (str): Prefix to use for saving sample
-                images (if save_to_dir is set).
+                images (if ``save_to_dir`` is set).
             save_format (str): Format to use for saving sample images
-                (if save_to_dir is set).
+                (if ``save_to_dir`` is set).
 
         Returns:
-            RetinaNetIterator: An Iterator yielding tuples of (x, y),
-                where x is a numpy array of image data and y is a numpy array
-                of labels of the same shape.
+            RetinaNetIterator: An ``Iterator`` yielding tuples of ``(x, y)``,
+            where ``x`` is a numpy array of image data and ``y`` is list of
+            numpy arrays of transformed masks of the same shape.
         """
         return RetinaNetIterator(
             train_dict,
@@ -199,8 +209,9 @@ class RetinaNetGenerator(ImageDataGenerator):
             seed: Random seed.
 
         Returns:
-            A randomly transformed version of the input (same shape).
-            If y is passed, it is transformed if necessary and returned.
+            numpy.array: A randomly transformed version of the input
+            (same shape). If ``y`` is passed, it is transformed if
+            necessary and returned.
         """
         params = self.get_random_transform(x.shape, seed)
 
@@ -232,31 +243,36 @@ class RetinaNetGenerator(ImageDataGenerator):
 
 
 class RetinaNetIterator(Iterator):
-    """Iterator yielding data from Numpy arrayss (X and y).
+    """Iterator yielding data from Numpy arrays (``X`` and ``y``).
 
     Adapted from https://github.com/fizyr/keras-retinanet.
 
     Args:
-        train_dict (dict): Consists of numpy arrays for X and y.
+        train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
         image_data_generator (RetinaNetGenerator): For random
             transformations and normalization.
         compute_shapes: Function to determine the shapes of the anchors.
-        min_objects (int): Images with fewer than 'min_objects' are ignored.
+        min_objects (int): Images with fewer than ``min_objects`` are ignored.
         num_classes (int): Number of classes to predict.
-        clear_borders (bool): Whether to use clear_border on y.
-        include_masks (bool): Train on mask data (MaskRCNN).
+        clear_borders (bool): Whether to use ``clear_border`` on ``y``.
+        include_masks (bool): Train on mask data (``MaskRCNN``).
         batch_size (int): Size of a batch.
         shuffle (bool): Whether to shuffle the data between epochs.
         seed (int): Random seed for data shuffling.
-        data_format (str): One of 'channels_first', 'channels_last'.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         save_to_dir (str): Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix (str): Prefix to use for saving sample
-            images (if save_to_dir is set).
+            images (if ``save_to_dir`` is set).
         save_format (str): Format to use for saving sample images
-            (if save_to_dir is set).
+            (if ``save_to_dir`` is set).
     """
 
     def __init__(self,
@@ -405,7 +421,7 @@ class RetinaNetIterator(Iterator):
             y (tensor): Tensor to annotate
 
         Returns:
-            dict: Annotations of bboxes and labels
+            dict: Annotations of ``bboxes`` and ``labels``
         """
         labels, bboxes, masks = [], [], []
         for prop in regionprops(np.squeeze(y.astype('int'))):
@@ -545,32 +561,37 @@ class RetinaNetIterator(Iterator):
 
 
 class RetinaMovieIterator(Iterator):
-    """Iterator yielding data from Numpy arrayss (X and y).
+    """Iterator yielding data from Numpy arrayss (``X`` and ``y``).
 
     Adapted from https://github.com/fizyr/keras-retinanet.
 
     Args:
-        train_dict (dict): Consists of numpy arrays for X and y.
+        train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
         movie_data_generator (RetinaMovieDataGenerator): For random
             transformations and normalization.
         batch_size (int): Size of a batch.
         shuffle (bool): Whether to shuffle the data between epochs.
         compute_shapes: functor for generating shapes, based on the model.
-        min_objects (int): Image with fewer than min_objects are ignored.
+        min_objects (int): Image with fewer than ``min_objects`` are ignored.
         num_classes (int): Number of classes for classification.
         frames_per_batch (int): Size of z axis in generated batches.
-        clear_borders (bool): Whether to call clear_border on y.
+        clear_borders (bool): Whether to call ``clear_border`` on ``y``.
         include_masks (bool): Whether to yield mask data.
         seed (int): Random seed for data shuffling.
-        data_format (str): One of 'channels_first', 'channels_last'.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         save_to_dir (str): Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix (str): Prefix to use for saving sample
-            images (if save_to_dir is set).
+            images (if ``save_to_dir`` is set).
         save_format (str): Format to use for saving sample images
-            (if save_to_dir is set).
+            (if ``save_to_dir`` is set).
     """
 
     def __init__(self,
@@ -736,7 +757,7 @@ class RetinaMovieIterator(Iterator):
             y (tensor): tensor to annotate.
 
         Returns:
-            dict: Annotations of bboxes and labels
+            dict: Annotations of ``bboxes`` and ``labels``
         """
         labels, bboxes, masks = [], [], []
         for prop in regionprops(np.squeeze(y.astype('int'))):
@@ -957,16 +978,28 @@ class RetinaMovieDataGenerator(MovieDataGenerator):
             - float: fraction of total width, if < 1, or pixels if >= 1.
             - 1-D array-like: random elements from the array.
             - int: integer number of pixels from interval
-              (-width_shift_range, +width_shift_range)
-            - With width_shift_range=2 possible values are ints [-1, 0, +1],
-              same as with width_shift_range=[-1, 0, +1], while with
-              width_shift_range=1.0 possible values are floats in the interval
-              [-1.0, +1.0).
+              ``(-width_shift_range, +width_shift_range)``
+            - With ``width_shift_range=2`` possible values are integers
+              ``[-1, 0, +1]``, same as with ``width_shift_range=[-1, 0, +1]``,
+              while with ``width_shift_range=1.0`` possible values are floats
+              in the interval [-1.0, +1.0).
+
+        height_shift_range: Float, 1-D array-like or int
+
+            - float: fraction of total height, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval
+              ``(-height_shift_range, +height_shift_range)``
+            - With ``height_shift_range=2`` possible values
+              are integers ``[-1, 0, +1]``,
+              same as with ``height_shift_range=[-1, 0, +1]``,
+              while with ``height_shift_range=1.0`` possible values are floats
+              in the interval [-1.0, +1.0).
 
         shear_range (float): Shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range (float): float or [lower, upper], Range for random zoom.
-            If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
+            If a float, ``[lower, upper] = [1-zoom_range, 1+zoom_range]``.
         channel_shift_range (float): range for random channel shifts.
         fill_mode (str): One of {"constant", "nearest", "reflect" or "wrap"}.
 
@@ -979,7 +1012,7 @@ class RetinaMovieDataGenerator(MovieDataGenerator):
                 - 'wrap':  abcdabcd|abcd|abcdabcd
 
         cval (float): Value used for points outside the boundaries
-            when fill_mode = "constant".
+            when ``fill_mode = "constant"``.
         horizontal_flip (bool): Randomly flip inputs horizontally.
         vertical_flip (bool): Randomly flip inputs vertically.
         rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
@@ -990,16 +1023,12 @@ class RetinaMovieDataGenerator(MovieDataGenerator):
             The function should take one argument:
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
-        data_format (str): One of {"channels_first", "channels_last"}.
-
-            - "channels_last" mode means that the images should have shape
-              (samples, height, width, channels),
-            - "channels_first" mode means that the images should have shape
-              (samples, channels, height, width).
-            - It defaults to the image_data_format value found in your
-              Keras config file at "~/.keras/keras.json".
-            - If you never set it, then it will be "channels_last".
-
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         validation_split (float): Fraction of images reserved for validation
             (strictly between 0 and 1).
     """
@@ -1026,13 +1055,13 @@ class RetinaMovieDataGenerator(MovieDataGenerator):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
-            train_dict (dict): Consists of numpy arrays for X and y.
+            train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             batch_size (int): Size of a batch.
             frames_per_batch (int): Size of z axis in generated batches.
             shuffle (bool): Whether to shuffle the data between epochs.
             compute_shapes: functor for generating shapes, based on the model.
             num_classes (int): Number of classes for classification.
-            clear_borders (bool): Whether to call clear_border on y.
+            clear_borders (bool): Whether to call ``clear_border`` on ``y``.
             include_masks (bool): Whether to yield mask data.
             seed (int): Random seed for data shuffling.
             save_to_dir (str): Optional directory where to save the pictures
@@ -1040,14 +1069,14 @@ class RetinaMovieDataGenerator(MovieDataGenerator):
                 for visualizing the random transformations being
                 applied, for debugging purposes.
             save_prefix (str): Prefix to use for saving sample
-                images (if save_to_dir is set).
+                images (if ``save_to_dir`` is set).
             save_format (str): Format to use for saving sample images
-                (if save_to_dir is set).
+                (if ``save_to_dir`` is set).
 
         Returns:
-            RetinaMovieIterator: An Iterator yielding tuples of (x, y),
-                where x is a numpy array of image data and y is a numpy array
-                of labels of the same shape.
+            RetinaMovieIterator: An ``Iterator`` yielding tuples of ``(x, y)``,
+            where ``x`` is a numpy array of image data and ``y`` is list of
+            numpy arrays of transformed masks of the same shape.
         """
         return RetinaMovieIterator(
             train_dict,

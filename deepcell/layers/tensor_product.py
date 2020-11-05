@@ -32,7 +32,6 @@ from __future__ import division
 import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import activations
 from tensorflow.python.keras import constraints
 from tensorflow.python.keras import initializers
 from tensorflow.python.keras import regularizers
@@ -45,40 +44,42 @@ class TensorProduct(Layer):
     """Just your regular densely-connected NN layer.
 
     Dense implements the operation:
-    output = activation(dot(input, kernel) + bias)
-    where 'activation' is the element-wise activation function
-    passed as the activation argument, 'kernel' is a weights matrix
-    created by the layer, and 'bias' is a bias vector created by the layer
-    (only applicable if use_bias is True).
+
+    ``output = activation(dot(input, kernel) + bias)``
+
+    where ``activation`` is the element-wise activation function
+    passed as the ``activation`` argument, ``kernel`` is a weights matrix
+    created by the layer, and ``bias`` is a bias vector created by the layer
+    (only applicable if ``use_bias`` is ``True``).
+
     Note: if the input to the layer has a rank greater than 2, then
-    it is flattened prior to the initial dot product with 'kernel'.
+    it is flattened prior to the initial dot product with ``kernel``.
 
     Args:
-        output_dim: Positive integer, dimensionality of the output space.
-        data_format: A string,
-            one of 'channels_last' (default) or 'channels_first'.
-            The ordering of the dimensions in the inputs.
-            'channels_last' corresponds to inputs with shape
-            (batch, height, width, channels) while 'channels_first'
+        output_dim (int): Positive integer, dimensionality of the output space.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
             corresponds to inputs with shape
-            (batch, channels, height, width).
-            It defaults to the image_data_format value found in your
-            Keras config file at "~/.keras/keras.json".
-            If you never set it, then it will be "channels_last".
-        activation: Activation function to use.
+            ``(batch, channels, height, width)``.
+        activation (function): Activation function to use.
             If you don't specify anything, no activation is applied
-            (ie. "linear" activation: a(x) = x).
-        use_bias: Boolean, whether the layer uses a bias vector.
-        kernel_initializer: Initializer for the kernel weights matrix.
-        bias_initializer: Initializer for the bias vector.
-        kernel_regularizer: Regularizer function applied to
-            the 'kernel' weights matrix.
-        bias_regularizer: Regularizer function applied to the bias vector.
-        activity_regularizer: Regularizer function applied to
-            the output of the layer (its "activation")..
-        kernel_constraint: Constraint function applied to
-            the 'kernel' weights matrix.
-        bias_constraint: Constraint function applied to the bias vector.
+            (ie. "linear" activation: ``a(x) = x``).
+        use_bias (bool): Whether the layer uses a bias.
+        kernel_initializer (function): Initializer for the ``kernel`` weights
+            matrix, used for the linear transformation of the inputs.
+        bias_initializer (function): Initializer for the bias vector. If None,
+            the default initializer will be used.
+        kernel_regularizer (function): Regularizer function applied to the
+            ``kernel`` weights matrix.
+        bias_regularizer (function): Regularizer function applied to the
+            bias vector.
+        activity_regularizer (function): Regularizer function applied to.
+        kernel_constraint (function): Constraint function applied to
+            the ``kernel`` weights matrix.
+        bias_constraint (function): Constraint function applied to the
+            bias vector.
 
     Input shape:
         nD tensor with shape: (batch_size, ..., input_dim).
@@ -111,15 +112,15 @@ class TensorProduct(Layer):
             activity_regularizer=regularizers.get(activity_regularizer), **kwargs)
         self.output_dim = int(output_dim)
         self.data_format = conv_utils.normalize_data_format(data_format)
-        self.activation = activations.get(activation)
+        self.activation = tf.keras.activations.get(activation)
         self.use_bias = use_bias
-        self.kernel_initializer = initializers.get(kernel_initializer)
-        self.bias_initializer = initializers.get(bias_initializer)
-        self.kernel_regularizer = regularizers.get(kernel_regularizer)
-        self.bias_regularizer = regularizers.get(bias_regularizer)
-        self.activity_regularizer = regularizers.get(activity_regularizer)
-        self.kernel_constraint = constraints.get(kernel_constraint)
-        self.bias_constraint = constraints.get(bias_constraint)
+        self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
+        self.bias_initializer = tf.keras.initializers.get(bias_initializer)
+        self.kernel_regularizer = tf.keras.regularizers.get(kernel_regularizer)
+        self.bias_regularizer = tf.keras.regularizers.get(bias_regularizer)
+        self.activity_regularizer = tf.keras.regularizers.get(activity_regularizer)
+        self.kernel_constraint = tf.keras.constraints.get(kernel_constraint)
+        self.bias_constraint = tf.keras.constraints.get(bias_constraint)
 
         self.supports_masking = True
         self.input_spec = InputSpec(min_ndim=2)

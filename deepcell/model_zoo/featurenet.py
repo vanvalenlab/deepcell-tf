@@ -80,10 +80,13 @@ def bn_feature_net_2D(receptive_field=61,
         reg (int): regularization value
         n_conv_filters (int): number of convolutional filters
         n_dense_filters (int): number of dense filters
-        VGG_mode (bool): If multires, uses VGG_mode for multiresolution
+        VGG_mode (bool): If ``multires``, uses ``VGG_mode``
+            for multiresolution
         init (str): Method for initalizing weights.
-        norm_method (str): ImageNormalization mode to use
-        location (bool): Whether to include location data
+        norm_method (str): Normalization method to use with the
+            :mod:`deepcell.layers.normalization.ImageNormalization2D` layer.
+        location (bool): Whether to include a
+            :mod:`deepcell.layers.location.Location2D` layer.
         dilated (bool): Whether to use dilated pooling.
         padding (bool): Whether to use padding.
         padding_mode (str): Type of padding, one of 'reflect' or 'zero'
@@ -246,9 +249,10 @@ def bn_feature_net_skip_2D(receptive_field=61,
         last_only (bool): Model will only output the final prediction,
             and not return any of the underlying model predictions.
         n_skips (int): The number of skip-connections
-        norm_method (str): The type of ImageNormalization to use
+        norm_method (str): Normalization method to use with the
+            :mod:`deepcell.layers.normalization.ImageNormalization2D` layer.
         padding_mode (str): Type of padding, one of 'reflect' or 'zero'
-        kwargs (dict): Other model options defined in bn_feature_net_2D
+        kwargs (dict): Other model options defined in `~bn_feature_net_2D`
 
     Returns:
         tensorflow.keras.Model: 2D FeatureNet with skip-connections
@@ -329,10 +333,13 @@ def bn_feature_net_3D(receptive_field=61,
         reg (int): regularization value
         n_conv_filters (int): number of convolutional filters
         n_dense_filters (int): number of dense filters
-        VGG_mode (bool): If multires, uses VGG_mode for multiresolution
+        VGG_mode (bool): If ``multires``, uses ``VGG_mode``
+            for multiresolution
         init (str): Method for initalizing weights.
-        norm_method (str): ImageNormalization mode to use
-        location (bool): Whether to include location data
+        norm_method (str): Normalization method to use with the
+            :mod:`deepcell.layers.normalization.ImageNormalization3D` layer.
+        location (bool): Whether to include a
+            :mod:`deepcell.layers.location.Location3D` layer.
         dilated (bool): Whether to use dilated pooling.
         padding (bool): Whether to use padding.
         padding_mode (str): Type of padding, one of 'reflect' or 'zero'
@@ -526,9 +533,10 @@ def bn_feature_net_skip_3D(receptive_field=61,
         last_only (bool): Model will only output the final prediction,
             and not return any of the underlying model predictions.
         n_skips (int): The number of skip-connections
-        norm_method (str): The type of ImageNormalization to use
+        norm_method (str): Normalization method to use with the
+            :mod:`deepcell.layers.normalization.ImageNormalization3D` layer.
         padding_mode (str): Type of padding, one of 'reflect' or 'zero'
-        kwargs (dict): Other model options defined in bn_feature_net_3D
+        kwargs (dict): Other model options defined in `~bn_feature_net_3D`
 
     Returns:
         tensorflow.keras.Model: 3D FeatureNet with skip-connections

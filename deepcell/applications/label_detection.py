@@ -49,16 +49,16 @@ def LabelDetectionModel(input_shape=(None, None, 1),
     This can be helpful in determining the type of data (nuclear, cytoplasm,
     etc.) so that this data can be forwared to the correct segmenation model.
 
-    Based on a standard backbone with an intiial ImageNormalization2D and final
-    AveragePooling2D, TensorProduct, and Softmax layers.
+    Based on a standard backbone with an intiial ``ImageNormalization2D`` and
+    final ``AveragePooling2D``, ``TensorProduct``, and ``Softmax`` layers.
 
     Args:
         input_shape (tuple): a 3-length tuple of the input data shape.
         inputs (tensorflow.keras.Layer): Optional input layer of the model.
-            If not provided, creates a Layer based on input_shape.
+            If not provided, creates a ``Layer`` based on ``input_shape``.
         backbone (str): name of the backbone to use for the model.
         use_pretrained_weights (bool): whether to load pre-trained weights.
-            Only supports the MobileNetV2 backbone.
+            Only supports the ``MobileNetV2`` backbone.
     """
     required_channels = 3  # required for most backbones
 

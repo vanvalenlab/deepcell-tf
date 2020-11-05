@@ -44,21 +44,21 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
                         inputs=None,
                         backbone='mobilenetv2',
                         use_pretrained_weights=True):
-    """Create a ScaleDetectionModel for detecting scales of input data.
+    """Create a ``ScaleDetectionModel`` for detecting scales of input data.
 
     This enables data to be scaled appropriately for other segmentation models
     which may not be resolution tolerant.
 
-    Based on a standard backbone with an intiial ImageNormalization2D and final
-    AveragePooling2D and TensorProduct layers.
+    Based on a standard backbone with an intiial ``ImageNormalization2D`` and
+    final ``AveragePooling2D`` and ``TensorProduct`` layers.
 
     Args:
         input_shape (tuple): a 3-length tuple of the input data shape.
         inputs (tensorflow.keras.Layer): Optional input layer of the model.
-            If not provided, creates a Layer based on input_shape.
+            If not provided, creates a ``Layer`` based on ``input_shape``.
         backbone (str): name of the backbone to use for the model.
         use_pretrained_weights (bool): whether to load pre-trained weights.
-            Only supports the MobileNetV2 backbone.
+            Only supports the ``MobileNetV2`` backbone.
     """
     required_channels = 3  # required for most backbones
 

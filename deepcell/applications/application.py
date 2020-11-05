@@ -35,29 +35,33 @@ from deepcell_toolbox.utils import resize, tile_image, untile_image
 
 
 class Application(object):
-    """Application object that takes a model with weights and manages predictions
+    """Application object that takes a model with weights
+    and manages predictions
 
-        Args:
-            model (tf.model): Tensorflow model with weights loaded
-            model_image_shape (tuple, optional): Shape of input expected by model.
-                Defaults to `(128, 128, 1)`.
-            dataset_metadata (optional): Any input, e.g. str or dict. Defaults to None.
-            model_metadata (optional): Any input, e.g. str or dict. Defaults to None.
-            model_mpp (float, optional): Microns per pixel resolution of training data.
-                Defaults to 0.65.
-            preprocessing_fn (function, optional): Preprocessing function to apply to data
-                prior to prediction. Defaults to None.
-            postprocessing_fn (function, optional): Postprocessing function to apply
-                to data after prediction. Defaults to None.
-                Must accept an input of a list of arrays and then return a single array.
-            format_model_output_fn (function, optional): Convert model output from a list
-                of matrices to a dictionary with keys for each semantic head
+    Args:
+        model (tensorflow.keras.Model): ``tf.keras.Model``
+            with loaded weights.
+        model_image_shape (tuple): Shape of input expected by ``model``.
+        dataset_metadata (str or dict): Metadata for the data that
+            ``model`` was trained on.
+        model_metadata (str or dict): Training metadata for ``model``.
+        model_mpp (float): Microns per pixel resolution of the
+            training data used for ``model``.
+        preprocessing_fn (function): Pre-processing function to apply
+            to data prior to prediction.
+        postprocessing_fn (function): Post-processing function to apply
+            to data after prediction.
+            Must accept an input of a list of arrays and then
+            return a single array.
+        format_model_output_fn (function): Convert model output
+            from a list of matrices to a dictionary with keys for
+            each semantic head.
 
-        Raises:
-            ValueError: `Preprocessing_fn` must be a callable function
-            ValueError: `Postprocessing_fn` must be a callable function
-            ValueError: `Model_output_fn` must be a callable function
-        """
+    Raises:
+        ValueError: ``preprocessing_fn`` must be a callable function
+        ValueError: ``postprocessing_fn`` must be a callable function
+        ValueError: ``model_output_fn`` must be a callable function
+    """
 
     def __init__(self,
                  model,
@@ -97,14 +101,15 @@ class Application(object):
 
     def _resize_input(self, image, image_mpp):
         """Checks if there is a difference between image and model resolution
-        and resizes if they are different. Otherwise returns the unmodified image.
+        and resizes if they are different. Otherwise returns the unmodified
+        image.
 
         Args:
-            image (array): Input image to resize
-            image_mpp (float): Microns per pixel for the input image
+            image (numpy.array): Input image to resize.
+            image_mpp (float): Microns per pixel for the ``image``.
 
         Returns:
-            array: Input image resized if necessary to match `model_mpp`
+            numpy.array: Input image resized if necessary to match ``model_mpp``
         """
 
         # Don't scale the image if mpp is the same or not defined
@@ -117,8 +122,15 @@ class Application(object):
         return image
 
     def _preprocess(self, image, **kwargs):
-        """Preprocess image if `preprocessing_fn` is defined.
-        Otherwise return unmodified image
+        """Preprocess ``image`` if ``preprocessing_fn`` is defined.
+        Otherwise return ``image`` unmodified.
+
+        Args:
+            image (numpy.array): 4D stack of images
+            kwargs (dict): Keyword arguments for ``preprocessing_fn``.
+
+        Returns:
+            numpy.array: The pre-processed ``image``.
         """
 
         if self.preprocessing_fn is not None:
@@ -128,17 +140,19 @@ class Application(object):
 
     def _tile_input(self, image):
         """Tile the input image to match shape expected by model
-        using the deepcell_toolbox function.
-        Currently only supports 4d images and otherwise raises an error
+        using the ``deepcell_toolbox`` function.
+
+        Only supports 4D images.
 
         Args:
-            image (array): Input image to tile
+            image (numpy.array): Input image to tile
 
         Raises:
             ValueError: Input images must have only 4 dimensions
 
         Returns:
-            (array, dict): Tuple of tiled image and dictionary of tiling specs
+            (numpy.array, dict): Tuple of tiled image and dict of tiling
+            information.
         """
 
         if len(image.shape) != 4:
@@ -173,11 +187,11 @@ class Application(object):
         Otherwise returns unmodified image.
 
         Args:
-            image (array or list): Input to postprocessing function
-                either an array or list of arrays
+            image (numpy.array or list): Input to postprocessing function
+                either an ``numpy.array`` or list of ``numpy.arrays``.
 
         Returns:
-            array: labeled image
+            numpy.array: labeled image
         """
 
         if self.postprocessing_fn is not None:
@@ -197,11 +211,11 @@ class Application(object):
         according to a dictionary of tiling specs
 
         Args:
-            output_tiles (array or list): Array or list of arrays
-            tiles_info (dict): Dictionary of tiling specs output by tiling function
+            output_tiles (numpy.array or list): Array or list of arrays.
+            tiles_info (dict): Tiling specs output by the tiling function.
 
         Returns:
-            array or list: Array or list according to input with untiled images
+            numpy.array or list: Array or list according to input with untiled images
         """
 
         # If padding was used, remove padding
@@ -224,15 +238,15 @@ class Application(object):
         return output_images
 
     def _format_model_output(self, output_images):
-        """Applies formatting function the output from the model if one was provided.
-        Otherwise, returns the model output unmodified
+        """Applies formatting function the output from the model if one was
+        provided. Otherwise, returns the unmodified model output.
 
         Args:
             output_images: stack of untiled images to be reformatted
 
         Returns:
-            dict or list: reformatted images stored as a dict, or input images stored as list
-                if no formatting function is specified
+            dict or list: reformatted images stored as a dict, or input
+            images stored as list if no formatting function is specified.
         """
 
         if self.format_model_output_fn is not None:
@@ -246,7 +260,7 @@ class Application(object):
         excluding the batch and channel dimensions
 
         Args:
-            image (array): Image to be rescaled to original shape
+            image (numpy.array): Image to be rescaled to original shape
             original_shape (tuple): Shape of the original input image
 
         Returns:
@@ -277,13 +291,13 @@ class Application(object):
         """Run the model to generate output probabilities on the data.
 
         Args:
-            image (np.array): Input image with shape `[batch, x, y, channel]`
-            batch_size (int, optional): Number of images to predict on per batch. Defaults to 4.
-            preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
-                Defaults to {}.
+            image (numpy.array): Image with shape ``[batch, x, y, channel]``
+            batch_size (int): Number of images to predict on per batch.
+            preprocess_kwargs (dict): Keyword arguments to pass to
+                the preprocessing function.
 
         Returns:
-            np.array: Model outputs
+            numpy.array: Model outputs
         """
 
         # Preprocess image if function is defined
@@ -312,26 +326,28 @@ class Application(object):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
-        Input images are required to have 4 dimensions `[batch, x, y, channel]`. Additional
-        empty dimensions can be added using `np.expand_dims`
+        Input images are required to have 4 dimensions
+        ``[batch, x, y, channel]``. Additional empty dimensions can be added
+        using ``np.expand_dims``.
 
         Args:
-            image (np.array): Input image with shape `[batch, x, y, channel]`
-            batch_size (int, optional): Number of images to predict on per batch. Defaults to 4.
-            image_mpp (float, optional): Microns per pixel for the input image. Defaults to None.
-            preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
-                Defaults to {}.
-            postprocess_kwargs (dict, optional): Kwargs to pass to postprocessing function.
-                Defaults to {}.
+            image (numpy.array): Input image with shape
+                ``[batch, x, y, channel]``.
+            batch_size (int): Number of images to predict on per batch.
+            image_mpp (float): Microns per pixel for ``image``.
+            preprocess_kwargs (dict): Keyword arguments to pass to the
+                pre-processing function.
+            postprocess_kwargs (dict): Keyword arguments to pass to the
+                post-processing function.
 
         Raises:
-            ValueError: Input data must match required rank of the application, calculated as
-                one dimension more (batch dimension) than expected by the model
+            ValueError: Input data must match required rank, calculated as one
+                dimension more (batch dimension) than expected by the model.
 
-            ValueError: Input data must match required number of channels of application
+            ValueError: Input data must match required number of channels.
 
         Returns:
-            np.array: Labeled image
+            numpy.array: Labeled image
         """
 
         # Check input size of image
