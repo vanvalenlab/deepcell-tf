@@ -6,7 +6,7 @@ on:
 
 jobs:
 
-  build:
+  docker:
 
     runs-on: ubuntu-latest
 
