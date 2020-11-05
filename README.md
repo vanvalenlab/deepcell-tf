@@ -1,6 +1,5 @@
 # ![DeepCell Banner](https://raw.githubusercontent.com/vanvalenlab/deepcell-tf/master/docs/images/DeepCell_tf_Banner.png)
-
-[![Build Status](https://travis-ci.com/vanvalenlab/deepcell-tf.svg?branch=master)](https://travis-ci.com/vanvalenlab/deepcell-tf)
+[![Build Status](https://github.com/vanvalenlab/deepcell-tf/workflows/build/badge.svg)](https://github.com/vanvalenlab/deepcell-tf/actions)
 [![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/deepcell/badge/?version=master)](https://deepcell.readthedocs.io/en/master/?badge=master)
 [![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE)
@@ -43,7 +42,7 @@ Tracked Image
 
 ## Getting Started
 
-The fastest way to get started with `deepcell-tf` is to run one of our existing images from Docker Hub. While you can run the package without any specialized hardware by omitting the `-gpu` flags in the command below, we recommend the use of hardware acceleration. To  run the library locally on a GPU, you will need to make sure the latest version of [`nvidia-docker`](https://github.com/NVIDIA/nvidia-docker) and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
+The fastest way to get started with `deepcell-tf` is to run one of our existing images from Docker Hub. While you can run the package without any specialized hardware by omitting the `-gpu` flags in the command below, we recommend the use of hardware acceleration. To  run the library locally on a GPU, you will need to make sure the latest version of <tt><a href="https://github.com/NVIDIA/nvidia-docker">nvidia-docker</a></tt> and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
 
 Once `nvidia-docker` is installed, run the following command:
 

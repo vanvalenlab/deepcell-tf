@@ -44,17 +44,17 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 
 
 class CellTracking(Application):
-    """Loads a `deepcell.model_zoo.siamese_model` model for object tracking
-    with pretrained weights using a simple `predict` interface.
+    """Loads a :mod:`deepcell.model_zoo.featurenet.siamese_model` model for
+    object tracking with pretrained weights using a simple
+    ``predict`` interface.
 
     Args:
-        use_pretrained_weights (bool, optional): Loads pretrained weights. Defaults to True.
-        model_image_shape (tuple, optional): Shape of input data expected by model.
-            Defaults to `(32, 32, 1)`
-        neighborhood_scale_size (int):
-        birth (float): Cost of new cell in linear assignment matrix. Defaults to `0.99`.
-        death (float): Cost of cell death in linear assignment matrix. Defaults to `0.99`.
-        division (float): Cost of cell division in linear assignment matrix. Defaults to `0.9`.
+        use_pretrained_weights (bool): Whether to load pretrained weights.
+        model_image_shape (tuple): Shape of input data expected by model.
+        neighborhood_scale_size (int): Size of the area surrounding each cell.
+        birth (float): Cost of new cell in linear assignment matrix.
+        death (float): Cost of cell death in linear assignment matrix.
+        division (float): Cost of cell division in linear assignment matrix.
     """
 
     #: Metadata for the dataset used to train the model
@@ -122,8 +122,8 @@ class CellTracking(Application):
         track objects across all frames.
 
         Args:
-            image (np.array): Raw image data.
-            labels (np.array): Labels for image data, integer masks.
+            image (numpy.array): Raw image data.
+            labels (numpy.array): Labels for ``image``, integer masks.
 
         Returns:
             dict: Tracked labels and lineage information.

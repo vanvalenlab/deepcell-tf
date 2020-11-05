@@ -46,46 +46,35 @@ WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 
 
 class NuclearSegmentation(Application):
-    """Loads a `deepcell.model_zoo.PanopticNet` model for nuclear segmentation
-    with pretrained weights.
-    The `predict` method handles prep and post processing steps to return a labeled image.
+    """Loads a :mod:`deepcell.model_zoo.panopticnet.PanopticNet` model
+    for nuclear segmentation with pretrained weights.
+
+    The ``predict`` method handles prep and post processing steps
+    to return a labeled image.
 
     Example:
 
-    .. nbinput:: ipython3
+    .. code-block:: python
 
         from skimage.io import imread
         from deepcell.applications import NuclearSegmentation
 
+        # Load the image
         im = imread('HeLa_nuclear.png')
-        im.shape
-
-    .. nboutput::
-
-        (1080, 1280)
-
-    .. nbinput:: ipython3
 
         # Expand image dimensions to rank 4
-        im = np.expand_dims(im,-1)
-        im = np.expand_dims(im,0)
-        im.shape
+        im = np.expand_dims(im, axis=-1)
+        im = np.expand_dims(im, axis=0)
 
-    .. nboutput::
-
-        (1, 1080, 1280, 1)
-
-    .. nbinput:: ipython3
-
+        # Create the application
         app = NuclearSegmentation(use_pretrained_weights=True)
+
+        # create the lab
         labeled_image = app.predict(image)
 
-    .. nboutput::
-
     Args:
-        use_pretrained_weights (bool, optional): Loads pretrained weights. Defaults to True.
-        model_image_shape (tuple, optional): Shape of input data expected by model.
-            Defaults to `(128, 128, 1)`
+        use_pretrained_weights (bool): Whether to load pretrained weights.
+        model_image_shape (tuple): Shape of input expected by ``model``.
     """
 
     #: Metadata for the dataset used to train the model
@@ -150,19 +139,20 @@ class NuclearSegmentation(Application):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
-        Input images are required to have 4 dimensions `[batch, x, y, channel]`.
-        Additional empty dimensions can be added using `np.expand_dims`
+        Input images are required to have 4 dimensions
+        ``[batch, x, y, channel]``.
+
+        Additional empty dimensions can be added using ``np.expand_dims``.
 
         Args:
-            image (np.array): Input image with shape `[batch, x, y, channel]`
-            batch_size (int, optional): Number of images to predict on per batch.
-                Defaults to 4.
-            image_mpp (float, optional): Microns per pixel for the input image.
-                Defaults to None.
-            preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
-                Defaults to {}.
-            postprocess_kwargs (dict, optional): Kwargs to pass to postprocessing function.
-                Defaults to {}.
+            image (numpy.array): Input image with shape
+                ``[batch, x, y, channel]``.
+            batch_size (int): Number of images to predict on per batch.
+            image_mpp (float): Microns per pixel for ``image``.
+            preprocess_kwargs (dict): Keyword arguments to pass to the
+                pre-processing function.
+            postprocess_kwargs (dict): Keyword arguments to pass to the
+                post-processing function.
 
         Raises:
             ValueError: Input data must match required rank of the application,
@@ -172,7 +162,7 @@ class NuclearSegmentation(Application):
             ValueError: Input data must match required number of channels.
 
         Returns:
-            np.array: Labeled image
+            numpy.array: Labeled image
         """
         return self._predict_segmentation(
             image,

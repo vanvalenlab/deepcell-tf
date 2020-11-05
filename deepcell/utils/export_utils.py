@@ -40,13 +40,13 @@ from tensorflow.python.saved_model.builder import SavedModelBuilder
 
 
 def export_model(keras_model, export_path, model_version=0, weights_path=None):
-    """Export a model for use with tensorflow-serving.
+    """Export a model for use with TensorFlow Serving.
 
     Args:
-        keras_model (tensorflow.keras.Model): instantiated Keras model to export
-        export_path (str): destination to save the exported model files
-        model_version (int): integer version of the model
-        weights_path (str): path to a .h5 or .tf weights file
+        keras_model (tensorflow.keras.Model): Instantiated Keras model.
+        export_path (str): Destination to save the exported model files.
+        model_version (int): Integer version of the model.
+        weights_path (str): Path to a ``.h5`` or ``.tf`` weights file.
     """
     # Start the tensorflow session
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8,
@@ -106,20 +106,19 @@ def export_model_to_tflite(model_file, export_path, calibration_images,
                            norm=True, location=True, file_name='model.tflite'):
     """Export a saved keras model to tensorflow-lite with int8 precision.
 
-    This export function has only been tested with PanopticNet models. For the
-    export to be successful, the PanopticNet model must have normalization set
-    to None, location set to False, and the upsampling layers must use bilinear
-    interpolation.
+    This export function has only been tested with ``PanopticNet`` models.
+    For the export to be successful, the ``PanopticNet`` model must have
+    ``norm_method`` set to ``None``, ``location`` set to ``False``,
+    and the upsampling layers must use ``bilinear`` interpolation.
 
     Args:
-        model_file (str): Path to saved keras model
+        model_file (str): Path to saved model file
         export_path (str): Directory to save the exported tflite model
-        calibration_images (numpy array): Array of images used for calibration
+        calibration_images (numpy.array): Array of images used for calibration
             during model quantization
-        norm (boolean): Whether to normalize calibration images.
-            Defaults to True.
-        location (boolean): Whether to append a location image to calibration
-            images. Defaults to True.
+        norm (bool): Whether to normalize calibration images.
+        location (bool): Whether to append a location image
+            to calibration images.
         file_name (str): File name for the exported model. Defaults to
             'model.tflite'
     """

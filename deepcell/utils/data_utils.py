@@ -315,7 +315,7 @@ def trim_padding(nparr, win_x, win_y, win_z=None):
 
     Returns:
         numpy.array: trimmed numpy array of size
-            x - 2 * win_x - 1, y - 2 * win_y - 1
+        ``x - 2 * win_x - 1, y - 2 * win_y - 1``
 
     Raises:
         ValueError: nparr.ndim is not 4 or 5
@@ -349,10 +349,12 @@ def reshape_matrix(X, y, reshape_size=256):
     """
     Reshape matrix of dimension 4 to have x and y of size reshape_size.
     Adds overlapping slices to batches.
-    E.g. reshape_size of 256 yields (1, 1024, 1024, 1) -> (16, 256, 256, 1)
+    E.g. ``reshape_size`` of 256 yields
+    (1, 1024, 1024, 1) -> (16, 256, 256, 1)
     The input image is divided into subimages of side length reshape_size,
-    with the last row and column of subimages overlapping the one before the last
-    if the original image side lengths are not divisible by reshape_size.
+    with the last row and column of subimages overlapping the one before the
+    last if the original image side lengths are not divisible by
+    ``reshape_size``.
 
     Args:
         X (numpy.array): raw 4D image tensor
@@ -363,13 +365,15 @@ def reshape_matrix(X, y, reshape_size=256):
             size is reshape_size[0] x reshape_size[1]
 
     Returns:
-        numpy.array: reshaped X and y 4D tensors
-                     in shape[1:3] = (reshape_size, reshape_size), if reshape_size is an int, and
-                     shape[1:3] reshape_size, if reshape_size is a list of length 2
+        numpy.array: reshaped ``X`` and ``y`` 4D tensors
+        in ``shape[1:3] = (reshape_size, reshape_size)``,
+        if ``reshape_size`` is an ``int``,
+        and ``shape[1:3] = reshape_size``,
+        if ``reshape_size`` is a list of length 2
 
     Raises:
-        ValueError: X.ndim is not 4
-        ValueError: y.ndim is not 4
+        ValueError: ``X.ndim`` is not 4
+        ValueError: ``y.ndim`` is not 4
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     if X.ndim != 4:
@@ -450,9 +454,10 @@ def relabel_movie(y):
 
 def reshape_movie(X, y, reshape_size=256):
     """
-    Reshape tensor of dimension 5 to have x and y of size reshape_size.
+    Reshape tensor of dimension 5 to have x and y of size ``reshape_size``.
     Adds overlapping slices to batches.
-    E.g. reshape_size of 256 yields (1, 5, 1024, 1024, 1) -> (16, 5, 256, 256, 1)
+    E.g. ``reshape_size`` of 256 yields
+    ``(1, 5, 1024, 1024, 1) -> (16, 5, 256, 256, 1)``
 
     Args:
         X (numpy.array): raw 5D image tensor
@@ -460,12 +465,12 @@ def reshape_movie(X, y, reshape_size=256):
         reshape_size (int): size of the square output tensor
 
     Returns:
-        numpy.array: reshaped X and y tensors in shape
-            (reshape_size, reshape_size)
+        numpy.array: reshaped ``X`` and ``y`` tensors in shape
+        ``(reshape_size, reshape_size)``
 
     Raises:
-        ValueError: X.ndim is not 5
-        ValueError: y.ndim is not 5
+        ValueError: ``X.ndim`` is not 5
+        ValueError: ``y.ndim`` is not 5
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     if X.ndim != 5:
@@ -683,16 +688,16 @@ def load_training_images_3d(direc_name,
     Args:
         direc_name (str): directory containing folders of training data
         training_direcs (str[]): list of directories of images
-            inside direc_name.
+            inside ``direc_name``.
         raw_image_direc (str): directory name inside each training dir
             with raw images
         channel_names (str[]): Loads all raw images with
-            a channel_name in the filename
-        image_size (tuple): size of each image as tuple (x, y)
+            a ``channel_name`` in the filename
+        image_size (tuple): size of each image as tuple ``(x, y)``
         num_frames (int): number of frames to load from each
             training directory
         montage_mode (bool): load masks from "montaged" subdirs
-            inside annotation_direc
+            inside ``annotation_direc``
 
     Returns:
         numpy.array: 5D tensor of raw image data
@@ -753,15 +758,15 @@ def load_annotated_images_3d(direc_name,
     Args:
         direc_name (str): directory containing folders of training data
         training_direcs (str[]): list of directories of images
-            inside direc_name.
+            inside ``direc_name``.
         annotation_direc (str): directory name inside each
             training dir with masks
         annotation_name (str): Loads all masks with
-            annotation_name in the filename
+            ``annotation_name`` in the filename
         image_size (tuple): size of each image as tuple (x, y)
         num_frames (int): number of frames to load from each training directory
         montage_mode (bool): load masks from "montaged" subdirs
-            inside annotation_direc
+            inside ``annotation_direc``
 
     Returns:
         numpy.array: 5D tensor of image label masks
@@ -819,22 +824,24 @@ def make_training_data_3d(direc_name,
                           num_frames=None,
                           montage_mode=True):
     """Read all images in training directories and save as npz file.
+
     3D image sets are "stacks" of images. For annotation purposes, these images
     have been sliced into "montages", where a section of each stack has been
-    sliced for efficient annotated by humans. The raw_image_direc should be a
-    specific montage (e.g. montage_0_0) and the annotation is the corresponding
-    annotated montage.
+    sliced for efficient annotated by humans. The ``raw_image_direc`` should
+    be a specific montage (e.g. montage_0_0) and the annotation is the
+    corresponding annotated montage.
 
     Args:
         direc_name (str): directory containing folders of training data
         file_name_save (str): full filepath for npz file where the
             data will be saved
         training_direcs (str[]): directories of images located inside
-            direc_name. If None, all directories in direc_name are used.
+            ``direc_name``.
+            If ``None``, all directories in ``direc_name`` are used.
         annotation_name (str): Loads all masks with
             annotation_name in the filename
         channel_names (str[]): Loads all raw images with
-            a channel_name in the filename
+            a ``channel_name`` in the filename
         raw_image_direc (str): directory name inside each
             training dir with raw images
         annotation_direc (str): directory name inside each
@@ -842,7 +849,7 @@ def make_training_data_3d(direc_name,
         reshape_size (int): If provided, reshapes the images to the given size.
         num_frames (int): number of frames to load from each training directory
         montage_mode (bool): load masks from "montaged" subdirs
-            inside annotation_direc
+            inside ``annotation_direc``
     """
     # Load one file to get image sizes
     rand_train_dir = os.path.join(direc_name, random.choice(training_direcs), raw_image_direc)

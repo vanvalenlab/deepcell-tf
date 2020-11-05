@@ -63,13 +63,12 @@ def default_mask_model(num_classes,
         mask_feature_size (int): The number of filters to expect from the masks.
         roi_size (tuple): The number of filters to use in the Roi Layers.
         mask_size (tuple): The size of the masks.
-        mask_dtype (str): Dtype to use for mask tensors.
-        retinanet_dtype (str): Dtype retinanet models expect.
+        mask_dtype (str): ``dtype`` to use for mask tensors.
+        retinanet_dtype (str): ``dtype`` retinanet models expect.
         name (str): The name of the submodel.
 
     Returns:
-        tensorflow.keras.Model: a Model that predicts classes for
-            each anchor.
+        tensorflow.keras.Model: a Model that predicts classes for each anchor.
     """
     options = {
         'kernel_size': 3,
@@ -137,12 +136,12 @@ def default_roi_submodels(num_classes,
         mask_size (tuple): The size of the masks.
         frames_per_batch (int): Size of z axis in generated batches.
             If equal to 1, assumes 2D data.
-        mask_dtype (str): Dtype to use for mask tensors.
-        retinanet_dtype (str): Dtype retinanet models expect.
+        mask_dtype (str): ``dtype`` to use for mask tensors.
+        retinanet_dtype (str): ``dtype`` retinanet models expect.
 
     Returns:
         list: A list of tuple, where the first element is the name of the
-            submodel and the second element is the submodel itself.
+        submodel and the second element is the submodel itself.
     """
     if frames_per_batch > 1:
         return [
@@ -164,48 +163,48 @@ def default_roi_submodels(num_classes,
     ]
 
 
-def retinamask(inputs,
-               backbone_dict,
-               num_classes,
-               frames_per_batch=1,
-               backbone_levels=['C3', 'C4', 'C5'],
-               pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
-               retinanet_model=None,
-               anchor_params=None,
-               nms=True,
-               training=True,
-               panoptic=False,
-               class_specific_filter=True,
-               crop_size=(14, 14),
-               mask_size=(28, 28),
-               name='retinanet-mask',
-               roi_submodels=None,
-               max_detections=100,
-               score_threshold=0.05,
-               nms_threshold=0.5,
-               mask_dtype=K.floatx(),
-               **kwargs):
-    """Construct a RetinaNet mask model on top of a retinanet bbox model.
-    Uses the retinanet bbox model and appends layers to compute masks.
+def retinanetmask(inputs,
+                   backbone_dict,
+                   num_classes,
+                   frames_per_batch=1,
+                   backbone_levels=['C3', 'C4', 'C5'],
+                   pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
+                   retinanet_model=None,
+                   anchor_params=None,
+                   nms=True,
+                   panoptic=False,
+                   class_specific_filter=True,
+                   crop_size=(14, 14),
+                   mask_size=(28, 28),
+                   name='retinanet-mask',
+                   roi_submodels=None,
+                   max_detections=100,
+                   score_threshold=0.05,
+                   nms_threshold=0.5,
+                   mask_dtype=K.floatx(),
+                   **kwargs):
+    """Construct a masking model by appending layers to compute masks to a
+    :mod:`deepcell.model_zoo.retinanet.retinanet` model.
 
     Args:
-        inputs (tensor): List of tensorflow.keras.layers.Input.
+        inputs (tensor): List of ``tensorflow.keras.layers.Input``.
             The first input is the image, the second input the blob of masks.
         backbone_dict (dict): A dictionary with the backbone layers.
         num_classes (int): Integer, number of classes to classify.
         frames_per_batch (int): Size of z axis in generated batches.
             If equal to 1, assumes 2D data.
-        backbone_levels (list): The backbone levels to be used.
-            to create the feature pyramid. Defaults to ['C3', 'C4', 'C5'].
+        backbone_levels (list): The backbone levels to be used
+            to create the feature pyramid.
         pyramid_levels (list): The pyramid levels to attach regression and
-            classification heads to. Defaults to ['P3', 'P4', 'P5', 'P6', 'P7'].
-        retinanet_model (tensorflow.keras.Model): RetinaNet model that predicts
-            regression and classification values.
+            classification heads to.
+        retinanet_model (tensorflow.keras.Model):
+            :mod:`deepcell.model_zoo.retinanet.retinanet` model that
+            predicts regression and classification values.
         anchor_params (AnchorParameters): Struct containing anchor parameters.
         nms (bool): Whether to use non-maximum suppression
             for the filtering step.
         panoptic (bool): Flag for adding the semantic head for panoptic
-            segmentation tasks. Defaults to false.
+            segmentation tasks.
         class_specific_filter (bool): Use class specific filtering.
         crop_size (tuple): 2-length tuple for the x-y size of the crops.
             Used to create default roi_submodels.
@@ -214,23 +213,25 @@ def retinamask(inputs,
         name (str): Name of the model.
         roi_submodels (list): Submodels for processing ROIs.
         max_detections (int): The maximum number of detections allowed.
-        score_threshold (float): Minimum score for the FilterDetections layer.
-        nms_threshold (float): Minimimum NMS for the FilterDetections layer.
-        mask_dtype (str): Dtype to use for mask tensors.
-        kwargs (dict): Additional kwargs to pass to the retinanet bbox model.
+        score_threshold (float): Minimum score for the
+            :mod:`deepcell.layers.filter_detections.FilterDetections` layer.
+        nms_threshold (float): Minimimum NMS for the
+            :mod:`deepcell.layers.filter_detections.FilterDetections` layer.
+        mask_dtype (str): ``dtype`` to use for mask tensors.
+        kwargs (dict): Additional kwargs to pass to the
+            :mod:`deepcell.model_zoo.retinanet.retinanet` model.
 
     Returns:
         tensorflow.keras.Model: Model with inputs as input and as output
-            the output of each submodel for each pyramid level and the
-            detections. The order is as defined in submodels.
+        the output of each submodel for each pyramid level and the
+        detections. The order is as defined in submodels.
 
-            ```
+        .. code-block:: python
+
             [
                 regression, classification, other[0], ...,
                 boxes_masks, boxes, scores, labels, masks, other[0], ...
             ]
-            ```
-
     """
     if anchor_params is None:
         anchor_params = AnchorParameters.default
@@ -461,44 +462,45 @@ def RetinaMask(backbone,
                required_channels=3,
                frames_per_batch=1,
                **kwargs):
-    """Constructs a mrcnn model using a backbone from keras-applications.
+    """Constructs a mrcnn model using a backbone from ``keras-applications``.
 
     Args:
         backbone (str): Name of backbone to use.
         num_classes (int): Number of classes to classify.
         input_shape (tuple): The shape of the input data.
-        inputs (tensor): Optional input tensor, overrides input_shape.
+        inputs (tensor): Optional input tensor, overrides ``input_shape``.
         backbone_levels (list): The backbone levels to be used.
-            to create the feature pyramid. Defaults to ['C3', 'C4', 'C5'].
+            to create the feature pyramid.
         pyramid_levels (list): The pyramid levels to attach regression and
-            classification heads to. Defaults to ['P3', 'P4', 'P5', 'P6', 'P7'].
-        norm_method (str): ImageNormalization mode to use.
-        location (bool): Whether to include location data.
-        use_imagenet (bool): Whether to load imagenet-based pretrained weights.
+            classification heads.
+        norm_method (str): Normalization method to use with the
+            :mod:`deepcell.layers.normalization.ImageNormalization2D` layer.
+        location (bool): Whether to include a
+            :mod:`deepcell.layers.location.Location2D` layer.
+        use_imagenet (bool): Whether to load imagenet-based
+            pretrained weights.
         crop_size (tuple): 2-length tuple for the x-y size of the crops.
-            Used to create default roi_submodels.
-        pooling (str): optional pooling mode for feature extraction
-            when include_top is False.
+            Used to create default ``roi_submodels``.
+        pooling (str): Pooling mode for feature extraction
+            when ``include_top`` is ``False``.
 
             - None means that the output of the model will be
-                the 4D tensor output of the
-                last convolutional layer.
-            - 'avg' means that global average pooling
-                will be applied to the output of the
-                last convolutional layer, and thus
-                the output of the model will be a 2D tensor.
-            - 'max' means that global max pooling will
-                be applied.
+              the 4D tensor output of the last convolutional layer.
+            - 'avg' means that global average pooling will be applied to
+              the output of the last convolutional layer, and thus
+              the output of the model will be a 2D tensor.
+            - 'max' means that global max pooling will be applied.
 
-        mask_dtype (str): Dtype to use for mask tensors.
+        mask_dtype (str): ``dtype`` to use for mask tensors.
         required_channels (int): The required number of channels of the
             backbone.  3 is the default for all current backbones.
         frames_per_batch (int): Size of z axis in generated batches.
             If equal to 1, assumes 2D data.
-        kwargs (dict): Other standard inputs for retinanet_mask.
+        kwargs (dict): Other standard inputs for `~retinanetmask`.
 
     Returns:
-        tensorflow.keras.Model: RetinaNet model with a backbone.
+        tensorflow.keras.Model: :mod:`deepcell.model_zoo.retinanet.RetinaNet`
+        model with additional mask output.
     """
     channel_axis = 1 if K.image_data_format() == 'channels_first' else -1
     if inputs is None:
@@ -557,7 +559,7 @@ def RetinaMask(backbone,
         crop_size=crop_size,
         backbone_levels=backbone_levels,
         pyramid_levels=pyramid_levels,
-        name='{}_retinanet_mask'.format(backbone),
+        name='{}_retinanetmask'.format(backbone),
         mask_dtype=mask_dtype,
         frames_per_batch=frames_per_batch,
         **kwargs)
