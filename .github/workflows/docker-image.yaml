@@ -53,7 +53,7 @@ jobs:
         push: true
         tags: |
           ${{ github.repository }}:latest-gpu
-          ${{ github.repository }}:${{ github.event.release.tag_name }}
+          ${{ github.repository }}:${{ github.event.release.tag_name }}-gpu
         build-args: |
           TF_VERSION=$TF_VERSION-gpu
 
