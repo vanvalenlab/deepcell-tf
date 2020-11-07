@@ -212,9 +212,9 @@ def retinamask(inputs,
             segmentation tasks.
         class_specific_filter (bool): Use class specific filtering.
         crop_size (tuple): 2-length tuple for the x-y size of the crops.
-            Used to create default roi_submodels.
+            Used to create default ``roi_submodels``.
         mask_size (tuple): 2-length tuple for the x-y size of the masks.
-            Used to create default roi_submodels.
+            Used to create default ``roi_submodels``.
         name (str): Name of the model.
         roi_submodels (list): Submodels for processing ROIs.
         max_detections (int): The maximum number of detections allowed.
@@ -353,19 +353,23 @@ def retinamask_bbox(model,
 
     Args:
         model (tensorflow.keras.Model): RetinaNet model to append bbox
-            layers to. If None, it will create a RetinaNet model using kwargs.
+            layers to. If ``None``, it will create a ``RetinaNet`` model
+            using ``kwargs``.
         nms (bool): Whether to use non-maximum suppression
             for the filtering step.
-        backbone_levels (list): Backbone levels to use for
-            constructing retinanet.
-        pyramid_levels (list): Pyramid levels to attach
-            the object detection heads to.
+        panoptic (bool): Flag for adding the semantic head for panoptic
+            segmentation tasks.
+        num_semantic_heads (int): Total number of semantic heads to build.
         class_specific_filter (bool): Whether to use class specific filtering
             or filter for the best scoring class only.
-        name (str): Name of the model.
         anchor_params (AnchorParameters): Struct containing anchor parameters.
-            If None, default values are used.
-        kwargs (dict): Additional kwargs to pass to the minimal retinanet model.
+        max_detections (int): The maximum number of detections allowed.
+        frames_per_batch (int): Size of z axis in generated batches.
+            If equal to 1, assumes 2D data.
+        crop_size (tuple): 2-length tuple for the x-y size of the crops.
+            Used to create default ``roi_submodels``.
+        kwargs (dict): Additional kwargs to pass to the
+            :mod:`deepcell.model_zoo.retinanet.retinanet` model.
 
     Returns:
         tensorflow.keras.Model: A Model which takes an image as input and
