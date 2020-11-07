@@ -14,7 +14,6 @@ jobs:
     strategy:
       matrix:
         python-version: [3.5, 3.6, 3.7, 3.8]
-        tensorflow-version: [2.2.1, 2.3.1]
 
     steps:
     - uses: actions/checkout@v2
@@ -38,15 +37,13 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        sed -i "/tensorflow/d" requirements.txt
-        pip install tensorflow==${{ matrix.tensorflow-version }}
         pip install -r requirements.txt
         pip install -r requirements-test.txt
 
     - name: Run PyTest and Coveralls
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        COVERALLS_FLAG_NAME: py${{ matrix.python-version }}-tf${{ matrix.tensorflow-version }}
+        COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
         COVERALLS_PARALLEL: true
       run: |
         pytest --cov deepcell --pep8
