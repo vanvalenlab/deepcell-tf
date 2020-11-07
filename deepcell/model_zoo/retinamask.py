@@ -377,6 +377,7 @@ def retinamask_bbox(model,
         The order is defined as follows:
 
         .. code-block:: python
+
             [
                 boxes, scores, labels, other[0], other[1], ...
             ]
