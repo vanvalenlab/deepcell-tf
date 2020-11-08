@@ -87,6 +87,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         raise ValueError('Expected channel axis to be 1 dimension. Got',
                          y.shape[1 if data_format == 'channels_first' else -1])
 
+    y = y.astype('int32')
     if isinstance(transform, str):
         transform = transform.lower()
 
