@@ -30,13 +30,6 @@ RUN pip install /opt/deepcell-tf && \
     cd /opt/deepcell-tf && \
     python setup.py build_ext --inplace
 
-# Older versions of TensorFlow have notebooks, but they may not exist
-RUN if [ -n "$(find /notebooks/ -prune)" ] ; then \
-      mkdir -p /notebooks/intro_to_tensorflow && \
-      ls -d /notebooks/* | grep -v intro_to_tensorflow | \
-      xargs -r mv -t /notebooks/intro_to_tensorflow ; \
-    fi
-
 # Copy over deepcell notebooks
 COPY notebooks/ /notebooks/
 
