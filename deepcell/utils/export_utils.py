@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Functions for exporting convolutional neural networks for TF serving"""
+"""Save Keras models as a SavedModel for TensorFlow Serving"""
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -33,73 +33,39 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from tensorflow.keras import backend as K
-from tensorflow.python.saved_model import tag_constants
-from tensorflow.python.saved_model import signature_constants
-from tensorflow.python.saved_model.builder import SavedModelBuilder
+from tensorflow.python.platform import tf_logging
 
 
-def export_model(keras_model, export_path, model_version=0, weights_path=None):
+def export_model(keras_model, export_path, model_version=0, weights_path=None,
+                 include_optimizer=True, overwrite=True, save_format='tf'):
     """Export a model for use with TensorFlow Serving.
+
+    DEPRECATED: ``tf.keras.models.save_model`` is preferred.
 
     Args:
         keras_model (tensorflow.keras.Model): Instantiated Keras model.
         export_path (str): Destination to save the exported model files.
         model_version (int): Integer version of the model.
         weights_path (str): Path to a ``.h5`` or ``.tf`` weights file.
+        include_optimizer (bool): Whether to export the optimizer.
+        overwrite (bool): Whether to overwrite any existing files in
+            ``export_path``.
+        save_format (str): Saved model format, one of `'tf'` or `'h5'`.
     """
-    # Start the tensorflow session
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8,
-                                allow_growth=False)
-    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+    tf_logging.warn('`export_model` is deprecated. '
+                    'Please use `tf.keras.models.save_model` instead.')
 
-    K.set_session(sess)
-    K._LEARNING_PHASE = tf.constant(0)
-    K.set_learning_phase(0)
+    if weights_path:
+        keras_model.load_weights(weights_path, by_name=True)
 
-    # Create export path if it doesn't exist
-    export_path = os.path.join(export_path, str(model_version))
-    builder = SavedModelBuilder(export_path)
-    # legacy_init_op = tf.group(tf.tables_initializer(), name='legacy_init_op')
-
-    # Initialize global variables and the model
-    init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
-    sess.run(init_op)
-
-    # Load the model and the weights
-    if weights_path is not None:
-        keras_model.load_weights(weights_path)
-
-    # Export for tracking
-    if isinstance(keras_model.input, list):
-        input_map = {"input{}".format(i): input_tensor
-                     for i, input_tensor in enumerate(keras_model.input)}
-        output_map = {'output': keras_model.output}
-    # Export for panoptic
-    elif isinstance(keras_model.output, list):
-        input_map = {'image': keras_model.input}
-        output_map = {'prediction{}'.format(i): tensor
-                      for i, tensor in enumerate(keras_model.output)}
-    # Export for normal model architectures
-    else:
-        input_map = {"image": keras_model.input}
-        output_map = {"prediction": keras_model.output}
-
-    prediction_signature = tf.saved_model.signature_def_utils.predict_signature_def(
-        input_map,
-        output_map
+    tf.keras.models.save_model(
+        keras_model,
+        os.path.join(export_path, str(int(model_version))),
+        overwrite=overwrite,
+        include_optimizer=include_optimizer,
+        save_format=save_format,
+        signatures=None,
     )
-
-    # Add the meta_graph and the variables to the builder
-    builder.add_meta_graph_and_variables(
-        sess, [tag_constants.SERVING],
-        signature_def_map={
-            signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
-                prediction_signature
-        })
-
-    # Save the graph
-    builder.save()
 
 
 def export_model_to_tflite(model_file, export_path, calibration_images,
