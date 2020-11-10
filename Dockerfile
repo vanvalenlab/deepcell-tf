@@ -7,7 +7,8 @@ FROM tensorflow/tensorflow:${TF_VERSION}
 
 # System maintenance
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    python3-tk \
+    libxext6 \
+    libxrender-dev \
     libsm6 && \
     rm -rf /var/lib/apt/lists/* && \
     /usr/local/bin/pip install --upgrade pip
