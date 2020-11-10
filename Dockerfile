@@ -11,7 +11,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     libxrender-dev \
     libsm6 && \
     rm -rf /var/lib/apt/lists/* && \
-    /usr/local/bin/pip install --upgrade pip
+    /usr/bin/python3 -m pip install --upgrade pip
 
 WORKDIR /notebooks
 
