@@ -37,8 +37,6 @@ from skimage.external import tifffile as tiff
 from skimage.external.tifffile import TiffFile
 from tensorflow.keras import backend as K
 
-from deepcell.utils.misc_utils import 
-
 
 def get_image(file_name):
     """Read image from file and returns it as a tensor
