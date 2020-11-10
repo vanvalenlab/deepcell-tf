@@ -59,7 +59,7 @@ def export_model(keras_model, export_path, model_version=0, weights_path=None,
 
     tf.keras.models.save_model(
         keras_model,
-        os.path.join(export_path, model_version),
+        os.path.join(export_path, str(int(model_version))),
         overwrite=overwrite,
         include_optimizer=include_optimizer,
         save_format=save_format,
