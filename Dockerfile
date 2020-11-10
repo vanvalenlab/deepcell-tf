@@ -26,9 +26,7 @@ RUN sed -i "/tensorflow>/d" /opt/deepcell-tf/requirements.txt && \
 COPY deepcell /opt/deepcell-tf/deepcell
 
 # Install deepcell via setup.py
-RUN pip install /opt/deepcell-tf && \
-    cd /opt/deepcell-tf && \
-    python setup.py build_ext --inplace
+RUN pip install /opt/deepcell-tf
 
 # Copy over deepcell notebooks
 COPY notebooks/ /notebooks/
