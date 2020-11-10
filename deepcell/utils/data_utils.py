@@ -29,22 +29,11 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import os
-import random
-
-from fnmatch import fnmatch
-
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tensorflow.keras import backend as K
 from tensorflow.python.keras.utils import conv_utils
 
-from deepcell.utils.io_utils import get_image
-from deepcell.utils.io_utils import get_image_sizes
-from deepcell.utils.io_utils import nikon_getfiles
-from deepcell.utils.io_utils import get_immediate_subdirs
-from deepcell.utils.io_utils import count_image_files
-from deepcell.utils.misc_utils import sorted_nicely
 from deepcell.utils.tracking_utils import load_trks
 
 
