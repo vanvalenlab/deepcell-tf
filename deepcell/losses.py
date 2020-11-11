@@ -181,7 +181,8 @@ def discriminative_instance_loss(y_true, y_pred,
 
     # Compute variance loss
     cells_summed = tf.tensordot(y_true, y_pred, axes=[axes, axes])
-    n_pixels = K.cast(tf.count_nonzero(y_true, axis=axes), dtype=K.floatx()) + K.epsilon()
+    nonzeros = tf.math.count_nonzero(y_true, axis=axes)
+    n_pixels = K.cast(nonzeros, dtype=K.floatx()) + K.epsilon()
     n_pixels_expand = K.expand_dims(n_pixels, axis=1) + K.epsilon()
     mu = tf.divide(cells_summed, n_pixels_expand)
 
@@ -200,8 +201,8 @@ def discriminative_instance_loss(y_true, y_pred,
     diff_matrix = tf.subtract(mu_b, mu_a)
     L_dist_1 = temp_norm(diff_matrix)
     L_dist_2 = K.square(K.relu(K.constant(2 * delta_d, dtype=K.floatx()) - L_dist_1))
-    diag = K.constant(0, dtype=K.floatx()) * tf.diag_part(L_dist_2)
-    L_dist_3 = tf.matrix_set_diag(L_dist_2, diag)
+    diag = K.constant(0, dtype=K.floatx()) * tf.linalg.diag_part(L_dist_2)
+    L_dist_3 = tf.linalg.set_diag(L_dist_2, diag)
     L_dist = K.mean(L_dist_3)
 
     # Compute regularization loss
