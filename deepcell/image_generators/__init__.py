@@ -225,7 +225,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
     elif transform == 'disc' or transform is None:
-        y_transform = to_categorical(y.squeeze(channel_axis), dtype=np.int32)
+        dtype = K.floatx() if transform == 'disc' else np.int32
+        y_transform = to_categorical(y.squeeze(channel_axis), dtype=dtype)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
