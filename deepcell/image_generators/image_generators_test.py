@@ -303,7 +303,7 @@ class TestTransformMasks(test.TestCase):
             transform='disc',
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 30, 30, classes))
-        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
+        self.assertEqual(mask_transform.dtype, np.dtype(K.floatx()))
 
         mask = np.random.randint(classes, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
@@ -311,7 +311,7 @@ class TestTransformMasks(test.TestCase):
             transform='disc',
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, classes, 30, 30))
-        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
+        self.assertEqual(mask_transform.dtype, np.dtype(K.floatx()))
 
         # test 3D masks
         mask = np.random.randint(classes, size=(5, 10, 30, 30, 1))
@@ -320,7 +320,7 @@ class TestTransformMasks(test.TestCase):
             transform='disc',
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, classes))
-        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
+        self.assertEqual(mask_transform.dtype, np.dtype(K.floatx()))
 
         mask = np.random.randint(classes, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
@@ -328,7 +328,7 @@ class TestTransformMasks(test.TestCase):
             transform='disc',
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, classes, 10, 30, 30))
-        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
+        self.assertEqual(mask_transform.dtype, np.dtype(K.floatx()))
 
     def test_bad_mask(self):
         # test bad transform
