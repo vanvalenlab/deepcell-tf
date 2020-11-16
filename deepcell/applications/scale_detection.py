@@ -177,7 +177,7 @@ class ScaleDetection(Application):
             numpy.array: Model output
         """
 
-         # Check input size of image
+        # Check input size of image
         if len(image.shape) != self.required_rank:
             raise ValueError('Input data must have {} dimensions. '
                              'Input data only has {} dimensions'.format(
