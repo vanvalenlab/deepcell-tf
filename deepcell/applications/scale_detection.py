@@ -29,21 +29,23 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow import keras
-from tensorflow.keras.utils import get_file
+import os
 
-from deepcell.layers import ImageNormalization2D, TensorProduct
+import tensorflow as tf
+
+from deepcell.applications import Application
+from deepcell.layers import ImageNormalization2D
+from deepcell.layers import TensorProduct
 from deepcell.utils.backbone_utils import get_backbone
 
 
-MOBILENETV2_WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                            'model-weights/ScaleDetectionModel_mobilenetv2.h5')
+MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+              'saved-models/ScaleDetection-1.tar.gz')
 
 
 def ScaleDetectionModel(input_shape=(None, None, 1),
                         inputs=None,
-                        backbone='mobilenetv2',
-                        use_pretrained_weights=True):
+                        backbone='mobilenetv2'):
     """Create a ``ScaleDetectionModel`` for detecting scales of input data.
 
     This enables data to be scaled appropriately for other segmentation models
@@ -57,16 +59,16 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
         inputs (tensorflow.keras.Layer): Optional input layer of the model.
             If not provided, creates a ``Layer`` based on ``input_shape``.
         backbone (str): name of the backbone to use for the model.
-        use_pretrained_weights (bool): whether to load pre-trained weights.
-            Only supports the ``MobileNetV2`` backbone.
     """
     required_channels = 3  # required for most backbones
 
     if inputs is None:
-        inputs = keras.layers.Input(shape=input_shape)
+        inputs = tf.keras.layers.Input(shape=input_shape)
 
-    if keras.backend.image_data_format() == 'channels_first':
+    if tf.keras.backend.image_data_format() == 'channels_first':
         channel_axis = 0
+        raise ValueError('`channels_first` is not supported, '
+                         'please use `channels_last`.')
     else:
         channel_axis = -1
 
@@ -88,25 +90,58 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
         input_shape=fixed_input_shape,
         pooling=None)
 
-    x = keras.layers.AveragePooling2D(4)(backbone_model.outputs[0])
+    x = tf.keras.layers.AveragePooling2D(4)(backbone_model.outputs[0])
     x = TensorProduct(256, activation='relu')(x)
     x = TensorProduct(1)(x)
-    outputs = keras.layers.Flatten()(x)
+    outputs = tf.keras.layers.Flatten()(x)
 
-    model = keras.Model(inputs=backbone_model.inputs, outputs=outputs)
-
-    if use_pretrained_weights:
-        local_name = 'ScaleDetectionModel_{}.h5'.format(backbone)
-        if backbone.lower() in {'mobilenetv2' or 'mobilenet_v2'}:
-            weights_path = get_file(
-                local_name,
-                MOBILENETV2_WEIGHTS_PATH,
-                cache_subdir='models',
-                file_hash='aa78e6b9a4551289dd967f1f5ca83fed')
-        else:
-            raise ValueError('Backbone %s does not have a weights file.' %
-                             backbone)
-
-        model.load_weights(weights_path)
+    model = tf.keras.Model(inputs=backbone_model.inputs, outputs=outputs)
 
     return model
+
+
+class ScaleDetection(Application):
+    """Loads a :mod:`~ScaleDetectionModel` for detecting relative scales
+    of images.
+
+    Args:
+        model (tf.keras.Model): The model to load. If ``None``,
+            a pre-trained model will be downloaded.
+    """
+
+    #: Metadata for the dataset used to train the model
+    dataset_metadata = {
+        'name': 'general_nuclear_and_cyto_large',
+        'other': 'Collection of all available nuclear and cytplasm stains.'
+    }
+
+    #: Metadata for the model and training process
+    model_metadata = {
+        'batch_size': 64,
+        'lr': 1e-6,
+        'lr_decay': 0.9,
+        'training_seed': 0,
+        'n_epochs': 200,
+        'training_steps_per_epoch': 400,
+        'validation_steps_per_epoch': 100
+    }
+
+    def __init__(self, model=None):
+
+        if model is None:
+            archive_path = tf.keras.utils.get_file(
+                'ScaleDetection.tgz', MODEL_PATH,
+                file_hash='31f27bd8cc78ee87100041fb292695ff',
+                extract=True, cache_subdir='models'
+            )
+            model_path = os.path.splitext(archive_path)[0]
+            model = tf.keras.models.load_model(model_path)
+
+        super(ScaleDetection, self).__init__(
+            model,
+            model_image_shape=model.input_shape[1:],
+            model_mpp=0.65,
+            preprocessing_fn=None,
+            postprocessing_fn=None,
+            dataset_metadata=self.dataset_metadata,
+            model_metadata=self.model_metadata)
