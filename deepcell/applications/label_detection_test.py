@@ -30,14 +30,13 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+import tensorflow as tf
 
-from tensorflow.keras.layers import Input
-from tensorflow.python.platform import test
-
-from deepcell.applications import LabelDetectionModel
+from deepcell.applications.label_detection import LabelDetectionModel
+from deepcell.applications import LabelDetection
 
 
-class TestLabelDetectionModel(test.TestCase):
+class TestLabelDetectionModel(tf.test.TestCase):
 
     def test_label_detection_model(self):
 
@@ -50,11 +49,10 @@ class TestLabelDetectionModel(test.TestCase):
 
         for backbone in valid_backbones:
             with self.cached_session():
-                inputs = Input(shape=input_shape)
+                inputs = tf.keras.layers.Input(shape=input_shape)
                 model = LabelDetectionModel(
                     inputs=inputs,
-                    backbone=backbone,
-                    use_pretrained_weights=False)
+                    backbone=backbone)
 
                 y = model.predict(X)
 
@@ -64,10 +62,29 @@ class TestLabelDetectionModel(test.TestCase):
             with self.cached_session():
                 model = LabelDetectionModel(
                     input_shape=input_shape,
-                    backbone=backbone,
-                    use_pretrained_weights=False)
+                    backbone=backbone)
 
                 y = model.predict(X)
 
                 assert len(y.shape) == 2
                 assert y.shape[0] == X.shape[0]
+
+
+class TestLabelDetection(tf.test.TestCase):
+
+    def test_label_detection_app(self):
+        with self.cached_session():
+            num_classes = 3
+            model = LabelDetectionModel(input_shape=(128, 128, 1))
+            app = LabelDetection(model)
+
+            # test output shape
+            shape = app.model.output_shape
+            self.assertEqual(len(shape), 2)
+            self.assertEqual(shape[-1], num_classes)
+
+            # test predict with default
+            x = np.random.rand(1, 500, 500, 1)
+            y = app.predict(x)
+
+            self.assertTrue(int(y) in set(range(num_classes)))

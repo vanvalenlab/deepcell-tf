@@ -31,6 +31,7 @@ from __future__ import print_function
 
 import os
 
+import numpy as np
 import tensorflow as tf
 
 from deepcell.applications import Application
@@ -45,7 +46,8 @@ MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 
 def LabelDetectionModel(input_shape=(None, None, 1),
                         inputs=None,
-                        backbone='mobilenetv2'):
+                        backbone='mobilenetv2',
+                        num_classes=3):
     """Classify a microscopy image as Nuclear, Cytoplasm, or Phase.
 
     This can be helpful in determining the type of data (nuclear, cytoplasm,
@@ -59,6 +61,7 @@ def LabelDetectionModel(input_shape=(None, None, 1),
         inputs (tensorflow.keras.Layer): Optional input layer of the model.
             If not provided, creates a ``Layer`` based on ``input_shape``.
         backbone (str): name of the backbone to use for the model.
+        num_classes (int): The number of labels to detect.
     """
     required_channels = 3  # required for most backbones
 
@@ -92,7 +95,7 @@ def LabelDetectionModel(input_shape=(None, None, 1),
 
     x = tf.keras.layers.AveragePooling2D(4)(backbone_model.outputs[0])
     x = TensorProduct(256)(x)
-    x = TensorProduct(3)(x)
+    x = TensorProduct(num_classes)(x)
     x = tf.keras.layers.Flatten()(x)
     outputs = tf.keras.layers.Activation('softmax')(x)
 
@@ -146,3 +149,59 @@ class LabelDetection(Application):
             postprocessing_fn=None,
             dataset_metadata=self.dataset_metadata,
             model_metadata=self.model_metadata)
+
+    def predict(self,
+                image,
+                batch_size=4,
+                image_mpp=None):
+        """Generates a labeled image of the input running prediction with
+        appropriate pre and post processing functions.
+
+        Input images are required to have 4 dimensions
+        ``[batch, x, y, channel]``.
+        Additional empty dimensions can be added using ``np.expand_dims``.
+
+        Args:
+            image (numpy.array): Input image with shape
+                ``[batch, x, y, channel]``.
+            batch_size (int): Number of images to predict on per batch.
+            image_mpp (float): Microns per pixel for ``image``.
+
+        Raises:
+            ValueError: Input data must match required rank of the application,
+                calculated as one dimension more (batch dimension) than expected
+                by the model.
+
+            ValueError: Input data must match required number of channels.
+
+        Returns:
+            numpy.array: Labeled image
+            numpy.array: Model output
+        """
+
+         # Check input size of image
+        if len(image.shape) != self.required_rank:
+            raise ValueError('Input data must have {} dimensions. '
+                             'Input data only has {} dimensions'.format(
+                                 self.required_rank, len(image.shape)))
+
+        if image.shape[-1] != self.required_channels:
+            raise ValueError('Input data must have {} channels. '
+                             'Input data only has {} channels'.format(
+                                 self.required_channels, image.shape[-1]))
+
+        # Resize image, returns unmodified if appropriate
+        resized_image = self._resize_input(image, image_mpp)
+
+        # Tile images, raises error if the image is not 4d
+        tiles, _ = self._tile_input(resized_image)
+
+        # Run images through model
+        labels = self.model.predict(tiles, batch_size=batch_size)
+
+        labels = np.array(labels)
+        vote = labels.sum(axis=0)
+        maj = vote.max()
+
+        detected = np.where(vote == maj)[-1][0]
+        return detected

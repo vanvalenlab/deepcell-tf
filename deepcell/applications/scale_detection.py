@@ -31,6 +31,7 @@ from __future__ import print_function
 
 import os
 
+import numpy as np
 import tensorflow as tf
 
 from deepcell.applications import Application
@@ -123,7 +124,8 @@ class ScaleDetection(Application):
         'training_seed': 0,
         'n_epochs': 200,
         'training_steps_per_epoch': 400,
-        'validation_steps_per_epoch': 100
+        'validation_steps_per_epoch': 100,
+        'error_rate': .02
     }
 
     def __init__(self, model=None):
@@ -145,3 +147,60 @@ class ScaleDetection(Application):
             postprocessing_fn=None,
             dataset_metadata=self.dataset_metadata,
             model_metadata=self.model_metadata)
+
+    def predict(self,
+                image,
+                batch_size=4,
+                image_mpp=None):
+        """Generates a labeled image of the input running prediction with
+        appropriate pre and post processing functions.
+
+        Input images are required to have 4 dimensions
+        ``[batch, x, y, channel]``.
+        Additional empty dimensions can be added using ``np.expand_dims``.
+
+        Args:
+            image (numpy.array): Input image with shape
+                ``[batch, x, y, channel]``.
+            batch_size (int): Number of images to predict on per batch.
+            image_mpp (float): Microns per pixel for ``image``.
+
+        Raises:
+            ValueError: Input data must match required rank of the application,
+                calculated as one dimension more (batch dimension) than expected
+                by the model.
+
+            ValueError: Input data must match required number of channels.
+
+        Returns:
+            numpy.array: Labeled image
+            numpy.array: Model output
+        """
+
+         # Check input size of image
+        if len(image.shape) != self.required_rank:
+            raise ValueError('Input data must have {} dimensions. '
+                             'Input data only has {} dimensions'.format(
+                                 self.required_rank, len(image.shape)))
+
+        if image.shape[-1] != self.required_channels:
+            raise ValueError('Input data must have {} channels. '
+                             'Input data only has {} channels'.format(
+                                 self.required_channels, image.shape[-1]))
+
+        # Resize image, returns unmodified if appropriate
+        resized_image = self._resize_input(image, image_mpp)
+
+        # Tile images, raises error if the image is not 4d
+        tiles, _ = self._tile_input(resized_image)
+
+        # Run images through model
+        scales = self.model.predict(tiles, batch_size=batch_size)
+
+        detected_scale = np.mean(scales)
+
+        error_rate = self.model_metadata['error_rate']
+        if abs(detected_scale - 1) < error_rate:
+            detected_scale = 1
+
+        return detected_scale
