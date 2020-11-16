@@ -39,7 +39,18 @@ class TestNuclearSegmentation(test.TestCase):
 
     def test_nuclear_app(self):
         with self.cached_session():
-            app = NuclearSegmentation(use_pretrained_weights=False)
+            model = PanopticNet(
+                'resnet50',
+                input_shape=(128, 128, 1),
+                norm_method='whole_image',
+                num_semantic_heads=2,
+                num_semantic_classes=[1, 1],
+                location=True,
+                include_top=True,
+                lite=True,
+                use_imagenet=False,
+                interpolation='bilinear')
+            app = NuclearSegmentation(model)
 
             # test output shape
             shape = app.model.output_shape
