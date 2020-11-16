@@ -31,18 +31,15 @@ from __future__ import print_function
 
 import os
 
-from tensorflow.keras.utils import get_file
+import tensorflow as tf
 
-from deepcell_toolbox.processing import normalize
 from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.applications import Application
-from deepcell.model_zoo import PanopticNet
 
 
-WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/nuclear_0_82800_resnet50_watershed_named_'
-                '076bb10d832089b6a77faed1e63ad375.h5')
+MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+              'saved-models/NuclearSegmentation-1.tar.gz')
 
 
 class NuclearSegmentation(Application):
@@ -85,47 +82,31 @@ class NuclearSegmentation(Application):
 
     #: Metadata for the model and training process
     model_metadata = {
-        'batch_size': 16,
-        'lr': 1e-4,
-        'lr_decay': 0.95,
+        'batch_size': 1,
+        'lr': 1e-5,
+        'lr_decay': 0.99,
         'training_seed': 0,
-        'n_epochs': 8,
-        'training_steps_per_epoch': 82800 // 16,
-        'validation_steps_per_epoch': 20760 // 16
+        'n_epochs': 10,
+        'training_steps_per_epoch': 62556,
+        'validation_steps_per_epoch': 15627
     }
 
-    def __init__(self,
-                 use_pretrained_weights=True,
-                 model_image_shape=(128, 128, 1)):
+    def __init__(self, model=None):
 
-        model = PanopticNet('resnet50',
-                            input_shape=model_image_shape,
-                            norm_method='whole_image',
-                            num_semantic_heads=2,
-                            num_semantic_classes=[1, 1],
-                            location=True,
-                            include_top=True,
-                            lite=True,
-                            use_imagenet=use_pretrained_weights,
-                            interpolation='bilinear')
-
-        if use_pretrained_weights:
-            weights_path = get_file(
-                os.path.basename(WEIGHTS_PATH),
-                WEIGHTS_PATH,
-                cache_subdir='models',
-                file_hash='42ca0ebe4b7b0f782eaa4733cdddad88'
+        if model is None:
+            archive_path = tf.keras.utils.get_file(
+                'NuclearSegmentation.tgz', MODEL_PATH,
+                file_hash='2d14194b557726ad6bac57ae269e4162',
+                extract=True, cache_subdir='models'
             )
-
-            model.load_weights(weights_path, by_name=True)
-        else:
-            weights_path = None
+            model_path = os.path.splitext(archive_path)[0]
+            model = tf.keras.models.load_model(model_path)
 
         super(NuclearSegmentation, self).__init__(
             model,
-            model_image_shape=model_image_shape,
+            model_image_shape=model.input_shape[1:],
             model_mpp=0.65,
-            preprocessing_fn=normalize,
+            preprocessing_fn=None,
             postprocessing_fn=deep_watershed,
             dataset_metadata=self.dataset_metadata,
             model_metadata=self.model_metadata)
