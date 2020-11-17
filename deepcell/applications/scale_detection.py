@@ -68,8 +68,6 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
 
     if tf.keras.backend.image_data_format() == 'channels_first':
         channel_axis = 0
-        raise ValueError('`channels_first` is not supported, '
-                         'please use `channels_last`.')
     else:
         channel_axis = -1
 
