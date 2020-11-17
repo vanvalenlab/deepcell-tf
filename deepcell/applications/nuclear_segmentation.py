@@ -83,10 +83,10 @@ class NuclearSegmentation(Application):
     #: Metadata for the model and training process
     model_metadata = {
         'batch_size': 1,
-        'lr': 1e-5,
+        'lr': 1e-3,
         'lr_decay': 0.99,
         'training_seed': 0,
-        'n_epochs': 10,
+        'n_epochs': 25,
         'training_steps_per_epoch': 62556,
         'validation_steps_per_epoch': 15627
     }
@@ -96,7 +96,7 @@ class NuclearSegmentation(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'NuclearSegmentation.tgz', MODEL_PATH,
-                file_hash='2d14194b557726ad6bac57ae269e4162',
+                file_hash='0fe457d72d590d82bec219807114030b',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
