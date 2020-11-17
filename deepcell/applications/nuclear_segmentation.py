@@ -33,6 +33,7 @@ import os
 
 import tensorflow as tf
 
+from deepcell_toolbox.processing import normalize
 from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.applications import Application
@@ -106,7 +107,7 @@ class NuclearSegmentation(Application):
             model,
             model_image_shape=model.input_shape[1:],
             model_mpp=0.65,
-            preprocessing_fn=None,
+            preprocessing_fn=normalize,
             postprocessing_fn=deep_watershed,
             dataset_metadata=self.dataset_metadata,
             model_metadata=self.model_metadata)
