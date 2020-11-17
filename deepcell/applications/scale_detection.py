@@ -117,13 +117,13 @@ class ScaleDetection(Application):
     #: Metadata for the model and training process
     model_metadata = {
         'batch_size': 64,
-        'lr': 1e-6,
+        'lr': 1e-3,
         'lr_decay': 0.9,
         'training_seed': 0,
         'n_epochs': 200,
-        'training_steps_per_epoch': 400,
-        'validation_steps_per_epoch': 100,
-        'error_rate': .02
+        'training_steps_per_epoch': 8400,
+        'validation_steps_per_epoch': 2102,
+        'error_rate': .01
     }
 
     def __init__(self, model=None):
@@ -131,7 +131,7 @@ class ScaleDetection(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'ScaleDetection.tgz', MODEL_PATH,
-                file_hash='31f27bd8cc78ee87100041fb292695ff',
+                file_hash='1ca4ee3a90fd4445bb5484e10ac0081c',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
