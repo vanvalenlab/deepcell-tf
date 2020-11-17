@@ -39,7 +39,7 @@ from deepcell.applications import Application
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/NuclearSegmentation-1.tar.gz')
+              'saved-models/NuclearSegmentation-2.tar.gz')
 
 
 class NuclearSegmentation(Application):
