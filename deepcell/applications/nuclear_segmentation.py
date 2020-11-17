@@ -82,7 +82,7 @@ class NuclearSegmentation(Application):
 
     #: Metadata for the model and training process
     model_metadata = {
-        'batch_size': 1,
+        'batch_size': 64,
         'lr': 1e-3,
         'lr_decay': 0.99,
         'training_seed': 0,
