@@ -33,7 +33,7 @@ import os
 
 import tensorflow as tf
 
-from deepcell_toolbox.processing import normalize
+from deepcell_toolbox.processing import histogram_normalization
 from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.applications import Application
@@ -84,10 +84,10 @@ class NuclearSegmentation(Application):
     #: Metadata for the model and training process
     model_metadata = {
         'batch_size': 64,
-        'lr': 1e-3,
+        'lr': 1e-5,
         'lr_decay': 0.99,
         'training_seed': 0,
-        'n_epochs': 25,
+        'n_epochs': 10,
         'training_steps_per_epoch': 62556,
         'validation_steps_per_epoch': 15627
     }
@@ -97,7 +97,7 @@ class NuclearSegmentation(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'NuclearSegmentation.tgz', MODEL_PATH,
-                file_hash='0fe457d72d590d82bec219807114030b',
+                file_hash='8c294cde5b3fe3327447d70d2b7057ec',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
@@ -107,7 +107,7 @@ class NuclearSegmentation(Application):
             model,
             model_image_shape=model.input_shape[1:],
             model_mpp=0.65,
-            preprocessing_fn=normalize,
+            preprocessing_fn=histogram_normalization,
             postprocessing_fn=deep_watershed,
             dataset_metadata=self.dataset_metadata,
             model_metadata=self.model_metadata)
@@ -116,8 +116,8 @@ class NuclearSegmentation(Application):
                 image,
                 batch_size=4,
                 image_mpp=None,
-                preprocess_kwargs={},
-                postprocess_kwargs={}):
+                preprocess_kwargs=None,
+                postprocess_kwargs=None):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
@@ -146,6 +146,20 @@ class NuclearSegmentation(Application):
         Returns:
             numpy.array: Labeled image
         """
+        if preprocess_kwargs is None:
+            preprocess_kwargs = {
+                'kernel_size': 16
+            }
+
+        if postprocess_kwargs is None:
+            postprocess_kwargs = {
+                'min_distance': 10,
+                'detection_threshold': 0.1,
+                'distance_threshold': 0.01,
+                'exclude_border': False,
+                'small_objects_threshold': 0
+            }
+
         return self._predict_segmentation(
             image,
             batch_size=batch_size,
