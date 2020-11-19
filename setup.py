@@ -23,7 +23,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import os
 import logging
+
+from codecs import open
 
 try:
     from setuptools import setup, find_packages
@@ -31,35 +34,69 @@ except ImportError:
     from distutils.core import setup, find_packages
 
 
-def _parse_requirements(file_path):
-    lineiter = (line.strip() for line in open(file_path))
-    reqs = []
-    for line in lineiter:
-        # workaround to ignore keras_maskrcnn requirement
-        # which is downloaded directly from github
-        if line.startswith('#') or line.startswith('git+'):
-            continue
-        reqs.append(line)
-    return reqs
+here = os.path.abspath(os.path.dirname(__file__))
 
 
-try:
-    install_reqs = _parse_requirements('requirements.txt')
-except Exception:
-    logging.warning('Failed to load requirements file, using default ones.')
-    install_reqs = []
+with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as f:
+    README = f.read()
+
+
+NAME = 'DeepCell'
+VERSION = '0.8.0'
+AUTHOR = 'Van Valen Lab'
+AUTHOR_EMAIL = 'vanvalenlab@gmail.com'
+URL = 'https://github.com/vanvalenlab/deepcell-tf'
+DESCRIPTION = 'Deep learning for single cell image segmentation'
+
 
 setup(
-    name='DeepCell',
-    version='0.7.0',
-    packages=find_packages(),
-    install_requires=install_reqs,
-    extras_require={
-        'tests': ['pytest',
-                  'pytest-cov'],
-    },
+    name=NAME,
+    version=VERSION,
+    author=AUTHOR,
+    author_email=AUTHOR_EMAIL,
+    description=DESCRIPTION,
+    url=URL,
+    download_url='{}/tarball/{}'.format(URL, VERSION),
     license='LICENSE',
-    author='David Van Valen',
-    author_email='vanvalen@caltech.edu',
-    description='Deep learning for single cell image segmentation',
+    long_description=README,
+    long_description_content_type='text/markdown',
+    install_requires=[
+        'numpy>=1.16.4,<1.19.0',
+        'scipy>=1.1.0,<2',
+        'scikit-image>=0.14.1,<=0.16.2',
+        'scikit-learn>=0.19.1,<1',
+        'tensorflow==2.3.1',
+        'jupyter>=1.0.0,<2',
+        'opencv-python<=3.4.9.31',
+        'deepcell-tracking>=0.2.4',
+        'deepcell-toolbox>=0.8.2'
+    ],
+    extras_require={
+        'tests': [
+            'pytest<6',
+            'pytest-cov',
+            'pytest-pep8',
+        ],
+    },
+    packages=find_packages(),
+    python_requires='>=3.5, <3.9',
+    setup_requires=['numpy>=1.16.4,<1.19.0'],
+    classifiers=[
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+        'Topic :: Scientific/Engineering :: Bio-Informatics',
+        'Topic :: Scientific/Engineering :: Image Processing',
+        'Topic :: Scientific/Engineering :: Image Recognition',
+        'Topic :: Software Development :: Libraries',
+        'Topic :: Software Development :: Libraries :: Python Modules'
+    ]
 )
