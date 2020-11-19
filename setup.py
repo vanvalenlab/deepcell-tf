@@ -79,6 +79,7 @@ setup(
         ],
     },
     packages=find_packages(),
+    python_requires='>=3.5, <4',
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
