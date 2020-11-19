@@ -80,6 +80,7 @@ setup(
     },
     packages=find_packages(),
     python_requires='>=3.5, <3.9',
+    setup_requires=['numpy>=1.16.4,<1.19.0'],
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
