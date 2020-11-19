@@ -43,14 +43,15 @@ with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as f:
 
 def _parse_requirements(file_path):
     try:
-        lineiter = (line.strip() for line in open(file_path))
-        reqs = []
-        for line in lineiter:
-            # workaround to ignore keras_maskrcnn requirement
-            # which is downloaded directly from github
-            if line.startswith('#') or line.startswith('git+'):
-                continue
-            reqs.append(line)
+        with open(file_path, 'r', 'utf-8') as req_file:
+            lineiter = (line.strip() for line in req_file)
+            reqs = []
+            for line in lineiter:
+                # workaround to ignore keras_maskrcnn requirement
+                # which is downloaded directly from github
+                if line.startswith('#') or line.startswith('git+'):
+                    continue
+                reqs.append(line)
         return reqs
     except Exception:
         logging.warning('Failed to load %s, using default ones.', file_path)
