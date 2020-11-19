@@ -87,7 +87,7 @@ class NuclearSegmentation(Application):
         'lr': 1e-5,
         'lr_decay': 0.99,
         'training_seed': 0,
-        'n_epochs': 10,
+        'n_epochs': 30,
         'training_steps_per_epoch': 62556,
         'validation_steps_per_epoch': 15627
     }
