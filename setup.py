@@ -49,22 +49,6 @@ URL = 'https://github.com/vanvalenlab/deepcell-tf'
 DESCRIPTION = 'Deep learning for single cell image segmentation'
 
 
-def _parse_requirements(file_path):
-    try:
-        with open(file_path, 'r', 'utf-8') as req_file:
-            lineiter = (line.strip() for line in req_file)
-            reqs = []
-            for line in lineiter:
-                # Ignore comments
-                if line.startswith('#'):
-                    continue
-                reqs.append(line)
-        return reqs
-    except Exception:
-        logging.warning('Failed to load %s, using default ones.', file_path)
-        return []
-
-
 setup(
     name=NAME,
     version=VERSION,
@@ -76,9 +60,23 @@ setup(
     license='LICENSE',
     long_description=README,
     long_description_content_type='text/markdown',
-    install_requires=_parse_requirements('requirements.txt'),
+    install_requires=[
+        'numpy>=1.16.4,<1.19.0',
+        'scipy>=1.1.0,<2',
+        'scikit-image>=0.14.1,<=0.16.2',
+        'scikit-learn>=0.19.1,<1',
+        'tensorflow==2.3.1',
+        'jupyter>=1.0.0,<2',
+        'opencv-python<=3.4.9.31',
+        'deepcell-tracking>=0.2.4',
+        'deepcell-toolbox>=0.8.2'
+    ],
     extras_require={
-        'tests': _parse_requirements('requirements-test.txt'),
+        'tests': [
+            'pytest<6',
+            'pytest-cov',
+            'pytest-pep8',
+        ],
     },
     packages=find_packages(),
     classifiers=[
