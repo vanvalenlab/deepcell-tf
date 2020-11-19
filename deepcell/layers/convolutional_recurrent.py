@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -38,12 +38,12 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from tensorflow.python.keras import activations
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import constraints
-from tensorflow.python.keras import initializers
-from tensorflow.python.keras import regularizers
-from tensorflow.python.keras.layers import Layer
+from tensorflow.keras import activations
+from tensorflow.keras import backend as K
+from tensorflow.keras import constraints
+from tensorflow.keras import initializers
+from tensorflow.keras import regularizers
+from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.layers.recurrent import DropoutRNNCellMixin
 from tensorflow.python.keras.layers.convolutional_recurrent import ConvRNN2D
 from tensorflow.python.keras.utils import conv_utils
@@ -145,8 +145,6 @@ class ConvGRU2DCell(DropoutRNNCellMixin, Layer):
 
         self.dropout = min(1., max(0., dropout))
         self.recurrent_dropout = min(1., max(0., recurrent_dropout))
-        self._dropout_mask = None
-        self._recurrent_dropout_mask = None
 
     @property
     def state_size(self):
@@ -392,7 +390,8 @@ class ConvGRU2D(ConvRNN2D):
                              recurrent_constraint=recurrent_constraint,
                              bias_constraint=bias_constraint,
                              dropout=dropout,
-                             recurrent_dropout=recurrent_dropout)
+                             recurrent_dropout=recurrent_dropout,
+                             dtype=kwargs.get('dtype'))
 
         super(ConvGRU2D, self).__init__(cell,
                                         return_sequences=return_sequences,
@@ -404,6 +403,7 @@ class ConvGRU2D(ConvRNN2D):
         self.activity_regularizer = regularizers.get(activity_regularizer)
 
     def call(self, inputs, mask=None, training=None, initial_state=None):
+        self._maybe_reset_cell_dropout_mask(self.cell)
         result = super(ConvGRU2D, self).call(inputs,
                                              mask=mask,
                                              training=training,

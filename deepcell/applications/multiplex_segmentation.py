@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,19 +31,17 @@ from __future__ import print_function
 
 import os
 
-import numpy as np
+import tensorflow as tf
 
-from tensorflow.python.keras.utils.data_utils import get_file
-
-from deepcell_toolbox.multiplex_utils import \
-    multiplex_preprocess, multiplex_postprocess, format_output_multiplex
+from deepcell_toolbox.multiplex_utils import multiplex_preprocess
+from deepcell_toolbox.multiplex_utils import multiplex_postprocess
+from deepcell_toolbox.multiplex_utils import format_output_multiplex
 
 from deepcell.applications import Application
-from deepcell.model_zoo import PanopticNet
 
 
-WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/Multiplex_Segmentation_20201018.h5')
+MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+              'saved-models/MultiplexSegmentation-6.tar.gz')
 
 
 class MultiplexSegmentation(Application):
@@ -75,8 +73,8 @@ class MultiplexSegmentation(Application):
         labeled_image = app.predict(image)
 
     Args:
-        use_pretrained_weights (bool): Whether to load pretrained weights.
-        model_image_shape (tuple): Shape of input expected by ``model``.
+        model (tf.keras.Model): The model to load. If ``None``,
+            a pre-trained model will be downloaded.
     """
 
     #: Metadata for the dataset used to train the model
@@ -96,39 +94,20 @@ class MultiplexSegmentation(Application):
         'validation_steps_per_epoch': 193 // 1
     }
 
-    def __init__(self,
-                 use_pretrained_weights=True,
-                 model_image_shape=(256, 256, 2)):
+    def __init__(self, model=None):
 
-        whole_cell_classes = [1, 3]
-        nuclear_classes = [1, 3]
-        num_semantic_classes = whole_cell_classes + nuclear_classes
-        num_semantic_heads = len(num_semantic_classes)
-
-        model = PanopticNet('resnet50',
-                            input_shape=model_image_shape,
-                            norm_method=None,
-                            num_semantic_heads=num_semantic_heads,
-                            num_semantic_classes=num_semantic_classes,
-                            location=True,
-                            include_top=True,
-                            use_imagenet=False)
-
-        if use_pretrained_weights:
-            weights_path = get_file(
-                os.path.basename(WEIGHTS_PATH),
-                WEIGHTS_PATH,
-                cache_subdir='models',
-                file_hash='81f052b4ed0fe2c300ecc5950c08cc24'
+        if model is None:
+            archive_path = tf.keras.utils.get_file(
+                'MultiplexSegmentation.tgz', MODEL_PATH,
+                file_hash='06d070648c1a425baa848b0051e045d0',
+                extract=True, cache_subdir='models'
             )
-
-            model.load_weights(weights_path)
-        else:
-            weights_path = None
+            model_path = os.path.splitext(archive_path)[0]
+            model = tf.keras.models.load_model(model_path)
 
         super(MultiplexSegmentation, self).__init__(
             model,
-            model_image_shape=model_image_shape,
+            model_image_shape=model.input_shape[1:],
             model_mpp=0.5,
             preprocessing_fn=multiplex_preprocess,
             postprocessing_fn=multiplex_postprocess,

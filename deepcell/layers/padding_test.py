@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -30,6 +30,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+import tensorflow as tf
 
 from absl.testing import parameterized
 
@@ -60,7 +61,7 @@ class ReflectionPaddingTest(keras_parameterized.TestCase):
         ins1 = np.ones((num_samples, input_num_row, input_num_col, stack_size))
         ins2 = np.ones((num_samples, stack_size, input_num_row, input_num_col))
         data_formats = ['channels_first', 'channels_last']
-        with keras.utils.custom_object_scope(custom_objects):
+        with tf.keras.utils.custom_object_scope(custom_objects):
             for data_format, inputs in zip(data_formats, [ins2, ins1]):
                 # basic test
                 testing_utils.layer_test(
@@ -79,11 +80,11 @@ class ReflectionPaddingTest(keras_parameterized.TestCase):
         #     layer = layers.ReflectionPadding2D(
         #         padding=(2, 2), data_format=data_format)
         #     layer.build(inputs.shape)
-        #     output = layer(keras.backend.variable(inputs))
+        #     output = layer(tf.keras.backend.variable(inputs))
         #     if context.executing_eagerly():
         #         np_output = output.numpy()
         #     else:
-        #         np_output = keras.backend.eval(output)
+        #         np_output = tf.keras.backend.eval(output)
         #     if data_format == 'channels_last':
         #         for offset in [0, 1, -1, -2]:
         #             np.testing.assert_allclose(np_output[:, offset, :, :], 0.)
@@ -98,11 +99,11 @@ class ReflectionPaddingTest(keras_parameterized.TestCase):
         #     layer = layers.ReflectionPadding2D(
         #         padding=((1, 2), (3, 4)), data_format=data_format)
         #     layer.build(inputs.shape)
-        #     output = layer(keras.backend.variable(inputs))
+        #     output = layer(tf.keras.backend.variable(inputs))
         #     if context.executing_eagerly():
         #         np_output = output.numpy()
         #     else:
-        #         np_output = keras.backend.eval(output)
+        #         np_output = tf.keras.backend.eval(output)
         #     if data_format == 'channels_last':
         #         for top_offset in [0]:
         #             np.testing.assert_allclose(np_output[:, top_offset, :, :], 0.)
@@ -143,7 +144,7 @@ class ReflectionPaddingTest(keras_parameterized.TestCase):
         inputs2 = np.ones((num_samples, stack_size, input_len_dim1,
                            input_len_dim2, input_len_dim3))
         data_formats = ['channels_first', 'channels_last']
-        with keras.utils.custom_object_scope(custom_objects):
+        with tf.keras.utils.custom_object_scope(custom_objects):
             for data_format, inputs in zip(data_formats, [inputs2, inputs1]):
                 # basic test
                 testing_utils.layer_test(
@@ -156,11 +157,11 @@ class ReflectionPaddingTest(keras_parameterized.TestCase):
         # with self.cached_session():
         #     layer = layers.ReflectionPadding3D(padding=(2, 2, 2))
         #     layer.build(inputs.shape)
-        #     output = layer(keras.backend.variable(inputs))
+        #     output = layer(tf.keras.backend.variable(inputs))
         #     if context.executing_eagerly():
         #         np_output = output.numpy()
         #     else:
-        #         np_output = keras.backend.eval(output)
+        #         np_output = tf.keras.backend.eval(output)
         #     for offset in [0, 1, -1, -2]:
         #         np.testing.assert_allclose(np_output[:, offset, :, :, :], 0.)
         #         np.testing.assert_allclose(np_output[:, :, offset, :, :], 0.)

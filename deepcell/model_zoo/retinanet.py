@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,13 +31,13 @@ from __future__ import print_function
 
 import re
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D, TimeDistributed
-from tensorflow.python.keras.layers import Input, Concatenate
-from tensorflow.python.keras.layers import Permute, Reshape
-from tensorflow.python.keras.layers import Activation, Lambda
-from tensorflow.python.keras.initializers import RandomNormal
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Conv2D, Conv3D, TimeDistributed
+from tensorflow.keras.layers import Input, Concatenate
+from tensorflow.keras.layers import Permute, Reshape
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.initializers import RandomNormal
 
 from deepcell.initializers import PriorProbability
 from deepcell.layers import TensorProduct
@@ -231,8 +231,7 @@ def __build_model_pyramid(name, model, features):
         tensor: The response from the submodel on the FPN features.
     """
     if len(features) == 1:
-        # TODO: Lambda layer has no compute_output_shape in eager mode
-        identity = Lambda(lambda x: x, name=name)
+        identity = Activation('linear', name=name)
         return identity(model(features[0]))
     else:
         concat = Concatenate(axis=-2, name=name)
@@ -571,9 +570,9 @@ def RetinaNet(backbone,
             else:
                 input_shape_with_time = tuple(
                     [frames_per_batch] + list(input_shape))
-            inputs = Input(shape=input_shape_with_time)
+            inputs = Input(shape=input_shape_with_time, name='input')
         else:
-            inputs = Input(shape=input_shape)
+            inputs = Input(shape=input_shape, name='input')
 
     if location:
         if frames_per_batch > 1:

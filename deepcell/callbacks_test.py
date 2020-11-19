@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -49,6 +49,7 @@ NUM_HIDDEN = 5
 BATCH_SIZE = 5
 
 
+@keras_parameterized.run_with_all_model_types
 @keras_parameterized.run_all_keras_modes
 class CallbacksTest(keras_parameterized.TestCase):
 
@@ -61,8 +62,8 @@ class CallbacksTest(keras_parameterized.TestCase):
                 input_shape=(INPUT_DIM,),
                 num_classes=NUM_CLASSES)
 
-            y_test = keras.utils.to_categorical(y_test)
-            y_train = keras.utils.to_categorical(y_train)
+            y_test = keras.utils.np_utils.to_categorical(y_test)
+            y_train = keras.utils.np_utils.to_categorical(y_train)
             model = keras.models.Sequential()
             model.add(
                 keras.layers.Dense(

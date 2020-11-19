@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -37,8 +37,8 @@ import warnings
 
 import numpy as np
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.utils import to_categorical
+from tensorflow.keras import backend as K
+from tensorflow.keras.utils import to_categorical
 
 from deepcell.utils import transform_utils
 
@@ -225,7 +225,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
     elif transform == 'disc' or transform is None:
-        y_transform = to_categorical(y.squeeze(channel_axis), dtype=np.int32)
+        dtype = K.floatx() if transform == 'disc' else np.int32
+        y_transform = to_categorical(y.squeeze(channel_axis), dtype=dtype)
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 

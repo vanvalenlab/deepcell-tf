@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,7 +31,7 @@ from __future__ import division
 import numpy as np
 import skimage as sk
 import tensorflow as tf
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 from tensorflow.python.framework import tensor_shape
 # from cv2 import resize
 from skimage.transform import resize
@@ -724,7 +724,7 @@ def _get_detections(generator,
             image = generator.x[i]
 
             # run network
-            results = model.predict_on_batch(np.expand_dims(image, axis=0))
+            results = model.predict(np.expand_dims(image, axis=0))
 
             if generator.panoptic:
                 num_semantic_outputs = len(generator.y_semantic_list)
@@ -783,6 +783,7 @@ def _get_detections(generator,
         boxes_list = []
         scores_list = []
         labels_list = []
+        masks_list = []
 
         for i in range(generator.y.shape[0]):
             for j in range(0, generator.y.shape[1], frames_per_batch):
@@ -793,19 +794,11 @@ def _get_detections(generator,
                     # Add logic for networks that have semantic heads
                     pass
                 else:
-                    if (generator.include_masks and
-                            not generator.include_final_detection_layer):
+                    if generator.include_masks:
                         boxes = results[-4]
                         scores = results[-3]
                         labels = results[-2]
                         masks = results[-1]
-                    elif (generator.include_masks and
-                          generator.include_final_detection_layer):
-                        boxes = results[-5]
-                        scores = results[-4]
-                        labels = results[-3]
-                        masks = results[-2]
-                        final_scores = results[-1]
                     else:
                         boxes, scores, labels = results[0:3]
 
@@ -813,6 +806,8 @@ def _get_detections(generator,
                         boxes_list.append(boxes[0, k])
                         scores_list.append(scores[0, k])
                         labels_list.append(labels[0, k])
+                        if generator.include_masks:
+                            masks_list.append(masks[0, k])
 
         batch_boxes = np.stack(boxes_list, axis=0)
         batch_scores = np.stack(scores_list, axis=0)
@@ -855,7 +850,8 @@ def _get_detections(generator,
                 all_detections[i][label] = imd
 
             if generator.include_masks:
-                image_masks = masks[0, :, indices[scores_sort], :, :, image_labels]
+                masks = np.expand_dims(masks_list[i], axis=0)
+                image_masks = masks[0, indices[scores_sort], :, :, image_labels]
                 for label in range(generator.num_classes):
                     imm = image_masks[image_detections[:, -1] == label, ...]
                     all_masks[i][label] = imm
@@ -955,11 +951,6 @@ def evaluate(generator, model,
         max_detections=max_detections)
     all_annotations, _ = _get_annotations(generator, frames_per_batch)
     average_precisions = {}
-
-    # all_detections = pickle.load(open('all_detections.pkl', 'rb'))
-    # all_annotations = pickle.load(open('all_annotations.pkl', 'rb'))
-    # pickle.dump(all_detections, open('all_detections.pkl', 'wb'))
-    # pickle.dump(all_annotations, open('all_annotations.pkl', 'wb'))
 
     # process detections and annotations
     for label in range(generator.num_classes):

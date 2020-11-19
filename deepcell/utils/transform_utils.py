@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -34,9 +34,10 @@ from scipy import ndimage
 from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.morphology import ball, disk
+from skimage.morphology import binary_erosion
 from skimage.morphology import binary_dilation
 from skimage.segmentation import find_boundaries
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 
 from deepcell_toolbox import erode_edges
 
@@ -430,80 +431,3 @@ def inner_distance_transform_movie(mask, bins=None, erosion_width=None,
     inner_distances = np.stack(inner_distances, axis=0)
 
     return inner_distances
-
-
-def rotate_array_0(arr):
-    """Rotate array 0 degrees
-
-    Args:
-        arr (numpy.array): input array
-
-    Returns:
-        numpy.array: rotated array
-    """
-    return arr
-
-
-def rotate_array_90(arr):
-    """Rotate array 90 degrees
-
-    Args:
-        arr (numpy.array): input array
-
-    Returns:
-        numpy.array: rotated array
-    """
-    axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
-    slices = [slice(None) for _ in range(arr.ndim - 2)] + \
-             [slice(None), slice(None, None, -1)]
-    return arr[tuple(slices)].transpose(axes_order)
-
-
-def rotate_array_180(arr):
-    """Rotate array 180 degrees
-
-    Args:
-        arr (numpy.array): input array
-
-    Returns:
-        numpy.array: rotated array
-    """
-    slices = [slice(None) for _ in range(arr.ndim - 2)] + \
-             [slice(None, None, -1), slice(None, None, -1)]
-    return arr[tuple(slices)]
-
-
-def rotate_array_270(arr):
-    """Rotate array 270 degrees
-
-    Args:
-        arr (numpy.array): input array
-
-    Returns:
-        numpy.array: rotated array
-    """
-    axes_order = list(range(arr.ndim - 2)) + [arr.ndim - 1, arr.ndim - 2]
-    slices = [slice(None) for _ in range(arr.ndim - 2)] + \
-             [slice(None, None, -1), slice(None)]
-    return arr[tuple(slices)].transpose(axes_order)
-
-
-def to_categorical(y, num_classes=None):
-    """Converts a class vector (integers) to binary class matrix.
-    E.g. for use with ``categorical_crossentropy``.
-
-    Args:
-        y (numpy.array): class vector to be converted into a matrix
-            (integers from 0 to ``num_classes``).
-        num_classes (int): total number of classes.
-
-    Returns:
-        numpy.array: A binary matrix representation of the input.
-    """
-    y = np.array(y, dtype='int').ravel()
-    if not num_classes:
-        num_classes = np.max(y) + 1
-    n = y.shape[0]
-    categorical = np.zeros((n, num_classes))
-    categorical[np.arange(n), y] = 1
-    return categorical

@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -30,7 +30,7 @@ from __future__ import division
 
 from tensorflow.python.keras import testing_utils
 from tensorflow.python.keras import keras_parameterized
-from tensorflow.python.keras.utils import custom_object_scope
+from tensorflow.keras.utils import custom_object_scope
 from tensorflow.python.platform import test
 
 from deepcell import layers

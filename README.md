@@ -4,7 +4,7 @@
 [![Documentation Status](https://readthedocs.org/projects/deepcell/badge/?version=master)](https://deepcell.readthedocs.io/en/master/?badge=master)
 [![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE)
 
-`deepcell-tf` is a deep learning library for single-cell analysis of biological images. It is written in Python and built using [TensorFlow](https://github.com/tensorflow/tensorflow) and [Keras](https://www.tensorflow.org/guide/keras).
+`deepcell-tf` is a deep learning library for single-cell analysis of biological images. It is written in Python and built using [TensorFlow 2](https://github.com/tensorflow/tensorflow).
 
 This library allows users to apply pre-existing models to imaging data as well as to develop new deep learning models for single-cell analysis. This library specializes in models for cell segmentation (whole-cell and nuclear) in 2D and 3D images as well as cell tracking in 2D time-lapse datasets. These models are applicable to data ranging from multiplexed images of tissues to dynamic live-cell imaging movies.
 
@@ -13,6 +13,8 @@ This library allows users to apply pre-existing models to imaging data as well a
 Read the documentation at [deepcell.readthedocs.io](https://deepcell.readthedocs.io).
 
 For more information on deploying models in the cloud refer to the [the Kiosk documentation](https://deepcell-kiosk.readthedocs.io).
+
+For TensorFlow 1.X or Python 2.7 support, please use deepcell [0.7.0](https://github.com/vanvalenlab/deepcell-tf/tree/0.7.0) or earlier.
 
 ## Examples
 
@@ -75,7 +77,7 @@ For examples of how to train models with the `deepcell-tf` library, check out th
 ```bash
 git clone https://github.com/vanvalenlab/deepcell-tf.git
 cd deepcell-tf
-docker build --build-arg TF_VERSION=1.15.0-gpu -t $USER/deepcell-tf .
+docker build --build-arg TF_VERSION=2.3.1-gpu -t $USER/deepcell-tf .
 ```
 
 ### Run the new docker image

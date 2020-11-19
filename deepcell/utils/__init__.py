@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -48,13 +48,7 @@ from deepcell.utils import retinanet_anchor_utils
 
 # Globally-importable utils.
 from deepcell.utils.data_utils import get_data
-from deepcell.utils.data_utils import make_training_data
 from deepcell.utils.export_utils import export_model
-from deepcell.utils.io_utils import get_immediate_subdirs
-from deepcell.utils.io_utils import get_image
-from deepcell.utils.io_utils import nikon_getfiles
-from deepcell.utils.io_utils import get_image_sizes
-from deepcell.utils.io_utils import get_images_from_directory
 from deepcell.utils.misc_utils import sorted_nicely
 from deepcell.utils.train_utils import rate_scheduler
 from deepcell.utils.transform_utils import outer_distance_transform_2d

@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -30,14 +30,13 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+import tensorflow as tf
 
-from tensorflow.python.keras.layers import Input
-from tensorflow.python.platform import test
-
-from deepcell.applications import ScaleDetectionModel
+from deepcell.applications.scale_detection import ScaleDetectionModel
+from deepcell.applications import ScaleDetection
 
 
-class TestScaleDetectionModel(test.TestCase):
+class TestScaleDetectionModel(tf.test.TestCase):
 
     def test_scale_detection_model(self):
 
@@ -50,11 +49,10 @@ class TestScaleDetectionModel(test.TestCase):
 
         for backbone in valid_backbones:
             with self.cached_session():
-                inputs = Input(shape=input_shape)
+                inputs = tf.keras.layers.Input(shape=input_shape)
                 model = ScaleDetectionModel(
                     inputs=inputs,
-                    backbone=backbone,
-                    use_pretrained_weights=False)
+                    backbone=backbone)
 
                 y = model.predict(X)
 
@@ -64,10 +62,27 @@ class TestScaleDetectionModel(test.TestCase):
             with self.cached_session():
                 model = ScaleDetectionModel(
                     input_shape=input_shape,
-                    backbone=backbone,
-                    use_pretrained_weights=False)
+                    backbone=backbone)
 
                 y = model.predict(X)
 
                 assert len(y.shape) == 2
                 assert y.shape[0] == X.shape[0]
+
+
+class TestScaleDetection(tf.test.TestCase):
+
+    def test_scale_detection_app(self):
+        with self.cached_session():
+            model = ScaleDetectionModel(input_shape=(128, 128, 1))
+            app = ScaleDetection(model)
+
+            # test output shape
+            shape = app.model.output_shape
+            self.assertEqual(len(shape), 2)
+            self.assertEqual(shape[-1], 1)
+
+            # test predict with default
+            x = np.random.rand(1, 500, 500, 1)
+            y = app.predict(x)
+            self.assertIsInstance(y, np.float32)

@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,7 +31,7 @@ from __future__ import print_function
 
 import numpy as np
 
-from tensorflow.python import keras
+from tensorflow import keras
 from tensorflow.python.platform import test
 
 from deepcell import losses
@@ -57,7 +57,7 @@ class KerasLossesTest(test.TestCase):
             y_b = keras.backend.variable(np.random.random((5, 6, 7)))
             for obj in ALL_LOSSES:
                 objective_output = obj(y_a, y_b)
-                self.assertListEqual(objective_output.get_shape().as_list(), [5, 6])
+                self.assertListEqual(objective_output.shape.as_list(), [5, 6])
 
     def test_objective_shapes_2d(self):
         with self.cached_session():
@@ -65,7 +65,7 @@ class KerasLossesTest(test.TestCase):
             y_b = keras.backend.variable(np.random.random((6, 7)))
             for obj in ALL_LOSSES:
                 objective_output = obj(y_a, y_b)
-                self.assertListEqual(objective_output.get_shape().as_list(), [6])
+                self.assertListEqual(objective_output.shape.as_list(), [6])
 
 
 if __name__ == '__main__':

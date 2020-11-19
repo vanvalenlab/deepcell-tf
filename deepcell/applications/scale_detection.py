@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -29,21 +29,24 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.python import keras
-from tensorflow.python.keras.utils.data_utils import get_file
+import os
 
-from deepcell.layers import ImageNormalization2D, TensorProduct
+import numpy as np
+import tensorflow as tf
+
+from deepcell.applications import Application
+from deepcell.layers import ImageNormalization2D
+from deepcell.layers import TensorProduct
 from deepcell.utils.backbone_utils import get_backbone
 
 
-MOBILENETV2_WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                            'model-weights/ScaleDetectionModel_mobilenetv2.h5')
+MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+              'saved-models/ScaleDetection-1.tar.gz')
 
 
 def ScaleDetectionModel(input_shape=(None, None, 1),
                         inputs=None,
-                        backbone='mobilenetv2',
-                        use_pretrained_weights=True):
+                        backbone='mobilenetv2'):
     """Create a ``ScaleDetectionModel`` for detecting scales of input data.
 
     This enables data to be scaled appropriately for other segmentation models
@@ -57,15 +60,13 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
         inputs (tensorflow.keras.Layer): Optional input layer of the model.
             If not provided, creates a ``Layer`` based on ``input_shape``.
         backbone (str): name of the backbone to use for the model.
-        use_pretrained_weights (bool): whether to load pre-trained weights.
-            Only supports the ``MobileNetV2`` backbone.
     """
     required_channels = 3  # required for most backbones
 
     if inputs is None:
-        inputs = keras.layers.Input(shape=input_shape)
+        inputs = tf.keras.layers.Input(shape=input_shape)
 
-    if keras.backend.image_data_format() == 'channels_first':
+    if tf.keras.backend.image_data_format() == 'channels_first':
         channel_axis = 0
     else:
         channel_axis = -1
@@ -88,25 +89,116 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
         input_shape=fixed_input_shape,
         pooling=None)
 
-    x = keras.layers.AveragePooling2D(4)(backbone_model.outputs[0])
+    x = tf.keras.layers.AveragePooling2D(4)(backbone_model.outputs[0])
     x = TensorProduct(256, activation='relu')(x)
     x = TensorProduct(1)(x)
-    outputs = keras.layers.Flatten()(x)
+    outputs = tf.keras.layers.Flatten()(x)
 
-    model = keras.Model(inputs=backbone_model.inputs, outputs=outputs)
-
-    if use_pretrained_weights:
-        local_name = 'ScaleDetectionModel_{}.h5'.format(backbone)
-        if backbone.lower() in {'mobilenetv2' or 'mobilenet_v2'}:
-            weights_path = get_file(
-                local_name,
-                MOBILENETV2_WEIGHTS_PATH,
-                cache_subdir='models',
-                file_hash='aa78e6b9a4551289dd967f1f5ca83fed')
-        else:
-            raise ValueError('Backbone %s does not have a weights file.' %
-                             backbone)
-
-        model.load_weights(weights_path)
+    model = tf.keras.Model(inputs=backbone_model.inputs, outputs=outputs)
 
     return model
+
+
+class ScaleDetection(Application):
+    """Loads a :mod:`~ScaleDetectionModel` for detecting relative scales
+    of images.
+
+    Args:
+        model (tf.keras.Model): The model to load. If ``None``,
+            a pre-trained model will be downloaded.
+    """
+
+    #: Metadata for the dataset used to train the model
+    dataset_metadata = {
+        'name': 'general_nuclear_and_cyto_large',
+        'other': 'Collection of all available nuclear and cytplasm stains.'
+    }
+
+    #: Metadata for the model and training process
+    model_metadata = {
+        'batch_size': 64,
+        'lr': 1e-3,
+        'lr_decay': 0.9,
+        'training_seed': 0,
+        'n_epochs': 200,
+        'training_steps_per_epoch': 8400,
+        'validation_steps_per_epoch': 2102,
+        'error_rate': .01
+    }
+
+    def __init__(self, model=None):
+
+        if model is None:
+            archive_path = tf.keras.utils.get_file(
+                'ScaleDetection.tgz', MODEL_PATH,
+                file_hash='1ca4ee3a90fd4445bb5484e10ac0081c',
+                extract=True, cache_subdir='models'
+            )
+            model_path = os.path.splitext(archive_path)[0]
+            model = tf.keras.models.load_model(model_path)
+
+        super(ScaleDetection, self).__init__(
+            model,
+            model_image_shape=model.input_shape[1:],
+            model_mpp=0.65,
+            preprocessing_fn=None,
+            postprocessing_fn=None,
+            dataset_metadata=self.dataset_metadata,
+            model_metadata=self.model_metadata)
+
+    def predict(self,
+                image,
+                batch_size=4,
+                image_mpp=None):
+        """Generates a labeled image of the input running prediction with
+        appropriate pre and post processing functions.
+
+        Input images are required to have 4 dimensions
+        ``[batch, x, y, channel]``.
+        Additional empty dimensions can be added using ``np.expand_dims``.
+
+        Args:
+            image (numpy.array): Input image with shape
+                ``[batch, x, y, channel]``.
+            batch_size (int): Number of images to predict on per batch.
+            image_mpp (float): Microns per pixel for ``image``.
+
+        Raises:
+            ValueError: Input data must match required rank of the application,
+                calculated as one dimension more (batch dimension) than expected
+                by the model.
+
+            ValueError: Input data must match required number of channels.
+
+        Returns:
+            numpy.array: Labeled image
+            numpy.array: Model output
+        """
+
+        # Check input size of image
+        if len(image.shape) != self.required_rank:
+            raise ValueError('Input data must have {} dimensions. '
+                             'Input data only has {} dimensions'.format(
+                                 self.required_rank, len(image.shape)))
+
+        if image.shape[-1] != self.required_channels:
+            raise ValueError('Input data must have {} channels. '
+                             'Input data only has {} channels'.format(
+                                 self.required_channels, image.shape[-1]))
+
+        # Resize image, returns unmodified if appropriate
+        resized_image = self._resize_input(image, image_mpp)
+
+        # Tile images, raises error if the image is not 4d
+        tiles, _ = self._tile_input(resized_image)
+
+        # Run images through model
+        scales = self.model.predict(tiles, batch_size=batch_size)
+
+        detected_scale = np.mean(scales)
+
+        error_rate = self.model_metadata['error_rate']
+        if abs(detected_scale - 1) < error_rate:
+            detected_scale = 1
+
+        return detected_scale

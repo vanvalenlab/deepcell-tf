@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -41,7 +41,8 @@ from deepcell.model_zoo.retinanet import retinanet
 from deepcell.model_zoo.retinanet import retinanet_bbox
 
 from deepcell.model_zoo.retinamask import RetinaMask
-from deepcell.model_zoo.retinamask import retinanet_mask
+from deepcell.model_zoo.retinamask import retinamask
+from deepcell.model_zoo.retinamask import retinamask_bbox
 
 from deepcell.model_zoo.panopticnet import PanopticNet
 

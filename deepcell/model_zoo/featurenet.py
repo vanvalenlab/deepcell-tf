@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,18 +31,18 @@ from __future__ import division
 
 import numpy as np
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import Sequential, Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D, LSTM, ConvLSTM2D
-from tensorflow.python.keras.layers import Input, Concatenate, InputLayer
-from tensorflow.python.keras.layers import Add, Flatten, Dense, Reshape
-from tensorflow.python.keras.layers import MaxPool2D, MaxPool3D
-from tensorflow.python.keras.layers import Cropping2D, Cropping3D
-from tensorflow.python.keras.layers import Activation, Softmax
-from tensorflow.python.keras.layers import BatchNormalization
-from tensorflow.python.keras.layers import ZeroPadding2D, ZeroPadding3D
-from tensorflow.python.keras.regularizers import l2
-from tensorflow.python.keras import utils as keras_utils
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import Conv2D, Conv3D, LSTM, ConvLSTM2D
+from tensorflow.keras.layers import Input, Concatenate, InputLayer
+from tensorflow.keras.layers import Add, Flatten, Dense, Reshape
+from tensorflow.keras.layers import MaxPool2D, MaxPool3D
+from tensorflow.keras.layers import Cropping2D, Cropping3D
+from tensorflow.keras.layers import Activation, Softmax
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import ZeroPadding2D, ZeroPadding3D
+from tensorflow.keras.regularizers import l2
+from tensorflow.keras import utils as keras_utils
 
 from deepcell.layers import ConvGRU2D
 from deepcell.layers import DilatedMaxPool2D, DilatedMaxPool3D
@@ -217,7 +217,7 @@ def bn_feature_net_2D(receptive_field=61,
         if not dilated:
             x.append(Flatten()(x[-1]))
 
-        x.append(Softmax(axis=channel_axis)(x[-1]))
+        x.append(Softmax(axis=channel_axis, dtype=K.floatx())(x[-1]))
 
     if inputs is not None:
         real_inputs = keras_utils.get_source_inputs(x[0])
@@ -508,7 +508,7 @@ def bn_feature_net_3D(receptive_field=61,
         x.append(Flatten()(x[-1]))
 
     if include_top:
-        x.append(Softmax(axis=channel_axis)(x[-1]))
+        x.append(Softmax(axis=channel_axis, dtype=K.floatx())(x[-1]))
 
     model = Model(inputs=x[0], outputs=x[-1])
 
@@ -727,7 +727,7 @@ def siamese_model(input_shape=None,
     dense2 = Dense(128)(relu1)
     bn2 = BatchNormalization(axis=channel_axis)(dense2)
     relu2 = Activation('relu')(bn2)
-    dense3 = Dense(3, activation='softmax')(relu2)
+    dense3 = Dense(3, activation='softmax', dtype=K.floatx())(relu2)
 
     # Instantiate model
     final_layer = dense3

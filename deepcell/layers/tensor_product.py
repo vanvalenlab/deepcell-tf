@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,12 +31,9 @@ from __future__ import division
 
 import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import constraints
-from tensorflow.python.keras import initializers
-from tensorflow.python.keras import regularizers
-from tensorflow.python.keras.layers import Layer
-from tensorflow.python.keras.layers import InputSpec
+from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import InputSpec
 from tensorflow.python.keras.utils import conv_utils
 
 
@@ -109,7 +106,9 @@ class TensorProduct(Layer):
             kwargs['input_shape'] = (kwargs.pop('input_dim'),)
 
         super(TensorProduct, self).__init__(
-            activity_regularizer=regularizers.get(activity_regularizer), **kwargs)
+            activity_regularizer=tf.keras.regularizers.get(
+                activity_regularizer), **kwargs)
+
         self.output_dim = int(output_dim)
         self.data_format = conv_utils.normalize_data_format(data_format)
         self.activation = tf.keras.activations.get(activation)
@@ -131,7 +130,7 @@ class TensorProduct(Layer):
         else:
             channel_axis = -1
         input_shape = tensor_shape.TensorShape(input_shape)
-        if input_shape[channel_axis].value is None:
+        if input_shape.dims[channel_axis].value is None:
             raise ValueError('The channel dimension of the inputs to '
                              '`TensorProduct` should be defined. '
                              'Found `None`.')
@@ -198,13 +197,20 @@ class TensorProduct(Layer):
             'data_format': self.data_format,
             'activation': self.activation,
             'use_bias': self.use_bias,
-            'kernel_initializer': initializers.serialize(self.kernel_initializer),
-            'bias_initializer': initializers.serialize(self.bias_initializer),
-            'kernel_regularizer': regularizers.serialize(self.kernel_regularizer),
-            'bias_regularizer': regularizers.serialize(self.bias_regularizer),
-            'activity_regularizer': regularizers.serialize(self.activity_regularizer),
-            'kernel_constraint': constraints.serialize(self.kernel_constraint),
-            'bias_constraint': constraints.serialize(self.bias_constraint)
+            'kernel_initializer': tf.keras.initializers.serialize(
+                self.kernel_initializer),
+            'bias_initializer': tf.keras.initializers.serialize(
+                self.bias_initializer),
+            'kernel_regularizer': tf.keras.regularizers.serialize(
+                self.kernel_regularizer),
+            'bias_regularizer': tf.keras.regularizers.serialize(
+                self.bias_regularizer),
+            'activity_regularizer': tf.keras.regularizers.serialize(
+                self.activity_regularizer),
+            'kernel_constraint': tf.keras.constraints.serialize(
+                self.kernel_constraint),
+            'bias_constraint': tf.keras.constraints.serialize(
+                self.bias_constraint)
         }
         base_config = super(TensorProduct, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

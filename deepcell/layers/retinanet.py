@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,8 +31,8 @@ from __future__ import division
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
-from tensorflow.python.keras.layers import Layer
-from tensorflow.python.keras import backend as K
+from tensorflow.keras.layers import Layer
+from tensorflow.keras import backend as K
 from tensorflow.python.keras.utils import conv_utils
 
 from deepcell.utils import retinanet_anchor_utils
@@ -103,13 +103,9 @@ class Anchors(Layer):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
         if None not in input_shape[1:]:
             if self.data_format == "channels_first":
-                total = K.prod(input_shape[2:4]) * self.num_anchors
+                total = np.prod(input_shape[2:4]) * self.num_anchors
             else:
-                total = K.prod(input_shape[1:3]) * self.num_anchors
-
-            # TODO: fails time_distributed tests for RetinaMask
-            # AttributeError: 'Tensor' object has no attribute 'numpy'
-            total = K.get_value(total)
+                total = np.prod(input_shape[1:3]) * self.num_anchors
 
             return tensor_shape.TensorShape((input_shape[0], total, 4))
         return tensor_shape.TensorShape((input_shape[0], None, 4))

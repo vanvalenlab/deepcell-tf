@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,18 +31,16 @@ from __future__ import print_function
 
 import os
 
-from tensorflow.python.keras.utils.data_utils import get_file
+import tensorflow as tf
 
 from deepcell_toolbox.processing import normalize
 from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.applications import Application
-from deepcell.model_zoo import PanopticNet
 
 
-WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/nuclear_0_82800_resnet50_watershed_named_'
-                '076bb10d832089b6a77faed1e63ad375.h5')
+MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+              'saved-models/NuclearSegmentation-2.tar.gz')
 
 
 class NuclearSegmentation(Application):
@@ -73,8 +71,8 @@ class NuclearSegmentation(Application):
         labeled_image = app.predict(image)
 
     Args:
-        use_pretrained_weights (bool): Whether to load pretrained weights.
-        model_image_shape (tuple): Shape of input expected by ``model``.
+        model (tf.keras.Model): The model to load. If ``None``,
+            a pre-trained model will be downloaded.
     """
 
     #: Metadata for the dataset used to train the model
@@ -85,45 +83,29 @@ class NuclearSegmentation(Application):
 
     #: Metadata for the model and training process
     model_metadata = {
-        'batch_size': 16,
-        'lr': 1e-4,
-        'lr_decay': 0.95,
+        'batch_size': 64,
+        'lr': 1e-5,
+        'lr_decay': 0.99,
         'training_seed': 0,
-        'n_epochs': 8,
-        'training_steps_per_epoch': 82800 // 16,
-        'validation_steps_per_epoch': 20760 // 16
+        'n_epochs': 30,
+        'training_steps_per_epoch': 62556,
+        'validation_steps_per_epoch': 15627
     }
 
-    def __init__(self,
-                 use_pretrained_weights=True,
-                 model_image_shape=(128, 128, 1)):
+    def __init__(self, model=None):
 
-        model = PanopticNet('resnet50',
-                            input_shape=model_image_shape,
-                            norm_method='whole_image',
-                            num_semantic_heads=2,
-                            num_semantic_classes=[1, 1],
-                            location=True,
-                            include_top=True,
-                            lite=True,
-                            use_imagenet=use_pretrained_weights,
-                            interpolation='bilinear')
-
-        if use_pretrained_weights:
-            weights_path = get_file(
-                os.path.basename(WEIGHTS_PATH),
-                WEIGHTS_PATH,
-                cache_subdir='models',
-                file_hash='42ca0ebe4b7b0f782eaa4733cdddad88'
+        if model is None:
+            archive_path = tf.keras.utils.get_file(
+                'NuclearSegmentation.tgz', MODEL_PATH,
+                file_hash='7e18a2b85e05a81f9fddb9dd3f69eedb',
+                extract=True, cache_subdir='models'
             )
-
-            model.load_weights(weights_path, by_name=True)
-        else:
-            weights_path = None
+            model_path = os.path.splitext(archive_path)[0]
+            model = tf.keras.models.load_model(model_path)
 
         super(NuclearSegmentation, self).__init__(
             model,
-            model_image_shape=model_image_shape,
+            model_image_shape=model.input_shape[1:],
             model_mpp=0.65,
             preprocessing_fn=normalize,
             postprocessing_fn=deep_watershed,
@@ -134,8 +116,8 @@ class NuclearSegmentation(Application):
                 image,
                 batch_size=4,
                 image_mpp=None,
-                preprocess_kwargs={},
-                postprocess_kwargs={}):
+                preprocess_kwargs=None,
+                postprocess_kwargs=None):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
@@ -164,6 +146,19 @@ class NuclearSegmentation(Application):
         Returns:
             numpy.array: Labeled image
         """
+        if preprocess_kwargs is None:
+            preprocess_kwargs = {
+            }
+
+        if postprocess_kwargs is None:
+            postprocess_kwargs = {
+                'min_distance': 10,
+                'detection_threshold': 0.1,
+                'distance_threshold': 0.01,
+                'exclude_border': False,
+                'small_objects_threshold': 0
+            }
+
         return self._predict_segmentation(
             image,
             batch_size=batch_size,

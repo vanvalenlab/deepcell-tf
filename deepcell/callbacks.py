@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -29,7 +29,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from tensorflow.python.keras.callbacks import Callback
+from tensorflow.keras.callbacks import Callback
 
 from deepcell.utils.retinanet_anchor_utils import evaluate, evaluate_mask
 
@@ -152,13 +152,12 @@ class Evaluate(Callback):
         else:
             mean_ap = sum(precisions) / sum(x > 0 for x in instances)
 
-        if self.tensorboard is not None and self.tensorboard.writer is not None:
+        if self.tensorboard is not None:
             import tensorflow as tf
-            summary = tf.Summary()
-            summary_value = summary.value.add()  # pylint: disable=E1101
-            summary_value.simple_value = mean_ap
-            summary_value.tag = 'mAP'
-            self.tensorboard.writer.add_summary(summary, epoch)
+            writer = tf.summary.create_file_writer(self.tensorboard.log_dir)
+            with writer.as_default():
+                tf.summary.scalar('mAP', mean_ap, step=epoch)
+                writer.flush()
 
         logs['mAP'] = mean_ap
 

@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,16 +31,14 @@ from __future__ import division
 
 import copy
 
-import keras_applications as applications
-import tensorflow as tf
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.backend import is_keras_tensor
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
-from tensorflow.python.keras.layers import Activation, MaxPool2D, MaxPool3D
-from tensorflow.python.keras.layers import TimeDistributed, Lambda
-from tensorflow.python.keras.utils.data_utils import get_file
-from tensorflow.python.keras.utils.layer_utils import get_source_inputs
+from tensorflow.keras import backend as K
+from tensorflow.keras import applications
+from tensorflow.keras.backend import is_keras_tensor
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Conv2D, Conv3D, BatchNormalization
+from tensorflow.keras.layers import Activation, MaxPool2D, MaxPool3D
+from tensorflow.keras.layers import TimeDistributed
+from tensorflow.keras.utils import get_source_inputs
 
 
 def featurenet_block(x, n_filters):
@@ -204,21 +202,6 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
     """
     _backbone = str(backbone).lower()
 
-    # set up general Utils class to deal with different tf versions
-    class Utils(object):  # pylint: disable=useless-object-inheritance
-        pass
-
-    utils = Utils()
-    utils.get_file = get_file
-    utils.get_source_inputs = get_source_inputs
-
-    K.is_keras_tensor = is_keras_tensor
-
-    kwargs['backend'] = K
-    kwargs['layers'] = tf.keras.layers
-    kwargs['models'] = tf.keras.models
-    kwargs['utils'] = utils
-
     featurenet_backbones = {
         'featurenet': featurenet_backbone,
         'featurenet3d': featurenet_3D_backbone,
@@ -248,23 +231,23 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         'resnet101v2': applications.resnet_v2.ResNet101V2,
         'resnet152v2': applications.resnet_v2.ResNet152V2,
     }
-    resnext_backbones = {
-        'resnext50': applications.resnext.ResNeXt50,
-        'resnext101': applications.resnext.ResNeXt101,
-    }
+    # resnext_backbones = {
+    #     'resnext50': applications.resnext.ResNeXt50,
+    #     'resnext101': applications.resnext.ResNeXt101,
+    # }
     nasnet_backbones = {
         'nasnet_large': applications.nasnet.NASNetLarge,
         'nasnet_mobile': applications.nasnet.NASNetMobile,
     }
     efficientnet_backbones = {
-        # 'efficientnetb0': applications.efficientnet.EfficientNetB0,
-        # 'efficientnetb1': applications.efficientnet.EfficientNetB1,
-        # 'efficientnetb2': applications.efficientnet.EfficientNetB2,
-        # 'efficientnetb3': applications.efficientnet.EfficientNetB3,
-        # 'efficientnetb4': applications.efficientnet.EfficientNetB4,
-        # 'efficientnetb5': applications.efficientnet.EfficientNetB5,
-        # 'efficientnetb6': applications.efficientnet.EfficientNetB6,
-        # 'efficientnetb7': applications.efficientnet.EfficientNetB7,
+        'efficientnetb0': applications.efficientnet.EfficientNetB0,
+        'efficientnetb1': applications.efficientnet.EfficientNetB1,
+        'efficientnetb2': applications.efficientnet.EfficientNetB2,
+        'efficientnetb3': applications.efficientnet.EfficientNetB3,
+        'efficientnetb4': applications.efficientnet.EfficientNetB4,
+        'efficientnetb5': applications.efficientnet.EfficientNetB5,
+        'efficientnetb6': applications.efficientnet.EfficientNetB6,
+        'efficientnetb7': applications.efficientnet.EfficientNetB7,
     }
 
     # TODO: Check and make sure **kwargs is in the right format.
@@ -379,24 +362,24 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
 
         layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
-    elif _backbone in resnext_backbones:
-        model_cls = resnext_backbones[_backbone]
-        model = model_cls(input_tensor=img_input, **kwargs)
-
-        # Set the weights of the model if requested
-        if use_imagenet:
-            model_with_weights = model_cls(**kwargs_with_weights)
-            model_with_weights.save_weights('model_weights.h5')
-            model.load_weights('model_weights.h5', by_name=True)
-
-        if _backbone == 'resnext50':
-            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
-                           'conv4_block6_out', 'conv5_block3_out']
-        elif _backbone == 'resnext101':
-            layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
-                           'conv4_block23_out', 'conv5_block3_out']
-
-        layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
+    # elif _backbone in resnext_backbones:
+    #     model_cls = resnext_backbones[_backbone]
+    #     model = model_cls(input_tensor=img_input, **kwargs)
+    #
+    #     # Set the weights of the model if requested
+    #     if use_imagenet:
+    #         model_with_weights = model_cls(**kwargs_with_weights)
+    #         model_with_weights.save_weights('model_weights.h5')
+    #         model.load_weights('model_weights.h5', by_name=True)
+    #
+    #     if _backbone == 'resnext50':
+    #         layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+    #                        'conv4_block6_out', 'conv5_block3_out']
+    #     elif _backbone == 'resnext101':
+    #         layer_names = ['conv1_relu', 'conv2_block3_out', 'conv3_block4_out',
+    #                        'conv4_block23_out', 'conv5_block3_out']
+    #
+    #     layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     elif _backbone in mobilenet_backbones:
         model_cls = mobilenet_backbones[_backbone]
@@ -454,10 +437,9 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
     else:
         join = lambda x: [v for y in x for v in list(y.keys())]
         backbones = join([featurenet_backbones, densenet_backbones,
-                          resnet_backbones, resnext_backbones,
-                          resnet_v2_backbones, vgg_backbones,
-                          nasnet_backbones, mobilenet_backbones,
-                          efficientnet_backbones])
+                          resnet_backbones, resnet_v2_backbones,
+                          vgg_backbones, nasnet_backbones,
+                          mobilenet_backbones, efficientnet_backbones])
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
                          ', '.join(backbones))
 

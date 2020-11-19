@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -41,10 +41,10 @@ import numpy as np
 from skimage.measure import regionprops
 from skimage.segmentation import clear_border
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.preprocessing.image import array_to_img
-from tensorflow.python.keras.preprocessing.image import Iterator
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import backend as K
+from tensorflow.keras.preprocessing.image import array_to_img
+from tensorflow.keras.preprocessing.image import Iterator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.python.platform import tf_logging as logging
 
 from deepcell.utils.retinanet_anchor_utils import anchor_targets_bbox
@@ -136,6 +136,7 @@ class RetinaNetGenerator(ImageDataGenerator):
              min_objects=3,
              num_classes=1,
              clear_borders=False,
+             include_bbox=False,
              include_masks=False,
              panoptic=False,
              transforms=['watershed'],
@@ -144,7 +145,6 @@ class RetinaNetGenerator(ImageDataGenerator):
              pyramid_levels=['P3', 'P4', 'P5', 'P6', 'P7'],
              batch_size=32,
              shuffle=False,
-             semantic_only=False,
              seed=None,
              save_to_dir=None,
              save_prefix='',
@@ -183,6 +183,7 @@ class RetinaNetGenerator(ImageDataGenerator):
             min_objects=min_objects,
             num_classes=num_classes,
             clear_borders=clear_borders,
+            include_bbox=include_bbox,
             include_masks=include_masks,
             panoptic=panoptic,
             transforms=transforms,
@@ -191,7 +192,6 @@ class RetinaNetGenerator(ImageDataGenerator):
             pyramid_levels=pyramid_levels,
             batch_size=batch_size,
             shuffle=shuffle,
-            semantic_only=semantic_only,
             seed=seed,
             data_format=self.data_format,
             save_to_dir=save_to_dir,
@@ -284,11 +284,11 @@ class RetinaNetIterator(Iterator):
                  min_objects=3,
                  num_classes=1,
                  clear_borders=False,
+                 include_bbox=False,
                  include_masks=False,
                  panoptic=False,
                  transforms=['watershed'],
                  transforms_kwargs={},
-                 semantic_only=False,
                  batch_size=32,
                  shuffle=False,
                  seed=None,
@@ -317,17 +317,19 @@ class RetinaNetIterator(Iterator):
         self.pyramid_levels = [int(l[1:]) for l in pyramid_levels]
         self.min_objects = min_objects
         self.num_classes = num_classes
+        self.include_bbox = include_bbox
         self.include_masks = include_masks
         self.panoptic = panoptic
         self.transforms = transforms
         self.transforms_kwargs = transforms_kwargs
         self.channel_axis = 3 if data_format == 'channels_last' else 1
+        self.row_axis = 1 if data_format == 'channels_last' else 2
+        self.col_axis = 2 if data_format == 'channels_last' else 3
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        self.semantic_only = semantic_only
 
         self.y_semantic_list = []  # optional semantic segmentation targets
 
@@ -446,7 +448,8 @@ class RetinaNetIterator(Iterator):
         return annotations
 
     def _get_batches_of_transformed_samples(self, index_array):
-        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]))
+        batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]),
+                           dtype=K.floatx())
 
         batch_y_semantic_list = []
         for y_sem in self.y_semantic_list:
@@ -501,7 +504,17 @@ class RetinaNetIterator(Iterator):
             annotations_list,
             self.num_classes)
 
-        max_shape = tuple(max_shape)  # was a list for max shape indexing
+        # was a list for max shape indexing
+        max_shape = tuple([max_shape[self.row_axis - 1],
+                           max_shape[self.col_axis - 1]])
+
+        if self.include_bbox:
+            max_annotations = max(len(a['masks']) for a in annotations_list)
+            batch_x_bbox_shape = (len(index_array), max_annotations, 4)
+            batch_x_bbox = np.zeros(batch_x_bbox_shape, dtype=K.floatx())
+
+            for i, ann in enumerate(annotations_list):
+                batch_x_bbox[i, :ann['bboxes'].shape[0], :4] = ann['bboxes']
 
         if self.include_masks:
             # masks_batch has shape: (batch size, max_annotations,
@@ -536,17 +549,22 @@ class RetinaNetIterator(Iterator):
                     format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
 
-        batch_outputs = [regressions, labels]
+        # Create dictionary outputs
+        batch_inputs = {'input': batch_x}
+        batch_outputs = {'regression': regressions,
+                         'classification': labels}
+
+        if self.include_bbox:
+            batch_inputs['boxes_input'] = batch_x_bbox
 
         if self.include_masks:
-            batch_outputs.append(masks_batch)
+            batch_outputs['masks'] = masks_batch
 
-        batch_outputs.extend(batch_y_semantic_list)
+        if self.panoptic:
+            for i, batch_y_semantic in enumerate(batch_y_semantic_list):
+                batch_outputs['semantic_{}'.format(i)] = batch_y_semantic
 
-        if self.semantic_only:
-            batch_outputs = batch_y_semantic_list
-
-        return batch_x, batch_outputs
+        return batch_inputs, batch_outputs
 
     def next(self):
         """For python 2.x. Returns the next batch.
@@ -604,8 +622,8 @@ class RetinaMovieIterator(Iterator):
                  num_classes=1,
                  frames_per_batch=2,
                  clear_borders=False,
+                 include_bbox=False,
                  include_masks=False,
-                 include_final_detection_layer=False,
                  panoptic=False,
                  transforms=['watershed'],
                  transforms_kwargs={},
@@ -638,8 +656,8 @@ class RetinaMovieIterator(Iterator):
         self.min_objects = min_objects
         self.num_classes = num_classes
         self.frames_per_batch = frames_per_batch
+        self.include_bbox = include_bbox
         self.include_masks = include_masks
-        self.include_final_detection_layer = include_final_detection_layer
         self.panoptic = panoptic
         self.transforms = transforms
         self.transforms_kwargs = transforms_kwargs
@@ -898,6 +916,19 @@ class RetinaMovieIterator(Iterator):
         max_shape = tuple([max_shape[self.row_axis - 1],
                            max_shape[self.col_axis - 1]])
 
+        if self.include_bbox:
+            flatten = lambda l: [item for sublist in l for item in sublist]
+            annotations_list_flatten = flatten(annotations_list)
+            max_annotations = max(len(a['masks']) for a in annotations_list_flatten)
+
+            batch_x_bbox_shape = (len(index_array), self.frames_per_batch, max_annotations, 4)
+            batch_x_bbox = np.zeros(batch_x_bbox_shape, dtype=K.floatx())
+
+            for idx_time, time in enumerate(times):
+                annotations_frame = annotations_list[idx_time]
+                for idx_batch, ann in enumerate(annotations_frame):
+                    batch_x_bbox[idx_batch, idx_time, :ann['bboxes'].shape[0], :4] = ann['bboxes']
+
         if self.include_masks:
             # masks_batch has shape: (batch size, max_annotations,
             #     bbox_x1 + bbox_y1 + bbox_x2 + bbox_y2 + label +
@@ -936,15 +967,22 @@ class RetinaMovieIterator(Iterator):
                         format=self.save_format)
                     img.save(os.path.join(self.save_to_dir, fname))
 
-        batch_outputs = [regressions, labels]
-        if self.include_masks:
-            batch_outputs.append(masks_batch)
-        if self.include_final_detection_layer:
-            batch_outputs.append(masks_batch)
-        if self.panoptic:
-            batch_outputs += batch_y_semantic_list
+        # Create dictionary outputs
+        batch_inputs = {'input': batch_x}
+        batch_outputs = {'regression': regressions,
+                         'classification': labels}
 
-        return batch_x, batch_outputs
+        if self.include_bbox:
+            batch_inputs['boxes_input'] = batch_x_bbox
+
+        if self.include_masks:
+            batch_outputs['masks'] = masks_batch
+
+        if self.panoptic:
+            for i, by in enumerate(batch_y_semantic_list):
+                batch_outputs['semantic_{}'.format(i)] = by
+
+        return batch_inputs, batch_outputs
 
     def next(self):
         """For python 2.x. Returns the next batch.
@@ -1040,8 +1078,8 @@ class RetinaMovieDataGenerator(MovieDataGenerator):
              compute_shapes=guess_shapes,
              num_classes=1,
              clear_borders=False,
+             include_bbox=False,
              include_masks=False,
-             include_final_detection_layer=False,
              panoptic=False,
              transforms=['watershed'],
              transforms_kwargs={},
@@ -1084,8 +1122,8 @@ class RetinaMovieDataGenerator(MovieDataGenerator):
             compute_shapes=compute_shapes,
             num_classes=num_classes,
             clear_borders=clear_borders,
+            include_bbox=include_bbox,
             include_masks=include_masks,
-            include_final_detection_layer=include_final_detection_layer,
             panoptic=panoptic,
             transforms=transforms,
             transforms_kwargs=transforms_kwargs,
