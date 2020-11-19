@@ -33,7 +33,7 @@ import os
 
 import tensorflow as tf
 
-from deepcell_toolbox.processing import histogram_normalization
+from deepcell_toolbox.processing import normalize
 from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.applications import Application
@@ -71,8 +71,8 @@ class NuclearSegmentation(Application):
         labeled_image = app.predict(image)
 
     Args:
-        use_pretrained_weights (bool): Whether to load pretrained weights.
-        model_image_shape (tuple): Shape of input expected by ``model``.
+        model (tf.keras.Model): The model to load. If ``None``,
+            a pre-trained model will be downloaded.
     """
 
     #: Metadata for the dataset used to train the model
@@ -97,7 +97,7 @@ class NuclearSegmentation(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'NuclearSegmentation.tgz', MODEL_PATH,
-                file_hash='87b11b1e9cf06d5bef2910e5cf7fd37a',
+                file_hash='7e18a2b85e05a81f9fddb9dd3f69eedb',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
@@ -107,7 +107,7 @@ class NuclearSegmentation(Application):
             model,
             model_image_shape=model.input_shape[1:],
             model_mpp=0.65,
-            preprocessing_fn=histogram_normalization,
+            preprocessing_fn=normalize,
             postprocessing_fn=deep_watershed,
             dataset_metadata=self.dataset_metadata,
             model_metadata=self.model_metadata)
@@ -148,7 +148,6 @@ class NuclearSegmentation(Application):
         """
         if preprocess_kwargs is None:
             preprocess_kwargs = {
-                'kernel_size': 16
             }
 
         if postprocess_kwargs is None:
