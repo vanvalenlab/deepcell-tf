@@ -73,8 +73,8 @@ class MultiplexSegmentation(Application):
         labeled_image = app.predict(image)
 
     Args:
-        use_pretrained_weights (bool): Whether to load pretrained weights.
-        model_image_shape (tuple): Shape of input expected by ``model``.
+        model (tf.keras.Model): The model to load. If ``None``,
+            a pre-trained model will be downloaded.
     """
 
     #: Metadata for the dataset used to train the model
