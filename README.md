@@ -46,7 +46,7 @@ Tracked Image
 
 ## Getting Started
 
-## Install with pip
+### Install with pip
 
 The fastest way to get started with `deepcell-tf` is to install the package with `pip`:
 
