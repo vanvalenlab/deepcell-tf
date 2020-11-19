@@ -97,7 +97,7 @@ class NuclearSegmentation(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'NuclearSegmentation.tgz', MODEL_PATH,
-                file_hash='8c294cde5b3fe3327447d70d2b7057ec',
+                file_hash='87b11b1e9cf06d5bef2910e5cf7fd37a',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
