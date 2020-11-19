@@ -41,6 +41,14 @@ with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as f:
     README = f.read()
 
 
+NAME = 'DeepCell'
+VERSION = '0.8.0'
+AUTHOR = 'Van Valen Lab'
+AUTHOR_EMAIL = 'vanvalenlab@gmail.com'
+URL = 'https://github.com/vanvalenlab/deepcell-tf'
+DESCRIPTION = 'Deep learning for single cell image segmentation'
+
+
 def _parse_requirements(file_path):
     try:
         with open(file_path, 'r', 'utf-8') as req_file:
@@ -58,17 +66,21 @@ def _parse_requirements(file_path):
 
 
 setup(
-    name='DeepCell',
-    version='0.7.0',
-    packages=find_packages(),
-    install_requires=_parse_requirements('requirements.txt'),
-    tests_require=_parse_requirements('requirements-test.txt'),
+    name=NAME,
+    version=VERSION,
+    author=AUTHOR,
+    author_email=AUTHOR_EMAIL,
+    description=DESCRIPTION,
+    url=URL,
+    download_url='{}/tarball/{}'.format(URL, VERSION),
     license='LICENSE',
-    author='David Van Valen',
-    author_email='vanvalen@caltech.edu',
-    description='Deep learning for single cell image segmentation',
     long_description=README,
     long_description_content_type='text/markdown',
+    install_requires=_parse_requirements('requirements.txt'),
+    extras_require={
+        'tests': _parse_requirements('requirements-test.txt'),
+    },
+    packages=find_packages(),
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
