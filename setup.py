@@ -23,7 +23,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import os
 import logging
+
+from codecs import open
 
 try:
     from setuptools import setup, find_packages
@@ -31,8 +34,11 @@ except ImportError:
     from distutils.core import setup, find_packages
 
 
+here = os.path.abspath(os.path.dirname(__file__))
 
 
+with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as f:
+    README = f.read()
 
 
 def _parse_requirements(file_path):
@@ -61,4 +67,6 @@ setup(
     author='David Van Valen',
     author_email='vanvalen@caltech.edu',
     description='Deep learning for single cell image segmentation',
+    long_description=README,
+    long_description_content_type='text/markdown',
 )
