@@ -46,7 +46,18 @@ Tracked Image
 
 ## Getting Started
 
-The fastest way to get started with `deepcell-tf` is to run one of our existing images from Docker Hub. While you can run the package without any specialized hardware by omitting the `-gpu` flags in the command below, we recommend the use of hardware acceleration. To  run the library locally on a GPU, you will need to make sure the latest version of <tt><a href="https://github.com/NVIDIA/nvidia-docker">nvidia-docker</a></tt> and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
+## Install with pip
+
+The fastest way to get started with `deepcell-tf` is to install the package with `pip`:
+
+```bash
+$ pip install deepcell
+```
+
+### Install with Docker
+
+There are also [docker containers](https://hub.docker.com/r/vanvalenlab/deepcell-tf) with GPU support available from DockerHub.
+run one of our existing images from Docker Hub. To  run the library locally on a GPU, you will need to make sure the latest version of <tt><a href="https://github.com/NVIDIA/nvidia-docker">nvidia-docker</a></tt> and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
 
 Once `nvidia-docker` is installed, run the following command:
 
@@ -56,10 +67,10 @@ docker run --gpus '"device=0"' -it --rm \
     -p 8888:8888 \
     -v $PWD/notebooks:/notebooks \
     -v $PWD/data:/data \
-    vanvalenlab/deepcell-tf:0.5.0-gpu
+    vanvalenlab/deepcell-tf:0.8.0-gpu
 ```
 
-This will spin up a docker container with `deepcell-tf` installed and start a jupyter session using the default port 8888. This command also mounts a data folder (`$PWD/data`) and a scripts folder (`$PWD/scripts`) to the docker container so it can access data and Juyter notebooks stored on the host workstation. For any saved data or models to persist once the container is shut down, or be accessible outside of the container in general, it must be saved in these mounted directories. The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 81:8888`. If you run across any errors getting started, you should either refer to the `deepcell-tf` for developers section or raise an issue on GitHub.
+This will spin up a docker container with `deepcell-tf` installed and start a jupyter session using the default port 8888. This command also mounts a data folder (`$PWD/data`) and a scripts folder (`$PWD/scripts`) to the docker container so it can access data and Juyter notebooks stored on the host workstation. For any saved data or models to persist once the container is shut down, or be accessible outside of the container in general, it must be saved in these mounted directories. The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 8080:8888`. If you run across any errors getting started, you should either refer to the `deepcell-tf` for developers section or raise an issue on GitHub.
 
 For examples of how to train models with the `deepcell-tf` library, check out the following notebooks:
 
