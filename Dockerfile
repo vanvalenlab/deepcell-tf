@@ -15,8 +15,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 
 WORKDIR /notebooks
 
-# Copy the setup.py and requirements.txt and install the deepcell-tf dependencies
-COPY setup.py requirements.txt /opt/deepcell-tf/
+# Copy the required setup files and install the deepcell-tf dependencies
+COPY setup.py README.md requirements.txt /opt/deepcell-tf/
 
 # Prevent reinstallation of tensorflow and install all other requirements.
 RUN sed -i "/tensorflow>/d" /opt/deepcell-tf/requirements.txt && \
