@@ -24,7 +24,6 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import logging
 
 from codecs import open
 
@@ -42,7 +41,7 @@ with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as f:
 
 
 NAME = 'DeepCell'
-VERSION = '0.8.1'
+VERSION = '0.8.2'
 AUTHOR = 'Van Valen Lab'
 AUTHOR_EMAIL = 'vanvalenlab@gmail.com'
 URL = 'https://github.com/vanvalenlab/deepcell-tf'
