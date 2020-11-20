@@ -121,7 +121,6 @@ def PanopticNet(backbone,
                 create_semantic_head=__create_semantic_head,
                 frames_per_batch=1,
                 temporal_mode=None,
-                num_semantic_heads=1,
                 num_semantic_classes=[3],
                 required_channels=3,
                 norm_method=None,
@@ -305,9 +304,9 @@ def PanopticNet(backbone,
     target_level = min(semantic_levels)
 
     semantic_head_list = []
-    for i in range(num_semantic_heads):
+    for i, c in enumerate(num_semantic_classes):
         semantic_head_list.append(create_semantic_head(
-            pyramid_dict, n_classes=num_semantic_classes[i],
+            pyramid_dict, n_classes=c,
             input_target=inputs, target_level=target_level,
             semantic_id=i, ndim=ndim, upsample_type=upsample_type,
             interpolation=interpolation, **kwargs))
