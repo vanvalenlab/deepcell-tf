@@ -33,14 +33,14 @@ import os
 
 import tensorflow as tf
 
-from deepcell_toolbox.processing import normalize
+from deepcell_toolbox.processing import histogram_normalization
 from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.applications import Application
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/NuclearSegmentation-2.tar.gz')
+              'saved-models/NuclearSegmentation-3.tar.gz')
 
 
 class NuclearSegmentation(Application):
@@ -97,7 +97,7 @@ class NuclearSegmentation(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'NuclearSegmentation.tgz', MODEL_PATH,
-                file_hash='7e18a2b85e05a81f9fddb9dd3f69eedb',
+                file_hash='7fff56a59f453252f24967cfe1813abd',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
@@ -107,7 +107,7 @@ class NuclearSegmentation(Application):
             model,
             model_image_shape=model.input_shape[1:],
             model_mpp=0.65,
-            preprocessing_fn=normalize,
+            preprocessing_fn=histogram_normalization,
             postprocessing_fn=deep_watershed,
             dataset_metadata=self.dataset_metadata,
             model_metadata=self.model_metadata)
@@ -148,6 +148,7 @@ class NuclearSegmentation(Application):
         """
         if preprocess_kwargs is None:
             preprocess_kwargs = {
+                'kernel_size': 64
             }
 
         if postprocess_kwargs is None:
