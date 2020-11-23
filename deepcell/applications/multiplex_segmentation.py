@@ -67,7 +67,7 @@ class MultiplexSegmentation(Application):
         im = np.expand_dims(im,0)
 
         # Create the application
-        app = MultiplexSegmentation(use_pretrained_weights=True)
+        app = MultiplexSegmentation()
 
         # create the lab
         labeled_image = app.predict(image)

@@ -65,7 +65,7 @@ class NuclearSegmentation(Application):
         im = np.expand_dims(im, axis=0)
 
         # Create the application
-        app = NuclearSegmentation(use_pretrained_weights=True)
+        app = NuclearSegmentation()
 
         # create the lab
         labeled_image = app.predict(image)
