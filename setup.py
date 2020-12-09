@@ -41,7 +41,7 @@ with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as f:
 
 
 NAME = 'DeepCell'
-VERSION = '0.8.2'
+VERSION = '0.8.3'
 AUTHOR = 'Van Valen Lab'
 AUTHOR_EMAIL = 'vanvalenlab@gmail.com'
 URL = 'https://github.com/vanvalenlab/deepcell-tf'
@@ -67,8 +67,8 @@ setup(
         'tensorflow==2.3.1',
         'jupyter>=1.0.0,<2',
         'opencv-python-headless<=3.4.9.31',
-        'deepcell-tracking>=0.2.4',
-        'deepcell-toolbox>=0.8.2'
+        'deepcell-tracking>=0.2.7',
+        'deepcell-toolbox>=0.8.3'
     ],
     extras_require={
         'tests': [
