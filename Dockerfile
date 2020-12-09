@@ -6,12 +6,7 @@ ARG TF_VERSION=2.3.1-gpu
 FROM tensorflow/tensorflow:${TF_VERSION}
 
 # System maintenance
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    libxext6 \
-    libxrender-dev \
-    libsm6 && \
-    rm -rf /var/lib/apt/lists/* && \
-    /usr/bin/python3 -m pip install --upgrade pip
+RUN /usr/bin/python3 -m pip install --upgrade pip
 
 WORKDIR /notebooks
 
