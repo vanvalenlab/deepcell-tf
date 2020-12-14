@@ -99,7 +99,7 @@ class MultiplexSegmentation(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'MultiplexSegmentation.tgz', MODEL_PATH,
-                file_hash='TODO',
+                file_hash='e7360e8e87c3ab71ded00a577a61c689',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
