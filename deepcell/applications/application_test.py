@@ -225,7 +225,6 @@ class TestApplication(test.TestCase):
         for y_sub in y:
             self.assertEqual(original_shape, y_sub.shape)
 
-
     def test_format_model_output(self):
         def _format_model_output(Lx):
             return {'inner-distance': Lx}
