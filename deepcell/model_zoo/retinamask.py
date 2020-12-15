@@ -507,7 +507,7 @@ def RetinaMask(backbone,
             backbone.  3 is the default for all current backbones.
         frames_per_batch (int): Size of z axis in generated batches.
             If equal to 1, assumes 2D data.
-        kwargs (dict): Other standard inputs for `~retinanetmask`.
+        kwargs (dict): Other standard inputs for `~retinamask`.
 
     Returns:
         tensorflow.keras.Model: :mod:`deepcell.model_zoo.retinanet.RetinaNet`

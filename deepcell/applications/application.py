@@ -264,7 +264,7 @@ class Application(object):
             original_shape (tuple): Shape of the original input image
 
         Returns:
-            array: Rescaled image
+            numpy.array: Rescaled image
         """
         if not isinstance(image, list):
             image = [image]

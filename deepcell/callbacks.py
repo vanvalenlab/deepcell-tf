@@ -84,7 +84,7 @@ class Evaluate(Callback):
     """Evaluate a dataset with a model at the end of each training epoch.
 
     Args:
-        generator (RetinaNetDataGenerator): The generator that represents the
+        generator (RetinaNetGenerator): The generator that represents the
             dataset to evaluate.
         iou_threshold (float): The threshold used to consider
             when a detection is positive or negative.
@@ -96,6 +96,7 @@ class Evaluate(Callback):
             the mAP value.
         weighted_average (bool): Compute the mAP using the weighted average of
             precisions among classes.
+        frames_per_batch (int): Size of z-axis. A value of 1 means 2D data.
         verbose (int): Set the verbosity level, by default this is set to 1.
     """
 
