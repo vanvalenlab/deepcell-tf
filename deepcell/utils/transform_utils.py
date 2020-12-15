@@ -47,7 +47,7 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
     """Transforms a label mask for a z stack edge, interior, and background
 
     Args:
-        mask (tensor): tensor of labels
+        mask (numpy.array): tensor of labels
         dilation_radius (int):  width to enlarge the edge feature of
             each instance
         data_format (str): A string, one of ``channels_last`` (default)

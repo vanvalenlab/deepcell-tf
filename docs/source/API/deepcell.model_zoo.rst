@@ -14,16 +14,16 @@ FeatureNet
     :undoc-members:
     :show-inheritance:
 
-RetinaMask
-----------
+RetinaNet
+---------
 
 .. automodule:: deepcell.model_zoo.retinanet
     :members:
     :undoc-members:
     :show-inheritance:
 
-RetinaNet
----------
+RetinaMask
+----------
 
 .. automodule:: deepcell.model_zoo.retinamask
     :members:

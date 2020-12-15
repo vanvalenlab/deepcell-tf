@@ -1,0 +1,29 @@
+# TODO: set type for "function" properly
+py:class function
+
+# TODO: set type for "tensor" properly
+py:class tensor
+
+# Local classes
+py:class deepcell.layers.retinanet._RoiAlign
+
+# 3rd party classes
+
+# NumPy classes
+py:class numpy.array
+
+# TensorFlow classes
+py:class tf.keras.Model
+py:class tf.keras.Layer
+py:class tensorflow.keras.Model
+py:class tensorflow.keras.Layer
+py:class tensorflow.keras.layers.Layer
+py:class tensorflow.keras.callbacks.Callback
+py:class tensorflow.keras.initializers.Initializer
+py:class tensorflow.python.keras.layers.recurrent.DropoutRNNCellMixin
+py:class tensorflow.python.keras.layers.convolutional_recurrent.ConvRNN2D
+py:class tensorflow.keras.layers.ZeroPadding2D
+py:class tensorflow.keras.layers.ZeroPadding3D
+py:class tensorflow.keras.preprocessing.image.Iterator
+py:class tensorflow.keras.preprocessing.image.ImageDataGenerator
+py:class tf.keras.preprocessing.image.ImageDataGenerator

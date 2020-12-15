@@ -135,7 +135,7 @@ class MultiplexSegmentation(Application):
                 ``[batch, x, y, channel]``.
             batch_size (int): Number of images to predict on per batch.
             image_mpp (float): Microns per pixel for ``image``.
-            compartment (string): Specify type of segmentation to predict.
+            compartment (str): Specify type of segmentation to predict.
                 Must be one of ``"whole-cell"``, ``"nuclear"``, ``"both"``.
             preprocess_kwargs (dict): Keyword arguments to pass to the
                 pre-processing function.

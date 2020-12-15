@@ -45,12 +45,12 @@ def featurenet_block(x, n_filters):
     """Add a set of layers that make up one unit of the featurenet backbone
 
     Args:
-        x (tensorflow.keras.layers.Layer): Keras layer object to pass to
+        x (tensorflow.keras.Layer): Keras layer object to pass to
             backbone unit
         n_filters (int): Number of filters to use for convolutional layers
 
     Returns:
-        tensorflow.keras.layers.Layer: Keras layer object
+        tensorflow.keras.Layer: Keras layer object
     """
     df = K.image_data_format()
     # conv set 1
@@ -71,12 +71,12 @@ def featurenet_3D_block(x, n_filters):
     """Add a set of layers that make up one unit of the featurenet 3D backbone
 
     Args:
-        x (tensorflow.keras.layers.Layer): Keras layer object to pass to
+        x (tensorflow.keras.Layer): Keras layer object to pass to
             backbone unit
         n_filters (int): Number of filters to use for convolutional layers
 
     Returns:
-        tensorflow.keras.layers.Layer: Keras layer object
+        tensorflow.keras.Layer: Keras layer object
     """
     df = K.image_data_format()
     # conv set 1
