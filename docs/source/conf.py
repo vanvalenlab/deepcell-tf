@@ -273,26 +273,17 @@ intersphinx_mapping = {
 intersphinx_cache_limit = 0
 
 # -- Custom Additions --------------------------------------------------------
-nitpick_ignore = [
-    ('py:class', 'function'),  # TODO: set type for "function" properly
-    ('py:class', 'tensor'),  # TODO: set type for "tensor" properly
-    ('py:class', 'numpy.array'),
-    ('py:class', 'tf.keras.Model'),
-    ('py:class', 'tf.keras.Layer'),
-    ('py:class', 'tensorflow.keras.Model'),
-    ('py:class', 'tensorflow.keras.Layer'),
-    ('py:class', 'tensorflow.keras.layers.Layer'),
-    ('py:class', 'tensorflow.keras.callbacks.Callback'),
-    ('py:class', 'tensorflow.keras.initializers.Initializer'),
-    ('py:class', 'tensorflow.python.keras.layers.recurrent.DropoutRNNCellMixin'),
-    ('py:class', 'tensorflow.python.keras.layers.convolutional_recurrent.ConvRNN2D'),
-    ('py:class', 'tensorflow.keras.layers.ZeroPadding2D'),
-    ('py:class', 'tensorflow.keras.layers.ZeroPadding3D'),
-    ('py:class', 'tensorflow.keras.preprocessing.image.Iterator'),
-    ('py:class', 'tensorflow.keras.preprocessing.image.ImageDataGenerator'),
-    ('py:class', 'tf.keras.preprocessing.image.ImageDataGenerator'),
-    ('py:class', 'deepcell.layers.retinanet._RoiAlign'),
-]
+nitpick_ignore = []
+# See the following page for more information and syntax:
+#  www.sphinx-doc.org/en/master/usage/configuration.html#confval-nitpick_ignore
+
+for line in open('.nitpick-ignore'):
+    line = line.strip()
+    if not line or line.startswith('#'):
+        continue
+
+    reftype, target = line.split(' ', 1)
+    nitpick_ignore.append((reftype, target.strip()))
 
 StandaloneHTMLBuilder.supported_image_types = [
     'image/svg+xml',
