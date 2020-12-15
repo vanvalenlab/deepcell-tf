@@ -41,7 +41,7 @@ from deepcell.applications import Application
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/MultiplexSegmentation-6.tar.gz')
+              'saved-models/MultiplexSegmentation-7.tar.gz')
 
 
 class MultiplexSegmentation(Application):
@@ -99,7 +99,7 @@ class MultiplexSegmentation(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'MultiplexSegmentation.tgz', MODEL_PATH,
-                file_hash='06d070648c1a425baa848b0051e045d0',
+                file_hash='e7360e8e87c3ab71ded00a577a61c689',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
