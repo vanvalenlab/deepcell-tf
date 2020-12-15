@@ -278,6 +278,7 @@ nitpick_ignore = [
     ('py:class', 'tensor'),  # TODO: set type for "tensor" properly
     ('py:class', 'numpy.array'),
     ('py:class', 'tf.keras.Model'),
+    ('py:class', 'tf.keras.Layer'),
     ('py:class', 'tensorflow.keras.Model'),
     ('py:class', 'tensorflow.keras.Layer'),
     ('py:class', 'tensorflow.keras.layers.Layer'),
@@ -289,6 +290,7 @@ nitpick_ignore = [
     ('py:class', 'tensorflow.keras.layers.ZeroPadding3D'),
     ('py:class', 'tensorflow.keras.preprocessing.image.Iterator'),
     ('py:class', 'tensorflow.keras.preprocessing.image.ImageDataGenerator'),
+    ('py:class', 'tf.keras.preprocessing.image.ImageDataGenerator'),
     ('py:class', 'deepcell.layers.retinanet._RoiAlign'),
 ]
 
