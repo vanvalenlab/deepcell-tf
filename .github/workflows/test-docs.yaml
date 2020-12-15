@@ -27,4 +27,4 @@ jobs:
         sudo apt-get install pandoc -y
 
     - name: Test sphinx-build
-      run: sphinx-build -nT -b dummy ./docs/source build/html
+      run: sphinx-build -W -nT -b dummy ./docs/source build/html

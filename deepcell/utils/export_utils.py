@@ -50,7 +50,7 @@ def export_model(keras_model, export_path, model_version=0, weights_path=None,
         include_optimizer (bool): Whether to export the optimizer.
         overwrite (bool): Whether to overwrite any existing files in
             ``export_path``.
-        save_format (str): Saved model format, one of `'tf'` or `'h5'`.
+        save_format (str): Saved model format, one of ``'tf'`` or ``'h5'``.
     """
     tf_logging.warn('`export_model` is deprecated. '
                     'Please use `tf.keras.models.save_model` instead.')

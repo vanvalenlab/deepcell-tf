@@ -52,8 +52,8 @@ if git_rev:
 on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 
 # This is used for linking and such so we link to the thing we're building
-rtd_version = os.environ.get("READTHEDOCS_VERSION", "latest")
-if rtd_version not in ["stable", "latest"]:
+rtd_version = os.environ.get("READTHEDOCS_VERSION", "master")
+if rtd_version not in ["stable", "latest", "master"]:
     rtd_version = "stable"
 
 # -- General configuration ---------------------------------------------------
@@ -93,6 +93,9 @@ templates_path = ['_templates']
 #
 source_suffix = ['.rst', '.md']
 # source_suffix = '.rst'
+
+# Ignore warning: 
+suppress_warnings = ['autosectionlabel.*']
 
 # The master toctree document.
 master_doc = 'index'
@@ -275,13 +278,17 @@ nitpick_ignore = [
     ('py:class', 'tensor'),  # TODO: set type for "tensor" properly
     ('py:class', 'numpy.array'),
     ('py:class', 'tensorflow.keras.Model'),
-    ('py:class', 'tensorflow.keras.Model'),
+    ('py:class', 'tensorflow.keras.Layer'),
     ('py:class', 'tensorflow.keras.layers.Layer'),
-    ('py:class', 'tensorflow.keras.layers.Layer'),
+    ('py:class', 'tensorflow.keras.callbacks.Callback'),
+    ('py:class', 'tensorflow.keras.initializers.Initializer'),
+    ('py:class', 'tensorflow.python.keras.layers.recurrent.DropoutRNNCellMixin'),
+    ('py:class', 'tensorflow.python.keras.layers.convolutional_recurrent.ConvRNN2D'),
     ('py:class', 'tensorflow.keras.layers.ZeroPadding2D'),
     ('py:class', 'tensorflow.keras.layers.ZeroPadding3D'),
     ('py:class', 'tensorflow.keras.preprocessing.image.Iterator'),
     ('py:class', 'tensorflow.keras.preprocessing.image.ImageDataGenerator'),
+    ('py:class', 'deepcell.layers.retinanet._RoiAlign'),
 ]
 
 StandaloneHTMLBuilder.supported_image_types = [
