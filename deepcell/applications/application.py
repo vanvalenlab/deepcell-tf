@@ -257,7 +257,7 @@ class Application(object):
 
     def _resize_output(self, image, original_shape):
         """Rescales input if the shape does not match the original shape
-        excluding the batch and channel dimensions
+        excluding the batch and channel dimensions.
 
         Args:
             image (numpy.array): Image to be rescaled to original shape
@@ -266,22 +266,31 @@ class Application(object):
         Returns:
             array: Rescaled image
         """
+        if not isinstance(image, list):
+            image = [image]
 
-        # Compare x,y based on rank of image
-        if len(image.shape) == 4:
-            same = image.shape[1:-1] == original_shape[1:-1]
-        elif len(image.shape) == 3:
-            same = image.shape[1:] == original_shape[1:-1]
-        else:
-            same = image.shape == original_shape[1:-1]
+        for i in range(len(image)):
+            img = image[i]
+            # Compare x,y based on rank of image
+            if len(img.shape) == 4:
+                same = img.shape[1:-1] == original_shape[1:-1]
+            elif len(img.shape) == 3:
+                same = img.shape[1:] == original_shape[1:-1]
+            else:
+                same = img.shape == original_shape[1:-1]
 
-        # Resize if same is false
-        if not same:
-            # Resize function only takes the x,y dimensions for shape
-            new_shape = original_shape[1:-1]
-            image = resize(image, new_shape,
-                           data_format='channels_last',
-                           labeled_image=True)
+            # Resize if same is false
+            if not same:
+                # Resize function only takes the x,y dimensions for shape
+                new_shape = original_shape[1:-1]
+                img = resize(img, new_shape,
+                             data_format='channels_last',
+                             labeled_image=True)
+            image[i] = img
+
+        if len(image) == 1:
+            image = image[0]
+
         return image
 
     def _run_model(self,

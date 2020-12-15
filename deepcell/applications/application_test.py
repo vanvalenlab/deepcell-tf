@@ -209,6 +209,22 @@ class TestApplication(test.TestCase):
         y = app._resize_output(x, original_shape)
         self.assertEqual(original_shape, y.shape)
 
+        # test multiple outputs are also resized
+        x_list = [x, x]
+
+        # x.shape = original_shape --> no resize
+        y = app._resize_output(x_list, x.shape)
+        self.assertIsInstance(y, list)
+        for y_sub in y:
+            self.assertEqual(x.shape, y_sub.shape)
+
+        # x.shape != original_shape --> resize
+        original_shape = (1, 500, 500, 1)
+        y = app._resize_output(x_list, original_shape)
+        self.assertIsInstance(y, list)
+        for y_sub in y:
+            self.assertEqual(original_shape, y_sub.shape)
+
     def test_format_model_output(self):
         def _format_model_output(Lx):
             return {'inner-distance': Lx}
