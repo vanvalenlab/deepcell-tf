@@ -277,6 +277,7 @@ nitpick_ignore = [
     ('py:class', 'function'),  # TODO: set type for "function" properly
     ('py:class', 'tensor'),  # TODO: set type for "tensor" properly
     ('py:class', 'numpy.array'),
+    ('py:class', 'tf.keras.Model'),
     ('py:class', 'tensorflow.keras.Model'),
     ('py:class', 'tensorflow.keras.Layer'),
     ('py:class', 'tensorflow.keras.layers.Layer'),
