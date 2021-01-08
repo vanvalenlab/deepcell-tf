@@ -894,8 +894,9 @@ class SiameseIterator(Iterator):
 
             batch_y[i, type_cell] = 1
 
-        # prepare final batch list
-        batch_list = []
+        # create dictionary to house generator outputs
+        # Start with batch inputs to model
+        batch_inputs = {}
         for feature_i, feature in enumerate(self.features):
             batch_feature_1, batch_feature_2 = batch_features[feature_i]
             # Remove singleton dimensions (if min_track_length is 1)
@@ -904,10 +905,14 @@ class SiameseIterator(Iterator):
                 batch_feature_1 = np.squeeze(batch_feature_1, axis=axis)
                 batch_feature_2 = np.squeeze(batch_feature_2, axis=axis)
 
-            batch_list.append(batch_feature_1)
-            batch_list.append(batch_feature_2)
+            batch_inputs['{}_input1'.format(feature)] = batch_feature_1
+            batch_inputs['{}_input2'.format(feature)] = batch_feature_2
 
-        return batch_list, batch_y
+        # Dict to house training output (model target)
+        batch_outputs = {'classification': batch_y}
+
+        return batch_inputs, batch_outputs
+
 
     def next(self):
         """For python 2.x. Returns the next batch.
