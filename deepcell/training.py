@@ -568,7 +568,6 @@ def train_model_siamese_daughter(model,
         (input_type_dict, output_type_dict),
         output_shapes=(input_shape_dict, output_shape_dict))
 
-
     train_callbacks = get_callbacks(
         model_path, lr_sched=lr_sched,
         tensorboard_log_dir=log_dir,

@@ -913,7 +913,6 @@ class SiameseIterator(Iterator):
 
         return batch_inputs, batch_outputs
 
-
     def next(self):
         """For python 2.x. Returns the next batch.
         """
