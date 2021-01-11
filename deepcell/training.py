@@ -521,23 +521,26 @@ def train_model_siamese_daughter(model,
     input_shape_dict = {}
     for feature in features:
 
-        input_type_dict['{}_input1'.format(feature)] = tf.float32
-        input_type_dict['{}_input2'.format(feature)] = tf.float32
+        feature_name1 = '{}_input1'.format(feature)
+        feature_name2 = '{}_input2'.format(feature)
+
+        input_type_dict[feature_name1] = tf.float32
+        input_type_dict[feature_name2] = tf.float32
 
         if feature == 'appearance':
             app1 = tuple([None, train_data.min_track_length,
                           train_data.crop_dim, train_data.crop_dim, 1])
             app2 = tuple([None, 1, train_data.crop_dim, train_data.crop_dim, 1])
 
-            input_shape_dict['{}_input1'.format(feature)] = app1
-            input_shape_dict['{}_input2'.format(feature)] = app2
+            input_shape_dict[feature_name1] = app1
+            input_shape_dict[feature_name2] = app2
 
         elif feature == 'distance':
             dist1 = tuple([None, train_data.min_track_length, 2])
             dist2 = tuple([None, 1, 2])
 
-            input_shape_dict['{}_input1'.format(feature)] = dist1
-            input_shape_dict['{}_input2'.format(feature)] = dist2
+            input_shape_dict[feature_name1] = dist1
+            input_shape_dict[feature_name2] = dist2
 
         elif feature == 'neighborhood':
             neighborhood_size = 2 * train_data.neighborhood_scale_size + 1
@@ -545,15 +548,15 @@ def train_model_siamese_daughter(model,
                             neighborhood_size, neighborhood_size, 1])
             neigh2 = tuple([None, 1, neighborhood_size, neighborhood_size, 1])
 
-            input_shape_dict['{}_input1'.format(feature)] = neigh1
-            input_shape_dict['{}_input2'.format(feature)] = neigh2
+            input_shape_dict[feature_name1] = neigh1
+            input_shape_dict[feature_name2] = neigh2
 
         elif feature == 'regionprop':
             rprop1 = tuple([None, train_data.min_track_length, 3])
             rprop2 = tuple([None, 1, 3])
 
-            input_shape_dict['{}_input1'.format(feature)] = rprop1
-            input_shape_dict['{}_input2'.format(feature)] = rprop2
+            input_shape_dict[feature_name1] = rprop1
+            input_shape_dict[feature_name2] = rprop2
 
     output_type_dict = {'classification': tf.int32}
     # Ouput_shape has to be None because we dont know how many cells
