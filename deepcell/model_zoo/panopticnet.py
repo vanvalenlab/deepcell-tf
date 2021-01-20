@@ -56,7 +56,7 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256,
     Output: ``y = x + x'``
 
     Args:
-        feature (tensorflow.keras.layers.Layer): Input layer
+        feature (tensorflow.keras.Layer): Input layer
         mode (str): Mode of temporal convolution. One of
             ``{'conv','lstm','gru', None}``.
         feature_size (int): Length of convolutional kernel
@@ -67,7 +67,7 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256,
         ValueError: ``mode`` not 'conv', 'lstm', 'gru' or ``None``
 
     Returns:
-        tensorflow.keras.layers.Layer: Input feature merged with its residual
+        tensorflow.keras.Layer: Input feature merged with its residual
         from a temporal convolution. If mode is ``None``,
         the output is exactly the input.
     """

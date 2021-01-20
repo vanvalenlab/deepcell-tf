@@ -46,10 +46,10 @@ def filter_detections(boxes,
     """Filter detections using the boxes and classification values.
 
     Args:
-        boxes (tensor): Tensor of shape ``(num_boxes, 4)`` containing the
+        boxes (numpy.array): Tensor of shape ``(num_boxes, 4)`` containing the
             boxes in ``(x1, y1, x2, y2)`` format.
-        classification (tensor): Tensor of shape ``(num_boxes, num_classes)``
-            containing the classification scores.
+        classification (numpy.array): Tensor of shape
+            ``(num_boxes, num_classes)`` containing the classification scores.
         other (list): List of tensors of shape ``(num_boxes, ...)`` to filter
             along with the boxes and classification scores.
         class_specific_filter (bool): Whether to perform filtering per class,
@@ -186,7 +186,7 @@ class FilterDetections(Layer):
 
         Args:
             inputs: List of
-            ``[boxes, classification, other[0], other[1], ...]`` tensors.
+                ``[boxes, classification, other[0], other[1], ...]`` tensors.
         """
         boxes = inputs[0]
         classification = inputs[1]

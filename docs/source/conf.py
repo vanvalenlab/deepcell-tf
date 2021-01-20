@@ -52,8 +52,8 @@ if git_rev:
 on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 
 # This is used for linking and such so we link to the thing we're building
-rtd_version = os.environ.get("READTHEDOCS_VERSION", "latest")
-if rtd_version not in ["stable", "latest"]:
+rtd_version = os.environ.get("READTHEDOCS_VERSION", "master")
+if rtd_version not in ["stable", "latest", "master"]:
     rtd_version = "stable"
 
 # -- General configuration ---------------------------------------------------
@@ -93,6 +93,9 @@ templates_path = ['_templates']
 #
 source_suffix = ['.rst', '.md']
 # source_suffix = '.rst'
+
+# Ignore warning: 
+suppress_warnings = ['autosectionlabel.*']
 
 # The master toctree document.
 master_doc = 'index'
@@ -270,19 +273,17 @@ intersphinx_mapping = {
 intersphinx_cache_limit = 0
 
 # -- Custom Additions --------------------------------------------------------
-nitpick_ignore = [
-    ('py:class', 'function'),  # TODO: set type for "function" properly
-    ('py:class', 'tensor'),  # TODO: set type for "tensor" properly
-    ('py:class', 'numpy.array'),
-    ('py:class', 'tensorflow.keras.Model'),
-    ('py:class', 'tensorflow.keras.Model'),
-    ('py:class', 'tensorflow.keras.layers.Layer'),
-    ('py:class', 'tensorflow.keras.layers.Layer'),
-    ('py:class', 'tensorflow.keras.layers.ZeroPadding2D'),
-    ('py:class', 'tensorflow.keras.layers.ZeroPadding3D'),
-    ('py:class', 'tensorflow.keras.preprocessing.image.Iterator'),
-    ('py:class', 'tensorflow.keras.preprocessing.image.ImageDataGenerator'),
-]
+nitpick_ignore = []
+# See the following page for more information and syntax:
+#  www.sphinx-doc.org/en/master/usage/configuration.html#confval-nitpick_ignore
+
+for line in open('.nitpick-ignore'):
+    line = line.strip()
+    if not line or line.startswith('#'):
+        continue
+
+    reftype, target = line.split(' ', 1)
+    nitpick_ignore.append((reftype, target.strip()))
 
 StandaloneHTMLBuilder.supported_image_types = [
     'image/svg+xml',
