@@ -178,7 +178,8 @@ class Application(object):
         # Otherwise tile images larger than model size
         else:
             # Tile images, needs 4d
-            tiles, tiles_info = tile_image(image, model_input_shape=self.model_image_shape)
+            tiles, tiles_info = tile_image(image, model_input_shape=self.model_image_shape,
+                                           stride_ratio=0.75, pad_mode='reflect')
 
         return tiles, tiles_info
 
