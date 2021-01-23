@@ -66,7 +66,7 @@ class TestCellTracking(test.TestCase):
     def test_cell_tracking_app(self):
         with self.cached_session():
             # test instantiation
-            app = CellTracking(use_pretrained_weights=False)
+            app = CellTracking()
 
             # test output shape
             shape = app.model.output_shape
