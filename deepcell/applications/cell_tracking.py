@@ -93,8 +93,8 @@ class CellTracking(Application):
 
         if model is None:
             archive_path = tf.keras.utils.get_file(
-                'TrackingModel-2.tgz', MODEL_PATH,
-                file_hash='d5c35f14fc9255901031c8e2c2d1483c',
+                'Tracking.tgz', MODEL_PATH,
+                file_hash='06e2043b4b898c9f81baeda9b6950ce0',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
             model = tf.keras.models.load_model(model_path)
