@@ -64,7 +64,7 @@ setup(
         'scipy>=1.1.0,<2',
         'scikit-image>=0.14.1,<=0.16.2',
         'scikit-learn>=0.19.1,<1',
-        'tensorflow==2.3.1',
+        'tensorflow==2.4.0',
         'jupyter>=1.0.0,<2',
         'opencv-python-headless<=3.4.9.31',
         'deepcell-tracking>=0.2.7',
