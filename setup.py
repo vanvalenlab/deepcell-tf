@@ -60,10 +60,10 @@ setup(
     long_description=README,
     long_description_content_type='text/markdown',
     install_requires=[
-        'numpy>=1.19.2,<2',
-        'scipy>=1.5.4,<2',
-        'scikit-image>=0.14.1,<=0.16.2',
-        'scikit-learn>=0.19.1,<1',
+        'numpy>=1.16.6,<2',
+        'scipy>=1.2.3,<2',
+        'scikit-image<0.17',
+        'scikit-learn>=0.20.4,<1',
         'tensorflow==2.4.1',
         'jupyter>=1.0.0,<2',
         'opencv-python-headless',
@@ -79,7 +79,7 @@ setup(
     },
     packages=find_packages(),
     python_requires='>=3.6, <3.9',
-    setup_requires=['numpy~=1.19.2'],
+    setup_requires=['numpy>=1.6.6,<2'],
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
