@@ -60,13 +60,13 @@ setup(
     long_description=README,
     long_description_content_type='text/markdown',
     install_requires=[
-        'numpy>=1.16.4,<1.19.0',
-        'scipy>=1.1.0,<2',
+        'numpy>=1.19.2,<2',
+        'scipy>=1.5.4,<2',
         'scikit-image>=0.14.1,<=0.16.2',
         'scikit-learn>=0.19.1,<1',
         'tensorflow==2.4.1',
         'jupyter>=1.0.0,<2',
-        'opencv-python-headless<=3.4.9.31',
+        'opencv-python-headless',
         'deepcell-tracking>=0.2.7',
         'deepcell-toolbox>=0.8.3'
     ],
@@ -78,8 +78,8 @@ setup(
         ],
     },
     packages=find_packages(),
-    python_requires='>=3.5, <3.9',
-    setup_requires=['numpy>=1.16.4,<1.19.0'],
+    python_requires='>=3.6, <3.9',
+    setup_requires=['numpy~=1.19.2'],
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
