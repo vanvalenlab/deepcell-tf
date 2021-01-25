@@ -138,7 +138,7 @@ class Application(object):
 
         return image
 
-    def _tile_input(self, image):
+    def _tile_input(self, image, pad_mode='constant'):
         """Tile the input image to match shape expected by model
         using the ``deepcell_toolbox`` function.
 
@@ -146,6 +146,7 @@ class Application(object):
 
         Args:
             image (numpy.array): Input image to tile
+            pad_mode (str): The padding mode, one of "constant" or "reflect".
 
         Raises:
             ValueError: Input images must have only 4 dimensions
@@ -179,7 +180,7 @@ class Application(object):
         else:
             # Tile images, needs 4d
             tiles, tiles_info = tile_image(image, model_input_shape=self.model_image_shape,
-                                           stride_ratio=0.75, pad_mode='reflect')
+                                           stride_ratio=0.75, pad_mode=pad_mode)
 
         return tiles, tiles_info
 
@@ -297,12 +298,14 @@ class Application(object):
     def _run_model(self,
                    image,
                    batch_size=4,
+                   pad_mode='constant',
                    preprocess_kwargs={}):
         """Run the model to generate output probabilities on the data.
 
         Args:
             image (numpy.array): Image with shape ``[batch, x, y, channel]``
             batch_size (int): Number of images to predict on per batch.
+            pad_mode (str): The padding mode, one of "constant" or "reflect".
             preprocess_kwargs (dict): Keyword arguments to pass to
                 the preprocessing function.
 
@@ -314,7 +317,7 @@ class Application(object):
         image = self._preprocess(image, **preprocess_kwargs)
 
         # Tile images, raises error if the image is not 4d
-        tiles, tiles_info = self._tile_input(image)
+        tiles, tiles_info = self._tile_input(image, pad_mode=pad_mode)
 
         # Run images through model
         output_tiles = self.model.predict(tiles, batch_size=batch_size)
@@ -331,6 +334,7 @@ class Application(object):
                               image,
                               batch_size=4,
                               image_mpp=None,
+                              pad_mode='constant',
                               preprocess_kwargs={},
                               postprocess_kwargs={}):
         """Generates a labeled image of the input running prediction with
@@ -345,6 +349,7 @@ class Application(object):
                 ``[batch, x, y, channel]``.
             batch_size (int): Number of images to predict on per batch.
             image_mpp (float): Microns per pixel for ``image``.
+            pad_mode (str): The padding mode, one of "constant" or "reflect".
             preprocess_kwargs (dict): Keyword arguments to pass to the
                 pre-processing function.
             postprocess_kwargs (dict): Keyword arguments to pass to the
@@ -375,8 +380,10 @@ class Application(object):
         resized_image = self._resize_input(image, image_mpp)
 
         # Generate model outputs
-        output_images = self._run_model(image=resized_image, batch_size=batch_size,
-                                        preprocess_kwargs=preprocess_kwargs)
+        output_images = self._run_model(
+            image=resized_image, batch_size=batch_size,
+            pad_mode=pad_mode, preprocess_kwargs=preprocess_kwargs
+        )
 
         # Postprocess predictions to create label image
         label_image = self._postprocess(output_images, **postprocess_kwargs)
