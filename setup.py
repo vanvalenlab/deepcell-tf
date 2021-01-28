@@ -41,7 +41,7 @@ with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as f:
 
 
 NAME = 'DeepCell'
-VERSION = '0.8.3'
+VERSION = '0.9.0'
 AUTHOR = 'Van Valen Lab'
 AUTHOR_EMAIL = 'vanvalenlab@gmail.com'
 URL = 'https://github.com/vanvalenlab/deepcell-tf'
