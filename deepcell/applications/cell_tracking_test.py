@@ -66,11 +66,13 @@ class TestCellTracking(test.TestCase):
 
     def test_cell_tracking_app(self):
         with self.cached_session():
-            features={'appearance', 'distance', 'neighborhood', 'regionprop'}
-            input_shape=(32, 32, 1)
+            input_shape = (32, 32, 1)
+            neighborhood_scale_size = 30
+            features = {'appearance', 'distance', 'neighborhood', 'regionprop'}
 
             model = siamese_model(
                 input_shape=input_shape,
+                neighborhood_scale_size=neighborhood_scale_size,
                 features=features)
 
             # test instantiation
