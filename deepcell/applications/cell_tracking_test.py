@@ -33,6 +33,7 @@ from tensorflow.python.platform import test
 import numpy as np
 import skimage as sk
 
+from deepcell.model_zoo.featurenet import siamese_model
 from deepcell.applications import CellTracking
 
 
@@ -65,8 +66,15 @@ class TestCellTracking(test.TestCase):
 
     def test_cell_tracking_app(self):
         with self.cached_session():
+            features={'appearance', 'distance', 'neighborhood', 'regionprop'}
+            input_shape=(32, 32, 1)
+
+            model = siamese_model(
+                input_shape=input_shape,
+                features=features)
+
             # test instantiation
-            app = CellTracking()
+            app = CellTracking(model=model)
 
             # test output shape
             shape = app.model.output_shape
