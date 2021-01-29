@@ -116,6 +116,7 @@ class NuclearSegmentation(Application):
                 image,
                 batch_size=4,
                 image_mpp=None,
+                pad_mode='reflect',
                 preprocess_kwargs=None,
                 postprocess_kwargs=None):
         """Generates a labeled image of the input running prediction with
@@ -131,6 +132,7 @@ class NuclearSegmentation(Application):
                 ``[batch, x, y, channel]``.
             batch_size (int): Number of images to predict on per batch.
             image_mpp (float): Microns per pixel for ``image``.
+            pad_mode (str): The padding mode, one of "constant" or "reflect".
             preprocess_kwargs (dict): Keyword arguments to pass to the
                 pre-processing function.
             postprocess_kwargs (dict): Keyword arguments to pass to the
@@ -164,5 +166,6 @@ class NuclearSegmentation(Application):
             image,
             batch_size=batch_size,
             image_mpp=image_mpp,
+            pad_mode=pad_mode,
             preprocess_kwargs=preprocess_kwargs,
             postprocess_kwargs=postprocess_kwargs)
