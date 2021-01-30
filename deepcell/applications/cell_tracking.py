@@ -29,18 +29,18 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.keras.utils import get_file
+import os
+
+import tensorflow as tf
 
 import deepcell_tracking
 from deepcell_toolbox.processing import normalize
 
 from deepcell.applications import Application
-from deepcell import model_zoo
 
 
-WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/tracking_model_benchmarking_757_step5_20'
-                'epoch_80split_9tl.h5')
+MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+              'saved-models/TrackingModel-2.tar.gz')
 
 
 class CellTracking(Application):
@@ -68,10 +68,10 @@ class CellTracking(Application):
         'batch_size': 128,
         'lr': 1e-2,
         'lr_decay': 0.99,
-        'training_seed': 1,
+        'training_seed': 757,
         'n_epochs': 10,
         'training_steps_per_epoch': 5536,
-        'validation_steps_per_epoch': 1384,
+        'validation_steps_per_epoch': 1427,
         'features': {'appearance', 'distance', 'neighborhood', 'regionprop'},
         'min_track_length': 9,
         'neighborhood_scale_size': 30,
@@ -79,34 +79,25 @@ class CellTracking(Application):
     }
 
     def __init__(self,
-                 use_pretrained_weights=True,
+                 model=None,
                  model_image_shape=(32, 32, 1),
-                 neighborhood_scale_size=30,
                  birth=0.99,
                  death=0.99,
-                 division=0.9):
+                 division=0.9,
+                 track_length=9):
         self.features = {'appearance', 'distance', 'neighborhood', 'regionprop'}
         self.birth = birth
         self.death = death
         self.division = division
+        self.track_length = track_length
 
-        model = model_zoo.siamese_model(
-            input_shape=model_image_shape,
-            reg=1e-5,
-            init='he_normal',
-            neighborhood_scale_size=neighborhood_scale_size,
-            features=self.features)
-
-        if use_pretrained_weights:
-            weights_path = get_file(
-                'CellTrackingModel.h5',
-                WEIGHTS_PATH,
-                cache_subdir='models',
-                file_hash='3349b363fdad0266a1845ba785e057a6')
-
-            model.load_weights(weights_path)
-        else:
-            weights_path = None
+        if model is None:
+            archive_path = tf.keras.utils.get_file(
+                'Tracking.tgz', MODEL_PATH,
+                file_hash='06e2043b4b898c9f81baeda9b6950ce0',
+                extract=True, cache_subdir='models')
+            model_path = os.path.splitext(archive_path)[0]
+            model = tf.keras.models.load_model(model_path)
 
         super(CellTracking, self).__init__(
             model,
@@ -132,6 +123,7 @@ class CellTracking(Application):
 
         cell_tracker = deepcell_tracking.CellTracker(
             image_norm, labels, self.model,
+            track_length=self.track_length,
             birth=self.birth, death=self.death,
             division=self.division)
 
