@@ -41,7 +41,7 @@ with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as f:
 
 
 NAME = 'DeepCell'
-VERSION = '0.9.0'
+VERSION = '0.8.4'
 AUTHOR = 'Van Valen Lab'
 AUTHOR_EMAIL = 'vanvalenlab@gmail.com'
 URL = 'https://github.com/vanvalenlab/deepcell-tf'
@@ -60,15 +60,15 @@ setup(
     long_description=README,
     long_description_content_type='text/markdown',
     install_requires=[
-        'numpy>=1.16.6,<2',
+        'numpy>=1.16.6,<1.20.0',
         'scipy>=1.2.3,<2',
-        'scikit-image<0.17',
+        'scikit-image>=0.14.5,<=0.17',
         'scikit-learn>=0.20.4,<1',
         'tensorflow==2.4.1',
         'jupyter>=1.0.0,<2',
-        'opencv-python-headless>4,<5',
+        'opencv-python-headless<5',
         'deepcell-tracking>=0.3.1',
-        'deepcell-toolbox>=0.8.5'
+        'deepcell-toolbox>=0.8.6'
     ],
     extras_require={
         'tests': [
