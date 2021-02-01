@@ -60,15 +60,15 @@ setup(
     long_description=README,
     long_description_content_type='text/markdown',
     install_requires=[
-        'numpy>=1.16.4,<1.19.0',
+        'numpy>=1.16.6,<1.20.0',
         'scipy>=1.1.0,<2',
-        'scikit-image>=0.14.1,<=0.16.2',
+        'scikit-image>=0.14.5,<=0.17',
         'scikit-learn>=0.19.1,<1',
         'tensorflow==2.3.1',
         'jupyter>=1.0.0,<2',
         'opencv-python-headless<5',
         'deepcell-tracking>=0.3.1',
-        'deepcell-toolbox>=0.8.5'
+        'deepcell-toolbox>=0.8.6'
     ],
     extras_require={
         'tests': [
