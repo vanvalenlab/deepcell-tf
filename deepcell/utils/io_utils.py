@@ -39,7 +39,9 @@ from tensorflow.keras import backend as K
 
 
 def get_image(file_name):
-    """Read image from file and returns it as a tensor
+    """DEPRECATED. Use ``skimage.io.imread`` instead.
+    
+    Read image from file and returns it as a tensor.
 
     Args:
         file_name (str): path to image file
@@ -47,9 +49,6 @@ def get_image(file_name):
     Returns:
         numpy.array: numpy array of image data
     """
-    ext = os.path.splitext(file_name.lower())[-1]
-    if ext == '.tif' or ext == '.tiff':
-        return np.float32(TiffFile(file_name).asarray())
     return np.float32(imread(file_name))
 
 
