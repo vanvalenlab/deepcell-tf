@@ -37,27 +37,24 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as f:
-    README = f.read()
+    readme = f.read()
 
 
-NAME = 'DeepCell'
-VERSION = '0.8.4'
-AUTHOR = 'Van Valen Lab'
-AUTHOR_EMAIL = 'vanvalenlab@gmail.com'
-URL = 'https://github.com/vanvalenlab/deepcell-tf'
-DESCRIPTION = 'Deep learning for single cell image segmentation'
+about = {}
+with open(os.path.join(here, 'deepcell', '_version.py'), 'r', 'utf-8') as f:
+    exec(f.read(), about)
 
 
 setup(
-    name=NAME,
-    version=VERSION,
-    author=AUTHOR,
-    author_email=AUTHOR_EMAIL,
-    description=DESCRIPTION,
-    url=URL,
-    download_url='{}/tarball/{}'.format(URL, VERSION),
-    license='LICENSE',
-    long_description=README,
+    name=about['__title__'],
+    version=about['__version__'],
+    author=about['__author__'],
+    author_email=about['__author_email__'],
+    description=about['__description__'],
+    url=about['__url__'],
+    download_url=about['__download_url__'],
+    license=about['__license__'],
+    long_description=readme,
     long_description_content_type='text/markdown',
     install_requires=[
         'numpy>=1.16.6,<1.20.0',

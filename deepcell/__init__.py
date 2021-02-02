@@ -29,6 +29,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from deepcell._version import __version__
+
 from deepcell import applications
 from deepcell import callbacks
 from deepcell import datasets
