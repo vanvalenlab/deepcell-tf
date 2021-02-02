@@ -32,8 +32,7 @@ from __future__ import division
 import os
 
 import numpy as np
-from skimage.io import imread
-from skimage.external import tifffile as tiff
+from skimage.io import imread, imsave
 from skimage.external.tifffile import TiffFile
 from tensorflow.keras import backend as K
 
@@ -105,5 +104,5 @@ def save_model_output(output,
                     cnnout_name = '{}_{}'.format(feature_name, cnnout_name)
 
                 out_file_path = os.path.join(output_dir, batch_dir, cnnout_name)
-                tiff.imsave(out_file_path, feature.astype('int32'))
+                imsave(out_file_path, feature.astype('int32'), check_contrast=False)
         print('Saved {} frames to {}'.format(output.shape[1], output_dir))
