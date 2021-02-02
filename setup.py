@@ -37,7 +37,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as f:
-    README = f.read()
+    readme = f.read()
 
 
 about = {}
@@ -45,12 +45,8 @@ with open(os.path.join(here, 'deepcell', '_version.py'), 'r', 'utf-8') as f:
     exec(f.read(), about)
 
 
-with open('README.md', 'r', 'utf-8') as f:
-    readme = f.read()
-
-
 setup(
-    name=Nabout['__title__']AME,
+    name=about['__title__'],
     version=about['__version__'],
     author=about['__author__'],
     author_email=about['__author_email__'],
@@ -58,7 +54,7 @@ setup(
     url=about['__url__'],
     download_url=about['__download_url__'],
     license=about['__license__'],
-    long_description=README,
+    long_description=readme,
     long_description_content_type='text/markdown',
     install_requires=[
         'numpy>=1.16.6,<1.20.0',
