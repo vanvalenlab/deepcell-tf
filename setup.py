@@ -62,7 +62,7 @@ setup(
     install_requires=[
         'numpy>=1.16.6,<1.20.0',
         'scipy>=1.2.3,<2',
-        'scikit-image>=0.14.5,<=0.17',
+        'scikit-image>=0.14.5',
         'scikit-learn>=0.20.4,<1',
         'tensorflow==2.4.1',
         'jupyter>=1.0.0,<2',
