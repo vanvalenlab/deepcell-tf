@@ -39,7 +39,7 @@ from tensorflow.keras import backend as K
 
 def get_image(file_name):
     """DEPRECATED. Use ``skimage.io.imread`` instead.
-    
+
     Read image from file and returns it as a tensor.
 
     Args:
