@@ -41,7 +41,7 @@ with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as f:
 
 
 about = {}
-with open(os.path.join(here, 'deepcell', '__version__.py'), 'r', 'utf-8') as f:
+with open(os.path.join(here, 'deepcell', '_version.py'), 'r', 'utf-8') as f:
     exec(f.read(), about)
 
 
@@ -49,22 +49,14 @@ with open('README.md', 'r', 'utf-8') as f:
     readme = f.read()
 
 
-NAME = about['__title__']
-VERSION = about['__version__']
-AUTHOR = about['__author__']
-AUTHOR_EMAIL = about['__author_email__']
-URL = about['__url__']
-DESCRIPTION = about['__description__']
-
-
 setup(
-    name=NAME,
-    version=VERSION,
-    author=AUTHOR,
-    author_email=AUTHOR_EMAIL,
-    description=DESCRIPTION,
-    url=URL,
-    download_url='{}/tarball/{}'.format(URL, VERSION),
+    name=Nabout['__title__']AME,
+    version=about['__version__'],
+    author=about['__author__'],
+    author_email=about['__author_email__'],
+    description=about['__description__'],
+    url=about['__url__'],
+    download_url=about['__download_url__'],
     license=about['__license__'],
     long_description=README,
     long_description_content_type='text/markdown',
