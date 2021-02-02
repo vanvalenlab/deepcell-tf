@@ -79,7 +79,6 @@ setup(
     },
     packages=find_packages(),
     python_requires='>=3.6, <3.9',
-    setup_requires=['numpy>=1.6.6,<2'],
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
