@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,8 +31,6 @@ from __future__ import division
 
 import numpy as np
 from tensorflow.keras import callbacks
-from tensorflow.python.keras.utils import multi_gpu_model
-from tensorflow.python.keras import Model
 from tensorflow.python.client import device_lib
 
 
@@ -46,17 +44,17 @@ def get_callbacks(model_path,
     """Returns a list of callbacks used for training
 
     Args:
-        model_path: (str) path for the h5 model file.
+        model_path: (str) path for the ``h5`` model file.
         save_weights_only: (bool) if True, then only the model's weights
             will be saved.
         lr_sched (function): learning rate scheduler per epoch.
-            from deepcell.utils.train_utils.rate_scheduler.
+            from `~deepcell.utils.train_utils.rate_scheduler`.
         tensorboard_log_dir (str): log directory for tensorboard.
         monitor (str): quantity to monitor.
         verbose (int): verbosity mode, 0 or 1.
 
     Returns:
-        list: a list of callbacks to be passed to model.fit()
+        list: a list of callbacks to be passed to ``model.fit()``
     """
     cbs = [
         callbacks.ModelCheckpoint(
@@ -92,7 +90,7 @@ def rate_scheduler(lr=.001, decay=0.95):
 
     Returns:
         function: A function that takes in the epoch
-            and returns a learning rate.
+        and returns a learning rate.
     """
     def output_fn(epoch):
         epoch = np.int(epoch)
@@ -110,27 +108,3 @@ def count_gpus():
     devices = device_lib.list_local_devices()
     gpus = [d for d in devices if d.name.lower().startswith('/device:gpu')]
     return len(gpus)
-
-
-class MultiGpuModel(Model):
-    """Wrapper Model class to enable multi-gpu saving/loading
-
-    Args:
-        ser_model (tensorflow.keras.Model): serial-model for multiple GPUs.
-        gpus (int): number of GPUs to train on.
-    """
-    def __init__(self, ser_model, gpus):
-        pmodel = multi_gpu_model(ser_model, gpus)
-        self.__dict__.update(pmodel.__dict__)
-        self._smodel = ser_model
-
-    def __getattribute__(self, attrname):
-        """Override load and save methods to be used from the serial-model.
-
-        The serial-model holds references to the weights in the multi-gpu model
-        """
-        # return Model.__getattribute__(self, attrname)
-        if 'load' in attrname or 'save' in attrname:
-            return getattr(self._smodel, attrname)
-
-        return super(MultiGpuModel, self).__getattribute__(attrname)

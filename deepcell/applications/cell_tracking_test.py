@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -33,6 +33,7 @@ from tensorflow.python.platform import test
 import numpy as np
 import skimage as sk
 
+from deepcell.model_zoo.featurenet import siamese_model
 from deepcell.applications import CellTracking
 
 
@@ -65,8 +66,17 @@ class TestCellTracking(test.TestCase):
 
     def test_cell_tracking_app(self):
         with self.cached_session():
+            input_shape = (32, 32, 1)
+            neighborhood_scale_size = 30
+            features = {'appearance', 'distance', 'neighborhood', 'regionprop'}
+
+            model = siamese_model(
+                input_shape=input_shape,
+                neighborhood_scale_size=neighborhood_scale_size,
+                features=features)
+
             # test instantiation
-            app = CellTracking(use_pretrained_weights=False)
+            app = CellTracking(model=model)
 
             # test output shape
             shape = app.model.output_shape

@@ -1,5 +1,5 @@
-deepcell.datasets package
-=========================
+deepcell.datasets
+=================
 Basic datasets can be loaded according to the following example.
 
 .. code-block:: python
@@ -25,24 +25,24 @@ Tracked datasets have a dedicated load function to handle the different data str
 .. contents:: Contents
     :local:
 
-deepcell.datasets.cytoplasm module
-----------------------------------
+deepcell.datasets.cytoplasm
+---------------------------
 
 .. automodule:: deepcell.datasets.cytoplasm
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.datasets.phase module
-------------------------------
+deepcell.datasets.phase
+-----------------------
 
 .. automodule:: deepcell.datasets.phase
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.datasets.tracked module
---------------------------------
+deepcell.datasets.tracked
+-------------------------
 
 .. automodule:: deepcell.datasets.tracked
     :members:

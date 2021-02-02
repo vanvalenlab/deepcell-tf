@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -32,9 +32,9 @@ from __future__ import print_function
 import numpy as np
 import skimage as sk
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.preprocessing.image import array_to_img
-from tensorflow.python.keras.preprocessing.image import img_to_array
+from tensorflow.keras import backend as K
+from tensorflow.keras.preprocessing.image import array_to_img
+from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.python.platform import test
 
 from deepcell import image_generators
@@ -303,7 +303,7 @@ class TestTransformMasks(test.TestCase):
             transform='disc',
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 30, 30, classes))
-        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
+        self.assertEqual(mask_transform.dtype, np.dtype(K.floatx()))
 
         mask = np.random.randint(classes, size=(5, 1, 30, 30))
         mask_transform = image_generators._transform_masks(
@@ -311,7 +311,7 @@ class TestTransformMasks(test.TestCase):
             transform='disc',
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, classes, 30, 30))
-        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
+        self.assertEqual(mask_transform.dtype, np.dtype(K.floatx()))
 
         # test 3D masks
         mask = np.random.randint(classes, size=(5, 10, 30, 30, 1))
@@ -320,7 +320,7 @@ class TestTransformMasks(test.TestCase):
             transform='disc',
             data_format='channels_last')
         self.assertEqual(mask_transform.shape, (5, 10, 30, 30, classes))
-        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
+        self.assertEqual(mask_transform.dtype, np.dtype(K.floatx()))
 
         mask = np.random.randint(classes, size=(5, 1, 10, 30, 30))
         mask_transform = image_generators._transform_masks(
@@ -328,7 +328,7 @@ class TestTransformMasks(test.TestCase):
             transform='disc',
             data_format='channels_first')
         self.assertEqual(mask_transform.shape, (5, classes, 10, 30, 30))
-        self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
+        self.assertEqual(mask_transform.dtype, np.dtype(K.floatx()))
 
     def test_bad_mask(self):
         # test bad transform
@@ -1395,12 +1395,22 @@ class TestRetinaNetDataGenerator(test.TestCase):
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
-            for x, (r, l) in generator.flow(
+            for x, y in generator.flow(
                     train_dict,
                     num_classes=num_classes,
+                    include_bbox=True,
+                    include_masks=True,
                     save_to_dir=temp_dir,
                     shuffle=True):
-                self.assertEqual(x.shape[1:], images.shape[1:])
+                self.assertIsInstance(x, dict)
+                self.assertEqual('input' in x, True)
+                self.assertEqual('boxes_input' in x, True)
+                self.assertEqual(x['input'].shape[1:], images.shape[1:])
+                self.assertIsInstance(y, dict)
+                self.assertEqual('regression' in y, True)
+                self.assertEqual('classification' in y, True)
+                r = y['regression']
+                l = y['classification']
                 self.assertEqual(r.shape[:-1], l.shape[:-1])
                 self.assertEqual(r.shape[-1], 5)
                 self.assertEqual(l.shape[-1], num_classes + 1)
@@ -1451,12 +1461,22 @@ class TestRetinaNetDataGenerator(test.TestCase):
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
 
-            for x, (r, l) in generator.flow(
+            for x, y in generator.flow(
                     train_dict,
                     num_classes=num_classes,
+                    include_bbox=True,
+                    include_masks=True,
                     save_to_dir=temp_dir,
                     shuffle=True):
-                self.assertEqual(x.shape[1:], images.shape[1:])
+                self.assertIsInstance(x, dict)
+                self.assertEqual('input' in x, True)
+                self.assertEqual('boxes_input' in x, True)
+                self.assertEqual(x['input'].shape[1:], images.shape[1:])
+                self.assertIsInstance(y, dict)
+                self.assertEqual('regression' in y, True)
+                self.assertEqual('classification' in y, True)
+                r = y['regression']
+                l = y['classification']
                 self.assertEqual(r.shape[:-1], l.shape[:-1])
                 self.assertEqual(r.shape[-1], 5)
                 self.assertEqual(l.shape[-1], num_classes + 1)
@@ -1560,15 +1580,26 @@ class TestRetinaMovieDataGenerator(test.TestCase):
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
 
-            for x, (r, l) in generator.flow(
+            for x, y in generator.flow(
                     train_dict,
                     frames_per_batch=frames_per_batch,
                     num_classes=num_classes,
+                    include_bbox=True,
+                    include_masks=True,
                     save_to_dir=temp_dir,
                     shuffle=True):
                 expected = list(images.shape)
                 expected[1] = frames_per_batch
-                self.assertEqual(x.shape[1:], tuple(expected)[1:])
+                expected = tuple(expected)
+                self.assertIsInstance(x, dict)
+                self.assertEqual('input' in x, True)
+                self.assertEqual('boxes_input' in x, True)
+                self.assertEqual(x['input'].shape[1:], expected[1:])
+                self.assertIsInstance(y, dict)
+                self.assertEqual('regression' in y, True)
+                self.assertEqual('classification' in y, True)
+                r = y['regression']
+                l = y['classification']
                 self.assertEqual(r.shape[:-1], l.shape[:-1])
                 self.assertEqual(r.shape[-1], 5)
                 self.assertEqual(l.shape[-1], num_classes + 1)
@@ -1629,15 +1660,27 @@ class TestRetinaMovieDataGenerator(test.TestCase):
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
 
-            for x, (r, l) in generator.flow(
+            for x, y in generator.flow(
                     train_dict,
                     num_classes=num_classes,
+                    include_bbox=True,
+                    include_masks=True,
                     frames_per_batch=frames_per_batch,
                     save_to_dir=temp_dir,
                     shuffle=True):
                 expected = list(images.shape)
                 expected[2] = frames_per_batch
-                self.assertEqual(x.shape[1:], tuple(expected)[1:])
+                expected = tuple(expected)
+                self.assertIsInstance(x, dict)
+                self.assertEqual('input' in x, True)
+                self.assertEqual('boxes_input' in x, True)
+                self.assertEqual(x['input'].shape[1:], expected[1:])
+
+                self.assertIsInstance(y, dict)
+                self.assertEqual('regression' in y, True)
+                self.assertEqual('classification' in y, True)
+                r = y['regression']
+                l = y['classification']
                 self.assertEqual(r.shape[:-1], l.shape[:-1])
                 self.assertEqual(r.shape[-1], 5)
                 self.assertEqual(l.shape[-1], num_classes + 1)

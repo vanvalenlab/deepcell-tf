@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,7 +31,8 @@ from __future__ import division
 from absl.testing import parameterized
 
 import numpy as np
-from tensorflow.python import keras
+import tensorflow as tf
+
 from tensorflow.python.keras import keras_parameterized
 from tensorflow.python.keras import testing_utils
 from tensorflow.python.framework import test_util as tf_test_util
@@ -48,7 +49,7 @@ class ImageNormalizationTest(keras_parameterized.TestCase):
 
     def test_normalize_2d(self, norm_method):
         custom_objects = {'ImageNormalization2D': layers.ImageNormalization2D}
-        with keras.utils.custom_object_scope(custom_objects):
+        with tf.keras.utils.custom_object_scope(custom_objects):
             testing_utils.layer_test(
                 layers.ImageNormalization2D,
                 kwargs={'norm_method': norm_method,
@@ -62,13 +63,13 @@ class ImageNormalizationTest(keras_parameterized.TestCase):
                         'data_format': 'channels_first'},
                 input_shape=(3, 4, 5, 6))
             # test constraints and bias
-            k_constraint = keras.constraints.max_norm(0.01)
-            b_constraint = keras.constraints.max_norm(0.01)
+            k_constraint = tf.keras.constraints.max_norm(0.01)
+            b_constraint = tf.keras.constraints.max_norm(0.01)
             layer = layers.ImageNormalization2D(
                 use_bias=True,
                 kernel_constraint=k_constraint,
                 bias_constraint=b_constraint)
-            layer(keras.backend.variable(np.ones((3, 5, 6, 4))))
+            layer(tf.keras.backend.variable(np.ones((3, 5, 6, 4))))
             # self.assertEqual(layer.kernel.constraint, k_constraint)
             # self.assertEqual(layer.bias.constraint, b_constraint)
             # test bad norm_method
@@ -85,7 +86,7 @@ class ImageNormalizationTest(keras_parameterized.TestCase):
 
     def test_normalize_3d(self, norm_method):
         custom_objects = {'ImageNormalization3D': layers.ImageNormalization3D}
-        with keras.utils.custom_object_scope(custom_objects):
+        with tf.keras.utils.custom_object_scope(custom_objects):
             testing_utils.layer_test(
                 layers.ImageNormalization3D,
                 kwargs={'norm_method': norm_method,
@@ -99,13 +100,13 @@ class ImageNormalizationTest(keras_parameterized.TestCase):
                         'data_format': 'channels_first'},
                 input_shape=(3, 4, 11, 12, 10))
             # test constraints and bias
-            k_constraint = keras.constraints.max_norm(0.01)
-            b_constraint = keras.constraints.max_norm(0.01)
+            k_constraint = tf.keras.constraints.max_norm(0.01)
+            b_constraint = tf.keras.constraints.max_norm(0.01)
             layer = layers.ImageNormalization3D(
                 use_bias=True,
                 kernel_constraint=k_constraint,
                 bias_constraint=b_constraint)
-            layer(keras.backend.variable(np.ones((3, 4, 11, 12, 10))))
+            layer(tf.keras.backend.variable(np.ones((3, 4, 11, 12, 10))))
             # self.assertEqual(layer.kernel.constraint, k_constraint)
             # self.assertEqual(layer.bias.constraint, b_constraint)
             # test bad norm_method

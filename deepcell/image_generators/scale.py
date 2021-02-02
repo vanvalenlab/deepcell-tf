@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -39,32 +39,37 @@ import os
 
 import numpy as np
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.preprocessing.image import array_to_img
-from tensorflow.python.keras.preprocessing.image import Iterator
+from tensorflow.keras import backend as K
+from tensorflow.keras.preprocessing.image import array_to_img
+from tensorflow.keras.preprocessing.image import Iterator
 
 from deepcell.image_generators import ImageFullyConvDataGenerator
 
 
 class ScaleIterator(Iterator):
-    """Iterator yielding data from Numpy arrayss (X and y).
+    """Iterator yielding data from Numpy arrays (``X`` and ``y``).
 
     Args:
-        train_dict (dict): Consists of numpy arrays for X and y.
+        train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
         scale_generator (ScaleDataGenerator): For random transformations
             and normalization.
         batch_size (int): Size of a batch.
         shuffle (bool): Whether to shuffle the data between epochs.
         seed (int): Random seed for data shuffling.
-        data_format (str): One of 'channels_first', 'channels_last'.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         save_to_dir (str): Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix (str): Prefix to use for saving sample
-            images (if save_to_dir is set).
+            images (if ``save_to_dir`` is set).
         save_format (str): Format to use for saving sample images
-            (if save_to_dir is set).
+            (if ``save_to_dir`` is set).
     """
 
     def __init__(self,
@@ -163,16 +168,28 @@ class ScaleDataGenerator(ImageFullyConvDataGenerator):
             - float: fraction of total width, if < 1, or pixels if >= 1.
             - 1-D array-like: random elements from the array.
             - int: integer number of pixels from interval
-              (-width_shift_range, +width_shift_range)
-            - With width_shift_range=2 possible values are ints [-1, 0, +1],
-              same as with width_shift_range=[-1, 0, +1], while with
-              width_shift_range=1.0 possible values are floats in the interval
-              [-1.0, +1.0).
+              ``(-width_shift_range, +width_shift_range)``
+            - With ``width_shift_range=2`` possible values are integers
+              ``[-1, 0, +1]``, same as with ``width_shift_range=[-1, 0, +1]``,
+              while with ``width_shift_range=1.0`` possible values are floats
+              in the interval [-1.0, +1.0).
+
+        height_shift_range: Float, 1-D array-like or int
+
+            - float: fraction of total height, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval
+              ``(-height_shift_range, +height_shift_range)``
+            - With ``height_shift_range=2`` possible values
+              are integers ``[-1, 0, +1]``,
+              same as with ``height_shift_range=[-1, 0, +1]``,
+              while with ``height_shift_range=1.0`` possible values are floats
+              in the interval [-1.0, +1.0).
 
         shear_range (float): Shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range (float): float or [lower, upper], Range for random zoom.
-            If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
+            If a float, ``[lower, upper] = [1-zoom_range, 1+zoom_range]``.
         channel_shift_range (float): range for random channel shifts.
         fill_mode (str): One of {"constant", "nearest", "reflect" or "wrap"}.
 
@@ -185,7 +202,7 @@ class ScaleDataGenerator(ImageFullyConvDataGenerator):
                 - 'wrap':  abcdabcd|abcd|abcdabcd
 
         cval (float): Value used for points outside the boundaries
-            when fill_mode = "constant".
+            when ``fill_mode = "constant"``.
         horizontal_flip (bool): Randomly flip inputs horizontally.
         vertical_flip (bool): Randomly flip inputs vertically.
         rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
@@ -196,16 +213,12 @@ class ScaleDataGenerator(ImageFullyConvDataGenerator):
             The function should take one argument:
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
-        data_format (str): One of {"channels_first", "channels_last"}.
-
-            - "channels_last" mode means that the images should have shape
-              (samples, height, width, channels),
-            - "channels_first" mode means that the images should have shape
-              (samples, channels, height, width).
-            - It defaults to the image_data_format value found in your
-              Keras config file at "~/.keras/keras.json".
-            - If you never set it, then it will be "channels_last".
-
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         validation_split (float): Fraction of images reserved for validation
             (strictly between 0 and 1).
     """
@@ -221,7 +234,7 @@ class ScaleDataGenerator(ImageFullyConvDataGenerator):
         """Generates batches of augmented/normalized data with given arrays.
 
         Args:
-            train_dict (dict): Consists of numpy arrays for X and y.
+            train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
             batch_size (int): Size of a batch.
             shuffle (bool): Whether to shuffle the data between epochs.
             seed (int): Random seed for data shuffling.
@@ -230,14 +243,14 @@ class ScaleDataGenerator(ImageFullyConvDataGenerator):
                 for visualizing the random transformations being
                 applied, for debugging purposes.
             save_prefix (str): Prefix to use for saving sample
-                images (if save_to_dir is set).
+                images (if ``save_to_dir`` is set).
             save_format (str): Format to use for saving sample images
-                (if save_to_dir is set).
+                (if ``save_to_dir`` is set).
 
         Returns:
-            ScaleIterator: An Iterator yielding tuples of (x, y),
-                where x is a numpy array of image data and y is a numpy array
-                of labels of the same shape.
+            ScaleIterator: An ``Iterator`` yielding tuples of ``(x, y)``,
+            where ``x`` is a numpy array of image data and ``y``
+            is the transformed scale of ``x``.
         """
         return ScaleIterator(
             train_dict,
@@ -262,7 +275,7 @@ class ScaleDataGenerator(ImageFullyConvDataGenerator):
 
         Returns:
             tensor:  A randomly transformed version of the input (same shape).
-                If y is passed, it is transformed if necessary and returned.
+            If ``y`` is passed, it is transformed if necessary and returned.
         """
         params = self.get_random_transform(x.shape, seed)
         params['zy'] = params['zx']

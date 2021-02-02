@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -43,7 +43,7 @@ from skimage.segmentation import find_boundaries
 
 def get_js_video(images, batch=0, channel=0, cmap='jet',
                  vmin=0, vmax=0, interval=200, repeat_delay=1000):
-    """Create a JavaScript video as HTML for visualizing 3D data as a movie
+    """Create a JavaScript video as HTML for visualizing 3D data as a movie.
 
     Args:
         images (numpy.array): images to display as video
@@ -87,7 +87,7 @@ def draw_box(image, box, color, thickness=2):
 
     Args:
         image (numpy.array): The image to draw on.
-        box (int[]): A list of 4 elements (x1, y1, x2, y2).
+        box (int[]): A list of 4 elements ``(x1, y1, x2, y2)``.
         color (int[]): The color of the box.
         thickness (int): The thickness of the lines to draw a box with.
     """
@@ -102,7 +102,7 @@ def draw_caption(image, box, caption):
 
     Args:
         image (numpy.array): The image to draw on.
-        box (int[]): A list of 4 elements (x1, y1, x2, y2).
+        box (int[]): A list of 4 elements ``(x1, y1, x2, y2)``.
         caption (str): String containing the text to draw.
     """
     b = np.array(box).astype(int)
@@ -121,11 +121,11 @@ def draw_mask(image,
 
     Args:
         image (numpy.array): Three dimensional image to draw on.
-        box (int[]): Vector of at least 4 values (x1, y1, x2, y2)
+        box (tuple): Vector of at least 4 values ``(x1, y1, x2, y2)``
             representing a box in the image.
         mask (numpy.array): A 2D float mask which will be reshaped to the size
             of the box, binarized and drawn over the image.
-        color (int[]): Color to draw the mask with. If the box has 5 values,
+        color (tuple): Color to draw the mask with. If the box has 5 values,
             the last value is assumed to be the label and used to
             construct a default color.
         binarize_threshold (float): Threshold used for binarizing the mask.
@@ -170,14 +170,14 @@ def draw_masks(image, boxes, scores, masks,
 
     Args:
         image (numpy.array): Three dimensional image to draw on.
-        boxes (int[]): Matrix of shape (N, >=4)
-            (at least 4 values: (x1, y1, x2, y2)) representing boxes
+        boxes (list): Matrix of shape ``(N, >=4)``
+            (at least 4 values: ``(x1, y1, x2, y2)``) representing boxes
             in the image.
-        scores (float[]): A list of N classification scores.
-        masks (numpy.array): Matrix of shape (N, H, W) of N masks of shape (H, W)
-            which will be reshaped to the size of the corresponding box,
-            binarized and drawn over the image.
-        color (int[]): Color or to draw the masks with.
+        scores (list): A list of N classification scores.
+        masks (numpy.array): Matrix of shape ``(N, H, W)`` of N masks of shape
+            ``(H, W)`` which will be reshaped to the size of the corresponding
+            box, binarized and drawn over the image.
+        color (list): Color or to draw the masks with.
         score_threshold (float): Threshold used for determining
             the masks to draw.
         binarize_threshold (float): Threshold used for binarizing the masks.
@@ -203,10 +203,10 @@ def draw_detections(image,
 
     Args:
         image (numpy.array): The image to draw on.
-        boxes (int[]): A [N, 4] matrix (x1, y1, x2, y2).
-        scores (float[]): A list of N classification scores.
-        labels (str[]): A list of N labels.
-        color (int[]): The color of the boxes.
+        boxes (list): A [N, 4] matrix ``(x1, y1, x2, y2)``.
+        scores (list): A list of N classification scores.
+        labels (list): A list of N labels.
+        color (list): The color of the boxes.
         label_to_name (function): (optional) Functor for mapping a
             label to a name.
         score_threshold (float): Threshold used for determining
@@ -233,10 +233,10 @@ def draw_annotations(image,
 
     Args:
         image (numpy.array): The image to draw on.
-        annotations (numpy.array): A [N, 5] matrix (x1, y1, x2, y2, label) or
-            dictionary containing bboxes (shaped [N, 4])
-            and labels (shaped [N]).
-        color (int[]): The color of the boxes.
+        annotations (numpy.array): A [N, 5] matrix ``(x1, y1, x2, y2, label)``
+            or dictionary containing bboxes (shaped ``[N, 4]``)
+            and labels (shaped ``[N]``).
+        color (list): The color of the boxes.
         label_to_name (function): (optional) Functor for mapping a
             label to a name.
     """
@@ -263,7 +263,7 @@ def cf(x_coord, y_coord, sample_image):
         sample_image (numpy.array): Sample image for numpy arrays
 
     Returns:
-        str: formatted coordinates (x, y, and z).
+        str: formatted coordinates ``(x, y, z)``.
     """
     numrows, numcols = sample_image.shape
     col = int(x_coord + 0.5)
@@ -371,8 +371,9 @@ def create_rgb_image(input_data, channel_colors):
         numpy.array: transformed version of input data into RGB version
 
     Raises:
-        ValueError: if len(channel_colors) is not equal to number of channels
-        ValueError: if invalid channel_colors provided
+        ValueError: if ``len(channel_colors)`` is not equal
+            to number of channels
+        ValueError: if invalid ``channel_colors`` provided
         ValueError: if input_data is not 4D, with 1 or 2 channels
     """
 
@@ -421,7 +422,7 @@ def make_outline_overlay(rgb_data, predictions):
     """Overlay a segmentation mask with image data for easy visualization
 
     Args:
-        rgb_data: 3 channel array of images, output of create_rgb_data
+        rgb_data: 3 channel array of images, output of ``create_rgb_data``
         predictions: segmentation predictions to be visualized
 
     Returns:

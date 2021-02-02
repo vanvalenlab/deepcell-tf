@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -30,8 +30,8 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
-from tensorflow.python.keras.layers import ZeroPadding2D
-from tensorflow.python.keras.layers import ZeroPadding3D
+from tensorflow.keras.layers import ZeroPadding2D
+from tensorflow.keras.layers import ZeroPadding3D
 
 
 class ReflectionPadding2D(ZeroPadding2D):
@@ -41,45 +41,20 @@ class ReflectionPadding2D(ZeroPadding2D):
     at the top, bottom, left and right side of an image tensor.
 
     Args:
-        padding (int, or tuple of 2 ints, or tuple of 2 tuples of 2 ints):
-
-            - If int: the same symmetric padding
-                is applied to height and width.
-            - If tuple of 2 ints:
-                interpreted as two different
-                symmetric padding values for height and width:
-                (symmetric_height_pad, symmetric_width_pad).
-            - If tuple of 2 tuples of 2 ints:
-                interpreted as
-                ((top_pad, bottom_pad), (left_pad, right_pad))
-
-        data_format (str): One of 'channels_last' (default) or 'channels_first'.
-            The ordering of the dimensions in the inputs.
-            'channels_last' corresponds to inputs with shape
-            (batch, height, width, channels) while 'channels_first'
+        padding (int, tuple):
+            If int, the same symmetric padding is applied to height and width.
+            If tuple of 2 ints, interpreted as two different symmetric padding
+            values for height and width:
+            ``(symmetric_height_pad, symmetric_width_pad)``.
+            If tuple of 2 tuples of 2 ints, interpreted as
+            ``((top_pad, bottom_pad), (left_pad, right_pad))``.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
             corresponds to inputs with shape
-            (batch, channels, height, width).
-            It defaults to the image_data_format value found in your
-            Keras config file at "~/.keras/keras.json".
-            If you never set it, then it will be "channels_last".
-
-    Input shape:
-        4D tensor with shape:
-
-        - If data_format is "channels_last":
-            (batch, rows, cols, channels)
-        - If data_format is "channels_first":
-            (batch, channels, rows, cols)
-
-    Output shape:
-        4D tensor with shape:
-
-        - If data_format is "channels_last":
-            (batch, padded_rows, padded_cols, channels)
-        - If data_format is "channels_first":
-            (batch, channels, padded_rows, padded_cols)
+            ``(batch, channels, height, width)``.
     """
-
     def call(self, inputs):
         w_pad, h_pad = self.padding
         if self.data_format == 'channels_first':
@@ -93,48 +68,23 @@ class ReflectionPadding3D(ZeroPadding3D):
     """Reflection-padding layer for 3D data (spatial or spatio-temporal).
 
     Args:
-        padding: int, or tuple of 3 ints, or tuple of 3 tuples of 2 ints.
-            - If int: the same symmetric padding
-                is applied to height and width.
-            - If tuple of 3 ints:
-                interpreted as two different
-                symmetric padding values for height and width:
-                (symmetric_dim1_pad, symmetric_dim2_pad, symmetric_dim3_pad).
-            - If tuple of 3 tuples of 2 ints:
-                interpreted as
-                ((left_dim1_pad, right_dim1_pad), (left_dim2_pad,
-                    right_dim2_pad), (left_dim3_pad, right_dim3_pad))
-
-        data_format: A string,
-            one of 'channels_last' (default) or 'channels_first'.
-            The ordering of the dimensions in the inputs.
-            'channels_last' corresponds to inputs with shape
-            (batch, spatial_dim1, spatial_dim2, spatial_dim3, channels)
-            while 'channels_first' corresponds to inputs with shape
-            (batch, channels, spatial_dim1, spatial_dim2, spatial_dim3).
-            It defaults to the image_data_format value found in your
-            Keras config file at '~/.keras/keras.json'.
-            If you never set it, then it will be "channels_last".
-
-    Input shape:
-        5D tensor with shape:
-        - If data_format is "channels_last":
-            (batch, first_axis_to_pad, second_axis_to_pad, third_axis_to_pad,
-                depth)
-        - If data_format is "channels_first":
-            (batch, depth, first_axis_to_pad, second_axis_to_pad,
-                third_axis_to_pad)
-
-    Output shape:
-        5D tensor with shape:
-        - If data_format is "channels_last":
-            (batch, first_padded_axis, second_padded_axis, third_axis_to_pad,
-                depth)
-        - If data_format is "channels_first":
-            (batch, depth, first_padded_axis, second_padded_axis,
-                third_axis_to_pad)
+        padding (int, tuple): The pad-width to add in each dimension.
+            If an int, the same symmetric padding is applied to height and
+            width.
+            If a tuple of 3 ints, interpreted as two different symmetric
+            padding values for height and width:
+            ``(symmetric_dim1_pad, symmetric_dim2_pad, symmetric_dim3_pad)``.
+            If tuple of 3 tuples of 2 ints, interpreted as
+            ``((left_dim1_pad, right_dim1_pad),
+            (left_dim2_pad, right_dim2_pad),
+            (left_dim3_pad, right_dim3_pad))``
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
     """
-
     def call(self, inputs):
         d_pad, w_pad, h_pad = self.padding
         if self.data_format == 'channels_first':

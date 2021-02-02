@@ -1,11 +1,12 @@
 # ![DeepCell Banner](https://raw.githubusercontent.com/vanvalenlab/deepcell-tf/master/docs/images/DeepCell_tf_Banner.png)
-
-[![Build Status](https://travis-ci.com/vanvalenlab/deepcell-tf.svg?branch=master)](https://travis-ci.com/vanvalenlab/deepcell-tf)
+[![Build Status](https://github.com/vanvalenlab/deepcell-tf/workflows/build/badge.svg)](https://github.com/vanvalenlab/deepcell-tf/actions)
 [![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/deepcell/badge/?version=master)](https://deepcell.readthedocs.io/en/master/?badge=master)
 [![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE)
+[![PyPI version](https://badge.fury.io/py/DeepCell.svg)](https://badge.fury.io/py/deepcell)
+[![Python Versions](https://img.shields.io/pypi/pyversions/deepcell.svg)](https://pypi.org/project/deepcell/)
 
-`deepcell-tf` is a deep learning library for single-cell analysis of biological images. It is written in Python and built using [TensorFlow](https://github.com/tensorflow/tensorflow) and [Keras](https://www.tensorflow.org/guide/keras).
+`deepcell-tf` is a deep learning library for single-cell analysis of biological images. It is written in Python and built using [TensorFlow 2](https://github.com/tensorflow/tensorflow).
 
 This library allows users to apply pre-existing models to imaging data as well as to develop new deep learning models for single-cell analysis. This library specializes in models for cell segmentation (whole-cell and nuclear) in 2D and 3D images as well as cell tracking in 2D time-lapse datasets. These models are applicable to data ranging from multiplexed images of tissues to dynamic live-cell imaging movies.
 
@@ -14,6 +15,8 @@ This library allows users to apply pre-existing models to imaging data as well a
 Read the documentation at [deepcell.readthedocs.io](https://deepcell.readthedocs.io).
 
 For more information on deploying models in the cloud refer to the [the Kiosk documentation](https://deepcell-kiosk.readthedocs.io).
+
+For TensorFlow 1.X or Python 2.7 support, please use deepcell [0.7.0](https://github.com/vanvalenlab/deepcell-tf/tree/0.7.0) or earlier.
 
 ## Examples
 
@@ -43,7 +46,18 @@ Tracked Image
 
 ## Getting Started
 
-The fastest way to get started with `deepcell-tf` is to run one of our existing images from Docker Hub. While you can run the package without any specialized hardware by omitting the `-gpu` flags in the command below, we recommend the use of hardware acceleration. To  run the library locally on a GPU, you will need to make sure the latest version of [`nvidia-docker`](https://github.com/NVIDIA/nvidia-docker) and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
+### Install with pip
+
+The fastest way to get started with `deepcell-tf` is to install the package with `pip`:
+
+```bash
+$ pip install deepcell
+```
+
+### Install with Docker
+
+There are also [docker containers](https://hub.docker.com/r/vanvalenlab/deepcell-tf) with GPU support available from DockerHub.
+run one of our existing images from Docker Hub. To  run the library locally on a GPU, you will need to make sure the latest version of <tt><a href="https://github.com/NVIDIA/nvidia-docker">nvidia-docker</a></tt> and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
 
 Once `nvidia-docker` is installed, run the following command:
 
@@ -53,10 +67,10 @@ docker run --gpus '"device=0"' -it --rm \
     -p 8888:8888 \
     -v $PWD/notebooks:/notebooks \
     -v $PWD/data:/data \
-    vanvalenlab/deepcell-tf:0.5.0-gpu
+    vanvalenlab/deepcell-tf:0.8.3-gpu
 ```
 
-This will spin up a docker container with `deepcell-tf` installed and start a jupyter session using the default port 8888. This command also mounts a data folder (`$PWD/data`) and a scripts folder (`$PWD/scripts`) to the docker container so it can access data and Juyter notebooks stored on the host workstation. For any saved data or models to persist once the container is shut down, or be accessible outside of the container in general, it must be saved in these mounted directories. The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 81:8888`. If you run across any errors getting started, you should either refer to the `deepcell-tf` for developers section or raise an issue on GitHub.
+This will spin up a docker container with `deepcell-tf` installed and start a jupyter session using the default port 8888. This command also mounts a data folder (`$PWD/data`) and a scripts folder (`$PWD/scripts`) to the docker container so it can access data and Juyter notebooks stored on the host workstation. For any saved data or models to persist once the container is shut down, or be accessible outside of the container in general, it must be saved in these mounted directories. The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 8080:8888`. If you run across any errors getting started, you should either refer to the `deepcell-tf` for developers section or raise an issue on GitHub.
 
 For examples of how to train models with the `deepcell-tf` library, check out the following notebooks:
 
@@ -76,7 +90,7 @@ For examples of how to train models with the `deepcell-tf` library, check out th
 ```bash
 git clone https://github.com/vanvalenlab/deepcell-tf.git
 cd deepcell-tf
-docker build --build-arg TF_VERSION=1.15.0-gpu -t $USER/deepcell-tf .
+docker build --build-arg TF_VERSION=2.3.1-gpu -t $USER/deepcell-tf .
 ```
 
 ### Run the new docker image

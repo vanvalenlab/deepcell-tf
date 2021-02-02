@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -48,13 +48,14 @@ def sorted_nicely(l):
 
 def get_sorted_keys(dict_to_sort):
     """Gets the keys from a dict and sorts them in ascending order.
-    Assumes keys are of the form Ni, where N is a letter and i is an integer.
+    Assumes keys are of the form ``Ni``, where ``N`` is a letter and ``i``
+    is an integer.
 
     Args:
         dict_to_sort (dict): dict whose keys need sorting
 
     Returns:
-        list: list of sorted keys from dict_to_sort
+        list: list of sorted keys from ``dict_to_sort``
     """
     sorted_keys = list(dict_to_sort.keys())
     sorted_keys.sort(key=lambda x: int(x[1:]))

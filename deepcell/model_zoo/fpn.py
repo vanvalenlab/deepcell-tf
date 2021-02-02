@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,13 +31,14 @@ from __future__ import division
 
 import re
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.layers import Conv2D, Conv3D, DepthwiseConv2D
-from tensorflow.python.keras.layers import Softmax
-from tensorflow.python.keras.layers import Add
-from tensorflow.python.keras.layers import Activation
-from tensorflow.python.keras.layers import UpSampling2D, UpSampling3D
-from tensorflow.python.keras.layers import BatchNormalization
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Conv2D, Conv3D, DepthwiseConv2D
+from tensorflow.keras.layers import Softmax
+from tensorflow.keras.layers import Add
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.layers import UpSampling2D, UpSampling3D
+from tensorflow.keras.layers import BatchNormalization
 
 from deepcell.layers import UpsampleLike
 from deepcell.utils.misc_utils import get_sorted_keys
@@ -56,32 +57,30 @@ def create_pyramid_level(backbone_input,
     """Create a pyramid layer from a particular backbone input layer.
 
     Args:
-        backbone_input (layer): Backbone layer to use to create they pyramid
-            layer
+        backbone_input (tensorflow.keras.Layer): Backbone layer to use to
+            create they pyramid layer.
         upsamplelike_input (tensor): Optional input to use
-            as a template for shape to upsample to
-        addition_input (layer): Optional layer to add to
+            as a template for shape to upsample to.
+        addition_input (tensorflow.keras.Layer): Optional layer to add to
             pyramid layer after convolution and upsampling.
-        upsample_type (str, optional): Choice of upsampling methods
-            from ['upsamplelike','upsampling2d','upsampling3d'].
-            Defaults to 'upsamplelike'.
-        level (int): Level to use in layer names, defaults to 5.
-        feature_size (int):Number of filters for
-            convolutional layer, defaults to 256.
-        ndim (int): The spatial dimensions of the input data. Default is 2,
-            but it also works with 3
+        upsample_type (str): Choice of upsampling methods
+            from ``['upsamplelike','upsampling2d','upsampling3d']``.
+        level (int): Level to use in layer names.
+        feature_size (int): Number of filters for the convolutional layer.
+        ndim (int): The spatial dimensions of the input data.
+            Must be either 2 or 3.
         lite (bool): Whether to use depthwise conv instead of regular conv for
             feature pyramid construction
         interpolation (str): Choice of interpolation mode for upsampling
-            layers from ['bilinear', 'nearest']. Defaults to bilinear.
+            layers from ``['bilinear', 'nearest']``.
 
     Returns:
         tuple: Pyramid layer after processing, upsampled pyramid layer
 
     Raises:
-        ValueError: ndim is not 2 or 3
-        ValueError: upsample_type not ['upsamplelike','upsampling2d',
-            'upsampling3d']
+        ValueError: ``ndim`` is not 2 or 3
+        ValueError: ``upsample_type`` not in
+            ``['upsamplelike','upsampling2d', 'upsampling3d']``
     """
     # Check input to ndims
     acceptable_ndims = {2, 3}
@@ -170,30 +169,29 @@ def __create_pyramid_features(backbone_dict,
 
     Args:
         backbone_dict (dictionary): A dictionary of the backbone layers, with
-            the names as keys, e.g. {'C0': C0, 'C1': C1, 'C2': C2, ...}
-        feature_size (int): Defaults to 256. The feature size to use
-            for the resulting feature levels.
+            the names as keys, e.g. ``{'C0': C0, 'C1': C1, 'C2': C2, ...}``
+        feature_size (int): The feature size to use for
+            the resulting feature levels.
         include_final_layers (bool): Add two coarser pyramid levels
         ndim (int): The spatial dimensions of the input data.
-            Default is 2, but it also works with 3
+            Must be either 2 or 3.
         lite (bool): Whether to use depthwise conv instead of regular conv for
             feature pyramid construction
-        upsample_type (str, optional): Choice of upsampling methods
-            from ['upsamplelike','upsamling2d','upsampling3d'].
-            Defaults to 'upsamplelike'.
+        upsample_type (str): Choice of upsampling methods
+            from ``['upsamplelike','upsamling2d','upsampling3d']``.
         interpolation (str): Choice of interpolation mode for upsampling
-            layers from ['bilinear', 'nearest']. Defaults to bilinear.
+            layers from ``['bilinear', 'nearest']``.
 
     Returns:
         dict: The feature pyramid names and levels,
-            e.g. {'P3': P3, 'P4': P4, ...}
-            Each backbone layer gets a pyramid level, and two additional levels
-            are added, e.g. [C3, C4, C5] --> [P3, P4, P5, P6, P7]
+        e.g. ``{'P3': P3, 'P4': P4, ...}``
+        Each backbone layer gets a pyramid level, and two additional levels
+        are added, e.g. ``[C3, C4, C5]`` --> ``[P3, P4, P5, P6, P7]``
 
     Raises:
-        ValueError: ndim is not 2 or 3
-        ValueError: upsample_type not ['upsamplelike','upsampling2d',
-            'upsampling3d']
+        ValueError: ``ndim`` is not 2 or 3
+        ValueError: ``upsample_type`` not in
+            ``['upsamplelike','upsampling2d', 'upsampling3d']``
     """
     # Check input to ndims
     acceptable_ndims = [2, 3]
@@ -320,29 +318,29 @@ def semantic_upsample(x,
                       upsample_type='upsamplelike',
                       interpolation='bilinear'):
     """Performs iterative rounds of 2x upsampling and
-    convolutions with a 3x3 filter to remove aliasing effects
+    convolutions with a 3x3 filter to remove aliasing effects.
 
     Args:
         x (tensor): The input tensor to be upsampled.
         n_upsample (int): The number of 2x upsamplings.
         target (tensor): An optional tensor with the target shape.
-        n_filters (int, optional): Defaults to 64. The number of filters for
+        n_filters (int): The number of filters for
             the 3x3 convolution.
         ndim (int): The spatial dimensions of the input data.
-            Default is 2, but it also works with 3.
-        semantic_id (int): ID of the semantic head. Defaults to 0.
+            Must be either 2 or 3.
+        semantic_id (int): ID of the semantic head.
         upsample_type (str): Choice of upsampling layer to use from
-        ['upsamplelike', 'upsampling2d', 'upsampling3d']. Defaults to
-            "upsamplelike".
+            ``['upsamplelike', 'upsampling2d', 'upsampling3d']``.
         interpolation (str): Choice of interpolation mode for upsampling
-            layers from ['bilinear', 'nearest']. Defaults to bilinear.
+            layers from ``['bilinear', 'nearest']``.
 
     Raises:
-        ValueError: ndim is not 2 or 3.
-        ValueError: interpolation not in ['bilinear', 'nearest'].
-        ValueError: upsample_type not in ['upsamplelike','upsampling2d',
-            'upsampling3d'].
-        ValueError: target is None if upsample_type is 'upsamplelike'
+        ValueError: ``ndim`` is not 2 or 3.
+        ValueError: ``interpolation`` not in ``['bilinear', 'nearest']``.
+        ValueError: ``upsample_type`` not in
+            ``['upsamplelike','upsampling2d', 'upsampling3d']``.
+        ValueError: ``target`` is ``None`` and
+            ``upsample_type`` is ``'upsamplelike'``
 
     Returns:
         tensor: The upsampled tensor.
@@ -425,30 +423,30 @@ def __create_semantic_head(pyramid_dict,
     """Creates a semantic head from a feature pyramid network.
 
     Args:
-        pyramid_dict (dict): dict of pyramid names and features.
+        pyramid_dict (dict): Dictionary of pyramid names and features.
         input_target (tensor): Optional tensor with the input image.
-        n_classes (int): Defaults to 3.  The number of classes to be predicted.
+        n_classes (int): The number of classes to be predicted.
         n_filters (int): The number of convolutional filters.
-        n_dense (int): Defaults to 128. Number of dense filters.
-        semantic_id (int): ID of the semantic head. Defaults to 0.
-        ndim (int): Defaults to 2, 3d supported.
-        include_top (bool): Defaults to False.
-        target_level (int, optional): The level we need to reach. Performs
-            2x upsampling until we're at the target level. Defaults to 2.
+        n_dense (int): Number of dense filters.
+        semantic_id (int): ID of the semantic head.
+        ndim (int): The spatial dimensions of the input data.
+            Must be either 2 or 3.
+        include_top (bool): Whether to include the final layer of the model
+        target_level (int): The level we need to reach. Performs
+            2x upsampling until we're at the target level.
         upsample_type (str): Choice of upsampling layer to use from
-            ['upsamplelike', 'upsampling2d', 'upsampling3d']. Defaults to
-            'upsamplelike'.
+            ``['upsamplelike', 'upsampling2d', 'upsampling3d']``.
         interpolation (str): Choice of interpolation mode for upsampling
-            layers from ['bilinear', 'nearest']. Defaults to bilinear.
+            layers from ``['bilinear', 'nearest']``.
 
     Raises:
-        ValueError: ndim must be 2 or 3
-        ValueError: interpolation not in ['bilinear', 'nearest']
-        ValueError: upsample_type not in ['upsamplelike','upsampling2d',
-            'upsampling3d']
+        ValueError: ``ndim`` must be 2 or 3
+        ValueError: ``interpolation`` not in ``['bilinear', 'nearest']``
+        ValueError: ``upsample_type`` not in
+            ``['upsamplelike','upsampling2d', 'upsampling3d']``
 
     Returns:
-        keras.layers.Layer: The semantic segmentation head
+        tensorflow.keras.Layer: The semantic segmentation head
     """
     # Check input to ndims
     if ndim not in {2, 3}:
@@ -540,8 +538,11 @@ def __create_semantic_head(pyramid_dict,
 
     if include_top:
         x = Softmax(axis=channel_axis,
+                    dtype=K.floatx(),
                     name='semantic_{}'.format(semantic_id))(x)
     else:
-        x = Activation('relu', name='semantic_{}'.format(semantic_id))(x)
+        x = Activation('relu',
+                       dtype=K.floatx(),
+                       name='semantic_{}'.format(semantic_id))(x)
 
     return x

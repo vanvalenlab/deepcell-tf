@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,7 +31,7 @@ from __future__ import print_function
 
 import numpy as np
 
-from tensorflow.python.keras.layers import Input
+from tensorflow.keras.layers import Input
 from tensorflow.python.platform import test
 
 from deepcell.applications import Application
@@ -208,6 +208,22 @@ class TestApplication(test.TestCase):
         original_shape = (1, 500, 500, 1)
         y = app._resize_output(x, original_shape)
         self.assertEqual(original_shape, y.shape)
+
+        # test multiple outputs are also resized
+        x_list = [x, x]
+
+        # x.shape = original_shape --> no resize
+        y = app._resize_output(x_list, x.shape)
+        self.assertIsInstance(y, list)
+        for y_sub in y:
+            self.assertEqual(x.shape, y_sub.shape)
+
+        # x.shape != original_shape --> resize
+        original_shape = (1, 500, 500, 1)
+        y = app._resize_output(x_list, original_shape)
+        self.assertIsInstance(y, list)
+        for y_sub in y:
+            self.assertEqual(original_shape, y_sub.shape)
 
     def test_format_model_output(self):
         def _format_model_output(Lx):

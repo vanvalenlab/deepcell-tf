@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -33,10 +33,10 @@ import numpy as np
 from skimage.measure import regionprops
 from skimage.transform import resize
 
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 from tensorflow.python.platform import tf_logging as logging
-from tensorflow.python.keras.preprocessing.image import Iterator
-from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.preprocessing.image import Iterator
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
 class SiameseDataGenerator(ImageDataGenerator):
@@ -58,16 +58,28 @@ class SiameseDataGenerator(ImageDataGenerator):
             - float: fraction of total width, if < 1, or pixels if >= 1.
             - 1-D array-like: random elements from the array.
             - int: integer number of pixels from interval
-              (-width_shift_range, +width_shift_range)
-            - With width_shift_range=2 possible values are ints [-1, 0, +1],
-              same as with width_shift_range=[-1, 0, +1], while with
-              width_shift_range=1.0 possible values are floats in the interval
-              [-1.0, +1.0).
+              ``(-width_shift_range, +width_shift_range)``
+            - With ``width_shift_range=2`` possible values are integers
+              ``[-1, 0, +1]``, same as with ``width_shift_range=[-1, 0, +1]``,
+              while with ``width_shift_range=1.0`` possible values are floats
+              in the interval [-1.0, +1.0).
+
+        height_shift_range: Float, 1-D array-like or int
+
+            - float: fraction of total height, if < 1, or pixels if >= 1.
+            - 1-D array-like: random elements from the array.
+            - int: integer number of pixels from interval
+              ``(-height_shift_range, +height_shift_range)``
+            - With ``height_shift_range=2`` possible values
+              are integers ``[-1, 0, +1]``,
+              same as with ``height_shift_range=[-1, 0, +1]``,
+              while with ``height_shift_range=1.0`` possible values are floats
+              in the interval [-1.0, +1.0).
 
         shear_range (float): Shear Intensity
             (Shear angle in counter-clockwise direction in degrees)
         zoom_range (float): float or [lower, upper], Range for random zoom.
-            If a float, [lower, upper] = [1-zoom_range, 1+zoom_range].
+            If a float, ``[lower, upper] = [1-zoom_range, 1+zoom_range]``.
         channel_shift_range (float): range for random channel shifts.
         fill_mode (str): One of {"constant", "nearest", "reflect" or "wrap"}.
 
@@ -80,7 +92,7 @@ class SiameseDataGenerator(ImageDataGenerator):
                 - 'wrap':  abcdabcd|abcd|abcdabcd
 
         cval (float): Value used for points outside the boundaries
-            when fill_mode = "constant".
+            when ``fill_mode = "constant"``.
         horizontal_flip (bool): Randomly flip inputs horizontally.
         vertical_flip (bool): Randomly flip inputs vertically.
         rescale: rescaling factor. Defaults to None. If None or 0, no rescaling
@@ -91,16 +103,12 @@ class SiameseDataGenerator(ImageDataGenerator):
             The function should take one argument:
             one image (Numpy tensor with rank 3),
             and should output a Numpy tensor with the same shape.
-        data_format (str): One of {"channels_first", "channels_last"}.
-
-            - "channels_last" mode means that the images should have shape
-              (samples, height, width, channels),
-            - "channels_first" mode means that the images should have shape
-              (samples, channels, height, width).
-            - It defaults to the image_data_format value found in your
-              Keras config file at "~/.keras/keras.json".
-            - If you never set it, then it will be "channels_last".
-
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         validation_split (float): Fraction of images reserved for validation
             (strictly between 0 and 1).
     """
@@ -144,7 +152,7 @@ class SiameseIterator(Iterator):
         {"same", "different", or "daughter"}.
 
     Args:
-        train_dict (dict): Consists of numpy arrays for X and y.
+        train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
         image_data_generator (SiameseDataGenerator): For random transformations
             and normalization.
         features (list): Feature names to calculate and yield.
@@ -156,15 +164,20 @@ class SiameseIterator(Iterator):
         batch_size (int): Size of a batch.
         shuffle (bool): Whether to shuffle the data between epochs.
         seed (int): Random seed for data shuffling.
-        data_format (str): One of 'channels_first', 'channels_last'.
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
         save_to_dir (str): Optional directory where to save the pictures
             being yielded, in a viewable format. This is useful
             for visualizing the random transformations being
             applied, for debugging purposes.
         save_prefix (str): Prefix to use for saving sample
-            images (if save_to_dir is set).
+            images (if ``save_to_dir`` is set).
         save_format (str): Format to use for saving sample images
-            (if save_to_dir is set).
+            (if ``save_to_dir`` is set).
     """
     def __init__(self,
                  train_dict,
@@ -250,10 +263,11 @@ class SiameseIterator(Iterator):
 
     def _create_track_ids(self):
         """Builds the track IDs.
+
         Creates unique cell IDs, as cell labels are NOT unique across batches.
 
         Returns:
-            A dict containing the batch and label of each each track.
+            dict: A dict containing the batch and label of each each track.
         """
         track_counter = 0
         track_ids = {}
@@ -576,16 +590,17 @@ class SiameseIterator(Iterator):
     def _fetch_frames(self, track, division=False):
         """Fetch a random interval of frames given a track:
 
-           If division, grab the last min_track_length frames.
-           Otherwise, grab any interval of frames of length min_track_length
-           that does not include the last tracked frame.
+        If division, grab the last ``min_track_length`` frames.
+        Otherwise, grab any interval of frames of length
+        ``min_track_length`` that does not include the
+        last tracked frame.
 
-           Args:
-               track: integer, used to look up track ID
-               division: boolean, is the event being tracked a division
+        Args:
+            track: integer, used to look up track ID
+            division: boolean, is the event being tracked a division
 
-           Returns:
-               list of interval of frames of length min_track_length
+        Returns:
+            list: interval of frames of length ``min_track_length``
         """
         track_id = self.track_ids[track]
 
@@ -879,8 +894,9 @@ class SiameseIterator(Iterator):
 
             batch_y[i, type_cell] = 1
 
-        # prepare final batch list
-        batch_list = []
+        # create dictionary to house generator outputs
+        # Start with batch inputs to model
+        batch_inputs = {}
         for feature_i, feature in enumerate(self.features):
             batch_feature_1, batch_feature_2 = batch_features[feature_i]
             # Remove singleton dimensions (if min_track_length is 1)
@@ -889,10 +905,13 @@ class SiameseIterator(Iterator):
                 batch_feature_1 = np.squeeze(batch_feature_1, axis=axis)
                 batch_feature_2 = np.squeeze(batch_feature_2, axis=axis)
 
-            batch_list.append(batch_feature_1)
-            batch_list.append(batch_feature_2)
+            batch_inputs['{}_input1'.format(feature)] = batch_feature_1
+            batch_inputs['{}_input2'.format(feature)] = batch_feature_2
 
-        return batch_list, batch_y
+        # Dict to house training output (model target)
+        batch_outputs = {'classification': batch_y}
+
+        return batch_inputs, batch_outputs
 
     def next(self):
         """For python 2.x. Returns the next batch.

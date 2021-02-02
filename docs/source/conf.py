@@ -31,9 +31,9 @@ copyright = ('2016-{currentyear}, Van Valen Lab at the '
 author = 'Van Valen Lab at Caltech'
 
 # The short X.Y version
-version = '2.0'
+version = '0.6.0'
 # The full version, including alpha/beta/rc tags
-release = '2.0.0'
+release = '0.6.0'
 
 import subprocess
 try:
@@ -52,8 +52,8 @@ if git_rev:
 on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 
 # This is used for linking and such so we link to the thing we're building
-rtd_version = os.environ.get("READTHEDOCS_VERSION", "latest")
-if rtd_version not in ["stable", "latest"]:
+rtd_version = os.environ.get("READTHEDOCS_VERSION", "master")
+if rtd_version not in ["stable", "latest", "master"]:
     rtd_version = "stable"
 
 # -- General configuration ---------------------------------------------------
@@ -94,6 +94,9 @@ templates_path = ['_templates']
 source_suffix = ['.rst', '.md']
 # source_suffix = '.rst'
 
+# Ignore warning: 
+suppress_warnings = ['autosectionlabel.*']
+
 # The master toctree document.
 master_doc = 'index'
 
@@ -129,7 +132,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -226,16 +229,10 @@ autodoc_mock_imports = [
     'numpy',
     'sklearn',
     'skimage',
-    'pandas',
-    'networkx',
-    'nbformat',
     'cv2',
     'cython',
-    'keras-preprocessing',
-    'keras_retinanet',
     'deepcell_tracking',
     'deepcell_toolbox',
-    'keras_applications',
     'matplotlib'
 ]
 
@@ -267,7 +264,7 @@ r"""
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3.7', None),
-    'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
     'kiosk': ('https://deepcell-kiosk.readthedocs.io/en/{}/'.format(rtd_version), None),
     'kiosk-redis-consumer': (('https://deepcell-kiosk.readthedocs.io/'
                               'projects/kiosk-redis-consumer/en/{}/').format(rtd_version), None),
@@ -276,20 +273,17 @@ intersphinx_mapping = {
 intersphinx_cache_limit = 0
 
 # -- Custom Additions --------------------------------------------------------
-nitpick_ignore = [
-    ('py:class', 'function'),  # TODO: set type for "function" properly
-    ('py:class', 'tensor'),  # TODO: set type for "tensor" properly
-    ('py:class', 'numpy.array'),
-    ('py:class', 'pandas.DataFrame'),
-    ('py:class', 'tensorflow.keras.Model'),
-    ('py:class', 'tensorflow.python.keras.Model'),
-    ('py:class', 'tensorflow.keras.layers.Layer'),
-    ('py:class', 'tensorflow.python.keras.layers.Layer'),
-    ('py:class', 'tensorflow.python.keras.layers.ZeroPadding2D'),
-    ('py:class', 'tensorflow.python.keras.layers.ZeroPadding3D'),
-    ('py:class', 'tensorflow.python.keras.preprocessing.image.Iterator'),
-    ('py:class', 'tensorflow.python.keras.preprocessing.image.ImageDataGenerator'),
-]
+nitpick_ignore = []
+# See the following page for more information and syntax:
+#  www.sphinx-doc.org/en/master/usage/configuration.html#confval-nitpick_ignore
+
+for line in open('.nitpick-ignore'):
+    line = line.strip()
+    if not line or line.startswith('#'):
+        continue
+
+    reftype, target = line.split(' ', 1)
+    nitpick_ignore.append((reftype, target.strip()))
 
 StandaloneHTMLBuilder.supported_image_types = [
     'image/svg+xml',

@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -23,19 +23,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 """Convolutational Recurrent Layers
 
-References:
+Based on Convolutional gated recurrent networks for video segmentation
+(`link <https://bit.ly/3ehmpV8>`_).
 
-Keras GRU
-https://github.com/keras-team/keras/blob/master/keras/layers/recurrent.py#L422
-Keras ConvLSTM2D
-https://github.com/keras-team/keras/blob/master/keras/layers/convolutional_recurrent.py
-
-RFCNN
-https://gitlab.com/sepehr.valipour/RFCNN/blob/master/rfcnn/layers/convolutional.py
-Literature at https://ieeexplore.ieee.org/abstract/document/8296851
+Also influenced by Keras's `GRU <https://bit.ly/3ejjBHq>`_
+and  `ConvLSTM2D <https://bit.ly/2HUzJ60>`_ Layers.
 """
 
 from __future__ import absolute_import
@@ -44,20 +38,65 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from tensorflow.python.keras import activations
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras import constraints
-from tensorflow.python.keras import initializers
-from tensorflow.python.keras import regularizers
-from tensorflow.python.keras.layers import Layer
+from tensorflow.keras import activations
+from tensorflow.keras import backend as K
+from tensorflow.keras import constraints
+from tensorflow.keras import initializers
+from tensorflow.keras import regularizers
+from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.layers.recurrent import DropoutRNNCellMixin
 from tensorflow.python.keras.layers.convolutional_recurrent import ConvRNN2D
 from tensorflow.python.keras.utils import conv_utils
 
 
 class ConvGRU2DCell(DropoutRNNCellMixin, Layer):
-    """Cell class for the ConvGRU2D layer."""
+    """Cell class for the ConvGRU2D layer.
 
+    Args:
+        filters (int): An integer or tuple/list of n integers, specifying the
+            dimensions of the convolution window.
+        strides (int): An integer or tuple/list of 2 integers,
+            specifying the strides of the pooling operation.
+            Can be a single integer to specify the same value for
+            all spatial dimensions.
+        padding (str): The padding method, either ``"valid"`` or ``"same"``
+            (case-insensitive).
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
+        dilation_rate (int): An integer or tuple/list of 2 integers,
+            specifying the dilation rate for the pooling.
+        activation (function): Activation function to use.
+            If you don't specify anything, no activation is applied
+            (ie. "linear" activation: ``a(x) = x``).
+        use_bias (bool): Whether the layer uses a bias.
+        kernel_initializer (function): Initializer for the ``kernel`` weights
+            matrix, used for the linear transformation of the inputs.
+        bias_initializer (function): Initializer for the bias vector. If None,
+            the default initializer will be used.
+        kernel_regularizer (function): Regularizer function applied to the
+            ``kernel`` weights matrix.
+        recurrent_initializer (function): Initializer for the
+            ``recurrent_kernel`` weights matrix, used for the linear
+            transformation of the recurrent state.
+        bias_regularizer (function): Regularizer function applied to the
+            bias vector.
+        activity_regularizer (function): Regularizer function applied to.
+        recurrent_regularizer (function): Regularizer function applied to
+            the ``recurrent_kernel`` weights matrix.
+        kernel_constraint (function): Constraint function applied to
+            the ``kernel`` weights matrix.
+        bias_constraint (function): Constraint function applied to the
+            bias vector.
+        dropout (float): Float between 0 and 1. Fraction of the units to drop
+            for the linear transformation of the inputs.
+        recurrent_dropout (float): Float between 0 and 1. Fraction of the
+            units to drop for the linear transformation of the
+            recurrent state.
+    """
     def __init__(self,
                  filters,
                  kernel_size,
@@ -106,8 +145,6 @@ class ConvGRU2DCell(DropoutRNNCellMixin, Layer):
 
         self.dropout = min(1., max(0., dropout))
         self.recurrent_dropout = min(1., max(0., recurrent_dropout))
-        self._dropout_mask = None
-        self._recurrent_dropout_mask = None
 
     @property
     def state_size(self):
@@ -252,6 +289,61 @@ class ConvGRU2DCell(DropoutRNNCellMixin, Layer):
 
 
 class ConvGRU2D(ConvRNN2D):
+    """Cell class for the ConvGRU2D layer.
+
+    Args:
+        filters (int): An integer or tuple/list of n integers, specifying the
+            dimensions of the convolution window.
+        strides (int): An integer or tuple/list of 2 integers,
+            specifying the strides of the pooling operation.
+            Can be a single integer to specify the same value for
+            all spatial dimensions.
+        padding (str): The padding method, either ``"valid"`` or ``"same"``
+            (case-insensitive).
+        data_format (str): A string, one of ``channels_last`` (default)
+            or ``channels_first``. The ordering of the dimensions in the
+            inputs. ``channels_last`` corresponds to inputs with shape
+            ``(batch, height, width, channels)`` while ``channels_first``
+            corresponds to inputs with shape
+            ``(batch, channels, height, width)``.
+        dilation_rate (int): An integer or tuple/list of 2 integers,
+            specifying the dilation rate for the pooling.
+        activation (function): Activation function to use.
+            If you don't specify anything, no activation is applied
+            (ie. "linear" activation: ``a(x) = x``).
+        use_bias (bool): Whether the layer uses a bias.
+        kernel_initializer (function): Initializer for the ``kernel`` weights
+            matrix, used for the linear transformation of the inputs.
+        bias_initializer (function): Initializer for the bias vector. If None,
+            the default initializer will be used.
+        kernel_regularizer (function): Regularizer function applied to the
+            ``kernel`` weights matrix.
+        recurrent_initializer (function): Initializer for the
+            ``recurrent_kernel`` weights matrix, used for the linear
+            transformation of the recurrent state.
+        bias_regularizer (function): Regularizer function applied to the
+            bias vector.
+        activity_regularizer (function): Regularizer function applied to.
+        recurrent_regularizer (function): Regularizer function applied to
+            the ``recurrent_kernel`` weights matrix.
+        kernel_constraint (function): Constraint function applied to
+            the ``kernel`` weights matrix.
+        bias_constraint (function): Constraint function applied to the
+            bias vector.
+        return_sequences (bool): Whether to return the last output in the
+            output sequence, or the full sequence.
+        return_state (bool): Whether to return the last state
+            in addition to the output.
+        go_backwards (bool): If True, process the input sequence backwards.
+        stateful (bool): If True, the last state for each sample at index i in
+            a batch will be used as initial state for the sample of index i in
+            the following batch.
+        dropout (float): Float between 0 and 1. Fraction of the units to drop
+            for the linear transformation of the inputs.
+        recurrent_dropout (float): Float between 0 and 1. Fraction of the
+            units to drop for the linear transformation of the
+            recurrent state.
+    """
     def __init__(self,
                  filters,
                  kernel_size,
@@ -298,7 +390,8 @@ class ConvGRU2D(ConvRNN2D):
                              recurrent_constraint=recurrent_constraint,
                              bias_constraint=bias_constraint,
                              dropout=dropout,
-                             recurrent_dropout=recurrent_dropout)
+                             recurrent_dropout=recurrent_dropout,
+                             dtype=kwargs.get('dtype'))
 
         super(ConvGRU2D, self).__init__(cell,
                                         return_sequences=return_sequences,
@@ -310,6 +403,7 @@ class ConvGRU2D(ConvRNN2D):
         self.activity_regularizer = regularizers.get(activity_regularizer)
 
     def call(self, inputs, mask=None, training=None, initial_state=None):
+        self._maybe_reset_cell_dropout_mask(self.cell)
         result = super(ConvGRU2D, self).call(inputs,
                                              mask=mask,
                                              training=training,

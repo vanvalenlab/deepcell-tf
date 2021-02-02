@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -32,12 +32,12 @@ from __future__ import division
 import math
 import re
 
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import Model
-from tensorflow.python.keras.layers import Conv2D, Conv3D
-from tensorflow.python.keras.layers import TimeDistributed, ConvLSTM2D
-from tensorflow.python.keras.layers import Input, Concatenate
-from tensorflow.python.keras.layers import Activation, BatchNormalization
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Conv2D, Conv3D
+from tensorflow.keras.layers import TimeDistributed, ConvLSTM2D
+from tensorflow.keras.layers import Input, Concatenate
+from tensorflow.keras.layers import Activation, BatchNormalization
 
 from deepcell.layers import ConvGRU2D
 from deepcell.layers import ImageNormalization2D, Location2D
@@ -48,25 +48,28 @@ from deepcell.utils.backbone_utils import get_backbone
 
 def __merge_temporal_features(feature, mode='conv', feature_size=256,
                               frames_per_batch=1):
-    """ Merges feature with its temporal residual through addition.
+    """Merges feature with its temporal residual through addition.
+
     Input feature (x) --> Temporal convolution* --> Residual feature (x')
-    *Type of temporal convolution specified by "mode" argument
-    Output: y = x + x'
+    *Type of temporal convolution specified by ``mode``.
+
+    Output: ``y = x + x'``
 
     Args:
-        feature (tensorflow.keras.layers.Layer): Input layer
-        mode (str, optional): Mode of temporal convolution. Choose from
-            {'conv','lstm','gru', None}. Defaults to 'conv'.
-        feature_size (int, optional): Defaults to 256.
-        frames_per_batch (int, optional): Defaults to 1.
+        feature (tensorflow.keras.Layer): Input layer
+        mode (str): Mode of temporal convolution. One of
+            ``{'conv','lstm','gru', None}``.
+        feature_size (int): Length of convolutional kernel
+        frames_per_batch (int): Size of z axis in generated batches.
+            If equal to 1, assumes 2D data.
 
     Raises:
-        ValueError: Mode not 'conv', 'lstm', 'gru' or None
+        ValueError: ``mode`` not 'conv', 'lstm', 'gru' or ``None``
 
     Returns:
-        tensorflow.keras.layers.Layer: Input feature merged with its residual
-            from a temporal convolution. If mode is None,
-                the output is exactly the input.
+        tensorflow.keras.Layer: Input feature merged with its residual
+        from a temporal convolution. If mode is ``None``,
+        the output is exactly the input.
     """
     # Check inputs to mode
     acceptable_modes = {'conv', 'lstm', 'gru', None}
@@ -118,10 +121,9 @@ def PanopticNet(backbone,
                 create_semantic_head=__create_semantic_head,
                 frames_per_batch=1,
                 temporal_mode=None,
-                num_semantic_heads=1,
                 num_semantic_classes=[3],
                 required_channels=3,
-                norm_method='whole_image',
+                norm_method=None,
                 pooling=None,
                 location=True,
                 use_imagenet=True,
@@ -131,56 +133,58 @@ def PanopticNet(backbone,
                 name='panopticnet',
                 z_axis_convolutions=False,
                 **kwargs):
-    """Constructs a mrcnn model using a backbone from keras-applications.
+    """Constructs a Mask-RCNN model using a backbone from
+    ``keras-applications`` with optional semantic segmentation transforms.
 
     Args:
         backbone (str): Name of backbone to use.
         input_shape (tuple): The shape of the input data.
         backbone_levels (list): The backbone levels to be used.
-            to create the feature pyramid. Defaults to ['C3', 'C4', 'C5'].
-        pyramid_levels (list): Pyramid levels to use. Defaults to
-            ['P3','P4','P5','P6','P7']
+            to create the feature pyramid.
+        pyramid_levels (list): Pyramid levels to use.
         create_pyramid_features (function): Function to get the pyramid
             features from the backbone.
         create_semantic_head (function): Function to build a semantic head
             submodel.
-        frames_per_batch (int): Defaults to 1.
+        frames_per_batch (int): Size of z axis in generated batches.
+            If equal to 1, assumes 2D data.
         temporal_mode: Mode of temporal convolution. Choose from
-            {'conv','lstm','gru', None}. Defaults to None.
-        num_semantic_heads (int): Defaults to 1.
-        num_semantic_classes (list): Defaults to [3].
-        norm_method (str): ImageNormalization mode to use.
-            Defaults to 'whole_image'.
-        location (bool): Whether to include location data. Defaults to True
+            ``{'conv','lstm','gru', None}``.
+        num_semantic_heads (int): Total number of semantic heads to build.
+        num_semantic_classes (list): Number of semantic classes
+            for each semantic head.
+        norm_method (str): Normalization method to use with the
+            :mod:`deepcell.layers.normalization.ImageNormalization2D` layer.
+        location (bool): Whether to include a
+            :mod:`deepcell.layers.location.Location2D` layer.
         use_imagenet (bool): Whether to load imagenet-based pretrained weights.
         lite (bool): Whether to use a depthwise conv in the feature pyramid
-            rather than regular conv. Defaults to False.
+            rather than regular conv.
         upsample_type (str): Choice of upsampling layer to use from
-            ['upsamplelike', 'upsampling2d', 'upsampling3d']. Defaults to
-            'upsampling2d'.
+            ``['upsamplelike', 'upsampling2d', 'upsampling3d']``.
         interpolation (str): Choice of interpolation mode for upsampling
-            layers from ['bilinear', 'nearest']. Defaults to bilinear.
+            layers from ``['bilinear', 'nearest']``.
         pooling (str): optional pooling mode for feature extraction
-            when include_top is False.
-        z_axis_convolutions (bool): Whether or not to do convolutions on 3D data across
-            the z axis.
+            when ``include_top`` is ``False``.
 
             - None means that the output of the model will be
-                the 4D tensor output of the
-                last convolutional layer.
+              the 4D tensor output of the
+              last convolutional layer.
             - 'avg' means that global average pooling
-                will be applied to the output of the
-                last convolutional layer, and thus
-                the output of the model will be a 2D tensor.
+              will be applied to the output of the
+              last convolutional layer, and thus
+              the output of the model will be a 2D tensor.
             - 'max' means that global max pooling will
-                be applied.
+              be applied.
 
+        z_axis_convolutions (bool): Whether or not to do convolutions on
+            3D data across the z axis.
         required_channels (int): The required number of channels of the
             backbone.  3 is the default for all current backbones.
-        kwargs (dict): Other standard inputs for retinanet_mask.
+        kwargs (dict): Other standard inputs for ``retinanet_mask``.
 
     Raises:
-        ValueError: temporal_mode not 'conv', 'lstm', 'gru'  or None
+        ValueError: ``temporal_mode`` not 'conv', 'lstm', 'gru'  or ``None``
 
     Returns:
         tensorflow.keras.Model: Panoptic model with a backbone.
@@ -300,9 +304,9 @@ def PanopticNet(backbone,
     target_level = min(semantic_levels)
 
     semantic_head_list = []
-    for i in range(num_semantic_heads):
+    for i, c in enumerate(num_semantic_classes):
         semantic_head_list.append(create_semantic_head(
-            pyramid_dict, n_classes=num_semantic_classes[i],
+            pyramid_dict, n_classes=c,
             input_target=inputs, target_level=target_level,
             semantic_id=i, ndim=ndim, upsample_type=upsample_type,
             interpolation=interpolation, **kwargs))

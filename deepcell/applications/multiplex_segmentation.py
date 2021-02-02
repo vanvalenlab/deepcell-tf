@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,64 +31,50 @@ from __future__ import print_function
 
 import os
 
-import numpy as np
+import tensorflow as tf
 
-from tensorflow.python.keras.utils.data_utils import get_file
-
-from deepcell_toolbox.multiplex_utils import \
-    multiplex_preprocess, multiplex_postprocess, format_output_multiplex
+from deepcell_toolbox.multiplex_utils import multiplex_preprocess
+from deepcell_toolbox.multiplex_utils import multiplex_postprocess
+from deepcell_toolbox.multiplex_utils import format_output_multiplex
 
 from deepcell.applications import Application
-from deepcell.model_zoo import PanopticNet
 
 
-WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/Multiplex_Segmentation_20200908_2_head.h5')
+MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+              'saved-models/MultiplexSegmentation-7.tar.gz')
 
 
 class MultiplexSegmentation(Application):
-    """Loads a `deepcell.model_zoo.PanopticNet` model for multiplex segmentation
-    with pretrained weights.
-    The `predict` method handles prep and post processing steps to return a labeled image.
+    """Loads a :mod:`deepcell.model_zoo.panopticnet.PanopticNet` model for
+    multiplex segmentation with pretrained weights.
+
+    The ``predict`` method handles prep and post processing steps
+    to return a labeled image.
 
     Example:
 
-    .. nbinput:: ipython3
+    .. code-block:: python
 
         from skimage.io import imread
         from deepcell.applications import MultiplexSegmentation
 
+        # Load the images
         im1 = imread('TNBC_DNA.tiff')
         im2 = imread('TNBC_Membrane.tiff')
-        im1.shape
-
-    .. nboutput::
-
-        (1024, 1024)
-
-    .. nbinput:: ipython3
 
         # Combined together and expand to 4D
         im = np.stack((im1, im2), axis=-1)
         im = np.expand_dims(im,0)
-        im.shape
 
-    .. nboutput::
+        # Create the application
+        app = MultiplexSegmentation()
 
-        (1, 1024, 1024, 2)
-
-    .. nbinput:: ipython3
-
-        app = MultiplexSegmentation(use_pretrained_weights=True)
+        # create the lab
         labeled_image = app.predict(image)
 
-    .. nboutput::
-
     Args:
-        use_pretrained_weights (bool, optional): Loads pretrained weights.
-            Defaults to True.
-        model_image_shape (tuple, optional): Shape of input data expected by model.
-            Defaults to `(256, 256, 2)`
+        model (tf.keras.Model): The model to load. If ``None``,
+            a pre-trained model will be downloaded.
     """
 
     #: Metadata for the dataset used to train the model
@@ -108,39 +94,20 @@ class MultiplexSegmentation(Application):
         'validation_steps_per_epoch': 193 // 1
     }
 
-    def __init__(self,
-                 use_pretrained_weights=True,
-                 model_image_shape=(256, 256, 2)):
+    def __init__(self, model=None):
 
-        whole_cell_classes = [1, 3]
-        nuclear_classes = [1, 3]
-        num_semantic_classes = whole_cell_classes + nuclear_classes
-        num_semantic_heads = len(num_semantic_classes)
-
-        model = PanopticNet('resnet50',
-                            input_shape=model_image_shape,
-                            norm_method=None,
-                            num_semantic_heads=num_semantic_heads,
-                            num_semantic_classes=num_semantic_classes,
-                            location=True,
-                            include_top=True,
-                            use_imagenet=False)
-
-        if use_pretrained_weights:
-            weights_path = get_file(
-                os.path.basename(WEIGHTS_PATH),
-                WEIGHTS_PATH,
-                cache_subdir='models',
-                file_hash='4e440b0e329dd5c24c1162efa0a33bc9'
+        if model is None:
+            archive_path = tf.keras.utils.get_file(
+                'MultiplexSegmentation.tgz', MODEL_PATH,
+                file_hash='e7360e8e87c3ab71ded00a577a61c689',
+                extract=True, cache_subdir='models'
             )
-
-            model.load_weights(weights_path)
-        else:
-            weights_path = None
+            model_path = os.path.splitext(archive_path)[0]
+            model = tf.keras.models.load_model(model_path)
 
         super(MultiplexSegmentation, self).__init__(
             model,
-            model_image_shape=model_image_shape,
+            model_image_shape=model.input_shape[1:],
             model_mpp=0.5,
             preprocessing_fn=multiplex_preprocess,
             postprocessing_fn=multiplex_postprocess,
@@ -159,33 +126,32 @@ class MultiplexSegmentation(Application):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
-        Input images are required to have 4 dimensions `[batch, x, y, channel]`.
-        Additional empty dimensions can be added using `np.expand_dims`
+        Input images are required to have 4 dimensions
+        ``[batch, x, y, channel]``.
+        Additional empty dimensions can be added using ``np.expand_dims``.
 
         Args:
-            image (np.array): Input image with shape `[batch, x, y, channel]`
-            batch_size (int, optional): Number of images to predict on per batch.
-                Defaults to 4.
-            image_mpp (float, optional): Microns per pixel for the input image.
-                Defaults to None.
-            preprocess_kwargs (dict, optional): Kwargs to pass to preprocessing function.
-                Defaults to {}.
-            compartment (string): Specify type of segmentation to predict. Must be one of
-                [whole-cell, nuclear, both]
-            postprocess_kwargs_whole_cell (dict, optional): Kwargs to pass to postprocessing
-                function for whole_cell prediction. Defaults to {}.
-            postprocess_kwargs_nuclear (dict, optional): Kwargs to pass to postprocessing
-                function for nuclear prediction. Defaults to {}.
+            image (numpy.array): Input image with shape
+                ``[batch, x, y, channel]``.
+            batch_size (int): Number of images to predict on per batch.
+            image_mpp (float): Microns per pixel for ``image``.
+            compartment (str): Specify type of segmentation to predict.
+                Must be one of ``"whole-cell"``, ``"nuclear"``, ``"both"``.
+            preprocess_kwargs (dict): Keyword arguments to pass to the
+                pre-processing function.
+            postprocess_kwargs (dict): Keyword arguments to pass to the
+                post-processing function.
 
         Raises:
-            ValueError: Input data must match required rank of the application, calculated as
-                one dimension more (batch dimension) than expected by the model
+            ValueError: Input data must match required rank of the application,
+                calculated as one dimension more (batch dimension) than expected
+                by the model.
 
-            ValueError: Input data must match required number of channels of application
+            ValueError: Input data must match required number of channels.
 
         Returns:
-            np.array: Labeled image
-            np.array: Model output
+            numpy.array: Labeled image
+            numpy.array: Model output
         """
 
         if postprocess_kwargs_whole_cell is None:

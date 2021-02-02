@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -30,7 +30,7 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 
 from deepcell.utils.retinanet_anchor_utils import overlap
 
@@ -41,9 +41,9 @@ def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from
     Args:
         y_true: A tensor of the same shape as output.
         y_pred: A tensor resulting from a softmax
-            (unless from_logits is True, in which
-            case y_pred is expected to be the logits).
-        from_logits: Boolean, whether y_pred is the
+            (unless ``from_logits`` is ``True``, in which
+            case ``y_pred`` is expected to be the logits).
+        from_logits: Boolean, whether ``y_pred`` is the
             result of a softmax, or is a tensor of logits.
 
     Returns:
@@ -73,11 +73,11 @@ def weighted_categorical_crossentropy(y_true, y_pred,
     them to weight the cross entropy
 
     Args:
-        y_true: A tensor of the same shape as y_pred.
+        y_true: A tensor of the same shape as ``y_pred``.
         y_pred: A tensor resulting from a softmax
-            (unless from_logits is True, in which
-            case y_pred is expected to be the logits).
-        from_logits: Boolean, whether y_pred is the
+            (unless ``from_logits`` is ``True``, in which
+            case ``y_pred`` is expected to be the logits).
+        from_logits: Boolean, whether ``y_pred`` is the
             result of a softmax, or is a tensor of logits.
 
     Returns:
@@ -97,7 +97,7 @@ def weighted_categorical_crossentropy(y_true, y_pred,
     total_sum = K.sum(y_true_cast)
     class_sum = K.sum(y_true_cast, axis=reduce_axis, keepdims=True)
     class_weights = 1.0 / K.cast_to_floatx(n_classes) * tf.divide(total_sum, class_sum + 1.)
-    return - K.sum((y_true * K.log(y_pred) * class_weights), axis=axis)
+    return - K.sum((y_true_cast * K.log(y_pred) * class_weights), axis=axis)
 
 
 def sample_categorical_crossentropy(y_true,
@@ -110,11 +110,11 @@ def sample_categorical_crossentropy(y_true,
     cross entropy.
 
     Args:
-        y_true: A tensor of the same shape as y_pred.
+        y_true: A tensor of the same shape as ``y_pred``.
         y_pred: A tensor resulting from a softmax
-            (unless from_logits is True, in which
-            case y_pred is expected to be the logits).
-        from_logits: Boolean, whether y_pred is the
+            (unless ``from_logits`` is ``True``, in which
+            case ``y_pred`` is expected to be the logits).
+        from_logits: Boolean, whether ``y_pred`` is the
             result of a softmax, or is a tensor of logits.
 
     Returns:
@@ -144,7 +144,7 @@ def dice_loss(y_true, y_pred, smooth=1):
     """Dice coefficient loss between an output tensor and a target tensor.
 
     Args:
-        y_true: A tensor of the same shape as y_pred.
+        y_true: A tensor of the same shape as ``y_pred``.
         y_pred: A tensor resulting from a softmax
 
     Returns:
@@ -163,7 +163,7 @@ def discriminative_instance_loss(y_true, y_pred,
     """Discriminative loss between an output tensor and a target tensor.
 
     Args:
-        y_true: A tensor of the same shape as y_pred.
+        y_true: A tensor of the same shape as ``y_pred``.
         y_pred: A tensor of the vector embedding
 
     Returns:
@@ -181,7 +181,8 @@ def discriminative_instance_loss(y_true, y_pred,
 
     # Compute variance loss
     cells_summed = tf.tensordot(y_true, y_pred, axes=[axes, axes])
-    n_pixels = K.cast(tf.count_nonzero(y_true, axis=axes), dtype=K.floatx()) + K.epsilon()
+    nonzeros = tf.math.count_nonzero(y_true, axis=axes)
+    n_pixels = K.cast(nonzeros, dtype=K.floatx()) + K.epsilon()
     n_pixels_expand = K.expand_dims(n_pixels, axis=1) + K.epsilon()
     mu = tf.divide(cells_summed, n_pixels_expand)
 
@@ -200,8 +201,8 @@ def discriminative_instance_loss(y_true, y_pred,
     diff_matrix = tf.subtract(mu_b, mu_a)
     L_dist_1 = temp_norm(diff_matrix)
     L_dist_2 = K.square(K.relu(K.constant(2 * delta_d, dtype=K.floatx()) - L_dist_1))
-    diag = K.constant(0, dtype=K.floatx()) * tf.diag_part(L_dist_2)
-    L_dist_3 = tf.matrix_set_diag(L_dist_2, diag)
+    diag = K.constant(0, dtype=K.floatx()) * tf.linalg.diag_part(L_dist_2)
+    L_dist_3 = tf.linalg.set_diag(L_dist_2, diag)
     L_dist = K.mean(L_dist_3)
 
     # Compute regularization loss
@@ -217,11 +218,11 @@ def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_l
     them to weight the cross entropy
 
     Args:
-        y_true: A tensor of the same shape as y_pred.
+        y_true: A tensor of the same shape as ``y_pred``.
         y_pred: A tensor resulting from a softmax
-            (unless from_logits is True, in which
-            case y_pred is expected to be the logits).
-        from_logits: Boolean, whether y_pred is the
+            (unless ``from_logits`` is ``True``, in which
+            case ``y_pred`` is expected to be the logits).
+        from_logits: Boolean, whether ``y_pred`` is the
             result of a softmax, or is a tensor of logits.
 
     Returns:
@@ -247,17 +248,17 @@ def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_l
 
 
 def smooth_l1(y_true, y_pred, sigma=3.0, axis=None):
-    """Compute the smooth L1 loss of y_pred w.r.t. y_true.
+    """Compute the smooth L1 loss of ``y_pred`` w.r.t. ``y_true``.
 
     Args:
-        y_true: Tensor from the generator of shape (B, N, 5).
+        y_true: Tensor from the generator of shape ``(B, N, 5)``.
             The last value for each box is the state of the anchor
             (ignore, negative, positive).
-        y_pred: Tensor from the network of shape (B, N, 4).
+        y_pred: Tensor from the network of shape ``(B, N, 4)``.
         sigma: The point where the loss changes from L2 to L1.
 
     Returns:
-        The smooth L1 loss of y_pred w.r.t. y_true.
+        The smooth L1 loss of ``y_pred`` w.r.t. ``y_true``.
     """
     if axis is None:
         axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
@@ -282,13 +283,13 @@ def focal(y_true, y_pred, alpha=0.25, gamma=2.0, axis=None):
     As defined in https://arxiv.org/abs/1708.02002
 
     Args:
-        y_true: Tensor of target data with shape (B, N, num_classes).
-        y_pred: Tensor of predicted data with shape (B, N, num_classes).
-        alpha: Scale the focal weight with alpha.
-        gamma: Take the power of the focal weight with gamma.
+        y_true: Tensor of target data with shape ``(B, N, num_classes)``.
+        y_pred: Tensor of predicted data with shape ``(B, N, num_classes)``.
+        alpha: Scale the focal weight with ``alpha``.
+        gamma: Take the power of the focal weight with ``gamma``.
 
     Returns:
-        The focal loss of y_pred w.r.t. y_true.
+        float: The focal loss of ``y_pred`` w.r.t. ``y_true``.
     """
     if axis is None:
         axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1

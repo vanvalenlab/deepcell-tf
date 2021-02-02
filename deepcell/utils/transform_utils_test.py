@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -31,7 +31,7 @@ from __future__ import print_function
 import numpy as np
 from skimage.measure import label
 from tensorflow.python.platform import test
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 
 from deepcell.utils import transform_utils
 
@@ -439,57 +439,6 @@ class TransformUtilsTest(test.TestCase):
         distance = np.expand_dims(distance, axis=1)
         self.assertAllEqual(np.unique(distance), np.array([0, 1, 2, 3]))
         self.assertEqual(distance.shape, unique.shape)
-
-    def test_to_categorical(self):
-        num_classes = 5
-        shapes = [(1,), (3,), (4, 3), (5, 4, 3), (3, 1), (3, 2, 1)]
-        expected_shapes = [(1, num_classes),
-                           (3, num_classes),
-                           (12, num_classes),
-                           (60, num_classes),
-                           (3, num_classes),
-                           (6, num_classes)]
-        labels = [np.random.randint(0, num_classes, shape) for shape in shapes]
-        ohes = [transform_utils.to_categorical(l, num_classes) for l in labels]
-        for lbl, one_hot, expected_shape in zip(labels, ohes, expected_shapes):
-            # Check shape
-            self.assertEqual(one_hot.shape, expected_shape)
-            # Make sure there are only 0s and 1s
-            self.assertAllEqual(one_hot, one_hot.astype(bool))
-            # Make sure there is exactly one 1 in a row
-            assert np.all(one_hot.sum(axis=-1) == 1)
-            # Get original labels back from one hots
-            self.assertAllEqual(np.argmax(one_hot, -1).reshape(lbl.shape), lbl)
-
-    def test_rotate_array_0(self):
-        img = _get_image()
-        unrotated_image = transform_utils.rotate_array_0(img)
-        self.assertAllEqual(unrotated_image, img)
-
-    def test_rotate_array_90(self):
-        img = _get_image()
-        rotated_image = transform_utils.rotate_array_90(img)
-        expected_image = np.rot90(img)
-        self.assertAllEqual(rotated_image, expected_image)
-
-    def test_rotate_array_180(self):
-        img = _get_image()
-        rotated_image = transform_utils.rotate_array_180(img)
-        expected_image = np.rot90(np.rot90(img))
-        self.assertAllEqual(rotated_image, expected_image)
-
-    def test_rotate_array_270(self):
-        img = _get_image()
-        rotated_image = transform_utils.rotate_array_270(img)
-        expected_image = np.rot90(np.rot90(np.rot90(img)))
-        self.assertAllEqual(rotated_image, expected_image)
-
-    def test_rotate_array_90_and_180(self):
-        img = _get_image()
-        rotated_image1 = transform_utils.rotate_array_90(img)
-        rotated_image1 = transform_utils.rotate_array_90(rotated_image1)
-        rotated_image2 = transform_utils.rotate_array_180(img)
-        self.assertAllEqual(rotated_image1, rotated_image2)
 
 
 if __name__ == '__main__':

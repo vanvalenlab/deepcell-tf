@@ -1,37 +1,45 @@
-deepcell.model_zoo package
-==========================
+deepcell.model_zoo
+==================
 
 .. automodule:: deepcell.model_zoo
 
 .. contents:: Contents
     :local:
 
-deepcell.model_zoo.featurenet module
-------------------------------------
+FeatureNet
+----------
 
 .. automodule:: deepcell.model_zoo.featurenet
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.model_zoo.maskrcnn module
-----------------------------------
-
-.. automodule:: deepcell.model_zoo.maskrcnn
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-deepcell.model_zoo.retinanet module
------------------------------------
+RetinaNet
+---------
 
 .. automodule:: deepcell.model_zoo.retinanet
     :members:
     :undoc-members:
     :show-inheritance:
 
-deepcell.model_zoo.fpn module
------------------------------
+RetinaMask
+----------
+
+.. automodule:: deepcell.model_zoo.retinamask
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PanOpticNet
+-----------
+
+.. automodule:: deepcell.model_zoo.panopticnet
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+FPN
+---
 .. automodule:: deepcell.model_zoo.fpn
     :members:
     :undoc-members:

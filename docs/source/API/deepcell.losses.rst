@@ -1,5 +1,5 @@
-deepcell.losses module
-======================
+deepcell.losses
+===============
 
 .. automodule:: deepcell.losses
     :members:

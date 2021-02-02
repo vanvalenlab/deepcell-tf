@@ -1,4 +1,4 @@
-# Copyright 2016-2019 The Van Valen Lab at the California Institute of
+# Copyright 2016-2020 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -35,48 +35,7 @@ import numpy as np
 from skimage.io import imread
 from skimage.external import tifffile as tiff
 from skimage.external.tifffile import TiffFile
-from tensorflow.python.keras import backend as K
-
-from deepcell.utils.misc_utils import sorted_nicely
-
-
-def get_immediate_subdirs(directory):
-    """Get all DIRECTORIES that are immediate children of a given directory.
-
-    Args:
-        directory (str): a filepath to a directory
-
-    Returns:
-        list: a sorted list of child directories of given dir.
-    """
-    exists = lambda x: os.path.isdir(os.path.join(directory, x))
-    return sorted([d for d in os.listdir(directory) if exists(d)])
-
-
-def count_image_files(directory, montage_mode=False):
-    """Counts all image files inside the directory.
-    If montage_mode, counts 1 level deep and returns the minimum count.
-    Else, counts all child images of directory.
-
-    Args:
-        directory (str): directory to look for child image files
-        montage_mode (bool): whether ot not to look in subdirs of directory
-
-    Returns:
-        int: the number of image files in the directory
-    """
-    def count_images(d):
-        valid_extensions = {'.tiff', '.tif', '.png', '.jpg', '.jpeg', '.bmp'}
-        count = 0
-        for f in os.listdir(directory):
-            _, ext = os.path.splitext(f.lower())
-            if ext in valid_extensions:
-                count += 1
-        return count
-
-    if not montage_mode:
-        return count_images(directory)
-    return min([count_images(d) for d in get_immediate_subdirs(directory)])
+from tensorflow.keras import backend as K
 
 
 def get_image(file_name):
@@ -94,82 +53,6 @@ def get_image(file_name):
     return np.float32(imread(file_name))
 
 
-def nikon_getfiles(direc_name, channel_name):
-    """Return a sorted list of files inside direc_name
-    with channel_name in the filename.
-
-    Args:
-        direc_name (str): directory to find image files
-        channel_name (str): wildcard filter for filenames
-
-    Returns:
-        list: sorted list of files inside direc_name.
-    """
-    imglist = os.listdir(direc_name)
-    imgfiles = [i for i in imglist if channel_name in i]
-    imgfiles = sorted_nicely(imgfiles)
-    return imgfiles
-
-
-def get_image_sizes(data_location, channel_names):
-    """Get the first image inside the data_location and return its shape
-
-    Args:
-        data_location (str): path to image data
-        channel_names (str[]): list of wildcards to filter filenames
-
-    Returns:
-        int: size of random image inside the data_location.
-    """
-    img_list_channels = []
-    for channel in channel_names:
-        img_list_channels.append(nikon_getfiles(data_location, channel))
-    img_temp = np.asarray(get_image(os.path.join(data_location, img_list_channels[0][0])))
-    return img_temp.shape
-
-
-def get_images_from_directory(data_location, channel_names):
-    """Read all images from directory with channel_name in the filename
-
-    Args:
-        data_location (str): folder containing image files
-        channel_names (str[]): list of wildcards to select filenames
-
-    Returns:
-        numpy.array: numpy array of each image in the directory
-    """
-    data_format = K.image_data_format()
-    img_list_channels = []
-    for channel in channel_names:
-        img_list_channels.append(nikon_getfiles(data_location, channel))
-
-    img_temp = np.asarray(get_image(os.path.join(data_location, img_list_channels[0][0])))
-
-    n_channels = len(channel_names)
-    all_images = []
-
-    for stack_iteration in range(len(img_list_channels[0])):
-
-        if data_format == 'channels_first':
-            shape = tuple([1, n_channels] + list(img_temp.shape))
-        else:
-            shape = tuple([1] + list(img_temp.shape) + [n_channels])
-
-        all_channels = np.zeros(shape, dtype=K.floatx())
-
-        for j in range(n_channels):
-            img_path = os.path.join(data_location, img_list_channels[j][stack_iteration])
-            channel_img = get_image(img_path)
-            if data_format == 'channels_first':
-                all_channels[0, j, ...] = channel_img
-            else:
-                all_channels[0, ..., j] = channel_img
-
-        all_images.append(all_channels)
-
-    return all_images
-
-
 def save_model_output(output,
                       output_dir,
                       feature_name='',
@@ -178,10 +61,12 @@ def save_model_output(output,
     """Save model output as tiff images in the provided directory
 
     Args:
-        output (numpy.array): output of model. Expects channel to have its own axis
-        output_dir (str): directory to save the model output images
-        feature_name (str): optional description to start each output image filename
-        channel (int): if given, only saves this channel
+        output (numpy.array): Output of a model.
+            Expects channel to have its own axis.
+        output_dir (str): Directory to save the model output images.
+        feature_name (str): Optional description to start each output image
+            filename.
+        channel (int): If given, only saves this channel.
     """
     if data_format is None:
         data_format = K.image_data_format()
