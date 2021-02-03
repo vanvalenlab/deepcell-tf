@@ -229,7 +229,6 @@ autodoc_mock_imports = [
     'numpy',
     'sklearn',
     'skimage',
-    'cv2',
     'cython',
     'deepcell_tracking',
     'deepcell_toolbox',

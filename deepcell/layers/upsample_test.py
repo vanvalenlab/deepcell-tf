@@ -143,22 +143,3 @@ class TestUpsampleLike(keras_parameterized.TestCase):
 
         self.assertAllEqual(actual, expected)
 
-
-@keras_parameterized.run_all_keras_modes
-class TestUpsample(keras_parameterized.TestCase):
-
-    def test_simple(self):
-        with custom_object_scope({'Upsample': layers.Upsample}):
-            testing_utils.layer_test(
-                layers.Upsample,
-                kwargs={'target_size': (2, 2)},
-                input_shape=(3, 5, 6, 4))
-            testing_utils.layer_test(
-                layers.Upsample,
-                kwargs={'target_size': (2, 2),
-                        'data_format': 'channels_first'},
-                input_shape=(3, 4, 5, 6))
-
-
-if __name__ == '__main__':
-    test.main()

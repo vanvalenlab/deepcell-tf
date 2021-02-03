@@ -36,14 +36,6 @@ from deepcell.model_zoo.featurenet import bn_feature_net_skip_3D
 
 from deepcell.model_zoo.featurenet import siamese_model
 
-from deepcell.model_zoo.retinanet import RetinaNet
-from deepcell.model_zoo.retinanet import retinanet
-from deepcell.model_zoo.retinanet import retinanet_bbox
-
-from deepcell.model_zoo.retinamask import RetinaMask
-from deepcell.model_zoo.retinamask import retinamask
-from deepcell.model_zoo.retinamask import retinamask_bbox
-
 from deepcell.model_zoo.panopticnet import PanopticNet
 
 del absolute_import
