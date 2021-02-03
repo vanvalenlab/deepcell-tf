@@ -32,8 +32,6 @@ from __future__ import division
 import tensorflow as tf
 from tensorflow.keras import backend as K
 
-from deepcell.utils.retinanet_anchor_utils import overlap
-
 
 def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from_logits=False):
     """Categorical crossentropy between an output tensor and a target tensor.
