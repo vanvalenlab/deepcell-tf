@@ -29,9 +29,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import numpy as np
+import logging
 
-from tensorflow.python.platform import tf_logging as logging
+import numpy as np
 
 from deepcell_toolbox.utils import resize, tile_image, untile_image
 
@@ -90,6 +90,8 @@ class Application(object):
         self.dataset_metadata = dataset_metadata
         self.model_metadata = model_metadata
 
+        self.logger = logging.getLogger(self.__class__.__name__)
+
         # Test that pre and post processing functions are callable
         if self.preprocessing_fn is not None and not callable(self.preprocessing_fn):
             raise ValueError('Preprocessing_fn must be a callable function.')
@@ -120,7 +122,7 @@ class Application(object):
             new_shape = (int(shape[1] * scale_factor),
                          int(shape[2] * scale_factor))
             image = resize(image, new_shape, data_format='channels_last')
-            logger.debug('Resized input from %s to %s', shape, new_shape)
+            self.logger.debug('Resized input from %s to %s', shape, new_shape)
 
         return image
 
@@ -137,14 +139,14 @@ class Application(object):
         """
         if self.preprocessing_fn is not None:
             t = timeit.default_timer()
-            logging.debug('Pre-processing data with %s and kwargs: %s',
-                          self.preprocessing_fn.__name__, kwargs)
+            self.logger.debug('Pre-processing data with %s and kwargs: %s',
+                              self.preprocessing_fn.__name__, kwargs)
 
             image = self.preprocessing_fn(image, **kwargs)
 
-            logger.debug('Pre-processed data with %s in %s s',
-                         self.preprocessing_fn.__name__,
-                         timeit.default_timer() - t)
+            self.logger.debug('Pre-processed data with %s in %s s',
+                              self.preprocessing_fn.__name__,
+                              timeit.default_timer() - t)
 
         return image
 
@@ -206,8 +208,8 @@ class Application(object):
         """
         if self.postprocessing_fn is not None:
             t = timeit.default_timer()
-            logging.debug('Post-processing results with %s and kwargs: %s',
-                          self.postprocessing_fn.__name__, kwargs)
+            self.logger.debug('Post-processing results with %s and kwargs: %s',
+                              self.postprocessing_fn.__name__, kwargs)
 
             image = self.postprocessing_fn(image, **kwargs)
 
@@ -215,9 +217,9 @@ class Application(object):
             if len(image.shape) == self.required_rank - 1:
                 image = np.expand_dims(image, axis=-1)
             
-            logger.debug('Post-processed results with %s in %s s',
-                         self.postprocessing_fn.__name__,
-                         timeit.default_timer() - t)
+            self.logger.debug('Post-processed results with %s in %s s',
+                              self.postprocessing_fn.__name__,
+                              timeit.default_timer() - t)
 
         elif isinstance(image, list) and len(image) == 1:
             image = image[0]
@@ -335,8 +337,8 @@ class Application(object):
         # Run images through model
         t = timeit.default_timer()
         output_tiles = self.model.predict(tiles, batch_size=batch_size)
-        logger.debug('Model inference finished in %s s',
-                     timeit.default_timer() - t)
+        self.logger.debug('Model inference finished in %s s',
+                          timeit.default_timer() - t)
 
         # Untile images
         output_images = self._untile_output(output_tiles, tiles_info)
