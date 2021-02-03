@@ -142,4 +142,3 @@ class TestUpsampleLike(keras_parameterized.TestCase):
         actual = K.get_value(actual)
 
         self.assertAllEqual(actual, expected)
-
