@@ -41,10 +41,6 @@ from tensorflow.python.data import Dataset
 
 from deepcell import losses
 from deepcell import image_generators
-from deepcell.callbacks import RedirectModel, Evaluate
-from deepcell.model_zoo import retinanet_bbox, retinamask_bbox
-from deepcell.utils.retinanet_anchor_utils import guess_shapes
-from deepcell.utils.retinanet_anchor_utils import evaluate
 from deepcell.utils import train_utils
 from deepcell.utils import tracking_utils
 from deepcell.utils.data_utils import get_data
