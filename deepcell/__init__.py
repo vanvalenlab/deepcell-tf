@@ -49,7 +49,6 @@ from deepcell.running import process_whole_image
 from deepcell.training import train_model_conv
 from deepcell.training import train_model_sample
 from deepcell.training import train_model_siamese_daughter
-from deepcell.training import train_model_retinanet
 from deepcell.utils import *
 
 del absolute_import
