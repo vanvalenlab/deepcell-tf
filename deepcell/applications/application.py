@@ -31,6 +31,8 @@ from __future__ import print_function
 
 import numpy as np
 
+from tensorflow.python.platform import tf_logging as logging
+
 from deepcell_toolbox.utils import resize, tile_image, untile_image
 
 
@@ -111,13 +113,14 @@ class Application(object):
         Returns:
             numpy.array: Input image resized if necessary to match ``model_mpp``
         """
-
         # Don't scale the image if mpp is the same or not defined
         if image_mpp not in {None, self.model_mpp}:
+            shape = image.shape
             scale_factor = image_mpp / self.model_mpp
-            new_shape = (int(image.shape[1] * scale_factor),
-                         int(image.shape[2] * scale_factor))
+            new_shape = (int(shape[1] * scale_factor),
+                         int(shape[2] * scale_factor))
             image = resize(image, new_shape, data_format='channels_last')
+            logger.debug('Resized input from %s to %s', shape, new_shape)
 
         return image
 
@@ -132,9 +135,16 @@ class Application(object):
         Returns:
             numpy.array: The pre-processed ``image``.
         """
-
         if self.preprocessing_fn is not None:
+            t = timeit.default_timer()
+            logging.debug('Pre-processing data with %s and kwargs: %s',
+                          self.preprocessing_fn.__name__, kwargs)
+
             image = self.preprocessing_fn(image, **kwargs)
+
+            logger.debug('Pre-processed data with %s in %s s',
+                         self.preprocessing_fn.__name__,
+                         timeit.default_timer() - t)
 
         return image
 
@@ -155,7 +165,6 @@ class Application(object):
             (numpy.array, dict): Tuple of tiled image and dict of tiling
             information.
         """
-
         if len(image.shape) != 4:
             raise ValueError('deepcell_toolbox.tile_image only supports 4d images.'
                              'Image submitted for predict has {} dimensions'.format(
@@ -195,13 +204,20 @@ class Application(object):
         Returns:
             numpy.array: labeled image
         """
-
         if self.postprocessing_fn is not None:
+            t = timeit.default_timer()
+            logging.debug('Post-processing results with %s and kwargs: %s',
+                          self.postprocessing_fn.__name__, kwargs)
+
             image = self.postprocessing_fn(image, **kwargs)
 
             # Restore channel dimension if not already there
             if len(image.shape) == self.required_rank - 1:
                 image = np.expand_dims(image, axis=-1)
+            
+            logger.debug('Post-processed results with %s in %s s',
+                         self.postprocessing_fn.__name__,
+                         timeit.default_timer() - t)
 
         elif isinstance(image, list) and len(image) == 1:
             image = image[0]
@@ -219,7 +235,6 @@ class Application(object):
         Returns:
             numpy.array or list: Array or list according to input with untiled images
         """
-
         # If padding was used, remove padding
         if tiles_info.get('padding', False):
             def _process(im, tiles_info):
@@ -250,7 +265,6 @@ class Application(object):
             dict or list: reformatted images stored as a dict, or input
             images stored as list if no formatting function is specified.
         """
-
         if self.format_model_output_fn is not None:
             formatted_images = self.format_model_output_fn(output_images)
             return formatted_images
@@ -312,7 +326,6 @@ class Application(object):
         Returns:
             numpy.array: Model outputs
         """
-
         # Preprocess image if function is defined
         image = self._preprocess(image, **preprocess_kwargs)
 
@@ -320,7 +333,10 @@ class Application(object):
         tiles, tiles_info = self._tile_input(image, pad_mode=pad_mode)
 
         # Run images through model
+        t = timeit.default_timer()
         output_tiles = self.model.predict(tiles, batch_size=batch_size)
+        logger.debug('Model inference finished in %s s',
+                     timeit.default_timer() - t)
 
         # Untile images
         output_images = self._untile_output(output_tiles, tiles_info)
@@ -364,7 +380,6 @@ class Application(object):
         Returns:
             numpy.array: Labeled image
         """
-
         # Check input size of image
         if len(image.shape) != self.required_rank:
             raise ValueError('Input data must have {} dimensions. '
