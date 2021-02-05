@@ -67,7 +67,7 @@ docker run --gpus '"device=0"' -it --rm \
     -p 8888:8888 \
     -v $PWD/notebooks:/notebooks \
     -v $PWD/data:/data \
-    vanvalenlab/deepcell-tf:0.8.5-gpu
+    vanvalenlab/deepcell-tf:0.8.6-gpu
 ```
 
 This will spin up a docker container with `deepcell-tf` installed and start a jupyter session using the default port 8888. This command also mounts a data folder (`$PWD/data`) and a scripts folder (`$PWD/scripts`) to the docker container so it can access data and Juyter notebooks stored on the host workstation. For any saved data or models to persist once the container is shut down, or be accessible outside of the container in general, it must be saved in these mounted directories. The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 8080:8888`. If you run across any errors getting started, you should either refer to the `deepcell-tf` for developers section or raise an issue on GitHub.
