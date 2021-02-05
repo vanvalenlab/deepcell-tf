@@ -40,8 +40,8 @@ from deepcell.applications import Application
 from deepcell.model_zoo import PanopticNet
 
 
-WEIGHTS_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'model-weights/general_cyto_named.h5')
+MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+              'saved-models/CytoplasmSegmentation-2.tar.gz')
 
 
 class CytoplasmSegmentation(Application):
@@ -93,38 +93,22 @@ class CytoplasmSegmentation(Application):
         'validation_steps_per_epoch': 1973 // 2
     }
 
-    def __init__(self,
-                 use_pretrained_weights=True,
-                 model_image_shape=(128, 128, 1)):
+    def __init__(self, model=None):
 
-        model = PanopticNet('resnet50',
-                            input_shape=model_image_shape,
-                            norm_method='whole_image',
-                            num_semantic_heads=2,
-                            num_semantic_classes=[1, 1],
-                            location=True,
-                            include_top=True,
-                            lite=True,
-                            use_imagenet=use_pretrained_weights,
-                            interpolation='bilinear')
-
-        if use_pretrained_weights:
-            weights_path = get_file(
-                os.path.basename(WEIGHTS_PATH),
-                WEIGHTS_PATH,
-                cache_subdir='models',
-                file_hash='104a7d7884c80c37d2bce6d1c3a17c7a'
+        if model is None:
+            archive_path = tf.keras.utils.get_file(
+                'CytoplasmSegmentation.tgz', MODEL_PATH,
+                file_hash='4536223e6ce160e8a8b67e4f45d5a5ef',
+                extract=True, cache_subdir='models'
             )
-
-            model.load_weights(weights_path, by_name=True)
-        else:
-            weights_path = None
+            model_path = os.path.splitext(archive_path)[0]
+            model = tf.keras.models.load_model(model_path)
 
         super(CytoplasmSegmentation, self).__init__(
             model,
-            model_image_shape=model_image_shape,
+            model_image_shape=model.input_shape[1:],
             model_mpp=0.65,
-            preprocessing_fn=phase_preprocess,
+            preprocessing_fn=normalize,
             postprocessing_fn=deep_watershed,
             dataset_metadata=self.dataset_metadata,
             model_metadata=self.model_metadata)
