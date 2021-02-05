@@ -32,6 +32,7 @@ from __future__ import print_function
 from tensorflow.python.platform import test
 import numpy as np
 
+from deepcell.model_zoo import PanopticNet
 from deepcell.applications import CytoplasmSegmentation
 
 
