@@ -4,9 +4,7 @@ deepcell API
 .. toctree::
 
     deepcell.applications
-    deepcell.callbacks
     deepcell.datasets
-    deepcell.initializers
     deepcell.image_generators
     deepcell.layers
     deepcell.losses

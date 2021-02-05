@@ -68,10 +68,3 @@ transform\_utils
     :members:
     :undoc-members:
     :show-inheritance:
-
-retinanet\_anchor\_utils
-------------------------
-.. automodule:: deepcell.utils.retinanet_anchor_utils
-    :members:
-    :undoc-members:
-    :show-inheritance:

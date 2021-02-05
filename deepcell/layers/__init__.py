@@ -34,10 +34,9 @@ from deepcell.layers import normalization
 from deepcell.layers import pooling
 from deepcell.layers import tensor_product
 from deepcell.layers import padding
-from deepcell.layers import filter_detections
-from deepcell.layers import retinanet
 from deepcell.layers import upsample
 
+from deepcell.layers.convolutional_recurrent import ConvGRU2D
 from deepcell.layers.location import Location2D
 from deepcell.layers.location import Location3D
 from deepcell.layers.normalization import ImageNormalization2D
@@ -47,18 +46,7 @@ from deepcell.layers.pooling import DilatedMaxPool3D
 from deepcell.layers.tensor_product import TensorProduct
 from deepcell.layers.padding import ReflectionPadding2D
 from deepcell.layers.padding import ReflectionPadding3D
-from deepcell.layers.filter_detections import FilterDetections
-from deepcell.layers.retinanet import Anchors
-from deepcell.layers.retinanet import RegressBoxes
-from deepcell.layers.retinanet import ClipBoxes
-from deepcell.layers.retinanet import ConcatenateBoxes
-from deepcell.layers.retinanet import _RoiAlign
-from deepcell.layers.retinanet import RoiAlign
-from deepcell.layers.retinanet import Shape
-from deepcell.layers.retinanet import Cast
-from deepcell.layers.upsample import Upsample
 from deepcell.layers.upsample import UpsampleLike
-from deepcell.layers.convolutional_recurrent import ConvGRU2D
 
 del absolute_import
 del division
