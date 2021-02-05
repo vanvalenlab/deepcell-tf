@@ -33,7 +33,6 @@ import os
 
 import numpy as np
 from skimage.io import imread, imsave
-from skimage.external.tifffile import TiffFile
 from tensorflow.keras import backend as K
 
 
