@@ -16,13 +16,6 @@ fully_convolutional
     :undoc-members:
     :show-inheritance:
 
-retinanet
----------
-.. automodule:: deepcell.image_generators.retinanet
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 sample
 ------
 .. automodule:: deepcell.image_generators.sample
