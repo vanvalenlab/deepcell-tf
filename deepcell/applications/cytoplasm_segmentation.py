@@ -31,13 +31,12 @@ from __future__ import print_function
 
 import os
 
-from tensorflow.keras.utils import get_file
+import tensorflow as tf
 
+from deepcell_toolbox.processing import normalize
 from deepcell_toolbox.deep_watershed import deep_watershed
-from deepcell_toolbox.processing import phase_preprocess
 
 from deepcell.applications import Application
-from deepcell.model_zoo import PanopticNet
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
@@ -84,9 +83,9 @@ class CytoplasmSegmentation(Application):
 
     #: Metadata for the model and training process
     model_metadata = {
-        'batch_size': 2,
+        'batch_size': 16,
         'lr': 1e-4,
-        'lr_decay': 0.95,
+        'lr_decay': 0.9,
         'training_seed': 0,
         'n_epochs': 8,
         'training_steps_per_epoch': 7899 // 2,
