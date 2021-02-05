@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Van Valen Lab at the California Institute of
+# Copyright 2016-2021 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -23,36 +23,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Package for single cell image segmentation with convolutional neural networks"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-from deepcell._version import __version__
-
-from deepcell import applications
-from deepcell import datasets
-from deepcell import layers
-from deepcell import losses
-from deepcell import image_generators
-from deepcell import model_zoo
-from deepcell import running
-from deepcell import tracking
-from deepcell import training
-from deepcell import utils
-from deepcell import metrics
-
-from deepcell.layers import *
-from deepcell.image_generators import *
-from deepcell.model_zoo import *
-from deepcell.running import get_cropped_input_shape
-from deepcell.running import process_whole_image
-from deepcell.training import train_model_conv
-from deepcell.training import train_model_sample
-from deepcell.training import train_model_siamese_daughter
-from deepcell.utils import *
-
-del absolute_import
-del division
-del print_function
+__title__ = 'DeepCell'
+__description__ = 'Deep learning for single cell image segmentation'
+__url__ = 'https://github.com/vanvalenlab/deepcell-tf'
+__version__ = '0.8.6'
+__download_url__ = '{}/tarball/{}'.format(__url__, __version__)
+__author__ = 'The Van Valen Lab'
+__author_email__ = 'vanvalen@caltech.edu'
+__license__ = 'LICENSE'
+__copyright__ = 'Copyright 2016-2021 The Van Valen Lab at the ' \
+    'California Institute of Technology (Caltech)'
