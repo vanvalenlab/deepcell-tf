@@ -51,7 +51,7 @@ class TestCytoplasmSegmentation(test.TestCase):
                 lite=True,
                 use_imagenet=False,
                 interpolation='bilinear')
-            app = NuclearSegmentation(model)
+            app = CytoplasmSegmentation(model)
 
             # test output shape
             shape = app.model.output_shape

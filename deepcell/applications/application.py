@@ -217,7 +217,7 @@ class Application(object):
             # Restore channel dimension if not already there
             if len(image.shape) == self.required_rank - 1:
                 image = np.expand_dims(image, axis=-1)
-            
+
             self.logger.debug('Post-processed results with %s in %s s',
                               self.postprocessing_fn.__name__,
                               timeit.default_timer() - t)
