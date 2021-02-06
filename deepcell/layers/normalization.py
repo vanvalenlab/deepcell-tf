@@ -142,8 +142,8 @@ class ImageNormalization2D(Layer):
         #     trainable=False,
         #     dtype=self.dtype)
 
-        W = K.ones(kernel_shape, dtype=K.floatx())
-        W = W / K.cast(K.prod(K.int_shape(W)), dtype=K.floatx())
+        W = K.ones(kernel_shape, dtype=self.compute_dtype)
+        W = W / K.cast(K.prod(K.int_shape(W)), dtype=self.compute_dtype)
         self.kernel = W
         # self.set_weights([W])
 
@@ -329,8 +329,8 @@ class ImageNormalization3D(Layer):
         #     trainable=False,
         #     dtype=self.dtype)
 
-        W = K.ones(kernel_shape, dtype=K.floatx())
-        W = W / K.cast(K.prod(K.int_shape(W)), dtype=K.floatx())
+        W = K.ones(kernel_shape, dtype=self.compute_dtype)
+        W = W / K.cast(K.prod(K.int_shape(W)), dtype=self.compute_dtype)
         self.kernel = W
         # self.set_weights([W])
 
