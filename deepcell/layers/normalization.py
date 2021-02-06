@@ -166,6 +166,7 @@ class ImageNormalization2D(Layer):
         return tensor_shape.TensorShape(input_shape)
 
     def _average_filter(self, inputs):
+        # Depthwise convolution on CPU is only supported for NHWC format
         if self.data_format == 'channels_first':
             inputs = K.permute_dimensions(inputs, pattern=[0, 2, 3, 1])
         outputs = tf.nn.depthwise_conv2d(inputs, self.kernel, [1, 1, 1, 1],
