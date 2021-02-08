@@ -150,7 +150,6 @@ def PanopticNet(backbone,
             If equal to 1, assumes 2D data.
         temporal_mode: Mode of temporal convolution. Choose from
             ``{'conv','lstm','gru', None}``.
-        num_semantic_heads (int): Total number of semantic heads to build.
         num_semantic_classes (list): Number of semantic classes
             for each semantic head.
         norm_method (str): Normalization method to use with the
