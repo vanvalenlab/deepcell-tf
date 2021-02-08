@@ -366,7 +366,6 @@ class PanopticNetTest(keras_parameterized.TestCase):
                 location=location,
                 pooling=pooling,
                 upsample_type=upsample_type,
-                num_semantic_heads=len(num_semantic_classes),
                 num_semantic_classes=num_semantic_classes,
                 use_imagenet=False,
             )
@@ -395,7 +394,6 @@ class PanopticNetTest(keras_parameterized.TestCase):
                 norm_method=norm_method,
                 location=True,
                 pooling='avg',
-                num_semantic_heads=len(num_semantic_classes),
                 num_semantic_classes=num_semantic_classes,
                 use_imagenet=False,
             )
@@ -410,7 +408,6 @@ class PanopticNetTest(keras_parameterized.TestCase):
                 norm_method=norm_method,
                 location=True,
                 pooling='avg',
-                num_semantic_heads=len(num_semantic_classes),
                 num_semantic_classes=num_semantic_classes,
                 use_imagenet=False,
             )
