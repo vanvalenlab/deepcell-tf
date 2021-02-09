@@ -92,10 +92,10 @@ def LabelDetectionModel(input_shape=(None, None, 1),
         pooling=None)
 
     x = tf.keras.layers.AveragePooling2D(4)(backbone_model.outputs[0])
+    x = tf.keras.layers.Flatten()(x)
     x = TensorProduct(256)(x)
     x = TensorProduct(num_classes)(x)
-    x = tf.keras.layers.Flatten()(x)
-    outputs = tf.keras.layers.Activation('softmax')(x)
+    outputs = tf.keras.layers.Softmax(dtype=tf.keras.backend.floatx())(x)
 
     model = tf.keras.Model(inputs=backbone_model.inputs, outputs=outputs)
 

@@ -90,9 +90,9 @@ def ScaleDetectionModel(input_shape=(None, None, 1),
         pooling=None)
 
     x = tf.keras.layers.AveragePooling2D(4)(backbone_model.outputs[0])
-    x = TensorProduct(256, activation='relu')(x)
     x = tf.keras.layers.Flatten()(x)
-    outputs = TensorProduct(1)(x)
+    x = TensorProduct(256, activation='relu')(x)
+    outputs = TensorProduct(1, dtype=tf.keras.backend.floatx())(x)
 
     model = tf.keras.Model(inputs=backbone_model.inputs, outputs=outputs)
 
