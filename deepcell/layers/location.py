@@ -64,11 +64,11 @@ class Location2D(Layer):
     def call(self, inputs):
         input_shape = self.in_shape
         if self.data_format == 'channels_first':
-            x = K.arange(0, input_shape[1], dtype=K.floatx())
-            y = K.arange(0, input_shape[2], dtype=K.floatx())
+            x = K.arange(0, input_shape[1], dtype=inputs.dtype)
+            y = K.arange(0, input_shape[2], dtype=inputs.dtype)
         else:
-            x = K.arange(0, input_shape[0], dtype=K.floatx())
-            y = K.arange(0, input_shape[1], dtype=K.floatx())
+            x = K.arange(0, input_shape[0], dtype=inputs.dtype)
+            y = K.arange(0, input_shape[1], dtype=inputs.dtype)
 
         x = x / K.max(x)
         y = y / K.max(y)
@@ -131,13 +131,13 @@ class Location3D(Layer):
         input_shape = self.in_shape
 
         if self.data_format == 'channels_first':
-            z = K.arange(0, input_shape[1], dtype=K.floatx())
-            x = K.arange(0, input_shape[2], dtype=K.floatx())
-            y = K.arange(0, input_shape[3], dtype=K.floatx())
+            z = K.arange(0, input_shape[1], dtype=inputs.dtype)
+            x = K.arange(0, input_shape[2], dtype=inputs.dtype)
+            y = K.arange(0, input_shape[3], dtype=inputs.dtype)
         else:
-            z = K.arange(0, input_shape[0], dtype=K.floatx())
-            x = K.arange(0, input_shape[1], dtype=K.floatx())
-            y = K.arange(0, input_shape[2], dtype=K.floatx())
+            z = K.arange(0, input_shape[0], dtype=inputs.dtype)
+            x = K.arange(0, input_shape[1], dtype=inputs.dtype)
+            y = K.arange(0, input_shape[2], dtype=inputs.dtype)
 
         x = x / K.max(x)
         y = y / K.max(y)
