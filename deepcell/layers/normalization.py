@@ -140,7 +140,7 @@ class ImageNormalization2D(Layer):
         #     regularizer=self.kernel_regularizer,
         #     constraint=self.kernel_constraint,
         #     trainable=False,
-        #     dtype=self.dtype)
+        #     dtype=self.compute_dtype)
 
         W = K.ones(kernel_shape, dtype=self.compute_dtype)
         W = W / K.cast(K.prod(K.int_shape(W)), dtype=self.compute_dtype)
@@ -155,7 +155,7 @@ class ImageNormalization2D(Layer):
                 regularizer=self.bias_regularizer,
                 constraint=self.bias_constraint,
                 trainable=False,
-                dtype=self.dtype)
+                dtype=self.compute_dtype)
         else:
             self.bias = None
 
@@ -328,7 +328,7 @@ class ImageNormalization3D(Layer):
         #     regularizer=self.kernel_regularizer,
         #     constraint=self.kernel_constraint,
         #     trainable=False,
-        #     dtype=self.dtype)
+        #     dtype=self.compute_dtype)
 
         W = K.ones(kernel_shape, dtype=self.compute_dtype)
         W = W / K.cast(K.prod(K.int_shape(W)), dtype=self.compute_dtype)
@@ -337,15 +337,16 @@ class ImageNormalization3D(Layer):
 
         if self.use_bias:
             self.bias = self.add_weight(
-                'bias',
+                name='bias',
                 shape=(depth, self.filter_size, self.filter_size),
                 initializer=self.bias_initializer,
                 regularizer=self.bias_regularizer,
                 constraint=self.bias_constraint,
                 trainable=False,
-                dtype=self.dtype)
+                dtype=self.compute_dtype)
         else:
             self.bias = None
+
         self.built = True
 
     def compute_output_shape(self, input_shape):
