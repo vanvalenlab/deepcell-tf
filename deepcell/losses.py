@@ -49,6 +49,8 @@ def categorical_crossentropy(y_true, y_pred, class_weights=None, axis=None, from
     """
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
+    y_pred = tf.convert_to_tensor(y_pred)
+    y_true = K.cast(y_true, y_pred.dtype)
     if axis is None:
         axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
     if not from_logits:
@@ -83,6 +85,9 @@ def weighted_categorical_crossentropy(y_true, y_pred,
     """
     if from_logits:
         raise Exception('weighted_categorical_crossentropy cannot take logits')
+    y_pred = tf.convert_to_tensor(y_pred)
+    y_true = K.cast(y_true, y_pred.dtype)
+    n_classes = K.cast(n_classes, y_pred.dtype)
     if axis is None:
         axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
     reduce_axis = [x for x in list(range(K.ndim(y_pred))) if x != axis]
@@ -91,11 +96,10 @@ def weighted_categorical_crossentropy(y_true, y_pred,
     # manual computation of crossentropy
     _epsilon = tf.convert_to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
     y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
-    y_true_cast = K.cast(y_true, K.floatx())
-    total_sum = K.sum(y_true_cast)
-    class_sum = K.sum(y_true_cast, axis=reduce_axis, keepdims=True)
-    class_weights = 1.0 / K.cast_to_floatx(n_classes) * tf.divide(total_sum, class_sum + 1.)
-    return - K.sum((y_true_cast * K.log(y_pred) * class_weights), axis=axis)
+    total_sum = K.sum(y_true)
+    class_sum = K.sum(y_true, axis=reduce_axis, keepdims=True)
+    class_weights = 1.0 / n_classes * tf.divide(total_sum, class_sum + 1.)
+    return - K.sum((y_true * K.log(y_pred) * class_weights), axis=axis)
 
 
 def sample_categorical_crossentropy(y_true,
@@ -120,6 +124,8 @@ def sample_categorical_crossentropy(y_true,
     """
     # Note: tf.nn.softmax_cross_entropy_with_logits
     # expects logits, Keras expects probabilities.
+    y_pred = tf.convert_to_tensor(y_pred)
+    y_true = K.cast(y_true, y_pred.dtype)
     if axis is None:
         axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
     if not from_logits:
@@ -148,6 +154,8 @@ def dice_loss(y_true, y_pred, smooth=1):
     Returns:
         tensor: Output tensor.
     """
+    y_pred = tf.convert_to_tensor(y_pred)
+    y_true = K.cast(y_true, y_pred.dtype)
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = K.sum(y_true_f * y_pred_f)
@@ -167,6 +175,8 @@ def discriminative_instance_loss(y_true, y_pred,
     Returns:
         tensor: Output tensor.
     """
+    y_pred = tf.convert_to_tensor(y_pred)
+    y_true = K.cast(y_true, y_pred.dtype)
 
     def temp_norm(ten, axis=None):
         if axis is None:
@@ -180,11 +190,11 @@ def discriminative_instance_loss(y_true, y_pred,
     # Compute variance loss
     cells_summed = tf.tensordot(y_true, y_pred, axes=[axes, axes])
     nonzeros = tf.math.count_nonzero(y_true, axis=axes)
-    n_pixels = K.cast(nonzeros, dtype=K.floatx()) + K.epsilon()
+    n_pixels = K.cast(nonzeros, dtype=y_pred.dtype) + K.epsilon()
     n_pixels_expand = K.expand_dims(n_pixels, axis=1) + K.epsilon()
     mu = tf.divide(cells_summed, n_pixels_expand)
 
-    delta_v = K.constant(delta_v, dtype=K.floatx())
+    delta_v = K.constant(delta_v, dtype=y_pred.dtype)
     mu_tensor = tf.tensordot(y_true, mu, axes=[[channel_axis], [0]])
     L_var_1 = y_pred - mu_tensor
     L_var_2 = K.square(K.relu(temp_norm(L_var_1) - delta_v))
@@ -198,8 +208,8 @@ def discriminative_instance_loss(y_true, y_pred,
 
     diff_matrix = tf.subtract(mu_b, mu_a)
     L_dist_1 = temp_norm(diff_matrix)
-    L_dist_2 = K.square(K.relu(K.constant(2 * delta_d, dtype=K.floatx()) - L_dist_1))
-    diag = K.constant(0, dtype=K.floatx()) * tf.linalg.diag_part(L_dist_2)
+    L_dist_2 = K.square(K.relu(K.constant(2 * delta_d, dtype=y_pred.dtype) - L_dist_1))
+    diag = K.constant(0, dtype=y_pred.dtype) * tf.linalg.diag_part(L_dist_2)
     L_dist_3 = tf.linalg.set_diag(L_dist_2, diag)
     L_dist = K.mean(L_dist_3)
 
@@ -228,6 +238,9 @@ def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_l
     """
     if from_logits:
         raise Exception('weighted_focal_loss cannot take logits')
+    y_pred = tf.convert_to_tensor(y_pred)
+    y_true = K.cast(y_true, y_pred.dtype)
+    n_classes = K.cast(n_classes, y_pred.dtype)
     if axis is None:
         axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
     reduce_axis = [x for x in list(range(K.ndim(y_pred))) if x != axis]
@@ -236,10 +249,9 @@ def weighted_focal_loss(y_true, y_pred, n_classes=3, gamma=2., axis=None, from_l
     # manual computation of crossentropy
     _epsilon = tf.convert_to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
     y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
-    y_true_cast = K.cast(y_true, K.floatx())
-    total_sum = K.sum(y_true_cast)
-    class_sum = K.sum(y_true_cast, axis=reduce_axis, keepdims=True)
-    class_weights = 1.0 / K.cast_to_floatx(n_classes) * tf.divide(total_sum, class_sum + 1.)
+    total_sum = K.sum(y_true)
+    class_sum = K.sum(y_true, axis=reduce_axis, keepdims=True)
+    class_weights = 1.0 / n_classes * tf.divide(total_sum, class_sum + 1.)
     temp_loss = (K.pow(1. - y_pred, gamma) * K.log(y_pred) * class_weights)
     focal_loss = - K.sum(y_true * temp_loss, axis=axis)
     return focal_loss
@@ -258,6 +270,9 @@ def smooth_l1(y_true, y_pred, sigma=3.0, axis=None):
     Returns:
         The smooth L1 loss of ``y_pred`` w.r.t. ``y_true``.
     """
+    y_pred = tf.convert_to_tensor(y_pred)
+    y_true = K.cast(y_true, y_pred.dtype)
+
     if axis is None:
         axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
 
@@ -289,6 +304,9 @@ def focal(y_true, y_pred, alpha=0.25, gamma=2.0, axis=None):
     Returns:
         float: The focal loss of ``y_pred`` w.r.t. ``y_true``.
     """
+    y_pred = tf.convert_to_tensor(y_pred)
+    y_true = K.cast(y_true, y_pred.dtype)
+
     if axis is None:
         axis = 1 if K.image_data_format() == 'channels_first' else K.ndim(y_pred) - 1
 
