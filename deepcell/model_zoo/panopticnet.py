@@ -246,10 +246,10 @@ def PanopticNet(backbone,
     if location:
         if frames_per_batch > 1:
             # TODO: TimeDistributed is incompatible with channels_first
-            loc = TimeDistributed(Location2D(in_shape=input_shape,
-                                             name='location'), name='td_location')(norm)
+            loc = TimeDistributed(Location2D(name='location'),
+                                  name='td_location')(norm)
         else:
-            loc = Location2D(in_shape=input_shape, name='location')(norm)
+            loc = Location2D(name='location')(norm)
         concat = Concatenate(axis=channel_axis,
                              name='concatenate_location')([norm, loc])
     else:
