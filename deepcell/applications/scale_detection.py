@@ -41,7 +41,7 @@ from deepcell.utils.backbone_utils import get_backbone
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/ScaleDetection-1.tar.gz')
+              'saved-models/ScaleDetection-2.tar.gz')
 
 
 def ScaleDetectionModel(input_shape=(None, None, 1),
@@ -116,13 +116,14 @@ class ScaleDetection(Application):
 
     #: Metadata for the model and training process
     model_metadata = {
-        'batch_size': 64,
+        'batch_size': 128,
         'lr': 1e-3,
         'lr_decay': 0.9,
         'training_seed': 0,
-        'n_epochs': 200,
-        'training_steps_per_epoch': 8400,
-        'validation_steps_per_epoch': 2102,
+        'n_epochs': 20,
+        'precision_policy': 'mixed_float16',
+        'training_steps_per_epoch': 1199,
+        'validation_steps_per_epoch': 299,
         'error_rate': .01
     }
 
@@ -131,7 +132,7 @@ class ScaleDetection(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'ScaleDetection.tgz', MODEL_PATH,
-                file_hash='1ca4ee3a90fd4445bb5484e10ac0081c',
+                file_hash='516bac6d3f98b4fb345c035e88a6d0a4',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
