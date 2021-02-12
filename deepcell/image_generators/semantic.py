@@ -588,10 +588,10 @@ class SemanticMovieIterator(Iterator):
                 for frame in range(batch_x.shape[time_axis]):
                     if time_axis == 2:
                         img = array_to_img(batch_x[i, :, frame],
-                                            self.data_format, scale=True)
+                                           self.data_format, scale=True)
                     else:
                         img = array_to_img(batch_x[i, frame],
-                                            self.data_format, scale=True)
+                                           self.data_format, scale=True)
                     fname = '{prefix}_{index}_{hash}.{format}'.format(
                         prefix=self.save_prefix,
                         index=j,
@@ -603,17 +603,15 @@ class SemanticMovieIterator(Iterator):
                         # Save argmax of y batch
                         if self.time_axis == 2:
                             img_y = np.argmax(batch_y[0][i, :, frame],
-                                                axis=0)
+                                              axis=0)
                             img_channel_axis = 0
                             img_y = batch_y[0][i, :, frame]
                         else:
                             img_channel_axis = -1
                             img_y = batch_y[0][i, frame]
                         img_y = np.argmax(img_y, axis=img_channel_axis)
-                        img_y = np.expand_dims(img_y,
-                                                axis=img_channel_axis)
-                        img = array_to_img(img_y, self.data_format,
-                                            scale=True)
+                        img_y = np.expand_dims(img_y, axis=img_channel_axis)
+                        img = array_to_img(img_y, self.data_format, scale=True)
                         fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
                             prefix=self.save_prefix,
                             index=j,
