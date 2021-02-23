@@ -6,7 +6,15 @@ ARG TF_VERSION=2.4.1-gpu
 FROM tensorflow/tensorflow:${TF_VERSION}
 
 # System maintenance
-RUN /usr/bin/python3 -m pip install --upgrade pip
+# System maintenance
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    python3-tk \
+    graphviz \
+    libxext6 \
+    libxrender-dev \
+    libsm6 && \
+    rm -rf /var/lib/apt/lists/* && \
+    /usr/bin/python3 -m pip install --upgrade pip
 
 WORKDIR /notebooks
 
@@ -22,6 +30,9 @@ COPY deepcell /opt/deepcell-tf/deepcell
 
 # Install deepcell via setup.py
 RUN pip install /opt/deepcell-tf
+
+## need to remove jedi - causes erros for tab in jupyter
+RUN pip uninstall jedi --yes
 
 # Copy over deepcell notebooks
 COPY notebooks/ /notebooks/

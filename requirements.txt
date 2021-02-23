@@ -6,3 +6,8 @@ tensorflow==2.4.1
 jupyter>=1.0.0,<2
 deepcell-tracking>=0.3.1
 deepcell-toolbox>=0.8.6
+opencv-python<=3.4.9.31
+spektral==0.6.1
+pydot>=1.4.1
+pydotplus>=2.0.2
+graphviz>=0.14
