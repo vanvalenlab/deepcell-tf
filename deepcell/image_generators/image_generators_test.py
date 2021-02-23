@@ -1183,6 +1183,9 @@ class TestSiamsesDataGenerator(test.TestCase):
                 x.append(_x)
                 y.append(_y)
 
+        # remove cell 1 from last frame
+        y[-1] = np.where(y[-1] == 1, len(np.unique(y[-1])), y[-1])
+
         x = np.stack(x, axis=0)  # expand to 3D
         y = np.stack(y, axis=0)  # expand to 3D
 
@@ -1223,26 +1226,21 @@ class TestSiamsesDataGenerator(test.TestCase):
             # TODO: image generator should handle RGB as well as grayscale
             'X': images,
             'y': labels,
-            'daughters': [{j: [{1: [2, 3]}] for j in range(1, 4)}
-                          for k in range(batches)]
+            'daughters': [{1: [2, 3]} for k in range(batches)]
         }
         generator.flow(train_dict, features=feats)
 
         # Temp dir to save generated images
         temp_dir = self.get_temp_dir()
-        y_shape = tuple(list(images.shape)[:-1] + [1])
-        train_dict['X'] = images
-        train_dict['y'] = labels
-        train_dict['daughters'] = [{j: [{1: [2, 3]}] for j in range(1, 4)}
-                                   for k in range(y_shape[0])]
+
         # TODO: test the correctness of the `x` and `y`
-        # for x, y in generator.flow(
-        #         train_dict,
-        #         features=feats,
-        #         crop_dim=2,
-        #         save_to_dir=temp_dir,
-        #         shuffle=True):
-        #     break
+        for x, y in generator.flow(
+                train_dict,
+                features=feats,
+                crop_dim=2,
+                save_to_dir=temp_dir,
+                shuffle=True):
+            break
 
     def test_siamese_data_generator_channels_first(self):
         frames = 5
@@ -1277,25 +1275,20 @@ class TestSiamsesDataGenerator(test.TestCase):
             # TODO: image generator should handle RGB as well as grayscale
             'X': images,
             'y': labels,
-            'daughters': [{j: [{1: [2, 3]}] for j in range(1, 4)}
-                          for k in range(batches)]
+            'daughters': [{1: [2, 3]} for k in range(batches)]
         }
         generator.flow(train_dict, features=feats)
 
         # Temp dir to save generated images
         temp_dir = self.get_temp_dir()
-        y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
-        train_dict['X'] = images
-        train_dict['y'] = labels
-        train_dict['daughters'] = []
         # TODO: test the correctness of the `x` and `y`
-        # for x, y in generator.flow(
-        #         train_dict,
-        #         features=feats,
-        #         crop_dim=2,
-        #         save_to_dir=temp_dir,
-        #         shuffle=True):
-        #     break
+        for x, y in generator.flow(
+                train_dict,
+                features=feats,
+                crop_dim=2,
+                save_to_dir=temp_dir,
+                shuffle=True):
+            break
 
     def test_siamese_data_generator_invalid_data(self):
         generator = image_generators.SiameseDataGenerator(
