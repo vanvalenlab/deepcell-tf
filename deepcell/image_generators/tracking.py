@@ -745,10 +745,10 @@ class SiameseIterator(Iterator):
 
         if self.data_format == 'channels_first':
             neighborhood_1 = neighborhoods[:, 0:-1, :, :]
-            neighborhood_2 = neighborhoods[:, -1, :, :]
+            neighborhood_2 = neighborhoods[:, -1:, :, :]
         else:
             neighborhood_1 = neighborhoods[0:-1, :, :, :]
-            neighborhood_2 = neighborhoods[-1, :, :, :]
+            neighborhood_2 = neighborhoods[-1:, :, :, :]
 
         return neighborhood_1, neighborhood_2
 
