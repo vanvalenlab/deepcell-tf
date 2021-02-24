@@ -1239,14 +1239,13 @@ class TestSiamsesDataGenerator(test.TestCase):
                 shuffle=True)
 
             for x, y in iterator:
-                target = y['classification']
-                assert target.shape[-1] == 3
+                assert y['classification'].shape[-1] == 3
                 for f in feats:
                     f1 = x['{}_input1'.format(f)]
                     f2 = x['{}_input2'.format(f)]
 
                     shape1, shape2 = iterator._compute_feature_shape(
-                        f, [None] * target.shape[0])
+                        f, [None] * y['classification'].shape[0])
                     assert f1.shape[1:] == shape1[1:]
                     assert f2.shape[1:] == shape2[1:]
                 break
@@ -1298,14 +1297,13 @@ class TestSiamsesDataGenerator(test.TestCase):
                 shuffle=True)
 
             for x, y in iterator:
-                target = y['classification']
-                assert target.shape[-1] == 3
+                assert y['classification'].shape[-1] == 3
                 for f in feats:
                     f1 = x['{}_input1'.format(f)]
                     f2 = x['{}_input2'.format(f)]
 
                     shape1, shape2 = iterator._compute_feature_shape(
-                        f, [None] * target.shape[0])
+                        f, [None] * y['classification'].shape[0])
                     assert f1.shape[1:] == shape1[1:]
                     assert f2.shape[1:] == shape2[1:]
                 break
