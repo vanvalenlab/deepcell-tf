@@ -1231,14 +1231,24 @@ class TestSiamsesDataGenerator(test.TestCase):
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
+            iterator = generator.flow(
+                train_dict,
+                features=feats,
+                crop_dim=2,
+                save_to_dir=temp_dir,
+                shuffle=True)
 
-            # TODO: test the correctness of the `x` and `y`
-            for x, y in generator.flow(
-                    train_dict,
-                    features=feats,
-                    crop_dim=2,
-                    save_to_dir=temp_dir,
-                    shuffle=True):
+            for x, y in iterator:
+                target = y['classification']
+                assert target.shape[-1] == 3
+                for f in feats:
+                    f1 = x['{}_input1'.format(f)]
+                    f2 = x['{}_input2'.format(f)]
+
+                    shape1, shape2 = iterator._compute_feature_shape(
+                        f, [None] * target.shape[0])
+                    assert f1.shape[1:] == shape1[1:]
+                    assert f2.shape[1:] == shape2[1:]
                 break
 
     def test_siamese_data_generator_channels_first(self):
@@ -1280,13 +1290,24 @@ class TestSiamsesDataGenerator(test.TestCase):
 
             # Temp dir to save generated images
             temp_dir = self.get_temp_dir()
-            # TODO: test the correctness of the `x` and `y`
-            for x, y in generator.flow(
-                    train_dict,
-                    features=feats,
-                    crop_dim=2,
-                    save_to_dir=temp_dir,
-                    shuffle=True):
+            iterator = generator.flow(
+                train_dict,
+                features=feats,
+                crop_dim=2,
+                save_to_dir=temp_dir,
+                shuffle=True)
+
+            for x, y in iterator:
+                target = y['classification']
+                assert target.shape[-1] == 3
+                for f in feats:
+                    f1 = x['{}_input1'.format(f)]
+                    f2 = x['{}_input2'.format(f)]
+
+                    shape1, shape2 = iterator._compute_feature_shape(
+                        f, [None] * target.shape[0])
+                    assert f1.shape[1:] == shape1[1:]
+                    assert f2.shape[1:] == shape2[1:]
                 break
 
     def test_siamese_data_generator_invalid_data(self):
