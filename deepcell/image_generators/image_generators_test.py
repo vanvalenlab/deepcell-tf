@@ -1169,126 +1169,125 @@ class TestMovieDataGenerator(test.TestCase):
 class TestSiamsesDataGenerator(test.TestCase):
 
     def _get_dummy_tracking_data(self, length=32, frames=3, batches=8,
-                                 data_format='channels_last'):
+                                 channels=1, data_format='channels_last'):
         if data_format == 'channels_last':
-            channel_axis = -1
+            channel_axis = 4
         else:
-            channel_axis = 0
+            channel_axis = 1
 
-        x, y = [], []
-        while len(x) < frames:
-            _x = sk.data.binary_blobs(length=length, n_dim=2)
-            _y = sk.measure.label(_x)
+        y = []
+        while len(y) < frames:
+            _y = sk.measure.label(sk.data.binary_blobs(length=length, n_dim=2))
             if len(np.unique(_y)) > 2:
-                x.append(_x)
                 y.append(_y)
 
         # remove cell 1 from last frame
         y[-1] = np.where(y[-1] == 1, len(np.unique(y[-1])), y[-1])
 
-        x = np.stack(x, axis=0)  # expand to 3D
         y = np.stack(y, axis=0)  # expand to 3D
 
-        x = np.expand_dims(np.expand_dims(x, axis=channel_axis), axis=0)
-        y = np.expand_dims(np.expand_dims(y, axis=channel_axis), axis=0)
+        y = np.expand_dims(np.expand_dims(y, axis=0), axis=channel_axis)
+        shape = list(y.shape)
+        shape[channel_axis] = channels
+        x = np.random.random(size=shape)
 
         return x.astype('float32'), y.astype('int32')
 
     def test_siamese_data_generator(self):
         frames = 5
         batches = 8
-        # TODO: image generator should handle RGB as well as grayscale
-        images, labels = self._get_dummy_tracking_data(
-            32, frames, batches, 'channels_last')
 
-        generator = image_generators.SiameseDataGenerator(
-            featurewise_center=True,
-            samplewise_center=True,
-            featurewise_std_normalization=True,
-            samplewise_std_normalization=True,
-            zca_whitening=True,
-            rotation_range=90.,
-            width_shift_range=0.1,
-            height_shift_range=0.1,
-            shear_range=0.5,
-            zoom_range=0.2,
-            channel_shift_range=1.,
-            brightness_range=(1, 5),
-            fill_mode='nearest',
-            cval=0.5,
-            horizontal_flip=True,
-            vertical_flip=True)
+        for channel in [1, 3]:
+            images, labels = self._get_dummy_tracking_data(
+                32, frames, batches, channel, 'channels_last')
 
-        feats = ['appearance', 'distance', 'neighborhood', 'regionprop']
+            generator = image_generators.SiameseDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                brightness_range=(1, 5),
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True)
 
-        # Basic test before fit
-        train_dict = {
-            # TODO: image generator should handle RGB as well as grayscale
-            'X': images,
-            'y': labels,
-            'daughters': [{1: [2, 3]} for k in range(batches)]
-        }
-        generator.flow(train_dict, features=feats)
+            feats = ['appearance', 'distance', 'neighborhood', 'regionprop']
 
-        # Temp dir to save generated images
-        temp_dir = self.get_temp_dir()
+            # Basic test before fit
+            train_dict = {
+                'X': images,
+                'y': labels,
+                'daughters': [{1: [2, 3]} for k in range(batches)]
+            }
+            generator.flow(train_dict, features=feats)
 
-        # TODO: test the correctness of the `x` and `y`
-        for x, y in generator.flow(
-                train_dict,
-                features=feats,
-                crop_dim=2,
-                save_to_dir=temp_dir,
-                shuffle=True):
-            break
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
+
+            # TODO: test the correctness of the `x` and `y`
+            for x, y in generator.flow(
+                    train_dict,
+                    features=feats,
+                    crop_dim=2,
+                    save_to_dir=temp_dir,
+                    shuffle=True):
+                break
 
     def test_siamese_data_generator_channels_first(self):
         frames = 5
         batches = 8
-        # TODO: image generator should handle RGB as well as grayscale
-        images, labels = self._get_dummy_tracking_data(
-            32, frames, batches, 'channels_first')
 
-        generator = image_generators.SiameseDataGenerator(
-            featurewise_center=True,
-            samplewise_center=True,
-            featurewise_std_normalization=True,
-            samplewise_std_normalization=True,
-            zca_whitening=True,
-            rotation_range=90.,
-            width_shift_range=0.1,
-            height_shift_range=0.1,
-            shear_range=0.5,
-            zoom_range=0.2,
-            channel_shift_range=1.,
-            # brightness_range=(1, 5),  # TODO: `channels_first` conflict
-            fill_mode='nearest',
-            cval=0.5,
-            horizontal_flip=True,
-            vertical_flip=True,
-            data_format='channels_first')
+        for channel in [1, 3]:
+            images, labels = self._get_dummy_tracking_data(
+                32, frames, batches, channel, 'channels_first')
 
-        feats = ['appearance', 'distance', 'neighborhood', 'regionprop']
+            generator = image_generators.SiameseDataGenerator(
+                featurewise_center=True,
+                samplewise_center=True,
+                featurewise_std_normalization=True,
+                samplewise_std_normalization=True,
+                zca_whitening=True,
+                rotation_range=90.,
+                width_shift_range=0.1,
+                height_shift_range=0.1,
+                shear_range=0.5,
+                zoom_range=0.2,
+                channel_shift_range=1.,
+                # brightness_range=(1, 5),  # TODO: `channels_first` conflict
+                fill_mode='nearest',
+                cval=0.5,
+                horizontal_flip=True,
+                vertical_flip=True,
+                data_format='channels_first')
 
-        # Basic test before fit
-        train_dict = {
-            # TODO: image generator should handle RGB as well as grayscale
-            'X': images,
-            'y': labels,
-            'daughters': [{1: [2, 3]} for k in range(batches)]
-        }
-        generator.flow(train_dict, features=feats)
+            feats = ['appearance', 'distance', 'neighborhood', 'regionprop']
 
-        # Temp dir to save generated images
-        temp_dir = self.get_temp_dir()
-        # TODO: test the correctness of the `x` and `y`
-        for x, y in generator.flow(
-                train_dict,
-                features=feats,
-                crop_dim=2,
-                save_to_dir=temp_dir,
-                shuffle=True):
-            break
+            # Basic test before fit
+            train_dict = {
+                'X': images,
+                'y': labels,
+                'daughters': [{1: [2, 3]} for k in range(batches)]
+            }
+            generator.flow(train_dict, features=feats)
+
+            # Temp dir to save generated images
+            temp_dir = self.get_temp_dir()
+            # TODO: test the correctness of the `x` and `y`
+            for x, y in generator.flow(
+                    train_dict,
+                    features=feats,
+                    crop_dim=2,
+                    save_to_dir=temp_dir,
+                    shuffle=True):
+                break
 
     def test_siamese_data_generator_invalid_data(self):
         generator = image_generators.SiameseDataGenerator(
