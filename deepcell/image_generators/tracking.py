@@ -589,7 +589,7 @@ class SiameseIterator(Iterator):
         """
         # TODO: Check to make sure the frames are acceptable
         if self.data_format == 'channels_first':
-            return self.all_future_areas[track, :, np.array(frames), :, :]
+            return self.all_future_areas[track][:, np.array(frames), :, :]
         return self.all_future_areas[track, np.array(frames), :, :, :]
 
     def _fetch_regionprops(self, track, frames):
