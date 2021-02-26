@@ -53,7 +53,6 @@ class Location2D(Layer):
     def __init__(self, data_format=None, **kwargs):
         in_shape = kwargs.pop('in_shape', None)
         if in_shape is not None:
-            # warn in_shape is deprecated.
             logger.warn('in_shape (from deepcell.layerse.location) is '
                         'deprecated and will be removed in a future version.')
         super(Location2D, self).__init__(**kwargs)
@@ -61,20 +60,18 @@ class Location2D(Layer):
 
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
-        if self.data_format == 'channels_first':
-            output_shape = (input_shape[0], 2, input_shape[2], input_shape[3])
-        else:
-            output_shape = (input_shape[0], input_shape[1], input_shape[2], 2)
-        return tensor_shape.TensorShape(output_shape)
+        channel_axis = 1 if self.data_format == 'channels_first' else 3
+        input_shape[channel_axis] = 2
+        return tensor_shape.TensorShape(input_shape)
 
     def call(self, inputs):
         input_shape = K.shape(inputs)
         if self.data_format == 'channels_first':
+            x = K.arange(0, input_shape[2], dtype=inputs.dtype)
+            y = K.arange(0, input_shape[3], dtype=inputs.dtype)
+        else:
             x = K.arange(0, input_shape[1], dtype=inputs.dtype)
             y = K.arange(0, input_shape[2], dtype=inputs.dtype)
-        else:
-            x = K.arange(0, input_shape[0], dtype=inputs.dtype)
-            y = K.arange(0, input_shape[1], dtype=inputs.dtype)
 
         x = x / K.max(x)
         y = y / K.max(y)
@@ -119,7 +116,6 @@ class Location3D(Layer):
     def __init__(self, data_format=None, **kwargs):
         in_shape = kwargs.pop('in_shape', None)
         if in_shape is not None:
-            # warn in_shape is deprecated.
             logger.warn('in_shape (from deepcell.layerse.location) is '
                         'deprecated and will be removed in a future version.')
         super(Location3D, self).__init__(**kwargs)
@@ -127,25 +123,21 @@ class Location3D(Layer):
 
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
-        if self.data_format == 'channels_first':
-            output_shape = (input_shape[0], 3, input_shape[2],
-                            input_shape[3], input_shape[4])
-        else:
-            output_shape = (input_shape[0], input_shape[1], input_shape[2],
-                            input_shape[3], 3)
-        return tensor_shape.TensorShape(output_shape)
+        channel_axis = 1 if self.data_format == 'channels_first' else 4
+        input_shape[channel_axis] = 3
+        return tensor_shape.TensorShape(input_shape)
 
     def call(self, inputs):
         input_shape = K.shape(inputs)
 
         if self.data_format == 'channels_first':
+            z = K.arange(0, input_shape[2], dtype=inputs.dtype)
+            x = K.arange(0, input_shape[3], dtype=inputs.dtype)
+            y = K.arange(0, input_shape[4], dtype=inputs.dtype)
+        else:
             z = K.arange(0, input_shape[1], dtype=inputs.dtype)
             x = K.arange(0, input_shape[2], dtype=inputs.dtype)
             y = K.arange(0, input_shape[3], dtype=inputs.dtype)
-        else:
-            z = K.arange(0, input_shape[0], dtype=inputs.dtype)
-            x = K.arange(0, input_shape[1], dtype=inputs.dtype)
-            y = K.arange(0, input_shape[2], dtype=inputs.dtype)
 
         x = x / K.max(x)
         y = y / K.max(y)
