@@ -33,12 +33,12 @@ from tensorflow.python.platform import test
 import numpy as np
 
 from deepcell.model_zoo import PanopticNet
-from deepcell.applications import MultiplexSegmentation
+from deepcell.applications import Mesmer
 
 
-class TestMultiplexSegmentation(test.TestCase):
+class TestMesmer(test.TestCase):
 
-    def test_multiplex_app(self):
+    def test_mesmer_app(self):
         with self.cached_session():
             whole_cell_classes = [1, 3]
             nuclear_classes = [1, 3]
@@ -55,7 +55,7 @@ class TestMultiplexSegmentation(test.TestCase):
                 include_top=True,
                 use_imagenet=False)
 
-            app = MultiplexSegmentation(model)
+            app = Mesmer(model)
 
             # test output shape
             shape = app.model.output_shape

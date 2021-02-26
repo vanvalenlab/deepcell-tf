@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Multiplex segmentation application"""
+"""Mesmer application"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -44,9 +44,9 @@ MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
               'saved-models/MultiplexSegmentation-6.tar.gz')
 
 
-class MultiplexSegmentation(Application):
+class Mesmer(Application):
     """Loads a :mod:`deepcell.model_zoo.panopticnet.PanopticNet` model for
-    multiplex segmentation with pretrained weights.
+    tissue segmentation with pretrained weights.
 
     The ``predict`` method handles prep and post processing steps
     to return a labeled image.
@@ -56,7 +56,7 @@ class MultiplexSegmentation(Application):
     .. code-block:: python
 
         from skimage.io import imread
-        from deepcell.applications import MultiplexSegmentation
+        from deepcell.applications import Mesmer
 
         # Load the images
         im1 = imread('TNBC_DNA.tiff')
@@ -67,7 +67,7 @@ class MultiplexSegmentation(Application):
         im = np.expand_dims(im,0)
 
         # Create the application
-        app = MultiplexSegmentation()
+        app = Mesmer()
 
         # create the lab
         labeled_image = app.predict(image)
@@ -105,7 +105,7 @@ class MultiplexSegmentation(Application):
             model_path = os.path.splitext(archive_path)[0]
             model = tf.keras.models.load_model(model_path)
 
-        super(MultiplexSegmentation, self).__init__(
+        super(Mesmer, self).__init__(
             model,
             model_image_shape=model.input_shape[1:],
             model_mpp=0.5,
