@@ -582,44 +582,42 @@ class SemanticMovieIterator(Iterator):
             for k, ys in enumerate(y_semantic_list):
                 batch_y[k][i] = ys
 
-            if self.save_to_dir:
-                time_axis = 2 if self.data_format == 'channels_first' else 1
-                for i, j in enumerate(index_array):
-                    for frame in range(batch_x.shape[time_axis]):
-                        if time_axis == 2:
-                            img = array_to_img(batch_x[i, :, frame],
-                                               self.data_format, scale=True)
+        if self.save_to_dir:
+            time_axis = 2 if self.data_format == 'channels_first' else 1
+            for i, j in enumerate(index_array):
+                for frame in range(batch_x.shape[time_axis]):
+                    if time_axis == 2:
+                        img = array_to_img(batch_x[i, :, frame],
+                                           self.data_format, scale=True)
+                    else:
+                        img = array_to_img(batch_x[i, frame],
+                                           self.data_format, scale=True)
+                    fname = '{prefix}_{index}_{hash}.{format}'.format(
+                        prefix=self.save_prefix,
+                        index=j,
+                        hash=np.random.randint(1e4),
+                        format=self.save_format)
+                    img.save(os.path.join(self.save_to_dir, fname))
+
+                    if self.y is not None:
+                        # Save argmax of y batch
+                        if self.time_axis == 2:
+                            img_y = np.argmax(batch_y[0][i, :, frame],
+                                              axis=0)
+                            img_channel_axis = 0
+                            img_y = batch_y[0][i, :, frame]
                         else:
-                            img = array_to_img(batch_x[i, frame],
-                                               self.data_format, scale=True)
-                        fname = '{prefix}_{index}_{hash}.{format}'.format(
+                            img_channel_axis = -1
+                            img_y = batch_y[0][i, frame]
+                        img_y = np.argmax(img_y, axis=img_channel_axis)
+                        img_y = np.expand_dims(img_y, axis=img_channel_axis)
+                        img = array_to_img(img_y, self.data_format, scale=True)
+                        fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
                             prefix=self.save_prefix,
                             index=j,
                             hash=np.random.randint(1e4),
                             format=self.save_format)
                         img.save(os.path.join(self.save_to_dir, fname))
-
-                        if self.y is not None:
-                            # Save argmax of y batch
-                            if self.time_axis == 2:
-                                img_y = np.argmax(batch_y[0][i, :, frame],
-                                                  axis=0)
-                                img_channel_axis = 0
-                                img_y = batch_y[0][i, :, frame]
-                            else:
-                                img_channel_axis = -1
-                                img_y = batch_y[0][i, frame]
-                            img_y = np.argmax(img_y, axis=img_channel_axis)
-                            img_y = np.expand_dims(img_y,
-                                                   axis=img_channel_axis)
-                            img = array_to_img(img_y, self.data_format,
-                                               scale=True)
-                            fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
-                                prefix=self.save_prefix,
-                                index=j,
-                                hash=np.random.randint(1e4),
-                                format=self.save_format)
-                            img.save(os.path.join(self.save_to_dir, fname))
 
         return batch_x, batch_y
 

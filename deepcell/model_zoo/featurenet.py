@@ -605,7 +605,8 @@ def siamese_model(input_shape=None,
             return (None, 2)
         elif feature == 'neighborhood':
             return (None, 2 * neighborhood_scale_size + 1,
-                    2 * neighborhood_scale_size + 1, 1)
+                    2 * neighborhood_scale_size + 1,
+                    input_shape[-1])
         elif feature == 'regionprop':
             return (None, 3)
         else:
@@ -651,10 +652,7 @@ def siamese_model(input_shape=None,
             N_layers_og = np.int(np.floor(np.log2(2 * neighborhood_scale_size + 1)))
             feature_extractor_neighborhood = Sequential()
             feature_extractor_neighborhood.add(
-                InputLayer(input_shape=(None,
-                                        2 * neighborhood_scale_size + 1,
-                                        2 * neighborhood_scale_size + 1,
-                                        1))
+                InputLayer(input_shape=shape)
             )
             for layer in range(N_layers_og):
                 feature_extractor_neighborhood.add(Conv3D(64, (1, 3, 3),
@@ -679,10 +677,11 @@ def siamese_model(input_shape=None,
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
-        input_shape = tuple([input_shape[0], None] + list(input_shape[1:]))
+        raise ValueError('siamese_model: Only channels_last is supported.')
     else:
         channel_axis = -1
-        input_shape = tuple([None] + list(input_shape))
+
+    input_shape = tuple([None] + list(input_shape))
 
     features = sorted(features)
 

@@ -232,6 +232,11 @@ class SiameseIterator(Iterator):
                              'Lineage information is required for training.')
 
         self._remove_bad_images()
+
+        if self.x.shape[0] == 0:
+            raise ValueError('Invalid data. No batch provided '
+                             'with at least 2 cells.')
+
         self._create_track_ids()
         self._create_features()
 
@@ -239,8 +244,7 @@ class SiameseIterator(Iterator):
             len(self.track_ids), batch_size, shuffle, seed)
 
     def _remove_bad_images(self):
-        """Iterate over all image batches and remove images with only one cell.
-        """
+        """Remove any batch of images that has fewer than 2 cell IDs."""
         good_batches = []
         for batch in range(self.x.shape[0]):
             # There should be at least 3 id's - 2 cells and 1 background
@@ -382,8 +386,7 @@ class SiameseIterator(Iterator):
         X_reduced = resize(X_reduced, resize_shape, mode='constant', preserve_range=True)
 
         if self.data_format == 'channels_first':
-            X_frame = np.rollaxis(X_frame, -1, 0)
-            y_frame = np.rollaxis(y_frame, -1, 0)
+            X_reduced = np.rollaxis(X_reduced, -1, 0)
 
         return X_reduced
 
@@ -405,10 +408,16 @@ class SiameseIterator(Iterator):
                                 self.crop_dim,
                                 X.shape[channel_axis])
 
-        neighborhood_shape = (len(frames),
-                              2 * self.neighborhood_scale_size + 1,
-                              2 * self.neighborhood_scale_size + 1,
-                              1)
+        if self.data_format == 'channels_first':
+            neighborhood_shape = (len(frames),
+                                  X.shape[channel_axis],
+                                  2 * self.neighborhood_scale_size + 1,
+                                  2 * self.neighborhood_scale_size + 1)
+        else:
+            neighborhood_shape = (len(frames),
+                                  2 * self.neighborhood_scale_size + 1,
+                                  2 * self.neighborhood_scale_size + 1,
+                                  X.shape[channel_axis])
 
         # future area should not include last frame in movie
         last_frame = self.x.shape[self.time_axis] - 1
@@ -417,10 +426,7 @@ class SiameseIterator(Iterator):
         else:
             future_area_len = len(frames)
 
-        future_area_shape = (future_area_len,
-                             2 * self.neighborhood_scale_size + 1,
-                             2 * self.neighborhood_scale_size + 1,
-                             1)
+        future_area_shape = tuple([future_area_len] + list(neighborhood_shape)[1:])
 
         # Initialize storage for appearances and centroids
         appearances = np.zeros(appearance_shape, dtype=K.floatx())
@@ -497,19 +503,22 @@ class SiameseIterator(Iterator):
         all_regionprops_shape = (number_of_tracks, self.x.shape[self.time_axis], 3)
         all_regionprops = np.zeros(all_regionprops_shape, dtype=K.floatx())
 
-        all_neighborhoods_shape = (number_of_tracks,
-                                   self.x.shape[self.time_axis],
-                                   2 * self.neighborhood_scale_size + 1,
-                                   2 * self.neighborhood_scale_size + 1,
-                                   1)
+        if self.data_format == 'channels_first':
+            all_neighborhoods_shape = (number_of_tracks,
+                                       self.x.shape[self.channel_axis],
+                                       self.x.shape[self.time_axis],
+                                       2 * self.neighborhood_scale_size + 1,
+                                       2 * self.neighborhood_scale_size + 1)
+        else:
+            all_neighborhoods_shape = (number_of_tracks,
+                                       self.x.shape[self.time_axis],
+                                       2 * self.neighborhood_scale_size + 1,
+                                       2 * self.neighborhood_scale_size + 1,
+                                       self.x.shape[self.channel_axis])
+
         all_neighborhoods = np.zeros(all_neighborhoods_shape, dtype=K.floatx())
 
-        all_future_area_shape = (number_of_tracks,
-                                 self.x.shape[self.time_axis] - 1,
-                                 2 * self.neighborhood_scale_size + 1,
-                                 2 * self.neighborhood_scale_size + 1,
-                                 1)
-        all_future_areas = np.zeros(all_future_area_shape, dtype=K.floatx())
+        all_future_areas = np.zeros(all_neighborhoods_shape, dtype=K.floatx())
 
         for track in self.track_ids:
             batch = self.track_ids[track]['batch']
@@ -525,24 +534,30 @@ class SiameseIterator(Iterator):
                 X, y, frames, labels)
 
             if self.data_format == 'channels_first':
-                appearance = np.transpose(appearance, (1, 2, 3, 0))
-                all_appearances = np.transpose(all_appearances, (0, 2, 3, 4, 1))
-
-            all_appearances[track, np.array(frames), :, :, :] = appearance
-
-            if self.data_format == 'channels_first':
-                all_appearances = np.transpose(all_appearances, (0, 4, 1, 2, 3))
+                all_appearances[track][:, np.array(frames), :, :] = appearance
+            else:
+                all_appearances[track, np.array(frames), :, :, :] = appearance
 
             all_centroids[track, np.array(frames), :] = centroid
-            all_neighborhoods[track, np.array(frames), :, :] = neighborhood
+
+            if self.data_format == 'channels_first':
+                all_neighborhoods[track, :, np.array(frames), :] = neighborhood
+            else:
+                all_neighborhoods[track, np.array(frames), :, :] = neighborhood
 
             # future area should never include last frame
             last_frame = self.x.shape[self.time_axis] - 1
             if last_frame in frames:
                 frames_without_last = [f for f in frames if f != last_frame]
-                all_future_areas[track, np.array(frames_without_last), :, :] = future_area
+                if self.data_format == 'channels_first':
+                    all_future_areas[track, :, np.array(frames_without_last), :] = future_area
+                else:
+                    all_future_areas[track, np.array(frames_without_last), :, :] = future_area
             else:
-                all_future_areas[track, np.array(frames), :, :] = future_area
+                if self.data_format == 'channels_first':
+                    all_future_areas[track, :, np.array(frames), :] = future_area
+                else:
+                    all_future_areas[track, np.array(frames), :, :] = future_area
             all_regionprops[track, np.array(frames), :] = regionprop
 
         self.all_appearances = all_appearances
@@ -556,7 +571,7 @@ class SiameseIterator(Iterator):
         """
         # TODO: Check to make sure the frames are acceptable
         if self.data_format == 'channels_first':
-            return self.all_appearances[track, :, np.array(frames), :, :]
+            return self.all_appearances[track][:, np.array(frames), :, :]
         return self.all_appearances[track, np.array(frames), :, :, :]
 
     def _fetch_centroids(self, track, frames):
@@ -570,7 +585,7 @@ class SiameseIterator(Iterator):
         """
         # TODO: Check to make sure the frames are acceptable
         if self.data_format == 'channels_first':
-            return self.all_neighborhoods[track, :, np.array(frames), :, :]
+            return self.all_neighborhoods[track][:, np.array(frames), :, :]
         return self.all_neighborhoods[track, np.array(frames), :, :, :]
 
     def _fetch_future_areas(self, track, frames):
@@ -578,7 +593,7 @@ class SiameseIterator(Iterator):
         """
         # TODO: Check to make sure the frames are acceptable
         if self.data_format == 'channels_first':
-            return self.all_future_areas[track, :, np.array(frames), :, :]
+            return self.all_future_areas[track][:, np.array(frames), :, :]
         return self.all_future_areas[track, np.array(frames), :, :, :]
 
     def _fetch_regionprops(self, track, frames):
@@ -712,19 +727,32 @@ class SiameseIterator(Iterator):
         neighborhood_1 = self._fetch_neighborhoods(track_1, frames_1)
         neighborhood_2 = self._fetch_future_areas(track_1, [frames_1[-1]])
 
-        neighborhoods = np.concatenate([neighborhood_1, neighborhood_2], axis=0)
+        axis = 1 if self.data_format == 'channels_first' else 0
+
+        neighborhoods = np.concatenate([neighborhood_1, neighborhood_2], axis=axis)
 
         for frame in range(neighborhoods.shape[self.time_axis - 1]):
-            neigh_temp = neighborhoods[frame]
+            if self.data_format == 'channels_first':
+                neigh_temp = neighborhoods[:, frame]
+            else:
+                neigh_temp = neighborhoods[frame]
             if transform is not None:
                 neigh_temp = self.image_data_generator.apply_transform(
                     neigh_temp, transform)
             else:
                 neigh_temp = self.image_data_generator.random_transform(neigh_temp)
-            neighborhoods[frame] = neigh_temp
 
-        neighborhood_1 = neighborhoods[0:-1, :, :, :]
-        neighborhood_2 = neighborhoods[-1, :, :, :]
+            if self.data_format == 'channels_first':
+                neighborhoods[:, frame] = neigh_temp
+            else:
+                neighborhoods[frame] = neigh_temp
+
+        if self.data_format == 'channels_first':
+            neighborhood_1 = neighborhoods[:, 0:-1, :, :]
+            neighborhood_2 = neighborhoods[:, -1:, :, :]
+        else:
+            neighborhood_1 = neighborhoods[0:-1, :, :, :]
+            neighborhood_2 = neighborhoods[-1:, :, :, :]
 
         return neighborhood_1, neighborhood_2
 
@@ -738,6 +766,7 @@ class SiameseIterator(Iterator):
                            self.crop_dim)
                 shape_2 = (len(index_array),
                            self.x.shape[self.channel_axis],
+                           1,
                            self.crop_dim,
                            self.crop_dim)
             else:
@@ -757,16 +786,28 @@ class SiameseIterator(Iterator):
             shape_2 = (len(index_array), 1, 2)
 
         elif feature == 'neighborhood':
-            shape_1 = (len(index_array),
-                       self.min_track_length,
-                       2 * self.neighborhood_scale_size + 1,
-                       2 * self.neighborhood_scale_size + 1,
-                       1)
-            shape_2 = (len(index_array),
-                       1,
-                       2 * self.neighborhood_scale_size + 1,
-                       2 * self.neighborhood_scale_size + 1,
-                       1)
+            if self.data_format == 'channels_first':
+                shape_1 = (len(index_array),
+                           self.x.shape[self.channel_axis],
+                           self.min_track_length,
+                           2 * self.neighborhood_scale_size + 1,
+                           2 * self.neighborhood_scale_size + 1)
+                shape_2 = (len(index_array),
+                           self.x.shape[self.channel_axis],
+                           1,
+                           2 * self.neighborhood_scale_size + 1,
+                           2 * self.neighborhood_scale_size + 1)
+            else:
+                shape_1 = (len(index_array),
+                           self.min_track_length,
+                           2 * self.neighborhood_scale_size + 1,
+                           2 * self.neighborhood_scale_size + 1,
+                           self.x.shape[self.channel_axis])
+                shape_2 = (len(index_array),
+                           1,
+                           2 * self.neighborhood_scale_size + 1,
+                           2 * self.neighborhood_scale_size + 1,
+                           self.x.shape[self.channel_axis])
         elif feature == 'regionprop':
             shape_1 = (len(index_array), self.min_track_length, 3)
             shape_2 = (len(index_array), 1, 3)
