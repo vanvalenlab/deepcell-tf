@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Van Valen Lab at the California Institute of
+# Copyright 2016-2021 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -140,10 +140,10 @@ class ImageNormalization2D(Layer):
         #     regularizer=self.kernel_regularizer,
         #     constraint=self.kernel_constraint,
         #     trainable=False,
-        #     dtype=self.dtype)
+        #     dtype=self.compute_dtype)
 
-        W = K.ones(kernel_shape, dtype=K.floatx())
-        W = W / K.cast(K.prod(K.int_shape(W)), dtype=K.floatx())
+        W = K.ones(kernel_shape, dtype=self.compute_dtype)
+        W = W / K.cast(K.prod(K.int_shape(W)), dtype=self.compute_dtype)
         self.kernel = W
         # self.set_weights([W])
 
@@ -155,7 +155,7 @@ class ImageNormalization2D(Layer):
                 regularizer=self.bias_regularizer,
                 constraint=self.bias_constraint,
                 trainable=False,
-                dtype=self.dtype)
+                dtype=self.compute_dtype)
         else:
             self.bias = None
 
@@ -166,6 +166,7 @@ class ImageNormalization2D(Layer):
         return tensor_shape.TensorShape(input_shape)
 
     def _average_filter(self, inputs):
+        # Depthwise convolution on CPU is only supported for NHWC format
         if self.data_format == 'channels_first':
             inputs = K.permute_dimensions(inputs, pattern=[0, 2, 3, 1])
         outputs = tf.nn.depthwise_conv2d(inputs, self.kernel, [1, 1, 1, 1],
@@ -327,24 +328,25 @@ class ImageNormalization3D(Layer):
         #     regularizer=self.kernel_regularizer,
         #     constraint=self.kernel_constraint,
         #     trainable=False,
-        #     dtype=self.dtype)
+        #     dtype=self.compute_dtype)
 
-        W = K.ones(kernel_shape, dtype=K.floatx())
-        W = W / K.cast(K.prod(K.int_shape(W)), dtype=K.floatx())
+        W = K.ones(kernel_shape, dtype=self.compute_dtype)
+        W = W / K.cast(K.prod(K.int_shape(W)), dtype=self.compute_dtype)
         self.kernel = W
         # self.set_weights([W])
 
         if self.use_bias:
             self.bias = self.add_weight(
-                'bias',
+                name='bias',
                 shape=(depth, self.filter_size, self.filter_size),
                 initializer=self.bias_initializer,
                 regularizer=self.bias_regularizer,
                 constraint=self.bias_constraint,
                 trainable=False,
-                dtype=self.dtype)
+                dtype=self.compute_dtype)
         else:
             self.bias = None
+
         self.built = True
 
     def compute_output_shape(self, input_shape):

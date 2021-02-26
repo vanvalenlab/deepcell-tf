@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Van Valen Lab at the California Institute of
+# Copyright 2016-2021 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -250,11 +250,6 @@ from deepcell.image_generators.fully_convolutional import ImageFullyConvIterator
 from deepcell.image_generators.fully_convolutional import MovieDataGenerator
 from deepcell.image_generators.fully_convolutional import MovieArrayIterator
 
-from deepcell.image_generators.retinanet import RetinaNetGenerator
-from deepcell.image_generators.retinanet import RetinaNetIterator
-from deepcell.image_generators.retinanet import RetinaMovieIterator
-from deepcell.image_generators.retinanet import RetinaMovieDataGenerator
-
 from deepcell.image_generators.semantic import SemanticDataGenerator
 from deepcell.image_generators.semantic import SemanticIterator
 from deepcell.image_generators.semantic import SemanticMovieGenerator
@@ -288,10 +283,6 @@ __all__ = [
     'ImageFullyConvIterator',
     'MovieDataGenerator',
     'MovieArrayIterator',
-    'RetinaNetGenerator',
-    'RetinaNetIterator',
-    'RetinaMovieIterator',
-    'RetinaMovieDataGenerator',
     'SampleDataGenerator',
     'ImageSampleArrayIterator',
     'SampleMovieDataGenerator',

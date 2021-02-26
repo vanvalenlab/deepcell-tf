@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Van Valen Lab at the California Institute of
+# Copyright 2016-2021 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -32,14 +32,14 @@ from __future__ import division
 import os
 
 import numpy as np
-from skimage.io import imread
-from skimage.external import tifffile as tiff
-from skimage.external.tifffile import TiffFile
+from skimage.io import imread, imsave
 from tensorflow.keras import backend as K
 
 
 def get_image(file_name):
-    """Read image from file and returns it as a tensor
+    """DEPRECATED. Use ``skimage.io.imread`` instead.
+
+    Read image from file and returns it as a tensor.
 
     Args:
         file_name (str): path to image file
@@ -47,9 +47,6 @@ def get_image(file_name):
     Returns:
         numpy.array: numpy array of image data
     """
-    ext = os.path.splitext(file_name.lower())[-1]
-    if ext == '.tif' or ext == '.tiff':
-        return np.float32(TiffFile(file_name).asarray())
     return np.float32(imread(file_name))
 
 
@@ -106,5 +103,5 @@ def save_model_output(output,
                     cnnout_name = '{}_{}'.format(feature_name, cnnout_name)
 
                 out_file_path = os.path.join(output_dir, batch_dir, cnnout_name)
-                tiff.imsave(out_file_path, feature.astype('int32'))
+                imsave(out_file_path, feature.astype('int32'), check_contrast=False)
         print('Saved {} frames to {}'.format(output.shape[1], output_dir))

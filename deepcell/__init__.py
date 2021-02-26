@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Van Valen Lab at the California Institute of
+# Copyright 2016-2021 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -29,12 +29,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from deepcell._version import __version__
+
 from deepcell import applications
-from deepcell import callbacks
 from deepcell import datasets
 from deepcell import layers
 from deepcell import losses
-from deepcell import initializers
 from deepcell import image_generators
 from deepcell import model_zoo
 from deepcell import running
@@ -51,7 +51,6 @@ from deepcell.running import process_whole_image
 from deepcell.training import train_model_conv
 from deepcell.training import train_model_sample
 from deepcell.training import train_model_siamese_daughter
-from deepcell.training import train_model_retinanet
 from deepcell.utils import *
 
 del absolute_import

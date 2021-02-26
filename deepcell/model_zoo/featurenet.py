@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Van Valen Lab at the California Institute of
+# Copyright 2016-2021 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -693,8 +693,8 @@ def siamese_model(input_shape=None,
         re_shape = compute_reshape(feature)
         feature_extractor = compute_feature_extractor(feature, in_shape)
 
-        layer_1 = Input(shape=in_shape)
-        layer_2 = Input(shape=in_shape)
+        layer_1 = Input(shape=in_shape, name='{}_input1'.format(feature))
+        layer_2 = Input(shape=in_shape, name='{}_input2'.format(feature))
 
         inputs.extend([layer_1, layer_2])
 
@@ -727,7 +727,7 @@ def siamese_model(input_shape=None,
     dense2 = Dense(128)(relu1)
     bn2 = BatchNormalization(axis=channel_axis)(dense2)
     relu2 = Activation('relu')(bn2)
-    dense3 = Dense(3, activation='softmax', dtype=K.floatx())(relu2)
+    dense3 = Dense(3, activation='softmax', name='classification', dtype=K.floatx())(relu2)
 
     # Instantiate model
     final_layer = dense3

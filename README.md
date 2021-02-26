@@ -10,7 +10,7 @@
 
 This library allows users to apply pre-existing models to imaging data as well as to develop new deep learning models for single-cell analysis. This library specializes in models for cell segmentation (whole-cell and nuclear) in 2D and 3D images as well as cell tracking in 2D time-lapse datasets. These models are applicable to data ranging from multiplexed images of tissues to dynamic live-cell imaging movies.
 
-`deepcell-tf` is one of several resources created by the [Van Valen lab](http://vanvalen.caltech.edu/) to facilitate the development and application of new deep learning methods to biology. Other projects within our DeepCell ecosystem include the [DeepCell Toolbox](https://github.com/vanvalenlab/deepcell-toolbox) for pre and post-processing the outputs of deep learning models, [DeepCell Tracking](https://github.com/vanvalenlab/deepcell-tracking) for creating cell lineages with deep-learning-based tracking models, and the [DeepCell Kiosk](https://github.com/vanvalenlab/kiosk-console) for deploying workflows on large datasets in the cloud. Additionally, we have developed [Caliban](https://github.com/vanvalenlab/caliban) for annotating high-dimensional biological images to use as training data.
+`deepcell-tf` is one of several resources created by the [Van Valen lab](http://vanvalen.caltech.edu/) to facilitate the development and application of new deep learning methods to biology. Other projects within our DeepCell ecosystem include the [DeepCell Toolbox](https://github.com/vanvalenlab/deepcell-toolbox) for pre and post-processing the outputs of deep learning models, [DeepCell Tracking](https://github.com/vanvalenlab/deepcell-tracking) for creating cell lineages with deep-learning-based tracking models, and the [DeepCell Kiosk](https://github.com/vanvalenlab/kiosk-console) for deploying workflows on large datasets in the cloud. Additionally, we have developed [DeepCell Label](https://github.com/vanvalenlab/deepcell-label) for annotating high-dimensional biological images to use as training data.
 
 Read the documentation at [deepcell.readthedocs.io](https://deepcell.readthedocs.io).
 
@@ -67,7 +67,7 @@ docker run --gpus '"device=0"' -it --rm \
     -p 8888:8888 \
     -v $PWD/notebooks:/notebooks \
     -v $PWD/data:/data \
-    vanvalenlab/deepcell-tf:0.8.3-gpu
+    vanvalenlab/deepcell-tf:0.8.6-gpu
 ```
 
 This will spin up a docker container with `deepcell-tf` installed and start a jupyter session using the default port 8888. This command also mounts a data folder (`$PWD/data`) and a scripts folder (`$PWD/scripts`) to the docker container so it can access data and Juyter notebooks stored on the host workstation. For any saved data or models to persist once the container is shut down, or be accessible outside of the container in general, it must be saved in these mounted directories. The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 8080:8888`. If you run across any errors getting started, you should either refer to the `deepcell-tf` for developers section or raise an issue on GitHub.
@@ -99,7 +99,7 @@ docker build --build-arg TF_VERSION=2.3.1-gpu -t $USER/deepcell-tf .
 # '"device=0"' refers to the specific GPU(s) to run DeepCell-tf on, and is not required
 docker run --gpus '"device=0"' -it \
 -p 8888:8888 \
-$USER/deepcell-tf:latest
+$USER/deepcell-tf:latest-gpu
 ```
 
 It can also be helpful to mount the local copy of the repository and the notebooks to speed up local development. However, if you are going to mount a local version of the repository, you must first run the docker image without the local repository mounted so that the C extensions can be compiled and then copied over to your local version.
@@ -108,7 +108,7 @@ It can also be helpful to mount the local copy of the repository and the noteboo
 # First run the docker image without mounting externally
 docker run --gpus '"device=0"' -it \
 -p 8888:8888 \
-$USER/deepcell-tf:latest
+$USER/deepcell-tf:latest-gpu
 
 # Use ctrl-p, ctrl-q (or ctrl+p+q) to exit the running docker image without shutting it down
 
@@ -127,7 +127,7 @@ docker run --gpus '"device=0"' -it \
     -v $PWD/deepcell:/usr/local/lib/python3.6/dist-packages/deepcell/ \
     -v $PWD/notebooks:/notebooks \
     -v /$PWD:/data \
-    $USER/deepcell-tf:latest
+    $USER/deepcell-tf:latest-gpu
 ```
 
 ## How to Cite
@@ -138,7 +138,7 @@ docker run --gpus '"device=0"' -it \
 
 ## Copyright
 
-Copyright © 2016-2020 [The Van Valen Lab](http://www.vanvalen.caltech.edu/) at the California Institute of Technology (Caltech), with support from the Shurl and Kay Curci Foundation, Google Research Cloud, the Paul Allen Family Foundation, & National Institutes of Health (NIH) under Grant U24CA224309-01.
+Copyright © 2016-2021 [The Van Valen Lab](http://www.vanvalen.caltech.edu/) at the California Institute of Technology (Caltech), with support from the Shurl and Kay Curci Foundation, Google Research Cloud, the Paul Allen Family Foundation, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 All rights reserved.
 
 ## License

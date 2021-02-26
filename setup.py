@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Van Valen Lab at the California Institute of
+# Copyright 2016-2021 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -37,38 +37,35 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 with open(os.path.join(here, 'README.md'), 'r', 'utf-8') as f:
-    README = f.read()
+    readme = f.read()
 
 
-NAME = 'DeepCell'
-VERSION = '0.8.3'
-AUTHOR = 'Van Valen Lab'
-AUTHOR_EMAIL = 'vanvalenlab@gmail.com'
-URL = 'https://github.com/vanvalenlab/deepcell-tf'
-DESCRIPTION = 'Deep learning for single cell image segmentation'
+about = {}
+with open(os.path.join(here, 'deepcell', '_version.py'), 'r', 'utf-8') as f:
+    exec(f.read(), about)
 
 
 setup(
-    name=NAME,
-    version=VERSION,
-    author=AUTHOR,
-    author_email=AUTHOR_EMAIL,
-    description=DESCRIPTION,
-    url=URL,
-    download_url='{}/tarball/{}'.format(URL, VERSION),
-    license='LICENSE',
-    long_description=README,
+    name=about['__title__'],
+    version=about['__version__'],
+    author=about['__author__'],
+    author_email=about['__author_email__'],
+    description=about['__description__'],
+    url=about['__url__'],
+    download_url=about['__download_url__'],
+    license=about['__license__'],
+    long_description=readme,
     long_description_content_type='text/markdown',
     install_requires=[
-        'numpy>=1.16.4,<1.19.0',
-        'scipy>=1.1.0,<2',
-        'scikit-image>=0.14.1,<=0.16.2',
-        'scikit-learn>=0.19.1,<1',
-        'tensorflow==2.3.1',
+        'numpy>=1.16.6,<1.20.0',
+        'scipy>=1.2.3,<2',
+        'scikit-image>=0.14.5',
+        'scikit-learn>=0.20.4',
+        'tensorflow==2.4.1',
         'jupyter>=1.0.0,<2',
-        'opencv-python-headless<=3.4.9.31',
-        'deepcell-tracking>=0.2.7',
-        'deepcell-toolbox>=0.8.3'
+        'opencv-python-headless<5',
+        'deepcell-tracking>=0.3.1',
+        'deepcell-toolbox>=0.8.6'
     ],
     extras_require={
         'tests': [
@@ -78,15 +75,13 @@ setup(
         ],
     },
     packages=find_packages(),
-    python_requires='>=3.5, <3.9',
-    setup_requires=['numpy>=1.16.4,<1.19.0'],
+    python_requires='>=3.6, <3.9',
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',

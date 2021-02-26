@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Van Valen Lab at the California Institute of
+# Copyright 2016-2021 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -33,9 +33,8 @@ import shutil
 
 import numpy as np
 from tensorflow.keras import backend as K
-from tensorflow.keras.preprocessing.image import array_to_img
 from tensorflow.python.platform import test
-from skimage.external import tifffile as tiff
+from skimage.io import imsave
 
 from deepcell.utils import io_utils
 
@@ -44,27 +43,27 @@ def _write_image(filepath, img_w=30, img_h=30):
     bias = np.random.rand(img_w, img_h, 1) * 64
     variance = np.random.rand(img_w, img_h, 1) * (255 - 64)
     imarray = np.random.rand(img_w, img_h, 1) * variance + bias
-    if filepath.lower().endswith('tif') or filepath.lower().endswith('tiff'):
-        tiff.imsave(filepath, imarray[:, :, 0])
-    else:
-        img = array_to_img(imarray, scale=False, data_format='channels_last')
-        img.save(filepath)
+    imsave(filepath, imarray[..., 0], check_contrast=False)
 
 
 class TestIOUtils(test.TestCase):
 
     def test_get_image(self):
+        image = 255 * np.random.random(size=(300, 300, 1)).astype('float32')
         temp_dir = self.get_temp_dir()
         # test tiff files
         test_img_path = os.path.join(temp_dir, 'phase.tif')
-        _write_image(test_img_path, 300, 300)
+        imsave(test_img_path, image, check_contrast=False)
         test_img = io_utils.get_image(test_img_path)
-        self.assertEqual(np.asarray(test_img).shape, (300, 300))
+        self.assertAllEqual(image, test_img)
         # test png files
+        # pngs are integer only and don't have a channel axis.
         test_img_path = os.path.join(temp_dir, 'feature_0.png')
-        _write_image(test_img_path, 400, 400)
+        image = image.astype('uint8')
+        imsave(test_img_path, image, check_contrast=False)
         test_img = io_utils.get_image(test_img_path)
-        self.assertEqual(np.asarray(test_img).shape, (400, 400))
+        test_img = np.expand_dims(test_img, axis=-1)
+        self.assertAllClose(image, test_img)
 
     def test_save_model_output(self):
         temp_dir = self.get_temp_dir()

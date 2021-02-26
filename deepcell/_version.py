@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Van Valen Lab at the California Institute of
+# Copyright 2016-2021 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -23,35 +23,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Custom initializers"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
-
-from tensorflow.keras import backend as K
-from tensorflow.keras.initializers import Initializer
-
-
-class PriorProbability(Initializer):
-    """Initializer that applies a prior probability to the weights.
-
-    Adapted from https://github.com/fizyr/keras-retinanet.
-
-    Args:
-        probability (float): The prior probability to apply to the weights.
-    """
-
-    def __init__(self, probability=0.01):
-        self.probability = probability
-
-    def get_config(self):
-        return {
-            'probability': self.probability
-        }
-
-    def __call__(self, shape, dtype=None, partition_info=None):
-        # set bias to -log((1 - p)/p) for foreground
-        bias = -K.log((1 - self.probability) / self.probability)
-        result = K.get_value(K.ones(shape, dtype=dtype)) * bias
-        return result
+__title__ = 'DeepCell'
+__description__ = 'Deep learning for single cell image segmentation'
+__url__ = 'https://github.com/vanvalenlab/deepcell-tf'
+__version__ = '0.8.6'
+__download_url__ = '{}/tarball/{}'.format(__url__, __version__)
+__author__ = 'The Van Valen Lab'
+__author_email__ = 'vanvalen@caltech.edu'
+__license__ = 'LICENSE'
+__copyright__ = 'Copyright 2016-2021 The Van Valen Lab at the ' \
+    'California Institute of Technology (Caltech)'

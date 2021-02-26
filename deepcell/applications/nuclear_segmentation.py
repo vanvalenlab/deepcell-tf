@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Van Valen Lab at the California Institute of
+# Copyright 2016-2021 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -33,7 +33,7 @@ import os
 
 import tensorflow as tf
 
-from deepcell_toolbox.processing import histogram_normalization
+from deepcell_toolbox.processing import normalize
 from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.applications import Application
@@ -107,7 +107,7 @@ class NuclearSegmentation(Application):
             model,
             model_image_shape=model.input_shape[1:],
             model_mpp=0.65,
-            preprocessing_fn=histogram_normalization,
+            preprocessing_fn=normalize,
             postprocessing_fn=deep_watershed,
             dataset_metadata=self.dataset_metadata,
             model_metadata=self.model_metadata)
@@ -116,6 +116,7 @@ class NuclearSegmentation(Application):
                 image,
                 batch_size=4,
                 image_mpp=None,
+                pad_mode='reflect',
                 preprocess_kwargs=None,
                 postprocess_kwargs=None):
         """Generates a labeled image of the input running prediction with
@@ -131,6 +132,7 @@ class NuclearSegmentation(Application):
                 ``[batch, x, y, channel]``.
             batch_size (int): Number of images to predict on per batch.
             image_mpp (float): Microns per pixel for ``image``.
+            pad_mode (str): The padding mode, one of "constant" or "reflect".
             preprocess_kwargs (dict): Keyword arguments to pass to the
                 pre-processing function.
             postprocess_kwargs (dict): Keyword arguments to pass to the
@@ -147,9 +149,7 @@ class NuclearSegmentation(Application):
             numpy.array: Labeled image
         """
         if preprocess_kwargs is None:
-            preprocess_kwargs = {
-                'kernel_size': 64
-            }
+            preprocess_kwargs = {}
 
         if postprocess_kwargs is None:
             postprocess_kwargs = {
@@ -164,5 +164,6 @@ class NuclearSegmentation(Application):
             image,
             batch_size=batch_size,
             image_mpp=image_mpp,
+            pad_mode=pad_mode,
             preprocess_kwargs=preprocess_kwargs,
             postprocess_kwargs=postprocess_kwargs)

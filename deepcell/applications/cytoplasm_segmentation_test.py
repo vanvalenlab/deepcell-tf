@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The Van Valen Lab at the California Institute of
+# Copyright 2016-2021 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -32,6 +32,7 @@ from __future__ import print_function
 from tensorflow.python.platform import test
 import numpy as np
 
+from deepcell.model_zoo import PanopticNet
 from deepcell.applications import CytoplasmSegmentation
 
 
@@ -39,7 +40,18 @@ class TestCytoplasmSegmentation(test.TestCase):
 
     def test_cytoplasm_app(self):
         with self.cached_session():
-            app = CytoplasmSegmentation(use_pretrained_weights=False)
+            model = PanopticNet(
+                'resnet50',
+                input_shape=(128, 128, 1),
+                norm_method='whole_image',
+                num_semantic_heads=2,
+                num_semantic_classes=[1, 1],
+                location=True,
+                include_top=True,
+                lite=True,
+                use_imagenet=False,
+                interpolation='bilinear')
+            app = CytoplasmSegmentation(model)
 
             # test output shape
             shape = app.model.output_shape
