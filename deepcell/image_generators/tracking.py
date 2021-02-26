@@ -232,6 +232,11 @@ class SiameseIterator(Iterator):
                              'Lineage information is required for training.')
 
         self._remove_bad_images()
+
+        if self.x.shape[0] == 0:
+            raise ValueError('Invalid data. No batch provided '
+                             'with at least 2 cells.')
+
         self._create_track_ids()
         self._create_features()
 
@@ -239,8 +244,7 @@ class SiameseIterator(Iterator):
             len(self.track_ids), batch_size, shuffle, seed)
 
     def _remove_bad_images(self):
-        """Iterate over all image batches and remove images with only one cell.
-        """
+        """Remove any batch of images that has fewer than 2 cell IDs."""
         good_batches = []
         for batch in range(self.x.shape[0]):
             # There should be at least 3 id's - 2 cells and 1 background
