@@ -31,6 +31,7 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 
+from tensorflow.test import assert_equal_graph_def
 from tensorflow.keras import backend as K
 from tensorflow.python.keras import keras_parameterized
 
@@ -366,7 +367,6 @@ class PanopticNetTest(keras_parameterized.TestCase):
                 location=location,
                 pooling=pooling,
                 upsample_type=upsample_type,
-                num_semantic_heads=len(num_semantic_classes),
                 num_semantic_classes=num_semantic_classes,
                 use_imagenet=False,
             )
@@ -375,6 +375,26 @@ class PanopticNetTest(keras_parameterized.TestCase):
             self.assertEqual(len(model.output_shape), len(num_semantic_classes))
             for i, s in enumerate(num_semantic_classes):
                 self.assertEqual(model.output_shape[i][axis], s)
+
+    @keras_parameterized.run_all_keras_modes
+    def test_panopticnet_semantic_class_types(self):
+        shared_kwargs = {
+            'backbone': 'featurenet',
+            'input_shape': (32, 32, 1),
+            'use_imagenet': False,
+        }
+
+        with self.cached_session():
+            nsc1 = [2, 3]
+            model1 = PanopticNet(num_semantic_classes=nsc1, **shared_kwargs)
+
+            nsc2 = {'0': 2, '1': 3}
+            model2 = PanopticNet(num_semantic_classes=nsc1, **shared_kwargs)
+
+            for o1, o2 in zip(model1.outputs, model2.outputs):
+                self.assertEqual(o1.shape.as_list(), o2.shape.as_list())
+                self.assertEqual(o1.name, o2.name)
+                self.assertEqual(o1.dtype, o2.dtype)
 
     def test_panopticnet_bad_input(self):
 
@@ -395,7 +415,6 @@ class PanopticNetTest(keras_parameterized.TestCase):
                 norm_method=norm_method,
                 location=True,
                 pooling='avg',
-                num_semantic_heads=len(num_semantic_classes),
                 num_semantic_classes=num_semantic_classes,
                 use_imagenet=False,
             )
@@ -410,7 +429,6 @@ class PanopticNetTest(keras_parameterized.TestCase):
                 norm_method=norm_method,
                 location=True,
                 pooling='avg',
-                num_semantic_heads=len(num_semantic_classes),
                 num_semantic_classes=num_semantic_classes,
                 use_imagenet=False,
             )
