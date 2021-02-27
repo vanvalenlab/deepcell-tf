@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for MultiplexSegmentationApplication"""
+"""Tests for Mesmer Application"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -34,6 +34,7 @@ import numpy as np
 
 from deepcell.model_zoo import PanopticNet
 from deepcell.applications import Mesmer
+from deepcell.applications import MultiplexSegmentation
 
 
 class TestMesmer(test.TestCase):
@@ -84,3 +85,11 @@ class TestMesmer(test.TestCase):
             y = app.predict(x, compartment='both')
             self.assertEqual(x.shape[:-1], y.shape[:-1])
             self.assertEqual(y.shape[-1], 2)
+
+            # test legacy version
+            old_app = MultiplexSegmentation(model)
+
+            # test predict with default
+            x = np.random.rand(1, 500, 500, 2)
+            y = old_app.predict(x)
+            self.assertEqual(x.shape[:-1], y.shape[:-1])
