@@ -43,8 +43,7 @@ class LocationTest(keras_parameterized.TestCase):
         with custom_object_scope({'Location2D': layers.Location2D}):
             testing_utils.layer_test(
                 layers.Location2D,
-                kwargs={'in_shape': (5, 6, 4),
-                        'data_format': 'channels_last'},
+                kwargs={'data_format': 'channels_last'},
                 input_shape=(3, 5, 6, 4))
             testing_utils.layer_test(
                 layers.Location2D,
@@ -56,8 +55,7 @@ class LocationTest(keras_parameterized.TestCase):
         with custom_object_scope({'Location3D': layers.Location3D}):
             testing_utils.layer_test(
                 layers.Location3D,
-                kwargs={'in_shape': (11, 12, 10, 4),
-                        'data_format': 'channels_last'},
+                kwargs={'data_format': 'channels_last'},
                 input_shape=(3, 11, 12, 10, 4))
             testing_utils.layer_test(
                 layers.Location3D,

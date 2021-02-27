@@ -30,17 +30,19 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
-from tensorflow.python.framework import tensor_shape
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.utils import conv_utils
+from tensorflow.python.framework import tensor_shape
+
+
+logger = tf.get_logger()
 
 
 class Location2D(Layer):
     """Location Layer for 2D cartesian coordinate locations.
 
     Args:
-        in_shape (tuple): Shape of each input image in ``(x, y, c)``.
         data_format (str): A string, one of ``channels_last`` (default)
             or ``channels_first``. The ordering of the dimensions in the
             inputs. ``channels_last`` corresponds to inputs with shape
@@ -48,27 +50,28 @@ class Location2D(Layer):
             corresponds to inputs with shape
             ``(batch, channels, height, width)``.
     """
-    def __init__(self, in_shape, data_format=None, **kwargs):
+    def __init__(self, data_format=None, **kwargs):
+        in_shape = kwargs.pop('in_shape', None)
+        if in_shape is not None:
+            logger.warn('in_shape (from deepcell.layerse.location) is '
+                        'deprecated and will be removed in a future version.')
         super(Location2D, self).__init__(**kwargs)
-        self.in_shape = in_shape
         self.data_format = conv_utils.normalize_data_format(data_format)
 
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
-        if self.data_format == 'channels_first':
-            output_shape = (input_shape[0], 2, input_shape[2], input_shape[3])
-        else:
-            output_shape = (input_shape[0], input_shape[1], input_shape[2], 2)
-        return tensor_shape.TensorShape(output_shape)
+        channel_axis = 1 if self.data_format == 'channels_first' else 3
+        input_shape[channel_axis] = 2
+        return tensor_shape.TensorShape(input_shape)
 
     def call(self, inputs):
-        input_shape = self.in_shape
+        input_shape = K.shape(inputs)
         if self.data_format == 'channels_first':
+            x = K.arange(0, input_shape[2], dtype=inputs.dtype)
+            y = K.arange(0, input_shape[3], dtype=inputs.dtype)
+        else:
             x = K.arange(0, input_shape[1], dtype=inputs.dtype)
             y = K.arange(0, input_shape[2], dtype=inputs.dtype)
-        else:
-            x = K.arange(0, input_shape[0], dtype=inputs.dtype)
-            y = K.arange(0, input_shape[1], dtype=inputs.dtype)
 
         x = x / K.max(x)
         y = y / K.max(y)
@@ -84,7 +87,7 @@ class Location2D(Layer):
         if self.data_format == 'channels_first':
             location = K.permute_dimensions(location, pattern=[0, 2, 3, 1])
 
-        location = tf.tile(location, [K.shape(inputs)[0], 1, 1, 1])
+        location = tf.tile(location, [input_shape[0], 1, 1, 1])
 
         if self.data_format == 'channels_first':
             location = K.permute_dimensions(location, pattern=[0, 3, 1, 2])
@@ -93,7 +96,6 @@ class Location2D(Layer):
 
     def get_config(self):
         config = {
-            'in_shape': self.in_shape,
             'data_format': self.data_format
         }
         base_config = super(Location2D, self).get_config()
@@ -104,7 +106,6 @@ class Location3D(Layer):
     """Location Layer for 3D cartesian coordinate locations.
 
     Args:
-        in_shape (tuple): Shape of each input image in ``(f, x, y, c)``.
         data_format (str): A string, one of ``channels_last`` (default)
             or ``channels_first``. The ordering of the dimensions in the
             inputs. ``channels_last`` corresponds to inputs with shape
@@ -112,32 +113,31 @@ class Location3D(Layer):
             corresponds to inputs with shape
             ``(batch, channels, height, width)``.
     """
-    def __init__(self, in_shape, data_format=None, **kwargs):
+    def __init__(self, data_format=None, **kwargs):
+        in_shape = kwargs.pop('in_shape', None)
+        if in_shape is not None:
+            logger.warn('in_shape (from deepcell.layerse.location) is '
+                        'deprecated and will be removed in a future version.')
         super(Location3D, self).__init__(**kwargs)
-        self.in_shape = in_shape
         self.data_format = conv_utils.normalize_data_format(data_format)
 
     def compute_output_shape(self, input_shape):
         input_shape = tensor_shape.TensorShape(input_shape).as_list()
-        if self.data_format == 'channels_first':
-            output_shape = (input_shape[0], 3, input_shape[2],
-                            input_shape[3], input_shape[4])
-        else:
-            output_shape = (input_shape[0], input_shape[1], input_shape[2],
-                            input_shape[3], 3)
-        return tensor_shape.TensorShape(output_shape)
+        channel_axis = 1 if self.data_format == 'channels_first' else 4
+        input_shape[channel_axis] = 3
+        return tensor_shape.TensorShape(input_shape)
 
     def call(self, inputs):
-        input_shape = self.in_shape
+        input_shape = K.shape(inputs)
 
         if self.data_format == 'channels_first':
+            z = K.arange(0, input_shape[2], dtype=inputs.dtype)
+            x = K.arange(0, input_shape[3], dtype=inputs.dtype)
+            y = K.arange(0, input_shape[4], dtype=inputs.dtype)
+        else:
             z = K.arange(0, input_shape[1], dtype=inputs.dtype)
             x = K.arange(0, input_shape[2], dtype=inputs.dtype)
             y = K.arange(0, input_shape[3], dtype=inputs.dtype)
-        else:
-            z = K.arange(0, input_shape[0], dtype=inputs.dtype)
-            x = K.arange(0, input_shape[1], dtype=inputs.dtype)
-            y = K.arange(0, input_shape[2], dtype=inputs.dtype)
 
         x = x / K.max(x)
         y = y / K.max(y)
@@ -155,7 +155,7 @@ class Location3D(Layer):
         if self.data_format == 'channels_first':
             location = K.permute_dimensions(location, pattern=[0, 2, 3, 4, 1])
 
-        location = tf.tile(location, [K.shape(inputs)[0], 1, 1, 1, 1])
+        location = tf.tile(location, [input_shape[0], 1, 1, 1, 1])
 
         if self.data_format == 'channels_first':
             location = K.permute_dimensions(location, pattern=[0, 4, 1, 2, 3])
@@ -164,7 +164,6 @@ class Location3D(Layer):
 
     def get_config(self):
         config = {
-            'in_shape': self.in_shape,
             'data_format': self.data_format
         }
         base_config = super(Location3D, self).get_config()
