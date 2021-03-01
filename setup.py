@@ -64,7 +64,7 @@ setup(
         'tensorflow==2.3.1',
         'jupyter>=1.0.0,<2',
         'opencv-python-headless<5',
-        'deepcell-tracking>=0.3.1',
+        'deepcell-tracking>=0.3.1,<0.4.0',
         'deepcell-toolbox>=0.8.6,<0.9.0'
     ],
     extras_require={
