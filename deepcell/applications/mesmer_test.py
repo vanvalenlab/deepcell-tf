@@ -29,14 +29,150 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from tensorflow.python.platform import test
+import pytest
+
 import numpy as np
+
+from tensorflow.python.platform import test
 
 from deepcell.model_zoo import PanopticNet
 from deepcell.applications import Mesmer
 from deepcell.applications import MultiplexSegmentation
+from deepcell.applications.mesmer import format_output_mesmer
+from deepcell.applications.mesmer import mesmer_postprocess
+from deepcell.applications.mesmer import mesmer_preprocess
 
 
+# test pre- and post-processing functions
+def test_multiplex_preprocess():
+    height, width = 300, 300
+    img = np.random.randint(0, 100, (height, width))
+
+    # make rank 4 (batch, X, y, channel)
+    img = np.expand_dims(img, axis=0)
+    img = np.expand_dims(img, axis=-1)
+
+    # single bright spot
+    img[0, 200, 200, 0] = 5000
+
+    # histogram normalized
+    processed = mesmer_preprocess(img)
+    assert (processed <= 1).all() and (processed >= -1).all()
+
+    # maxima is no longer significantly greater than rest of image
+    new_spot_val = processed[0, 200, 200, 0]
+    processed[0, 200, 200, 0] = 0.5
+    next_max_val = np.max(processed)
+
+    # difference between bright spot and next greatest value is essentially nothing
+    assert np.round(new_spot_val / next_max_val, 1) == 1
+
+    # histogram normalization without thresholding
+    processed_hist = mesmer_preprocess(img, threshold=False)
+    assert (processed_hist <= 1).all() and (processed_hist >= -1).all()
+
+    new_spot_val = processed_hist[0, 200, 200, 0]
+    processed_hist[0, 200, 200, 0] = 0.5
+    next_max_val = np.max(processed_hist)
+    assert np.round(new_spot_val / next_max_val, 1) > 1
+
+    # thresholding without histogram normalization
+    processed_thresh = mesmer_preprocess(img, normalize=False)
+    assert not (processed_thresh <= 1).all()
+
+    new_spot_val = processed_thresh[0, 200, 200, 0]
+    processed_thresh[0, 200, 200, 0] = 0.5
+    next_max_val = np.max(processed_thresh)
+    assert np.round(new_spot_val / next_max_val, 1) == 1
+
+    # no change to image
+    not_processed = mesmer_preprocess(img, normalize=False, threshold=False)
+    assert np.all(not_processed == img)
+
+
+def test_multiplex_postprocess(mocker):
+    # create dict, with each image having a different constant value
+    base_array = np.ones((1, 20, 20, 1))
+
+    whole_cell_list = [base_array * mult for mult in range(1, 3)]
+    whole_cell_dict = {'inner-distance': whole_cell_list[0],
+                       'pixelwise-interior': whole_cell_list[1]}
+
+    nuclear_list = [base_array * mult for mult in range(3, 5)]
+    nuclear_dict = {'inner-distance': nuclear_list[0],
+                    'pixelwise-interior': nuclear_list[1]}
+
+    model_output = {'whole-cell': whole_cell_dict, 'nuclear': nuclear_dict}
+
+    # whole cell predictions only
+    whole_cell = mesmer_postprocess(model_output=model_output,
+                                    compartment='whole-cell')
+    assert whole_cell.shape == (1, 20, 20, 1)
+
+    # nuclear predictions only
+    nuclear = mesmer_postprocess(model_output=model_output,
+                                 compartment='nuclear')
+    assert nuclear.shape == (1, 20, 20, 1)
+
+    # both whole-cell and nuclear predictions
+    both = mesmer_postprocess(model_output=model_output,
+                              compartment='both')
+    assert both.shape == (1, 20, 20, 2)
+
+    # make sure correct arrays are being passed to helper function
+    def mock_deep_watershed_mibi(model_output):
+        pixelwise_interior_vals = model_output['pixelwise-interior']
+        return pixelwise_interior_vals
+
+    mocker.patch('deepcell.applications.mesmer.deep_watershed_mibi',
+                 mock_deep_watershed_mibi)
+
+    # whole cell predictions only
+    whole_cell_mocked = mesmer_postprocess(model_output=model_output,
+                                           compartment='whole-cell')
+
+    assert np.array_equal(whole_cell_mocked, whole_cell_dict['pixelwise-interior'])
+
+    # nuclear predictions only
+    whole_cell_mocked = mesmer_postprocess(model_output=model_output,
+                                           compartment='nuclear')
+
+    assert np.array_equal(whole_cell_mocked, nuclear_dict['pixelwise-interior'])
+
+    with pytest.raises(ValueError):
+        whole_cell = mesmer_postprocess(model_output=model_output,
+                                        compartment='invalid')
+
+
+def test_format_output_multiplex():
+
+    # create output list, each with a different constant value across image
+    base_array = np.ones((1, 20, 20, 1))
+
+    whole_cell_list = [base_array * mult for mult in range(1, 5)]
+    whole_cell_list = [whole_cell_list[0],
+                       np.concatenate(whole_cell_list[1:4], axis=-1)]
+
+    # create output list for nuclear predictions
+    nuclear_list = [img * 2 for img in whole_cell_list]
+
+    combined_list = whole_cell_list + nuclear_list
+
+    output = format_output_mesmer(combined_list)
+
+    assert set(output.keys()) == {'whole-cell', 'nuclear'}
+
+    assert np.array_equal(output['whole-cell']['inner-distance'], base_array)
+    assert np.array_equal(output['nuclear']['inner-distance'], base_array * 2)
+
+    assert np.array_equal(output['whole-cell']['pixelwise-interior'], base_array * 3)
+    assert np.array_equal(output['nuclear']['pixelwise-interior'], base_array * 6)
+
+    with pytest.raises(ValueError):
+        output = format_output_mesmer(combined_list[:3])
+
+
+# test application
 class TestMesmer(test.TestCase):
 
     def test_mesmer_app(self):
