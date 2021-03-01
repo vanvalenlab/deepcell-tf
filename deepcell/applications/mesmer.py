@@ -101,7 +101,7 @@ def format_output_mesmer(output_list):
 
 
 def mesmer_postprocess(model_output, compartment='whole-cell', whole_cell_kwargs=None,
-                          nuclear_kwargs=None):
+                       nuclear_kwargs=None):
     """Postprocess Mesmer output to generate predictions for distinct cellular compartments
 
     Args:
