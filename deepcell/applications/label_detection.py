@@ -41,7 +41,7 @@ from deepcell.utils.backbone_utils import get_backbone
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/LabelDetection-2.tar.gz')
+              'saved-models/LabelDetection-1.tar.gz')
 
 
 def LabelDetectionModel(input_shape=(None, None, 1),
@@ -119,14 +119,13 @@ class LabelDetection(Application):
 
     #: Metadata for the model and training process
     model_metadata = {
-        'batch_size': 32,
+        'batch_size': 64,
         'lr': 1e-3,
         'lr_decay': 0.9,
         'training_seed': 0,
-        'n_epochs': 20,
-        'precision_policy': 'mixed_float16',
-        'training_steps_per_epoch': 2653,
-        'validation_steps_per_epoch': 663
+        'n_epochs': 25,
+        'training_steps_per_epoch': 400,
+        'validation_steps_per_epoch': 100
     }
 
     def __init__(self, model=None):
@@ -134,7 +133,7 @@ class LabelDetection(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'LabelDetection.tgz', MODEL_PATH,
-                file_hash='3eb5900e6825abc6d2fa27d5b0a623c9',
+                file_hash='eadd047d599e58de91ff4ab1d735f4f0',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
