@@ -44,7 +44,7 @@ from deepcell.applications.mesmer import mesmer_preprocess
 
 
 # test pre- and post-processing functions
-def test_multiplex_preprocess():
+def test_mesmer_preprocess():
     height, width = 300, 300
     img = np.random.randint(0, 100, (height, width))
 
@@ -89,8 +89,12 @@ def test_multiplex_preprocess():
     not_processed = mesmer_preprocess(img, normalize=False, threshold=False)
     assert np.all(not_processed == img)
 
+    # bad input
+    with pytest.raises(ValueError):
+        _ = mesmer_preprocess(np.zeros((3, 50, 50)))
 
-def test_multiplex_postprocess(mocker):
+
+def test_mesmer_postprocess(mocker):
     # create dict, with each image having a different constant value
     base_array = np.ones((1, 20, 20, 1))
 
@@ -144,7 +148,7 @@ def test_multiplex_postprocess(mocker):
                                         compartment='invalid')
 
 
-def test_format_output_multiplex():
+def test_format_output_mesmer():
 
     # create output list, each with a different constant value across image
     base_array = np.ones((1, 20, 20, 1))

@@ -55,6 +55,10 @@ def mesmer_preprocess(image, **kwargs):
     Returns:
         np.array: processed image array
     """
+
+    if len(image.shape) != 4:
+        raise ValueError("Image data must be 4D, got image of shape {}".format(image.shape))
+
     output = np.copy(image)
     threshold = kwargs.get('threshold', True)
     if threshold:
