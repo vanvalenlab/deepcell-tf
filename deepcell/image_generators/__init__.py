@@ -75,8 +75,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         'disc',
         'watershed',  # deprecated for "outer-distance"
         'watershed-cont',  # deprecated for "outer-distance"
-        'inner-distance',
-        'outer-distance',
+        'inner-distance', 'inner_distance',
+        'outer-distance', 'outer_distance',
         'centroid',  # deprecated for "inner-distance"
         'fgbg'
     }
@@ -126,7 +126,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
                 mask, dilation_radius, data_format=data_format,
                 separate_edge_classes=separate_edge_classes)
 
-    elif transform in {'outer-distance', 'watershed', 'watershed-cont'}:
+    elif transform in {'outer-distance', 'outer_distance',
+                       'watershed', 'watershed-cont'}:
         if transform in {'watershed', 'watershed-cont'}:
             warnings.warn('The `{}` transform is deprecated. Please use the '
                           '`outer-distance` transform instead.'.format(transform),
@@ -174,7 +175,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         if data_format == 'channels_first':
             y_transform = np.rollaxis(y_transform, y.ndim - 1, 1)
 
-    elif transform in {'inner-distance', 'centroid'}:
+    elif transform in {'inner-distance', 'inner_distance', 'centroid'}:
         if transform == 'centroid':
             warnings.warn('The `{}` transform is deprecated. Please use the '
                           '`inner-distance` transform instead.'.format(transform),
