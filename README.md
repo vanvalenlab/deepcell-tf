@@ -133,8 +133,8 @@ docker run --gpus '"device=0"' -it \
 ## How to Cite
 
 - [Deep Learning Automates the Quantitative Analysis of Individual Cells in Live-Cell Imaging Experiments](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005177)
-- [Dynamic allocation of computational resources for deep learning-enabled cellular image analysis with Kubernetes](https://www.biorxiv.org/content/10.1101/505032v3)
 - [Accurate cell tracking and lineage construction in live-cell imaging experiments with deep learning](https://www.biorxiv.org/content/10.1101/803205v2)
+- [DeepCell Kiosk: scaling deep learning–enabled cellular image analysis with Kubernetes](https://www.nature.com/articles/s41592-020-01023-0)
 
 ## Copyright
 
