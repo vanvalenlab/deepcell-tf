@@ -49,7 +49,6 @@ from sklearn.preprocessing import quantile_transform as qt
 Data Loading Functions
 """
 
-
 def get_image(file_name):
     """Read image from file and returns it as a tensor
 
@@ -701,3 +700,27 @@ def celltype_to_labeled_img(mibi_celltypes, celltype_data):
 
     return new_label_image
 
+
+def rot_mat2D(self, data):
+    """apply 2D roation"""
+    assert data.shape[-1] == 2, 'data is not 2D'
+    theta = np.radians(np.random.randint(0,360))
+    rot = np.array([[np.cos(theta), -np.sin(theta)],
+                    [np.sin(theta), np.cos(theta)]])
+    
+    return tf.matmul(data,rot)
+
+def trans_mat2D(self, data):
+    """apply 2D translation"""
+    assert data.shape[-1] == 2, 'data is not 2D'
+    t = np.random.randint(-5,5)
+    
+    return data + np.array([[t,t]])
+
+def ref_mat2D(self, data):
+    """apply 2D reflection"""
+    assert data.shape[-1] ==2, 'data is not 2D'
+    theta = np.radians(np.random.randint(0,360))
+    ref = np.array([[np.cos(2*theta), np.sin(2*theta)],
+                    [np.sin(2*theta), -np.cos(2*theta)]])
+    return tf.matmul(data,ref)
