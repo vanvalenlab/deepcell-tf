@@ -52,8 +52,6 @@ from deepcell.layers import ReflectionPadding2D, ReflectionPadding3D
 from spektral.layers import GCSConv
 # from spektral.layers import GCNConv, GATConv
 
-from functools import partial
-
 
 def siamese_model(input_shape=None,
                   features=None,
