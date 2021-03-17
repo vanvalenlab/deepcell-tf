@@ -29,8 +29,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
+import tensorflow as tf
+import tensorflow_addons as tfa
+
 
 class TrackingDatasetBuilder(object):
+    """Create a tf.data.Dataset object for training tracking models.
+
+    Args:
+        track_list (list): A list of `track` objects containing lineage info
+        track_length (int): Number of desired frames per track
+        batch_size (int): Number of desired batches per dataset
+    """
     def __init__(self,
                  track_list,
                  track_length=8,
@@ -56,11 +67,11 @@ class TrackingDatasetBuilder(object):
         self.max_frames = max(n_frames)
 
     def _pad_array(self,
-                    arr,
-                    node_axes=[1],
-                    time_axes = [2],
-                    temporal_adj=False,
-                    pad_value=0):
+                   arr,
+                   node_axes=[1],
+                   time_axes=[2],
+                   temporal_adj=False,
+                   pad_value=0):
 
         n_axes = len(arr.shape)
         pads = []
@@ -77,7 +88,7 @@ class TrackingDatasetBuilder(object):
             elif ax in time_axes:
                 pads.append((0, max_frames - arr.shape[ax]))
             else:
-                pads.append((0,0))
+                pads.append((0, 0))
         pads = tuple(pads)
         values = (pad_value, pad_value)
         arr = np.pad(arr,
@@ -103,8 +114,8 @@ class TrackingDatasetBuilder(object):
                                   node_axes=[1, 2],
                                   time_axes=[3])
             norm_adj = self._pad_array(track.norm_adj_matrix,
-                                  node_axes=[1, 2],
-                                  time_axes=[3])
+                                       node_axes=[1, 2],
+                                       time_axes=[3])
             temporal_adj = self._pad_array(track.temporal_adj_matrix,
                                            temporal_adj=True,
                                            node_axes=[1, 2],
@@ -138,16 +149,16 @@ class TrackingDatasetBuilder(object):
         for key in X_dict.keys():
             data = X_dict[key]
             if 'adj' not in key:
-                sampled_data = data[:,t_start:t_start+self.track_length,...]
+                sampled_data = data[:, t_start:t_start+self.track_length, ...]
                 X_dict[key] = sampled_data
             else:
-                sampled_data = data[:,:,t_start:t_start+self.track_length]
+                sampled_data = data[:, :, t_start:t_start+self.track_length]
                 X_dict[key] = sampled_data
 
 
         for key in y_dict.keys():
             data = y_dict[key]
-            sampled_data = data[:,:,t_start:t_start+self.track_length-1,...]
+            sampled_data = data[:, :, t_start:t_start+self.track_length-1, ...]
             y_dict[key] = sampled_data
 
         return (X_dict, y_dict)
@@ -180,7 +191,7 @@ class TrackingDatasetBuilder(object):
         rot_row_1 = tf.stack([sin_theta, cos_theta], axis=1)
         rotation_matrix = tf.concat([rot_row_0, rot_row_1], axis=0)
         transformed_centroids = tf.matmul(centroids, tf.transpose(rotation_matrix))
-        r0 = tf.random.uniform([1,1,2], -512, 512)
+        r0 = tf.random.uniform([1, 1, 2], -512, 512)
         transformed_centroids = transformed_centroids + r0
         X_dict['centroids'] = transformed_centroids
 
@@ -195,3 +206,6 @@ class TrackingDatasetBuilder(object):
         dataset = tf.data.Dataset.from_tensor_slices((input_dict, output_dict))
         self.dataset = dataset.shuffle(256).repeat().map(self._sample_time).map(self._augment).batch(self.batch_size)
 
+
+#TODO: Include a split dataset utils module when ready
+#TODO: the train/test/val split should be addressed
