@@ -245,6 +245,8 @@ class GNNTrackingModel(object):
         self.adj_shape = (self.max_cells, self.max_cells, self.track_length)
 
         # Create encoders and decoders
+        # self.reshape_model = self.get_reshape_model()
+
         self._create_reshape_model()
         self._create_unmerge_embeddings_model()
         self._create_unmerge_centroids_model()
