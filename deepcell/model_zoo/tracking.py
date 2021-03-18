@@ -33,13 +33,14 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow.keras import backend as K
-from tensorflow.keras.models import Sequential, Model, TimeDistributed, Layer
-from tensorflow.keras.layers import Conv2D, Conv3D, LSTM
+from tensorflow.keras import Model
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import TimeDistributed, Conv2D, Conv3D, LSTM
 from tensorflow.keras.layers import Input, Concatenate, InputLayer
 from tensorflow.keras.layers import Add, Subtract, Dense, Reshape
 from tensorflow.keras.layers import MaxPool2D, MaxPool3D
 from tensorflow.keras.layers import Activation, Softmax
-from tensorflow.keras.layers import BatchNormalization, Lambda
+from tensorflow.keras.layers import BatchNormalization, Lambda, Layer
 from tensorflow.keras.layers import ZeroPadding2D, ZeroPadding3D
 
 from tensorflow.keras.regularizers import l2
@@ -48,6 +49,7 @@ from deepcell.layers import DilatedMaxPool2D, DilatedMaxPool3D
 from deepcell.layers import ImageNormalization2D
 from deepcell.layers import Location2D, Location3D
 from deepcell.layers import ReflectionPadding2D, ReflectionPadding3D
+from deepcell.layers import TempMerge, TempUnmerge
 
 from spektral.layers import GCSConv
 # from spektral.layers import GCNConv, GATConv
@@ -209,30 +211,6 @@ def siamese_model(input_shape=None,
     return model
 
 
-# Utils for Tracking Model
-class TempMerge(Layer):
-    def __init__(self, encoder_dim=64, **kwargs):
-        super(TempMerge, self).__init__(**kwargs)
-        self.encoder_dim = encoder_dim
-
-    def call(self, inputs):
-        a = inputs[0]
-        b = inputs[1]
-        new_shape = [-1, tf.shape(b)[2], self.encoder_dim]
-        return tf.reshape(a, new_shape)
-
-class TempUnmerge(Layer):
-    def __init__(self, encoder_dim=64, **kwargs):
-        super(TempUnmerge, self).__init__(**kwargs)
-        self.encoder_dim = encoder_dim
-
-    def call(self, inputs):
-        a = inputs[0]
-        b = inputs[1]
-        new_shape = [-1, tf.shape(b)[1], tf.shape(b)[2], self.encoder_dim]
-        return tf.reshape(a, new_shape)
-
-
 class GNNTrackingModel(object):
     """Creates a tracking model based on Graph Neural Networks(GNNs).
 
@@ -251,17 +229,20 @@ class GNNTrackingModel(object):
                  n_layers=3,
                  time_window=5,
                  max_cells=39,
-                 track_length=8)
+                 track_length=8):
 
         self.n_filters = n_filters
         self.encoder_dim = encoder_dim
         self.embedding_dim = embedding_dim
         self.n_layers = n_layers
         self.time_window = time_window
-        self.appearance_shape = (max_cells, track_length, 32, 32, 1)
-        self.morphology_shape = (max_cells, track_length, 3)
-        self.centroid_shape = (max_cells, track_length, 2)
-        self.adj_shape = (max_cells, max_cells, track_length)
+        self.max_cells = max_cells
+        self.track_length = track_length
+        # Use inputs to build expected shapes
+        self.appearance_shape = (self.max_cells, self.track_length, 32, 32, 1)
+        self.morphology_shape = (self.max_cells, self.track_length, 3)
+        self.centroid_shape = (self.max_cells, self.track_length, 2)
+        self.adj_shape = (self.max_cells, self.max_cells, self.track_length)
 
         # Create encoders and decoders
         self._create_reshape_model()
@@ -332,16 +313,16 @@ class GNNTrackingModel(object):
         self.delta_temporal_merge_model = Model(inputs=inputs, outputs=x, name='delta_temporal_merge')
 
     def _unmerge_embeddings(self, x):
-        new_shape = [-1, track_length, self.appearance_shape[0], self.embedding_dim]
+        new_shape = [-1, self.track_length, self.appearance_shape[0], self.embedding_dim]
         new_x = tf.reshape(x, new_shape)
-        new_x = tf.transpose(new_x, perm=(0,2,1,3))
+        new_x = tf.transpose(new_x, perm=(0, 2, 1, 3))
 
         return new_x
 
     def _unmerge_centroids(self, x):
-        new_shape = [-1, track_length, self.centroid_shape[0], self.centroid_shape[2]]
+        new_shape = [-1, self.track_length, self.centroid_shape[0], self.centroid_shape[2]]
         new_x = tf.reshape(x, new_shape)
-        new_x = tf.transpose(new_x, perm=(0,2,1,3))
+        new_x = tf.transpose(new_x, perm=(0, 2, 1, 3))
 
         return new_x
 
@@ -570,8 +551,8 @@ class GNNTrackingModel(object):
         centroids = self.unmerge_centroids_model(centroids)
 
         # Get current and future embeddings
-        x_current = Lambda(lambda t: t[:,:,0:-1,:])(x)
-        x_future = Lambda(lambda t: t[:,:,1:,:])(x)
+        x_current = Lambda(lambda t: t[:, :, 0:-1, :])(x)
+        x_future = Lambda(lambda t: t[:, :, 1:, :])(x)
 
         # Integrate temporal information for embeddings and compare
         x_current = self.embedding_temporal_merge_model(x_current)
@@ -587,7 +568,7 @@ class GNNTrackingModel(object):
         deltas_current = self.delta_encoder(deltas_current)
         deltas_future = self.delta_across_frames_encoder(deltas_future)
 
-        deltas_current = Lambda(lambda t: t[:,:,0:-1,:])(deltas_current)
+        deltas_current = Lambda(lambda t: t[:, :, 0:-1, :])(deltas_current)
         deltas_current = self.delta_temporal_merge_model(deltas_current)
         deltas_current = Lambda(lambda t: tf.expand_dims(t, 2))(deltas_current)
         multiples = [1, 1, self.centroid_shape[0], 1, 1]
@@ -617,7 +598,7 @@ class GNNTrackingModel(object):
         x_current = self.embedding_temporal_merge_model(current_embedding)
 
         # Embeddings - Get final frame from current track
-        x_current = Lambda(lambda t: t[:,:,-1:,:])(x_current)
+        x_current = Lambda(lambda t: t[:, :, -1:, :])(x_current)
 
         x = Lambda(self._comparison, name='inference_comparison')([x_current, future_embedding])
 
@@ -627,10 +608,10 @@ class GNNTrackingModel(object):
 
         deltas_current = self.delta_encoder(deltas_current)
         deltas_current = self.delta_temporal_merge_model(deltas_current)
-        deltas_current = Lambda(lambda t: t[:,:,-1:,:])(deltas_current)
+        deltas_current = Lambda(lambda t: t[:, :, -1:, :])(deltas_current)
 
         # Centroids - Get deltas across frames
-        centroid_current_end = Lambda(lambda t: t[:,:,-1:,:])(current_centroids)
+        centroid_current_end = Lambda(lambda t: t[:, :, -1:, :])(current_centroids)
 
         centroid_current_end = Lambda(lambda t: tf.expand_dims(t, 2))(centroid_current_end)
         centroid_future = Lambda(lambda t: tf.expand_dims(t, 1))(future_centroids)
