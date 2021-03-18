@@ -150,9 +150,9 @@ def PanopticNet(backbone,
             If equal to 1, assumes 2D data.
         temporal_mode: Mode of temporal convolution. Choose from
             ``{'conv','lstm','gru', None}``.
-        num_semantic_heads (int): Total number of semantic heads to build.
-        num_semantic_classes (list): Number of semantic classes
-            for each semantic head.
+        num_semantic_classes (list or dict): Number of semantic classes
+            for each semantic head. If a ``dict``, keys will be used as
+            head names and values will be the number of classes.
         norm_method (str): Normalization method to use with the
             :mod:`deepcell.layers.normalization.ImageNormalization2D` layer.
         location (bool): Whether to include a
@@ -246,10 +246,10 @@ def PanopticNet(backbone,
     if location:
         if frames_per_batch > 1:
             # TODO: TimeDistributed is incompatible with channels_first
-            loc = TimeDistributed(Location2D(in_shape=input_shape,
-                                             name='location'), name='td_location')(norm)
+            loc = TimeDistributed(Location2D(name='location'),
+                                  name='td_location')(norm)
         else:
-            loc = Location2D(in_shape=input_shape, name='location')(norm)
+            loc = Location2D(name='location')(norm)
         concat = Concatenate(axis=channel_axis,
                              name='concatenate_location')([norm, loc])
     else:
@@ -304,11 +304,16 @@ def PanopticNet(backbone,
     target_level = min(semantic_levels)
 
     semantic_head_list = []
-    for i, c in enumerate(num_semantic_classes):
+    if not isinstance(num_semantic_classes, dict):
+        num_semantic_classes = {
+            k: v for k, v in enumerate(num_semantic_classes)
+        }
+
+    for k, v in num_semantic_classes.items():
         semantic_head_list.append(create_semantic_head(
-            pyramid_dict, n_classes=c,
+            pyramid_dict, n_classes=v,
             input_target=inputs, target_level=target_level,
-            semantic_id=i, ndim=ndim, upsample_type=upsample_type,
+            semantic_id=k, ndim=ndim, upsample_type=upsample_type,
             interpolation=interpolation, **kwargs))
 
     outputs = semantic_head_list

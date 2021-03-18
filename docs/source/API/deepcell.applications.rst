@@ -28,9 +28,9 @@ NuclearSegmentation
     :undoc-members:
     :show-inheritance:
 
-MultiplexSegmentation
+Mesmer
 ---------------------
-.. autoclass:: deepcell.applications.multiplex_segmentation.MultiplexSegmentation
+.. autoclass:: deepcell.applications.mesmer.Mesmer
     :members:
     :undoc-members:
     :show-inheritance:
