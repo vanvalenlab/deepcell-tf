@@ -297,7 +297,6 @@ def get_celltypes(label_image, celltype_image):
             props = regionprops_table(label_image_batch,
                                       properties=['coords', 'label'])
 
-
             for i in range(len(props['coords'])):
                 coords = props['coords'][i]
                 cell_type_list = celltype_image_batch[coords[:, 0], coords[:, 1]]
@@ -700,8 +699,9 @@ def celltype_to_labeled_img(mibi_celltypes, celltype_data):
 
     return new_label_image
 
+""" move rot, trans, ref to data utils"""
 
-def rot_mat2D(self, data):
+def rotation_mat2D(self, data):
     """apply 2D roation"""
     assert data.shape[-1] == 2, 'data is not 2D'
     theta = np.radians(np.random.randint(0,360))
@@ -710,14 +710,14 @@ def rot_mat2D(self, data):
     
     return tf.matmul(data,rot)
 
-def trans_mat2D(self, data):
+def translation_mat2D(self, data):
     """apply 2D translation"""
     assert data.shape[-1] == 2, 'data is not 2D'
     t = np.random.randint(-5,5)
     
     return data + np.array([[t,t]])
 
-def ref_mat2D(self, data):
+def reflection_mat2D(self, data):
     """apply 2D reflection"""
     assert data.shape[-1] ==2, 'data is not 2D'
     theta = np.radians(np.random.randint(0,360))
