@@ -51,6 +51,8 @@ from deepcell.layers import Location2D, Location3D
 from deepcell.layers import ReflectionPadding2D, ReflectionPadding3D
 from deepcell.layers import TensorProduct
 
+# Allow backward compatibility with original cell tracking model
+from deepcell.model_zoo.tracking import siamese_model
 
 def bn_feature_net_2D(receptive_field=61,
                       input_shape=(256, 256, 1),
@@ -582,11 +584,3 @@ def bn_feature_net_skip_3D(receptive_field=61,
         model = Model(inputs=inputs, outputs=model_outputs[1:])
 
     return model
-
-
-"""
-Tracking Model
-"""
-
-# Allow backward compatibility with original cell tracking model
-from model_zoo.tracking import siamese_model
