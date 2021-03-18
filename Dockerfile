@@ -37,4 +37,4 @@ RUN pip uninstall jedi --yes
 # Copy over deepcell notebooks
 COPY notebooks/ /notebooks/
 
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--allow-root"]
+CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--allow-root"]
