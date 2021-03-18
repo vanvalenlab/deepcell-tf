@@ -119,6 +119,9 @@ def wce_for_adj_mat(y_true, y_pred):
     Returns:
         tensor: Output tensor.
     """
+    y_pred = tf.convert_to_tensor(y_pred)
+    y_true = K.cast(y_true, y_pred.dtype)
+
     n_classes = tf.shape(y_true)[-1]
     new_shape = [-1, n_classes]
     y_true = tf.reshape(y_true, new_shape)
@@ -130,14 +133,13 @@ def wce_for_adj_mat(y_true, y_pred):
     y_true = tf.gather(y_true, good_loc, axis=0)
     y_pred = tf.gather(y_pred, good_loc, axis=0)
 
-    # Manual computation of crossentropy
+    # Manual computation of crossentropy (change to match above)
     _epsilon = tf.convert_to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
     y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
-    y_true_cast = K.cast(y_true, K.floatx())
-    total_sum = K.sum(y_true_cast)
-    class_sum = K.sum(y_true_cast, axis=0, keepdims=True)
-    class_weights = 1.0 / K.cast_to_floatx(n_classes) * tf.divide(total_sum, class_sum + 1e-5)
-    return - K.sum((y_true_cast * K.log(y_pred) * class_weights), axis=-1)
+    total_sum = K.sum(y_true)
+    class_sum = K.sum(y_true, axis=reduce_axis, keepdims=True)
+    class_weights = 1.0 / n_classes * tf.divide(total_sum, class_sum + 1.)
+    return - K.sum((y_true * K.log(y_pred) * class_weights), axis=axis)
 
 
 def sample_categorical_crossentropy(y_true,
