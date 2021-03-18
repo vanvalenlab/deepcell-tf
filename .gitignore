@@ -122,3 +122,4 @@ Thumbs.db
 
 # Tensorflow log files
 notebooks/logs/
+model.png

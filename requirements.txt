@@ -11,3 +11,5 @@ spektral==0.6.1
 pydot>=1.4.1
 pydotplus>=2.0.2
 graphviz>=0.14
+einops==0.3.0
+jupyterlab==3.0.10

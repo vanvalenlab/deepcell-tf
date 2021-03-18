@@ -16,7 +16,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     rm -rf /var/lib/apt/lists/* && \
     /usr/bin/python3 -m pip install --upgrade pip
 
-WORKDIR /notebooks
+WORKDIR notebooks/
 
 # Copy the required setup files and install the deepcell-tf dependencies
 COPY setup.py README.md requirements.txt /opt/deepcell-tf/
@@ -37,4 +37,4 @@ RUN pip uninstall jedi --yes
 # Copy over deepcell notebooks
 COPY notebooks/ /notebooks/
 
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--allow-root"]
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--allow-root"]
