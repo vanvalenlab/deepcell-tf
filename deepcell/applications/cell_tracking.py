@@ -103,7 +103,7 @@ class CellTracking(Application):
                 file_hash='32399338ee1142b59215a25a3df2d80f',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
-            neighborhood_encoder = tf.keras.models.load_model(model_path)
+            self.neighborhood_encoder = tf.keras.models.load_model(model_path)
 
         if tracking_model is None:
             archive_path = tf.keras.utils.get_file(
@@ -111,13 +111,12 @@ class CellTracking(Application):
                 file_hash='4d8264aebfa7a0c8ee9ad27923d0ccfd',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
-            tracking_model = tf.keras.models.load_model(model_path,
+            model = tf.keras.models.load_model(model_path,
                                                         custom_objects={'_comparison':tm._comparison,
                                                                         '_delta_reshape':tm._delta_reshape})
 
         super(CellTracking, self).__init__(
-            neighborhood_encoder,
-            tracking_model,
+            model,
             model_mpp=0.65,
             preprocessing_fn=None,
             postprocessing_fn=None,
@@ -139,7 +138,7 @@ class CellTracking(Application):
 
         cell_tracker = deepcell_tracking.CellTracker(
             image_norm, labels,
-            self.neighborhood_encoder, self.tracking_model,
+            self.neighborhood_encoder, self.model,
             distance_threshold=self.distance_threshold,
             track_length=self.track_length,
             birth=self.birth, death=self.death,
