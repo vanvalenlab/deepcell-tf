@@ -206,7 +206,7 @@ def siamese_model(input_shape=None,
 
     return model
 
-# TODO: name all the layers to try and fix load_model issues
+
 class GNNTrackingModel(object):
     """Creates a tracking model based on Graph Neural Networks(GNNs).
 

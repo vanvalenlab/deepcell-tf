@@ -37,10 +37,14 @@ import deepcell_tracking
 from deepcell_toolbox.processing import normalize
 
 from deepcell.applications import Application
+from deepcell.model_zoo.tracking import GNNTrackingModel
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/TrackingModel-2.tar.gz')
+              'saved-models/TrackingModel-3.tar.gz')
+
+ENCODER_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
+                'saved-models/TrackingModelNE-1.tar.gz')
 
 
 class CellTracking(Application):
@@ -65,43 +69,55 @@ class CellTracking(Application):
 
     #: Metadata for the model and training process
     model_metadata = {
-        'batch_size': 128,
-        'lr': 1e-2,
-        'lr_decay': 0.99,
-        'training_seed': 757,
-        'n_epochs': 10,
-        'training_steps_per_epoch': 5536,
-        'validation_steps_per_epoch': 1427,
-        'features': {'appearance', 'distance', 'neighborhood', 'regionprop'},
-        'min_track_length': 9,
-        'neighborhood_scale_size': 30,
-        'crop_dim': 32,
+        'batch_size': 4,
+        'track_length': 8,
+        'lr': 1e-3,
+        'clipnorm': 0.001,
+        'n_epochs': 24,
+        'training_steps_per_epoch': 512,
+        'validation_steps': 100,
+        'min_lr': 1e-7,
+        'training_seed': None,
+        'crop_dim': 32
     }
 
     def __init__(self,
-                 model=None,
-                 model_image_shape=(32, 32, 1),
+                 neighborhood_encoder=None,
+                 tracking_model=None,
+                 distance_threshold=64,
                  birth=0.99,
                  death=0.99,
                  division=0.9,
-                 track_length=9):
-        self.features = {'appearance', 'distance', 'neighborhood', 'regionprop'}
+                 track_length=5):
+        self.distance_threshold = distance_threshold
         self.birth = birth
         self.death = death
         self.division = division
         self.track_length = track_length
 
-        if model is None:
+        tm = GNNTrackingModel()
+
+        if neighborhood_encoder is None:
             archive_path = tf.keras.utils.get_file(
-                'Tracking.tgz', MODEL_PATH,
-                file_hash='06e2043b4b898c9f81baeda9b6950ce0',
+                'TrackingModelNE.tgz', ENCODER_PATH,
+                file_hash='32399338ee1142b59215a25a3df2d80f',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
-            model = tf.keras.models.load_model(model_path)
+            neighborhood_encoder = tf.keras.models.load_model(model_path)
+
+        if tracking_model is None:
+            archive_path = tf.keras.utils.get_file(
+                'TrackingModelInf.tgz', MODEL_PATH,
+                file_hash='4d8264aebfa7a0c8ee9ad27923d0ccfd',
+                extract=True, cache_subdir='models')
+            model_path = os.path.splitext(archive_path)[0]
+            tracking_model = tf.keras.models.load_model(model_path,
+                                                        custom_objects={'_comparison':tm._comparison,
+                                                                        '_delta_reshape':tm._delta_reshape})
 
         super(CellTracking, self).__init__(
-            model,
-            model_image_shape=model_image_shape,
+            neighborhood_encoder,
+            tracking_model,
             model_mpp=0.65,
             preprocessing_fn=None,
             postprocessing_fn=None,
@@ -122,7 +138,9 @@ class CellTracking(Application):
         image_norm = normalize(image)
 
         cell_tracker = deepcell_tracking.CellTracker(
-            image_norm, labels, self.model,
+            image_norm, labels,
+            self.neighborhood_encoder, self.tracking_model,
+            distance_threshold=self.distance_threshold,
             track_length=self.track_length,
             birth=self.birth, death=self.death,
             division=self.division)
