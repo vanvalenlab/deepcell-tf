@@ -260,9 +260,9 @@ class GNNTrackingModel(object):
         # Create model
         self.training_model, self.inference_model = self.get_models()
 
-    def _comparison(self, arg):
-        x = arg[0]
-        y = arg[1]
+    def _comparison(self, args):
+        x = args[0]
+        y = args[1]
 
         x = tf.expand_dims(x, 2)
         multiples = [1, 1, tf.shape(y)[1], 1, 1]
@@ -273,6 +273,13 @@ class GNNTrackingModel(object):
         y = tf.tile(y, multiples)
 
         return tf.concat([x, y], axis=-1)
+
+    def _delta_reshape(self, args):
+        c = args[0]
+        f = args[1]
+        multiples = [1, 1, tf.shape(f)[1], 1, 1]
+        output = tf.tile(c, multiples)
+        return output
 
     def get_embedding_temporal_merge_model(self, merge_type='cnn'):
         inputs = Input(shape=(None, None, self.encoder_dim),
@@ -354,28 +361,28 @@ class GNNTrackingModel(object):
                          self.appearance_shape[2],
                          self.appearance_shape[3],
                          self.appearance_shape[4]]
-        transposed_app_input = Lambda(lambda t: tf.transpose(t, perm=(0,2,1,3,4,5)))(app_input)
+        transposed_app_input = Lambda(lambda t: tf.transpose(t, perm=(0, 2, 1, 3, 4, 5)))(app_input)
         reshaped_app_input = Lambda(lambda t: tf.reshape(t, new_app_shape),
                                     name='reshaped_appearances')(transposed_app_input)
 
         new_morph_shape = [-1,
                            self.morphology_shape[0],
                            self.morphology_shape[2]]
-        transposed_morph_input = Lambda(lambda t: tf.transpose(t, perm=(0,2,1,3)))(morph_input)
+        transposed_morph_input = Lambda(lambda t: tf.transpose(t, perm=(0, 2, 1, 3)))(morph_input)
         reshaped_morph_input = Lambda(lambda t: tf.reshape(t, new_morph_shape),
                                       name='reshaped_morphologies')(transposed_morph_input)
 
         new_centroid_shape = [-1,
                               self.centroid_shape[0],
                               self.centroid_shape[2]]
-        transposed_centroid_input = Lambda(lambda t: tf.transpose(t, perm=(0,2,1,3)))(centroid_input)
+        transposed_centroid_input = Lambda(lambda t: tf.transpose(t, perm=(0, 2, 1, 3)))(centroid_input)
         reshaped_centroid_input = Lambda(lambda t: tf.reshape(t, new_centroid_shape),
                                          name='reshaped_centroids')(transposed_centroid_input)
 
         new_adj_shape = [-1,
                          self.adj_shape[0],
                          self.adj_shape[1]]
-        transposed_adj_input = Lambda(lambda t: tf.transpose(t, perm=(0,3,1,2)))(adj_input)
+        transposed_adj_input = Lambda(lambda t: tf.transpose(t, perm=(0, 3, 1, 2)))(adj_input)
         reshaped_adj_input = Lambda(lambda t: tf.reshape(t, new_adj_shape),
                                     name='reshaped_adj_matrices')(transposed_adj_input)
 
@@ -395,7 +402,6 @@ class GNNTrackingModel(object):
                        name='encoder_app_input')
 
         x = inputs
-
         x = TimeDistributed(ImageNormalization2D(norm_method='whole_image',
                                                  name='imgnrm_ae'))(x)
 
@@ -437,9 +443,9 @@ class GNNTrackingModel(object):
 
         x = inputs
 
-        x = Dense(self.encoder_dim)(x)
-        x = BatchNormalization(axis=-1)(x)
-        x = Activation('relu')(x)
+        x = Dense(self.encoder_dim, name='dense_ce')(x)
+        x = BatchNormalization(axis=-1, name='bn_ce')(x)
+        x = Activation('relu', name='centroid_embedding')(x)
 
         return Model(inputs=inputs, outputs=x)
 
@@ -450,15 +456,15 @@ class GNNTrackingModel(object):
         inputs_across_frames = Input(shape=(None, None, None, self.centroid_shape[-1]),
                                      name='encoder_delta_across_frames_input')
 
-        d = Dense(self.n_filters)
-        a = Activation('relu')
+        d = Dense(self.n_filters, name='dense_des')
+        a = Activation('relu', name='relu_des')
 
         x_0 = d(inputs)
-        x_0 = BatchNormalization(axis=-1)(x_0)
+        x_0 = BatchNormalization(axis=-1, name='bn_des0')(x_0)
         x_0 = a(x_0)
 
         x_1 = d(inputs_across_frames)
-        x_1 = BatchNormalization(axis=-1)(x_1)
+        x_1 = BatchNormalization(axis=-1, name='bn_des1')(x_1)
         x_1 = a(x_1)
 
         delta_encoder = Model(inputs=inputs, outputs=x_0)
@@ -560,8 +566,8 @@ class GNNTrackingModel(object):
         deltas_current = self._get_deltas(centroids)
         deltas_future = self._get_deltas_across_frames(centroids)
 
-        deltas_current = Activation(tf.math.abs)(deltas_current)
-        deltas_future = Activation(tf.math.abs)(deltas_future)
+        deltas_current = Activation(tf.math.abs, name='act_dc_tb')(deltas_current)
+        deltas_future = Activation(tf.math.abs, name='act_df_tb')(deltas_future)
 
         deltas_current = self.delta_encoder(deltas_current)
         deltas_future = self.delta_across_frames_encoder(deltas_future)
@@ -602,7 +608,7 @@ class GNNTrackingModel(object):
 
         # Centroids - Get deltas
         deltas_current = self._get_deltas(current_centroids)
-        deltas_current = Activation(tf.math.abs)(deltas_current)
+        deltas_current = Activation(tf.math.abs, name='act_dc_ib')(deltas_current)
 
         deltas_current = self.delta_encoder(deltas_current)
         deltas_current = self.delta_temporal_merge_model(deltas_current)
@@ -614,20 +620,11 @@ class GNNTrackingModel(object):
         centroid_current_end = Lambda(lambda t: tf.expand_dims(t, 2))(centroid_current_end)
         centroid_future = Lambda(lambda t: tf.expand_dims(t, 1))(future_centroids)
         deltas_future = Subtract()([centroid_future, centroid_current_end])
-        deltas_future = Activation(tf.math.abs)(deltas_future)
+        deltas_future = Activation(tf.math.abs, name='act_df_ib')(deltas_future)
         deltas_future = self.delta_across_frames_encoder(deltas_future)
 
         deltas_current = Lambda(lambda t: tf.expand_dims(t, 2))(deltas_current)
-        # multiples = [1, 1, self.centroid_shape[0], 1, 1]
-
-        def delta_reshape(args):
-            c = args[0]
-            f = args[1]
-            multiples = [1, 1, tf.shape(f)[1], 1, 1]
-            output = tf.tile(c, multiples)
-            return output
-
-        deltas_current = Lambda(delta_reshape)([deltas_current, future_centroids])
+        deltas_current = Lambda(self._delta_reshape, name='delta_reshape')([deltas_current, future_centroids])
 
         deltas = Concatenate(axis=-1)([deltas_current, deltas_future])
 
