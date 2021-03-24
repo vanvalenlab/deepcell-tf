@@ -246,7 +246,6 @@ def get_cell_features(image, label_image):
 
     # Find out the max number of cells
     max_cells = get_max_cells(label_image)
-
     # Instantiate the feature matrix
     feature_matrix = np.zeros((image.shape[0], max_cells, image.shape[-1]))
 

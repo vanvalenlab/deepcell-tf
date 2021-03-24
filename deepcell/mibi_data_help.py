@@ -130,12 +130,12 @@ def create_cell_tf_dataset(multiplex_image,
     
     
     
-    train_adjacency_matrix, train_normalized_adjacency_matrix = create_adjacency_matrix(label_train)
+    train_adjacency_matrix, train_normalized_adjacency_matrix, train_coords = create_adjacency_matrix(label_train)
     train_feature_matrix = create_feature_matrix(multiplex_train, label_train)
     train_celltype_matrix = create_celltype_matrix(celltype_train, label_train)
     
     
-    val_adjacency_matrix, val_normalized_adjacency_matrix = create_adjacency_matrix(label_val)
+    val_adjacency_matrix, val_normalized_adjacency_matrix, val_coords = create_adjacency_matrix(label_val)
     val_feature_matrix = create_feature_matrix(multiplex_val, label_val)
     val_celltype_matrix = create_celltype_matrix(celltype_val, label_val)
     
@@ -202,7 +202,20 @@ def create_cell_tf_dataset(multiplex_image,
             ({'feature_matrix': val_feature_matrix,
               'adjacency_matrix': val_normalized_adjacency_matrix},
              {'decoded': val_adjacency_matrix,
-              'celltypes': val_celltype_matrix}))        
+              'celltypes': val_celltype_matrix}))
+
+    elif mode == 'EGCL':
+        train_dataset = tf.data.Dataset.from_tensor_slices(
+          ({'feature_matrix': train_feature_matrix,
+            'adjacency_matrix': train_normalized_adjacency_matrix,
+            'coords': train_coords,},
+           {'celltypes': train_celltype_matrix}))
+
+        val_dataset = tf.data.Dataset.from_tensor_slices(
+          ({'feature_matrix': val_feature_matrix,
+            'adjacency_matrix': val_normalized_adjacency_matrix,
+            'coords': val_coords,},
+           {'celltypes': val_celltype_matrix}))        
         
     else: 
         print('please enter a valid mode type')
@@ -219,7 +232,7 @@ def create_adjacency_matrix(label_image):
     adjacency_matrix.astype(np.float32)
     normalized_adjacency_matrix = normalize_adj(adjacency_matrix)
 
-    return adjacency_matrix, normalized_adjacency_matrix
+    return adjacency_matrix, normalized_adjacency_matrix, centroid_matrix
 
 def create_feature_matrix(multiplex_image, label_image):
     """docstring"""
