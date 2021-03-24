@@ -48,7 +48,7 @@ ENCODER_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
 
 
 class CellTracking(Application):
-    """Loads a :mod:`deepcell.model_zoo.featurenet.siamese_model` model for
+    """Loads a :mod:`deepcell.model_zoo.tracking.GNNTrackingModel` model for
     object tracking with pretrained weights using a simple
     ``predict`` interface.
 
