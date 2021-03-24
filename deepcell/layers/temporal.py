@@ -29,10 +29,7 @@ from __future__ import print_function
 from __future__ import division
 
 import tensorflow as tf
-from tensorflow.python.framework import tensor_shape
 from tensorflow.keras.layers import Layer
-from tensorflow.keras import backend as K
-from tensorflow.python.keras.utils import conv_utils
 
 
 class TempMerge(Layer):
