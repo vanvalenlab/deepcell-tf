@@ -54,6 +54,7 @@ from deepcell.layers import TensorProduct
 # Allow backward compatibility with original cell tracking model
 from deepcell.model_zoo.tracking import siamese_model
 
+
 def bn_feature_net_2D(receptive_field=61,
                       input_shape=(256, 256, 1),
                       inputs=None,

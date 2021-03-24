@@ -140,7 +140,7 @@ class TrackingDatasetBuilder(object):
         y_dict = args[1]
 
         app = X_dict['appearances']
-        max_time = tf.shape(app)[1]-self.track_length
+        max_time = tf.shape(app)[1] - self.track_length
         t_start = tf.random.uniform([1],
                                     minval=0,
                                     maxval=max_time,
@@ -149,20 +149,18 @@ class TrackingDatasetBuilder(object):
         for key in X_dict.keys():
             data = X_dict[key]
             if 'adj' not in key:
-                sampled_data = data[:, t_start:t_start+self.track_length, ...]
+                sampled_data = data[:, t_start:t_start + self.track_length, ...]
                 X_dict[key] = sampled_data
             else:
-                sampled_data = data[:, :, t_start:t_start+self.track_length]
+                sampled_data = data[:, :, t_start:t_start + self.track_length]
                 X_dict[key] = sampled_data
-
 
         for key in y_dict.keys():
             data = y_dict[key]
-            sampled_data = data[:, :, t_start:t_start+self.track_length-1, ...]
+            sampled_data = data[:, :, t_start:t_start + self.track_length - 1, ...]
             y_dict[key] = sampled_data
 
         return (X_dict, y_dict)
-
 
     def _augment(self, *args):
         X_dict = args[0]
@@ -172,7 +170,7 @@ class TrackingDatasetBuilder(object):
         centroids = X_dict['centroids']
 
         # Randomly rotate appearances
-        theta = tf.random.uniform([1], 0, 2*3.1415926)
+        theta = tf.random.uniform([1], 0, 2 * 3.1415926)
 
         # Transform appearances
         old_shape = tf.shape(app)
@@ -207,5 +205,5 @@ class TrackingDatasetBuilder(object):
         self.dataset = dataset.shuffle(256).repeat().map(self._sample_time).map(self._augment).batch(self.batch_size)
 
 
-#TODO: Include a split dataset utils module when ready
-#TODO: the train/test/val split should be addressed
+# TODO: Include a split dataset utils module when ready
+# TODO: the train/test/val split should be addressed

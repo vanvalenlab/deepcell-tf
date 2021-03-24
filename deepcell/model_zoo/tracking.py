@@ -294,7 +294,8 @@ class GNNTrackingModel(object):
 
         elif merge_type == 'cnn':
             x = inputs
-            x = Conv2D(self.encoder_dim, (1, self.time_window), padding='SAME', name='conv2d_tm')(x)
+            x = Conv2D(self.encoder_dim, (1, self.time_window),
+                       padding='SAME', name='conv2d_tm')(x)
             x = BatchNormalization(axis=-1, name='bn_tm')(x)
             x = Activation('relu', name='relu_tm')(x)
 
@@ -316,7 +317,8 @@ class GNNTrackingModel(object):
 
         elif merge_type == 'cnn':
             x = inputs
-            x = Conv2D(self.encoder_dim, (1, self.time_window), padding='SAME', name='conv2d_delta')(x)
+            x = Conv2D(self.encoder_dim, (1, self.time_window),
+                       padding='SAME', name='conv2d_delta')(x)
             x = BatchNormalization(axis=-1, name='bn_delta')(x)
             x = Activation('relu', name='relu_delta')(x)
 
@@ -362,7 +364,8 @@ class GNNTrackingModel(object):
                          self.appearance_shape[2],
                          self.appearance_shape[3],
                          self.appearance_shape[4]]
-        transposed_app_input = Lambda(lambda t: tf.transpose(t, perm=(0, 2, 1, 3, 4, 5)))(app_input)
+        transposed_app_input = Lambda(lambda t: tf.transpose(t,
+                                                             perm=(0, 2, 1, 3, 4, 5)))(app_input)
         reshaped_app_input = Lambda(lambda t: tf.reshape(t, new_app_shape),
                                     name='reshaped_appearances')(transposed_app_input)
 
@@ -376,7 +379,8 @@ class GNNTrackingModel(object):
         new_centroid_shape = [-1,
                               self.centroid_shape[0],
                               self.centroid_shape[2]]
-        transposed_cent_input = Lambda(lambda t: tf.transpose(t, perm=(0, 2, 1, 3)))(centroid_input)
+        transposed_cent_input = Lambda(lambda t: tf.transpose(t,
+                                                              perm=(0, 2, 1, 3)))(centroid_input)
         reshaped_centroid_input = Lambda(lambda t: tf.reshape(t, new_centroid_shape),
                                          name='reshaped_centroids')(transposed_cent_input)
 
@@ -498,8 +502,8 @@ class GNNTrackingModel(object):
         for i in range(self.n_layers):
             node_features = GCSConv(self.n_filters,
                                     activation=None, name='gcs{}'.format(i))([node_features, adj])
-            node_features = BatchNormalization(axis=-1, name='bn_ne{}'.format(i+1))(node_features)
-            node_features = Activation('relu', name='relu_ne{}'.format(i+1))(node_features)
+            node_features = BatchNormalization(axis=-1, name='bn_ne{}'.format(i + 1))(node_features)
+            node_features = Activation('relu', name='relu_ne{}'.format(i + 1))(node_features)
 
         concat = Concatenate(axis=-1)([app_features, morph_features, node_features])
         node_features = Dense(self.embedding_dim, name='dense_nef')(concat)
@@ -531,7 +535,7 @@ class GNNTrackingModel(object):
 
     def _get_deltas(self, x):
         # Convert raw positions to deltas
-        deltas = Lambda(lambda t: t[:, :, 1:, :]-t[:, :, 0:-1, :])(x)
+        deltas = Lambda(lambda t: t[:, :, 1:, :] - t[:, :, 0:-1, :])(x)
         deltas = Lambda(lambda t: tf.pad(t, tf.constant([[0, 0], [0, 0], [1, 0], [0, 0]])))(deltas)
 
         return deltas
@@ -635,8 +639,8 @@ class GNNTrackingModel(object):
         return Model(inputs=inputs, outputs=outputs, name='inference_branch')
 
     def get_tracking_decoder(self):
-        embedding_input = Input(shape=(None, None, None, 2*self.embedding_dim))
-        deltas_input = Input(shape=(None, None, None, 2*self.encoder_dim))
+        embedding_input = Input(shape=(None, None, None, 2 * self.embedding_dim))
+        deltas_input = Input(shape=(None, None, None, 2 * self.encoder_dim))
 
         embedding = Concatenate(axis=-1)([embedding_input, deltas_input])
 
@@ -645,9 +649,9 @@ class GNNTrackingModel(object):
         embedding = Activation('relu', name='relu_td0')(embedding)
 
         for i in range(self.n_layers):
-            res = Dense(self.n_filters, name='dense_td{}'.format(i+1))(embedding)
-            res = BatchNormalization(axis=-1, name='bn_td{}'.format(i+1))(res)
-            res = Activation('relu', name='relu_td{}'.format(i+1))(res)
+            res = Dense(self.n_filters, name='dense_td{}'.format(i + 1))(embedding)
+            res = BatchNormalization(axis=-1, name='bn_td{}'.format(i + 1))(res)
+            res = Activation('relu', name='relu_td{}'.format(i + 1))(res)
             embedding = Add()([embedding, res])
 
         embedding = Dense(3, name='dense_outembed')(embedding)

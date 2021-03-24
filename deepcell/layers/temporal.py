@@ -48,6 +48,7 @@ class TempMerge(Layer):
         new_shape = [-1, tf.shape(b)[2], self.encoder_dim]
         return tf.reshape(a, new_shape)
 
+
 class TempUnmerge(Layer):
     """Layer for unmerging the time dimension of a Tensor.
 
