@@ -94,7 +94,7 @@ templates_path = ['_templates']
 source_suffix = ['.rst', '.md']
 # source_suffix = '.rst'
 
-# Ignore warning: 
+# Ignore warning:
 suppress_warnings = ['autosectionlabel.*']
 
 # The master toctree document.
@@ -225,6 +225,8 @@ epub_exclude_files = ['search.html']
 # -- Extension configuration -------------------------------------------------
 autodoc_mock_imports = [
     'tensorflow',
+    'tensorflow_addons',
+    'spektral',
     'scipy',
     'numpy',
     'sklearn',
