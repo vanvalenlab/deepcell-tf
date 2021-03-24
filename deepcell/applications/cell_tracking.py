@@ -89,6 +89,7 @@ class CellTracking(Application):
                  death=0.99,
                  division=0.9,
                  track_length=5):
+        self.neighborhood_encoder = neighborhood_encoder
         self.distance_threshold = distance_threshold
         self.birth = birth
         self.death = death
@@ -97,7 +98,7 @@ class CellTracking(Application):
 
         tm = GNNTrackingModel()
 
-        if neighborhood_encoder is None:
+        if self.neighborhood_encoder is None:
             archive_path = tf.keras.utils.get_file(
                 'TrackingModelNE.tgz', ENCODER_PATH,
                 file_hash='32399338ee1142b59215a25a3df2d80f',
