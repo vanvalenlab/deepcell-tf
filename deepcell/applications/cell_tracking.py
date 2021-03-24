@@ -114,8 +114,7 @@ class CellTracking(Application):
             model = tf.keras.models.load_model(model_path,
                                                custom_objects={
                                                    '_comparison': tm._comparison,
-                                                   '_delta_reshape': tm._delta_reshape
-                                                   })
+                                                   '_delta_reshape': tm._delta_reshape})
 
         super(CellTracking, self).__init__(
             model,

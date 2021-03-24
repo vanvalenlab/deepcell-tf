@@ -70,8 +70,8 @@ class TestCellTracking(test.TestCase):
             tm = GNNTrackingModel()
 
             # Test instantiation
-            app = CellTracking(neighborhood_encoder=tm.neighborhood_encoder,
-                               tracking_model=tm.inference_model)
+            app = CellTracking(model=tm.inference_model,
+                               neighborhood_encoder=tm.neighborhood_encoder)
 
             # test output shape
             shape = app.model.output_shape

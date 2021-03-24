@@ -502,7 +502,8 @@ class GNNTrackingModel(object):
         for i in range(self.n_layers):
             node_features = GCSConv(self.n_filters,
                                     activation=None, name='gcs{}'.format(i))([node_features, adj])
-            node_features = BatchNormalization(axis=-1, name='bn_ne{}'.format(i + 1))(node_features)
+            node_features = BatchNormalization(axis=-1,
+                                               name='bn_ne{}'.format(i + 1))(node_features)
             node_features = Activation('relu', name='relu_ne{}'.format(i + 1))(node_features)
 
         concat = Concatenate(axis=-1)([app_features, morph_features, node_features])
