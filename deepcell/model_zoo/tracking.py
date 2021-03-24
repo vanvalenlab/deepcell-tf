@@ -212,7 +212,8 @@ class GNNTrackingModel(object):
 
     Args:
         n_filters (int): Number of filters
-        endcoder_dim (int): Dimension of embedding
+        endcoder_dim (int): Dimension of encoder
+        embedding_dim (int): Dimension of embedding
         n_layers (int): number of layers
         time_window (int): number of frames to include in temporal merges
         max_cells (int): maximum number of tracks per movie in dataset
@@ -375,9 +376,9 @@ class GNNTrackingModel(object):
         new_centroid_shape = [-1,
                               self.centroid_shape[0],
                               self.centroid_shape[2]]
-        transposed_centroid_input = Lambda(lambda t: tf.transpose(t, perm=(0, 2, 1, 3)))(centroid_input)
+        transposed_cent_input = Lambda(lambda t: tf.transpose(t, perm=(0, 2, 1, 3)))(centroid_input)
         reshaped_centroid_input = Lambda(lambda t: tf.reshape(t, new_centroid_shape),
-                                         name='reshaped_centroids')(transposed_centroid_input)
+                                         name='reshaped_centroids')(transposed_cent_input)
 
         new_adj_shape = [-1,
                          self.adj_shape[0],
@@ -405,7 +406,7 @@ class GNNTrackingModel(object):
         x = TimeDistributed(ImageNormalization2D(norm_method='whole_image',
                                                  name='imgnrm_ae'))(x)
 
-        for i in range(5):  ## is this supposed to match self.time_window?
+        for i in range(self.time_window):
             x = Conv3D(self.n_filters,
                        (1, 3, 3),
                        strides=1,
@@ -624,7 +625,8 @@ class GNNTrackingModel(object):
         deltas_future = self.delta_across_frames_encoder(deltas_future)
 
         deltas_current = Lambda(lambda t: tf.expand_dims(t, 2))(deltas_current)
-        deltas_current = Lambda(self._delta_reshape, name='delta_reshape')([deltas_current, future_centroids])
+        deltas_current = Lambda(self._delta_reshape,
+                                name='delta_reshape')([deltas_current, future_centroids])
 
         deltas = Concatenate(axis=-1)([deltas_current, deltas_future])
 
