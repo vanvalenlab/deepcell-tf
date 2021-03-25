@@ -24,13 +24,15 @@ PanOpticNet
 
 FPN
 ---
+
 .. automodule:: deepcell.model_zoo.fpn
     :members:
     :undoc-members:
     :show-inheritance:
 
 Tracking
----
+--------
+
 .. automodule:: deepcell.model_zoo.tracking
     :members:
     :undoc-members:
