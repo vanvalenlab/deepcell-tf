@@ -30,6 +30,8 @@ from __future__ import print_function
 from __future__ import division
 
 import numpy as np
+import tensorflow as tf
+
 from sklearn.model_selection import train_test_split
 from tensorflow.keras import backend as K
 from tensorflow.python.keras.utils import conv_utils
@@ -507,3 +509,28 @@ def reshape_movie(X, y, reshape_size=256):
     print('Reshaped feature data from {} to {}'.format(y.shape, new_y.shape))
     print('Reshaped training data from {} to {}'.format(X.shape, new_X.shape))
     return new_X, new_y
+
+
+def rotation_mat2D(data):
+    """apply 2D roation"""
+    assert data.shape[-1] == 2, 'data is not 2D'
+    theta = np.radians(np.random.randint(0,360))
+    rot = np.array([[np.cos(theta), -np.sin(theta)],
+                    [np.sin(theta), np.cos(theta)]])
+    
+    return tf.matmul(data,rot)
+
+def translation_mat2D(data):
+    """apply 2D translation"""
+    assert data.shape[-1] == 2, 'data is not 2D'
+    t = np.random.randint(-5,5)
+    
+    return data + np.array([[t,t]])
+
+def reflection_mat2D(data):
+    """apply 2D reflection"""
+    assert data.shape[-1] ==2, 'data is not 2D'
+    theta = np.radians(np.random.randint(0,360))
+    ref = np.array([[np.cos(2*theta), np.sin(2*theta)],
+                    [np.sin(2*theta), -np.cos(2*theta)]])
+    return tf.matmul(data,ref)

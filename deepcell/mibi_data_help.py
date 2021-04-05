@@ -31,10 +31,12 @@ import tensorflow as tf
 
 from tensorflow.keras.utils import to_categorical
 
-from deepcell.graph_utils import get_celltypes, reshape_matrix, normalize_mibi_data
+from deepcell.utils.data_utils import reshape_matrix
+
+from deepcell.graph_utils import get_celltypes
 from deepcell.graph_utils import image_to_graph, get_cell_features, normalize_adj
 
-# from tmp_utils import get_cell_type, get_cell_type_dict, load_cell_type_data
+from deepcell.tmp_funcs import normalize_mibi_data
 
 """
 Cell level data functions
