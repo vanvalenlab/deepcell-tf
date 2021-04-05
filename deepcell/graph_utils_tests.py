@@ -26,22 +26,25 @@
 
 import numpy as np
 
-from tensorflow.keras.preprocessing.image import array_to_img
 
+def _generate_test_images(img_w=21, img_h=21, num_channels=20):
+    """ generates a multiplexed and single channel image with random pixel values
 
-def _generate_test_images(img_w=21, img_h=21):
-    """ docstring holder"""
-    test_images = []
-
+        Returns:
+            list: index 0 is the multiplexed image and index 1 is the gray iamge
+    """
+    multiplexed_images = []
+    gray_images = []
     for _ in range(8):
         bias = np.random.rand(img_w, img_h, 1) * 64
         variance = np.random.rand(img_w, img_h, 1) * (255 - 64)
-        imarray = np.random.rand(img_w, img_h, 3) * variance + bias
-        # im = array_to_img(imarray, scale=False)
-        # i dont think i need to make it an image bc im using arrays?
-        test_images.append(imarray)
+        imarray = np.random.rand(img_w, img_h, num_channels) * variance + bias
+        multiplexed_images.append(imarray)
 
-    return test_images
+        imarray = np.random.rand(img_w, img_h, 1) * variance + bias
+        gray_images.append(imarray)
+
+    return [multiplexed_images, gray_images]
 
 def max_cell_test(label_image):
     """ Compute the maximum number of cells in a single batch for a label image
@@ -56,7 +59,7 @@ def max_cell_test(label_image):
     """
 
 
-def image_to_graph_test(label_image,
+def test_image_to_graph(label_image,
                         distance_threshold=50,
                         self_connection=True):
     """Convert a label image to a graph
