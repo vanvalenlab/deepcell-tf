@@ -23,30 +23,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import pytest
 
 import numpy as np
 
+from deepcell import graph_utils
 
-def _generate_test_images(img_w=21, img_h=21, num_channels=20):
-    """ generates a multiplexed and single channel image with random pixel values
+def _get_dummy_mibi_img_data(num_batches=3, img_dim=128):
+    """dockersting holder - generate fake mibi data """
+    # generate feature data
+    
+    multiplexed_img = []
+    for _ in range(num_batches):
+        bias = np.random.rand(img_dim, img_dim, 1)*64
+        variance = np.random.rand(img_dim, img_dim, 1) * (255-64)
+        imarray = np.random.rand(img_dim, img_dim, 6) * variance + bias
+        multiplexed_img.append(imarray)
+    
+    multiplexed_img = np.array(multiplexed_img)
 
-        Returns:
-            list: index 0 is the multiplexed image and index 1 is the gray iamge
-    """
-    multiplexed_images = []
-    gray_images = []
-    for _ in range(8):
-        bias = np.random.rand(img_w, img_h, 1) * 64
-        variance = np.random.rand(img_w, img_h, 1) * (255 - 64)
-        imarray = np.random.rand(img_w, img_h, num_channels) * variance + bias
-        multiplexed_images.append(imarray)
+    return multiplexed_img.astype('float32')
 
-        imarray = np.random.rand(img_w, img_h, 1) * variance + bias
-        gray_images.append(imarray)
+def _get_dummy_mibi_label_data(num_batches=3, img_dim=128):
+    """dockersting holder"""
 
-    return [multiplexed_images, gray_images]
+    # generate label data
+    labels = []
+    num_cells = []
+    while len(labels) < num_batches:
+        _x = sk.data.binary_blobs(length=img_dim, n_dim=2)
+        _y = sk.measure.label(_x)
+        num_unique = len(np.unique(_y))
+        if num_unique > 3:
+            labels.append(_y)
+            num_cells.append(num_unique)
 
-def max_cell_test(label_image):
+    labels = np.stack(labels, axis=0)
+    labels = np.expand_dims(labels, axis=-1)
+
+    return labels.astype('int32'), max(num_cells)
+
+def test_max_cell():
     """ Compute the maximum number of cells in a single batch for a label image
 
     Args:
@@ -57,6 +74,19 @@ def max_cell_test(label_image):
         np.int: The maximum number of cells in a single batch of the
             label image
     """
+    x = np.zeros((8, 8))
+
+    x[0, 0] = 1
+    x[7, 7] = 2
+    x[7, 0] = 5
+    x[4, 5] = 6
+    x[0, 7] = 10
+
+    x = np.expand_dims(x,axis=0)
+    x = np.expand_dims(x,axis=-1)
+
+    assert get_max_cells(x) == 5 
+    
 
 
 def test_image_to_graph(label_image,
@@ -75,7 +105,7 @@ def test_image_to_graph(label_image,
     """
 
 
-def get_cell_features_test(image, label_image):
+def test_get_cell_features(image, label_image):
     """Extract feature vectors from cells in multiplexed imaging data
 
     Args:
@@ -90,7 +120,7 @@ def get_cell_features_test(image, label_image):
     """
 
 
-def get_celltypes_test(label_image, celltype_image):
+def test_get_celltypes(label_image, celltype_image):
     """Query cell type image with a given label image and get cell
     type for each cell
 
@@ -105,8 +135,7 @@ def get_celltypes_test(label_image, celltype_image):
             each cell
     """
 
-
-def adj_to_degree_test(adj, power=-0.5, epsilon=1e-5):
+def test_adj_to_degree(adj, power=-0.5, epsilon=1e-5):
     """ Convert adjacency matrix to degree matrix
 
     Args:
@@ -117,7 +146,7 @@ def adj_to_degree_test(adj, power=-0.5, epsilon=1e-5):
     """
 
 
-def normalize_adj_test(adj):
+def test_normalize_adj(adj):
     """Symmetrically normalize adjacency matrix.
 
     Args:
@@ -128,7 +157,7 @@ def normalize_adj_test(adj):
             coordinate format
     """
 
-def preprocess_adj_test(adj):
+def test_preprocess_adj(adj):
     """Preprocessing of adjacency matrix for simple GCN model and conversion to
     tuple representation.
 
@@ -141,7 +170,7 @@ def preprocess_adj_test(adj):
     """
 
 
-def node_dist_test(prop0, prop1):
+def test_node_dist(prop0, prop1):
     """ Compute minimum distance between two cells
 
     Args:
