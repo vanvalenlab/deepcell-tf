@@ -65,8 +65,9 @@ class InferenceTimer(tf.keras.callbacks.Callback):
     def on_predict_end(self, logs=None):
         avg = np.mean(self._batch_times)
         std = np.std(self._batch_times)
-        print('Average inference speed for %s samples: %0.5fs ± %0.5fs.' %
-              (self._samples_seen, avg, std))
+        print('Average inference speed per batch for %s batches '
+              '(%s samples total): %0.5fs ± %0.5fs.' %
+              (len(self._batch_times), self._samples_seen, avg, std))
 
     def on_epoch_end(self, epoch, logs=None):
         shape = tuple([self._samples] + list(self.model.input_shape[1:]))
