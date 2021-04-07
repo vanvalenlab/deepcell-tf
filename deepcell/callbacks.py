@@ -38,9 +38,8 @@ from tensorflow.keras import backend as K
 class InferenceTimer(tf.keras.callbacks.Callback):
     """Callback to log inference speed per epoch."""
 
-    def __init__(self, batch_size):
+    def __init__(self):
         super(InferenceTimer, self).__init__()
-        self.batch_size = int(batch_size)
         self._batch_times = []
         self._timer = None
         # best_weights to store the weights at which the minimum loss occurs.
