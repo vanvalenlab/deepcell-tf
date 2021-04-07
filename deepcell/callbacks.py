@@ -59,4 +59,4 @@ class InferenceTimer(tf.keras.callbacks.Callback):
         avg = np.mean(self._batch_times)
         std = np.std(self._batch_times)
         print('Finished epoch {} with an average speed of {}s ± {}s.'.format(
-            epoch, avg, std)
+            epoch, avg, std))
