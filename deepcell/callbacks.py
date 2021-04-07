@@ -40,25 +40,35 @@ from tensorflow.keras import backend as K
 class InferenceTimer(tf.keras.callbacks.Callback):
     """Callback to log inference speed per epoch."""
 
-    def __init__(self):
+    def __init__(self, samples=100):
         super(InferenceTimer, self).__init__()
+        self._samples = int(samples)
         self._batch_times = []
+        self._samples_seen = 0
         self._timer = None
-        # best_weights to store the weights at which the minimum loss occurs.
-        self.best_weights = None
 
-    def on_epoch_begin(self, epoch, logs=None):
+    def on_predict_begin(self, epoch, logs=None):
         self._batch_times = []
+        self._samples_seen = 0
 
-    def on_train_batch_begin(self, batch, logs=None):
+    def on_predict_batch_begin(self, batch, logs=None):
         self._timer = timeit.default_timer()
 
-    def on_train_batch_end(self, batch, logs=None):
+    def on_predict_batch_end(self, batch, logs=None):
         t = timeit.default_timer() - self._timer
         self._batch_times.append(t)
+        outputs = logs.get('outputs', np.empty((1,)))
+        if isinstance(self.model.output_shape, list):
+            outputs = outputs[0]
+        self._samples_seen += outputs.shape[0]
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_predict_end(self, logs=None):
         avg = np.mean(self._batch_times)
         std = np.std(self._batch_times)
-        print('Epoch %05d: average batch inference speed: %0.5fs ± %0.5fs.' %
-              (epoch + 1, avg, std))
+        print('Average inference speed for %s samples: %0.5fs ± %0.5fs.' %
+              (self._samples_seen, avg, std))
+
+    def on_epoch_end(self, epoch, logs=None):
+        shape = tuple([samples] + list(self.model.input_shape[1:]))
+        test_batch = np.random.random(shape)
+        self.model.predict(test_batch, callbacks=self, batch_size=batch_size)
