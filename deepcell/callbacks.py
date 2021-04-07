@@ -31,6 +31,8 @@ from __future__ import division
 
 import timeit
 
+import numpy as np
+
 import tensorflow as tf
 from tensorflow.keras import backend as K
 
@@ -58,5 +60,5 @@ class InferenceTimer(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         avg = np.mean(self._batch_times)
         std = np.std(self._batch_times)
-        print('Finished epoch {} with an average speed of {}s ± {}s.'.format(
-            epoch, avg, std))
+        print('Epoch %05d: average batch inference speed: %0.5fs ± %0.5fs.' %
+              (epoch + 1, avg, std))
