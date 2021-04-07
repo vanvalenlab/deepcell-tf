@@ -71,4 +71,4 @@ class InferenceTimer(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         shape = tuple([self._samples] + list(self.model.input_shape[1:]))
         test_batch = np.random.random(shape)
-        self.model.predict(test_batch, callbacks=self, batch_size=batch_size)
+        self.model.predict(test_batch, callbacks=self)
