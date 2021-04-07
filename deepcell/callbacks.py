@@ -23,37 +23,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Package for single cell image segmentation with convolutional neural networks"""
+"""Custom Callbacks for DeepCell"""
 
 from __future__ import absolute_import
-from __future__ import division
 from __future__ import print_function
+from __future__ import division
 
-from deepcell._version import __version__
+import timeit
 
-from deepcell import applications
-from deepcell import callbacks
-from deepcell import datasets
-from deepcell import layers
-from deepcell import losses
-from deepcell import image_generators
-from deepcell import model_zoo
-from deepcell import running
-from deepcell import tracking
-from deepcell import training
-from deepcell import utils
-from deepcell import metrics
+import tensorflow as tf
+from tensorflow.keras import backend as K
 
-from deepcell.layers import *
-from deepcell.image_generators import *
-from deepcell.model_zoo import *
-from deepcell.running import get_cropped_input_shape
-from deepcell.running import process_whole_image
-from deepcell.training import train_model_conv
-from deepcell.training import train_model_sample
-from deepcell.training import train_model_siamese_daughter
-from deepcell.utils import *
 
-del absolute_import
-del division
-del print_function
+class InferenceTimer(tf.keras.callbacks.Callback):
+    """Callback to log inference speed per epoch."""
+
+    def __init__(self, batch_size):
+        super(InferenceTimer, self).__init__()
+        self.batch_size = int(batch_size)
+        self._batch_times = []
+        self._timer = None
+        # best_weights to store the weights at which the minimum loss occurs.
+        self.best_weights = None
+
+    def on_epoch_begin(self, epoch, logs=None):
+        self._batch_times = []
+
+    def on_train_batch_begin(self, batch, logs=None):
+        self._timer = timeit.default_timer()
+
+    def on_train_batch_end(self, batch, logs=None):
+        t = timeit.default_timer() - self._timer
+        self._batch_times.append(t)
+
+    def on_epoch_end(self, epoch, logs=None):
+        avg = np.mean(self._batch_times)
+        std = np.std(self._batch_times)
+        print('Finished epoch {} with an average speed of {}s ± {}s.'.format(
+            epoch, avg, std)
