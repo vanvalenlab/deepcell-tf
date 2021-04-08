@@ -23,37 +23,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Package for single cell image segmentation with convolutional neural networks"""
+"""Custom Callbacks for DeepCell"""
 
 from __future__ import absolute_import
-from __future__ import division
 from __future__ import print_function
+from __future__ import division
 
-from deepcell._version import __version__
+import sys
 
-from deepcell import applications
+import tensorflow as tf
+from tensorflow.python.keras import keras_parameterized
+from tensorflow.python.keras import testing_utils
+from tensorflow.python.framework import test_util as tf_test_util
+
 from deepcell import callbacks
-from deepcell import datasets
-from deepcell import layers
-from deepcell import losses
-from deepcell import image_generators
-from deepcell import model_zoo
-from deepcell import running
-from deepcell import tracking
-from deepcell import training
-from deepcell import utils
-from deepcell import metrics
 
-from deepcell.layers import *
-from deepcell.image_generators import *
-from deepcell.model_zoo import *
-from deepcell.running import get_cropped_input_shape
-from deepcell.running import process_whole_image
-from deepcell.training import train_model_conv
-from deepcell.training import train_model_sample
-from deepcell.training import train_model_siamese_daughter
-from deepcell.utils import *
 
-del absolute_import
-del division
-del print_function
+class TestInferenceTimer(keras_parameterized.TestCase):
+    """Callback to log inference speed per epoch."""
+
+    @keras_parameterized.run_all_keras_modes
+    def test_inference_time_logging(self):
+        model = tf.keras.models.Sequential()
+        model.add(tf.keras.layers.Dense(1))
+        model.compile(
+            'sgd',
+            loss='mse',
+            run_eagerly=testing_utils.should_run_eagerly())
+
+        x = tf.ones((200, 3))
+        y = tf.zeros((200, 2))
+        dataset = tf.data.Dataset.from_tensor_slices((x, y)).batch(10)
+        expected_log = r'(.*Average inference.*)+'
+
+        cbks = [callbacks.InferenceTimer()]
+
+        with self.captureWritesToStream(sys.stdout) as printed:
+            y = model.call(x)
+            model.fit(dataset, epochs=2, steps_per_epoch=10, callbacks=cbks)
+            self.assertRegex(printed.contents(), expected_log)
