@@ -146,7 +146,7 @@ class TrackingDatasetBuilder(object):
                                     maxval=max_time,
                                     dtype=tf.int32)[0]
 
-        for key in X_dict.keys():
+        for key in X_dict:
             data = X_dict[key]
             if 'adj' not in key:
                 sampled_data = data[:, t_start:t_start + self.track_length, ...]
