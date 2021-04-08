@@ -51,20 +51,28 @@ class TrackingDatasetBuilder(object):
         self.track_length = track_length
 
         # Create max_nodes and max_frames
-        self._create_max_sizes()
+        self.max_nodes, self.max_frames = self._get_max_sizes()
 
         # Load tracks
-        self._load_tracks()
+        track_info = self._load_tracks()
+        self.appearances = track_info['appearances']
+        self.centroids = track_info['centroids']
+        self.morphologies = track_info['morphologies']
+        self.adj_matrices = track_info['adj_matrices']
+        self.norm_adj_matrices = track_info['norm_adj_matrices']
+        self.temporal_adj_matrices = track_info['temporal_adj_matrices']
 
         # Create datasets
-        self._create_dataset()
+        self.dataset = self._create_dataset()
 
-    def _create_max_sizes(self):
+    def _get_max_sizes(self):
         n_nodes = [track.appearances.shape[1] for track in self.track_list]
-        self.max_nodes = max(n_nodes)
+        max_nodes = max(n_nodes)
 
         n_frames = [track.appearances.shape[2] for track in self.track_list]
-        self.max_frames = max(n_frames)
+        max_frames = max(n_frames)
+
+        return max_nodes, max_frames
 
     def _pad_array(self,
                    arr,
@@ -128,12 +136,15 @@ class TrackingDatasetBuilder(object):
             norm_adj_matrices.append(norm_adj)
             temporal_adj_matrices.append(temporal_adj)
 
-        self.appearances = np.concatenate(appearances, axis=0)
-        self.centroids = np.concatenate(centroids, axis=0)
-        self.morphologies = np.concatenate(morphologies, axis=0)
-        self.adj_matrices = np.concatenate(adj_matrices, axis=0)
-        self.norm_adj_matrices = np.concatenate(norm_adj_matrices, axis=0)
-        self.temporal_adj_matrices = np.concatenate(temporal_adj_matrices, axis=0)
+        track_info = {}
+        track_info['appearances'] = np.concatenate(appearances, axis=0)
+        track_info['centroids'] = np.concatenate(centroids, axis=0)
+        track_info['morphologies'] = np.concatenate(morphologies, axis=0)
+        track_info['adj_matrices'] = np.concatenate(adj_matrices, axis=0)
+        track_info['norm_adj_matrices'] = np.concatenate(norm_adj_matrices, axis=0)
+        track_info['temporal_adj_matrices'] = np.concatenate(temporal_adj_matrices, axis=0)
+
+        return track_info
 
     def _sample_time(self, *args):
         X_dict = args[0]
@@ -202,8 +213,9 @@ class TrackingDatasetBuilder(object):
                       'adj_matrices': self.norm_adj_matrices}
         output_dict = {'temporal_adj_matrices': self.temporal_adj_matrices}
         dataset = tf.data.Dataset.from_tensor_slices((input_dict, output_dict))
-        self.dataset = dataset.shuffle(256).repeat().map(self._sample_time).map(self._augment).batch(self.batch_size)
+        dataset = dataset.shuffle(256).repeat().map(self._sample_time).map(self._augment).batch(self.batch_size)
 
+        return dataset
 
 # TODO: Include a split dataset utils module when ready
 # TODO: the train/test/val split should be addressed
