@@ -32,14 +32,14 @@ import tensorflow as tf
 from tensorflow.keras.layers import Layer
 
 
-class TempMerge(Layer):
+class TemporalMerge(Layer):
     """Layer for merging the time dimension of a Tensor.
 
     Args:
         encoder_dim (int): desired encoder dimension.
     """
     def __init__(self, encoder_dim=64, **kwargs):
-        super(TempMerge, self).__init__(**kwargs)
+        super(TemporalMerge, self).__init__(**kwargs)
         self.encoder_dim = encoder_dim
 
     def call(self, inputs):
@@ -49,14 +49,14 @@ class TempMerge(Layer):
         return tf.reshape(a, new_shape)
 
 
-class TempUnmerge(Layer):
+class TemporalUnmerge(Layer):
     """Layer for unmerging the time dimension of a Tensor.
 
     Args:
         encoder_dim (int): desired encoder dimension.
     """
     def __init__(self, encoder_dim=64, **kwargs):
-        super(TempUnmerge, self).__init__(**kwargs)
+        super(TemporalUnmerge, self).__init__(**kwargs)
         self.encoder_dim = encoder_dim
 
     def call(self, inputs):

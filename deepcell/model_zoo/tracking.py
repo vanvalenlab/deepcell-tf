@@ -45,7 +45,7 @@ from tensorflow.keras.layers import BatchNormalization, Lambda
 from tensorflow.keras.regularizers import l2
 
 from deepcell.layers import ImageNormalization2D
-from deepcell.layers import TempMerge, TempUnmerge
+from deepcell.layers import TemporalMerge, TemporalUnmerge
 
 from spektral.layers import GCSConv
 # from spektral.layers import GCNConv, GATConv
@@ -288,9 +288,9 @@ class GNNTrackingModel(object):
 
         if merge_type == 'lstm':
             x = inputs
-            x = TempMerge(name='merge_emb_tm')([x, inputs])
+            x = TemporalMerge(name='merge_emb_tm')([x, inputs])
             x = LSTM(self.encoder_dim, return_sequences=True, name='lstm_tm')(x)
-            x = TempUnmerge(name='unmerge_emb_tm')([x, inputs])
+            x = TemporalUnmerge(name='unmerge_emb_tm')([x, inputs])
 
         elif merge_type == 'cnn':
             x = inputs
@@ -311,9 +311,9 @@ class GNNTrackingModel(object):
 
         if merge_type == 'lstm':
             x = inputs
-            x = TempMerge(name='merge_delta_tm')([x, inputs])
+            x = TemporalMerge(name='merge_delta_tm')([x, inputs])
             x = LSTM(self.encoder_dim, return_sequences=True, name='lstm_delta')(x)
-            x = TempUnmerge(name='unmerge_delta_tm')([x, inputs])
+            x = TemporalUnmerge(name='unmerge_delta_tm')([x, inputs])
 
         elif merge_type == 'cnn':
             x = inputs
