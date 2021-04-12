@@ -148,7 +148,7 @@ def qt_transform(X):
     return np.array(transformed_data)
 
 
-def normalize_mibi_data(tmp_mibi_data, marker_idx_dict):
+def normalize_mibi_data(tmp_mibi_data):#, marker_idx_dict):
     """Normalize mibi data by applying a gaussian smothing on the raw data
        removing bottom 5% of labels and breaking remaining values into quantiles
 

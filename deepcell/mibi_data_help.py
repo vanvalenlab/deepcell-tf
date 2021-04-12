@@ -211,12 +211,9 @@ def create_cell_tf_dataset(multiplex_image,
         multiplex_val, lb_val = reshape_matrix(multiplex_val, label_val, reshape_size)
         celltype_val, label_val = reshape_matrix(celltype_val, label_val, reshape_size)
 
-
-
     train_adjacency_matrix, train_normalized_adjacency_matrix, train_coords = create_adjacency_matrix(label_train)
     train_feature_matrix = create_feature_matrix(multiplex_train, label_train)
     train_celltype_matrix = create_celltype_matrix(celltype_train, label_train)
-
 
     val_adjacency_matrix, val_normalized_adjacency_matrix, val_coords = create_adjacency_matrix(label_val)
     val_feature_matrix = create_feature_matrix(multiplex_val, label_val)
@@ -261,7 +258,7 @@ def create_cell_tf_dataset(multiplex_image,
         val_dataset = tf.data.Dataset.from_tensor_slices(
             ({'feature_matrix': val_feature_matrix,
               'adjacency_matrix': val_normalized_adjacency_matrix},
-             {'celltypes': val_celltype_matrix}))         
+             {'celltypes': val_celltype_matrix}))
 
     elif mode == 'GAE':
         train_dataset = tf.data.Dataset.from_tensor_slices(
@@ -272,7 +269,7 @@ def create_cell_tf_dataset(multiplex_image,
         val_dataset = tf.data.Dataset.from_tensor_slices(
             ({'feature_matrix': val_feature_matrix,
               'adjacency_matrix': val_normalized_adjacency_matrix},
-             {'decoded': val_adjacency_matrix}))        
+             {'decoded': val_adjacency_matrix}))     
 
     elif mode == 'GAE_FC':
         train_dataset = tf.data.Dataset.from_tensor_slices(
@@ -311,7 +308,10 @@ def create_cell_tf_dataset(multiplex_image,
 def create_adjacency_matrix(label_image):
     """docstring"""
     adjacency_matrix, centroid_matrix, _ = image_to_graph(label_image,
-                                                                     self_connection=True)
+                                                          self_connection=True)
+
+    print(adjacency_matrix.shape)
+    print(adjacency_matrix)
     adjacency_matrix.astype(np.float32)
     normalized_adjacency_matrix = normalize_adj(adjacency_matrix)
 

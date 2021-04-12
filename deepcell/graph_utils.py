@@ -58,7 +58,7 @@ def get_max_cells(label_image):
 
 
 def image_to_graph(label_image,
-                   distance_threshold=50,
+                   distance_threshold=0.5,
                    self_connection=True):
     """Convert a label image to a graph
 
@@ -72,12 +72,11 @@ def image_to_graph(label_image,
     Returns:
         np.array: The adjacency matrix for the graph
     """
-
     # label image (batch, x, y, 1)
     # adjacency matrix (batch, Max cells, Max cells)
 
     # Remove singleton dimension (batch, num_pix_x, num_pix_y)
-    label_image = np.squeeze(label_image)
+    label_image = np.squeeze(label_image, axis=-1)
 
     # Find out the maximum numbers of cells
     max_cells = get_max_cells(label_image)
@@ -95,9 +94,11 @@ def image_to_graph(label_image,
         labels = props['label']
         distances = cdist(centroids, centroids, metric='euclidean')
 
+        threshold = distances.mean()*distance_threshold
+
         adjacency_matrix[batch,
                          0:distances.shape[0],
-                         0:distances.shape[1]] = distances < distance_threshold
+                         0:distances.shape[1]] = distances < threshold
 
         if not self_connection:
             adjacency_matrix[batch,
@@ -110,7 +111,7 @@ def image_to_graph(label_image,
     return adjacency_matrix, centroid_matrix, label_matrix
 
 
-def get_cell_features(image, label_image):
+def get_cell_features(label_image, image):
     """Extract feature vectors from cells in multiplexed imaging data
 
     Args:
@@ -119,7 +120,7 @@ def get_cell_features(image, label_image):
             unique integer id
 
     Raises:
-        ValueError: if image and label_image bach does not match
+        ValueError: if image and label_image batch size does not match
 
     Returns:
         np.array: matrix consisting of feature vectors for each cell
@@ -184,7 +185,7 @@ def get_celltypes(label_image, celltype_image):
     for batch in range(label_image.shape[0]):
         label_image_batch = np.squeeze(label_image[batch])
         celltype_image_batch = np.squeeze(celltype_image[batch])
-    
+
         props = regionprops_table(label_image_batch,
                                   properties=['coords', 'label'])
 
@@ -208,6 +209,8 @@ def adj_to_degree(adj, power=-0.5, epsilon=1e-5):
     Returns:
         np.array: Degree matrix raised to a given power
     """
+    if not isinstance(adj, sp.csr.csr_matrix):
+        adj = sp.csr.csr_matrix(adj)
 
     # adj is (batch, row, col)
     degrees = np.sum(adj, axis=1)  # this should be (batch, col)

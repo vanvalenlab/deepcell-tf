@@ -74,66 +74,174 @@ def test_max_cell():
         np.int: The maximum number of cells in a single batch of the
             label image
     """
+   # create a test label image
     x = np.zeros((8, 8))
+    x[0, 0] = 1
+    x[7, 7] = 2
+    x[7, 0] = 5
+    x[4, 5] = 6
+    x[0, 7] = 10
+    
+    # add a batch and a value dim (batch, img_dim, img_dim, 1)
+    x = np.expand_dims(x,axis=0)
+    x = np.expand_dims(x,axis=-1)
 
+    assert graph_utils.get_max_cells(x) == 5
+
+
+def test_image_to_graph():
+    """Test the conversion a label image to a graph"""  
+
+    # create a test label image
+    x = np.zeros((8, 8))
     x[0, 0] = 1
     x[7, 7] = 2
     x[7, 0] = 5
     x[4, 5] = 6
     x[0, 7] = 10
 
+    # add a batch and a value dim
+    # x dims are (batch, img_dim, img_dim, 1)
     x = np.expand_dims(x,axis=0)
-    x = np.expand_dims(x,axis=-1)
+    x = np.expand_dims(x,axis=-1).astype('int')
 
-    assert get_max_cells(x) == 5 
-    
+    # define the true centriods based on x
+    true_centroids = np.array([[0,0], [7,7], [7,0], [4,5], [0,7]])
+
+    # define the true labels based on x
+    true_labels = np.array([1,2,5,6,10])
+
+    # test that NO connections are made when threshold = 0
+    adj_mat, centriod_mat, label_mat = graph_utils.image_to_graph(x,
+                                                                  distance_threshold=0.01,
+                                                                  self_connection=True)
+    assert np.sum(adj_mat) == 5
+    assert (true_centroids == centriod_mat).all()
+    assert (true_labels == label_mat).all()
+
+    # test that there are 5 connections when threshold = 
+    adj_mat, centriod_mat, label_mat = graph_utils.image_to_graph(x,
+                                                                  distance_threshold=0.7,
+                                                                  self_connection=True)
+    assert np.sum(adj_mat) == 7.0
+    assert (true_centroids == centriod_mat).all()
+    assert (true_labels == label_mat).all()
+
+    # test that graph is fully connected when threshold = 
+    adj_mat, centriod_mat, label_mat = graph_utils.image_to_graph(x,
+                                                                  distance_threshold=2.0,
+                                                                  self_connection=True)
+    assert np.sum(adj_mat) == 25.0
+    assert (true_centroids == centriod_mat).all()
+    assert (true_labels == label_mat).all()
+
+    # test that NO connections are made when threshold = 0
+    adj_mat, centriod_mat, label_mat = graph_utils.image_to_graph(x,
+                                                                  distance_threshold=0.01,
+                                                                  self_connection=False)
+    assert np.sum(adj_mat) == 0
+    assert (true_centroids == centriod_mat).all()
+    assert (true_labels == label_mat).all()
+
+    # test that there are 5 connections when threshold = 
+    adj_mat, centriod_mat, label_mat = graph_utils.image_to_graph(x,
+                                                                  distance_threshold=0.7,
+                                                                  self_connection=False)
+    assert np.sum(adj_mat) == 2.0
+    assert (true_centroids == centriod_mat).all()
+    assert (true_labels == label_mat).all()
+
+    # test that graph is fully connected when threshold = 
+    adj_mat, centriod_mat, label_mat = graph_utils.image_to_graph(x,
+                                                                  distance_threshold=2.0,
+                                                                  self_connection=False)
+    assert np.sum(adj_mat) == 20.0
+    assert (true_centroids == centriod_mat).all()
+    assert (true_labels == label_mat).all()
 
 
-def test_image_to_graph(label_image,
-                        distance_threshold=50,
-                        self_connection=True):
-    """Convert a label image to a graph
+def test_get_cell_features():
+    """Test the extraction of feature vectors from cells in multiplexed imaging data"""
 
-    Args:
-        label_image (int): Label image where every cell has been given a
-            unique integer id
-        distance_threshold (float): Connect two cells with an edge if their
-            centroids are closer than distance_threshold pixels
+    # create a test label image
+    x = np.zeros((8, 8))
+    x[0, 0] = 1
+    x[7, 7] = 2
+    x[7, 0] = 5
+    x[4, 5] = 6
+    x[0, 7] = 10
 
-    Returns:
-        np.array: The adjacency matrix for the graph
-    """
+    # add a batch and a value dim
+    # x dims are (batch, img_dim, img_dim, 1)
+    x = np.expand_dims(x,axis=0)
+    x = np.expand_dims(x,axis=-1).astype('int')
+
+    # create test image data
+    y = [[2, 0, 1, 5, 3, 4, 0, 7],
+         [6, 8, 3, 0, 7, 6, 2, 1],
+         [6, 6, 5, 9, 5, 2, 2, 8],
+         [5, 0, 1, 8, 6, 8, 5, 4],
+         [7, 1, 0, 1, 1, 0, 0, 3],
+         [5, 6, 9, 6, 0, 6, 6, 7],
+         [8, 2, 0, 8, 4, 0, 5, 5],
+         [8, 6, 3, 7, 2, 4, 6, 7]]
+
+    # conver to numpy array
+    y = np.array(y)
+
+    # add a batch and a value dim
+    # x dims are (batch, img_dim, img_dim, 1)
+    y = np.expand_dims(y,axis=0)
+    y = np.expand_dims(y,axis=-1)
+
+    true_features = np.array([[2], [7], [8], [0], [7]])
+
+    feature_matrix = graph_utils.get_cell_features(x, y)
+
+    assert (true_features == feature_matrix).all()
 
 
-def test_get_cell_features(image, label_image):
-    """Extract feature vectors from cells in multiplexed imaging data
-
-    Args:
-        image (float): Multiplexed imaging dataset
-        label_image (int): Label image where every cell has been given a
-            unique integer id
-
-    Returns:
-        np.array (float): Feature matrix consisting of feature vectors
-            for each cell
-
-    """
-
-
-def test_get_celltypes(label_image, celltype_image):
-    """Query cell type image with a given label image and get cell
+def test_get_celltypes():
+    """test the function for querying cell type image with a given label image and get cell
     type for each cell
-
-    Args:
-        label_image (np.array): Label image where every cell has been given a
-            unique integer id
-        cell_type_image (np.arry: Image where pixels belonging to each cell
-            are given an integer id specifying cell type
-
-    Returns:
-        np.array (float): Cell type matrix consisting of cell types for
-            each cell
     """
+    # create a test label image
+    x = np.zeros((8, 8))
+    x[0, 0] = 1
+    x[7, 7] = 2
+    x[7, 0] = 5
+    x[4, 5] = 6
+    x[4, 4] = 6
+    x[0, 7] = 10
+    x[1, 7] = 10
+    x[0, 6] = 10
+    x[1, 6] = 10
+
+    # add a batch and a value dim
+    # x dims are (batch, img_dim, img_dim, 1)
+    x = np.expand_dims(x,axis=0)
+    x = np.expand_dims(x,axis=-1).astype('int')
+
+    y = [[2, 2, 0, 2, 1, 1, 1, 1],
+        [0, 2, 0, 0, 2, 1, 2, 1],
+        [1, 2, 1, 1, 2, 1, 2, 2],
+        [2, 1, 0, 1, 0, 0, 2, 2],
+        [0, 1, 0, 0, 0, 0, 2, 0],
+        [1, 0, 0, 0, 1, 0, 2, 1],
+        [0, 1, 0, 2, 2, 1, 0, 2],
+        [0, 0, 2, 2, 0, 1, 1, 2]]
+
+    y = np.array(y)
+
+    y = np.expand_dims(y,axis=0)
+    y = np.expand_dims(y,axis=-1)
+
+    # true cell types
+    true_celltypes = np.array([2., 2., 0., 0., 1.])
+
+    celltype_matrix = graph_utils.get_celltypes(x, y)
+
+    assert (true_celltypes == celltype_matrix).all()
 
 def test_adj_to_degree(adj, power=-0.5, epsilon=1e-5):
     """ Convert adjacency matrix to degree matrix
