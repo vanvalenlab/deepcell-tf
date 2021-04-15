@@ -6,7 +6,6 @@ ARG TF_VERSION=2.4.1-gpu
 FROM tensorflow/tensorflow:${TF_VERSION}
 
 # System maintenance
-# System maintenance
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     python3-tk \
     graphviz \
