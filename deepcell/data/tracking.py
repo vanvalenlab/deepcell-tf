@@ -113,9 +113,12 @@ def prepare_dataset(track_info, batch_size=32, buffer_size=256,
     """Build and prepare the tracking dataset.
 
     Args:
-        batch_size (int):
-        buffer_size (int):
-        seed (int):
+        track_info (dict): A dicitonary of all input and output features
+        batch_size (int): number of examples per batch
+        buffer_size (int): number of samples to buffer
+        seed (int): Random seed
+        track_length (int): Number of frames per example
+        rotation_range (int): Maximum degrees to rotate inputs
 
     Returns:
         tf.data.Dataset: A ``tf.data.Dataset`` object ready for training.
@@ -129,7 +132,6 @@ def prepare_dataset(track_info, batch_size=32, buffer_size=256,
 
     output_dict = {'temporal_adj_matrices': track_info['temporal_adj_matrices']}
 
-    # TODO: Include a split dataset utils module when ready
     # TODO: the train/test/val split should be addressed
 
     dataset = tf.data.Dataset.from_tensor_slices((input_dict, output_dict))
