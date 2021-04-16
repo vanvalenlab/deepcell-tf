@@ -118,13 +118,13 @@ class TrackingDatasetBuilder(object):
             app = self._pad_array(track.appearances)
             cent = self._pad_array(track.centroids)
             morph = self._pad_array(track.morphologies)
-            adj = self._pad_array(track.adj_matrix,
+            adj = self._pad_array(track.adj_matrices,
                                   node_axes=[1, 2],
                                   time_axes=[3])
-            norm_adj = self._pad_array(track.norm_adj_matrix,
+            norm_adj = self._pad_array(track.norm_adj_matrices,
                                        node_axes=[1, 2],
                                        time_axes=[3])
-            temporal_adj = self._pad_array(track.temporal_adj_matrix,
+            temporal_adj = self._pad_array(track.temporal_adj_matrices,
                                            temporal_adj=True,
                                            node_axes=[1, 2],
                                            time_axes=[3])
