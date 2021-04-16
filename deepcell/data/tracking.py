@@ -55,14 +55,16 @@ def temporal_slice(X, y, track_length=8):
                                 maxval=max_time,
                                 dtype=tf.int32)
 
+    t_end = t_start + track_length
+
     for key in X:
         if 'adj' not in key:
-            X[key] = X[key][:, t_start:t_start + track_length, ...]
+            X[key] = X[key][:, t_start:t_end, ...]
         else:
-            X[key] = X[key][:, :, t_start:t_start + track_length]
+            X[key] = X[key][:, :, t_start:t_end]
 
     for key in y:
-        y[key] = y[key][:, :, t_start:t_start + track_length - 1, ...]
+        y[key] = y[key][:, :, t_start:t_end - 1, ...]
 
     return (X, y)
 
