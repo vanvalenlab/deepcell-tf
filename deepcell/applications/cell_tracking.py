@@ -139,8 +139,8 @@ class CellTracking(Application):
         image_norm = normalize(image)
 
         cell_tracker = deepcell_tracking.CellTracker(
-            image_norm, labels,
-            self.model, self.neighborhood_encoder,
+            image_norm, labels, self.model,
+            neighborhood_encoder=self.neighborhood_encoder,
             distance_threshold=self.distance_threshold,
             track_length=self.track_length,
             birth=self.birth, death=self.death,
