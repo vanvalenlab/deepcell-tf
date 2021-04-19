@@ -29,8 +29,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.data import tracking
-
 
 def split_dataset(dataset, validation_data_fraction):
     """
@@ -57,6 +55,9 @@ def split_dataset(dataset, validation_data_fraction):
     train_dataset = train_dataset.map(lambda f, data: data)
     validation_dataset = validation_dataset.map(lambda f, data: data)
     return train_dataset, validation_dataset
+
+
+from deepcell.data import tracking
 
 
 del absolute_import

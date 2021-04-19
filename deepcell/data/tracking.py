@@ -35,6 +35,8 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
 
+from deepcell.data import split_dataset
+
 
 def temporal_slice(X, y, track_length=8):
     """Randomly slice movies and labels with a length of ``track_length``.
@@ -57,19 +59,19 @@ def temporal_slice(X, y, track_length=8):
 
     t_end = t_start + track_length
 
-    for key in X:
+    for key, data in X.items():
         if 'adj' not in key:
-            X[key] = X[key][:, t_start:t_end, ...]
+            X[key] = data[:, t_start:t_end, ...]
         else:
-            X[key] = X[key][:, :, t_start:t_end]
+            X[key] = data[:, :, t_start:t_end]
 
-    for key in y:
-        y[key] = y[key][:, :, t_start:t_end - 1, ...]
+    for key, data in y.items():
+        y[key] = data[:, :, t_start:t_end - 1, ...]
 
     return (X, y)
 
 
-def random_rotate(X, rotation_range=0):
+def random_rotate(X, y, rotation_range=0):
     """Randomly rotate centroids and appearances.
 
     Args:
@@ -107,11 +109,12 @@ def random_rotate(X, rotation_range=0):
     transformed_centroids = transformed_centroids + r0
     X['centroids'] = transformed_centroids
 
-    return X
+    return X, y
 
 
 def prepare_dataset(track_info, batch_size=32, buffer_size=256,
-                    seed=None, track_length=8, rotation_range=0):
+                    seed=None, track_length=8, rotation_range=0,
+                    val_split=0.2):
     """Build and prepare the tracking dataset.
 
     Args:
@@ -134,21 +137,27 @@ def prepare_dataset(track_info, batch_size=32, buffer_size=256,
 
     output_dict = {'temporal_adj_matrices': track_info['temporal_adj_matrices']}
 
-    # TODO: the train/test/val split should be addressed
-
     dataset = tf.data.Dataset.from_tensor_slices((input_dict, output_dict))
 
-    dataset = dataset.shuffle(buffer_size, seed).repeat()
+    dataset = dataset.shuffle(buffer_size, seed=seed).repeat()
 
     # randomly sample along the temporal axis
     sample = lambda X, y: temporal_slice(X, y, track_length=track_length)
-    dataset = dataset.map(sample)
+    dataset = dataset.map(sample, num_parallel_calls=tf.data.AUTOTUNE)
+
+    # split into train/val before doing any augmentation
+    train_data, val_data = split_dataset(dataset, val_split)
 
     # randomly rotate
-    rotate = lambda X, y: (random_rotate(X, rotation_range=rotation_range), y)
-    dataset = dataset.map(rotate)
+    rotate = lambda X, y: random_rotate(X, y, rotation_range=rotation_range)
+    train_data = train_data.map(rotate, num_parallel_calls=tf.data.AUTOTUNE)
 
     # batch the data
-    dataset = dataset.batch(batch_size)
+    train_data = train_data.batch(batch_size)
+    val_data = val_data.batch(batch_size)
 
-    return dataset
+    # prefetch the data
+    train_data = train_data.prefetch(tf.data.AUTOTUNE)
+    val_data = val_data.prefetch(tf.data.AUTOTUNE)
+
+    return train_data, val_data
