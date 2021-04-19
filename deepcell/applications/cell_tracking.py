@@ -143,6 +143,7 @@ class CellTracking(Application):
             neighborhood_encoder=self.neighborhood_encoder,
             distance_threshold=self.distance_threshold,
             track_length=self.track_length,
+            embedding_axis=self.embedding_axis,
             birth=self.birth, death=self.death,
             division=self.division)
 
