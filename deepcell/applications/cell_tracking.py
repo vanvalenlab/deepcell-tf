@@ -88,13 +88,15 @@ class CellTracking(Application):
                  birth=0.99,
                  death=0.99,
                  division=0.9,
-                 track_length=5):
+                 track_length=5,
+                 embedding_axis=0):
         self.neighborhood_encoder = neighborhood_encoder
         self.distance_threshold = distance_threshold
         self.birth = birth
         self.death = death
         self.division = division
         self.track_length = track_length
+        self.embedding_axis = embedding_axis
 
         tm = GNNTrackingModel()
 
