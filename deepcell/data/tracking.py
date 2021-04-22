@@ -50,8 +50,8 @@ def temporal_slice(X, y, track_length=8):
         tuple(dict, dict): Tuple of sliced ``X`` and ``y`` data.
     """
     # TODO: time axis may change! would be easier if it was always first.
-    appearnces = X['appearances']
-    max_time = tf.shape(appearnces)[1] - track_length
+    appearances = X['appearances']
+    max_time = tf.shape(appearances)[1] - track_length
 
     t_start = tf.random.uniform(shape=[], minval=0,
                                 maxval=max_time,
@@ -60,13 +60,10 @@ def temporal_slice(X, y, track_length=8):
     t_end = t_start + track_length
 
     for key, data in X.items():
-        if 'adj' not in key:
-            X[key] = data[:, t_start:t_end, ...]
-        else:
-            X[key] = data[:, :, t_start:t_end]
+        X[key] = data[t_start:t_end]
 
     for key, data in y.items():
-        y[key] = data[:, :, t_start:t_end - 1, ...]
+        y[key] = data[t_start:t_end - 1]
 
     return (X, y)
 
@@ -89,6 +86,7 @@ def random_rotate(X, y, rotation_range=0):
     theta = tf.random.uniform(shape=[1], minval=-rg, maxval=rg)
 
     # Transform appearances
+    # TODO: what is being reshaped here? How to convert to time-first?
     old_shape = tf.shape(appearances)
     new_shape = [-1, old_shape[2], old_shape[3], old_shape[4]]
     img = tf.reshape(appearances, new_shape)
