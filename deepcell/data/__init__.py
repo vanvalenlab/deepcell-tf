@@ -39,7 +39,7 @@ def split_dataset(dataset, validation_data_fraction):
         dataset (tf.data.Dataset): the input dataset to split.
         validation_data_fraction (float): the fraction of the validation data
             between 0 and 1.
-    
+
     Returns:
         (tf.data.Dataset, tf.data.Dataset): a tuple of (training, validation).
     """
