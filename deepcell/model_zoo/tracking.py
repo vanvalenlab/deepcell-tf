@@ -235,6 +235,7 @@ class GNNTrackingModel(object):
         self.time_window = time_window
         self.max_cells = max_cells
         self.track_length = track_length
+
         # Use inputs to build expected shapes
         self.appearance_shape = (self.track_length, self.max_cells, 32, 32, 1)
         self.morphology_shape = (self.track_length, self.max_cells, 3)
@@ -264,13 +265,12 @@ class GNNTrackingModel(object):
     def _comparison(self, args):
         x = args[0]
         y = args[1]
-        # TODO: which axes are these?
-        x = tf.expand_dims(x, 2)
-        multiples = [1, 1, tf.shape(y)[1], 1, 1]
+        x = tf.expand_dims(x, 3)
+        multiples = [1, 1, 1, tf.shape(y)[2], 1]
         x = tf.tile(x, multiples)
 
-        y = tf.expand_dims(y, 1)
-        multiples = [1, tf.shape(x)[1], 1, 1, 1]
+        y = tf.expand_dims(y, 2)
+        multiples = [1, 1, tf.shape(x)[2], 1, 1]
         y = tf.tile(y, multiples)
 
         return tf.concat([x, y], axis=-1)
@@ -278,8 +278,7 @@ class GNNTrackingModel(object):
     def _delta_reshape(self, args):
         c = args[0]
         f = args[1]
-        # TODO: which axes are these?
-        multiples = [1, 1, tf.shape(f)[1], 1, 1]
+        multiples = [1, 1, tf.shape(f)[2], 1, 1]
         output = tf.tile(c, multiples)
         return output
 
@@ -395,8 +394,7 @@ class GNNTrackingModel(object):
                      self.appearance_shape[2],
                      self.appearance_shape[3],
                      self.appearance_shape[4]]
-        inputs = Input(shape=app_shape,
-                       name='encoder_app_input')
+        inputs = Input(shape=app_shape, name='encoder_app_input')
 
         x = inputs
         x = TimeDistributed(ImageNormalization2D(norm_method='whole_image',
@@ -411,7 +409,6 @@ class GNNTrackingModel(object):
             x = BatchNormalization(axis=-1, name='bn_ae{}'.format(i))(x)
             x = Activation('relu', name='relu_ae{}'.format(i))(x)
             x = MaxPool3D(pool_size=(1, 2, 2))(x)
-        # TODO: which axes are these?
         x = Lambda(lambda t: tf.squeeze(t, axis=(2, 3)))(x)
         x = Dense(self.encoder_dim, name='dense_aeout')(x)
         x = BatchNormalization(axis=-1, name='bn_aeout')(x)
@@ -420,11 +417,8 @@ class GNNTrackingModel(object):
 
     def get_morphology_encoder(self):
         morph_shape = [None, self.morphology_shape[2]]
-        inputs = Input(shape=morph_shape,
-                       name='encoder_morph_input')
-
+        inputs = Input(shape=morph_shape, name='encoder_morph_input')
         x = inputs
-
         x = Dense(self.encoder_dim, name='dense_me')(x)
         x = BatchNormalization(axis=-1, name='bn_me')(x)
         x = Activation('relu', name='morphology_embedding')(x)
@@ -432,14 +426,11 @@ class GNNTrackingModel(object):
 
     def get_centroid_encoder(self):
         centroid_shape = [None, self.centroid_shape[2]]
-        inputs = Input(shape=centroid_shape,
-                       name='encoder_centroid_input')
-
+        inputs = Input(shape=centroid_shape, name='encoder_centroid_input')
         x = inputs
         x = Dense(self.encoder_dim, name='dense_ce')(x)
         x = BatchNormalization(axis=-1, name='bn_ce')(x)
         x = Activation('relu', name='centroid_embedding')(x)
-
         return Model(inputs=inputs, outputs=x)
 
     def get_delta_encoders(self):
@@ -475,6 +466,7 @@ class GNNTrackingModel(object):
         app_features = self.appearance_encoder.output
         morph_features = self.morphology_encoder.output
         centroid_features = self.centroid_encoder.output
+
         adj = adj_input
 
         # Concatenate features
@@ -485,8 +477,8 @@ class GNNTrackingModel(object):
 
         # Apply graph convolution
         for i in range(self.n_layers):
-            node_features = GCSConv(self.n_filters,
-                                    activation=None, name='gcs{}'.format(i))([node_features, adj])
+            node_features = GCSConv(self.n_filters, activation=None,
+                                    name='gcs{}'.format(i))([node_features, adj])
             node_features = BatchNormalization(axis=-1,
                                                name='bn_ne{}'.format(i + 1))(node_features)
             node_features = Activation('relu', name='relu_ne{}'.format(i + 1))(node_features)
@@ -502,15 +494,14 @@ class GNNTrackingModel(object):
         return Model(inputs=inputs, outputs=outputs, name='neighborhood_encoder')
 
     def get_unmerge_embeddings_model(self):
-        inputs = Input(shape=(self.appearance_shape[0], self.embedding_dim),
+        inputs = Input(shape=(self.appearance_shape[1], self.embedding_dim),
                        name='unmerge_embeddings_input')
         x = inputs
         x = Lambda(self._unmerge_embeddings, name='unmerge_embeddings')(x)
-
         return Model(inputs=inputs, outputs=x, name='unmerge_embeddings_model')
 
     def get_unmerge_centroids_model(self):
-        inputs = Input(shape=(self.centroid_shape[0], self.centroid_shape[-1]),
+        inputs = Input(shape=(self.centroid_shape[1], self.centroid_shape[-1]),
                        name='unmerge_centroids_input')
         x = inputs
         x = Lambda(self._unmerge_centroids, name='unmerge_centroids')(x)
@@ -519,17 +510,16 @@ class GNNTrackingModel(object):
 
     def _get_deltas(self, x):
         """Convert raw positions to deltas"""
-        deltas = Lambda(lambda t: t[1:] - t[0:-1])(x)
-        deltas = Lambda(lambda t: tf.pad(t, tf.constant([[1, 0], [0, 0], [0, 0], [0, 0]])))(deltas)
+        deltas = Lambda(lambda t: t[:, 1:] - t[:, 0:-1])(x)
+        deltas = Lambda(lambda t: tf.pad(t, tf.constant([[0, 0], [1, 0], [0, 0], [0, 0]])))(deltas)
         return deltas
 
     def _get_deltas_across_frames(self, centroids):
         """Find deltas across frames"""
-        centroid_current = Lambda(lambda t: t[0:-1])(centroids)
-        centroid_future = Lambda(lambda t: t[1:])(centroids)
-        # TODO: which axes are these?
-        centroid_current = Lambda(lambda t: tf.expand_dims(t, 2))(centroid_current)
-        centroid_future = Lambda(lambda t: tf.expand_dims(t, 1))(centroid_future)
+        centroid_current = Lambda(lambda t: t[:, 0:-1])(centroids)
+        centroid_future = Lambda(lambda t: t[:, 1:])(centroids)
+        centroid_current = Lambda(lambda t: tf.expand_dims(t, 3))(centroid_current)
+        centroid_future = Lambda(lambda t: tf.expand_dims(t, 2))(centroid_future)
         deltas_across_frames = Subtract()([centroid_future, centroid_current])
         return deltas_across_frames
 
@@ -543,8 +533,8 @@ class GNNTrackingModel(object):
         centroids = self.unmerge_centroids_model(centroids)
 
         # Get current and future embeddings
-        x_current = Lambda(lambda t: t[0:-1])(x)
-        x_future = Lambda(lambda t: t[1:])(x)
+        x_current = Lambda(lambda t: t[:, 0:-1])(x)
+        x_future = Lambda(lambda t: t[:, 1:])(x)
 
         # Integrate temporal information for embeddings and compare
         x_current = self.embedding_temporal_merge_model(x_current)
@@ -560,9 +550,8 @@ class GNNTrackingModel(object):
         deltas_current = self.delta_encoder(deltas_current)
         deltas_future = self.delta_across_frames_encoder(deltas_future)
 
-        deltas_current = Lambda(lambda t: t[0:-1])(deltas_current)
+        deltas_current = Lambda(lambda t: t[:, 0:-1])(deltas_current)
         deltas_current = self.delta_temporal_merge_model(deltas_current)
-        # TODO: which axes are these?
         deltas_current = Lambda(lambda t: tf.expand_dims(t, 2))(deltas_current)
         multiples = [1, 1, self.centroid_shape[1], 1, 1]
         deltas_current = Lambda(lambda t: tf.tile(t, multiples))(deltas_current)
@@ -591,7 +580,7 @@ class GNNTrackingModel(object):
         x_current = self.embedding_temporal_merge_model(current_embedding)
 
         # Embeddings - Get final frame from current track
-        x_current = Lambda(lambda t: t[-1:])(x_current)
+        x_current = Lambda(lambda t: t[:, -1:])(x_current)
 
         x = Lambda(self._comparison, name='inference_comparison')([x_current, future_embedding])
 
@@ -601,11 +590,10 @@ class GNNTrackingModel(object):
 
         deltas_current = self.delta_encoder(deltas_current)
         deltas_current = self.delta_temporal_merge_model(deltas_current)
-        deltas_current = Lambda(lambda t: t[-1:])(deltas_current)
+        deltas_current = Lambda(lambda t: t[:, -1:])(deltas_current)
 
         # Centroids - Get deltas across frames
-        centroid_current_end = Lambda(lambda t: t[-1:])(current_centroids)
-        # TODO: which axes are these?
+        centroid_current_end = Lambda(lambda t: t[:, -1:])(current_centroids)
         centroid_current_end = Lambda(lambda t: tf.expand_dims(t, 2))(centroid_current_end)
         centroid_future = Lambda(lambda t: tf.expand_dims(t, 1))(future_centroids)
         deltas_future = Subtract()([centroid_future, centroid_current_end])
@@ -654,6 +642,7 @@ class GNNTrackingModel(object):
         inference_inputs = self.inference_branch.input
 
         # Apply decoder
+        # tracking_decoder = TrackingDecoder()
         training_output = self.tracking_decoder(self.training_branch.output)
         inference_output = self.tracking_decoder(self.inference_branch.output)
 
