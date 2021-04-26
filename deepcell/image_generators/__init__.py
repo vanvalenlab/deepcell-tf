@@ -293,5 +293,11 @@ __all__ = [
     'SiameseDataGenerator',
     'SiameseIterator',
     'CroppingDataGenerator',
-    'CroppingIterator'
+    'CroppingIterator',
+    'SemanticIterator',
+    'SemanticDataGenerator',
+    'SemanticMovieIterator',
+    'SemanticMovieGenerator',
+    'Semantic3DIterator',
+    'Semantic3DGenerator',
 ]
