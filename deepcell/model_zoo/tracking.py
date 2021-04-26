@@ -642,7 +642,6 @@ class GNNTrackingModel(object):
         inference_inputs = self.inference_branch.input
 
         # Apply decoder
-        # tracking_decoder = TrackingDecoder()
         training_output = self.tracking_decoder(self.training_branch.output)
         inference_output = self.tracking_decoder(self.inference_branch.output)
 
