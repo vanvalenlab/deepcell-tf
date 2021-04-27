@@ -594,13 +594,13 @@ class GNNTrackingModel(object):
 
         # Centroids - Get deltas across frames
         centroid_current_end = Lambda(lambda t: t[:, -1:])(current_centroids)
-        centroid_current_end = Lambda(lambda t: tf.expand_dims(t, 2))(centroid_current_end)
-        centroid_future = Lambda(lambda t: tf.expand_dims(t, 1))(future_centroids)
+        centroid_current_end = Lambda(lambda t: tf.expand_dims(t, 3))(centroid_current_end)
+        centroid_future = Lambda(lambda t: tf.expand_dims(t, 2))(future_centroids)
         deltas_future = Subtract()([centroid_future, centroid_current_end])
         deltas_future = Activation(tf.math.abs, name='act_df_ib')(deltas_future)
         deltas_future = self.delta_across_frames_encoder(deltas_future)
 
-        deltas_current = Lambda(lambda t: tf.expand_dims(t, 2))(deltas_current)
+        deltas_current = Lambda(lambda t: tf.expand_dims(t, 1))(deltas_current)
         deltas_current = Lambda(self._delta_reshape,
                                 name='delta_reshape')([deltas_current, future_centroids])
 
