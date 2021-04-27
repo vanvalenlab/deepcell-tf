@@ -294,7 +294,7 @@ class GNNTrackingModel(object):
 
         elif merge_type == 'cnn':
             x = inputs
-            x = Conv2D(self.encoder_dim, (1, self.time_window),
+            x = Conv2D(self.encoder_dim, (self.time_window, 1),
                        padding='SAME', name='conv2d_tm')(x)
             x = BatchNormalization(axis=-1, name='bn_tm')(x)
             x = Activation('relu', name='relu_tm')(x)
@@ -317,7 +317,7 @@ class GNNTrackingModel(object):
 
         elif merge_type == 'cnn':
             x = inputs
-            x = Conv2D(self.encoder_dim, (1, self.time_window),
+            x = Conv2D(self.encoder_dim, (self.time_window, 1),
                        padding='SAME', name='conv2d_delta')(x)
             x = BatchNormalization(axis=-1, name='bn_delta')(x)
             x = Activation('relu', name='relu_delta')(x)
