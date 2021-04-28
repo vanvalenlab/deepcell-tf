@@ -330,13 +330,11 @@ class GNNTrackingModel(object):
     def _unmerge_embeddings(self, x):
         new_shape = [-1, self.track_length, self.appearance_shape[1], self.embedding_dim]
         new_x = tf.reshape(x, new_shape)
-        # new_x = tf.transpose(new_x, perm=(0, 2, 1, 3))
         return new_x
 
     def _unmerge_centroids(self, x):
         new_shape = [-1, self.track_length, self.centroid_shape[1], self.centroid_shape[2]]
         new_x = tf.reshape(x, new_shape)
-        # new_x = tf.transpose(new_x, perm=(0, 2, 1, 3))
         return new_x
 
     def get_appearance_encoder(self):
