@@ -243,7 +243,6 @@ class GNNTrackingModel(object):
         self.adj_shape = (self.track_length, self.max_cells, self.max_cells)
 
         # Create encoders and decoders
-        self.reshape_model = self.get_reshape_model()
         self.unmerge_embeddings_model = self.get_unmerge_embeddings_model()
         self.unmerge_centroids_model = self.get_unmerge_centroids_model()
         self.embedding_temporal_merge_model = self.get_embedding_temporal_merge_model()
@@ -339,39 +338,6 @@ class GNNTrackingModel(object):
         new_x = tf.reshape(x, new_shape)
         # new_x = tf.transpose(new_x, perm=(0, 2, 1, 3))
         return new_x
-
-    def get_reshape_model(self):
-        # Define inputs
-        app_input = Input(shape=self.appearance_shape, name='appearances')
-        morph_input = Input(shape=self.morphology_shape, name='morphologies')
-        centroid_input = Input(shape=self.centroid_shape, name='centroids')
-        adj_input = Input(shape=self.adj_shape, name='adj_matrices')
-
-        inputs = [app_input, morph_input, centroid_input, adj_input]
-
-        # Merge batch and temporal dimensions
-        new_app_shape = tuple([-1] + list(self.appearance_shape)[1:])
-        reshaped_app_input = Lambda(lambda t: tf.reshape(t, new_app_shape),
-                                    name='reshaped_appearances')(app_input)
-
-        new_morph_shape = tuple([-1] + list(self.morphology_shape)[1:])
-        reshaped_morph_input = Lambda(lambda t: tf.reshape(t, new_morph_shape),
-                                      name='reshaped_morphologies')(morph_input)
-
-        new_centroid_shape = tuple([-1] + list(self.centroid_shape)[1:])
-        reshaped_centroid_input = Lambda(lambda t: tf.reshape(t, new_centroid_shape),
-                                         name='reshaped_centroids')(centroid_input)
-
-        new_adj_shape = [-1, self.adj_shape[1], self.adj_shape[2]]
-        reshaped_adj_input = Lambda(lambda t: tf.reshape(t, new_adj_shape),
-                                    name='reshaped_adj_matrices')(adj_input)
-
-        outputs = [reshaped_app_input,
-                   reshaped_morph_input,
-                   reshaped_centroid_input,
-                   reshaped_adj_input]
-
-        return Model(inputs=inputs, outputs=outputs)
 
     def get_appearance_encoder(self):
         app_shape = tuple([None] + list(self.appearance_shape)[2:])
@@ -505,9 +471,38 @@ class GNNTrackingModel(object):
         return deltas_across_frames
 
     def get_training_branch(self):
-        inputs = self.reshape_model.inputs
+        # Define inputs
+        app_input = Input(shape=self.appearance_shape, name='appearances')
+        morph_input = Input(shape=self.morphology_shape, name='morphologies')
+        centroid_input = Input(shape=self.centroid_shape, name='centroids')
+        adj_input = Input(shape=self.adj_shape, name='adj_matrices')
+        inputs = [app_input, morph_input, centroid_input, adj_input]
 
-        x, centroids = self.neighborhood_encoder(self.reshape_model.outputs)
+        # Merge batch and temporal dimensions
+        new_app_shape = tuple([-1] + list(self.appearance_shape)[1:])
+        reshaped_app_input = Lambda(lambda t: tf.reshape(t, new_app_shape),
+                                    name='reshaped_appearances')(app_input)
+
+        new_morph_shape = tuple([-1] + list(self.morphology_shape)[1:])
+        reshaped_morph_input = Lambda(lambda t: tf.reshape(t, new_morph_shape),
+                                      name='reshaped_{}')(morph_input)
+
+        new_centroid_shape = tuple([-1] + list(self.centroid_shape)[1:])
+        reshaped_centroid_input = Lambda(lambda t: tf.reshape(t, new_centroid_shape),
+                                         name='reshaped_centroids')(centroid_input)
+
+        new_adj_shape = [-1, self.adj_shape[1], self.adj_shape[2]]
+        reshaped_adj_input = Lambda(lambda t: tf.reshape(t, new_adj_shape),
+                                    name='reshaped_adj_matrices')(adj_input)
+        
+        reshaped_inputs = [
+            reshaped_app_input,
+            reshaped_morph_input,
+            reshaped_centroid_input,
+            reshaped_adj_input
+        ]
+
+        x, centroids = self.neighborhood_encoder(reshaped_inputs)
 
         # Reshape embeddings to add back temporal dimension
         x = self.unmerge_embeddings_model(x)
@@ -619,7 +614,7 @@ class GNNTrackingModel(object):
 
     def get_models(self):
         # Create inputs
-        training_inputs = self.reshape_model.input
+        training_inputs = self.training_branch.input
         inference_inputs = self.inference_branch.input
 
         # Apply decoder
