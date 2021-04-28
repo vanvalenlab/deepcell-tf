@@ -485,7 +485,7 @@ class GNNTrackingModel(object):
 
         new_morph_shape = tuple([-1] + list(self.morphology_shape)[1:])
         reshaped_morph_input = Lambda(lambda t: tf.reshape(t, new_morph_shape),
-                                      name='reshaped_{}')(morph_input)
+                                      name='reshaped_morphologies')(morph_input)
 
         new_centroid_shape = tuple([-1] + list(self.centroid_shape)[1:])
         reshaped_centroid_input = Lambda(lambda t: tf.reshape(t, new_centroid_shape),
