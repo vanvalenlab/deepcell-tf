@@ -548,7 +548,9 @@ class GNNTrackingModel(object):
                                  name='future_embeddings')
         future_centroids = Input(shape=(1, None, self.centroid_shape[-1]),
                                  name='future_centroids')
-        inputs = [current_embedding, current_centroids, future_embedding, future_centroids]
+
+        inputs = [current_embedding, current_centroids,
+                  future_embedding, future_centroids]
 
         # Embeddings - Integrate temporal information
         x_current = self.embedding_temporal_merge_model(current_embedding)
