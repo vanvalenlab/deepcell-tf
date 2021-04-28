@@ -494,7 +494,7 @@ class GNNTrackingModel(object):
         new_adj_shape = [-1, self.adj_shape[1], self.adj_shape[2]]
         reshaped_adj_input = Lambda(lambda t: tf.reshape(t, new_adj_shape),
                                     name='reshaped_adj_matrices')(adj_input)
-        
+
         reshaped_inputs = [
             reshaped_app_input,
             reshaped_morph_input,
