@@ -526,7 +526,7 @@ class GNNTrackingModel(object):
 
         deltas_current = Lambda(lambda t: t[:, 0:-1])(deltas_current)
         deltas_current = self.delta_temporal_merge_model(deltas_current)
-        deltas_current = Lambda(lambda t: tf.expand_dims(t, 2))(deltas_current)
+        deltas_current = Lambda(lambda t: tf.expand_dims(t, 3))(deltas_current)
         multiples = [1, 1, self.centroid_shape[1], 1, 1]
         deltas_current = Lambda(lambda t: tf.tile(t, multiples))(deltas_current)
 
