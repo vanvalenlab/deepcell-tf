@@ -207,6 +207,32 @@ def siamese_model(input_shape=None,
     return model
 
 
+class Comparison(tf.keras.layers.Layer):
+    def call(self, inputs):
+        x = inputs[0]
+        y = inputs[1]
+
+        x = tf.expand_dims(x, 3)
+        multiples = [1, 1, 1, tf.shape(y)[2], 1]
+        x = tf.tile(x, multiples)
+
+        y = tf.expand_dims(y, 2)
+        multiples = [1, 1, tf.shape(x)[2], 1, 1]
+        y = tf.tile(y, multiples)
+
+        return tf.concat([x, y], axis=-1)
+
+
+class DeltaReshape(tf.keras.layers.Layer):
+    def call(self, inputs):
+        current = inputs[0]
+        future = inputs[1]
+        current = tf.expand_dims(current, axis=3)
+        multiples = [1, 1, 1, tf.shape(future)[2], 1]
+        output = tf.tile(current, multiples)
+        return output
+
+
 class GNNTrackingModel(object):
     """Creates a tracking model based on Graph Neural Networks(GNNs).
 
@@ -260,26 +286,6 @@ class GNNTrackingModel(object):
 
         # Create model
         self.training_model, self.inference_model = self.get_models()
-
-    def _comparison(self, args):
-        x = args[0]
-        y = args[1]
-        x = tf.expand_dims(x, 3)
-        multiples = [1, 1, 1, tf.shape(y)[2], 1]
-        x = tf.tile(x, multiples)
-
-        y = tf.expand_dims(y, 2)
-        multiples = [1, 1, tf.shape(x)[2], 1, 1]
-        y = tf.tile(y, multiples)
-
-        return tf.concat([x, y], axis=-1)
-
-    def _delta_reshape(self, args):
-        c = args[0]
-        f = args[1]
-        multiples = [1, 1, tf.shape(f)[2], 1, 1]
-        output = tf.tile(c, multiples)
-        return output
 
     def get_embedding_temporal_merge_model(self, merge_type='cnn'):
         inputs = Input(shape=(None, None, self.encoder_dim),
@@ -512,7 +518,7 @@ class GNNTrackingModel(object):
 
         # Integrate temporal information for embeddings and compare
         x_current = self.embedding_temporal_merge_model(x_current)
-        x = Lambda(self._comparison, name='training_embedding_comparison')([x_current, x_future])
+        x = Comparison(name='training_embedding_comparison')([x_current, x_future])
 
         # Convert centroids to deltas
         deltas_current = self._get_deltas(centroids)
@@ -558,7 +564,7 @@ class GNNTrackingModel(object):
         # Embeddings - Get final frame from current track
         x_current = Lambda(lambda t: t[:, -1:])(x_current)
 
-        x = Lambda(self._comparison, name='inference_comparison')([x_current, future_embedding])
+        x = Comparison(name='inference_comparison')([x_current, future_embedding])
 
         # Centroids - Get deltas
         deltas_current = self._get_deltas(current_centroids)
@@ -576,9 +582,7 @@ class GNNTrackingModel(object):
         deltas_future = Activation(tf.math.abs, name='act_df_ib')(deltas_future)
         deltas_future = self.delta_across_frames_encoder(deltas_future)
 
-        deltas_current = Lambda(lambda t: tf.expand_dims(t, 1))(deltas_current)
-        deltas_current = Lambda(self._delta_reshape,
-                                name='delta_reshape')([deltas_current, future_centroids])
+        deltas_current = DeltaReshape(name='delta_reshape')([deltas_current, future_centroids])
 
         deltas = Concatenate(axis=-1)([deltas_current, deltas_future])
 
