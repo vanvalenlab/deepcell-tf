@@ -128,7 +128,7 @@ def wce_for_adj_mat(y_true, y_pred):
     y_pred = tf.reshape(y_pred, new_shape)
 
     # Mask out the padded cells
-    good_loc = tf.reshape(tf.where(K.not_equal(y_true, -1)), (-1,))
+    good_loc = tf.where(K.not_equal(y_true[:, 0], -1))[:, 0]
 
     y_true = tf.gather(y_true, good_loc, axis=0)
     y_pred = tf.gather(y_pred, good_loc, axis=0)
