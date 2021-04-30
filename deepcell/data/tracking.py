@@ -102,17 +102,23 @@ def random_rotate(X, y, rotation_range=0):
         [sin_theta, cos_theta],
     ], axis=1)
     transformed_centroids = tf.matmul(centroids, rotation_matrix)
-    # TODO: what does r0 do? why values of 512?
-    r0 = tf.random.uniform([1, 1, 2], -512, 512)
-    transformed_centroids = transformed_centroids + r0
     X['centroids'] = transformed_centroids
 
     return X, y
 
 
+def random_translate(X, y, range=512):
+    """Randomly translate the centroids."""
+    centroids = X['centroids']
+    r0 = tf.random.uniform([1, 1, 2], -range, range)
+    transformed_centroids = centroids + r0
+    X['centroids'] = transformed_centroids
+    return X, y
+
+
 def prepare_dataset(track_info, batch_size=32, buffer_size=256,
                     seed=None, track_length=8, rotation_range=0,
-                    val_split=0.2):
+                    translation_range=512, val_split=0.2):
     """Build and prepare the tracking dataset.
 
     Args:
@@ -122,6 +128,9 @@ def prepare_dataset(track_info, batch_size=32, buffer_size=256,
         seed (int): Random seed
         track_length (int): Number of frames per example
         rotation_range (int): Maximum degrees to rotate inputs
+        translation_range (int): Maximum range of translation,
+            should be equivalent to original input image size.
+        val_split (float): Fraciton of data to split into validation set.
 
     Returns:
         tf.data.Dataset: A ``tf.data.Dataset`` object ready for training.
@@ -149,6 +158,10 @@ def prepare_dataset(track_info, batch_size=32, buffer_size=256,
     # randomly rotate
     rotate = lambda X, y: random_rotate(X, y, rotation_range=rotation_range)
     train_data = train_data.map(rotate, num_parallel_calls=tf.data.AUTOTUNE)
+
+    # randomly translate centroids
+    translate = lambda X, y: random_translate(X, y, range=translation_range)
+    train_data = train_data.map(translate, num_parallel_calls=tf.data.AUTOTUNE)
 
     # batch the data
     train_data = train_data.batch(batch_size)
