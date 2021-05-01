@@ -118,7 +118,7 @@ def random_translate(X, y, range=512):
 
 def prepare_dataset(track_info, batch_size=32, buffer_size=256,
                     seed=None, track_length=8, rotation_range=0,
-                    translation_range=512, val_split=0.2):
+                    translation_range=0, val_split=0.2):
     """Build and prepare the tracking dataset.
 
     Args:
