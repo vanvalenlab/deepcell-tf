@@ -207,6 +207,32 @@ def siamese_model(input_shape=None,
     return model
 
 
+class Comparison(tf.keras.layers.Layer):
+    def call(self, inputs):
+        x = inputs[0]
+        y = inputs[1]
+
+        x = tf.expand_dims(x, 3)
+        multiples = [1, 1, 1, tf.shape(y)[2], 1]
+        x = tf.tile(x, multiples)
+
+        y = tf.expand_dims(y, 2)
+        multiples = [1, 1, tf.shape(x)[2], 1, 1]
+        y = tf.tile(y, multiples)
+
+        return tf.concat([x, y], axis=-1)
+
+
+class DeltaReshape(tf.keras.layers.Layer):
+    def call(self, inputs):
+        current = inputs[0]
+        future = inputs[1]
+        current = tf.expand_dims(current, axis=3)
+        multiples = [1, 1, 1, tf.shape(future)[2], 1]
+        output = tf.tile(current, multiples)
+        return output
+
+
 class GNNTrackingModel(object):
     """Creates a tracking model based on Graph Neural Networks(GNNs).
 
@@ -235,14 +261,14 @@ class GNNTrackingModel(object):
         self.time_window = time_window
         self.max_cells = max_cells
         self.track_length = track_length
+
         # Use inputs to build expected shapes
-        self.appearance_shape = (self.max_cells, self.track_length, 32, 32, 1)
-        self.morphology_shape = (self.max_cells, self.track_length, 3)
-        self.centroid_shape = (self.max_cells, self.track_length, 2)
-        self.adj_shape = (self.max_cells, self.max_cells, self.track_length)
+        self.appearance_shape = (self.track_length, self.max_cells, 32, 32, 1)
+        self.morphology_shape = (self.track_length, self.max_cells, 3)
+        self.centroid_shape = (self.track_length, self.max_cells, 2)
+        self.adj_shape = (self.track_length, self.max_cells, self.max_cells)
 
         # Create encoders and decoders
-        self.reshape_model = self.get_reshape_model()
         self.unmerge_embeddings_model = self.get_unmerge_embeddings_model()
         self.unmerge_centroids_model = self.get_unmerge_centroids_model()
         self.embedding_temporal_merge_model = self.get_embedding_temporal_merge_model()
@@ -261,27 +287,6 @@ class GNNTrackingModel(object):
         # Create model
         self.training_model, self.inference_model = self.get_models()
 
-    def _comparison(self, args):
-        x = args[0]
-        y = args[1]
-
-        x = tf.expand_dims(x, 2)
-        multiples = [1, 1, tf.shape(y)[1], 1, 1]
-        x = tf.tile(x, multiples)
-
-        y = tf.expand_dims(y, 1)
-        multiples = [1, tf.shape(x)[1], 1, 1, 1]
-        y = tf.tile(y, multiples)
-
-        return tf.concat([x, y], axis=-1)
-
-    def _delta_reshape(self, args):
-        c = args[0]
-        f = args[1]
-        multiples = [1, 1, tf.shape(f)[1], 1, 1]
-        output = tf.tile(c, multiples)
-        return output
-
     def get_embedding_temporal_merge_model(self, merge_type='cnn'):
         inputs = Input(shape=(None, None, self.encoder_dim),
                        name='embedding_temporal_merge_input')
@@ -294,7 +299,7 @@ class GNNTrackingModel(object):
 
         elif merge_type == 'cnn':
             x = inputs
-            x = Conv2D(self.encoder_dim, (1, self.time_window),
+            x = Conv2D(self.encoder_dim, (self.time_window, 1),
                        padding='SAME', name='conv2d_tm')(x)
             x = BatchNormalization(axis=-1, name='bn_tm')(x)
             x = Activation('relu', name='relu_tm')(x)
@@ -317,7 +322,7 @@ class GNNTrackingModel(object):
 
         elif merge_type == 'cnn':
             x = inputs
-            x = Conv2D(self.encoder_dim, (1, self.time_window),
+            x = Conv2D(self.encoder_dim, (self.time_window, 1),
                        padding='SAME', name='conv2d_delta')(x)
             x = BatchNormalization(axis=-1, name='bn_delta')(x)
             x = Activation('relu', name='relu_delta')(x)
@@ -329,82 +334,18 @@ class GNNTrackingModel(object):
         return Model(inputs=inputs, outputs=x, name='delta_temporal_merge')
 
     def _unmerge_embeddings(self, x):
-        new_shape = [-1, self.track_length, self.appearance_shape[0], self.embedding_dim]
+        new_shape = [-1, self.track_length, self.appearance_shape[1], self.embedding_dim]
         new_x = tf.reshape(x, new_shape)
-        new_x = tf.transpose(new_x, perm=(0, 2, 1, 3))
-
         return new_x
 
     def _unmerge_centroids(self, x):
-        new_shape = [-1, self.track_length, self.centroid_shape[0], self.centroid_shape[2]]
+        new_shape = [-1, self.track_length, self.centroid_shape[1], self.centroid_shape[2]]
         new_x = tf.reshape(x, new_shape)
-        new_x = tf.transpose(new_x, perm=(0, 2, 1, 3))
-
         return new_x
 
-    def get_reshape_model(self):
-        # Define inputs
-        app_input = Input(shape=self.appearance_shape,
-                          name='appearances')
-        morph_input = Input(shape=self.morphology_shape,
-                            name='morphologies')
-        centroid_input = Input(shape=self.centroid_shape,
-                               name='centroids')
-        adj_input = Input(shape=self.adj_shape,
-                          name='adj_matrices')
-
-        inputs = [app_input,
-                  morph_input,
-                  centroid_input,
-                  adj_input]
-
-        # Merge batch and temporal dimensions
-        new_app_shape = [-1,
-                         self.appearance_shape[0],
-                         self.appearance_shape[2],
-                         self.appearance_shape[3],
-                         self.appearance_shape[4]]
-        transposed_app_input = Lambda(lambda t: tf.transpose(t,
-                                                             perm=(0, 2, 1, 3, 4, 5)))(app_input)
-        reshaped_app_input = Lambda(lambda t: tf.reshape(t, new_app_shape),
-                                    name='reshaped_appearances')(transposed_app_input)
-
-        new_morph_shape = [-1,
-                           self.morphology_shape[0],
-                           self.morphology_shape[2]]
-        transposed_morph_input = Lambda(lambda t: tf.transpose(t, perm=(0, 2, 1, 3)))(morph_input)
-        reshaped_morph_input = Lambda(lambda t: tf.reshape(t, new_morph_shape),
-                                      name='reshaped_morphologies')(transposed_morph_input)
-
-        new_centroid_shape = [-1,
-                              self.centroid_shape[0],
-                              self.centroid_shape[2]]
-        transposed_cent_input = Lambda(lambda t: tf.transpose(t,
-                                                              perm=(0, 2, 1, 3)))(centroid_input)
-        reshaped_centroid_input = Lambda(lambda t: tf.reshape(t, new_centroid_shape),
-                                         name='reshaped_centroids')(transposed_cent_input)
-
-        new_adj_shape = [-1,
-                         self.adj_shape[0],
-                         self.adj_shape[1]]
-        transposed_adj_input = Lambda(lambda t: tf.transpose(t, perm=(0, 3, 1, 2)))(adj_input)
-        reshaped_adj_input = Lambda(lambda t: tf.reshape(t, new_adj_shape),
-                                    name='reshaped_adj_matrices')(transposed_adj_input)
-
-        outputs = [reshaped_app_input,
-                   reshaped_morph_input,
-                   reshaped_centroid_input,
-                   reshaped_adj_input]
-
-        return Model(inputs=inputs, outputs=outputs)
-
     def get_appearance_encoder(self):
-        app_shape = [None,
-                     self.appearance_shape[2],
-                     self.appearance_shape[3],
-                     self.appearance_shape[4]]
-        inputs = Input(shape=app_shape,
-                       name='encoder_app_input')
+        app_shape = tuple([None] + list(self.appearance_shape)[2:])
+        inputs = Input(shape=app_shape, name='encoder_app_input')
 
         x = inputs
         x = TimeDistributed(ImageNormalization2D(norm_method='whole_image',
@@ -423,35 +364,24 @@ class GNNTrackingModel(object):
         x = Dense(self.encoder_dim, name='dense_aeout')(x)
         x = BatchNormalization(axis=-1, name='bn_aeout')(x)
         x = Activation('relu', name='appearance_embedding')(x)
-
         return Model(inputs=inputs, outputs=x)
 
     def get_morphology_encoder(self):
-        morph_shape = [None,
-                       self.morphology_shape[2]]
-        inputs = Input(shape=morph_shape,
-                       name='encoder_morph_input')
-
+        morph_shape = (None, self.morphology_shape[-1])
+        inputs = Input(shape=morph_shape, name='encoder_morph_input')
         x = inputs
-
         x = Dense(self.encoder_dim, name='dense_me')(x)
         x = BatchNormalization(axis=-1, name='bn_me')(x)
         x = Activation('relu', name='morphology_embedding')(x)
-
         return Model(inputs=inputs, outputs=x)
 
     def get_centroid_encoder(self):
-        centroid_shape = [None,
-                          self.centroid_shape[2]]
-        inputs = Input(shape=centroid_shape,
-                       name='encoder_centroid_input')
-
+        centroid_shape = (None, self.centroid_shape[-1])
+        inputs = Input(shape=centroid_shape, name='encoder_centroid_input')
         x = inputs
-
         x = Dense(self.encoder_dim, name='dense_ce')(x)
         x = BatchNormalization(axis=-1, name='bn_ce')(x)
         x = Activation('relu', name='centroid_embedding')(x)
-
         return Model(inputs=inputs, outputs=x)
 
     def get_delta_encoders(self):
@@ -478,18 +408,16 @@ class GNNTrackingModel(object):
         return delta_encoder, delta_across_frames_encoder
 
     def get_neighborhood_encoder(self):
-
         app_input = self.appearance_encoder.input
         morph_input = self.morphology_encoder.input
         centroid_input = self.centroid_encoder.input
 
-        adj_shape = [None, None]
-        adj_input = Input(shape=adj_shape,
-                          name='encoder_adj_input')
+        adj_input = Input(shape=(None, None), name='encoder_adj_input')
 
         app_features = self.appearance_encoder.output
         morph_features = self.morphology_encoder.output
         centroid_features = self.centroid_encoder.output
+
         adj = adj_input
 
         # Concatenate features
@@ -500,8 +428,8 @@ class GNNTrackingModel(object):
 
         # Apply graph convolution
         for i in range(self.n_layers):
-            node_features = GCSConv(self.n_filters,
-                                    activation=None, name='gcs{}'.format(i))([node_features, adj])
+            node_features = GCSConv(self.n_filters, activation=None,
+                                    name='gcs{}'.format(i))([node_features, adj])
             node_features = BatchNormalization(axis=-1,
                                                name='bn_ne{}'.format(i + 1))(node_features)
             node_features = Activation('relu', name='relu_ne{}'.format(i + 1))(node_features)
@@ -517,56 +445,80 @@ class GNNTrackingModel(object):
         return Model(inputs=inputs, outputs=outputs, name='neighborhood_encoder')
 
     def get_unmerge_embeddings_model(self):
-        inputs = Input(shape=(self.appearance_shape[0], self.embedding_dim),
+        inputs = Input(shape=(self.appearance_shape[1], self.embedding_dim),
                        name='unmerge_embeddings_input')
         x = inputs
-        x = Lambda(self._unmerge_embeddings,
-                   name='unmerge_embeddings')(x)
-
+        x = Lambda(self._unmerge_embeddings, name='unmerge_embeddings')(x)
         return Model(inputs=inputs, outputs=x, name='unmerge_embeddings_model')
 
     def get_unmerge_centroids_model(self):
-        inputs = Input(shape=(self.centroid_shape[0], self.centroid_shape[-1]),
+        inputs = Input(shape=(self.centroid_shape[1], self.centroid_shape[-1]),
                        name='unmerge_centroids_input')
         x = inputs
-        x = Lambda(self._unmerge_centroids,
-                   name='unmerge_centroids')(x)
+        x = Lambda(self._unmerge_centroids, name='unmerge_centroids')(x)
 
         return Model(inputs=inputs, outputs=x, name='unmerge_centroids_model')
 
     def _get_deltas(self, x):
-        # Convert raw positions to deltas
-        deltas = Lambda(lambda t: t[:, :, 1:, :] - t[:, :, 0:-1, :])(x)
-        deltas = Lambda(lambda t: tf.pad(t, tf.constant([[0, 0], [0, 0], [1, 0], [0, 0]])))(deltas)
-
+        """Convert raw positions to deltas"""
+        deltas = Lambda(lambda t: t[:, 1:] - t[:, 0:-1])(x)
+        deltas = Lambda(lambda t: tf.pad(t, tf.constant([[0, 0], [1, 0], [0, 0], [0, 0]])))(deltas)
         return deltas
 
     def _get_deltas_across_frames(self, centroids):
-        # Find deltas across frames
-        centroid_current = Lambda(lambda t: t[:, :, 0:-1, :])(centroids)
-        centroid_future = Lambda(lambda t: t[:, :, 1:, :])(centroids)
-        centroid_current = Lambda(lambda t: tf.expand_dims(t, 2))(centroid_current)
-        centroid_future = Lambda(lambda t: tf.expand_dims(t, 1))(centroid_future)
+        """Find deltas across frames"""
+        centroid_current = Lambda(lambda t: t[:, 0:-1])(centroids)
+        centroid_future = Lambda(lambda t: t[:, 1:])(centroids)
+        centroid_current = Lambda(lambda t: tf.expand_dims(t, 3))(centroid_current)
+        centroid_future = Lambda(lambda t: tf.expand_dims(t, 2))(centroid_future)
         deltas_across_frames = Subtract()([centroid_future, centroid_current])
-
         return deltas_across_frames
 
     def get_training_branch(self):
-        inputs = self.reshape_model.inputs
+        # Define inputs
+        app_input = Input(shape=self.appearance_shape, name='appearances')
+        morph_input = Input(shape=self.morphology_shape, name='morphologies')
+        centroid_input = Input(shape=self.centroid_shape, name='centroids')
+        adj_input = Input(shape=self.adj_shape, name='adj_matrices')
+        inputs = [app_input, morph_input, centroid_input, adj_input]
 
-        x, centroids = self.neighborhood_encoder(self.reshape_model.outputs)
+        # Merge batch and temporal dimensions
+        new_app_shape = tuple([-1] + list(self.appearance_shape)[1:])
+        reshaped_app_input = Lambda(lambda t: tf.reshape(t, new_app_shape),
+                                    name='reshaped_appearances')(app_input)
+
+        new_morph_shape = tuple([-1] + list(self.morphology_shape)[1:])
+        reshaped_morph_input = Lambda(lambda t: tf.reshape(t, new_morph_shape),
+                                      name='reshaped_morphologies')(morph_input)
+
+        new_centroid_shape = tuple([-1] + list(self.centroid_shape)[1:])
+        reshaped_centroid_input = Lambda(lambda t: tf.reshape(t, new_centroid_shape),
+                                         name='reshaped_centroids')(centroid_input)
+
+        new_adj_shape = [-1, self.adj_shape[1], self.adj_shape[2]]
+        reshaped_adj_input = Lambda(lambda t: tf.reshape(t, new_adj_shape),
+                                    name='reshaped_adj_matrices')(adj_input)
+
+        reshaped_inputs = [
+            reshaped_app_input,
+            reshaped_morph_input,
+            reshaped_centroid_input,
+            reshaped_adj_input
+        ]
+
+        x, centroids = self.neighborhood_encoder(reshaped_inputs)
 
         # Reshape embeddings to add back temporal dimension
         x = self.unmerge_embeddings_model(x)
         centroids = self.unmerge_centroids_model(centroids)
 
         # Get current and future embeddings
-        x_current = Lambda(lambda t: t[:, :, 0:-1, :])(x)
-        x_future = Lambda(lambda t: t[:, :, 1:, :])(x)
+        x_current = Lambda(lambda t: t[:, 0:-1])(x)
+        x_future = Lambda(lambda t: t[:, 1:])(x)
 
         # Integrate temporal information for embeddings and compare
         x_current = self.embedding_temporal_merge_model(x_current)
-        x = Lambda(self._comparison, name='training_embedding_comparison')([x_current, x_future])
+        x = Comparison(name='training_embedding_comparison')([x_current, x_future])
 
         # Convert centroids to deltas
         deltas_current = self._get_deltas(centroids)
@@ -578,10 +530,10 @@ class GNNTrackingModel(object):
         deltas_current = self.delta_encoder(deltas_current)
         deltas_future = self.delta_across_frames_encoder(deltas_future)
 
-        deltas_current = Lambda(lambda t: t[:, :, 0:-1, :])(deltas_current)
+        deltas_current = Lambda(lambda t: t[:, 0:-1])(deltas_current)
         deltas_current = self.delta_temporal_merge_model(deltas_current)
-        deltas_current = Lambda(lambda t: tf.expand_dims(t, 2))(deltas_current)
-        multiples = [1, 1, self.centroid_shape[0], 1, 1]
+        deltas_current = Lambda(lambda t: tf.expand_dims(t, 3))(deltas_current)
+        multiples = [1, 1, 1, self.centroid_shape[1], 1]
         deltas_current = Lambda(lambda t: tf.tile(t, multiples))(deltas_current)
 
         deltas = Concatenate(axis=-1)([deltas_current, deltas_future])
@@ -598,19 +550,21 @@ class GNNTrackingModel(object):
         current_centroids = Input(shape=(None, None, self.centroid_shape[-1]),
                                   name='current_centroids')
 
-        future_embedding = Input(shape=(None, 1, self.encoder_dim),
+        future_embedding = Input(shape=(1, None, self.encoder_dim),
                                  name='future_embeddings')
-        future_centroids = Input(shape=(None, 1, self.centroid_shape[-1]),
+        future_centroids = Input(shape=(1, None, self.centroid_shape[-1]),
                                  name='future_centroids')
-        inputs = [current_embedding, current_centroids, future_embedding, future_centroids]
+
+        inputs = [current_embedding, current_centroids,
+                  future_embedding, future_centroids]
 
         # Embeddings - Integrate temporal information
         x_current = self.embedding_temporal_merge_model(current_embedding)
 
         # Embeddings - Get final frame from current track
-        x_current = Lambda(lambda t: t[:, :, -1:, :])(x_current)
+        x_current = Lambda(lambda t: t[:, -1:])(x_current)
 
-        x = Lambda(self._comparison, name='inference_comparison')([x_current, future_embedding])
+        x = Comparison(name='inference_comparison')([x_current, future_embedding])
 
         # Centroids - Get deltas
         deltas_current = self._get_deltas(current_centroids)
@@ -618,20 +572,17 @@ class GNNTrackingModel(object):
 
         deltas_current = self.delta_encoder(deltas_current)
         deltas_current = self.delta_temporal_merge_model(deltas_current)
-        deltas_current = Lambda(lambda t: t[:, :, -1:, :])(deltas_current)
+        deltas_current = Lambda(lambda t: t[:, -1:])(deltas_current)
 
         # Centroids - Get deltas across frames
-        centroid_current_end = Lambda(lambda t: t[:, :, -1:, :])(current_centroids)
-
-        centroid_current_end = Lambda(lambda t: tf.expand_dims(t, 2))(centroid_current_end)
-        centroid_future = Lambda(lambda t: tf.expand_dims(t, 1))(future_centroids)
+        centroid_current_end = Lambda(lambda t: t[:, -1:])(current_centroids)
+        centroid_current_end = Lambda(lambda t: tf.expand_dims(t, 3))(centroid_current_end)
+        centroid_future = Lambda(lambda t: tf.expand_dims(t, 2))(future_centroids)
         deltas_future = Subtract()([centroid_future, centroid_current_end])
         deltas_future = Activation(tf.math.abs, name='act_df_ib')(deltas_future)
         deltas_future = self.delta_across_frames_encoder(deltas_future)
 
-        deltas_current = Lambda(lambda t: tf.expand_dims(t, 2))(deltas_current)
-        deltas_current = Lambda(self._delta_reshape,
-                                name='delta_reshape')([deltas_current, future_centroids])
+        deltas_current = DeltaReshape(name='delta_reshape')([deltas_current, future_centroids])
 
         deltas = Concatenate(axis=-1)([deltas_current, deltas_future])
 
@@ -655,6 +606,7 @@ class GNNTrackingModel(object):
             res = Activation('relu', name='relu_td{}'.format(i + 1))(res)
             embedding = Add()([embedding, res])
 
+        # TODO: set to n_classes
         embedding = Dense(3, name='dense_outembed')(embedding)
 
         # Add classification head
@@ -666,7 +618,7 @@ class GNNTrackingModel(object):
 
     def get_models(self):
         # Create inputs
-        training_inputs = self.reshape_model.input
+        training_inputs = self.training_branch.input
         inference_inputs = self.inference_branch.input
 
         # Apply decoder
