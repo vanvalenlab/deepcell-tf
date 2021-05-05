@@ -35,7 +35,7 @@ def split_dataset(dataset, validation_data_fraction):
     Splits a dataset of type tf.data.Dataset into a training and validation
     dataset using given ratio. Fractions are rounded up to two decimal places.
 
-    Inspired by: https://stackoverflow.com/a/59671472
+    Inspired by: https://stackoverflow.com/a/59696126
 
     Args:
         dataset (tf.data.Dataset): the input dataset to split.
