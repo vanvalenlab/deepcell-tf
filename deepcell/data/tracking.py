@@ -49,7 +49,6 @@ def temporal_slice(X, y, track_length=8):
     Returns:
         tuple(dict, dict): Tuple of sliced ``X`` and ``y`` data.
     """
-    # TODO: time axis may change! would be easier if it was always first.
     appearances = X['appearances']
     max_time = tf.shape(appearances)[1] - track_length
 
@@ -86,7 +85,6 @@ def random_rotate(X, y, rotation_range=0):
     theta = tf.random.uniform(shape=[1], minval=-rg, maxval=rg)
 
     # Transform appearances
-    # TODO: what is being reshaped here? How to convert to time-first?
     old_shape = tf.shape(appearances)
     new_shape = [-1, old_shape[2], old_shape[3], old_shape[4]]
     img = tf.reshape(appearances, new_shape)
