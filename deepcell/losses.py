@@ -123,23 +123,20 @@ def wce_for_adj_mat(y_true, y_pred):
     y_true = K.cast(y_true, y_pred.dtype)
 
     n_classes = tf.shape(y_true)[-1]
-    new_shape = [-1, n_classes]
+    new_shape = (-1, n_classes)
     y_true = tf.reshape(y_true, new_shape)
     y_pred = tf.reshape(y_pred, new_shape)
 
     # Mask out the padded cells
-    good_loc = tf.where(y_true != -1)
+    good_loc = tf.where(K.not_equal(y_true[:, 0], -1))[:, 0]
 
     y_true = tf.gather(y_true, good_loc, axis=0)
     y_pred = tf.gather(y_pred, good_loc, axis=0)
 
-    # Manual computation of crossentropy (change to match above)
-    _epsilon = tf.convert_to_tensor(K.epsilon(), y_pred.dtype.base_dtype)
-    y_pred = tf.clip_by_value(y_pred, _epsilon, 1. - _epsilon)
-    total_sum = K.sum(y_true)
-    class_sum = K.sum(y_true, axis=0, keepdims=True)
-    class_weights = 1.0 / K.cast_to_floatx(n_classes) * tf.divide(total_sum, class_sum + 1e-5)
-    return - K.sum((y_true * K.log(y_pred) * class_weights), axis=-1)
+    return weighted_categorical_crossentropy(
+        y_true, y_pred,
+        n_classes=n_classes,
+        axis=1)
 
 
 def sample_categorical_crossentropy(y_true,

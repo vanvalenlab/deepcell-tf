@@ -23,51 +23,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for custom loss functions"""
+"""Data utilities using ``tf.data``."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import numpy as np
 
-from tensorflow import keras
-from tensorflow.python.platform import test
+def split_dataset(dataset, validation_data_fraction):
+    """
+    Splits a dataset of type tf.data.Dataset into a training and validation
+    dataset using given ratio. Fractions are rounded up to two decimal places.
 
-from deepcell import losses
+    Inspired by: https://stackoverflow.com/a/59696126
 
+    Args:
+        dataset (tf.data.Dataset): the input dataset to split.
+        validation_data_fraction (float): the fraction of the validation data
+            between 0 and 1.
 
-ALL_LOSSES = [
-    losses.categorical_crossentropy,
-    losses.weighted_categorical_crossentropy,
-    # losses.wce_for_adj_mat,
-    losses.sample_categorical_crossentropy,
-    losses.weighted_focal_loss,
-    losses.smooth_l1,
-    losses.focal,
-    # losses.dice_loss,
-    # losses.discriminative_instance_loss
-]
+    Returns:
+        (tf.data.Dataset, tf.data.Dataset): a tuple of (training, validation).
+    """
+    validation_data_percent = round(validation_data_fraction * 100)
+    if not (0 <= validation_data_percent <= 100):
+        raise ValueError('validation_data_fraction must be ∈ [0,1].')
 
+    dataset = dataset.enumerate()
+    train_dataset = dataset.filter(lambda f, data: f % 100 > validation_data_percent)
+    validation_dataset = dataset.filter(lambda f, data: f % 100 <= validation_data_percent)
 
-class KerasLossesTest(test.TestCase):
-
-    def test_objective_shapes_3d(self):
-        with self.cached_session():
-            y_a = keras.backend.variable(np.random.random((5, 6, 7)))
-            y_b = keras.backend.variable(np.random.random((5, 6, 7)))
-            for obj in ALL_LOSSES:
-                objective_output = obj(y_a, y_b)
-                self.assertListEqual(objective_output.shape.as_list(), [5, 6])
-
-    def test_objective_shapes_2d(self):
-        with self.cached_session():
-            y_a = keras.backend.variable(np.random.random((6, 7)))
-            y_b = keras.backend.variable(np.random.random((6, 7)))
-            for obj in ALL_LOSSES:
-                objective_output = obj(y_a, y_b)
-                self.assertListEqual(objective_output.shape.as_list(), [6])
+    # remove enumeration
+    train_dataset = train_dataset.map(lambda f, data: data)
+    validation_dataset = validation_dataset.map(lambda f, data: data)
+    return train_dataset, validation_dataset
 
 
-if __name__ == '__main__':
-    test.main()
+from deepcell.data import tracking
+
+
+del absolute_import
+del division
+del print_function
