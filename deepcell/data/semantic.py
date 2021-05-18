@@ -48,11 +48,11 @@ def transform_labels(y, transforms, transforms_kwargs=None,
     y_semantic_list = []
 
     # loop over channels axis of labels in case there are multiple label types
-    slc = slice([None] * len(y.shape))
+    slc = [slice(None)] * len(y.shape)
     for c in range(y.shape[channel_axis]):
         slc[channel_axis] = slice(c, c + 1)
 
-        y_current = y[slc]
+        y_current = y[tuple(slc)]
 
         for transform in transforms:
             transform_kwargs = transforms_kwargs.get(transform, dict())
