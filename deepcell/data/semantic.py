@@ -86,7 +86,7 @@ def prepare_data(X, y, batch_size=32, buffer_size=256,
                  seed=None, min_objects=1, val_split=0.2,
                  rotation_range=0, zoom_range=0, crop_size=None,
                  horizontal_flip=False, vertical_flip=False,
-                 transforms=(None,), transform_kwargs=None):
+                 transforms=(None,), transforms_kwargs=None):
     """Build and prepare the tracking dataset.
 
     Args:
@@ -105,8 +105,8 @@ def prepare_data(X, y, batch_size=32, buffer_size=256,
     Returns:
         tf.data.Dataset: A ``tf.data.Dataset`` object ready for training.
     """
-    if transform_kwargs is None:
-        transform_kwargs = dict()
+    if transforms_kwargs is None:
+        transforms_kwargs = dict()
 
     try:
         if isinstance(transforms, str):
@@ -122,7 +122,7 @@ def prepare_data(X, y, batch_size=32, buffer_size=256,
 
     # create the semantic transforms before creating the dataset
     # they require numpy and cannot be done by the Dataset itself
-    y_transform = transform_labels(y, transforms, transform_kwargs)
+    y_transform = transform_labels(y, transforms, transforms_kwargs)
 
     dataset = tf.data.Dataset.from_tensor_slices((X, y_transform))
 
