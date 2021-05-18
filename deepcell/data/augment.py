@@ -33,6 +33,7 @@ import math
 
 import tensorflow as tf
 from tensorflow.keras import backend as K
+from tensorflow.python.keras.utils import conv_utils
 from tensorflow.python.platform import tf_logging as logging
 
 import numpy as np
@@ -127,19 +128,24 @@ def random_zoom(arr, zoom_range):
     return tfa.image.transform(arr, transform_matrix, interpolation=interpolation)
 
 
-def apply_random_transform(image, rotation_range=0, zoom_range=0,
-                           vertical_flip=0, horizontal_flip=0):
+def apply_random_transform(*images, rotation_range=0, zoom_range=0,
+                           vertical_flip=0, horizontal_flip=0,
+                           crop_size=None):
     """Randomly transform the image input array."""
+    if crop_size is not None:
+        crop_size = conv_utils.normalize_tuple(crop_size, 2, 'crop_size')
+        images = tf.image.random_crop(images, crop_size)
+
     if horizontal_flip:
-        image = tf.image.random_flip_left_right(image)
+        images = tf.image.random_flip_left_right(images)
 
     if vertical_flip:
-        image = tf.image.random_flip_up_down(image)
+        images = tf.image.random_flip_up_down(images)
 
     if rotation_range:
-        image = random_rotate(image, rotation_range)
+        images = random_rotate(images, rotation_range)
 
     if zoom_range:
-        image = random_zoom(image, zoom_range=zoom_range)
+        images = random_zoom(images, zoom_range=zoom_range)
 
-    return image
+    return images

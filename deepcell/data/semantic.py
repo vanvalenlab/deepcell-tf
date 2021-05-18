@@ -68,14 +68,14 @@ def randomly_transform_images(X, y, **kwargs):
     if not isinstance(y, list):
         y = [y]
 
-    transformed_y = []
+    # send as single list to apply the same transform to all inputs
+    input_images = [X, *y]
 
-    transformed_X = apply_random_transform(X, **kwargs)
+    transformed_images = apply_random_transform(*input_images, **kwargs)
 
-    for lbl in y:
-        transformed_lbl = apply_random_transform(lbl, **kwargs)
-        transformed_y.append(transformed_lbl)
-    
+    transformed_X = transformed_images[0]
+    transformed_y = transformed_images[1:]
+
     if len(transformed_y) == 1:
         transformed_y = transformed_y[0]
 
@@ -84,7 +84,7 @@ def randomly_transform_images(X, y, **kwargs):
 
 def prepare_data(X, y, batch_size=32, buffer_size=256,
                  seed=None, min_objects=1, val_split=0.2,
-                 rotation_range=0, zoom_range=0,
+                 rotation_range=0, zoom_range=0, crop_size=None,
                  horizontal_flip=False, vertical_flip=False,
                  transforms=(None,), transform_kwargs=None):
     """Build and prepare the tracking dataset.
@@ -131,6 +131,7 @@ def prepare_data(X, y, batch_size=32, buffer_size=256,
 
     # randomly rotate, flip, & zoom
     rotate = lambda X, y: randomly_transform_images(X, y,
+                                                    crop_size=crop_size,
                                                     rotation_range=rotation_range,
                                                     horizontal_flip=horizontal_flip,
                                                     vertical_flip=vertical_flip,
