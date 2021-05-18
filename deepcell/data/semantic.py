@@ -116,6 +116,8 @@ def prepare_data(X, y, batch_size=32, buffer_size=256,
         raise TypeError('transforms should be a list, found {}'.format(
             type(transforms).__name__)) from err
 
+    AUTOTUNE = tf.data.AUTOTUNE
+
     X, y = remove_images_without_objects(X, y, min_objects=min_objects)
 
     # create the semantic transforms before creating the dataset
@@ -129,21 +131,29 @@ def prepare_data(X, y, batch_size=32, buffer_size=256,
     # split into train/val before doing any augmentation
     train_data, val_data = split_dataset(dataset, val_split)
 
-    # randomly rotate, flip, & zoom
-    rotate = lambda X, y: randomly_transform_images(X, y,
-                                                    crop_size=crop_size,
-                                                    rotation_range=rotation_range,
-                                                    horizontal_flip=horizontal_flip,
-                                                    vertical_flip=vertical_flip,
-                                                    zoom_range=zoom_range)
-    train_data = train_data.map(rotate, num_parallel_calls=tf.data.AUTOTUNE)
+    # randomly rotate, flip, & zoom training data
+    transform_train_data = lambda X, y: randomly_transform_images(
+        X, y,
+        crop_size=crop_size,
+        rotation_range=rotation_range,
+        horizontal_flip=horizontal_flip,
+        vertical_flip=vertical_flip,
+        zoom_range=zoom_range)
+
+    train_data = train_data.map(transform_train_data, num_parallel_calls=AUTOTUNE)
+
+    # randomly crop the validation data, but no other transforms
+    transform_val_data = lambda X, y: randomly_transform_images(
+        X, y, crop_size=crop_size)
+
+    val_data = val_data.map(transform_val_data, num_parallel_calls=AUTOTUNE)
 
     # batch the data
     train_data = train_data.batch(batch_size)
     val_data = val_data.batch(batch_size)
 
     # prefetch the data
-    train_data = train_data.prefetch(tf.data.AUTOTUNE)
-    val_data = val_data.prefetch(tf.data.AUTOTUNE)
+    train_data = train_data.prefetch(AUTOTUNE)
+    val_data = val_data.prefetch(AUTOTUNE)
 
     return train_data, val_data
