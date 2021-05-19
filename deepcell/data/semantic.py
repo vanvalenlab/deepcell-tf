@@ -71,10 +71,13 @@ def randomly_transform_images(X, y, **kwargs):
     # send as single list to apply the same transform to all inputs
     input_images = [X, *y]
 
-    transformed_images = apply_random_transform(*input_images, **kwargs)
+    transformed_y = []
 
-    transformed_X = transformed_images[0]
-    transformed_y = transformed_images[1:]
+    transformed_X = apply_random_transform(X, **kwargs)
+
+    for _y in y:
+        transformed = apply_random_transform(_y, **kwargs)
+        transformed_y.append(transformed)
 
     if len(transformed_y) == 1:
         transformed_y = transformed_y[0]

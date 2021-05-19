@@ -128,24 +128,24 @@ def random_zoom(arr, zoom_range):
     return tfa.image.transform(arr, transform_matrix, interpolation=interpolation)
 
 
-def apply_random_transform(*images, rotation_range=0, zoom_range=0,
+def apply_random_transform(image, rotation_range=0, zoom_range=0,
                            vertical_flip=0, horizontal_flip=0,
                            crop_size=None):
     """Randomly transform the image input array."""
     if crop_size is not None:
         crop_size = conv_utils.normalize_tuple(crop_size, 2, 'crop_size')
-        images = tf.image.random_crop(images, crop_size)
+        image = tf.image.random_crop(image, crop_size)
 
     if horizontal_flip:
-        images = tf.image.random_flip_left_right(images)
+        image = tf.image.random_flip_left_right(image)
 
     if vertical_flip:
-        images = tf.image.random_flip_up_down(images)
+        image = tf.image.random_flip_up_down(image)
 
     if rotation_range:
-        images = random_rotate(images, rotation_range)
+        image = random_rotate(image, rotation_range)
 
     if zoom_range:
-        images = random_zoom(images, zoom_range=zoom_range)
+        image = random_zoom(image, zoom_range=zoom_range)
 
-    return images
+    return image
