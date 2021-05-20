@@ -209,9 +209,7 @@ def adj_to_degree(adj, power=-0.5, epsilon=1e-5):
     Returns:
         np.array: Degree matrix raised to a given power
     """
-    if not isinstance(adj, sp.csr.csr_matrix):
-        adj = sp.csr.csr_matrix(adj)
-
+    
     # adj is (batch, row, col)
     degrees = np.sum(adj, axis=1)  # this should be (batch, col)
 
