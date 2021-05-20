@@ -111,7 +111,7 @@ def image_to_graph(label_image,
     return adjacency_matrix, centroid_matrix, label_matrix
 
 
-def get_cell_features(label_image, image):
+def get_cell_features(image, label_image):
     """Extract feature vectors from cells in multiplexed imaging data
 
     Args:
