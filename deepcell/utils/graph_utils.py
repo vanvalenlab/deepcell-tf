@@ -155,7 +155,7 @@ def get_cell_features(image, label_image):
     return feature_matrix
 
 
-def get_celltypes(label_image, celltype_image):
+def get_celltypes(celltype_image, label_image):
     """Query cell type image with a given label image and get cell
     type for each cell
 
