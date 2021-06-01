@@ -70,7 +70,7 @@ docker run --gpus '"device=0"' -it --rm \
     vanvalenlab/deepcell-tf:0.9.0-gpu
 ```
 
-This will spin up a docker container with `deepcell-tf` installed and start a jupyter session using the default port 8888. This command also mounts a data folder (`$PWD/data`) and a scripts folder (`$PWD/scripts`) to the docker container so it can access data and Juyter notebooks stored on the host workstation. For any saved data or models to persist once the container is shut down, or be accessible outside of the container in general, it must be saved in these mounted directories. The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 8080:8888`. If you run across any errors getting started, you should either refer to the `deepcell-tf` for developers section or raise an issue on GitHub.
+This will spin up a docker container with `deepcell-tf` installed and start a jupyter session using the default port 8888. This command also mounts a data folder (`$PWD/data`) and a notebooks folder (`$PWD/notebooks`) to the docker container so it can access data and Juyter notebooks stored on the host workstation. For any saved data or models to persist once the container is shut down, or be accessible outside of the container in general, it must be saved in these mounted directories. The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 8080:8888`. If you run across any errors getting started, you should either refer to the `deepcell-tf` for developers section or raise an issue on GitHub.
 
 For examples of how to train models with the `deepcell-tf` library, check out the following notebooks:
 
@@ -133,8 +133,9 @@ docker run --gpus '"device=0"' -it \
 ## How to Cite
 
 - [Deep Learning Automates the Quantitative Analysis of Individual Cells in Live-Cell Imaging Experiments](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005177)
-- [Dynamic allocation of computational resources for deep learning-enabled cellular image analysis with Kubernetes](https://www.biorxiv.org/content/10.1101/505032v3)
 - [Accurate cell tracking and lineage construction in live-cell imaging experiments with deep learning](https://www.biorxiv.org/content/10.1101/803205v2)
+- [DeepCell Kiosk: scaling deep learning–enabled cellular image analysis with Kubernetes](https://www.nature.com/articles/s41592-020-01023-0)
+- [Whole-cell segmentation of tissue images with human-level performance using large-scale data annotation and deep learning](https://www.biorxiv.org/content/10.1101/2021.03.01.431313v1)
 
 ## Copyright
 
