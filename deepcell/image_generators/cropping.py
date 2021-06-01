@@ -145,8 +145,13 @@ class CroppingIterator(SemanticIterator):
             y_semantic_list = [ys[0] for ys in y_semantic_list]
 
             # Apply transformation
-            x, y_semantic_list = self.image_data_generator.random_transform(
-                x, y_semantic_list)
+            while True:
+                x, y_semantic_list = self.image_data_generator.random_transform(
+                    x, y_semantic_list)
+                # make sure there are labels in the images
+                # if not, get a new random crop
+                if all(s.sum() > 0 for s in y_semantic_list):
+                    break
 
             x = self.image_data_generator.standardize(x)
 
