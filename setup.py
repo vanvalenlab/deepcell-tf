@@ -62,7 +62,7 @@ setup(
         'scikit-image>=0.14.5',
         'scikit-learn>=0.20.4',
         'tensorflow==2.4.1',
-        'tensorflow_addons==0.12.1',
+        'tensorflow_addons==0.13.0',
         'spektral==1.0.4',
         'jupyter>=1.0.0,<2',
         'opencv-python-headless<5',
