@@ -92,7 +92,9 @@ class CytoplasmSegmentation(Application):
         'validation_steps_per_epoch': 1973 // 2
     }
 
-    def __init__(self, model=None):
+    def __init__(self, model=None,
+                 preprocessing_fn=normalize,
+                 postprocessing_fn=deep_watershed):
 
         if model is None:
             archive_path = tf.keras.utils.get_file(
@@ -107,8 +109,8 @@ class CytoplasmSegmentation(Application):
             model,
             model_image_shape=model.input_shape[1:],
             model_mpp=0.65,
-            preprocessing_fn=normalize,
-            postprocessing_fn=deep_watershed,
+            preprocessing_fn=preprocessing_fn,
+            postprocessing_fn=postprocessing_fn,
             dataset_metadata=self.dataset_metadata,
             model_metadata=self.model_metadata)
 
