@@ -58,6 +58,7 @@ setup(
     long_description_content_type='text/markdown',
     install_requires=[
         'numpy>=1.16.6,<1.20.0',
+        'pydot>=1.4.2,<2',
         'scipy>=1.2.3,<2',
         'scikit-image>=0.14.5',
         'scikit-learn>=0.20.4',
