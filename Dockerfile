@@ -6,7 +6,10 @@ ARG TF_VERSION=2.4.2-gpu
 FROM tensorflow/tensorflow:${TF_VERSION}
 
 # System maintenance
-RUN /usr/bin/python3 -m pip install --upgrade pip
+RUN apt-get update && apt-get install -y  \
+    graphviz && \
+    rm -rf /var/lib/apt/lists/* && \
+    /usr/bin/python3 -m pip install --upgrade pip
 
 WORKDIR /notebooks
 
