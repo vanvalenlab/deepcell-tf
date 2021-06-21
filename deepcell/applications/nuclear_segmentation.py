@@ -40,7 +40,7 @@ from deepcell.applications import Application
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/NuclearSegmentation-3.tar.gz')
+              'saved-models/NuclearSegmentation-4.tar.gz')
 
 
 class NuclearSegmentation(Application):
@@ -99,7 +99,7 @@ class NuclearSegmentation(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'NuclearSegmentation.tgz', MODEL_PATH,
-                file_hash='7fff56a59f453252f24967cfe1813abd',
+                file_hash='99ea4fe44cd8c20eb224565ee7a242b4',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
