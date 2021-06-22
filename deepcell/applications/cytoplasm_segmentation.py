@@ -119,8 +119,8 @@ class CytoplasmSegmentation(Application):
                 batch_size=4,
                 image_mpp=None,
                 pad_mode='reflect',
-                preprocess_kwargs={},
-                postprocess_kwargs={}):
+                preprocess_kwargs=None,
+                postprocess_kwargs=None):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
@@ -150,6 +150,18 @@ class CytoplasmSegmentation(Application):
         Returns:
             numpy.array: Labeled image
         """
+        if preprocess_kwargs is None:
+            preprocess_kwargs = {}
+
+        if postprocess_kwargs is None:
+            postprocess_kwargs = {
+                'radius': 10,
+                'maxima_threshold': 0.1,
+                'interior_threshold': 0.01,
+                'exclude_border': False,
+                'small_objects_threshold': 0
+            }
+
         return self._predict_segmentation(
             image,
             batch_size=batch_size,
