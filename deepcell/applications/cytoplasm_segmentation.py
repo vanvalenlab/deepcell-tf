@@ -33,14 +33,14 @@ import os
 
 import tensorflow as tf
 
-from deepcell_toolbox.processing import normalize
+from deepcell_toolbox.processing import histogram_normalization
 from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.applications import Application
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/CytoplasmSegmentation-2.tar.gz')
+              'saved-models/CytoplasmSegmentation-3.tar.gz')
 
 
 class CytoplasmSegmentation(Application):
@@ -93,13 +93,13 @@ class CytoplasmSegmentation(Application):
     }
 
     def __init__(self, model=None,
-                 preprocessing_fn=normalize,
+                 preprocessing_fn=histogram_normalization,
                  postprocessing_fn=deep_watershed):
 
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'CytoplasmSegmentation.tgz', MODEL_PATH,
-                file_hash='4536223e6ce160e8a8b67e4f45d5a5ef',
+                file_hash='3a44131177f2c66457bad444d8973708',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
