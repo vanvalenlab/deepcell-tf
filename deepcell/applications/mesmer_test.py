@@ -166,11 +166,11 @@ def test_format_output_mesmer():
 
     assert set(output.keys()) == {'whole-cell', 'nuclear'}
 
-    assert np.array_equal(output['whole-cell']['inner-distance'], base_array)
-    assert np.array_equal(output['nuclear']['inner-distance'], base_array * 2)
+    assert np.array_equal(output['whole-cell'][0], base_array)
+    assert np.array_equal(output['nuclear'][0], base_array * 2)
 
-    assert np.array_equal(output['whole-cell']['pixelwise-interior'], base_array * 3)
-    assert np.array_equal(output['nuclear']['pixelwise-interior'], base_array * 6)
+    assert np.array_equal(output['whole-cell'][1], base_array * 3)
+    assert np.array_equal(output['nuclear'][1], base_array * 6)
 
     with pytest.raises(ValueError):
         output = format_output_mesmer(combined_list[:3])
