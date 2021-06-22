@@ -33,7 +33,7 @@ import os
 
 import tensorflow as tf
 
-from deepcell_toolbox.processing import normalize
+from deepcell_toolbox.processing import histogram_normalization
 from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.applications import Application
@@ -93,7 +93,7 @@ class CytoplasmSegmentation(Application):
     }
 
     def __init__(self, model=None,
-                 preprocessing_fn=normalize,
+                 preprocessing_fn=histogram_normalization,
                  postprocessing_fn=deep_watershed):
 
         if model is None:
