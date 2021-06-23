@@ -136,16 +136,16 @@ def mesmer_postprocess(model_output, compartment='whole-cell',
 
     if compartment == 'whole-cell':
         label_images = deep_watershed(model_output['whole-cell'],
-                                           **whole_cell_kwargs)
+                                      **whole_cell_kwargs)
     elif compartment == 'nuclear':
         label_images = deep_watershed(model_output['nuclear'],
-                                           **nuclear_kwargs)
+                                      **nuclear_kwargs)
     elif compartment == 'both':
         label_images_cell = deep_watershed(model_output['whole-cell'],
-                                                **whole_cell_kwargs)
+                                           **whole_cell_kwargs)
 
         label_images_nucleus = deep_watershed(model_output['nuclear'],
-                                                   **nuclear_kwargs)
+                                              **nuclear_kwargs)
 
         label_images = np.concatenate([
             label_images_cell,
