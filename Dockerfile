@@ -6,7 +6,10 @@ ARG TF_VERSION=2.5.0-gpu
 FROM tensorflow/tensorflow:${TF_VERSION}
 
 # System maintenance
-RUN /usr/bin/python3 -m pip install --upgrade pip
+RUN apt-get update && apt-get install -y  \
+    graphviz && \
+    rm -rf /var/lib/apt/lists/* && \
+    /usr/bin/python3 -m pip install --no-cache-dir --upgrade pip
 
 WORKDIR /notebooks
 
@@ -15,7 +18,7 @@ COPY setup.py README.md requirements.txt /opt/deepcell-tf/
 
 # Prevent reinstallation of tensorflow and install all other requirements.
 RUN sed -i "/tensorflow>/d" /opt/deepcell-tf/requirements.txt && \
-    pip install -r /opt/deepcell-tf/requirements.txt
+    pip install --no-cache-dir -r /opt/deepcell-tf/requirements.txt
 
 # Copy the rest of the package code and its scripts
 COPY deepcell /opt/deepcell-tf/deepcell
