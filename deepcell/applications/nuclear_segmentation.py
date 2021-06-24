@@ -155,9 +155,9 @@ class NuclearSegmentation(Application):
 
         if postprocess_kwargs is None:
             postprocess_kwargs = {
-                'min_distance': 10,
-                'detection_threshold': 0.1,
-                'distance_threshold': 0.01,
+                'radius': 10,
+                'maxima_threshold': 0.1,
+                'interior_threshold': 0.01,
                 'exclude_border': False,
                 'small_objects_threshold': 0
             }

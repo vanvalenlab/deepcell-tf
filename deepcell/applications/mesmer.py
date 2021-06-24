@@ -34,7 +34,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from deepcell_toolbox.deep_watershed import deep_watershed_mibi
+from deepcell_toolbox.deep_watershed import deep_watershed
 from deepcell_toolbox.processing import percentile_threshold
 from deepcell_toolbox.processing import histogram_normalization
 
@@ -80,7 +80,7 @@ def format_output_mesmer(output_list):
         output_list (list): predictions from semantic heads
 
     Returns:
-        dict: dictionary with predictions
+        dict: Dict of predictions for whole cell and nuclear.
 
     Raises:
         ValueError: if model output list is not len(8)
@@ -91,21 +91,15 @@ def format_output_mesmer(output_list):
             len(output_list), expected_length))
 
     formatted_dict = {
-        'whole-cell': {
-            'inner-distance': output_list[0],
-            'pixelwise-interior': output_list[1][..., 1:2]
-        },
-        'nuclear': {
-            'inner-distance': output_list[2],
-            'pixelwise-interior': output_list[3][..., 1:2]
-        }
+        'whole-cell': [output_list[0], output_list[1][..., 1:2]],
+        'nuclear': [output_list[2], output_list[3][..., 1:2]],
     }
 
     return formatted_dict
 
 
-def mesmer_postprocess(model_output, compartment='whole-cell', whole_cell_kwargs=None,
-                       nuclear_kwargs=None):
+def mesmer_postprocess(model_output, compartment='whole-cell',
+                       whole_cell_kwargs=None, nuclear_kwargs=None):
     """Postprocess Mesmer output to generate predictions for distinct cellular compartments
 
     Args:
@@ -141,19 +135,22 @@ def mesmer_postprocess(model_output, compartment='whole-cell', whole_cell_kwargs
                          'Must be one of {}'.format(compartment, valid_compartments))
 
     if compartment == 'whole-cell':
-        label_images = deep_watershed_mibi(model_output=model_output['whole-cell'],
-                                           **whole_cell_kwargs)
+        label_images = deep_watershed(model_output['whole-cell'],
+                                      **whole_cell_kwargs)
     elif compartment == 'nuclear':
-        label_images = deep_watershed_mibi(model_output=model_output['nuclear'],
-                                           **nuclear_kwargs)
+        label_images = deep_watershed(model_output['nuclear'],
+                                      **nuclear_kwargs)
     elif compartment == 'both':
-        label_images_cell = deep_watershed_mibi(model_output=model_output['whole-cell'],
-                                                **whole_cell_kwargs)
+        label_images_cell = deep_watershed(model_output['whole-cell'],
+                                           **whole_cell_kwargs)
 
-        label_images_nucleus = deep_watershed_mibi(model_output=model_output['nuclear'],
-                                                   **nuclear_kwargs)
+        label_images_nucleus = deep_watershed(model_output['nuclear'],
+                                              **nuclear_kwargs)
 
-        label_images = np.concatenate((label_images_cell, label_images_nucleus), axis=-1)
+        label_images = np.concatenate([
+            label_images_cell,
+            label_images_nucleus
+        ], axis=-1)
 
     else:
         raise ValueError('Invalid compartment supplied: {}. '
@@ -239,6 +236,7 @@ class Mesmer(Application):
                 image_mpp=None,
                 preprocess_kwargs={},
                 compartment='whole-cell',
+                pad_mode='constant',
                 postprocess_kwargs_whole_cell=None,
                 postprocess_kwargs_nuclear=None):
         """Generates a labeled image of the input running prediction with
@@ -268,16 +266,15 @@ class Mesmer(Application):
             ValueError: Input data must match required number of channels.
 
         Returns:
-            numpy.array: Labeled image
-            numpy.array: Model output
+            numpy.array: Instance segmentation mask.
         """
 
         if postprocess_kwargs_whole_cell is None:
             postprocess_kwargs_whole_cell = {
                 'maxima_threshold': 0.1,
-                'maxima_model_smooth': 0,
+                'maxima_smooth': 0,
                 'interior_threshold': 0.3,
-                'interior_model_smooth': 2,
+                'interior_smooth': 2,
                 'small_objects_threshold': 15,
                 'fill_holes_threshold': 15,
                 'radius': 2
@@ -286,9 +283,9 @@ class Mesmer(Application):
         if postprocess_kwargs_nuclear is None:
             postprocess_kwargs_nuclear = {
                 'maxima_threshold': 0.1,
-                'maxima_model_smooth': 0,
+                'maxima_smooth': 0,
                 'interior_threshold': 0.3,
-                'interior_model_smooth': 2,
+                'interior_smooth': 2,
                 'small_objects_threshold': 15,
                 'fill_holes_threshold': 15,
                 'radius': 2
@@ -304,5 +301,6 @@ class Mesmer(Application):
         return self._predict_segmentation(image,
                                           batch_size=batch_size,
                                           image_mpp=image_mpp,
+                                          pad_mode=pad_mode,
                                           preprocess_kwargs=preprocess_kwargs,
                                           postprocess_kwargs=postprocess_kwargs)
