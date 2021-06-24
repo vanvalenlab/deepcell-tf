@@ -1,7 +1,7 @@
 # Use tensorflow/tensorflow as the base image
 # Change the build arg to edit the tensorflow version.
 # Only supporting python3.
-ARG TF_VERSION=2.4.2-gpu
+ARG TF_VERSION=2.5.0-gpu
 
 FROM tensorflow/tensorflow:${TF_VERSION}
 
