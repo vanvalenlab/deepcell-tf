@@ -52,18 +52,18 @@ from deepcell.data import tracking
     }, {
         'testcase_name': 'test_data_02',
         'time': 40,
-        'max_cells': 39,
+        'max_cells': 19,
         'crop_size': 32,
-        'batch_size': 16,
+        'batch_size': 24,
         'seed': 2,
         'track_length': 7,
         'val_split': 0.2
     }, {
         'testcase_name': 'test_data_03',
         'time': 50,
-        'max_cells': 44,
+        'max_cells': 20,
         'crop_size': 32,
-        'batch_size': 4,
+        'batch_size': 16,
         'seed': 4,
         'track_length': 6,
         'val_split': 0.1
