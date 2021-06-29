@@ -50,7 +50,7 @@ def temporal_slice(X, y, track_length=8):
         tuple(dict, dict): Tuple of sliced ``X`` and ``y`` data.
     """
     appearances = X['appearances']
-    max_time = tf.shape(appearances)[1] - track_length
+    max_time = tf.shape(appearances)[0] - track_length
 
     t_start = tf.random.uniform(shape=[], minval=0,
                                 maxval=max_time,
