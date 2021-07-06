@@ -52,7 +52,7 @@ from deepcell.data import tracking
     }, {
         'testcase_name': 'test_data_02',
         'time': 40,
-        'max_cells': 19,
+        'max_cells': 29,
         'crop_size': 32,
         'batch_size': 24,
         'seed': 2,
@@ -61,9 +61,9 @@ from deepcell.data import tracking
     }, {
         'testcase_name': 'test_data_03',
         'time': 50,
-        'max_cells': 20,
+        'max_cells': 15,
         'crop_size': 32,
-        'batch_size': 16,
+        'batch_size': 10,
         'seed': 4,
         'track_length': 6,
         'val_split': 0.1
@@ -75,6 +75,7 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
                             batch_size, seed, track_length, val_split):
         X, y = self.create_test_data(time, max_cells, crop_size)
         sliced_X, sliced_y = tracking.temporal_slice(X, y, track_length)
+
         # Test temporal dimension correct index and value
         for key in sliced_X:
             self.assertEqual(sliced_X[key].shape[0], track_length)
@@ -84,13 +85,17 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
     def test_random_rotate(self, time, max_cells, crop_size,
                            batch_size, seed, track_length, val_split):
         X, y = self.create_test_data(time, max_cells, crop_size)
+
+        # Get appearance and centroid tensors
         X_apps = X['appearances']
         X_cents = X['centroids']
+
+        # Assert rotating does not mutate the shape of tensors
         rotated_X, y = tracking.random_rotate(X, y, 180)
         self.assertEqual(rotated_X['appearances'].shape, X_apps.shape)
         self.assertEqual(rotated_X['centroids'].shape, X_cents.shape)
 
-        # Assert rotating by 0 does not change Tensors
+        # Assert rotating by 0 does not change tensors
         X_apps = rotated_X['appearances'][0, 0, 0, 0]
         X_cents = rotated_X['centroids'][0, 0, 0]
         output_X, y = tracking.random_rotate(rotated_X, y, 0)
@@ -102,8 +107,11 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
     def test_random_translate(self, time, max_cells, crop_size,
                               batch_size, seed, track_length, val_split):
         X, y = self.create_test_data(time, max_cells, crop_size)
+
+        # Get initial centroid values for two different cells
         init_x_0 = X['centroids'][0, 0, 0]
         init_x_1 = X['centroids'][0, 1, 0]
+
         translated_X, y = tracking.random_translate(X, y)
 
         # Get distance translated for two different cells
@@ -120,10 +128,8 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
 
     def test_prepare_dataset(self, time, max_cells, crop_size,
                              batch_size, seed, track_length, val_split):
-        batch_size = 4
-        track_info, y = self.create_track_info(226, time, max_cells, crop_size)
-        track_info['norm_adj_matrices'] = track_info['adj_matrices']
-        track_info['temporal_adj_matrices'] = y['temporal_adj_matrices']
+        # Create track_info and prepare the dataset
+        track_info = self.create_track_info(226, time, max_cells, crop_size)
         train_data, val_data = tracking.prepare_dataset(track_info, rotation_range=180,
                                                         batch_size=batch_size, seed=seed,
                                                         track_length=track_length,
@@ -135,6 +141,7 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
             self.assertEqual((X['appearances'].shape)[0], batch_size)
 
     def create_test_data(self, time, max_cells, crop_size):
+        # Create dictionaries of feature data labels with correct dimensions
         X = {}
         y = {}
         appearances = np.random.random((time, max_cells, crop_size, crop_size, 1))
@@ -150,19 +157,23 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
         return X, y
 
     def create_track_info(self, n_batches, time, max_cells, crop_size):
-        X = {}
-        y = {}
+        # Create track_info input (dictionary of all input and output features) with correct
+        # dimensions for prepare_dataset function.
+        track_info = {}
         appearances = np.random.random((n_batches, time, max_cells, crop_size, crop_size, 1))
-        X['appearances'] = tf.convert_to_tensor(appearances, dtype=tf.float32)
+        track_info['appearances'] = tf.convert_to_tensor(appearances, dtype=tf.float32)
         centroids = np.random.random((n_batches, time, max_cells, 2))
-        X['centroids'] = tf.convert_to_tensor(centroids, dtype=tf.float32)
+        track_info['centroids'] = tf.convert_to_tensor(centroids, dtype=tf.float32)
         morphologies = np.random.random((n_batches, time, max_cells, 3))
-        X['morphologies'] = tf.convert_to_tensor(morphologies, dtype=tf.float32)
+        track_info['morphologies'] = tf.convert_to_tensor(morphologies, dtype=tf.float32)
         adj_matrices = np.random.random((n_batches, time, max_cells, max_cells))
-        X['adj_matrices'] = tf.convert_to_tensor(adj_matrices, dtype=tf.float32)
+        track_info['adj_matrices'] = tf.convert_to_tensor(adj_matrices, dtype=tf.float32)
+        norm_adj_matrices = np.random.random((n_batches, time, max_cells, max_cells))
+        track_info['norm_adj_matrices'] = tf.convert_to_tensor(norm_adj_matrices, dtype=tf.float32)
         temporal_adj_matrices = np.random.random((n_batches, time - 1, max_cells, max_cells, 3))
-        y['temporal_adj_matrices'] = tf.convert_to_tensor(temporal_adj_matrices, dtype=tf.float32)
-        return X, y
+        track_info['temporal_adj_matrices'] = tf.convert_to_tensor(temporal_adj_matrices,
+                                                                   dtype=tf.float32)
+        return track_info
 
 
 if __name__ == '__main__':
