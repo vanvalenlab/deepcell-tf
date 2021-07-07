@@ -107,18 +107,21 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
     def test_random_translate(self, time, max_cells, crop_size,
                               batch_size, seed, track_length, val_split):
         X, y = self.create_test_data(time, max_cells, crop_size)
-
-        # Get initial centroid values for two different cells
-        init_x_0 = X['centroids'][0, 0, 0]
-        init_x_1 = X['centroids'][0, 1, 0]
-
+        X_cents = X['centroids']
         translated_X, y = tracking.random_translate(X, y)
 
-        # Get distance translated for two different cells
-        r0 = (float)(translated_X['centroids'][0, 0, 0] - init_x_0)
-        r1 = (float)(translated_X['centroids'][0, 1, 0] - init_x_1)
+        # Get difference from translating
+        diff = X_cents - translated_X['centroids']
+
+        # Create array filled with same x and y values
+        x0 = np.empty((time, max_cells, 1))
+        y0 = np.empty((time, max_cells, 1))
+        x0.fill(diff[0, 0, 0])
+        y0.fill(diff[0, 0, 1])
+        r0 = tf.concat([x0, y0], 2)
+
         # Assert that centroids are translated by the same amount
-        assert abs(r1 - r0) < 0.001
+        self.assertAllEqual(diff, r0)
 
         # Assert range of 0 does not translate data
         X_cents = translated_X['centroids']
