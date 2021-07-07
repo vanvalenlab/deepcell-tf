@@ -96,13 +96,13 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
         self.assertEqual(rotated_X['centroids'].shape, X_cents.shape)
 
         # Assert rotating by 0 does not change tensors
-        X_apps = rotated_X['appearances'][0, 0, 0, 0]
-        X_cents = rotated_X['centroids'][0, 0, 0]
+        X_apps = rotated_X['appearances']
+        X_cents = rotated_X['centroids']
+
         output_X, y = tracking.random_rotate(rotated_X, y, 0)
-        r0 = (float)(output_X['appearances'][0, 0, 0, 0] - X_apps)
-        self.assertEqual(r0, 0)
-        r0 = (float)(output_X['centroids'][0, 0, 0] - X_cents)
-        self.assertEqual(r0, 0)
+
+        self.assertAllEqual(output_X['appearances'], X_apps)
+        self.assertAllEqual(output_X['centroids'], X_cents)
 
     def test_random_translate(self, time, max_cells, crop_size,
                               batch_size, seed, track_length, val_split):
@@ -121,10 +121,9 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
         assert abs(r1 - r0) < 0.001
 
         # Assert range of 0 does not translate data
-        X_cents = translated_X['centroids'][0, 0, 0]
+        X_cents = translated_X['centroids']
         output_X, y = tracking.random_translate(X, y, range=0)
-        r0 = (float)(output_X['centroids'][0, 0, 0] - X_cents)
-        self.assertEqual(r0, 0)
+        self.assertAllEqual(output_X['centroids'], X_cents)
 
     def test_prepare_dataset(self, time, max_cells, crop_size,
                              batch_size, seed, track_length, val_split):
