@@ -99,14 +99,10 @@ def test_mesmer_postprocess(mocker):
     base_array = np.ones((1, 20, 20, 1))
 
     whole_cell_list = [base_array * mult for mult in range(1, 3)]
-    whole_cell_dict = {'inner-distance': whole_cell_list[0],
-                       'pixelwise-interior': whole_cell_list[1]}
 
     nuclear_list = [base_array * mult for mult in range(3, 5)]
-    nuclear_dict = {'inner-distance': nuclear_list[0],
-                    'pixelwise-interior': nuclear_list[1]}
 
-    model_output = {'whole-cell': whole_cell_dict, 'nuclear': nuclear_dict}
+    model_output = {'whole-cell': whole_cell_list, 'nuclear': nuclear_list}
 
     # whole cell predictions only
     whole_cell = mesmer_postprocess(model_output=model_output,
@@ -124,24 +120,24 @@ def test_mesmer_postprocess(mocker):
     assert both.shape == (1, 20, 20, 2)
 
     # make sure correct arrays are being passed to helper function
-    def mock_deep_watershed_mibi(model_output):
-        pixelwise_interior_vals = model_output['pixelwise-interior']
+    def mock_deep_watershed(model_output):
+        pixelwise_interior_vals = model_output[-1]
         return pixelwise_interior_vals
 
-    mocker.patch('deepcell.applications.mesmer.deep_watershed_mibi',
-                 mock_deep_watershed_mibi)
+    mocker.patch('deepcell.applications.mesmer.deep_watershed',
+                 mock_deep_watershed)
 
     # whole cell predictions only
     whole_cell_mocked = mesmer_postprocess(model_output=model_output,
                                            compartment='whole-cell')
 
-    assert np.array_equal(whole_cell_mocked, whole_cell_dict['pixelwise-interior'])
+    assert np.array_equal(whole_cell_mocked, whole_cell_list[1])
 
     # nuclear predictions only
     whole_cell_mocked = mesmer_postprocess(model_output=model_output,
                                            compartment='nuclear')
 
-    assert np.array_equal(whole_cell_mocked, nuclear_dict['pixelwise-interior'])
+    assert np.array_equal(whole_cell_mocked, nuclear_list[1])
 
     with pytest.raises(ValueError):
         whole_cell = mesmer_postprocess(model_output=model_output,
@@ -166,11 +162,11 @@ def test_format_output_mesmer():
 
     assert set(output.keys()) == {'whole-cell', 'nuclear'}
 
-    assert np.array_equal(output['whole-cell']['inner-distance'], base_array)
-    assert np.array_equal(output['nuclear']['inner-distance'], base_array * 2)
+    assert np.array_equal(output['whole-cell'][0], base_array)
+    assert np.array_equal(output['nuclear'][0], base_array * 2)
 
-    assert np.array_equal(output['whole-cell']['pixelwise-interior'], base_array * 3)
-    assert np.array_equal(output['nuclear']['pixelwise-interior'], base_array * 6)
+    assert np.array_equal(output['whole-cell'][1], base_array * 3)
+    assert np.array_equal(output['nuclear'][1], base_array * 6)
 
     with pytest.raises(ValueError):
         output = format_output_mesmer(combined_list[:3])

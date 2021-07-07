@@ -33,14 +33,14 @@ import os
 
 import tensorflow as tf
 
-from deepcell_toolbox.processing import normalize
+from deepcell_toolbox.processing import histogram_normalization
 from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.applications import Application
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/NuclearSegmentation-3.tar.gz')
+              'saved-models/NuclearSegmentation-4.tar.gz')
 
 
 class NuclearSegmentation(Application):
@@ -92,12 +92,14 @@ class NuclearSegmentation(Application):
         'validation_steps_per_epoch': 15627
     }
 
-    def __init__(self, model=None):
+    def __init__(self, model=None,
+                 preprocessing_fn=histogram_normalization,
+                 postprocessing_fn=deep_watershed):
 
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'NuclearSegmentation.tgz', MODEL_PATH,
-                file_hash='7fff56a59f453252f24967cfe1813abd',
+                file_hash='99ea4fe44cd8c20eb224565ee7a242b4',
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
@@ -107,8 +109,8 @@ class NuclearSegmentation(Application):
             model,
             model_image_shape=model.input_shape[1:],
             model_mpp=0.65,
-            preprocessing_fn=normalize,
-            postprocessing_fn=deep_watershed,
+            preprocessing_fn=preprocessing_fn,
+            postprocessing_fn=postprocessing_fn,
             dataset_metadata=self.dataset_metadata,
             model_metadata=self.model_metadata)
 
@@ -153,9 +155,9 @@ class NuclearSegmentation(Application):
 
         if postprocess_kwargs is None:
             postprocess_kwargs = {
-                'min_distance': 10,
-                'detection_threshold': 0.1,
-                'distance_threshold': 0.01,
+                'radius': 10,
+                'maxima_threshold': 0.1,
+                'interior_threshold': 0.01,
                 'exclude_border': False,
                 'small_objects_threshold': 0
             }

@@ -32,6 +32,8 @@ from __future__ import print_function
 import numpy as np
 import skimage as sk
 
+from PIL import Image
+
 from tensorflow.keras import backend as K
 from tensorflow.keras.preprocessing.image import array_to_img
 from tensorflow.keras.preprocessing.image import img_to_array
@@ -40,21 +42,28 @@ from tensorflow.python.platform import test
 from deepcell import image_generators
 
 
-def _generate_test_images(img_w=21, img_h=21):
+def all_test_images():
+    img_w = img_h = 20
     rgb_images = []
+    rgba_images = []
     gray_images = []
-    for _ in range(8):
+    for n in range(8):
         bias = np.random.rand(img_w, img_h, 1) * 64
         variance = np.random.rand(img_w, img_h, 1) * (255 - 64)
         imarray = np.random.rand(img_w, img_h, 3) * variance + bias
-        im = array_to_img(imarray, scale=False)
+        im = Image.fromarray(imarray.astype('uint8')).convert('RGB')
         rgb_images.append(im)
 
+        imarray = np.random.rand(img_w, img_h, 4) * variance + bias
+        im = Image.fromarray(imarray.astype('uint8')).convert('RGBA')
+        rgba_images.append(im)
+
         imarray = np.random.rand(img_w, img_h, 1) * variance + bias
-        im = array_to_img(imarray, scale=False)
+        im = Image.fromarray(
+            imarray.astype('uint8').squeeze()).convert('L')
         gray_images.append(im)
 
-    return [rgb_images, gray_images]
+    return [rgb_images, rgba_images, gray_images]
 
 
 class TestTransformMasks(test.TestCase):
@@ -360,7 +369,7 @@ class TestTransformMasks(test.TestCase):
 class TestSampleDataGenerator(test.TestCase):
 
     def test_sample_data_generator(self):
-        for test_images in _generate_test_images():
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -415,7 +424,7 @@ class TestSampleDataGenerator(test.TestCase):
                 break
 
     def test_sample_data_generator_channels_first(self):
-        for test_images in _generate_test_images():
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -522,7 +531,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
 
     def test_sample_movie_data_generator(self):
         frames = 7
-        for test_images in _generate_test_images():
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 frame_list = []
@@ -587,7 +596,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
 
     def test_sample_movie_data_generator_channels_first(self):
         frames = 7
-        for test_images in _generate_test_images():
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 frame_list = []
@@ -703,7 +712,7 @@ class TestSampleMovieDataGenerator(test.TestCase):
 class TestFullyConvDataGenerator(test.TestCase):
 
     def test_fully_conv_data_generator(self):
-        for test_images in _generate_test_images():
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -754,7 +763,7 @@ class TestFullyConvDataGenerator(test.TestCase):
                 break
 
     def test_fully_conv_data_generator_channels_first(self):
-        for test_images in _generate_test_images():
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -879,7 +888,7 @@ class TestFullyConvDataGenerator(test.TestCase):
 
     def test_batch_standardize(self):
         # ImageFullyConvDataGenerator.standardize should work on batches
-        for test_images in _generate_test_images():
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -915,7 +924,7 @@ class TestMovieDataGenerator(test.TestCase):
 
     def test_movie_data_generator(self):
         frames = 7
-        for test_images in _generate_test_images():
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 frame_list = []
@@ -978,7 +987,7 @@ class TestMovieDataGenerator(test.TestCase):
 
     def test_movie_data_generator_channels_first(self):
         frames = 7
-        for test_images in _generate_test_images():
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 frame_list = []
@@ -1126,7 +1135,7 @@ class TestMovieDataGenerator(test.TestCase):
     def test_batch_standardize(self):
         # MovieDataGenerator.standardize should work on batches
         frames = 3
-        for test_images in _generate_test_images():
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 frame_list = []
@@ -1365,7 +1374,7 @@ class TestSiamsesDataGenerator(test.TestCase):
 class TestScaleDataGenerator(test.TestCase):
 
     def test_scale_data_generator(self):
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -1413,7 +1422,7 @@ class TestScaleDataGenerator(test.TestCase):
                 break
 
     def test_scale_data_generator_channels_first(self):
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -1508,7 +1517,7 @@ class TestScaleDataGenerator(test.TestCase):
 
 class TestSemanticDataGenerator(test.TestCase):
     def test_semantic_data_generator(self):
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -1558,7 +1567,7 @@ class TestSemanticDataGenerator(test.TestCase):
                 break
 
     def test_semantic_data_generator_channels_first(self):
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -1610,7 +1619,7 @@ class TestSemanticDataGenerator(test.TestCase):
                 break
 
     def test_semantic_data_generator_multiple_labels(self):
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -1659,7 +1668,7 @@ class TestSemanticDataGenerator(test.TestCase):
                 break
 
     def test_semantic_data_generator_multiple_labels_channels_first(self):
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -1756,7 +1765,7 @@ class TestSemanticDataGenerator(test.TestCase):
 class TestCroppingDataGenerator(test.TestCase):
 
     def test_cropping_data_generator(self):
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -1857,7 +1866,7 @@ class TestCroppingDataGenerator(test.TestCase):
                 horizontal_flip=True,
                 vertical_flip=True,
                 rescale=2,
-                crop_size=(21, 21))
+                crop_size=(20, 20))
 
             for x, y in generator.flow(
                     train_dict,
@@ -1869,7 +1878,7 @@ class TestCroppingDataGenerator(test.TestCase):
                 break
 
     def test_cropping_data_generator_channels_first(self):
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 img_list.append(img_to_array(im)[None, ...])
@@ -2000,7 +2009,7 @@ class TestSemanticMovieGenerator(test.TestCase):
     def test_semantic_movie_generator(self):
         frames = 7
         frames_per_batch = 5
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 frame_list = []
@@ -2061,7 +2070,7 @@ class TestSemanticMovieGenerator(test.TestCase):
     def test_semantic_movie_generator_channels_first(self):
         frames = 7
         frames_per_batch = 5
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 frame_list = []
@@ -2184,7 +2193,7 @@ class TestSemantic3DGenerator(test.TestCase):
         aug_3d = False
         rotation_3d = 0
 
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 frame_list = []
@@ -2257,7 +2266,7 @@ class TestSemantic3DGenerator(test.TestCase):
         aug_3d = True
         rotation_3d = 90
 
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 frame_list = []
@@ -2328,7 +2337,7 @@ class TestSemantic3DGenerator(test.TestCase):
         aug_3d = True
         rotation_3d = 0
 
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 frame_list = []
@@ -2401,7 +2410,7 @@ class TestSemantic3DGenerator(test.TestCase):
         aug_3d = True
         rotation_3d = 90
 
-        for test_images in _generate_test_images(21, 21):
+        for test_images in all_test_images():
             img_list = []
             for im in test_images:
                 frame_list = []
