@@ -233,12 +233,35 @@ class DeltaReshape(tf.keras.layers.Layer):
         return output
 
 
+class Unmerge(tf.keras.layers.Layer):
+    def __init__(self, track_length, max_cells, embedding_dim, **kwargs):
+        super(Unmerge, self).__init__(**kwargs)
+        self.track_length = track_length
+        self.max_cells = max_cells
+        self.embedding_dim = embedding_dim
+
+    def call(self, inputs):
+        new_shape = [-1, self.track_length, self.max_cells, self.embedding_dim]
+        output = tf.reshape(inputs, new_shape)
+
+        return output
+
+    def get_config(self):
+        config = {
+            'track_length': self.track_length,
+            'max_cells': self.max_cells,
+            'embedding_dim': self.embedding_dim
+        }
+        base_config = super(Unmerge, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+
 class GNNTrackingModel(object):
     """Creates a tracking model based on Graph Neural Networks(GNNs).
 
     Args:
         n_filters (int): Number of filters
-        endcoder_dim (int): Dimension of encoder
+        encoder_dim (int): Dimension of encoder
         embedding_dim (int): Dimension of embedding
         n_layers (int): number of layers
         time_window (int): number of frames to include in temporal merges
@@ -287,7 +310,7 @@ class GNNTrackingModel(object):
         # Create model
         self.training_model, self.inference_model = self.get_models()
 
-    def get_embedding_temporal_merge_model(self, merge_type='cnn'):
+    def get_embedding_temporal_merge_model(self, merge_type='lstm'):
         inputs = Input(shape=(None, None, self.encoder_dim),
                        name='embedding_temporal_merge_input')
 
@@ -310,7 +333,7 @@ class GNNTrackingModel(object):
 
         return Model(inputs=inputs, outputs=x, name='embedding_temporal_merge')
 
-    def get_delta_temporal_merge_model(self, merge_type='cnn'):
+    def get_delta_temporal_merge_model(self, merge_type='lstm'):
         inputs = Input(shape=(None, None, self.encoder_dim),
                        name='centroid_temporal_merge_input')
 
@@ -333,16 +356,6 @@ class GNNTrackingModel(object):
 
         return Model(inputs=inputs, outputs=x, name='delta_temporal_merge')
 
-    def _unmerge_embeddings(self, x):
-        new_shape = [-1, self.track_length, self.appearance_shape[1], self.embedding_dim]
-        new_x = tf.reshape(x, new_shape)
-        return new_x
-
-    def _unmerge_centroids(self, x):
-        new_shape = [-1, self.track_length, self.centroid_shape[1], self.centroid_shape[2]]
-        new_x = tf.reshape(x, new_shape)
-        return new_x
-
     def get_appearance_encoder(self):
         app_shape = tuple([None] + list(self.appearance_shape)[2:])
         inputs = Input(shape=app_shape, name='encoder_app_input')
@@ -351,7 +364,7 @@ class GNNTrackingModel(object):
         x = TimeDistributed(ImageNormalization2D(norm_method='whole_image',
                                                  name='imgnrm_ae'))(x)
 
-        for i in range(self.time_window):
+        for i in range(5):
             x = Conv3D(self.n_filters,
                        (1, 3, 3),
                        strides=1,
@@ -448,14 +461,20 @@ class GNNTrackingModel(object):
         inputs = Input(shape=(self.appearance_shape[1], self.embedding_dim),
                        name='unmerge_embeddings_input')
         x = inputs
-        x = Lambda(self._unmerge_embeddings, name='unmerge_embeddings')(x)
+        x = Unmerge(self.track_length,
+                    self.appearance_shape[1],
+                    self.embedding_dim,
+                    name='unmerge_embeddings')(x)
         return Model(inputs=inputs, outputs=x, name='unmerge_embeddings_model')
 
     def get_unmerge_centroids_model(self):
         inputs = Input(shape=(self.centroid_shape[1], self.centroid_shape[-1]),
                        name='unmerge_centroids_input')
         x = inputs
-        x = Lambda(self._unmerge_centroids, name='unmerge_centroids')(x)
+        x = Unmerge(self.track_length,
+                    self.centroid_shape[1],
+                    self.centroid_shape[2],
+                    name='unmerge_centroids')(x)
 
         return Model(inputs=inputs, outputs=x, name='unmerge_centroids_model')
 
@@ -599,12 +618,6 @@ class GNNTrackingModel(object):
         embedding = Dense(self.n_filters, name='dense_td0')(embedding)
         embedding = BatchNormalization(axis=-1, name='bn_td0')(embedding)
         embedding = Activation('relu', name='relu_td0')(embedding)
-
-        for i in range(self.n_layers):
-            res = Dense(self.n_filters, name='dense_td{}'.format(i + 1))(embedding)
-            res = BatchNormalization(axis=-1, name='bn_td{}'.format(i + 1))(res)
-            res = Activation('relu', name='relu_td{}'.format(i + 1))(res)
-            embedding = Add()([embedding, res])
 
         # TODO: set to n_classes
         embedding = Dense(3, name='dense_outembed')(embedding)
