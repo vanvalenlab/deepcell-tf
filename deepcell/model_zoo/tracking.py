@@ -310,49 +310,25 @@ class GNNTrackingModel(object):
         # Create model
         self.training_model, self.inference_model = self.get_models()
 
-    def get_embedding_temporal_merge_model(self, merge_type='lstm'):
+    def get_embedding_temporal_merge_model(self):
         inputs = Input(shape=(None, None, self.encoder_dim),
                        name='embedding_temporal_merge_input')
 
-        if merge_type == 'lstm':
-            x = inputs
-            x = TemporalMerge(name='merge_emb_tm')([x, inputs])
-            x = LSTM(self.encoder_dim, return_sequences=True, name='lstm_tm')(x)
-            x = TemporalUnmerge(name='unmerge_emb_tm')([x, inputs])
-
-        elif merge_type == 'cnn':
-            x = inputs
-            x = Conv2D(self.encoder_dim, (self.time_window, 1),
-                       padding='SAME', name='conv2d_tm')(x)
-            x = BatchNormalization(axis=-1, name='bn_tm')(x)
-            x = Activation('relu', name='relu_tm')(x)
-
-        else:
-            raise ValueError('merge_type "{}" not supported. '
-                             'Choose from lstm or cnn.'.format(merge_type))
+        x = inputs
+        x = TemporalMerge(name='merge_emb_tm')([x, inputs])
+        x = LSTM(self.encoder_dim, return_sequences=True, name='lstm_tm')(x)
+        x = TemporalUnmerge(name='unmerge_emb_tm')([x, inputs])
 
         return Model(inputs=inputs, outputs=x, name='embedding_temporal_merge')
 
-    def get_delta_temporal_merge_model(self, merge_type='lstm'):
+    def get_delta_temporal_merge_model(self):
         inputs = Input(shape=(None, None, self.encoder_dim),
                        name='centroid_temporal_merge_input')
 
-        if merge_type == 'lstm':
-            x = inputs
-            x = TemporalMerge(name='merge_delta_tm')([x, inputs])
-            x = LSTM(self.encoder_dim, return_sequences=True, name='lstm_delta')(x)
-            x = TemporalUnmerge(name='unmerge_delta_tm')([x, inputs])
-
-        elif merge_type == 'cnn':
-            x = inputs
-            x = Conv2D(self.encoder_dim, (self.time_window, 1),
-                       padding='SAME', name='conv2d_delta')(x)
-            x = BatchNormalization(axis=-1, name='bn_delta')(x)
-            x = Activation('relu', name='relu_delta')(x)
-
-        else:
-            raise ValueError('merge_type "{}" not supported. '
-                             'Choose from lstm or cnn.'.format(merge_type))
+        x = inputs
+        x = TemporalMerge(name='merge_delta_tm')([x, inputs])
+        x = LSTM(self.encoder_dim, return_sequences=True, name='lstm_delta')(x)
+        x = TemporalUnmerge(name='unmerge_delta_tm')([x, inputs])
 
         return Model(inputs=inputs, outputs=x, name='delta_temporal_merge')
 
