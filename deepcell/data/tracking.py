@@ -116,11 +116,11 @@ def random_translate(X, y, range=512):
 
 def prepare_dataset(track_info, batch_size=32, buffer_size=256,
                     seed=None, track_length=8, rotation_range=0,
-                    translation_range=0, val_split=0.2):
+                    translation_range=0, val_split=0.2, test_split=0):
     """Build and prepare the tracking dataset.
 
     Args:
-        track_info (dict): A dicitonary of all input and output features
+        track_info (dict): A dictionary of all input and output features
         batch_size (int): number of examples per batch
         buffer_size (int): number of samples to buffer
         seed (int): Random seed
@@ -128,7 +128,8 @@ def prepare_dataset(track_info, batch_size=32, buffer_size=256,
         rotation_range (int): Maximum degrees to rotate inputs
         translation_range (int): Maximum range of translation,
             should be equivalent to original input image size.
-        val_split (float): Fraciton of data to split into validation set.
+        val_split (float): Fraction of data to split into validation set.
+        test_split (float): Fraction of data to split into test set.
 
     Returns:
         tf.data.Dataset: A ``tf.data.Dataset`` object ready for training.
@@ -151,7 +152,7 @@ def prepare_dataset(track_info, batch_size=32, buffer_size=256,
     dataset = dataset.map(sample, num_parallel_calls=tf.data.AUTOTUNE)
 
     # split into train/val before doing any augmentation
-    train_data, val_data = split_dataset(dataset, val_split)
+    train_data, val_data, test_data = split_dataset(dataset, val_split, test_split)
 
     # randomly rotate
     rotate = lambda X, y: random_rotate(X, y, rotation_range=rotation_range)
@@ -164,9 +165,11 @@ def prepare_dataset(track_info, batch_size=32, buffer_size=256,
     # batch the data
     train_data = train_data.batch(batch_size)
     val_data = val_data.batch(batch_size)
+    test_data = test_data.batch(batch_size)
 
     # prefetch the data
     train_data = train_data.prefetch(tf.data.AUTOTUNE)
     val_data = val_data.prefetch(tf.data.AUTOTUNE)
+    test_data = test_data.prefetch(tf.data.AUTOTUNE)
 
-    return train_data, val_data
+    return train_data, val_data, test_data

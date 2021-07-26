@@ -30,33 +30,49 @@ from __future__ import division
 from __future__ import print_function
 
 
-def split_dataset(dataset, validation_data_fraction):
+def split_dataset(dataset, val_data_fraction, test_data_fraction=0):
     """
-    Splits a dataset of type tf.data.Dataset into a training and validation
-    dataset using given ratio. Fractions are rounded up to two decimal places.
+    Splits a dataset of type tf.data.Dataset into a training, validation, and
+    optionally test dataset using given ratios. Fractions are rounded up to
+    two decimal places.
 
     Inspired by: https://stackoverflow.com/a/59696126
 
     Args:
         dataset (tf.data.Dataset): the input dataset to split.
-        validation_data_fraction (float): the fraction of the validation data
+        val_data_fraction (float): the fraction of the validation data
             between 0 and 1.
+        test_data_fraction (float): the fraction of the test data between 0
+            and 1.
 
     Returns:
-        (tf.data.Dataset, tf.data.Dataset): a tuple of (training, validation).
+        (tf.data.Dataset, tf.data.Dataset, tf.data.Dataset): a tuple of
+            (training, validation, test).
     """
-    validation_data_percent = round(validation_data_fraction * 100)
-    if not (0 <= validation_data_percent <= 100):
-        raise ValueError('validation_data_fraction must be ∈ [0,1].')
+    val_data_percent = round(val_data_fraction * 100)
+    if not 0 <= val_data_percent <= 100:
+        raise ValueError('val_data_fraction must be ∈ [0,1].')
+
+    test_data_percent = round(test_data_fraction * 100)
+    if not 0 <= test_data_percent <= 100:
+        raise ValueError('test_data_fraction must be ∈ [0,1].')
+
+    if val_data_percent + test_data_percent >= 100:
+        raise ValueError('sum of val_data_fraction and '
+                         + 'test_data_fraction must be ∈ [0,1].')
 
     dataset = dataset.enumerate()
-    train_dataset = dataset.filter(lambda f, data: f % 100 > validation_data_percent)
-    validation_dataset = dataset.filter(lambda f, data: f % 100 <= validation_data_percent)
+    val_dataset = dataset.filter(lambda f, data: f % 100 <= val_data_percent)
+    train_dataset = dataset.filter(lambda f, data:
+                                   f % 100 > test_data_percent + val_data_percent)
+    test_dataset = dataset.filter(lambda f, data: f % 100 > val_data_percent and
+                                  f % 100 <= val_data_percent + test_data_percent)
 
     # remove enumeration
     train_dataset = train_dataset.map(lambda f, data: data)
-    validation_dataset = validation_dataset.map(lambda f, data: data)
-    return train_dataset, validation_dataset
+    val_dataset = val_dataset.map(lambda f, data: data)
+    test_dataset = test_dataset.map(lambda f, data: data)
+    return train_dataset, val_dataset, test_dataset
 
 
 from deepcell.data import tracking
