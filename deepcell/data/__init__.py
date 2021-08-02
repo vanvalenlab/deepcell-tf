@@ -59,7 +59,7 @@ def split_dataset(dataset, val_data_fraction, test_data_fraction=0):
 
     if val_data_percent + test_data_percent >= 100:
         raise ValueError('sum of val_data_fraction and '
-                         + 'test_data_fraction must be ∈ [0,1].')
+                         'test_data_fraction must be ∈ [0,1].')
 
     dataset = dataset.enumerate()
     val_dataset = dataset.filter(lambda f, data: f % 100 <= val_data_percent)
