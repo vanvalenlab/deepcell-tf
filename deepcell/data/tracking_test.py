@@ -141,7 +141,7 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
             self.assertEqual((X['appearances'].shape)[0], batch_size)
         for X, y in val_data.take(1):
             self.assertEqual((X['appearances'].shape)[0], batch_size)
-        if not test_split == 0:
+        if test_split != 0:
             for X, y in test_data.take(1):
                 self.assertEqual((X['appearances'].shape)[0], batch_size)
 
