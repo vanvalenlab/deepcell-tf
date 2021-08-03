@@ -265,7 +265,7 @@ class GNNTrackingModel(object):
         inputs = Input(shape=(None, None, self.encoder_dim),
                        name='embedding_temporal_merge_input')
 
-        x = TemporalMerge(name='emb_tm')(inputs)
+        x = TemporalMerge(self.encoder_dim, name='emb_tm')(inputs)
         return Model(inputs=inputs, outputs=x, name='embedding_temporal_merge')
 
     def get_delta_temporal_merge_model(self):
@@ -273,7 +273,7 @@ class GNNTrackingModel(object):
                        name='centroid_temporal_merge_input')
 
         x = inputs
-        x = TemporalMerge(name='delta_tm')(inputs)
+        x = TemporalMerge(self.encoder_dim, name='delta_tm')(inputs)
         return Model(inputs=inputs, outputs=x, name='delta_temporal_merge')
 
     def get_appearance_encoder(self):
