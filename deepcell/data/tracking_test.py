@@ -48,8 +48,8 @@ from deepcell.data import tracking
         'batch_size': 32,
         'seed': None,
         'track_length': 8,
-        'val_split': 0.15,
-        'test_split': 0.15
+        'val_size': 0.15,
+        'test_size': 0.15
     }, {
         'testcase_name': 'test_data_02',
         'time': 40,
@@ -58,15 +58,15 @@ from deepcell.data import tracking
         'batch_size': 24,
         'seed': 2,
         'track_length': 7,
-        'val_split': 0.2,
-        'test_split': 0
+        'val_size': 0.2,
+        'test_size': 0
     }
 ])
 class TrackingTests(test.TestCase, parameterized.TestCase):
 
     def test_temporal_slice(self, time, max_cells, crop_size,
                             batch_size, seed, track_length,
-                            val_split, test_split):
+                            val_size, test_size):
         X, y = self.create_test_data(time, max_cells, crop_size)
         sliced_X, sliced_y = tracking.temporal_slice(X, y, track_length)
 
@@ -78,7 +78,7 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
 
     def test_random_rotate(self, time, max_cells, crop_size,
                            batch_size, seed, track_length,
-                           val_split, test_split):
+                           val_size, test_size):
         X, y = self.create_test_data(time, max_cells, crop_size)
 
         # Get appearance and centroid tensors
@@ -101,7 +101,7 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
 
     def test_random_translate(self, time, max_cells, crop_size,
                               batch_size, seed, track_length,
-                              val_split, test_split):
+                              val_size, test_size):
         X, y = self.create_test_data(time, max_cells, crop_size)
         X_cents = X['centroids']
         translated_X, y = tracking.random_translate(X, y)
@@ -126,7 +126,7 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
 
     def test_prepare_dataset(self, time, max_cells, crop_size,
                              batch_size, seed, track_length,
-                             val_split, test_split):
+                             val_size, test_size):
         # Create track_info and prepare the dataset
         track_info = self.create_track_info(226, time, max_cells, crop_size)
         train_data, val_data, test_data = tracking.prepare_dataset(track_info,
@@ -134,14 +134,14 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
                                                                    batch_size=batch_size,
                                                                    seed=seed,
                                                                    track_length=track_length,
-                                                                   val_split=val_split,
-                                                                   test_split=test_split)
+                                                                   val_size=val_size,
+                                                                   test_size=test_size)
         # Test data correctly batched
         for X, y in train_data.take(1):
             self.assertEqual((X['appearances'].shape)[0], batch_size)
         for X, y in val_data.take(1):
             self.assertEqual((X['appearances'].shape)[0], batch_size)
-        if test_split != 0:
+        if test_size != 0:
             for X, y in test_data.take(1):
                 self.assertEqual((X['appearances'].shape)[0], batch_size)
 

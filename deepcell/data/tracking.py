@@ -116,7 +116,7 @@ def random_translate(X, y, range=512):
 
 def prepare_dataset(track_info, batch_size=32, buffer_size=256,
                     seed=None, track_length=8, rotation_range=0,
-                    translation_range=0, val_split=0.2, test_split=0):
+                    translation_range=0, val_size=0.2, test_size=0):
     """Build and prepare the tracking dataset.
 
     Args:
@@ -128,8 +128,8 @@ def prepare_dataset(track_info, batch_size=32, buffer_size=256,
         rotation_range (int): Maximum degrees to rotate inputs
         translation_range (int): Maximum range of translation,
             should be equivalent to original input image size.
-        val_split (float): Fraction of data to split into validation set.
-        test_split (float): Fraction of data to split into test set.
+        val_size (float): Fraction of data to split into validation set.
+        test_size (float): Fraction of data to split into test set.
 
     Returns:
         tf.data.Dataset: A ``tf.data.Dataset`` object ready for training.
@@ -152,7 +152,7 @@ def prepare_dataset(track_info, batch_size=32, buffer_size=256,
     dataset = dataset.map(sample, num_parallel_calls=tf.data.AUTOTUNE)
 
     # split into train/val before doing any augmentation
-    train_data, val_data, test_data = split_dataset(dataset, val_split, test_split)
+    train_data, val_data, test_data = split_dataset(dataset, val_size, test_size)
 
     # randomly rotate
     rotate = lambda X, y: random_rotate(X, y, rotation_range=rotation_range)
