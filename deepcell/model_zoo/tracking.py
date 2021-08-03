@@ -45,8 +45,7 @@ from tensorflow.keras.layers import BatchNormalization, Lambda
 from tensorflow.keras.regularizers import l2
 
 from deepcell.layers import ImageNormalization2D
-from deepcell.layers import Comparison, DeltaReshape, Unmerge
-from deepcell.layers import TemporalMerge, TemporalUnmerge
+from deepcell.layers import Comparison, DeltaReshape, Unmerge, TemporalMerge
 
 from spektral.layers import GCSConv
 # from spektral.layers import GCNConv, GATConv
@@ -266,11 +265,7 @@ class GNNTrackingModel(object):
         inputs = Input(shape=(None, None, self.encoder_dim),
                        name='embedding_temporal_merge_input')
 
-        x = inputs
-        x = TemporalMerge(name='merge_emb_tm')([x, inputs])
-        x = LSTM(self.encoder_dim, return_sequences=True, name='lstm_tm')(x)
-        x = TemporalUnmerge(name='unmerge_emb_tm')([x, inputs])
-
+        x = TemporalMerge(name='emb_tm')(inputs)
         return Model(inputs=inputs, outputs=x, name='embedding_temporal_merge')
 
     def get_delta_temporal_merge_model(self):
@@ -278,10 +273,7 @@ class GNNTrackingModel(object):
                        name='centroid_temporal_merge_input')
 
         x = inputs
-        x = TemporalMerge(name='merge_delta_tm')([x, inputs])
-        x = LSTM(self.encoder_dim, return_sequences=True, name='lstm_delta')(x)
-        x = TemporalUnmerge(name='unmerge_delta_tm')([x, inputs])
-
+        x = TemporalMerge(name='delta_tm')(inputs)
         return Model(inputs=inputs, outputs=x, name='delta_temporal_merge')
 
     def get_appearance_encoder(self):

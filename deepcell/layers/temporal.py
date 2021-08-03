@@ -92,40 +92,23 @@ class TemporalMerge(Layer):
     def __init__(self, encoder_dim=64, **kwargs):
         super(TemporalMerge, self).__init__(**kwargs)
         self.encoder_dim = encoder_dim
+        self.lstm = tf.keras.layers.LSTM(
+            self.encoder_dim,
+            return_sequences=True,
+            name='{}_lstm'.format(self.name))
 
     def call(self, inputs):
-        a = inputs[0]
-        b = inputs[1]
-        new_shape = [-1, tf.shape(b)[2], self.encoder_dim]
-        return tf.reshape(a, new_shape)
+        input_shape = tf.shape(inputs)
+        # reshape away the temporal axis
+        x = tf.reshape(inputs, [-1, input_shape[2], self.encoder_dim])
+        x = self.lstm(x)
+        output_shape = [-1, input_shape[1], input_shape[2], self.encoder_dim]
+        x = tf.reshape(x, output_shape)
+        return x
 
     def get_config(self):
         config = {
             'encoder_dim': self.encoder_dim,
         }
         base_config = super(TemporalMerge, self).get_config()
-        return dict(list(base_config.items()) + list(config.items()))
-
-
-class TemporalUnmerge(Layer):
-    """Layer for unmerging the time dimension of a Tensor.
-
-    Args:
-        encoder_dim (int): desired encoder dimension.
-    """
-    def __init__(self, encoder_dim=64, **kwargs):
-        super(TemporalUnmerge, self).__init__(**kwargs)
-        self.encoder_dim = encoder_dim
-
-    def call(self, inputs):
-        a = inputs[0]
-        b = inputs[1]
-        new_shape = [-1, tf.shape(b)[1], tf.shape(b)[2], self.encoder_dim]
-        return tf.reshape(a, new_shape)
-
-    def get_config(self):
-        config = {
-            'encoder_dim': self.encoder_dim,
-        }
-        base_config = super(TemporalUnmerge, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

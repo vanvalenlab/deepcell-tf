@@ -118,3 +118,20 @@ class TestUnmerge(keras_parameterized.TestCase):
                             'max_cells': max_cells,
                             'embedding_dim': embedding_dim},
                     input_shape=(None, track_length * max_cells, embedding_dim))
+
+
+@keras_parameterized.run_all_keras_modes
+class TestTemporalMerge(keras_parameterized.TestCase):
+
+    def test_temporal_merge(self):
+        track_length = 5
+        max_cells = 7
+        encoder_dim = 32
+
+        custom_objects = {'TemporalMerge': layers.TemporalMerge}
+        with self.cached_session():
+            with custom_object_scope(custom_objects):
+                testing_utils.layer_test(
+                    layers.TemporalMerge,
+                    kwargs={'encoder_dim': encoder_dim},
+                    input_shape=(None, track_length, max_cells, encoder_dim))
