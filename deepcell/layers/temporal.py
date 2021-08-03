@@ -71,7 +71,6 @@ class Unmerge(Layer):
     def call(self, inputs):
         new_shape = [-1, self.track_length, self.max_cells, self.embedding_dim]
         output = tf.reshape(inputs, new_shape)
-
         return output
 
     def get_config(self):
