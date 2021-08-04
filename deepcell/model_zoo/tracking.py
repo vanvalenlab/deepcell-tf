@@ -539,6 +539,12 @@ class GNNTrackingModel(object):
         embedding = BatchNormalization(axis=-1, name='bn_td0')(embedding)
         embedding = Activation('relu', name='relu_td0')(embedding)
 
+        for i in range(self.n_layers):
+            res = Dense(self.n_filters, name='dense_td{}'.format(i + 1))(embedding)
+            res = BatchNormalization(axis=-1, name='bn_td{}'.format(i + 1))(res)
+            res = Activation('relu', name='relu_td{}'.format(i + 1))(res)
+            embedding = Add()([embedding, res])
+
         # TODO: set to n_classes
         embedding = Dense(3, name='dense_outembed')(embedding)
 
