@@ -211,22 +211,24 @@ class GNNTrackingModel(object):
     """Creates a tracking model based on Graph Neural Networks(GNNs).
 
     Args:
+        max_cells (int): maximum number of tracks per movie in dataset
+        track_length (int): track length (parameter defined in dataset obj)
         n_filters (int): Number of filters
         encoder_dim (int): Dimension of encoder
         embedding_dim (int): Dimension of embedding
         n_layers (int): number of layers
         time_window (int): number of frames to include in temporal merges
-        max_cells (int): maximum number of tracks per movie in dataset
-        track_length (int): track length (parameter defined in dataset obj)
+        appearance_shape (tuple): shape of each object's appearance tensor
     """
     def __init__(self,
+                 max_cells=39,
+                 track_length=8,
                  n_filters=64,
                  encoder_dim=64,
                  embedding_dim=64,
                  n_layers=3,
                  time_window=5,
-                 max_cells=39,
-                 track_length=8):
+                 appearance_shape=(32, 32, 1)):
 
         self.n_filters = n_filters
         self.encoder_dim = encoder_dim
@@ -237,10 +239,11 @@ class GNNTrackingModel(object):
         self.track_length = track_length
 
         # Use inputs to build expected shapes
-        self.appearance_shape = (self.track_length, self.max_cells, 32, 32, 1)
-        self.morphology_shape = (self.track_length, self.max_cells, 3)
-        self.centroid_shape = (self.track_length, self.max_cells, 2)
-        self.adj_shape = (self.track_length, self.max_cells, self.max_cells)
+        base_shape = [self.track_length, self.max_cells]
+        self.appearance_shape = tuple(base_shape + list(appearance_shape))
+        self.morphology_shape = tuple(base_shape + [3])
+        self.centroid_shape = tuple(base_shape + [2])
+        self.adj_shape = tuple(base_shape + [self.max_cells])
 
         # Create encoders and decoders
         self.unmerge_embeddings_model = self.get_unmerge_embeddings_model()
@@ -284,7 +287,7 @@ class GNNTrackingModel(object):
         x = TimeDistributed(ImageNormalization2D(norm_method='whole_image',
                                                  name='imgnrm_ae'))(x)
 
-        for i in range(5):
+        for i in range(self.time_window):
             x = Conv3D(self.n_filters,
                        (1, 3, 3),
                        strides=1,
