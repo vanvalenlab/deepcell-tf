@@ -29,6 +29,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import math
+
 import numpy as np
 import tensorflow as tf
 
@@ -217,7 +219,6 @@ class GNNTrackingModel(object):
         encoder_dim (int): Dimension of encoder
         embedding_dim (int): Dimension of embedding
         n_layers (int): number of layers
-        time_window (int): number of frames to include in temporal merges
         appearance_shape (tuple): shape of each object's appearance tensor
     """
     def __init__(self,
@@ -227,16 +228,22 @@ class GNNTrackingModel(object):
                  encoder_dim=64,
                  embedding_dim=64,
                  n_layers=3,
-                 time_window=5,
                  appearance_shape=(32, 32, 1)):
 
         self.n_filters = n_filters
         self.encoder_dim = encoder_dim
         self.embedding_dim = embedding_dim
         self.n_layers = n_layers
-        self.time_window = time_window
         self.max_cells = max_cells
         self.track_length = track_length
+
+        if len(appearance_shape) != 3:
+            raise ValueError('appearanace_shape should be a '
+                             'tuple of length 3.')
+        log2 = math.log(appearance_shape[0], 2)
+        if appearance_shape[0] != appearance_shape[1] or int(log2) != log2:
+            raise ValueError('appearance_shape should have square dimensions '
+                             'and each side should be a power of 2.')
 
         # Use inputs to build expected shapes
         base_shape = [self.track_length, self.max_cells]
@@ -287,7 +294,7 @@ class GNNTrackingModel(object):
         x = TimeDistributed(ImageNormalization2D(norm_method='whole_image',
                                                  name='imgnrm_ae'))(x)
 
-        for i in range(self.time_window):
+        for i in range(int(math.log(app_shape[1], 2))):
             x = Conv3D(self.n_filters,
                        (1, 3, 3),
                        strides=1,
