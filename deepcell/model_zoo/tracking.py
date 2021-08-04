@@ -29,6 +29,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import math
+
 import numpy as np
 import tensorflow as tf
 
@@ -45,7 +47,7 @@ from tensorflow.keras.layers import BatchNormalization, Lambda
 from tensorflow.keras.regularizers import l2
 
 from deepcell.layers import ImageNormalization2D
-from deepcell.layers import TemporalMerge, TemporalUnmerge
+from deepcell.layers import Comparison, DeltaReshape, Unmerge, TemporalMerge
 
 from spektral.layers import GCSConv
 # from spektral.layers import GCNConv, GATConv
@@ -207,89 +209,48 @@ def siamese_model(input_shape=None,
     return model
 
 
-class Comparison(tf.keras.layers.Layer):
-    def call(self, inputs):
-        x = inputs[0]
-        y = inputs[1]
-
-        x = tf.expand_dims(x, 3)
-        multiples = [1, 1, 1, tf.shape(y)[2], 1]
-        x = tf.tile(x, multiples)
-
-        y = tf.expand_dims(y, 2)
-        multiples = [1, 1, tf.shape(x)[2], 1, 1]
-        y = tf.tile(y, multiples)
-
-        return tf.concat([x, y], axis=-1)
-
-
-class DeltaReshape(tf.keras.layers.Layer):
-    def call(self, inputs):
-        current = inputs[0]
-        future = inputs[1]
-        current = tf.expand_dims(current, axis=3)
-        multiples = [1, 1, 1, tf.shape(future)[2], 1]
-        output = tf.tile(current, multiples)
-        return output
-
-
-class Unmerge(tf.keras.layers.Layer):
-    def __init__(self, track_length, max_cells, embedding_dim, **kwargs):
-        super(Unmerge, self).__init__(**kwargs)
-        self.track_length = track_length
-        self.max_cells = max_cells
-        self.embedding_dim = embedding_dim
-
-    def call(self, inputs):
-        new_shape = [-1, self.track_length, self.max_cells, self.embedding_dim]
-        output = tf.reshape(inputs, new_shape)
-
-        return output
-
-    def get_config(self):
-        config = {
-            'track_length': self.track_length,
-            'max_cells': self.max_cells,
-            'embedding_dim': self.embedding_dim
-        }
-        base_config = super(Unmerge, self).get_config()
-        return dict(list(base_config.items()) + list(config.items()))
-
-
 class GNNTrackingModel(object):
     """Creates a tracking model based on Graph Neural Networks(GNNs).
 
     Args:
+        max_cells (int): maximum number of tracks per movie in dataset
+        track_length (int): track length (parameter defined in dataset obj)
         n_filters (int): Number of filters
         encoder_dim (int): Dimension of encoder
         embedding_dim (int): Dimension of embedding
         n_layers (int): number of layers
-        time_window (int): number of frames to include in temporal merges
-        max_cells (int): maximum number of tracks per movie in dataset
-        track_length (int): track length (parameter defined in dataset obj)
+        appearance_shape (tuple): shape of each object's appearance tensor
     """
     def __init__(self,
+                 max_cells=39,
+                 track_length=8,
                  n_filters=64,
                  encoder_dim=64,
                  embedding_dim=64,
                  n_layers=3,
-                 time_window=5,
-                 max_cells=39,
-                 track_length=8):
+                 appearance_shape=(32, 32, 1)):
 
         self.n_filters = n_filters
         self.encoder_dim = encoder_dim
         self.embedding_dim = embedding_dim
         self.n_layers = n_layers
-        self.time_window = time_window
         self.max_cells = max_cells
         self.track_length = track_length
 
+        if len(appearance_shape) != 3:
+            raise ValueError('appearanace_shape should be a '
+                             'tuple of length 3.')
+        log2 = math.log(appearance_shape[0], 2)
+        if appearance_shape[0] != appearance_shape[1] or int(log2) != log2:
+            raise ValueError('appearance_shape should have square dimensions '
+                             'and each side should be a power of 2.')
+
         # Use inputs to build expected shapes
-        self.appearance_shape = (self.track_length, self.max_cells, 32, 32, 1)
-        self.morphology_shape = (self.track_length, self.max_cells, 3)
-        self.centroid_shape = (self.track_length, self.max_cells, 2)
-        self.adj_shape = (self.track_length, self.max_cells, self.max_cells)
+        base_shape = [self.track_length, self.max_cells]
+        self.appearance_shape = tuple(base_shape + list(appearance_shape))
+        self.morphology_shape = tuple(base_shape + [3])
+        self.centroid_shape = tuple(base_shape + [2])
+        self.adj_shape = tuple(base_shape + [self.max_cells])
 
         # Create encoders and decoders
         self.unmerge_embeddings_model = self.get_unmerge_embeddings_model()
@@ -314,11 +275,7 @@ class GNNTrackingModel(object):
         inputs = Input(shape=(None, None, self.encoder_dim),
                        name='embedding_temporal_merge_input')
 
-        x = inputs
-        x = TemporalMerge(name='merge_emb_tm')([x, inputs])
-        x = LSTM(self.encoder_dim, return_sequences=True, name='lstm_tm')(x)
-        x = TemporalUnmerge(name='unmerge_emb_tm')([x, inputs])
-
+        x = TemporalMerge(self.encoder_dim, name='emb_tm')(inputs)
         return Model(inputs=inputs, outputs=x, name='embedding_temporal_merge')
 
     def get_delta_temporal_merge_model(self):
@@ -326,10 +283,7 @@ class GNNTrackingModel(object):
                        name='centroid_temporal_merge_input')
 
         x = inputs
-        x = TemporalMerge(name='merge_delta_tm')([x, inputs])
-        x = LSTM(self.encoder_dim, return_sequences=True, name='lstm_delta')(x)
-        x = TemporalUnmerge(name='unmerge_delta_tm')([x, inputs])
-
+        x = TemporalMerge(self.encoder_dim, name='delta_tm')(inputs)
         return Model(inputs=inputs, outputs=x, name='delta_temporal_merge')
 
     def get_appearance_encoder(self):
@@ -340,7 +294,7 @@ class GNNTrackingModel(object):
         x = TimeDistributed(ImageNormalization2D(norm_method='whole_image',
                                                  name='imgnrm_ae'))(x)
 
-        for i in range(5):
+        for i in range(int(math.log(app_shape[1], 2))):
             x = Conv3D(self.n_filters,
                        (1, 3, 3),
                        strides=1,
@@ -594,6 +548,12 @@ class GNNTrackingModel(object):
         embedding = Dense(self.n_filters, name='dense_td0')(embedding)
         embedding = BatchNormalization(axis=-1, name='bn_td0')(embedding)
         embedding = Activation('relu', name='relu_td0')(embedding)
+
+        for i in range(self.n_layers):
+            res = Dense(self.n_filters, name='dense_td{}'.format(i + 1))(embedding)
+            res = BatchNormalization(axis=-1, name='bn_td{}'.format(i + 1))(res)
+            res = Activation('relu', name='relu_td{}'.format(i + 1))(res)
+            embedding = Add()([embedding, res])
 
         # TODO: set to n_classes
         embedding = Dense(3, name='dense_outembed')(embedding)
