@@ -7,5 +7,5 @@ tensorflow~=2.5.0
 tensorflow_addons~=0.13.0
 spektral~=1.0.4
 jupyter>=1.0.0,<2
-deepcell-tracking~=0.4.2
+deepcell-tracking~=0.4.3
 deepcell-toolbox~=0.10.0
