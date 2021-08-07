@@ -327,7 +327,7 @@ class Application(object):
 
 
         Returns:
-            np.array or list: Model outputs
+            list: Model outputs
         """
 
         num_images = tiles.shape[0]
