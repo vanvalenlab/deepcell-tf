@@ -243,13 +243,27 @@ class TestApplication(test.TestCase):
         y = app._format_model_output(x)
         self.assertAllEqual(x, y['inner-distance'])
 
+    def test_batch_predict(self):
+        for num_images in [4, 8, 10]:
+            for num_pred_heads in [1, 2]:
+                model = DummyModel(n_out=num_pred_heads)
+                app = Application(model)
+
+                x = np.random.rand(num_images, 128, 128, 1)
+                y = app._batch_predict(x, batch_size=4)
+                self.assertEqual(x.shape, y[0].shape)
+
+                if num_pred_heads == 2:
+                    self.assertEqual(x.shape, y[1].shape)
+
     def test_run_model(self):
-        model = DummyModel()
+        model = DummyModel(n_out=2)
         app = Application(model)
 
         x = np.random.rand(1, 128, 128, 1)
         y = app._run_model(x)
         self.assertEqual(x.shape, y[0].shape)
+        self.assertEqual(x.shape, y[1].shape)
 
     def test_predict_segmentation(self):
         model = DummyModel()
