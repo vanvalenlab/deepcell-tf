@@ -34,6 +34,7 @@ import numpy as np
 from tensorflow.keras.layers import Input
 from tensorflow.python.platform import test
 from unittest.mock import Mock
+from itertools import product
 
 from deepcell.applications import Application
 
@@ -254,23 +255,27 @@ class TestApplication(test.TestCase):
             y = np.random.rand(*x.shape)
             return [y] * 2
 
-        for num_images in [4, 8, 10]:
-            for num_pred_heads in [1, 2]:
-                model = DummyModel(n_out=num_pred_heads)
+        num_images = [4, 8, 10]
+        num_pred_heads = [1, 2]
+        batch_sizes = [1, 4, 5]
+        prod = product(num_images, num_pred_heads, batch_sizes)
+
+        for num_image, num_pred_head, batch_size in prod:
+                model = DummyModel(n_out=num_pred_head)
                 app = Application(model)
 
-                x = np.random.rand(num_images, 128, 128, 1)
+                x = np.random.rand(num_image, 128, 128, 1)
 
-                if num_pred_heads == 1:
+                if num_pred_head == 1:
                     app.model.predict = Mock(side_effect=predict1)
                 else:
                     app.model.predict = Mock(side_effect=predict2)
-                y = app._batch_predict(x, batch_size=4)
+                y = app._batch_predict(x, batch_size=batch_size)
+
+                assert app.model.predict.call_count == np.ceil(num_image / batch_size)
+
                 self.assertEqual(x.shape, y[0].shape)
-
-                assert app.model.predict.call_count == np.ceil(num_images / 4)
-
-                if num_pred_heads == 2:
+                if num_pred_head == 2:
                     self.assertEqual(x.shape, y[1].shape)
 
     def test_run_model(self):
