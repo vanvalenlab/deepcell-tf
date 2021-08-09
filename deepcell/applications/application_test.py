@@ -29,12 +29,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import numpy as np
-
-from tensorflow.keras.layers import Input
-from tensorflow.python.platform import test
-from unittest.mock import Mock
 from itertools import product
+import numpy as np
+from unittest.mock import Mock
+
+from tensorflow.python.platform import test
 
 from deepcell.applications import Application
 
