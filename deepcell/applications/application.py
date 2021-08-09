@@ -321,8 +321,8 @@ class Application(object):
         model.predict function without soaking up GPU memory.
 
         Args:
-            tiles: Tiled data which will be fed to model
-            batch_size: Number of images to predict on per batch
+            tiles (np.array): Tiled data which will be fed to model
+            batch_size (int): Number of images to predict on per batch
 
         Returns:
             list: Model outputs
