@@ -312,9 +312,7 @@ class Application(object):
 
         return image
 
-    def _batch_predict(self,
-                       tiles,
-                       batch_size):
+    def _batch_predict(self, tiles, batch_size):
         """Batch process tiles to generate model predictions.
 
         The built-in keras.predict function has support for batching, but loads the entire
@@ -324,7 +322,6 @@ class Application(object):
         Args:
             tiles: Tiled data which will be fed to model
             batch_size: Number of images to predict on per batch
-
 
         Returns:
             list: Model outputs
@@ -339,17 +336,17 @@ class Application(object):
         output_tiles = []
 
         # loop through each batch
-        for batch_index, (batch_start, batch_end) in enumerate(batches):
-            batch_inputs = tiles[batch_start:batch_end, ...]
+        for i in range(0, tiles.shape[0], batch_size):
+            batch_inputs = tiles[i:i + batch_size, ...]
 
             batch_outputs = self.model.predict(batch_inputs, batch_size=batch_size)
 
             # model with only a single output gets temporarily converted to a list
-            if type(batch_outputs) != list:
+            if not isinstance(batch_outputs, list):
                 batch_outputs = [batch_outputs]
 
             # initialize output list with empty arrays to hold all batches
-            if batch_index == 0:
+            if not output_tiles:
                 for batch_out in batch_outputs:
                     shape = (num_images,) + batch_out.shape[1:]
                     output_tiles.append(np.zeros(shape, dtype=tiles.dtype))
