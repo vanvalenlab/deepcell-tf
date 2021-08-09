@@ -33,6 +33,7 @@ import numpy as np
 
 from tensorflow.keras.layers import Input
 from tensorflow.python.platform import test
+from unittest.mock import Mock
 
 from deepcell.applications import Application
 
@@ -244,14 +245,30 @@ class TestApplication(test.TestCase):
         self.assertAllEqual(x, y['inner-distance'])
 
     def test_batch_predict(self):
+
+        def predict1(x, batch_size=4):
+            y = np.random.rand(*x.shape)
+            return [y]
+
+        def predict2(x, batch_size=4):
+            y = np.random.rand(*x.shape)
+            return [y] * 2
+
         for num_images in [4, 8, 10]:
             for num_pred_heads in [1, 2]:
                 model = DummyModel(n_out=num_pred_heads)
                 app = Application(model)
 
                 x = np.random.rand(num_images, 128, 128, 1)
+
+                if num_pred_heads == 1:
+                    app.model.predict = Mock(side_effect=predict1)
+                else:
+                    app.model.predict = Mock(side_effect=predict2)
                 y = app._batch_predict(x, batch_size=4)
                 self.assertEqual(x.shape, y[0].shape)
+
+                assert app.model.predict.call_count == np.ceil(num_images / 4)
 
                 if num_pred_heads == 2:
                     self.assertEqual(x.shape, y[1].shape)
