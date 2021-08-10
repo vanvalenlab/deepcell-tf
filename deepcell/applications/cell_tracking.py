@@ -41,10 +41,10 @@ from deepcell.model_zoo.tracking import GNNTrackingModel
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/TrackingModel-3.tar.gz')
+              'saved-models/TrackingModel-4.tar.gz')
 
 ENCODER_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'saved-models/TrackingModelNE-1.tar.gz')
+                'saved-models/TrackingModelNE-2.tar.gz')
 
 
 class CellTracking(Application):
@@ -73,7 +73,7 @@ class CellTracking(Application):
         'track_length': 8,
         'lr': 1e-3,
         'clipnorm': 0.001,
-        'n_epochs': 24,
+        'n_epochs': 20,
         'training_steps_per_epoch': 512,
         'validation_steps': 100,
         'min_lr': 1e-7,
@@ -88,7 +88,7 @@ class CellTracking(Application):
                  birth=0.99,
                  death=0.99,
                  division=0.9,
-                 track_length=5,
+                 track_length=8,
                  embedding_axis=0):
         self.neighborhood_encoder = neighborhood_encoder
         self.distance_threshold = distance_threshold
@@ -111,7 +111,7 @@ class CellTracking(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'TrackingModelInf.tgz', MODEL_PATH,
-                file_hash='4d8264aebfa7a0c8ee9ad27923d0ccfd',
+                file_hash='ee03125d987808f8888d2be1fbdd599b',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
             model = tf.keras.models.load_model(model_path,
