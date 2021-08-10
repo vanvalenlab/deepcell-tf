@@ -30,8 +30,9 @@ from __future__ import division
 from __future__ import print_function
 
 from itertools import product
-import numpy as np
 from unittest.mock import Mock
+
+import numpy as np
 
 from tensorflow.python.platform import test
 
