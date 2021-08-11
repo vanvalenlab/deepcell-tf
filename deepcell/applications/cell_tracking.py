@@ -73,7 +73,7 @@ class CellTracking(Application):
         'track_length': 8,
         'lr': 1e-3,
         'clipnorm': 0.001,
-        'n_epochs': 20,
+        'n_epochs': 30,
         'training_steps_per_epoch': 512,
         'validation_steps': 100,
         'min_lr': 1e-7,
@@ -103,7 +103,7 @@ class CellTracking(Application):
         if self.neighborhood_encoder is None:
             archive_path = tf.keras.utils.get_file(
                 'TrackingModelNE.tgz', ENCODER_PATH,
-                file_hash='32399338ee1142b59215a25a3df2d80f',
+                file_hash='c02a077965a3cd8ba4ca55bfc976caf1',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
             self.neighborhood_encoder = tf.keras.models.load_model(model_path)
@@ -111,7 +111,7 @@ class CellTracking(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'TrackingModelInf.tgz', MODEL_PATH,
-                file_hash='ee03125d987808f8888d2be1fbdd599b',
+                file_hash='fd59fa1a36f9df6138c34d533bc73604',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
             model = tf.keras.models.load_model(model_path)
