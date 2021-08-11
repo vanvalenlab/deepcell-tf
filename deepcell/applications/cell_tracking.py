@@ -114,10 +114,7 @@ class CellTracking(Application):
                 file_hash='ee03125d987808f8888d2be1fbdd599b',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
-            model = tf.keras.models.load_model(model_path,
-                                               custom_objects={
-                                                   '_comparison': tm._comparison,
-                                                   '_delta_reshape': tm._delta_reshape})
+            model = tf.keras.models.load_model(model_path)
 
         super(CellTracking, self).__init__(
             model,
