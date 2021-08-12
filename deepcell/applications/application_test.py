@@ -29,9 +29,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from itertools import product
+from unittest.mock import Mock
+
 import numpy as np
 
-from tensorflow.keras.layers import Input
 from tensorflow.python.platform import test
 
 from deepcell.applications import Application
@@ -243,13 +245,47 @@ class TestApplication(test.TestCase):
         y = app._format_model_output(x)
         self.assertAllEqual(x, y['inner-distance'])
 
+    def test_batch_predict(self):
+
+        def predict1(x, batch_size=4):
+            y = np.random.rand(*x.shape)
+            return [y]
+
+        def predict2(x, batch_size=4):
+            y = np.random.rand(*x.shape)
+            return [y] * 2
+
+        num_images = [4, 8, 10]
+        num_pred_heads = [1, 2]
+        batch_sizes = [1, 4, 5]
+        prod = product(num_images, num_pred_heads, batch_sizes)
+
+        for num_image, num_pred_head, batch_size in prod:
+                model = DummyModel(n_out=num_pred_head)
+                app = Application(model)
+
+                x = np.random.rand(num_image, 128, 128, 1)
+
+                if num_pred_head == 1:
+                    app.model.predict = Mock(side_effect=predict1)
+                else:
+                    app.model.predict = Mock(side_effect=predict2)
+                y = app._batch_predict(x, batch_size=batch_size)
+
+                assert app.model.predict.call_count == np.ceil(num_image / batch_size)
+
+                self.assertEqual(x.shape, y[0].shape)
+                if num_pred_head == 2:
+                    self.assertEqual(x.shape, y[1].shape)
+
     def test_run_model(self):
-        model = DummyModel()
+        model = DummyModel(n_out=2)
         app = Application(model)
 
         x = np.random.rand(1, 128, 128, 1)
         y = app._run_model(x)
         self.assertEqual(x.shape, y[0].shape)
+        self.assertEqual(x.shape, y[1].shape)
 
     def test_predict_segmentation(self):
         model = DummyModel()
