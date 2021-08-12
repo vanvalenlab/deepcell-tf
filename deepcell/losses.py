@@ -102,43 +102,6 @@ def weighted_categorical_crossentropy(y_true, y_pred,
     return - K.sum((y_true * K.log(y_pred) * class_weights), axis=axis)
 
 
-def wce_for_adj_mat(y_true, y_pred):
-    """Weighted Categorical crossentropy between an output tensor and a
-    target tensor. Designed for temporal adjacency matrices where padding might
-    result in faulty loss. Automatically computes the class weights from the target
-    image and uses them to weight the cross entropy
-
-    Args:
-        y_true: A tensor of the same shape as ``y_pred``.
-        y_pred: A tensor resulting from a softmax
-            (unless ``from_logits`` is ``True``, in which
-            case ``y_pred`` is expected to be the logits).
-        from_logits: Boolean, whether ``y_pred`` is the
-            result of a softmax, or is a tensor of logits.
-
-    Returns:
-        tensor: Output tensor.
-    """
-    y_pred = tf.convert_to_tensor(y_pred)
-    y_true = K.cast(y_true, y_pred.dtype)
-
-    n_classes = tf.shape(y_true)[-1]
-    new_shape = (-1, n_classes)
-    y_true = tf.reshape(y_true, new_shape)
-    y_pred = tf.reshape(y_pred, new_shape)
-
-    # Mask out the padded cells
-    good_loc = tf.where(K.not_equal(y_true[:, 0], -1))[:, 0]
-
-    y_true = tf.gather(y_true, good_loc, axis=0)
-    y_pred = tf.gather(y_pred, good_loc, axis=0)
-
-    return weighted_categorical_crossentropy(
-        y_true, y_pred,
-        n_classes=n_classes,
-        axis=1)
-
-
 def sample_categorical_crossentropy(y_true,
                                     y_pred,
                                     class_weights=None,

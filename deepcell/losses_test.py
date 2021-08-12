@@ -40,7 +40,6 @@ from deepcell import losses
 ALL_LOSSES = [
     losses.categorical_crossentropy,
     losses.weighted_categorical_crossentropy,
-    # losses.wce_for_adj_mat,
     losses.sample_categorical_crossentropy,
     losses.weighted_focal_loss,
     losses.smooth_l1,
