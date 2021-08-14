@@ -33,6 +33,8 @@ import pytest
 
 import numpy as np
 
+from unittest.mock import Mock
+
 from tensorflow.python.platform import test
 
 from deepcell.model_zoo import PanopticNet
@@ -221,6 +223,47 @@ class TestMesmer(test.TestCase):
             y = app.predict(x, compartment='both')
             self.assertEqual(x.shape[:-1], y.shape[:-1])
             self.assertEqual(y.shape[-1], 2)
+
+            # test that kwargs are passed through successfully
+            app._predict_segmentation = Mock()
+
+            default_kwargs = {
+                'maxima_threshold': 0.1,
+                'maxima_smooth': 0,
+                'interior_threshold': 0.3,
+                'interior_smooth': 2,
+                'small_objects_threshold': 15,
+                'fill_holes_threshold': 15,
+                'radius': 2
+            }
+
+            # all defaults
+            _ = app.predict(x, compartment='whole-cell')
+            args = app._predict_segmentation.call_args[1]
+            assert args['postprocess_kwargs']['whole_cell_kwargs'] == default_kwargs
+
+            # check that one arg is changed
+            maxima_threshold_cell = 0.2
+            radius_nuc = 4
+
+            _ = app.predict(x, compartment='whole-cell',
+                            postprocess_kwargs_whole_cell={'maxima_threshold':
+                                                           maxima_threshold_cell},
+                            postprocess_kwargs_nuclear={'radius': radius_nuc})
+
+            args = app._predict_segmentation.call_args[1]
+            whole_cell_kwargs = args['postprocess_kwargs']['whole_cell_kwargs']
+            assert whole_cell_kwargs['maxima_threshold'] == maxima_threshold_cell
+
+            nuclear_kwargs = args['postprocess_kwargs']['nuclear_kwargs']
+            assert nuclear_kwargs['radius'] == radius_nuc
+
+            # check that rest are unchanged
+            whole_cell_kwargs['maxima_threshold'] = 0.1
+            assert whole_cell_kwargs == default_kwargs
+
+            nuclear_kwargs['radius'] = 2
+            assert nuclear_kwargs == default_kwargs
 
             # test legacy version
             old_app = MultiplexSegmentation(model)
