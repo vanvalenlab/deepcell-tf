@@ -44,7 +44,11 @@ jobs:
 
     - name: Build a source distribution
       run: |
-        sed -i "s/tensorflow/tensorflow-cpu/g" setup.py
+        sed -i "s/tensorflow~=/tensorflow-cpu~=/g" setup.py
+        sed -i "s/tensorflow==/tensorflow-cpu==/g" setup.py
+        sed -i "s/tensorflow>=/tensorflow-cpu>=/g" setup.py
+        sed -i "s/tensorflow<=/tensorflow-cpu<=/g" setup.py
+        sed -i "s/tensorflow!=/tensorflow-cpu!=/g" setup.py
         sed -i -e "/__title__ =/ s/= .*/= 'DeepCell-CPU'/" deepcell/_version.py
         python setup.py sdist
 
