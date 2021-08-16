@@ -62,10 +62,12 @@ setup(
         'scipy>=1.2.3,<2',
         'scikit-image>=0.14.5',
         'scikit-learn>=0.20.4',
-        'tensorflow~=2.5.0',
+        'tensorflow~=2.5.1',
+        'tensorflow_addons~=0.13.0',
+        'spektral~=1.0.4',
         'jupyter>=1.0.0,<2',
         'opencv-python-headless<5',
-        'deepcell-tracking>=0.3.1,<0.4.0',
+        'deepcell-tracking~=0.4.4',
         'deepcell-toolbox~=0.10.0'
     ],
     extras_require={
@@ -76,7 +78,7 @@ setup(
         ],
     },
     packages=find_packages(),
-    python_requires='>=3.6, <3.9',
+    python_requires='>=3.6, <3.10',
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
@@ -86,6 +88,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Topic :: Scientific/Engineering :: Bio-Informatics',

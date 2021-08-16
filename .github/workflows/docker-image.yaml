@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      TF_VERSION: 2.5.0
+      TF_VERSION: 2.5.1
 
     steps:
     - uses: actions/checkout@v2

@@ -23,33 +23,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Custom Layers"""
+"""Test the tracking models."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.layers import convolutional_recurrent
-from deepcell.layers import location
-from deepcell.layers import normalization
-from deepcell.layers import pooling
-from deepcell.layers import tensor_product
-from deepcell.layers import padding
-from deepcell.layers import upsample
+from absl.testing import parameterized
 
-from deepcell.layers.convolutional_recurrent import ConvGRU2D
-from deepcell.layers.location import Location2D
-from deepcell.layers.location import Location3D
-from deepcell.layers.normalization import ImageNormalization2D
-from deepcell.layers.normalization import ImageNormalization3D
-from deepcell.layers.pooling import DilatedMaxPool2D
-from deepcell.layers.pooling import DilatedMaxPool3D
-from deepcell.layers.temporal import Comparison, DeltaReshape, Unmerge
-from deepcell.layers.temporal import TemporalMerge
-from deepcell.layers.tensor_product import TensorProduct
-from deepcell.layers.padding import ReflectionPadding2D
-from deepcell.layers.padding import ReflectionPadding3D
-from deepcell.layers.upsample import UpsampleLike
+from tensorflow.python.framework import test_util as tf_test_util
+from tensorflow.python.keras import keras_parameterized
 
-del absolute_import
-del division
-del print_function
+from tensorflow.keras import backend as K
+
+from deepcell.model_zoo import tracking
