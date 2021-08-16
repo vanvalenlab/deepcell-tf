@@ -233,9 +233,9 @@ class TestMesmer(test.TestCase):
             default_cell_kwargs = args['postprocess_kwargs']['whole_cell_kwargs']
             default_nuc_kwargs = args['postprocess_kwargs']['nuclear_kwargs']
 
-            # check that one arg is changed
-            maxima_threshold_cell = 0.2
-            radius_nuc = 4
+            # change one of the args for each compartment
+            maxima_threshold_cell = default_cell_kwargs['maxima_threshold'] + 0.1
+            radius_nuc = default_nuc_kwargs['radius'] + 2
 
             _ = app.predict(x, compartment='whole-cell',
                             postprocess_kwargs_whole_cell={'maxima_threshold':
@@ -243,18 +243,18 @@ class TestMesmer(test.TestCase):
                             postprocess_kwargs_nuclear={'radius': radius_nuc})
 
             args = app._predict_segmentation.call_args[1]
-            whole_cell_kwargs = args['postprocess_kwargs']['whole_cell_kwargs']
-            assert whole_cell_kwargs['maxima_threshold'] == maxima_threshold_cell
+            cell_kwargs = args['postprocess_kwargs']['whole_cell_kwargs']
+            assert cell_kwargs['maxima_threshold'] == maxima_threshold_cell
 
-            nuclear_kwargs = args['postprocess_kwargs']['nuclear_kwargs']
-            assert nuclear_kwargs['radius'] == radius_nuc
+            nuc_kwargs = args['postprocess_kwargs']['nuclear_kwargs']
+            assert nuc_kwargs['radius'] == radius_nuc
 
             # check that rest are unchanged
-            whole_cell_kwargs['maxima_threshold'] = 0.1
-            assert whole_cell_kwargs == default_cell_kwargs
+            cell_kwargs['maxima_threshold'] = default_cell_kwargs['maxima_threshold']
+            assert cell_kwargs == default_cell_kwargs
 
-            nuclear_kwargs['radius'] = 2
-            assert nuclear_kwargs == default_nuc_kwargs
+            nuc_kwargs['radius'] = default_nuc_kwargs['radius']
+            assert nuc_kwargs == default_nuc_kwargs
 
             # test legacy version
             old_app = MultiplexSegmentation(model)
