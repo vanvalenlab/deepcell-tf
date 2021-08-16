@@ -237,11 +237,6 @@ class TestMesmer(test.TestCase):
                 'radius': 2
             }
 
-            # all defaults
-            _ = app.predict(x, compartment='whole-cell')
-            args = app._predict_segmentation.call_args[1]
-            assert args['postprocess_kwargs']['whole_cell_kwargs'] == default_kwargs
-
             # check that one arg is changed
             maxima_threshold_cell = 0.2
             radius_nuc = 4
