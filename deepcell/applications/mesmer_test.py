@@ -227,15 +227,11 @@ class TestMesmer(test.TestCase):
             # test that kwargs are passed through successfully
             app._predict_segmentation = Mock()
 
-            default_kwargs = {
-                'maxima_threshold': 0.1,
-                'maxima_smooth': 0,
-                'interior_threshold': 0.3,
-                'interior_smooth': 2,
-                'small_objects_threshold': 15,
-                'fill_holes_threshold': 15,
-                'radius': 2
-            }
+            # get defaults
+            _ = app.predict(x, compartment='whole-cell')
+            args = app._predict_segmentation.call_args[1]
+            default_cell_kwargs = args['postprocess_kwargs']['whole_cell_kwargs']
+            default_nuc_kwargs = args['postprocess_kwargs']['nuclear_kwargs']
 
             # check that one arg is changed
             maxima_threshold_cell = 0.2
@@ -255,10 +251,10 @@ class TestMesmer(test.TestCase):
 
             # check that rest are unchanged
             whole_cell_kwargs['maxima_threshold'] = 0.1
-            assert whole_cell_kwargs == default_kwargs
+            assert whole_cell_kwargs == default_cell_kwargs
 
             nuclear_kwargs['radius'] = 2
-            assert nuclear_kwargs == default_kwargs
+            assert nuclear_kwargs == default_nuc_kwargs
 
             # test legacy version
             old_app = MultiplexSegmentation(model)
