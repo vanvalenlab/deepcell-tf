@@ -49,8 +49,7 @@ from tensorflow.keras.regularizers import l2
 from deepcell.layers import ImageNormalization2D
 from deepcell.layers import Comparison, DeltaReshape, Unmerge, TemporalMerge
 
-from spektral.layers import GCSConv
-# from spektral.layers import GCNConv, GATConv
+from spektral.layers import GCSConv, GCNConv
 
 
 def siamese_model(input_shape=None,
@@ -228,6 +227,7 @@ class GNNTrackingModel(object):
                  encoder_dim=64,
                  embedding_dim=64,
                  n_layers=3,
+                 graph_layer='gcs',
                  appearance_shape=(32, 32, 1)):
 
         self.n_filters = n_filters
@@ -244,6 +244,11 @@ class GNNTrackingModel(object):
         if appearance_shape[0] != appearance_shape[1] or int(log2) != log2:
             raise ValueError('appearance_shape should have square dimensions '
                              'and each side should be a power of 2.')
+
+        graph_layer = str(graph_layer).lower()
+        if graph_layer not in {'gcn', 'gcs'}:
+            raise ValueError('Invalid graph_layer: {}'.format(graph_layer))
+        self.graph_layer = graph_layer
 
         # Use inputs to build expected shapes
         base_shape = [self.track_length, self.max_cells]
@@ -371,8 +376,15 @@ class GNNTrackingModel(object):
 
         # Apply graph convolution
         for i in range(self.n_layers):
-            node_features = GCSConv(self.n_filters, activation=None,
-                                    name='gcs{}'.format(i))([node_features, adj])
+            name = '{}{}'.format(self.graph_layer, i)
+            if self.graph_layer == 'gcn':
+                graph_layer = GCNConv(self.n_filters, activation=None, name=name)
+            elif self.graph_layer == 'gcs':
+                graph_layer = GCSConv(self.n_filters, activation=None, name=name)
+            else:
+                raise ValueError('Unexpected graph_layer: {}'.format(self.graph_layer))
+
+            node_features = graph_layer([node_features, adj])
             node_features = BatchNormalization(axis=-1,
                                                name='bn_ne{}'.format(i + 1))(node_features)
             node_features = Activation('relu', name='relu_ne{}'.format(i + 1))(node_features)
