@@ -43,13 +43,12 @@ from tensorflow.keras.layers import Add, Subtract, Dense, Reshape
 from tensorflow.keras.layers import MaxPool3D
 from tensorflow.keras.layers import Activation, Softmax
 from tensorflow.keras.layers import BatchNormalization, Lambda
-
 from tensorflow.keras.regularizers import l2
+
+from spektral.layers import GCSConv, GCNConv
 
 from deepcell.layers import ImageNormalization2D
 from deepcell.layers import Comparison, DeltaReshape, Unmerge, TemporalMerge
-
-from spektral.layers import GCSConv, GCNConv
 
 
 def siamese_model(input_shape=None,
