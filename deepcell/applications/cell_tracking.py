@@ -100,7 +100,7 @@ class CellTracking(Application):
         if self.neighborhood_encoder is None:
             archive_path = tf.keras.utils.get_file(
                 'TrackingModelNE.tgz', ENCODER_PATH,
-                file_hash='c02a077965a3cd8ba4ca55bfc976caf1',
+                file_hash='80217fdd8477f0cb827fe72e8ace6542',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
             self.neighborhood_encoder = tf.keras.models.load_model(model_path)
@@ -108,7 +108,7 @@ class CellTracking(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'TrackingModelInf.tgz', MODEL_PATH,
-                file_hash='fd59fa1a36f9df6138c34d533bc73604',
+                file_hash='2a4d08eb610999563f6a8f06692f8783',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
             model = tf.keras.models.load_model(model_path)
