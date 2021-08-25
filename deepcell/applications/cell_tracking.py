@@ -37,7 +37,6 @@ import deepcell_tracking
 from deepcell_toolbox.processing import normalize
 
 from deepcell.applications import Application
-from deepcell.model_zoo.tracking import GNNTrackingModel
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
@@ -97,8 +96,6 @@ class CellTracking(Application):
         self.division = division
         self.track_length = track_length
         self.embedding_axis = embedding_axis
-
-        tm = GNNTrackingModel()
 
         if self.neighborhood_encoder is None:
             archive_path = tf.keras.utils.get_file(
