@@ -237,8 +237,8 @@ class Mesmer(Application):
                 preprocess_kwargs={},
                 compartment='whole-cell',
                 pad_mode='constant',
-                postprocess_kwargs_whole_cell=None,
-                postprocess_kwargs_nuclear=None):
+                postprocess_kwargs_whole_cell={},
+                postprocess_kwargs_nuclear={}):
         """Generates a labeled image of the input running prediction with
         appropriate pre and post processing functions.
 
@@ -268,28 +268,32 @@ class Mesmer(Application):
         Returns:
             numpy.array: Instance segmentation mask.
         """
+        default_kwargs_cell = {
+            'maxima_threshold': 0.1,
+            'maxima_smooth': 0,
+            'interior_threshold': 0.3,
+            'interior_smooth': 2,
+            'small_objects_threshold': 15,
+            'fill_holes_threshold': 15,
+            'radius': 2
+        }
 
-        if postprocess_kwargs_whole_cell is None:
-            postprocess_kwargs_whole_cell = {
-                'maxima_threshold': 0.1,
-                'maxima_smooth': 0,
-                'interior_threshold': 0.3,
-                'interior_smooth': 2,
-                'small_objects_threshold': 15,
-                'fill_holes_threshold': 15,
-                'radius': 2
-            }
+        default_kwargs_nuc = {
+            'maxima_threshold': 0.1,
+            'maxima_smooth': 0,
+            'interior_threshold': 0.3,
+            'interior_smooth': 2,
+            'small_objects_threshold': 15,
+            'fill_holes_threshold': 15,
+            'radius': 2
+        }
 
-        if postprocess_kwargs_nuclear is None:
-            postprocess_kwargs_nuclear = {
-                'maxima_threshold': 0.1,
-                'maxima_smooth': 0,
-                'interior_threshold': 0.3,
-                'interior_smooth': 2,
-                'small_objects_threshold': 15,
-                'fill_holes_threshold': 15,
-                'radius': 2
-            }
+        # overwrite defaults with any user-provided values
+        postprocess_kwargs_whole_cell = {**default_kwargs_cell,
+                                         **postprocess_kwargs_whole_cell}
+
+        postprocess_kwargs_nuclear = {**default_kwargs_nuc,
+                                      **postprocess_kwargs_nuclear}
 
         # create dict to hold all of the post-processing kwargs
         postprocess_kwargs = {
