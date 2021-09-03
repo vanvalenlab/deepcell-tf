@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Instance masks of brightfield (phase) cytoplasm images"""
+"""Instance masks of fluorescent nuclear images"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -37,9 +37,9 @@ from tensorflow.python.keras.utils.data_utils import get_file
 
 
 def load_data():
-    """Loads cytoplasm image segmentation training data.
+    """Loads nuclear image segmentation training data.
 
-    The dataset consists of 512x512 brightfield cytoplasm images,
+    The dataset consists of 512x512 fluorescent nuclear images,
     with along with a instance label mask.
 
     Returns:
@@ -56,8 +56,8 @@ def load_data():
     ```
 
     """
-    dirname = os.path.join('datasets', 'cytoplasm-phase')
-    base = 'https://deepcell-data.s3.amazonaws.com/cytoplasm/brightfield/'
+    dirname = os.path.join('datasets', 'nuclear')
+    base = 'https://deepcell-data.s3.amazonaws.com/nuclei/'
     files = ['train.npz', 'val.npz']
 
     paths = []
