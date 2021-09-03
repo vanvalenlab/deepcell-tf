@@ -30,42 +30,37 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+
+from tensorflow.python.keras.utils.data_utils import get_file
+
+from deepcell.utils.tracking_utils import load_trks
 from deepcell.datasets import Dataset
 
 
-# pylint: disable=line-too-long
+def load_data():
+    """Loads tracked nuclei movies for building tracking models.
 
-#:
-nih_3t3 = Dataset(
-    path='3T3_NIH.trks',
-    url='https://deepcell-data.s3.amazonaws.com/tracked/3T3_NIH.trks',
-    file_hash='0d90ad370e1cb9655727065ada3ded65',
-    metadata={}
-)
+    The dataset consists of 512x512 nuclear fluorescent movies,
+    along with instance masks and a JSON file containing cell
+    lineage data.
 
-#:
-hek293 = Dataset(
-    path='hek293.trks',
-    url='https://deepcell-data.s3.amazonaws.com/tracked/HEK293.trks',
-    file_hash='d5c563ab5866403836f2dcbe249c640f',
-    metadata={}
-)
+    Returns:
+        dict: ``{'X': np.array, 'y': np.array, 'lineages': dict}``.
+    """
+    dirname = os.path.join('datasets', 'tracked-nuclear')
+    base = 'https://deepcell-data.s3.amazonaws.com/tracked/nuclei/'
+    files = ['train.trks', 'val.trks']
 
-#:
-hela_s3 = Dataset(
-    path='HeLa_S3.trks',
-    url='https://deepcell-data.s3.amazonaws.com/tracked/HeLa_S3.trks',
-    file_hash='590ee37d3c703cfe029a2e60c9dc777b',
-    metadata={}
-)
+    paths = []
+    for fname in files:
+        paths.append(get_file(fname, origin=base + fname, cache_subdir=dirname))
 
-#:
-raw2647 = Dataset(
-    path='raw2647.trks',
-    url='https://deepcell-data.s3.amazonaws.com/tracked/RAW2647.trks',
-    file_hash='52e53b7aab728d9ce18fd7478767eefa',
-    metadata={}
-)
+    train_data = load_trks(paths[0])
+    test_data = load_trks(paths[1])
+
+    return train_data, test_data
+
 
 # The following datasets were used to benchmark DeepCell-Tracking in "Accurate
 # cell tracking and lineage construction in live-cell imaging experiments with
@@ -74,6 +69,7 @@ raw2647 = Dataset(
 # TODO: Correct all 4 full datasets (above) to improve training accuracy and
 #        allow for dynamic train/val/test split with seed values
 
+# pylint: disable=line-too-long
 #:
 nih_3t3_bench = Dataset(
     path='3T3_NIH_benchmarks.trks',

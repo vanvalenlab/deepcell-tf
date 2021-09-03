@@ -120,39 +120,6 @@ class Dataset(object):  # pylint: disable=useless-object-inheritance
 
 # pylint: disable=line-too-long
 
-
-#:
-hek293 = Dataset(
-    path='HEK293.npz',
-    url='https://deepcell-data.s3-us-west-1.amazonaws.com/nuclei/HEK293.npz',
-    file_hash='6221fa459350cd1e45ce6c9145264329',
-    metadata={}
-)
-
-#:
-nih_3t3 = Dataset(
-    path='3T3_NIH.npz',
-    url='https://deepcell-data.s3.amazonaws.com/nuclei/3T3_NIH.npz',
-    file_hash='f6520df218847fa56be2de0d3552c8a2',
-    metadata={}
-)
-
-#:
-hela_s3 = Dataset(
-    path='HeLa_S3.npz',
-    url='https://deepcell-data.s3.amazonaws.com/nuclei/HeLa_S3.npz',
-    file_hash='759d28d87936fd59b250dea3b126b647',
-    metadata={}
-)
-
-#:
-mibi = Dataset(
-    path='mibi_original.npz',
-    url='https://deepcell-data.s3.amazonaws.com/mibi/mibi_original.npz',
-    file_hash='8b09a6bb143deb1912ada65742dfc847',
-    metadata={}
-)
-
 #:
 mousebrain = Dataset(
     path='mousebrain.npz',
@@ -171,6 +138,7 @@ multiplex_tissue = Dataset(
 
 # pylint: disable=wrong-import-position
 from deepcell.datasets import cytoplasm
+from deepcell.datasets import nuclear
 from deepcell.datasets import phase
 from deepcell.datasets import tracked
 # pylint: enable=wrong-import-position
