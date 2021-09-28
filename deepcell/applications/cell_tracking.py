@@ -99,7 +99,7 @@ class CellTracking(Application):
 
         if self.neighborhood_encoder is None:
             archive_path = tf.keras.utils.get_file(
-                'TrackingModelNE.tgz', ENCODER_PATH,
+                'NuclearTrackingNE.tgz', ENCODER_PATH,
                 file_hash='3e10e2a7b473f6908f7fcf4e0de2ff29',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
@@ -107,7 +107,7 @@ class CellTracking(Application):
 
         if model is None:
             archive_path = tf.keras.utils.get_file(
-                'TrackingModelInf.tgz', MODEL_PATH,
+                'NuclearTrackingINF.tgz', MODEL_PATH,
                 file_hash='fd3770c86508524762e56f01d9d7c4d2',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
