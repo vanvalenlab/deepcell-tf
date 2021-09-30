@@ -49,8 +49,19 @@ def temporal_slice(X, y, track_length=8):
     Returns:
         tuple(dict, dict): Tuple of sliced ``X`` and ``y`` data.
     """
-    appearances = X['appearances']
-    max_time = tf.shape(appearances)[0] - track_length
+    temporal_adj_matrices = y['temporal_adj_matrices']
+
+    temporal_adj_matrices = tf.dtypes.cast(temporal_adj_matrices, dtype=tf.dtypes.int32)
+
+    # Identify max time, accounting for padding
+    # Padding frames have zero value accross all channels - look for these
+    tam_reduce_sum = tf.sparse.reduce_sum(temporal_adj_matrices, axis=[1,2,3])
+    non_pad_indices = tf.where(tam_reduce_sum != 0)
+    max_time = tf.reduce_max(non_pad_indices) - track_length
+
+    max_time = tf.cond(max_time > 0,
+                       lambda: tf.dtypes.cast(max_time, dtype=tf.int32),
+                       lambda: tf.dtypes.cast(1, dtype=tf.int32))
 
     t_start = tf.random.uniform(shape=[], minval=0,
                                 maxval=max_time,
@@ -58,11 +69,25 @@ def temporal_slice(X, y, track_length=8):
 
     t_end = t_start + track_length
 
+    def slice_sparse(sp, t_start, t_length):
+        shape = sp.shape.as_list()
+        n_dim = len(shape)
+        start = [t_start] + [0] * (n_dim - 1)
+        size = [t_length] + shape[1:]
+        sp_slice = tf.sparse.slice(sp, start, size)
+        return tf.sparse.to_dense(sp_slice)
+
     for key, data in X.items():
-        X[key] = data[t_start:t_end]
+        if isinstance(data, tf.sparse.SparseTensor):
+            X[key] = slice_sparse(data, t_start, track_length)
+        else:
+            X[key] = data[t_start:t_end]
 
     for key, data in y.items():
-        y[key] = data[t_start:t_end - 1]
+        if isinstance(data, tf.sparse.SparseTensor):
+            y[key] = slice_sparse(data, t_start, track_length - 1)
+        else:
+            y[key] = data[t_start:t_end]
 
     return (X, y)
 
