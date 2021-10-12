@@ -97,6 +97,12 @@ class TestTrack(object):
         with pytest.raises(ValueError):
             tracking.Track()
 
+        # test if a .trk file is passed
+        bad_data = {k: data[k][0] for k in data}
+        bad_data['lineages'] = [bad_data['lineages']]
+        with pytest.raises(ValueError):
+            _ = tracking.Track(tracked_data=bad_data)
+
     def test_x_y_padding(self):
         num_labels = 3
 

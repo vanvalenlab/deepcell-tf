@@ -30,6 +30,7 @@ from __future__ import division
 from __future__ import print_function
 
 import math
+import os
 
 from scipy.spatial.distance import cdist
 
@@ -62,6 +63,10 @@ class Track(object):  # pylint: disable=useless-object-inheritance
         self.X = training_data['X'].astype('float32')
         self.y = training_data['y'].astype('int32')
         self.lineages = training_data['lineages']
+        if not len(self.X) == len(self.y) == len(self.lineages):
+            raise ValueError(
+                'The data do not share the same batch size. '
+                'Please make sure you are using a valid .trks file')
         self.appearance_dim = appearance_dim
         self.distance_threshold = distance_threshold
 
