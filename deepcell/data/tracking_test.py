@@ -243,9 +243,9 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
                              batch_size, seed, track_length,
                              val_size, test_size):
         # Create track_info and prepare the dataset
-        tracked_data = get_dummy_data(num_labels=3, batches=batch_size * 2)
+        track_info = self.create_track_info(100, time, max_cells, crop_size)
         train_data, val_data, test_data = tracking.prepare_dataset(
-            tracked_data,
+            track_info,
             rotation_range=180,
             batch_size=batch_size,
             seed=seed,
@@ -275,6 +275,22 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
         y['temporal_adj_matrices'] = tf.sparse.from_dense(
             tf.random.uniform([time - 1, max_cells, max_cells, 3], 0, 1))
         return X, y
+
+    def create_track_info(self, n_batches, time, max_cells, crop_size):
+        # Create track_info input (dictionary of all input and output features) with correct
+        # dimensions for prepare_dataset function.
+        track_info = {}
+        track_info['appearances'] = tf.random.uniform([n_batches, time, max_cells,
+                                                       crop_size, crop_size, 1], 0, 1)
+        track_info['centroids'] = tf.random.uniform([n_batches, time, max_cells, 2], 0, 512)
+        track_info['morphologies'] = tf.random.uniform([n_batches, time, max_cells, 3], 0, 1)
+        track_info['adj_matrices'] = tf.random.uniform([n_batches, time, max_cells, max_cells],
+                                                       0, 1)
+        track_info['norm_adj_matrices'] = tf.random.uniform([n_batches, time, max_cells,
+                                                            max_cells], 0, 1)
+        track_info['temporal_adj_matrices'] = tf.random.uniform([n_batches, time - 1, max_cells,
+                                                                max_cells, 3], 0, 1)
+        return track_info
 
 
 if __name__ == '__main__':
