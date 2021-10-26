@@ -157,22 +157,22 @@ class TestTrack(object):
 @parameterized.named_parameters([
     {
         'testcase_name': 'test_data_01',
-        'time': 30,
-        'max_cells': 25,
+        'time': 10,
+        'max_cells': 8,
         'crop_size': 32,
-        'batch_size': 32,
+        'batch_size': 2,
         'seed': None,
-        'track_length': 8,
+        'track_length': 4,
         'val_size': 0.15,
         'test_size': 0.15
     }, {
         'testcase_name': 'test_data_02',
-        'time': 40,
-        'max_cells': 29,
+        'time': 13,
+        'max_cells': 15,
         'crop_size': 32,
-        'batch_size': 24,
+        'batch_size': 2,
         'seed': 2,
-        'track_length': 7,
+        'track_length': 4,
         'val_size': 0.2,
         'test_size': 0
     }
