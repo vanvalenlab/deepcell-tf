@@ -157,22 +157,22 @@ class TestTrack(object):
 @parameterized.named_parameters([
     {
         'testcase_name': 'test_data_01',
-        'time': 30,
-        'max_cells': 25,
+        'time': 10,
+        'max_cells': 8,
         'crop_size': 32,
-        'batch_size': 32,
+        'batch_size': 2,
         'seed': None,
-        'track_length': 8,
+        'track_length': 4,
         'val_size': 0.15,
         'test_size': 0.15
     }, {
         'testcase_name': 'test_data_02',
-        'time': 40,
-        'max_cells': 29,
+        'time': 13,
+        'max_cells': 15,
         'crop_size': 32,
-        'batch_size': 24,
+        'batch_size': 2,
         'seed': 2,
-        'track_length': 7,
+        'track_length': 4,
         'val_size': 0.2,
         'test_size': 0
     }
@@ -243,9 +243,23 @@ class TrackingTests(test.TestCase, parameterized.TestCase):
                              batch_size, seed, track_length,
                              val_size, test_size):
         # Create track_info and prepare the dataset
-        tracked_data = get_dummy_data(num_labels=3, batches=batch_size * 2)
+        n_batches = 10
+        track_info = {}
+        track_info['appearances'] = tf.random.uniform(
+            [n_batches, time, max_cells, crop_size, crop_size, 1], 0, 1)
+        track_info['centroids'] = tf.random.uniform(
+            [n_batches, time, max_cells, 2], 0, 512)
+        track_info['morphologies'] = tf.random.uniform(
+            [n_batches, time, max_cells, 3], 0, 1)
+        track_info['adj_matrices'] = tf.sparse.from_dense(tf.random.uniform(
+            [n_batches, time, max_cells, max_cells], 0, 1))
+        track_info['norm_adj_matrices'] = tf.sparse.from_dense(tf.random.uniform(
+            [n_batches, time, max_cells, max_cells], 0, 1))
+        track_info['temporal_adj_matrices'] = tf.sparse.from_dense(tf.random.uniform(
+            [n_batches, time - 1, max_cells, max_cells, 3], 0, 1))
+
         train_data, val_data, test_data = tracking.prepare_dataset(
-            tracked_data,
+            track_info,
             rotation_range=180,
             batch_size=batch_size,
             seed=seed,

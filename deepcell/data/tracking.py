@@ -404,17 +404,14 @@ def random_translate(X, y, range=512):
     return X, y
 
 
-def prepare_dataset(tracked_data=None, path=None,
+def prepare_dataset(track_info,
                     batch_size=32, buffer_size=256,
                     seed=None, track_length=8, rotation_range=0,
                     translation_range=0, val_size=0.2, test_size=0):
     """Build and prepare the tracking dataset.
 
     Args:
-        tracked_data (dict): A dictionary of data from a trks file.
-            Only one of ``tracked_data`` and ``path`` can be used.
-        path (str): A filepath to a .trks file.
-            Only one of ``tracked_data`` and ``path`` can be used.
+        track_info (dict): A dictionary of all input and output features
         batch_size (int): number of examples per batch
         buffer_size (int): number of samples to buffer
         seed (int): Random seed
@@ -428,9 +425,6 @@ def prepare_dataset(tracked_data=None, path=None,
     Returns:
         tf.data.Dataset: A ``tf.data.Dataset`` object ready for training.
     """
-
-    track_info = concat_tracks([Track(path=path, tracked_data=tracked_data)])
-
     input_dict = {
         'appearances': track_info['appearances'],
         'centroids': track_info['centroids'],
