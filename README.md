@@ -5,7 +5,7 @@
 [![Documentation Status](https://readthedocs.org/projects/deepcell/badge/?version=master)](https://deepcell.readthedocs.io/en/master/?badge=master)
 [![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE)
 [![PyPI version](https://badge.fury.io/py/DeepCell.svg)](https://badge.fury.io/py/deepcell)
-[![PyPi Monthly Downloads](https://img.shields.io/pypi/dm/deepcell)](https://img.shields.io/pypi/dm/deepcell)
+[![PyPi Monthly Downloads](https://img.shields.io/pypi/dm/deepcell)](https://pypistats.org/packages/deepcell)
 [![Python Versions](https://img.shields.io/pypi/pyversions/deepcell.svg)](https://pypi.org/project/deepcell/)
 
 `deepcell-tf` is a deep learning library for single-cell analysis of biological images. It is written in Python and built using [TensorFlow 2](https://github.com/tensorflow/tensorflow).
