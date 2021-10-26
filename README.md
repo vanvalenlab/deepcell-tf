@@ -57,8 +57,8 @@ $ pip install deepcell
 
 ### Install with Docker
 
-There are also [docker containers](https://hub.docker.com/r/vanvalenlab/deepcell-tf) with GPU support available from DockerHub.
-run one of our existing images from Docker Hub. To  run the library locally on a GPU, you will need to make sure the latest version of <tt><a href="https://github.com/NVIDIA/nvidia-docker">nvidia-docker</a></tt> and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
+There are also [docker containers](https://hub.docker.com/r/vanvalenlab/deepcell-tf) with GPU support available on DockerHub.
+To  run the library locally on a GPU, you will need to make sure the latest version of <tt><a href="https://github.com/NVIDIA/nvidia-docker">nvidia-docker</a></tt> and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
 
 Once `nvidia-docker` is installed, run the following command:
 
