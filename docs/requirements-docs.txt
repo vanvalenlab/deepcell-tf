@@ -1,7 +1,7 @@
 m2r
 mock==3.0.5
 Sphinx==2.3.1
-docutils==0.12
+docutils==0.16
 ipython
 nbsphinx
 nbsphinx-link
