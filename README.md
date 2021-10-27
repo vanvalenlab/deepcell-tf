@@ -53,7 +53,7 @@ Tracked Image
 The fastest way to get started with `deepcell-tf` is to install the package with `pip`:
 
 ```bash
-$ pip install deepcell
+pip install deepcell
 ```
 
 ### Install with Docker
