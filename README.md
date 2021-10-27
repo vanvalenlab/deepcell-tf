@@ -70,7 +70,7 @@ docker run --gpus '"device=0"' -it --rm \
     -p 8888:8888 \
     -v $PWD/notebooks:/notebooks \
     -v $PWD/data:/data \
-    vanvalenlab/deepcell-tf:0.10.1-gpu
+    vanvalenlab/deepcell-tf:0.11.0-gpu
 ```
 
 This will start a Docker container with `deepcell-tf` installed and start a jupyter session using the default port 8888. This command also mounts a data folder (`$PWD/data`) and a notebooks folder (`$PWD/notebooks`) to the docker container so it can access data and Juyter notebooks stored on the host workstation. Data and models must be saved in these mounted directories to persist any them outside of the running container. The default port can be changed to any non-reserved port by updating `-p 8888:8888` to, e.g., `-p 8080:8888`. If you run across any errors getting started, you should either refer to the `deepcell-tf` for developers section or raise an issue on GitHub.
@@ -93,7 +93,7 @@ For examples of how to train models with the `deepcell-tf` library, check out th
 ```bash
 git clone https://github.com/vanvalenlab/deepcell-tf.git
 cd deepcell-tf
-docker build --build-arg TF_VERSION=2.3.1-gpu -t $USER/deepcell-tf .
+docker build --build-arg TF_VERSION=2.5.0-gpu -t $USER/deepcell-tf .
 ```
 
 ### Run the new docker image
