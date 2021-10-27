@@ -129,7 +129,7 @@ docker run --gpus '"device=0"' -it \
     -p 8888:8888 \
     -v $PWD/deepcell:/usr/local/lib/python3.6/dist-packages/deepcell/ \
     -v $PWD/notebooks:/notebooks \
-    -v /$PWD:/data \
+    -v $PWD:/data \
     $USER/deepcell-tf:latest-gpu
 ```
 
