@@ -59,9 +59,10 @@ pip install deepcell
 ### Install with Docker
 
 There are also [docker containers](https://hub.docker.com/r/vanvalenlab/deepcell-tf) with GPU support available on DockerHub.
-To  run the library locally on a GPU, you will need to make sure the latest version of <tt><a href="https://github.com/NVIDIA/nvidia-docker">nvidia-docker</a></tt> and [CUDA](https://developer.nvidia.com/cuda-downloads) are installed. Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with Cuda, Docker, and the NVIDIA Container Toolkit.
+To  run the library locally on a GPU, make sure you have [CUDA](https://developer.nvidia.com/cuda-downloads) and [Docker v19.03](https://docs.docker.com/get-docker/) or later installed. For prior Docker versions, use [nvidia-docker](https://github.com/NVIDIA/nvidia-docker).
+Alternatively, Google Cloud Platform (GCP) offers prebuilt virtual machines preinstalled with CUDA, Docker, and the NVIDIA Container Toolkit.
 
-Once `nvidia-docker` is installed, run the following command:
+Once `docker` is installed, run the following command:
 
 ```bash
 # Start a GPU enabled container on one GPUs
@@ -85,7 +86,7 @@ For examples of how to train models with the `deepcell-tf` library, check out th
 
 ## DeepCell-tf for Developers
 
-`deepcell-tf` uses `nvidia-docker` and `tensorflow` to enable GPU processing. If using GCP, there are [pre-built images](https://console.cloud.google.com/marketplace/details/nvidia-ngc-public/nvidia_gpu_cloud_image) which come with CUDA, docker, and nvidia-docker pre-installed. Otherwise, you will need to install [docker](https://docs.docker.com/install/linux/docker-ce/debian/), [nvidia-docker](https://github.com/NVIDIA/nvidia-docker), and [CUDA](https://developer.nvidia.com/cuda-downloads) separately. These instructions set up a docker container so that you can directly change the `deepcell-tf` library itself and have those changes reflected within the container
+`deepcell-tf` uses `docker` and `tensorflow` to enable GPU processing. If using GCP, there are [pre-built images](https://console.cloud.google.com/marketplace/details/nvidia-ngc-public/nvidia_gpu_cloud_image) which come with CUDA and Docker pre-installed. Otherwise, you will need to install [docker](https://docs.docker.com/install/linux/docker-ce/debian/) and [CUDA](https://developer.nvidia.com/cuda-downloads) separately.
 
 ### Build a local docker container, specifying the tensorflow version with TF_VERSION
 
