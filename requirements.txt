@@ -9,3 +9,4 @@ spektral~=1.0.4
 jupyter>=1.0.0,<2
 deepcell-tracking~=0.5.0
 deepcell-toolbox~=0.10.0
+wandb~=0.12.5
