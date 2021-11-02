@@ -151,12 +151,11 @@ batch_size = 4
 track_length = 8  # only train on 8 frames at once
 val_size = .20  # % of data saved as validation
 test_size = .1  # % of data held out as a test set
-n_epochs = 1  # number of training epochs
+n_epochs = 15  # number of training epochs
 
-# steps_per_epoch = 1000
-# validation_steps = 200
-steps_per_epoch = 10
-validation_steps = 2
+steps_per_epoch = 1000
+validation_steps = 200
+
 
 translation_range = 512 #X_train.shape[-2]
 
@@ -194,13 +193,21 @@ for i in range(len(dataset_indicies)):
         batch_size=batch_size,
         track_length=track_length)
 
-    graph_layers = ['se2t', 'gcn', 'se2c', 'gcs']
+    graph_layers = ['gcn', 'gcs']
 
     for layer in graph_layers:
+
+        print()
+        print('graph layer', layer)
+        print()
 
         model_name = 'graph_tracking_model_seed{}'.format(seed)
         model_path = os.path.join(MODEL_DIR, model_name)
 
+        # run = wandb.init(project='cell_tracking', reinit=True)
+        # wandb.run.name = layer+f'_datasize_{ds_size}'
+        # wandb.log({'metrics': metrics,
+        #            'losses': losses})
 
         tm = GNNTrackingModel(max_cells=max_cells, n_layers=n_layers, graph_layer=layer)
 
@@ -232,3 +239,5 @@ for i in range(len(dataset_indicies)):
 
         tm.inference_model.save(inf_path)
         tm.neighborhood_encoder.save(ne_path)
+
+        # run.finish()
