@@ -29,14 +29,12 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import wandb
+# import wandb
 import errno
 import deepcell
 
 import tensorflow as tf
 import numpy as np
-
-from wandb.keras import WandbCallback
 
 from deepcell.data.tracking import prepare_dataset
 from deepcell.data.tracking import Track, concat_tracks
@@ -45,7 +43,8 @@ from deepcell.utils.tracking_utils import trks_stats, load_trks
 
 from tensorflow_addons.optimizers import RectifiedAdam as RAdam
 
-from wandb.keras import WandbCallback
+# from wandb.keras import WandbCallback
+from tensorflow.keras.callbacks import CSVLogger
 
 # Verify GPU count
 from deepcell import train_utils
@@ -54,7 +53,7 @@ print('Training on {} GPUs'.format(num_gpus))
 
 
 # setup directories
-ROOT_DIR = '/data'  # TODO: Change this! Usually a mounted volume
+ROOT_DIR = '/data/tracking_data'  # TODO: Change this! Usually a mounted volume
 
 MODEL_DIR = os.path.abspath(os.path.join(ROOT_DIR, 'models'))
 LOG_DIR = os.path.abspath(os.path.join(ROOT_DIR, 'logs'))
@@ -147,22 +146,19 @@ metrics = [
 Set up training parameters
 """
 seed = 1   # random seed for training/validation data split
-batch_size = 4
+batch_size = 1
 track_length = 8  # only train on 8 frames at once
 val_size = .20  # % of data saved as validation
 test_size = .1  # % of data held out as a test set
-n_epochs = 15  # number of training epochs
+n_epochs = 8  # number of training epochs
 
-steps_per_epoch = 1000
-validation_steps = 200
+steps_per_epoch = 512
+validation_steps = 100
 
 
 translation_range = 512 #X_train.shape[-2]
 
 n_layers = 1
-
-model_name = 'graph_tracking_model_seed{}'.format(seed)
-model_path = os.path.join(MODEL_DIR, model_name)
 
 
 for i in range(len(dataset_indicies)):
@@ -193,7 +189,7 @@ for i in range(len(dataset_indicies)):
         batch_size=batch_size,
         track_length=track_length)
 
-    graph_layers = ['gcn', 'gcs']
+    graph_layers = ['gcn', 'gcs', 'se2c', 'se2t']
 
     for layer in graph_layers:
 
@@ -203,6 +199,9 @@ for i in range(len(dataset_indicies)):
 
         model_name = 'graph_tracking_model_seed{}'.format(seed)
         model_path = os.path.join(MODEL_DIR, model_name)
+
+        train_log = os.path.join(ROOT_DIR, f'train_logs/training_log_{layer}_{ds_size}.csv')
+        csv_logger = CSVLogger(train_log)
 
         # run = wandb.init(project='cell_tracking', reinit=True)
         # wandb.run.name = layer+f'_datasize_{ds_size}'
@@ -222,7 +221,7 @@ for i in range(len(dataset_indicies)):
                 save_weights_only=False),
             tf.keras.callbacks.ReduceLROnPlateau(
                 monitor='val_loss', factor=0.5, verbose=1,
-                patience=3, min_lr=1e-7)]#, WandbCallback()]
+                patience=3, min_lr=1e-7), csv_logger]
 
         loss_history = tm.training_model.fit(
             train_data,

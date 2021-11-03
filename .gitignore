@@ -121,3 +121,4 @@ Thumbs.db
 *.trks
 
 notebooks/wandb
+logfiles.txt
