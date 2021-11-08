@@ -93,7 +93,7 @@ For examples of how to train models with the `deepcell-tf` library, check out th
 ```bash
 git clone https://github.com/vanvalenlab/deepcell-tf.git
 cd deepcell-tf
-docker build --build-arg TF_VERSION=2.5.2-gpu -t $USER/deepcell-tf .
+docker build --build-arg TF_VERSION=2.5.1-gpu -t $USER/deepcell-tf .
 ```
 
 ### Run the new docker image
