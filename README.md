@@ -93,7 +93,7 @@ For examples of how to train models with the `deepcell-tf` library, check out th
 ```bash
 git clone https://github.com/vanvalenlab/deepcell-tf.git
 cd deepcell-tf
-docker build --build-arg TF_VERSION=2.6.0-gpu -t $USER/deepcell-tf .
+docker build --build-arg TF_VERSION=2.6.1-gpu -t $USER/deepcell-tf .
 ```
 
 ### Run the new docker image
@@ -138,7 +138,7 @@ docker run --gpus '"device=0"' -it \
 - [Deep Learning Automates the Quantitative Analysis of Individual Cells in Live-Cell Imaging Experiments](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1005177)
 - [Accurate cell tracking and lineage construction in live-cell imaging experiments with deep learning](https://www.biorxiv.org/content/10.1101/803205v2)
 - [DeepCell Kiosk: scaling deep learning–enabled cellular image analysis with Kubernetes](https://www.nature.com/articles/s41592-020-01023-0)
-- [Whole-cell segmentation of tissue images with human-level performance using large-scale data annotation and deep learning](https://www.biorxiv.org/content/10.1101/2021.03.01.431313v1)
+- [Whole-cell segmentation of tissue images with human-level performance using large-scale data annotation and deep learning](https://www.nature.com/articles/s41587-021-01094-0)
 
 ## Copyright
 
