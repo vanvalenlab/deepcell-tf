@@ -135,3 +135,7 @@ class TestTemporalMerge(keras_parameterized.TestCase):
                     layers.TemporalMerge,
                     kwargs={'encoder_dim': encoder_dim},
                     input_shape=(None, track_length, max_cells, encoder_dim))
+
+
+if __name__ == '__main__':
+    test.main()
