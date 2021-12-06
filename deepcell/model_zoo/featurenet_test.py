@@ -31,7 +31,7 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 
-from tensorflow.python.framework import test_util as tf_test_util
+from tensorflow.python.keras import testing_utils
 from tensorflow.python.keras import keras_parameterized
 
 from tensorflow.keras import backend as K
@@ -204,7 +204,7 @@ class FeatureNetTest(keras_parameterized.TestCase):
 
     @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters(
-        *tf_test_util.generate_combinations_with_testcase_name(
+        *testing_utils.generate_combinations_with_testcase_name(
             data_format=['channels_first', 'channels_last']))
     def test_bn_feature_net_2D_skip(self, data_format):
         receptive_field = 61
@@ -546,7 +546,7 @@ class FeatureNetTest(keras_parameterized.TestCase):
 
     @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters(
-        *tf_test_util.generate_combinations_with_testcase_name(
+        *testing_utils.generate_combinations_with_testcase_name(
             data_format=['channels_first', 'channels_last']))
     def test_bn_feature_net_3D_skip(self, data_format):
         receptive_field = 61

@@ -31,7 +31,7 @@ from __future__ import division
 
 from absl.testing import parameterized
 
-from tensorflow.python.framework import test_util as tf_test_util
+from tensorflow.python.keras import testing_utils
 from tensorflow.python.platform import test
 
 from tensorflow.keras import backend as K
@@ -47,7 +47,7 @@ class TestBackboneUtils(keras_parameterized.TestCase):
     @keras_parameterized.run_with_all_model_types
     @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters(
-        *tf_test_util.generate_combinations_with_testcase_name(
+        *testing_utils.generate_combinations_with_testcase_name(
             data_format=[
                 # 'channels_first',
                 'channels_last']))
@@ -67,9 +67,10 @@ class TestBackboneUtils(keras_parameterized.TestCase):
             with self.assertRaises(ValueError):
                 backbone_utils.get_backbone(backbone, inputs, use_imagenet=True)
 
+    # @keras_parameterized.run_with_all_model_types
     # @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters(
-        *tf_test_util.generate_combinations_with_testcase_name(
+        *testing_utils.generate_combinations_with_testcase_name(
             data_format=[
                 # 'channels_first',
                 'channels_last']))
@@ -92,7 +93,7 @@ class TestBackboneUtils(keras_parameterized.TestCase):
     # @keras_parameterized.run_with_all_model_types
     # @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters(
-        *tf_test_util.generate_combinations_with_testcase_name(
+        *testing_utils.generate_combinations_with_testcase_name(
             backbone=[
                 'resnet50',
                 'resnet101',

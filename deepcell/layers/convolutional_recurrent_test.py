@@ -11,7 +11,6 @@ import tensorflow as tf
 
 from tensorflow.python.keras import keras_parameterized
 from tensorflow.python.keras import testing_utils
-from tensorflow.python.framework import test_util as tf_test_util
 
 from deepcell import layers
 
@@ -20,7 +19,7 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
 
     @keras_parameterized.run_all_keras_modes
     @parameterized.named_parameters(
-        *tf_test_util.generate_combinations_with_testcase_name(
+        *testing_utils.generate_combinations_with_testcase_name(
             data_format=['channels_first', 'channels_last'],
             return_sequences=[True, False]))
     def test_conv_gru_2d(self, data_format, return_sequences):

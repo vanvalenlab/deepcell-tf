@@ -33,7 +33,6 @@ from absl.testing import parameterized
 from tensorflow.python.keras import keras_parameterized
 from tensorflow.python.keras import testing_utils
 from tensorflow.keras.utils import custom_object_scope
-from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.platform import test
 
 from deepcell import layers
@@ -43,7 +42,7 @@ class DilatedMaxPoolingTest(keras_parameterized.TestCase):
 
     @keras_parameterized.run_all_keras_modes(always_skip_v1=True)
     @parameterized.named_parameters(
-        *tf_test_util.generate_combinations_with_testcase_name(
+        *testing_utils.generate_combinations_with_testcase_name(
             strides=[(1, 1), (2, 2), None],
             dilation_rate=[1, 2, (1, 2)],
             padding=['valid', 'same']))
@@ -71,7 +70,7 @@ class DilatedMaxPoolingTest(keras_parameterized.TestCase):
 
     @keras_parameterized.run_all_keras_modes(always_skip_v1=True)
     @parameterized.named_parameters(
-        *tf_test_util.generate_combinations_with_testcase_name(
+        *testing_utils.generate_combinations_with_testcase_name(
             strides=[1, 2, None],
             dilation_rate=[1, 2, (1, 2, 2)],
             padding=['valid', 'same']))

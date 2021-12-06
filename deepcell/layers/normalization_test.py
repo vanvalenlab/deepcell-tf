@@ -35,7 +35,6 @@ import tensorflow as tf
 
 from tensorflow.python.keras import keras_parameterized
 from tensorflow.python.keras import testing_utils
-from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.platform import test
 
 from deepcell import layers
@@ -43,7 +42,7 @@ from deepcell import layers
 
 @keras_parameterized.run_all_keras_modes
 @parameterized.named_parameters(
-    *tf_test_util.generate_combinations_with_testcase_name(
+    *testing_utils.generate_combinations_with_testcase_name(
         norm_method=[None, 'std', 'max', 'whole_image']))
 class ImageNormalizationTest(keras_parameterized.TestCase):
 
