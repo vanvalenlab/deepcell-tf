@@ -34,6 +34,7 @@ from absl.testing import parameterized
 import numpy as np
 
 from tensorflow import keras
+from tensorflow.python.keras import testing_utils
 from tensorflow.python.platform import test
 
 from deepcell import layers
@@ -123,31 +124,25 @@ class RunningTests(test.TestCase, parameterized.TestCase):
         padded = running.get_padding_layers(model)
         self.assertEqual(len(padded), 0)
 
-    @parameterized.named_parameters([
-        {
-            'testcase_name': '2d_channels_last',
-            'data_format': 'channels_last',
-            'shape': (2, 32, 32, 1)
-        }, {
-            'testcase_name': '3d_channels_last',
-            'data_format': 'channels_last',
-            'shape': (2, 8, 32, 32, 1)
-        }, {
-            'testcase_name': '2d_channels_first',
-            'data_format': 'channels_first',
-            'shape': (2, 1, 32, 32)
-        }, {
-            'testcase_name': '3d_channels_first',
-            'data_format': 'channels_first',
-            'shape': (2, 1, 8, 32, 32)
-        },
-    ])
-    def test_process_whole_image(self, data_format, shape):
+    @parameterized.named_parameters(
+        *testing_utils.generate_combinations_with_testcase_name(
+            data_format=['channels_last', 'channels_first'],
+            dim=[2, 3],
+            padding=['reflect', 'zero']))
+    def test_process_whole_image(self, data_format, dim, padding):
         keras.backend.set_image_data_format(data_format)
 
         num_crops = 2
         receptive_field = 3
         features = 3
+
+        shape = [2, 32, 32]
+        if dim == 3:
+            shape.insert(1, 8)
+        if data_format == 'channels_first':
+            shape.insert(1, 1)
+        else:
+            shape.append(1)
 
         images = np.ones(shape)
 
@@ -156,28 +151,27 @@ class RunningTests(test.TestCase, parameterized.TestCase):
             receptive_field=receptive_field,
             data_format=data_format)
 
-        for padding in ['reflect', 'zero']:
-            with self.cached_session():
-                inputs = keras.layers.Input(shape=input_shape)
-                outputs = layers.TensorProduct(features)(inputs)
-                model = keras.models.Model(inputs=inputs,
-                                           outputs=[outputs, outputs])
+        inputs = keras.layers.Input(shape=input_shape)
+        dense = layers.TensorProduct(features, data_format=data_format)
+        outputs = dense(inputs)
+        model = keras.models.Model(inputs=inputs,
+                                    outputs=[outputs, outputs])
 
-                output = running.process_whole_image(
-                    model, images,
-                    num_crops=num_crops,
-                    receptive_field=receptive_field,
-                    padding=padding)
+        output = running.process_whole_image(
+            model, images,
+            num_crops=num_crops,
+            receptive_field=receptive_field,
+            padding=padding)
 
-                if data_format == 'channels_first':
-                    expected_shape = tuple([images.shape[0], features] +
-                                           list(images.shape[2:]))
-                else:
-                    expected_shape = tuple([images.shape[0]] +
-                                           list(images.shape[1:-1]) +
-                                           [features])
+        if data_format == 'channels_first':
+            expected_shape = tuple([images.shape[0], features] +
+                                    list(images.shape[2:]))
+        else:
+            expected_shape = tuple([images.shape[0]] +
+                                    list(images.shape[1:-1]) +
+                                    [features])
 
-                self.assertEqual(output.shape, expected_shape)
+        self.assertEqual(output.shape, expected_shape)
 
         with self.assertRaises(ValueError):
             inputs = keras.layers.Input(shape=(3, 4, 5))
