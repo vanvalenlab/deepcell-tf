@@ -64,15 +64,15 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
 
         # test for output shape:
         custom_objects = {'ConvGRU2D': layers.ConvGRU2D}
-        with tf.keras.utils.custom_object_scope(custom_objects):
-            testing_utils.layer_test(
-                layers.ConvGRU2D,
-                kwargs={'data_format': data_format,
-                        'return_sequences': return_sequences,
-                        'filters': filters,
-                        'kernel_size': (num_row, num_col),
-                        'padding': 'valid'},
-                input_shape=inputs.shape)
+        testing_utils.layer_test(
+            layers.ConvGRU2D,
+            custom_objects=custom_objects,
+            kwargs={'data_format': data_format,
+                    'return_sequences': return_sequences,
+                    'filters': filters,
+                    'kernel_size': (num_row, num_col),
+                    'padding': 'valid'},
+            input_shape=inputs.shape)
 
     def test_conv_gru_2d_statefulness(self):
         # Tests for statefulness
@@ -168,17 +168,17 @@ class ConvGRU2DTest(keras_parameterized.TestCase):
         # check dropout
         with self.cached_session():
             custom_objects = {'ConvGRU2D': layers.ConvGRU2D}
-            with tf.keras.utils.custom_object_scope(custom_objects):
-                testing_utils.layer_test(
-                    layers.ConvGRU2D,
-                    kwargs={'data_format': 'channels_last',
-                            'return_sequences': False,
-                            'filters': 2,
-                            'kernel_size': (3, 3),
-                            'padding': 'same',
-                            'dropout': 0.1,
-                            'recurrent_dropout': 0.1},
-                    input_shape=(1, 2, 5, 5, 2))
+            testing_utils.layer_test(
+                layers.ConvGRU2D,
+                custom_objects=custom_objects,
+                kwargs={'data_format': 'channels_last',
+                        'return_sequences': False,
+                        'filters': 2,
+                        'kernel_size': (3, 3),
+                        'padding': 'same',
+                        'dropout': 0.1,
+                        'recurrent_dropout': 0.1},
+                input_shape=(1, 2, 5, 5, 2))
 
     def test_conv_gru_2d_cloning(self):
         with self.cached_session():

@@ -57,19 +57,20 @@ class ReflectionPaddingTest(keras_parameterized.TestCase):
         ins1 = np.ones((num_samples, input_num_row, input_num_col, stack_size))
         ins2 = np.ones((num_samples, stack_size, input_num_row, input_num_col))
         data_formats = ['channels_first', 'channels_last']
-        with tf.keras.utils.custom_object_scope(custom_objects):
-            for data_format, inputs in zip(data_formats, [ins2, ins1]):
-                # basic test
-                testing_utils.layer_test(
-                    layers.ReflectionPadding2D,
-                    kwargs={'padding': (2, 2),
-                            'data_format': data_format},
-                    input_shape=inputs.shape)
-                testing_utils.layer_test(
-                    layers.ReflectionPadding2D,
-                    kwargs={'padding': ((1, 2), (3, 4)),
-                            'data_format': data_format},
-                    input_shape=inputs.shape)
+        for data_format, inputs in zip(data_formats, [ins2, ins1]):
+            # basic test
+            testing_utils.layer_test(
+                layers.ReflectionPadding2D,
+                custom_objects=custom_objects,
+                kwargs={'padding': (2, 2),
+                        'data_format': data_format},
+                input_shape=inputs.shape)
+            testing_utils.layer_test(
+                layers.ReflectionPadding2D,
+                custom_objects=custom_objects,
+                kwargs={'padding': ((1, 2), (3, 4)),
+                        'data_format': data_format},
+                input_shape=inputs.shape)
 
         # correctness test
         # with self.cached_session():
@@ -140,14 +141,14 @@ class ReflectionPaddingTest(keras_parameterized.TestCase):
         inputs2 = np.ones((num_samples, stack_size, input_len_dim1,
                            input_len_dim2, input_len_dim3))
         data_formats = ['channels_first', 'channels_last']
-        with tf.keras.utils.custom_object_scope(custom_objects):
-            for data_format, inputs in zip(data_formats, [inputs2, inputs1]):
-                # basic test
-                testing_utils.layer_test(
-                    layers.ReflectionPadding3D,
-                    kwargs={'padding': (2, 2, 2),
-                            'data_format': data_format},
-                    input_shape=inputs.shape)
+        for data_format, inputs in zip(data_formats, [inputs2, inputs1]):
+            # basic test
+            testing_utils.layer_test(
+                layers.ReflectionPadding3D,
+                custom_objects=custom_objects,
+                kwargs={'padding': (2, 2, 2),
+                        'data_format': data_format},
+                input_shape=inputs.shape)
 
         # correctness test
         # with self.cached_session():

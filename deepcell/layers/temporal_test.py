@@ -32,7 +32,6 @@ import numpy as np
 from tensorflow.keras import backend as K
 from tensorflow.python.keras import keras_parameterized
 from tensorflow.python.keras import testing_utils
-from tensorflow.keras.utils import custom_object_scope
 from tensorflow.python.platform import test
 
 from deepcell import layers
@@ -111,13 +110,13 @@ class TestUnmerge(keras_parameterized.TestCase):
 
         custom_objects = {'Unmerge': layers.Unmerge}
         with self.cached_session():
-            with custom_object_scope(custom_objects):
-                testing_utils.layer_test(
-                    layers.Unmerge,
-                    kwargs={'track_length': track_length,
-                            'max_cells': max_cells,
-                            'embedding_dim': embedding_dim},
-                    input_shape=(None, track_length * max_cells, embedding_dim))
+            testing_utils.layer_test(
+                layers.Unmerge,
+                custom_objects=custom_objects,
+                kwargs={'track_length': track_length,
+                        'max_cells': max_cells,
+                        'embedding_dim': embedding_dim},
+                input_shape=(None, track_length * max_cells, embedding_dim))
 
 
 @keras_parameterized.run_all_keras_modes
@@ -130,11 +129,11 @@ class TestTemporalMerge(keras_parameterized.TestCase):
 
         custom_objects = {'TemporalMerge': layers.TemporalMerge}
         with self.cached_session():
-            with custom_object_scope(custom_objects):
-                testing_utils.layer_test(
-                    layers.TemporalMerge,
-                    kwargs={'encoder_dim': encoder_dim},
-                    input_shape=(None, track_length, max_cells, encoder_dim))
+            testing_utils.layer_test(
+                layers.TemporalMerge,
+                custom_objects=custom_objects,
+                kwargs={'encoder_dim': encoder_dim},
+                input_shape=(None, track_length, max_cells, encoder_dim))
 
 
 if __name__ == '__main__':

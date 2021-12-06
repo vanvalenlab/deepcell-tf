@@ -32,7 +32,6 @@ import numpy as np
 from tensorflow.keras import backend as K
 from tensorflow.python.keras import keras_parameterized
 from tensorflow.python.keras import testing_utils
-from tensorflow.keras.utils import custom_object_scope
 from tensorflow.python.platform import test
 
 from deepcell import layers
@@ -142,3 +141,7 @@ class TestUpsampleLike(keras_parameterized.TestCase):
         actual = K.get_value(actual)
 
         self.assertAllEqual(actual, expected)
+
+
+if __name__ == '__main__':
+    test.main()
