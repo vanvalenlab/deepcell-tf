@@ -44,8 +44,8 @@ from deepcell import layers
 
 @keras_parameterized.run_all_keras_modes
 @parameterized.named_parameters(
-        *testing_utils.generate_combinations_with_testcase_name(
-            data_format=['channels_first', 'channels_last']))
+    *testing_utils.generate_combinations_with_testcase_name(
+        data_format=['channels_first', 'channels_last']))
 class ReflectionPaddingTest(keras_parameterized.TestCase):
 
     def test_reflection_padding_2d(self, data_format):
@@ -155,13 +155,13 @@ class ReflectionPaddingTest(keras_parameterized.TestCase):
                         'data_format': data_format},
                 input_shape=inputs.shape)
             testing_utils.layer_test(
-            layers.ReflectionPadding3D,
-            custom_objects=custom_objects,
-            kwargs={
-                'padding': ((1, 2), (3, 4), (0, 2)),
-                'data_format': data_format
-            },
-            input_shape=inputs.shape)
+                layers.ReflectionPadding3D,
+                custom_objects=custom_objects,
+                kwargs={
+                    'padding': ((1, 2), (3, 4), (0, 2)),
+                    'data_format': data_format
+                },
+                input_shape=inputs.shape)
 
         # correctness test
         with self.cached_session():
