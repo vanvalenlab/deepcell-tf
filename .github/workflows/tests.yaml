@@ -63,3 +63,40 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         parallel-finished: true
+
+  test-docker:
+    name: Build Docker and Run Tests
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Cache Docker layers
+      uses: actions/cache@v2
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+
+    - name: Build and Run Unit Tests
+      env:
+        IMAGE: ${{ github.repository }}:${{ github.sha }}
+        NAME: deepcell-test
+      run: |
+        docker buildx build --load --tag ${{ env.IMAGE }} .
+        docker run -d -it \
+          --entrypoint=bash \
+          --name ${{ env.NAME }} \
+          ${{ env.IMAGE }}
+        docker cp requirements-test.txt ${{ env.NAME }}:/opt/deepcell-tf/requirements-test.txt
+        docker exec ${{ env.NAME }} pip install -r /opt/deepcell-tf/requirements-test.txt
+        docker exec ${{ env.NAME }} pytest /opt/deepcell-tf/deepcell
+        docker kill ${{ env.NAME }} && docker rm ${{ env.NAME }}
