@@ -98,5 +98,5 @@ jobs:
           ${{ env.IMAGE }}
         docker cp requirements-test.txt ${{ env.NAME }}:/opt/deepcell-tf/requirements-test.txt
         docker exec ${{ env.NAME }} pip install -r /opt/deepcell-tf/requirements-test.txt
-        docker exec ${{ env.NAME }} pytest
+        docker exec ${{ env.NAME }} pytest /opt/deepcell-tf/deepcell
         docker kill ${{ env.NAME }} && docker rm ${{ env.NAME }}
