@@ -246,7 +246,7 @@ class GNNTrackingModel(object):
                              'and each side should be a power of 2.')
 
         graph_layer = str(graph_layer).lower()
-        if graph_layer not in {'gcn', 'gcs'}:
+        if graph_layer not in {'gcn', 'gcs', 'se2t', 'se2c'}:
             raise ValueError('Invalid graph_layer: {}'.format(graph_layer))
         self.graph_layer = graph_layer
 
@@ -369,7 +369,11 @@ class GNNTrackingModel(object):
         adj = adj_input
 
         # Concatenate features
-        node_features = Concatenate(axis=-1)([app_features, morph_features, centroid_features])
+        if self.graph_layer in ['se2t', 'se2c']:
+            node_features = Concatenate(axis=-1)([app_features, morph_features])
+        else:
+            node_features = Concatenate(axis=-1)([app_features, morph_features, centroid_features])
+        
         node_features = Dense(self.n_filters, name='dense_ne0')(node_features)
         node_features = BatchNormalization(axis=-1, name='bn_ne0')(node_features)
         node_features = Activation('relu', name='relu_ne0')(node_features)
