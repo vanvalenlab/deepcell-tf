@@ -385,10 +385,44 @@ class GNNTrackingModel(object):
                 graph_layer = GCNConv(self.n_filters, activation=None, name=name)
             elif self.graph_layer == 'gcs':
                 graph_layer = GCSConv(self.n_filters, activation=None, name=name)
+            elif self.graph_layer == 'se2c':
+                node_features = Lambda(lambda t:tf.expand_dims(t, axis=2))(node_features)
+                node_features = SE2Conv(output_order=1)([centroid_input,
+                                                        node_features,
+                                                        adj])
+                node_features = SE2SelfInteraction(n_filters=64)([centroid_input,
+                                                                  node_features,
+                                                                  adj])
+                node_features = SE2Conv(output_order=0)([centroid_input,
+                                                         node_features,
+                                                         adj])
+                node_features = SE2SelfInteraction(n_filters=64)([centroid_input,
+                                                                  node_features,
+                                                                  adj])
+                node_features = Lambda(lambda t:tf.squeeze(t, axis=2))(node_features)
+                node_features = Lambda(lambda t: tf.dtypes.cast(t, dtype=tf.float32))(node_features)
+            elif self.graph_layer == 'se2t':
+                node_features = Lambda(lambda t:tf.expand_dims(t, axis=2))(node_features)
+                node_features = SE2Transformer(output_order=1)([centroid_input,
+                                                                node_features,
+                                                                adj])
+                node_features = SE2SelfInteraction(n_filters=64)([centroid_input,
+                                                                  node_features,
+                                                                  adj])
+                node_features = SE2Transformer(output_order=0)([centroid_input,
+                                                                node_features,
+                                                                adj])
+                node_features = SE2SelfInteraction(n_filters=64)([centroid_input,
+                                                                  node_features,
+                                                                  adj])
+                node_features = Lambda(lambda t:tf.squeeze(t, axis=2))(node_features)
+                node_features = Lambda(lambda t: tf.dtypes.cast(t, dtype=tf.float32))(node_features)
             else:
                 raise ValueError('Unexpected graph_layer: {}'.format(self.graph_layer))
 
-            node_features = graph_layer([node_features, adj])
+            if self.graph_layer in ['gcn', 'gcs']:
+                node_features = graph_layer([node_features, adj])
+
             node_features = BatchNormalization(axis=-1,
                                                name='bn_ne{}'.format(i + 1))(node_features)
             node_features = Activation('relu', name='relu_ne{}'.format(i + 1))(node_features)
