@@ -49,6 +49,7 @@ from spektral.layers import GCSConv, GCNConv
 
 from deepcell.layers import ImageNormalization2D
 from deepcell.layers import Comparison, DeltaReshape, Unmerge, TemporalMerge
+from deepcell.layers import SE2SelfInteraction, SE2Conv, SE2Transformer
 
 
 def siamese_model(input_shape=None,
