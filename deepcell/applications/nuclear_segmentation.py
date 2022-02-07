@@ -43,6 +43,7 @@ MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
               'saved-models/NuclearSegmentation-5.tar.gz')
 MODEL_HASH = 'c3667ffbe08035c9cb69ed882e4a49d7'
 
+
 class NuclearSegmentation(Application):
     """Loads a :mod:`deepcell.model_zoo.panopticnet.PanopticNet` model
     for nuclear segmentation with pretrained weights.
