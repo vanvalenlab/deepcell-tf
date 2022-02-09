@@ -3,7 +3,14 @@
 
 name: build
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      operating_system:
+        description: 'Operating system of the runner'
+        required: true
 
 jobs:
 
@@ -12,9 +19,8 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8, 3.9]
-        os: [macos-latest, ubuntu-latest, windows-latest]
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ github.event.inputs.operating_system || 'ubuntu-latest' }}
 
     steps:
     - uses: actions/checkout@v2
