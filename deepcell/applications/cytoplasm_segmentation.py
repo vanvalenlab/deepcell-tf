@@ -41,6 +41,7 @@ from deepcell.applications import Application
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
               'saved-models/CytoplasmSegmentation-3.tar.gz')
+MODEL_HASH = '6a244f561b4d37169cb1a58b6029910f'
 
 
 class CytoplasmSegmentation(Application):
@@ -99,7 +100,7 @@ class CytoplasmSegmentation(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'CytoplasmSegmentation.tgz', MODEL_PATH,
-                file_hash='3a44131177f2c66457bad444d8973708',
+                file_hash=MODEL_HASH,
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
