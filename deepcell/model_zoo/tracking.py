@@ -45,7 +45,7 @@ from tensorflow.keras.layers import Activation, Softmax
 from tensorflow.keras.layers import BatchNormalization, Lambda
 from tensorflow.keras.regularizers import l2
 
-from spektral.layers import GCSConv, GCNConv
+from spektral.layers import GCSConv, GCNConv, GATConv
 
 from deepcell.layers import ImageNormalization2D
 from deepcell.layers import Comparison, DeltaReshape, Unmerge, TemporalMerge
@@ -245,7 +245,7 @@ class GNNTrackingModel(object):
                              'and each side should be a power of 2.')
 
         graph_layer = str(graph_layer).lower()
-        if graph_layer not in {'gcn', 'gcs'}:
+        if graph_layer not in {'gcn', 'gcs', 'gat'}:
             raise ValueError('Invalid graph_layer: {}'.format(graph_layer))
         self.graph_layer = graph_layer
 
@@ -380,6 +380,8 @@ class GNNTrackingModel(object):
                 graph_layer = GCNConv(self.n_filters, activation=None, name=name)
             elif self.graph_layer == 'gcs':
                 graph_layer = GCSConv(self.n_filters, activation=None, name=name)
+            elif self.graph_layer == 'gat':
+                graph_layer = GATConv(self.n_filters, activation=None, name=name, attn_heads=4)
             else:
                 raise ValueError('Unexpected graph_layer: {}'.format(self.graph_layer))
 
