@@ -217,6 +217,9 @@ class GNNTrackingModel(object):
         encoder_dim (int): Dimension of encoder
         embedding_dim (int): Dimension of embedding
         n_layers (int): number of layers
+        graph_layer (str): Must be one of {'gcs', 'gcn', 'gat'}
+            Additional kwargs for the graph layers can be encoded in the following format
+            `<layer name>-kwarg:value-kwarg:value`
         appearance_shape (tuple): shape of each object's appearance tensor
     """
     def __init__(self,
@@ -244,9 +247,9 @@ class GNNTrackingModel(object):
             raise ValueError('appearance_shape should have square dimensions '
                              'and each side should be a power of 2.')
 
-        graph_layer = str(graph_layer).lower()
-        if graph_layer not in {'gcn', 'gcs', 'gat'}:
-            raise ValueError('Invalid graph_layer: {}'.format(graph_layer))
+        graph_layer_name = str(graph_layer.split('-')[0]).lower()
+        if graph_layer_name not in {'gcn', 'gcs', 'gat'}:
+            raise ValueError('Invalid graph_layer: {}'.format(graph_layer_name))
         self.graph_layer = graph_layer
 
         # Use inputs to build expected shapes
@@ -375,13 +378,22 @@ class GNNTrackingModel(object):
 
         # Apply graph convolution
         for i in range(self.n_layers):
-            name = '{}{}'.format(self.graph_layer, i)
+            # Extract and define layer name
+            graph_layer_name = str(self.graph_layer.split('-')[0]).lower()
+            name = '{}{}'.format(graph_layer_name, i)
+            # Extract layer kwargs
+            split = self.graph_layer.split('-')
+            layer_kwargs = {}
+            if len(split) > 1:
+                for item in split[1:]:
+                    k, v = item.split(':')
+                    layer_kwargs[k] = v
             if self.graph_layer == 'gcn':
-                graph_layer = GCNConv(self.n_filters, activation=None, name=name)
+                graph_layer = GCNConv(self.n_filters, activation=None, name=name, **layer_kwargs)
             elif self.graph_layer == 'gcs':
-                graph_layer = GCSConv(self.n_filters, activation=None, name=name)
+                graph_layer = GCSConv(self.n_filters, activation=None, name=name, **layer_kwargs)
             elif self.graph_layer == 'gat':
-                graph_layer = GATConv(self.n_filters, activation=None, name=name, attn_heads=4)
+                graph_layer = GATConv(self.n_filters, activation=None, name=name, **layer_kwargs)
             else:
                 raise ValueError('Unexpected graph_layer: {}'.format(self.graph_layer))
 
