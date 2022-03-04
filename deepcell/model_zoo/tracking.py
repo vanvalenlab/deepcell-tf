@@ -29,6 +29,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import ast
 import math
 
 import numpy as np
@@ -219,7 +220,7 @@ class GNNTrackingModel(object):
         n_layers (int): number of layers
         graph_layer (str): Must be one of {'gcs', 'gcn', 'gat'}
             Additional kwargs for the graph layers can be encoded in the following format
-            `<layer name>-kwarg:value-kwarg:value`
+            ``<layer name>-kwarg:value-kwarg:value``
         appearance_shape (tuple): shape of each object's appearance tensor
     """
     def __init__(self,
@@ -387,15 +388,19 @@ class GNNTrackingModel(object):
             if len(split) > 1:
                 for item in split[1:]:
                     k, v = item.split(':')
-                    layer_kwargs[k] = v
-            if self.graph_layer == 'gcn':
+                    # Cast value to correct type
+                    try:
+                        layer_kwargs[k] = ast.literal_eval(v)
+                    except ValueError:
+                        layer_kwargs[k] = v
+            if graph_layer_name == 'gcn':
                 graph_layer = GCNConv(self.n_filters, activation=None, name=name, **layer_kwargs)
-            elif self.graph_layer == 'gcs':
+            elif graph_layer_name == 'gcs':
                 graph_layer = GCSConv(self.n_filters, activation=None, name=name, **layer_kwargs)
-            elif self.graph_layer == 'gat':
+            elif graph_layer_name == 'gat':
                 graph_layer = GATConv(self.n_filters, activation=None, name=name, **layer_kwargs)
             else:
-                raise ValueError('Unexpected graph_layer: {}'.format(self.graph_layer))
+                raise ValueError('Unexpected graph_layer: {}'.format(graph_layer_name))
 
             node_features = graph_layer([node_features, adj])
             node_features = BatchNormalization(axis=-1,
