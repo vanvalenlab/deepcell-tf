@@ -378,21 +378,21 @@ class GNNTrackingModel(object):
         node_features = Activation('relu', name='relu_ne0')(node_features)
 
         # Apply graph convolution
+        # Extract and define layer name
+        graph_layer_name = str(self.graph_layer.split('-')[0]).lower()
+        # Extract layer kwargs
+        split = self.graph_layer.split('-')
+        layer_kwargs = {}
+        if len(split) > 1:
+            for item in split[1:]:
+                k, v = item.split(':')
+                # Cast value to correct type
+                try:
+                    layer_kwargs[k] = ast.literal_eval(v)
+                except ValueError:
+                    layer_kwargs[k] = v
         for i in range(self.n_layers):
-            # Extract and define layer name
-            graph_layer_name = str(self.graph_layer.split('-')[0]).lower()
             name = '{}{}'.format(graph_layer_name, i)
-            # Extract layer kwargs
-            split = self.graph_layer.split('-')
-            layer_kwargs = {}
-            if len(split) > 1:
-                for item in split[1:]:
-                    k, v = item.split(':')
-                    # Cast value to correct type
-                    try:
-                        layer_kwargs[k] = ast.literal_eval(v)
-                    except ValueError:
-                        layer_kwargs[k] = v
             if graph_layer_name == 'gcn':
                 graph_layer = GCNConv(self.n_filters, activation=None, name=name, **layer_kwargs)
             elif graph_layer_name == 'gcs':
