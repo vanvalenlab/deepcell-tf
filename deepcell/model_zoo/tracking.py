@@ -29,6 +29,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
+import ast
 import math
 
 import numpy as np
@@ -45,7 +46,7 @@ from tensorflow.keras.layers import Activation, Softmax
 from tensorflow.keras.layers import BatchNormalization, Lambda
 from tensorflow.keras.regularizers import l2
 
-from spektral.layers import GCSConv, GCNConv
+from spektral.layers import GCSConv, GCNConv, GATConv
 
 from deepcell.layers import ImageNormalization2D
 from deepcell.layers import Comparison, DeltaReshape, Unmerge, TemporalMerge
@@ -218,6 +219,9 @@ class GNNTrackingModel(object):
         encoder_dim (int): Dimension of encoder
         embedding_dim (int): Dimension of embedding
         n_layers (int): number of layers
+        graph_layer (str): Must be one of {'gcs', 'gcn', 'gat'}
+            Additional kwargs for the graph layers can be encoded in the following format
+            ``<layer name>-kwarg:value-kwarg:value``
         appearance_shape (tuple): shape of each object's appearance tensor
     """
     def __init__(self,
@@ -245,9 +249,15 @@ class GNNTrackingModel(object):
             raise ValueError('appearance_shape should have square dimensions '
                              'and each side should be a power of 2.')
 
+<<<<<<< HEAD
         graph_layer = str(graph_layer).lower()
         if graph_layer not in {'gcn', 'gcs', 'se2t', 'se2c'}:
             raise ValueError('Invalid graph_layer: {}'.format(graph_layer))
+=======
+        graph_layer_name = str(graph_layer.split('-')[0]).lower()
+        if graph_layer_name not in {'gcn', 'gcs', 'gat'}:
+            raise ValueError('Invalid graph_layer: {}'.format(graph_layer_name))
+>>>>>>> master
         self.graph_layer = graph_layer
 
         # Use inputs to build expected shapes
@@ -379,12 +389,27 @@ class GNNTrackingModel(object):
         node_features = Activation('relu', name='relu_ne0')(node_features)
 
         # Apply graph convolution
+        # Extract and define layer name
+        graph_layer_name = str(self.graph_layer.split('-')[0]).lower()
+        # Extract layer kwargs
+        split = self.graph_layer.split('-')
+        layer_kwargs = {}
+        if len(split) > 1:
+            for item in split[1:]:
+                k, v = item.split(':')
+                # Cast value to correct type
+                try:
+                    layer_kwargs[k] = ast.literal_eval(v)
+                except ValueError:
+                    layer_kwargs[k] = v
         for i in range(self.n_layers):
-            name = '{}{}'.format(self.graph_layer, i)
-            if self.graph_layer == 'gcn':
-                graph_layer = GCNConv(self.n_filters, activation=None, name=name)
-            elif self.graph_layer == 'gcs':
-                graph_layer = GCSConv(self.n_filters, activation=None, name=name)
+            name = '{}{}'.format(graph_layer_name, i)
+            if graph_layer_name == 'gcn':
+                graph_layer = GCNConv(self.n_filters, activation=None, name=name, **layer_kwargs)
+            elif graph_layer_name == 'gcs':
+                graph_layer = GCSConv(self.n_filters, activation=None, name=name, **layer_kwargs)
+            elif graph_layer_name == 'gat':
+                graph_layer = GATConv(self.n_filters, activation=None, name=name, **layer_kwargs)
             elif self.graph_layer == 'se2c':
                 node_features = Lambda(lambda t:tf.expand_dims(t, axis=2))(node_features)
                 node_features = SE2Conv(output_order=1)([centroid_input,
@@ -417,8 +442,9 @@ class GNNTrackingModel(object):
                                                                   adj])
                 node_features = Lambda(lambda t:tf.squeeze(t, axis=2))(node_features)
                 node_features = Lambda(lambda t: tf.dtypes.cast(t, dtype=tf.float32))(node_features)
+
             else:
-                raise ValueError('Unexpected graph_layer: {}'.format(self.graph_layer))
+                raise ValueError('Unexpected graph_layer: {}'.format(graph_layer_name))
 
             if self.graph_layer in ['gcn', 'gcs']:
                 node_features = graph_layer([node_features, adj])
