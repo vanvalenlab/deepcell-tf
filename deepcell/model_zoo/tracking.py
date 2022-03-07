@@ -249,15 +249,9 @@ class GNNTrackingModel(object):
             raise ValueError('appearance_shape should have square dimensions '
                              'and each side should be a power of 2.')
 
-<<<<<<< HEAD
-        graph_layer = str(graph_layer).lower()
-        if graph_layer not in {'gcn', 'gcs', 'se2t', 'se2c'}:
-            raise ValueError('Invalid graph_layer: {}'.format(graph_layer))
-=======
         graph_layer_name = str(graph_layer.split('-')[0]).lower()
-        if graph_layer_name not in {'gcn', 'gcs', 'gat'}:
+        if graph_layer_name not in {'gcn', 'gcs', 'gat', 'se2t', 'se2c'}:
             raise ValueError('Invalid graph_layer: {}'.format(graph_layer_name))
->>>>>>> master
         self.graph_layer = graph_layer
 
         # Use inputs to build expected shapes
