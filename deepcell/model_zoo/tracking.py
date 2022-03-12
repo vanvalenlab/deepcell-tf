@@ -234,6 +234,12 @@ class GNNTrackingModel(object):
                  graph_layer='gcs',
                  appearance_shape=(32, 32, 1)):
 
+        print()
+        print('no batchnorm')
+        print('no batchnorm')
+        print('no batchnorm')
+        print()
+
         self.n_filters = n_filters
         self.encoder_dim = encoder_dim
         self.embedding_dim = embedding_dim
