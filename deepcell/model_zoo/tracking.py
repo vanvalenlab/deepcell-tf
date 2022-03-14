@@ -234,6 +234,12 @@ class GNNTrackingModel(object):
                  graph_layer='gcs',
                  appearance_shape=(32, 32, 1)):
 
+        print()
+        print('no batchnorm')
+        print('no batchnorm')
+        print('no batchnorm')
+        print()
+
         self.n_filters = n_filters
         self.encoder_dim = encoder_dim
         self.embedding_dim = embedding_dim
@@ -309,12 +315,12 @@ class GNNTrackingModel(object):
                        strides=1,
                        padding='same',
                        use_bias=False, name='conv3d_ae{}'.format(i))(x)
-            x = BatchNormalization(axis=-1, name='bn_ae{}'.format(i))(x)
+            # x = BatchNormalization(axis=-1, name='bn_ae{}'.format(i))(x)
             x = Activation('relu', name='relu_ae{}'.format(i))(x)
             x = MaxPool3D(pool_size=(1, 2, 2))(x)
         x = Lambda(lambda t: tf.squeeze(t, axis=(2, 3)))(x)
         x = Dense(self.encoder_dim, name='dense_aeout')(x)
-        x = BatchNormalization(axis=-1, name='bn_aeout')(x)
+        # x = BatchNormalization(axis=-1, name='bn_aeout')(x)
         x = Activation('relu', name='appearance_embedding')(x)
         return Model(inputs=inputs, outputs=x)
 
@@ -323,7 +329,7 @@ class GNNTrackingModel(object):
         inputs = Input(shape=morph_shape, name='encoder_morph_input')
         x = inputs
         x = Dense(self.encoder_dim, name='dense_me')(x)
-        x = BatchNormalization(axis=-1, name='bn_me')(x)
+        # x = BatchNormalization(axis=-1, name='bn_me')(x)
         x = Activation('relu', name='morphology_embedding')(x)
         return Model(inputs=inputs, outputs=x)
 
@@ -332,7 +338,7 @@ class GNNTrackingModel(object):
         inputs = Input(shape=centroid_shape, name='encoder_centroid_input')
         x = inputs
         x = Dense(self.encoder_dim, name='dense_ce')(x)
-        x = BatchNormalization(axis=-1, name='bn_ce')(x)
+        # x = BatchNormalization(axis=-1, name='bn_ce')(x)
         x = Activation('relu', name='centroid_embedding')(x)
         return Model(inputs=inputs, outputs=x)
 
@@ -347,11 +353,11 @@ class GNNTrackingModel(object):
         a = Activation('relu', name='relu_des')
 
         x_0 = d(inputs)
-        x_0 = BatchNormalization(axis=-1, name='bn_des0')(x_0)
+        # x_0 = BatchNormalization(axis=-1, name='bn_des0')(x_0)
         x_0 = a(x_0)
 
         x_1 = d(inputs_across_frames)
-        x_1 = BatchNormalization(axis=-1, name='bn_des1')(x_1)
+        # x_1 = BatchNormalization(axis=-1, name='bn_des1')(x_1)
         x_1 = a(x_1)
 
         delta_encoder = Model(inputs=inputs, outputs=x_0)
@@ -383,7 +389,7 @@ class GNNTrackingModel(object):
         print()
         
         node_features = Dense(self.n_filters, name='dense_ne0')(node_features)
-        node_features = BatchNormalization(axis=-1, name='bn_ne0')(node_features)
+        # node_features = BatchNormalization(axis=-1, name='bn_ne0')(node_features)
         node_features = Activation('relu', name='relu_ne0')(node_features)
 
         print('memory allocaiton neigh after node feat preproc')
@@ -463,8 +469,9 @@ class GNNTrackingModel(object):
                 print(tf.config.experimental.get_memory_info('GPU:0')['current'])
                 print()
 
-            node_features = BatchNormalization(axis=-1,
-                                               name='bn_ne{}'.format(i + 1))(node_features)
+            # node_features = BatchNormalization(axis=-1,
+            #                                    name='bn_ne{}'.format(i + 1))(node_features)
+
             node_features = Activation('relu', name='relu_ne{}'.format(i + 1))(node_features)
 
             print('memory allocaiton neigh after final node feat process')
@@ -473,7 +480,7 @@ class GNNTrackingModel(object):
 
         concat = Concatenate(axis=-1)([app_features, morph_features, node_features])
         node_features = Dense(self.embedding_dim, name='dense_nef')(concat)
-        node_features = BatchNormalization(axis=-1, name='bn_nef')(node_features)
+        # node_features = BatchNormalization(axis=-1, name='bn_nef')(node_features) 
         node_features = Activation('relu', name='relu_nef')(node_features)
 
         print('memory allocaiton neigh after concat node app morph')
@@ -664,7 +671,7 @@ class GNNTrackingModel(object):
         embedding = Concatenate(axis=-1)([embedding_input, deltas_input])
 
         embedding = Dense(self.n_filters, name='dense_td0')(embedding)
-        embedding = BatchNormalization(axis=-1, name='bn_td0')(embedding)
+        # embedding = BatchNormalization(axis=-1, name='bn_td0')(embedding) 
         embedding = Activation('relu', name='relu_td0')(embedding)
 
         # TODO: set to n_classes
