@@ -377,10 +377,18 @@ class GNNTrackingModel(object):
             node_features = Concatenate(axis=-1)([app_features, morph_features])
         else:
             node_features = Concatenate(axis=-1)([app_features, morph_features, centroid_features])
+
+        print('memory allocaiton neigh before networks')
+        print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+        print()
         
         node_features = Dense(self.n_filters, name='dense_ne0')(node_features)
         node_features = BatchNormalization(axis=-1, name='bn_ne0')(node_features)
         node_features = Activation('relu', name='relu_ne0')(node_features)
+
+        print('memory allocaiton neigh after node feat preproc')
+        print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+        print()
 
         # Apply graph convolution
         # Extract and define layer name
@@ -420,6 +428,10 @@ class GNNTrackingModel(object):
                                                                   adj])
                 node_features = Lambda(lambda t:tf.squeeze(t, axis=2))(node_features)
                 node_features = Lambda(lambda t: tf.dtypes.cast(t, dtype=tf.float32))(node_features)
+
+                print('memory allocaiton neigh after se2c')
+                print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+                print()
             elif self.graph_layer == 'se2t':
                 node_features = Lambda(lambda t:tf.expand_dims(t, axis=2))(node_features)
                 node_features = SE2Transformer(output_order=1)([centroid_input,
@@ -437,20 +449,36 @@ class GNNTrackingModel(object):
                 node_features = Lambda(lambda t:tf.squeeze(t, axis=2))(node_features)
                 node_features = Lambda(lambda t: tf.dtypes.cast(t, dtype=tf.float32))(node_features)
 
+                print('memory allocaiton neigh after se2t')
+                print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+                print()
+
             else:
                 raise ValueError('Unexpected graph_layer: {}'.format(graph_layer_name))
 
-            if self.graph_layer in ['gcn', 'gcs']:
+            if self.graph_layer in ['gcn', 'gcs', 'gat']:
                 node_features = graph_layer([node_features, adj])
+
+                print('memory allocaiton neigh after gcn/gcs/gat')
+                print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+                print()
 
             node_features = BatchNormalization(axis=-1,
                                                name='bn_ne{}'.format(i + 1))(node_features)
             node_features = Activation('relu', name='relu_ne{}'.format(i + 1))(node_features)
 
+            print('memory allocaiton neigh after final node feat process')
+            print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+            print()
+
         concat = Concatenate(axis=-1)([app_features, morph_features, node_features])
         node_features = Dense(self.embedding_dim, name='dense_nef')(concat)
         node_features = BatchNormalization(axis=-1, name='bn_nef')(node_features)
         node_features = Activation('relu', name='relu_nef')(node_features)
+
+        print('memory allocaiton neigh after concat node app morph')
+        print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+        print()
 
         inputs = [app_input, morph_input, centroid_input, adj_input]
         outputs = [node_features, centroid_input]
@@ -501,6 +529,13 @@ class GNNTrackingModel(object):
         adj_input = Input(shape=self.adj_shape, name='adj_matrices')
         inputs = [app_input, morph_input, centroid_input, adj_input]
 
+        # print('app shape ', app_input.shape)
+        # print('morph shape ', morph_input.shape)
+        # print('cent shape ', centroid_input.shape)
+        # print('adj shape ', adj_input.shape)
+        # print()
+
+
         # Merge batch and temporal dimensions
         new_app_shape = tuple([-1] + list(self.appearance_shape)[1:])
         reshaped_app_input = Lambda(lambda t: tf.reshape(t, new_app_shape),
@@ -517,6 +552,13 @@ class GNNTrackingModel(object):
         new_adj_shape = [-1, self.adj_shape[1], self.adj_shape[2]]
         reshaped_adj_input = Lambda(lambda t: tf.reshape(t, new_adj_shape),
                                     name='reshaped_adj_matrices')(adj_input)
+        
+        # print('merge batch and temp dim batch*8 in None position')
+        # print('reshape app shape ', reshaped_app_input.shape)
+        # print('reshape morph shape ', reshaped_morph_input.shape)
+        # print('reshape cent shape ', reshaped_centroid_input.shape)
+        # print('reshape adj shape ', reshaped_adj_input.shape)
+        # print()
 
         reshaped_inputs = [
             reshaped_app_input,
@@ -526,6 +568,12 @@ class GNNTrackingModel(object):
         ]
 
         x, centroids = self.neighborhood_encoder(reshaped_inputs)
+
+        # print('after neighborhood encoder')
+        # print('x shape ', x.shape)
+        # print('cent shape ', centroids.shape)
+        # print()
+
 
         # Reshape embeddings to add back temporal dimension
         x = self.unmerge_embeddings_model(x)
