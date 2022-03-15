@@ -358,12 +358,12 @@ class GNNTrackingModel(object):
 
         x_0 = d(inputs)
         # x_0 = BatchNormalization(axis=-1, name='bn_des0')(x_0)
-        x_0 = LayerNormalization(axis=-1, name='ln_des0')(x)
+        x_0 = LayerNormalization(axis=-1, name='ln_des0')(x_0)
         x_0 = a(x_0)
 
         x_1 = d(inputs_across_frames)
         # x_1 = BatchNormalization(axis=-1, name='bn_des1')(x_1)
-        x_1 = LayerNormalization(axis=-1, name='ln_des1')(x)
+        x_1 = LayerNormalization(axis=-1, name='ln_des1')(x_1)
         x_1 = a(x_1)
 
         delta_encoder = Model(inputs=inputs, outputs=x_0)
