@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/vanvalenlab/deepcell-tf/workflows/build/badge.svg)](https://github.com/vanvalenlab/deepcell-tf/actions)
 [![Coverage Status](https://coveralls.io/repos/github/vanvalenlab/deepcell-tf/badge.svg?branch=master)](https://coveralls.io/github/vanvalenlab/deepcell-tf?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/deepcell/badge/?version=master)](https://deepcell.readthedocs.io/en/master/?badge=master)
-[![Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE)
+[![Modified Apache 2.0](https://img.shields.io/badge/license-Modified%20Apache%202-blue)](https://github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE)
 [![PyPI version](https://badge.fury.io/py/DeepCell.svg)](https://badge.fury.io/py/deepcell)
 [![PyPi Monthly Downloads](https://img.shields.io/pypi/dm/deepcell)](https://pypistats.org/packages/deepcell)
 [![Python Versions](https://img.shields.io/pypi/pyversions/deepcell.svg)](https://pypi.org/project/deepcell/)
