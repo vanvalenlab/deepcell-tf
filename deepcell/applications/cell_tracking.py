@@ -40,11 +40,11 @@ from deepcell.applications import Application
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/TrackingModel-6.tar.gz')
+              'saved-models/TrackingModel-7.tar.gz')
 
 
 ENCODER_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'saved-models/TrackingModelNE-4.tar.gz')
+                'saved-models/TrackingModelNE-5.tar.gz')
 
 
 class CellTracking(Application):
@@ -87,7 +87,7 @@ class CellTracking(Application):
                  distance_threshold=64,
                  birth=0.99,
                  death=0.99,
-                 division=0.9,
+                 division=0.01,
                  track_length=8,
                  embedding_axis=0):
         self.neighborhood_encoder = neighborhood_encoder
@@ -101,7 +101,7 @@ class CellTracking(Application):
         if self.neighborhood_encoder is None:
             archive_path = tf.keras.utils.get_file(
                 'NuclearTrackingNE.tgz', ENCODER_PATH,
-                file_hash='f73f84ada41dec266c848bd80e817e01',
+                file_hash='7d6636838e138bd31124bf76d462630d',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
             self.neighborhood_encoder = tf.keras.models.load_model(model_path)
@@ -109,7 +109,7 @@ class CellTracking(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'NuclearTrackingInf.tgz', MODEL_PATH,
-                file_hash='d310702b094674cb699775820a2a150c',
+                file_hash='47a198b2aa1cbfd438e04f6c76a2ad02',
                 extract=True, cache_subdir='models')
             model_path = os.path.splitext(archive_path)[0]
             model = tf.keras.models.load_model(model_path)
