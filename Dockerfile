@@ -5,6 +5,9 @@ ARG TF_VERSION=2.5.1-gpu
 
 FROM tensorflow/tensorflow:${TF_VERSION}
 
+# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
+
 # System maintenance
 RUN apt-get update && apt-get install -y  \
     graphviz && \
