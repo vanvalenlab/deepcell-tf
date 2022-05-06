@@ -42,7 +42,8 @@ from deepcell.applications import Application
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/MultiplexSegmentation-7.tar.gz')
+              'saved-models/MultiplexSegmentation-8.tar.gz')
+MODEL_HASH = 'd77a668a07ff684fd7ec6c14cac12477'
 
 
 # pre- and post-processing functions
@@ -214,7 +215,7 @@ class Mesmer(Application):
         if model is None:
             archive_path = tf.keras.utils.get_file(
                 'MultiplexSegmentation.tgz', MODEL_PATH,
-                file_hash='e7360e8e87c3ab71ded00a577a61c689',
+                file_hash=MODEL_HASH,
                 extract=True, cache_subdir='models'
             )
             model_path = os.path.splitext(archive_path)[0]
