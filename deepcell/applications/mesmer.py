@@ -43,7 +43,7 @@ from deepcell.applications import Application
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
               'saved-models/MultiplexSegmentation-8.tar.gz')
-MODEL_HASH = 'd77a668a07ff684fd7ec6c14cac12477'
+MODEL_HASH = 'a685c80a1cb7cc36969afa7b99ec0005'
 
 
 # pre- and post-processing functions
