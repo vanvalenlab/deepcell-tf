@@ -20,8 +20,8 @@ py:class tensorflow.keras.Layer
 py:class tensorflow.keras.layers.Layer
 py:class tensorflow.keras.callbacks.Callback
 py:class tensorflow.keras.initializers.Initializer
-py:class tensorflow.python.keras.layers.recurrent.DropoutRNNCellMixin
-py:class tensorflow.python.keras.layers.convolutional_recurrent.ConvRNN2D
+py:class tensorflow.keras.layers.recurrent.DropoutRNNCellMixin
+py:class tensorflow.keras.layers.convolutional_recurrent.ConvRNN2D
 py:class tensorflow.keras.layers.ZeroPadding2D
 py:class tensorflow.keras.layers.ZeroPadding3D
 py:class tensorflow.keras.preprocessing.image.Iterator

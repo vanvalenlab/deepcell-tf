@@ -37,7 +37,7 @@ from tensorflow.keras import constraints
 from tensorflow.keras import initializers
 from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Layer, InputSpec
-from tensorflow.python.keras.utils import conv_utils
+from tensorflow.keras.utils import conv_utils
 
 
 class ImageNormalization2D(Layer):

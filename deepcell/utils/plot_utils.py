@@ -35,7 +35,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from matplotlib import animation
-from tensorflow.python.keras import backend as K
+from tensorflow.keras import backend as K
 from skimage.exposure import rescale_intensity
 from skimage.segmentation import find_boundaries
 
