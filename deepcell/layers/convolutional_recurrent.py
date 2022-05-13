@@ -44,9 +44,9 @@ from tensorflow.keras import constraints
 from tensorflow.keras import initializers
 from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Layer
-from tensorflow.keras.layers.recurrent import DropoutRNNCellMixin
-from tensorflow.keras.layers.convolutional_recurrent import ConvRNN2D
-from tensorflow.keras.utils import conv_utils
+from tensorflow.python.keras.layers.recurrent import DropoutRNNCellMixin
+from tensorflow.python.keras.layers.convolutional_recurrent import ConvRNN2D
+from tensorflow.python.keras.utils import conv_utils
 
 
 class ConvGRU2DCell(DropoutRNNCellMixin, Layer):

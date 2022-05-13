@@ -33,7 +33,7 @@ from absl.testing import parameterized
 
 from tensorflow.test import assert_equal_graph_def
 from tensorflow.keras import backend as K
-from tensorflow.keras import keras_parameterized
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.model_zoo import PanopticNet
 

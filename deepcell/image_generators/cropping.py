@@ -34,7 +34,7 @@ import warnings
 
 import numpy as np
 
-from tensorflow.keras.preprocessing.image import array_to_img
+from tensorflow.python.keras.preprocessing.image import array_to_img
 
 from deepcell.image_generators import SemanticDataGenerator, SemanticIterator
 

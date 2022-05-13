@@ -32,7 +32,7 @@ from __future__ import division
 import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Layer
-from tensorflow.keras.utils import conv_utils
+from tensorflow.python.keras.utils import conv_utils
 from tensorflow.python.framework import tensor_shape
 
 

@@ -37,7 +37,7 @@ from tensorflow.python.platform import test
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
-from tensorflow.keras import keras_parameterized
+from tensorflow.python.keras import keras_parameterized
 
 from deepcell.utils import backbone_utils
 
