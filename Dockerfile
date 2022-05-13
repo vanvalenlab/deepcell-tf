@@ -1,13 +1,16 @@
 # Use tensorflow/tensorflow as the base image
 # Change the build arg to edit the tensorflow version.
 # Only supporting python3.
-ARG TF_VERSION=2.5.1-gpu
+ARG TF_VERSION=2.8.0-gpu
 
 FROM tensorflow/tensorflow:${TF_VERSION}
 
+# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
+
 # System maintenance
 RUN apt-get update && apt-get install -y  \
-    graphviz && \
+    graphviz git && \
     rm -rf /var/lib/apt/lists/* && \
     /usr/bin/python3 -m pip install --no-cache-dir --upgrade pip
 
