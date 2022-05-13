@@ -32,8 +32,8 @@ from __future__ import division
 import sys
 
 import tensorflow as tf
-from tensorflow.python.keras import keras_parameterized
-from tensorflow.python.keras import testing_utils
+from tensorflow.keras import keras_parameterized
+from tensorflow.keras import testing_utils
 from tensorflow.python.framework import test_util as tf_test_util
 
 from deepcell import callbacks

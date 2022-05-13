@@ -28,8 +28,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-from tensorflow.python.keras import testing_utils
-from tensorflow.python.keras import keras_parameterized
+from tensorflow.keras import testing_utils
+from tensorflow.keras import keras_parameterized
 from tensorflow.keras.utils import custom_object_scope
 from tensorflow.python.platform import test
 
