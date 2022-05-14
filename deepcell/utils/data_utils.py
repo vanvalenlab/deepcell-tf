@@ -32,7 +32,7 @@ from __future__ import division
 import numpy as np
 from sklearn.model_selection import train_test_split
 from tensorflow.keras import backend as K
-from tensorflow.keras.utils import conv_utils
+from keras.utils import conv_utils
 
 from deepcell.utils.tracking_utils import load_trks
 

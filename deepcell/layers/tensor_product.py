@@ -34,7 +34,7 @@ from tensorflow.python.framework import tensor_shape
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import InputSpec
-from tensorflow.keras.utils import conv_utils
+from keras.utils import conv_utils
 
 
 class TensorProduct(Layer):
