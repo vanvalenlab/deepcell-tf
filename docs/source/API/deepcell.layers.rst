@@ -6,13 +6,6 @@ deepcell.layers
 .. contents:: Contents
     :local:
 
-convolutional_recurrent
------------------------
-.. automodule:: deepcell.layers.convolutional_recurrent
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 location
 --------
 .. automodule:: deepcell.layers.location
