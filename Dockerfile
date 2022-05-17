@@ -10,7 +10,7 @@ RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/
 
 # System maintenance
 RUN apt-get update && apt-get install -y  \
-    graphviz git && \
+    graphviz && \
     rm -rf /var/lib/apt/lists/* && \
     /usr/bin/python3 -m pip install --no-cache-dir --upgrade pip
 
