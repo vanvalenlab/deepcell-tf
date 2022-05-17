@@ -1,4 +1,4 @@
-# Copyright 2016-2021 David Van Valen at California Institute of Technology
+# Copyright 2016-2022 David Van Valen at California Institute of Technology
 # (Caltech), with support from the Paul Allen Family Foundation, Google,
 # & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
