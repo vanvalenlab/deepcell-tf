@@ -226,6 +226,7 @@ epub_exclude_files = ['search.html']
 autodoc_mock_imports = [
     'tensorflow',
     'tensorflow_addons',
+    'keras',
     'spektral',
     'scipy',
     'numpy',
