@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Van Valen Lab at the California Institute of
+# Copyright 2016-2022 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -33,7 +33,7 @@ from absl.testing import parameterized
 
 from tensorflow.test import assert_equal_graph_def
 from tensorflow.keras import backend as K
-from tensorflow.python.keras import keras_parameterized
+from keras import keras_parameterized
 
 from deepcell.model_zoo import PanopticNet
 

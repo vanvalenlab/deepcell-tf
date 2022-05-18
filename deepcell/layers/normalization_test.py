@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Van Valen Lab at the California Institute of
+# Copyright 2016-2022 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -33,8 +33,8 @@ from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
-from tensorflow.python.keras import keras_parameterized
-from tensorflow.python.keras import testing_utils
+from keras import keras_parameterized
+from keras import testing_utils
 from tensorflow.python.framework import test_util as tf_test_util
 from tensorflow.python.platform import test
 

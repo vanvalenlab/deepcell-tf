@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Van Valen Lab at the California Institute of
+# Copyright 2016-2022 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -28,7 +28,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from deepcell.layers import convolutional_recurrent
 from deepcell.layers import location
 from deepcell.layers import normalization
 from deepcell.layers import pooling
@@ -36,7 +35,6 @@ from deepcell.layers import tensor_product
 from deepcell.layers import padding
 from deepcell.layers import upsample
 
-from deepcell.layers.convolutional_recurrent import ConvGRU2D
 from deepcell.layers.location import Location2D
 from deepcell.layers.location import Location3D
 from deepcell.layers.normalization import ImageNormalization2D

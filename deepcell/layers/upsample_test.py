@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Van Valen Lab at the California Institute of
+# Copyright 2016-2022 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -30,8 +30,8 @@ from __future__ import division
 
 import numpy as np
 from tensorflow.keras import backend as K
-from tensorflow.python.keras import keras_parameterized
-from tensorflow.python.keras import testing_utils
+from keras import keras_parameterized
+from keras import testing_utils
 from tensorflow.keras.utils import custom_object_scope
 from tensorflow.python.platform import test
 

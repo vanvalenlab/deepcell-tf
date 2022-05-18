@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Van Valen Lab at the California Institute of
+# Copyright 2016-2022 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -32,7 +32,7 @@ from __future__ import print_function
 from absl.testing import parameterized
 
 from tensorflow.python.framework import test_util as tf_test_util
-from tensorflow.python.keras import keras_parameterized
+from keras import keras_parameterized
 
 from tensorflow.keras import backend as K
 
@@ -427,48 +427,6 @@ class FeatureNetTest(keras_parameterized.TestCase):
             'shape': (10, 32, 32, 1),
             'data_format': 'channels_last',
             'temporal': 'conv',
-            'residual': True,
-            'temporal_kernel_size': 3,
-        },
-        {
-            'testcase_name': 'dilated_no_top_convGRU2D_nonresidual',
-            'include_top': False,
-            'dilated': True,
-            'padding_mode': 'zero',
-            'padding': False,
-            'multires': False,
-            'location': False,
-            'shape': (10, 32, 32, 1),
-            'data_format': 'channels_last',
-            'temporal': 'gru',
-            'residual': False,
-            'temporal_kernel_size': 3,
-        },
-        {
-            'testcase_name': 'dilated_no_top_convgru2D_nonresidual',
-            'include_top': False,
-            'dilated': True,
-            'padding_mode': 'zero',
-            'padding': False,
-            'multires': False,
-            'location': False,
-            'shape': (10, 32, 32, 1),
-            'data_format': 'channels_last',
-            'temporal': 'GRU',
-            'residual': False,
-            'temporal_kernel_size': 3,
-        },
-        {
-            'testcase_name': 'dilated_no_top_convGRU2D_residual',
-            'include_top': False,
-            'dilated': True,
-            'padding_mode': 'zero',
-            'padding': False,
-            'multires': False,
-            'location': False,
-            'shape': (10, 32, 32, 1),
-            'data_format': 'channels_last',
-            'temporal': 'gru',
             'residual': True,
             'temporal_kernel_size': 3,
         },

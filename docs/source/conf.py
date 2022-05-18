@@ -226,6 +226,7 @@ epub_exclude_files = ['search.html']
 autodoc_mock_imports = [
     'tensorflow',
     'tensorflow_addons',
+    'keras',
     'spektral',
     'scipy',
     'numpy',
@@ -238,7 +239,7 @@ autodoc_mock_imports = [
 ]
 
 sys.modules['deepcell.utils.compute_overlap'] = mock.Mock()
-sys.modules['tensorflow.python.keras.layers.convolutional_recurrent.ConvRNN2D'] = mock.Mock()
+sys.modules['tensorflow.keras.layers.convolutional_recurrent.ConvRNN2D'] = mock.Mock()
 
 # Disable nbsphinx extension from running notebooks
 nbsphinx_execute = 'never'

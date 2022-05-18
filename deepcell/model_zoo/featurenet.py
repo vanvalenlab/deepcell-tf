@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Van Valen Lab at the California Institute of
+# Copyright 2016-2022 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -44,7 +44,6 @@ from tensorflow.keras.layers import ZeroPadding2D, ZeroPadding3D
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras import utils as keras_utils
 
-from deepcell.layers import ConvGRU2D
 from deepcell.layers import DilatedMaxPool2D, DilatedMaxPool3D
 from deepcell.layers import ImageNormalization2D, ImageNormalization3D
 from deepcell.layers import Location2D, Location3D
@@ -479,12 +478,8 @@ def bn_feature_net_3D(receptive_field=61,
             x = ConvLSTM2D(filters=n_filters, kernel_size=temporal_kernel_size,
                            padding='same', kernel_initializer=init, activation='relu',
                            kernel_regularizer=l2(reg), return_sequences=True)(feature)
-        elif mode == 'gru':
-            x = ConvGRU2D(filters=n_filters, kernel_size=temporal_kernel_size,
-                          padding='same', kernel_initializer=init, activation='relu',
-                          kernel_regularizer=l2(reg), return_sequences=True)(feature)
         else:
-            raise ValueError('`temporal` must be one of "conv", "lstm", "gru" or None')
+            raise ValueError('`temporal` must be one of "conv", "lstm" or None')
 
         if residual is True:
             temporal_feature = Add()([feature, x])

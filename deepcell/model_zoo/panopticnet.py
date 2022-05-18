@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Van Valen Lab at the California Institute of
+# Copyright 2016-2022 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -39,7 +39,6 @@ from tensorflow.keras.layers import TimeDistributed, ConvLSTM2D
 from tensorflow.keras.layers import Input, Concatenate
 from tensorflow.keras.layers import Activation, BatchNormalization
 
-from deepcell.layers import ConvGRU2D
 from deepcell.layers import ImageNormalization2D, Location2D
 from deepcell.model_zoo.fpn import __create_pyramid_features
 from deepcell.model_zoo.fpn import __create_semantic_head
@@ -58,13 +57,13 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256,
     Args:
         feature (tensorflow.keras.Layer): Input layer
         mode (str): Mode of temporal convolution. One of
-            ``{'conv','lstm','gru', None}``.
+            ``{'conv','lstm', None}``.
         feature_size (int): Length of convolutional kernel
         frames_per_batch (int): Size of z axis in generated batches.
             If equal to 1, assumes 2D data.
 
     Raises:
-        ValueError: ``mode`` not 'conv', 'lstm', 'gru' or ``None``
+        ValueError: ``mode`` not 'conv', 'lstm' or ``None``
 
     Returns:
         tensorflow.keras.Layer: Input feature merged with its residual
@@ -72,7 +71,7 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256,
         the output is exactly the input.
     """
     # Check inputs to mode
-    acceptable_modes = {'conv', 'lstm', 'gru', None}
+    acceptable_modes = {'conv', 'lstm', None}
     if mode is not None:
         mode = str(mode).lower()
         if mode not in acceptable_modes:
@@ -97,13 +96,6 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256,
                        activation='relu',
                        return_sequences=True,
                        name='convLSTM_mtf_{}'.format(f_name))(feature)
-    elif mode == 'gru':
-        x = ConvGRU2D(feature_size,
-                      (3, 3),
-                      padding='same',
-                      activation='relu',
-                      return_sequences=True,
-                      name='convGRU_mtf_{}'.format(f_name))(feature)
     else:
         x = feature
 
@@ -149,7 +141,7 @@ def PanopticNet(backbone,
         frames_per_batch (int): Size of z axis in generated batches.
             If equal to 1, assumes 2D data.
         temporal_mode: Mode of temporal convolution. Choose from
-            ``{'conv','lstm','gru', None}``.
+            ``{'conv','lstm', None}``.
         num_semantic_classes (list or dict): Number of semantic classes
             for each semantic head. If a ``dict``, keys will be used as
             head names and values will be the number of classes.
@@ -184,7 +176,7 @@ def PanopticNet(backbone,
         kwargs (dict): Other standard inputs for ``retinanet_mask``.
 
     Raises:
-        ValueError: ``temporal_mode`` not 'conv', 'lstm', 'gru'  or ``None``
+        ValueError: ``temporal_mode`` not 'conv', 'lstm'  or ``None``
 
     Returns:
         tensorflow.keras.Model: Panoptic model with a backbone.
@@ -194,7 +186,7 @@ def PanopticNet(backbone,
     conv_kernel = (1, 1, 1) if frames_per_batch > 1 else (1, 1)
 
     # Check input to __merge_temporal_features
-    acceptable_modes = {'conv', 'lstm', 'gru', None}
+    acceptable_modes = {'conv', 'lstm', None}
     if temporal_mode is not None:
         temporal_mode = str(temporal_mode).lower()
         if temporal_mode not in acceptable_modes:

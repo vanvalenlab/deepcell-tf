@@ -1,4 +1,4 @@
-# Copyright 2016-2021 The Van Valen Lab at the California Institute of
+# Copyright 2016-2022 The Van Valen Lab at the California Institute of
 # Technology (Caltech), with support from the Paul Allen Family Foundation,
 # Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
 # All rights reserved.
@@ -57,18 +57,18 @@ setup(
     long_description=readme,
     long_description_content_type='text/markdown',
     install_requires=[
-        'numpy>=1.16.6,<1.20.0',
+        'numpy>=1.16.6',
         'pydot>=1.4.2,<2',
         'scipy>=1.2.3,<2',
         'scikit-image>=0.14.5',
         'scikit-learn>=0.20.4',
-        'tensorflow~=2.5.1',
-        'tensorflow_addons~=0.13.0',
+        'tensorflow~=2.8.0',
+        'tensorflow_addons~=0.16.1',
         'spektral~=1.0.4',
         'jupyter>=1.0.0,<2',
         'opencv-python-headless<5',
-        'deepcell-tracking~=0.5.0',
-        'deepcell-toolbox~=0.10.0'
+        'deepcell-tracking~=0.5.7',
+        'deepcell-toolbox~=0.11.2'
     ],
     extras_require={
         'tests': [
@@ -78,14 +78,13 @@ setup(
         ],
     },
     packages=find_packages(),
-    python_requires='>=3.6, <3.10',
+    python_requires='>=3.7, <3.10',
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
