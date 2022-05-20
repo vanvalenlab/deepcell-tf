@@ -35,6 +35,7 @@ import pytest
 
 from deepcell.utils import tfrecord_utils
 
+
 def _get_image(img_h=300, img_w=300):
     bias = np.random.rand(img_w, img_h) * 64
     variance = np.random.rand(img_w, img_h) * (255 - 64)
@@ -44,20 +45,24 @@ def _get_image(img_h=300, img_w=300):
 
     return img
 
+
 def test__bytes_feature():
     img = _get_image()
     feature = tfrecord_utils._bytes_feature(tf.io.serialize_tensor(img))
     assert hasattr(feature, 'bytes_list')
+
 
 def test__float_feature():
     value = np.random.rand(1)
     feature = tfrecord_utils._float_feature(value)
     assert hasattr(feature, 'float_list')
 
+
 def test__int64_feature():
     value = np.random.randint(1)
     feature = tfrecord_utils.__int64_feature(value)
     assert hasattr(feature, 'int64_list')
+
 
 def test_create_segmentation_example():
     X_test = _get_image()
@@ -66,33 +71,35 @@ def test_create_segmentation_example():
     y_test_dict = {'y': y_test}
 
     example = tfrecord_utils.create_segmentation_example(X_test, y_test_dict)
-    
+
     for i in range(len(X_test.shape)):
         shape_string = 'X_shape_' + str(i)
         shape = example.features.feature[shape_string].int64_list.value[0]
-        
+
         assert shape == X_test.shape[i]
-        
+
     for i in range(len(y_test.shape)):
         shape_string = 'y_shape_' + str(i)
         shape = example.features.feature[shape_string].int64_list.value[0]
-        
         assert shape == y_test.shape[i]
+
 
 def test_write_segmentation_dataset_to_tfr():
     X_test = _get_image()
     y_test = _get_image()
-    
+
     X_test = np.expand_dims(X_test, axis=0)
     y_test = np.expand_dims(y_test, axis=0)
-    
+
     train_dict = {'X': X_test, 'y': y_test}
     filename = 'write_seg_dataset_test'
-    
-    tfrecord_utils.write_segmentation_dataset_to_tfr(train_dict, filename=filename)
-    
+
+    tfrecord_utils.write_segmentation_dataset_to_tfr(train_dict,
+                                                     filename=filename)
+
     assert os.path.exists(filename + '.tfrecord')
     assert os.path.exists(filename + '.csv')
+
 
 def test_parse_segmentation_example():
     X_test = _get_image()
@@ -101,33 +108,38 @@ def test_parse_segmentation_example():
     y_test_dict = {'y': y_test}
 
     example = tfrecord_utils.create_segmentation_example(X_test, y_test_dict)
-    
-    dataset_ndims = {'X':3, 'y':3}
-    parsed = tfrecord_utils.parse_segmentation_example(example.SerializeToString(), dataset_ndims=dataset_ndims)
-    
+
+    dataset_ndims = {'X': 3, 'y': 3}
+    parsed = tfrecord_utils.parse_segmentation_example(
+                    example.SerializeToString(),
+                    dataset_ndims=dataset_ndims)
+
     assert np.sum((np.array(parsed[0]['X']) - X_test)**2) == 0
     assert np.sum((np.array(parsed[1]['y']) - y_test)**2) == 0
 
+
 def test_get_segmentation_dataset():
-    
+
     X_test = _get_image()
     y_test = _get_image()
-    
+
     X_test = np.expand_dims(X_test, axis=0)
     y_test = np.expand_dims(y_test, axis=0)
-        
+
     train_dict = {'X': X_test, 'y': y_test}
     filename = 'write_seg_dataset_test'
-    
-    tfrecord_utils.write_segmentation_dataset_to_tfr(train_dict, filename=filename, verbose=False)
-    
+
+    tfrecord_utils.write_segmentation_dataset_to_tfr(train_dict,
+                                                     filename=filename,
+                                                     verbose=False)
+
     dataset = tfrecord_utils.get_segmentation_dataset('write_seg_dataset_test')
     it = iter(dataset)
-    
+
     Xd, yd = it.next()
-    
+
     X = np.array(Xd['X'])
     y = np.array(yd['y'])
-    
+
     assert np.sum((X-X_test)**2) == 0
     assert np.sum((y-y_test)**2) == 0

@@ -38,21 +38,26 @@ from tensorflow.data import Dataset
 from tensorflow.io import serialize_tensor
 from tensorflow.keras.utils import to_categorical
 
+
 def _bytes_feature(value):
     """Returns a bytes_list from a string / byte."""
     if isinstance(value, type(tf.constant(0))):
-        value = value.numpy() # BytesList won't unpack a string from an EagerTensor.
+        # BytesList won't unpack a string from an EagerTensor.
+        value = value.numpy()
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
 
 def _float_feature(value):
     """Returns a float_list from a float / double."""
     return tf.train.Feature(float_list=tf.train.FloatList(value=[value]))
 
+
 def _int64_feature(value):
     """Returns an int64_list from a bool / enum / int / uint."""
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
-def create_segmentation_example(X, y_dict): 
+
+def create_segmentation_example(X, y_dict):
 
     # Define the dictionary of our single example
     # Expect label keys in y_dict to be of the form
@@ -78,13 +83,14 @@ def create_segmentation_example(X, y_dict):
 
     return example
 
-def write_segmentation_dataset_to_tfr(train_dict, 
-                                      filename=None, 
+
+def write_segmentation_dataset_to_tfr(train_dict,
+                                      filename=None,
                                       verbose=True):
 
     if filename is None:
         ValueError('You need to specify a name for the training dataset!')
-    
+
     filename_tfrecord = filename + '.tfrecord'
     filename_csv = filename + '.csv'
 
@@ -104,7 +110,7 @@ def write_segmentation_dataset_to_tfr(train_dict,
 
     for b in range(X.shape[0]):
         Xb = X[b]
-        yb = {k:y[b] for k,y in zip(y_keys, y_list)} 
+        yb = {k: y[b] for k, y in zip(y_keys, y_list)}
 
         example = create_segmentation_example(Xb, yb)
 
@@ -120,7 +126,7 @@ def write_segmentation_dataset_to_tfr(train_dict,
 
     with open(filename_csv, 'w') as f:
         writer = csv.writer(f)
-        rows = [[k, dims] for k,dims in zip(dataset_keys, dataset_dims)]
+        rows = [[k, dims] for k, dims in zip(dataset_keys, dataset_dims)]
         writer.writerows(rows)
 
     if verbose:
@@ -128,13 +134,14 @@ def write_segmentation_dataset_to_tfr(train_dict,
 
     return count
 
-def parse_segmentation_example(example, dataset_ndims=None, 
-            X_dtype=tf.float32, y_dtype=tf.float32):
+
+def parse_segmentation_example(example, dataset_ndims=None,
+                               X_dtype=tf.float32, y_dtype=tf.float32):
 
     # Use standard (x,y,c) data structure if not specified
     if dataset_ndims is None:
-        dataset_ndims = {'X': 3, 'y':3}
-        
+        dataset_ndims = {'X': 3, 'y': 3}
+
     # Recreate the example structure
     data = {}
 
@@ -144,10 +151,11 @@ def parse_segmentation_example(example, dataset_ndims=None,
     for key in dataset_ndims:
         if 'y' in key:
             y_keys.append(key)
-    
+
     y_shape_strings_dict = {}
     for key in y_keys:
-        y_shape_strings = [key + '_shape_' + str(i) for i in range(dataset_ndims[key])]
+        y_shape_strings = [key + '_shape_' + str(i)
+                           for i in range(dataset_ndims[key])]
         y_shape_strings_dict[key] = y_shape_strings
 
     data['X'] = tf.io.FixedLenFeature([], tf.string)
@@ -185,6 +193,7 @@ def parse_segmentation_example(example, dataset_ndims=None,
 
     return X_dict, y_dict
 
+
 def get_segmentation_dataset(filename, **kwargs):
 
     # Define tfrecord and csv file
@@ -208,10 +217,3 @@ def get_segmentation_dataset(filename, **kwargs):
     dataset = dataset.map(parse_fn)
 
     return dataset
-
-
-
-
-
-
-
