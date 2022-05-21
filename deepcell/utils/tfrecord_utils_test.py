@@ -44,7 +44,7 @@ def _get_image(img_h=300, img_w=300):
 
     img = np.expand_dims(img, axis=-1)
 
-    return img
+    return img.astype('float32')
 
 
 def test__bytes_feature():
