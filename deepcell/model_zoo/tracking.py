@@ -43,7 +43,7 @@ from tensorflow.keras.layers import Input, Concatenate, InputLayer
 from tensorflow.keras.layers import Add, Subtract, Dense, Reshape
 from tensorflow.keras.layers import MaxPool3D
 from tensorflow.keras.layers import Activation, Softmax
-from tensorflow.keras.layers import BatchNormalization, Lambda
+from tensorflow.keras.layers import LayerNormalization, BatchNormalization, Lambda
 from tensorflow.keras.regularizers import l2
 
 from spektral.layers import GCSConv, GCNConv, GATConv
@@ -222,6 +222,7 @@ class GNNTrackingModel(object):
             Additional kwargs for the graph layers can be encoded in the following format
             ``<layer name>-kwarg:value-kwarg:value``
         appearance_shape (tuple): shape of each object's appearance tensor
+        norm_layer (str): Must be one of {'layer', 'batch'}
     """
     def __init__(self,
                  max_cells=39,
@@ -231,7 +232,8 @@ class GNNTrackingModel(object):
                  embedding_dim=64,
                  n_layers=3,
                  graph_layer='gcs',
-                 appearance_shape=(32, 32, 1)):
+                 appearance_shape=(32, 32, 1),
+                 norm_layer='batch'):
 
         self.n_filters = n_filters
         self.encoder_dim = encoder_dim
@@ -252,6 +254,17 @@ class GNNTrackingModel(object):
         if graph_layer_name not in {'gcn', 'gcs', 'gat'}:
             raise ValueError('Invalid graph_layer: {}'.format(graph_layer_name))
         self.graph_layer = graph_layer
+
+        norm_options = {'layer', 'batch'}
+        if norm_layer not in norm_options:
+            raise ValueError('Invalid normalization layer {}. Must be one of {}.'.format(
+                norm_layer, norm_options))
+        if norm_layer == 'layer':
+            self.norm_layer = LayerNormalization
+            self.norm_layer_prefix = 'ln'
+        elif norm_layer == 'batch':
+            self.norm_layer = BatchNormalization
+            self.norm_layer_prefix = 'bn'
 
         # Use inputs to build expected shapes
         base_shape = [self.track_length, self.max_cells]
@@ -308,12 +321,12 @@ class GNNTrackingModel(object):
                        strides=1,
                        padding='same',
                        use_bias=False, name='conv3d_ae{}'.format(i))(x)
-            x = BatchNormalization(axis=-1, name='bn_ae{}'.format(i))(x)
+            x = self.norm_layer(axis=-1, name='{}_ae{}'.format(self.norm_layer_prefix, i))(x)
             x = Activation('relu', name='relu_ae{}'.format(i))(x)
             x = MaxPool3D(pool_size=(1, 2, 2))(x)
         x = Lambda(lambda t: tf.squeeze(t, axis=(2, 3)))(x)
         x = Dense(self.encoder_dim, name='dense_aeout')(x)
-        x = BatchNormalization(axis=-1, name='bn_aeout')(x)
+        x = self.norm_layer(axis=-1, name='{}_aeout'.format(self.norm_layer_prefix))(x)
         x = Activation('relu', name='appearance_embedding')(x)
         return Model(inputs=inputs, outputs=x)
 
@@ -322,7 +335,7 @@ class GNNTrackingModel(object):
         inputs = Input(shape=morph_shape, name='encoder_morph_input')
         x = inputs
         x = Dense(self.encoder_dim, name='dense_me')(x)
-        x = BatchNormalization(axis=-1, name='bn_me')(x)
+        x = self.norm_layer(axis=-1, name='{}_me'.format(self.norm_layer_prefix))(x)
         x = Activation('relu', name='morphology_embedding')(x)
         return Model(inputs=inputs, outputs=x)
 
@@ -331,7 +344,7 @@ class GNNTrackingModel(object):
         inputs = Input(shape=centroid_shape, name='encoder_centroid_input')
         x = inputs
         x = Dense(self.encoder_dim, name='dense_ce')(x)
-        x = BatchNormalization(axis=-1, name='bn_ce')(x)
+        x = self.norm_layer(axis=-1, name='{}_ce'.format(self.norm_layer_prefix))(x)
         x = Activation('relu', name='centroid_embedding')(x)
         return Model(inputs=inputs, outputs=x)
 
@@ -346,11 +359,11 @@ class GNNTrackingModel(object):
         a = Activation('relu', name='relu_des')
 
         x_0 = d(inputs)
-        x_0 = BatchNormalization(axis=-1, name='bn_des0')(x_0)
+        x_0 = self.norm_layer(axis=-1, name='{}_des0'.format(self.norm_layer_prefix))(x_0)
         x_0 = a(x_0)
 
         x_1 = d(inputs_across_frames)
-        x_1 = BatchNormalization(axis=-1, name='bn_des1')(x_1)
+        x_1 = self.norm_layer(axis=-1, name='{}_des1'.format(self.norm_layer_prefix))(x_1)
         x_1 = a(x_1)
 
         delta_encoder = Model(inputs=inputs, outputs=x_0)
@@ -374,7 +387,7 @@ class GNNTrackingModel(object):
         # Concatenate features
         node_features = Concatenate(axis=-1)([app_features, morph_features, centroid_features])
         node_features = Dense(self.n_filters, name='dense_ne0')(node_features)
-        node_features = BatchNormalization(axis=-1, name='bn_ne0')(node_features)
+        node_features = self.norm_layer(axis=-1, name='{}_ne0'.format(self.norm_layer_prefix))(node_features)
         node_features = Activation('relu', name='relu_ne0')(node_features)
 
         # Apply graph convolution
@@ -403,13 +416,15 @@ class GNNTrackingModel(object):
                 raise ValueError('Unexpected graph_layer: {}'.format(graph_layer_name))
 
             node_features = graph_layer([node_features, adj])
-            node_features = BatchNormalization(axis=-1,
-                                               name='bn_ne{}'.format(i + 1))(node_features)
+            node_features = self.norm_layer(axis=-1,
+                                            name='{}_ne{}'.format(self.norm_layer_prefix, i + 1)
+                                            )(node_features)
             node_features = Activation('relu', name='relu_ne{}'.format(i + 1))(node_features)
 
         concat = Concatenate(axis=-1)([app_features, morph_features, node_features])
         node_features = Dense(self.embedding_dim, name='dense_nef')(concat)
-        node_features = BatchNormalization(axis=-1, name='bn_nef')(node_features)
+        node_features = self.norm_layer(axis=-1, name='{}_nef'.format(self.norm_layer_prefix)
+                                        )(node_features)
         node_features = Activation('relu', name='relu_nef')(node_features)
 
         inputs = [app_input, morph_input, centroid_input, adj_input]
@@ -576,7 +591,8 @@ class GNNTrackingModel(object):
         embedding = Concatenate(axis=-1)([embedding_input, deltas_input])
 
         embedding = Dense(self.n_filters, name='dense_td0')(embedding)
-        embedding = BatchNormalization(axis=-1, name='bn_td0')(embedding)
+        embedding = self.norm_layer(axis=-1, name='{}_td0'.format(self.norm_layer_prefix)
+                                    )(embedding)
         embedding = Activation('relu', name='relu_td0')(embedding)
 
         # TODO: set to n_classes
