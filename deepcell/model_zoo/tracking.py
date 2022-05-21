@@ -387,7 +387,8 @@ class GNNTrackingModel(object):
         # Concatenate features
         node_features = Concatenate(axis=-1)([app_features, morph_features, centroid_features])
         node_features = Dense(self.n_filters, name='dense_ne0')(node_features)
-        node_features = self.norm_layer(axis=-1, name='{}_ne0'.format(self.norm_layer_prefix))(node_features)
+        node_features = self.norm_layer(axis=-1, name='{}_ne0'.format(self.norm_layer_prefix)
+                                        )(node_features)
         node_features = Activation('relu', name='relu_ne0')(node_features)
 
         # Apply graph convolution
