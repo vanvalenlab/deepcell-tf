@@ -31,6 +31,7 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
+import os
 import pytest
 
 from deepcell.utils import tfrecord_utils
@@ -53,14 +54,14 @@ def test__bytes_feature():
 
 
 def test__float_feature():
-    value = np.random.rand(1)
+    value = np.random.rand(1)[0]
     feature = tfrecord_utils._float_feature(value)
     assert hasattr(feature, 'float_list')
 
 
 def test__int64_feature():
     value = np.random.randint(1)
-    feature = tfrecord_utils.__int64_feature(value)
+    feature = tfrecord_utils._int64_feature(value)
     assert hasattr(feature, 'int64_list')
 
 
@@ -111,8 +112,8 @@ def test_parse_segmentation_example():
 
     dataset_ndims = {'X': 3, 'y': 3}
     parsed = tfrecord_utils.parse_segmentation_example(
-                    example.SerializeToString(),
-                    dataset_ndims=dataset_ndims)
+        example.SerializeToString(),
+        dataset_ndims=dataset_ndims)
 
     assert np.sum((np.array(parsed[0]['X']) - X_test)**2) == 0
     assert np.sum((np.array(parsed[1]['y']) - y_test)**2) == 0
@@ -141,5 +142,5 @@ def test_get_segmentation_dataset():
     X = np.array(Xd['X'])
     y = np.array(yd['y'])
 
-    assert np.sum((X-X_test)**2) == 0
-    assert np.sum((y-y_test)**2) == 0
+    assert np.sum((X - X_test)**2) == 0
+    assert np.sum((y - y_test)**2) == 0

@@ -30,6 +30,7 @@ from __future__ import division
 from __future__ import print_function
 
 import csv
+import os
 
 import numpy as np
 import tensorflow as tf
@@ -122,7 +123,7 @@ def write_segmentation_dataset_to_tfr(train_dict,
 
     # Save dataset metadata
     dataset_keys = train_dict.keys()
-    dataset_dims = [len(train_dict[k].shape)-1 for k in dataset_keys]
+    dataset_dims = [len(train_dict[k].shape) - 1 for k in dataset_keys]
 
     with open(filename_csv, 'w') as f:
         writer = csv.writer(f)
