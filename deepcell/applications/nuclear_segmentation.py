@@ -40,8 +40,8 @@ from deepcell.applications import Application
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/NuclearSegmentation-5.tar.gz')
-MODEL_HASH = 'c3667ffbe08035c9cb69ed882e4a49d7'
+              'saved-models/NuclearSegmentation-6.tar.gz')
+MODEL_HASH = 'aa7dbb2b324de6a74ebe8d8cf6630db9'
 
 
 class NuclearSegmentation(Application):
