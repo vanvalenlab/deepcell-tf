@@ -40,8 +40,8 @@ from deepcell.applications import Application
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/CytoplasmSegmentation-3.tar.gz')
-MODEL_HASH = '6a244f561b4d37169cb1a58b6029910f'
+              'saved-models/CytoplasmSegmentation-5.tar.gz')
+MODEL_HASH = '97334472f59e6d85697c563ed65969ff'
 
 
 class CytoplasmSegmentation(Application):
