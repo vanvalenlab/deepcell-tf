@@ -213,7 +213,9 @@ def get_segmentation_dataset(filename, **kwargs):
 
     # Pass each feature through the mapping function
     def parse_fn(example):
-        return parse_segmentation_example(example, **kwargs)
+        return parse_segmentation_example(example,
+                                          dataset_ndims=dataset_ndims,
+                                          **kwargs)
 
     dataset = dataset.map(parse_fn)
 
