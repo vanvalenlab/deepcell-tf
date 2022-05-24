@@ -44,6 +44,7 @@ from deepcell.utils import plot_utils
 from deepcell.utils import tracking_utils
 from deepcell.utils import train_utils
 from deepcell.utils import transform_utils
+from deepcell.utils import tfrecord_utils
 
 # Globally-importable utils.
 from deepcell.utils.data_utils import get_data
