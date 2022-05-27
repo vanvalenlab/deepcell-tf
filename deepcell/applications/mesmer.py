@@ -84,7 +84,7 @@ def format_output_mesmer(output_list):
         dict: Dict of predictions for whole cell and nuclear.
 
     Raises:
-        ValueError: if model output list is not len(8)
+        ValueError: if model output list is not len(4)
     """
     expected_length = 4
     if len(output_list) != expected_length:
