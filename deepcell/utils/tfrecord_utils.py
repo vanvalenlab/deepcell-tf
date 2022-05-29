@@ -220,3 +220,92 @@ def get_segmentation_dataset(filename, **kwargs):
     dataset = dataset.map(parse_fn)
 
     return dataset
+
+
+def create_track_example(track_dict):
+
+    data = {}
+
+    # Define the dictionary of our single example
+    for key in track_dict:
+        data[key] = _bytes_feature(serialize_array(track_dict[key]))
+        shapes = track_dict[key].shape
+
+        for i in range(len(shapes)):
+            shape_string = key + '_shape_' + str(i)
+            data[shape_string] = _int64_feature(shapes[i])
+
+    # Create an Example, wrapping the single features
+    example = tf.train.Example(features = tf.train.Features(feature=data))
+
+    return example
+
+
+def write_tracking_dataset_to_tfr(track,
+                                  track_length=8,
+                                  target_max_cells=168,
+                                  filename=None,
+                                  verbose=True):
+
+    filename_tfr = filename + '.tfrecords'
+    filename_csv = filename + '.csv'
+
+    count = 0
+
+    writer = tf.io.TFRecordWriter(filename)
+
+    # Get features to add
+    app = track.appearances
+    cent = track.centroids
+    morph = track.morphologies
+    adj = np.array(tf.sparse.to_dense(track.norm_adj_matrices))
+    temp_adj = np.array(tf.sparse.to_dense(track.temporal_adj_matrices))
+
+    # Remove temporal dimension to track length and 
+    # remove frames added for padding
+    app_list = []
+    cent_list = []
+    morph_list = []
+    adj_list = []
+    temp_adj_list = []
+
+    n_frames = app.shape[1]
+    n_slices = n_frames // track_length
+
+    for b in range(app.shape[0]):
+        for t in range(n_slices):
+            if (t + 1)*track_length < n_frames:
+                start = t * track_length
+                end = (t + 1) * track_length
+                end_ta = end - 1
+
+            else:
+                start = -track_length
+                end = None
+                end_ta = -1
+
+            temp_adj_slice = temp_adj[b, start:end]
+            temp_adj_reduce = np.sum(temp_adj_slice, axis=-1)
+
+            if len(np.unique(temp_adj_reduce)) == 2:
+                app_list.append(app[b, start:end])
+                cent_list.append(cent[b, start:end])
+                morph_list.append(morph[b, start:end])
+                adj_list.append(adj[b, start:end])
+                temp_adj_list.append(temp_adj[b, start:end])
+
+    app = np.stack(app_list, axis=0)
+    cent = np.stack(cent_list, axis=0)
+    morph = np.stack(morph_list, axis=0)
+    adj = np.stack(adj_list, axis=0)
+    temp_adj = np.stack(temp_adj_list, axis=0)
+
+    # Pad cells - we need to do this to use validation data
+    # during training
+
+
+
+
+
+
+
