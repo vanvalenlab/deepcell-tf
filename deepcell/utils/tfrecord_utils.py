@@ -58,6 +58,11 @@ def _int64_feature(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
 
+"""
+Functions for segmentation datasets
+"""
+
+
 def create_segmentation_example(X, y_dict):
 
     # Define the dictionary of our single example
@@ -195,31 +200,9 @@ def parse_segmentation_example(example, dataset_ndims=None,
     return X_dict, y_dict
 
 
-def get_segmentation_dataset(filename, **kwargs):
-
-    # Define tfrecord and csv file
-    filename_tfrecord = filename + '.tfrecord'
-    filename_csv = filename + '.csv'
-
-    # Load the csv
-    dataset_ndims = {}
-    with open(filename_csv) as f:
-        reader = csv.reader(f)
-        for row in reader:
-            dataset_ndims[row[0]] = int(row[1])
-
-    # Create the dataset
-    dataset = tf.data.TFRecordDataset(filename_tfrecord)
-
-    # Pass each feature through the mapping function
-    def parse_fn(example):
-        return parse_segmentation_example(example,
-                                          dataset_ndims=dataset_ndims,
-                                          **kwargs)
-
-    dataset = dataset.map(parse_fn)
-
-    return dataset
+"""
+Functions for tracking datasets
+"""
 
 
 def create_track_example(track_dict):
@@ -236,7 +219,7 @@ def create_track_example(track_dict):
             data[shape_string] = _int64_feature(shapes[i])
 
     # Create an Example, wrapping the single features
-    example = tf.train.Example(features = tf.train.Features(feature=data))
+    example = tf.train.Example(features=tf.train.Features(feature=data))
 
     return example
 
@@ -261,7 +244,7 @@ def write_tracking_dataset_to_tfr(track,
     adj = np.array(tf.sparse.to_dense(track.norm_adj_matrices))
     temp_adj = np.array(tf.sparse.to_dense(track.temporal_adj_matrices))
 
-    # Remove temporal dimension to track length and 
+    # Remove temporal dimension to track length and
     # remove frames added for padding
     app_list = []
     cent_list = []
@@ -302,10 +285,128 @@ def write_tracking_dataset_to_tfr(track,
 
     # Pad cells - we need to do this to use validation data
     # during training
+    max_cells = app.shape[2]
+
+    if target_max_cells < max_cells:
+        pad_length = 0
+
+    else:
+        pad_length = target_max_cells - max_cells
+        app = np.pad(app, ((0, 0), (0, 0), (0, pad_length),
+                           (0, 0), (0, 0), (0, 0)))
+        morph = np.pad(morph, ((0, 0), (0, 0), (0, pad_length), (0, 0)))
+        cent = np.pad(cent, ((0, 0), (0, 0), (0, pad_length), (0, 0)))
+        adj = np.pad(adj, ((0, 0), (0, 0), (0, pad_length), (0, pad_length)))
+        temp_adj = np.pad(temp_adj, ((0, 0), (0, 0), (0, pad_length),
+                                     (0, pad_length), (0, 0)))
+
+    # Iterate over all batches
+    for b in tqdm(range(app.shape[0])):
+        app_b = app[b]
+        cent_b = cent[b]
+        morph_b = morph[b]
+        adj_b = adj[b]
+        temp_adj_b = temp_adj[b]
+
+        example = parse_single_track(app_b, cent_b, morph_b, adj_b, temp_adj_b)
+
+        if example is not None:
+            writer.write(example.SerializeToString())
+            count += 1
+
+    writer.close()
+
+    if verbose:
+        print(f'Wrote {count} elements to TFRecord')
+
+    return count
 
 
+def parse_tracking_example(example, dataset_ndims=None,
+                           dtype=tf.float32):
+
+    # Use standard (x,y,c) data structure if not specified
+    if dataset_ndims is None:
+        dataset_ndims = {'app': 4,
+                         'cent': 2,
+                         'morph': 2,
+                         'adj': 3,
+                         'temp_adj': 4}
+
+    X_names = ['app', 'cent', 'morph', 'adj']
+    y_names = ['temp_adj']
+
+    full_name_dict = {'app': 'appearances',
+                      'cent': 'centroids',
+                      'morph': 'morphologies',
+                      'adj': 'adj_matrices',
+                      'temp_adj': 'temporal_adj_matrices'}
+
+    # Recreate the example structure
+    data = {}
+
+    shape_strings_dict = {}
+    for key in dataset_ndims:
+        data[key] = tf.io.FixedLenFeature([], tf.string)
+        shape_strings = [key + '_shape_' + str(i)
+                         for i in range(dataset_ndims[key])]
+        shape_string_dict[key] = shape_strings
+
+        for ss in shape_strings:
+            data[ss] = tf.io.FixedLenFeature([], tf.int64)
+
+    # Get data
+    content = tf.io.parse_single_example(example, data)
+
+    X_dict = {}
+    y_dict = {}
+
+    for key in dataset_ndims:
+        value = content[key]
+        shape = [content[ss] for ss in shape_string_dict[key]]
+
+        # Get the feature and reshape
+        value = tf.io.parse_tensor(value, out_type=dtype)
+        value = tf.reshape(value, shape=shape)
+
+        if key in X_names:
+            X_dict[full_name_dict[key]] = value
+        else:
+            y_dict[full_name_dict[key]] = value
+
+    return X_dict, y_dict
 
 
+def get_dataset(filename, parse_fn=None, **kwargs):
+
+    # Define tfrecord and csv file
+    filename_tfrecord = filename + '.tftrecord'
+    filename_csv = filename + '.csv'
+
+    # Load the csv
+    dataset_ndims = {}
+    with open(filename_csv) as f:
+        reader = csv.reader(f)
+        for row in reader:
+            dataset_ndims[row[0]] = int(row[1])
+
+    # Create the dataset
+    dataset = tf.data.TFRecordDataset(filename_tfrecord)
+
+    # Pass each feature through the mapping function
+    def parse_fn(example):
+        return parse_fn(example,
+                        dataset_ndims=dataset_ndims,
+                        **kwargs)
+
+    dataset = dataset.map(parse_fn)
+
+    return dataset
 
 
+def get_segmentation_dataset(filename, **kwargs):
+    return get_dataset(filename, parse_fn=parse_segmentation_example, **kwargs)
 
+
+def get_tracking_dataset(filename, **kwargs):
+    return get_dataset(filename, parse_fn=parse_tracking_example, **kwargs)
