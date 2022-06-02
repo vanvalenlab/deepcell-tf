@@ -303,7 +303,7 @@ def write_tracking_dataset_to_tfr(track,
         temp_adj = track._get_sparse(temp_adj)
 
     # Iterate over all batches
-    for b in tqdm(range(app.shape[0])):
+    for b in range(app.shape[0]):
         app_b = app[b]
         cent_b = cent[b]
         morph_b = morph[b]
