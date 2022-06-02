@@ -38,6 +38,7 @@ import tensorflow as tf
 from tensorflow.data import Dataset
 from tensorflow.io import serialize_tensor
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.backend import is_sparse
 
 
 def _bytes_feature(value):
