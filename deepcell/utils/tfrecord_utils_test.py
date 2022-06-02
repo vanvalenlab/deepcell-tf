@@ -246,7 +246,7 @@ def test_create_tracking_example():
 
 def test_write_tracking_dataset_to_tfr():
     test_dict = get_dummy_data()
-    test_track = Track(test_dict)
+    test_track = Track(tracked_data=test_dict)
     filename = 'write_track_dataset_test'
     tfrecord_utils.write_tracking_dataset_to_tfr(test_track,
                                                  filename=filename)
