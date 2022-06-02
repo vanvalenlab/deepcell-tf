@@ -205,13 +205,46 @@ Functions for tracking datasets
 """
 
 
-def create_track_example(track_dict):
+def sample_batch_from_sparse(sp, batch):
+    with tf.device('/cpu:0'):
+        shape = sp.shape.as_list()
+        n_dim = len(shape)
+        start = [batch] + [0] * (n_dim - 1)
+        size = [1] + shape[1:]
+        sp_slice = tf.sparse.slice(sp, start=start, size=size)
+        sp_slice = tf.sparse.reduce_sum(sp_slice, axis=0, keepdims=False,
+                                        output_is_sparse=True)
+        return sp_slice
+
+
+def create_sparse_tensor_features(sparse_tensor, name='adj'):
+    feature_dict = {}
+
+    val = sparse_tensor.values.numpy()
+    ind = sparse_tensor.indices.numpy()
+    shape = sparse_tensor.dense_shape.numpy()
+
+    feature_dict[name + '_val'] = tf.train.Feature(
+        float_list=tf.train.FloatList(value=val))
+
+    for i in range(ind.shape[-1]):
+        feature_dict[name + '_ind_' + str(i)] = tf.train.Feature(
+            int64_list=tf.train.Int64List(value=ind[:, i]))
+    return feature_dict
+
+
+def create_tracking_example(track_dict):
 
     data = {}
 
     # Define the dictionary of our single example
     for key in track_dict:
-        data[key] = _bytes_feature(serialize_array(track_dict[key]))
+        if is_sparse(track_dict[key]):
+            ss = create_sparse_tensor_features(track_dict[key], name=key)
+            data.update(ss)
+        else:
+            data[key] = _bytes_feature(serialize_tensor(track_dict[key]))
+
         shapes = track_dict[key].shape
 
         for i in range(len(shapes)):
@@ -225,90 +258,65 @@ def create_track_example(track_dict):
 
 
 def write_tracking_dataset_to_tfr(track,
-                                  track_length=8,
                                   target_max_cells=168,
                                   filename=None,
                                   verbose=True):
 
-    filename_tfr = filename + '.tfrecords'
+    filename_tfr = filename + '.tfrecord'
     filename_csv = filename + '.csv'
 
     count = 0
 
-    writer = tf.io.TFRecordWriter(filename)
+    writer = tf.io.TFRecordWriter(filename_tfr)
 
     # Get features to add
     app = track.appearances
     cent = track.centroids
     morph = track.morphologies
-    adj = np.array(tf.sparse.to_dense(track.norm_adj_matrices))
-    temp_adj = np.array(tf.sparse.to_dense(track.temporal_adj_matrices))
-
-    # Remove temporal dimension to track length and
-    # remove frames added for padding
-    app_list = []
-    cent_list = []
-    morph_list = []
-    adj_list = []
-    temp_adj_list = []
-
-    n_frames = app.shape[1]
-    n_slices = n_frames // track_length
-
-    for b in range(app.shape[0]):
-        for t in range(n_slices):
-            if (t + 1)*track_length < n_frames:
-                start = t * track_length
-                end = (t + 1) * track_length
-                end_ta = end - 1
-
-            else:
-                start = -track_length
-                end = None
-                end_ta = -1
-
-            temp_adj_slice = temp_adj[b, start:end]
-            temp_adj_reduce = np.sum(temp_adj_slice, axis=-1)
-
-            if len(np.unique(temp_adj_reduce)) == 2:
-                app_list.append(app[b, start:end])
-                cent_list.append(cent[b, start:end])
-                morph_list.append(morph[b, start:end])
-                adj_list.append(adj[b, start:end])
-                temp_adj_list.append(temp_adj[b, start:end])
-
-    app = np.stack(app_list, axis=0)
-    cent = np.stack(cent_list, axis=0)
-    morph = np.stack(morph_list, axis=0)
-    adj = np.stack(adj_list, axis=0)
-    temp_adj = np.stack(temp_adj_list, axis=0)
+    adj = track.norm_adj_matrices
+    temp_adj = track.temporal_adj_matrices
 
     # Pad cells - we need to do this to use validation data
     # during training
-    max_cells = app.shape[2]
 
-    if target_max_cells < max_cells:
-        pad_length = 0
+    with tf.device('/cpu:0'):
+        adj = tf.sparse.to_dense(adj).numpy()
+        temp_adj = tf.sparse.to_dense(temp_adj).numpy()
 
-    else:
-        pad_length = target_max_cells - max_cells
-        app = np.pad(app, ((0, 0), (0, 0), (0, pad_length),
-                           (0, 0), (0, 0), (0, 0)))
-        morph = np.pad(morph, ((0, 0), (0, 0), (0, pad_length), (0, 0)))
-        cent = np.pad(cent, ((0, 0), (0, 0), (0, pad_length), (0, 0)))
-        adj = np.pad(adj, ((0, 0), (0, 0), (0, pad_length), (0, pad_length)))
-        temp_adj = np.pad(temp_adj, ((0, 0), (0, 0), (0, pad_length),
-                                     (0, pad_length), (0, 0)))
+        max_cells = app.shape[2]
+
+        if target_max_cells < max_cells:
+            pad_length = 0
+
+        else:
+            pad_length = target_max_cells - max_cells
+            app = np.pad(app, ((0, 0), (0, 0), (0, pad_length),
+                               (0, 0), (0, 0), (0, 0)))
+            cent = np.pad(cent, ((0, 0), (0, 0), (0, pad_length), (0, 0)))
+            morph = np.pad(morph, ((0, 0), (0, 0), (0, pad_length), (0, 0)))
+            adj = np.pad(adj, ((0, 0), (0, 0), (0, pad_length),
+                               (0, pad_length)))
+            temp_adj = np.pad(temp_adj, ((0, 0), (0, 0), (0, pad_length),
+                                         (0, pad_length), (0, 0)))
+
+        adj = track._get_sparse(adj)
+        temp_adj = track._get_sparse(temp_adj)
 
     # Iterate over all batches
     for b in tqdm(range(app.shape[0])):
         app_b = app[b]
         cent_b = cent[b]
         morph_b = morph[b]
-        adj_b = adj[b]
-        temp_adj_b = temp_adj[b]
+        adj_b = sample_batch_from_sparse(adj, b)
+        temp_adj_b = sample_batch_from_sparse(temp_adj, b)
 
-        example = parse_single_track(app_b, cent_b, morph_b, adj_b, temp_adj_b)
+        track_dict = {'app': app_b,
+                      'cent': cent_b,
+                      'morph': morph_b,
+                      'adj': adj_b,
+                      'temp_adj': temp_adj_b}
+
+        example = create_tracking_example(track_dict)
 
         if example is not None:
             writer.write(example.SerializeToString())
@@ -319,22 +327,31 @@ def write_tracking_dataset_to_tfr(track,
     if verbose:
         print(f'Wrote {count} elements to TFRecord')
 
+    # Save dataset metadata
+    dataset_keys = track_dict.keys()
+    dataset_dims = [len(track_dict[k].shape) for k in dataset_keys]
+
+    with open(filename_csv, 'w') as f:
+        writer = csv.writer(f)
+        rows = [[k, dims] for k, dims in zip(dataset_keys, dataset_dims)]
+        writer.writerows(rows)
+
+        adj_shape_row = ['adj_shape'] + list(track_dict['adj'].shape)
+        writer.writerow(adj_shape_row)
+
+        temp_adj_shape_row = ['temp_adj_shape'] + list(track_dict['temp_adj'].shape)
+        writer.writerow(temp_adj_shape_row)
+
     return count
 
 
-def parse_tracking_example(example, dataset_ndims=None,
+def parse_tracking_example(example, dataset_ndims,
                            dtype=tf.float32):
-
-    # Use standard (x,y,c) data structure if not specified
-    if dataset_ndims is None:
-        dataset_ndims = {'app': 4,
-                         'cent': 2,
-                         'morph': 2,
-                         'adj': 3,
-                         'temp_adj': 4}
 
     X_names = ['app', 'cent', 'morph', 'adj']
     y_names = ['temp_adj']
+
+    sparse_names = ['adj', 'temp_adj']
 
     full_name_dict = {'app': 'appearances',
                       'cent': 'centroids',
@@ -344,13 +361,30 @@ def parse_tracking_example(example, dataset_ndims=None,
 
     # Recreate the example structure
     data = {}
-
     shape_strings_dict = {}
+    shapes_dict = {}
+
     for key in dataset_ndims:
-        data[key] = tf.io.FixedLenFeature([], tf.string)
+        if 'shape' in key:
+            new_key = '_'.join(key.split('_')[0:-1])
+            shapes_dict[new_key] = dataset_ndims[key]
+
+    for key in shapes_dict:
+        dataset_ndims.pop(key + '_shape')
+
+    for key in dataset_ndims:
+        if key in sparse_names:
+            data[key] = tf.io.SparseFeature(value_key=key + '_val',
+                                            index_key=[key + '_ind_' + str(i)
+                                                       for i in range(dataset_ndims[key])],
+                                            size=shapes_dict[key],
+                                            dtype=tf.float32)
+        else:
+            data[key] = tf.io.FixedLenFeature([], tf.string)
+
         shape_strings = [key + '_shape_' + str(i)
                          for i in range(dataset_ndims[key])]
-        shape_string_dict[key] = shape_strings
+        shape_strings_dict[key] = shape_strings
 
         for ss in shape_strings:
             data[ss] = tf.io.FixedLenFeature([], tf.int64)
@@ -362,12 +396,15 @@ def parse_tracking_example(example, dataset_ndims=None,
     y_dict = {}
 
     for key in dataset_ndims:
-        value = content[key]
-        shape = [content[ss] for ss in shape_string_dict[key]]
 
         # Get the feature and reshape
-        value = tf.io.parse_tensor(value, out_type=dtype)
-        value = tf.reshape(value, shape=shape)
+        if key in sparse_names:
+            value = content[key]
+        else:
+            shape = [content[ss] for ss in shape_strings_dict[key]]
+            value = content[key]
+            value = tf.io.parse_tensor(value, out_type=dtype)
+            value = tf.reshape(value, shape=shape)
 
         if key in X_names:
             X_dict[full_name_dict[key]] = value
@@ -380,26 +417,31 @@ def parse_tracking_example(example, dataset_ndims=None,
 def get_dataset(filename, parse_fn=None, **kwargs):
 
     # Define tfrecord and csv file
-    filename_tfrecord = filename + '.tftrecord'
+    filename_tfrecord = filename + '.tfrecord'
     filename_csv = filename + '.csv'
 
     # Load the csv
     dataset_ndims = {}
+    shapes = {}
+
     with open(filename_csv) as f:
         reader = csv.reader(f)
         for row in reader:
-            dataset_ndims[row[0]] = int(row[1])
+            if 'shape' in row[0]:
+                dataset_ndims[row[0]] = [int(i) for i in row[1:]]
+            else:
+                dataset_ndims[row[0]] = int(row[1])
 
     # Create the dataset
     dataset = tf.data.TFRecordDataset(filename_tfrecord)
 
     # Pass each feature through the mapping function
-    def parse_fn(example):
+    def parse_func(example):
         return parse_fn(example,
                         dataset_ndims=dataset_ndims,
                         **kwargs)
 
-    dataset = dataset.map(parse_fn)
+    dataset = dataset.map(parse_func)
 
     return dataset
 
