@@ -447,7 +447,7 @@ def parse_tracking_example(example, dataset_ndims,
         else:
             data[key] = tf.io.FixedLenFeature([], tf.string)
 
-        shape_strings = [key + '_shape_' + str(i)
+        shape_strings = ['{}_shape_{}'.format(key, i)
                          for i in range(dataset_ndims[key])]
         shape_strings_dict[key] = shape_strings
 
