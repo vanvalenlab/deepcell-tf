@@ -439,8 +439,8 @@ def parse_tracking_example(example, dataset_ndims,
 
     for key in dataset_ndims:
         if key in sparse_names:
-            data[key] = tf.io.SparseFeature(value_key=key + '_val',
-                                            index_key=[key + '_ind_' + str(i)
+            data[key] = tf.io.SparseFeature(value_key='{}_val'.format(key),
+                                            index_key=['{}_ind_{}'.format(key, i)
                                                        for i in range(dataset_ndims[key])],
                                             size=shapes_dict[key],
                                             dtype=tf.float32)
