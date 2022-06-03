@@ -40,7 +40,7 @@ import tqdm
 import tensorflow as tf
 import tensorflow_addons as tfa
 
-from deepcell_tracking.utils import load_trks
+from deepcell_tracking.trk_io import load_trks
 from deepcell_tracking.utils import get_max_cells
 from deepcell_tracking.utils import get_image_features
 from deepcell_tracking.utils import is_valid_lineage
