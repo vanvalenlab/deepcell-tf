@@ -263,7 +263,7 @@ def create_sparse_tensor_features(sparse_tensor, name='adj'):
     ind = sparse_tensor.indices.numpy()
     shape = sparse_tensor.dense_shape.numpy()
 
-    feature_dict[name + '_val'] = tf.train.Feature(
+    feature_dict['{}_val'.format(name)] = tf.train.Feature(
         float_list=tf.train.FloatList(value=val))
 
     for i in range(ind.shape[-1]):
