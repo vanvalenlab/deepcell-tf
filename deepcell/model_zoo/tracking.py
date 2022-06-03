@@ -293,10 +293,10 @@ class GNNTrackingModel(object):
         self.training_model, self.inference_model = self.get_models()
 
     def get_embedding_temporal_merge_model(self):
-        inputs = Input(shape=(None, None, self.encoder_dim),
+        inputs = Input(shape=(None, None, self.embedding_dim),
                        name='embedding_temporal_merge_input')
 
-        x = TemporalMerge(self.encoder_dim, name='emb_tm')(inputs)
+        x = TemporalMerge(self.embedding_dim, name='emb_tm')(inputs)
         return Model(inputs=inputs, outputs=x, name='embedding_temporal_merge')
 
     def get_delta_temporal_merge_model(self):
@@ -355,7 +355,7 @@ class GNNTrackingModel(object):
         inputs_across_frames = Input(shape=(None, None, None, self.centroid_shape[-1]),
                                      name='encoder_delta_across_frames_input')
 
-        d = Dense(self.n_filters, name='dense_des')
+        d = Dense(self.encoder_dim, name='dense_des')
         a = Activation('relu', name='relu_des')
 
         x_0 = d(inputs)
