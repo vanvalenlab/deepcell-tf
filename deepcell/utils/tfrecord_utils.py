@@ -294,7 +294,7 @@ def create_tracking_example(track_dict):
         shapes = track_dict[key].shape
 
         for i in range(len(shapes)):
-            shape_string = key + '_shape_' + str(i)
+            shape_string = '{}_shape_{}'.format(key, i)
             data[shape_string] = _int64_feature(shapes[i])
 
     # Create an Example, wrapping the single features
