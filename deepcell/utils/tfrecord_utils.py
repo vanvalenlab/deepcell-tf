@@ -435,7 +435,7 @@ def parse_tracking_example(example, dataset_ndims,
             shapes_dict[new_key] = dataset_ndims[key]
 
     for key in shapes_dict:
-        dataset_ndims.pop(key + '_shape')
+        dataset_ndims.pop('{}_shape'.format(key))
 
     for key in dataset_ndims:
         if key in sparse_names:
