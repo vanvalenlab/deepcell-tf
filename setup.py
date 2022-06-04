@@ -67,7 +67,7 @@ setup(
         'spektral~=1.0.4',
         'jupyter>=1.0.0,<2',
         'opencv-python-headless<5',
-        'deepcell-tracking~=0.6.0',
+        'deepcell-tracking~=0.6.1',
         'deepcell-toolbox~=0.11.2'
     ],
     extras_require={
