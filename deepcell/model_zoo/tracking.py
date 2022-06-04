@@ -540,12 +540,12 @@ class GNNTrackingModel(object):
 
     def get_inference_branch(self):
         # batch size, tracks
-        current_embedding = Input(shape=(None, None, self.encoder_dim),
+        current_embedding = Input(shape=(None, None, self.embedding_dim),
                                   name='current_embeddings')
         current_centroids = Input(shape=(None, None, self.centroid_shape[-1]),
                                   name='current_centroids')
 
-        future_embedding = Input(shape=(1, None, self.encoder_dim),
+        future_embedding = Input(shape=(1, None, self.embedding_dim),
                                  name='future_embeddings')
         future_centroids = Input(shape=(1, None, self.centroid_shape[-1]),
                                  name='future_centroids')
