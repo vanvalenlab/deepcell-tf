@@ -70,8 +70,6 @@ class Track(object):  # pylint: disable=useless-object-inheritance
                 'Please make sure you are using a valid .trks file')
         self.appearance_dim = appearance_dim
         self.distance_threshold = distance_threshold
-        self.crop_mode = kwargs.get('crop_mode', 'resize')
-        self.norm = kwargs.get('norm', True)
 
         # Correct lineages and remove bad batches
         self._correct_lineages()
@@ -158,8 +156,7 @@ class Track(object):  # pylint: disable=useless-object-inheritance
 
                 frame_features = get_image_features(
                     self.X[batch, frame], self.y[batch, frame],
-                    appearance_dim=self.appearance_dim,
-                    crop_mode=self.crop_mode, norm=self.norm)
+                    appearance_dim=self.appearance_dim)
 
                 track_ids = frame_features['labels'] - 1
                 centroids[batch, frame, track_ids] = frame_features['centroids']
