@@ -35,6 +35,9 @@ import os
 import pytest
 
 from deepcell.utils import tfrecord_utils
+from deepcell.data.tracking import Track
+from deepcell.data.tracking_test import get_dummy_data
+from deepcell_tracking.utils import get_max_cells
 
 
 def _get_image(img_h=300, img_w=300):
@@ -144,3 +147,155 @@ def test_get_segmentation_dataset():
 
     assert np.sum((X - X_test)**2) == 0
     assert np.sum((y - y_test)**2) == 0
+
+
+"""
+Test tracking TFRecord functions
+"""
+
+
+def compare_tracking(output, test_track_dict):
+
+    keys = ['appearances', 'morphologies', 'centroids']
+    keys_brev = ['app', 'morph', 'cent']
+
+    for key_0, key_1 in zip(keys, keys_brev):
+        assert np.sum((output[0][key_0] - test_track_dict[key_1])**2) == 0
+
+    keys = ['adj_matrices']
+    keys_brev = ['adj']
+
+    for key_0, key_1 in zip(keys, keys_brev):
+        val_0 = tf.sparse.to_dense(output[0][key_0]).numpy()
+        val_1 = tf.sparse.to_dense(test_track_dict[key_1]).numpy()
+
+        assert np.sum((val_0 - val_1)**2) == 0
+
+    keys = ['temporal_adj_matrices']
+    keys_brev = ['temp_adj']
+
+    for key_0, key_1 in zip(keys, keys_brev):
+        val_0 = tf.sparse.to_dense(output[1][key_0]).numpy()
+        val_1 = tf.sparse.to_dense(test_track_dict[key_1]).numpy()
+
+        assert np.sum((val_0 - val_1)**2) == 0
+
+
+def create_test_track_dict(test_track):
+
+    adj_b = tfrecord_utils.sample_batch_from_sparse(test_track.norm_adj_matrices, 0)
+    temp_adj_b = tfrecord_utils.sample_batch_from_sparse(test_track.temporal_adj_matrices, 0)
+    test_track_dict = {'app': test_track.appearances[0],
+                       'morph': test_track.morphologies[0],
+                       'cent': test_track.centroids[0],
+                       'adj': adj_b,
+                       'temp_adj': temp_adj_b}
+
+    return test_track_dict
+
+
+def test_sample_batch_from_sparse():
+    test_array = np.array([0, 0, 0, 1, 1, 1, 0, 0, 0, 2, 2, 2])
+    test_array = np.expand_dims(test_array, axis=1)
+
+    with tf.device('/cpu:0'):
+        sparse_tensor = tf.sparse.from_dense(test_array)
+        sliced_1 = tfrecord_utils.sample_batch_from_sparse(sparse_tensor, 3)
+        sliced_1 = tf.sparse.to_dense(sliced_1).numpy()
+
+        sliced_2 = tfrecord_utils.sample_batch_from_sparse(sparse_tensor, 9)
+        sliced_2 = tf.sparse.to_dense(sliced_2).numpy()
+
+    assert np.unique(sliced_1)[0] == 1
+    assert np.unique(sliced_2)[0] == 2
+
+
+def test_create_sparse_tensor_features():
+    test_array = np.array([0, 0, 0, 1, 1, 1, 0, 0, 0, 2, 2, 2])
+    test_array = np.expand_dims(test_array, axis=0)
+
+    with tf.device('/cpu:0'):
+        sparse_tensor = tf.sparse.from_dense(test_array)
+
+    feature_dict = tfrecord_utils.create_sparse_tensor_features(sparse_tensor,
+                                                                name='test')
+    val = feature_dict['test_val'].float_list
+    ind_0 = feature_dict['test_ind_0'].int64_list
+    ind_1 = feature_dict['test_ind_1'].int64_list
+
+    assert val.value == list(sparse_tensor.values.numpy())
+    assert ind_0.value == list(sparse_tensor.indices[:, 0].numpy())
+    assert ind_1.value == list(sparse_tensor.indices[:, 1].numpy())
+
+
+def test_create_tracking_example():
+    test_dict = get_dummy_data()
+    test_track = Track(tracked_data=test_dict)
+
+    test_track_dict = create_test_track_dict(test_track)
+
+    example = tfrecord_utils.create_tracking_example(test_track_dict)
+
+    for key in test_track_dict:
+        for i in range(len(test_track_dict[key].shape)):
+            shape_string = key + '_shape_' + str(i)
+            shape = example.features.feature[shape_string].int64_list.value[0]
+
+            assert shape == test_track_dict[key].shape[i]
+
+
+def test_write_tracking_dataset_to_tfr():
+    test_dict = get_dummy_data()
+    test_track = Track(tracked_data=test_dict)
+    filename = 'write_track_dataset_test'
+    tfrecord_utils.write_tracking_dataset_to_tfr(test_track,
+                                                 filename=filename)
+
+    assert os.path.exists(filename + '.tfrecord')
+    assert os.path.exists(filename + '.csv')
+
+
+def test_parse_tracking_example():
+    test_dict = get_dummy_data()
+    test_track = Track(tracked_data=test_dict)
+
+    test_track_dict = create_test_track_dict(test_track)
+
+    example = tfrecord_utils.create_tracking_example(test_track_dict)
+    dataset_ndims = {}
+
+    for key in test_track_dict:
+        dataset_ndims[key] = len(test_track_dict[key].shape)
+
+    dataset_ndims['adj_shape'] = list(test_track_dict['adj'].shape)
+    dataset_ndims['temp_adj_shape'] = list(test_track_dict['temp_adj'].shape)
+
+    output = tfrecord_utils.parse_tracking_example(example.SerializeToString(),
+                                                   dataset_ndims=dataset_ndims)
+
+    compare_tracking(output, test_track_dict)
+
+
+def test_get_tracking_dataset():
+    test_dict = get_dummy_data()
+    test_track = Track(tracked_data=test_dict)
+
+    test_track_dict = create_test_track_dict(test_track)
+
+    filename = 'write_track_dataset_test'
+    max_cells = get_max_cells(test_dict['y'])
+    tfrecord_utils.write_tracking_dataset_to_tfr(test_track,
+                                                 filename=filename,
+                                                 target_max_cells=max_cells)
+
+    dataset = tfrecord_utils.get_tracking_dataset('write_track_dataset_test')
+    it = iter(dataset)
+
+    output = it.next()
+
+    compare_tracking(output, test_track_dict)
+
+
+def test_get_dataset():
+    test_get_segmentation_dataset()
+    test_get_tracking_dataset()
