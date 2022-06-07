@@ -33,8 +33,8 @@ from tensorflow.keras.layers import Layer
 
 
 def _l2_norm(r):
-    x = r[...,0]
-    y = r[...,1]
+    x = r[..., 0]
+    y = r[..., 1]
 
     output = tf.sqrt(x**2 + y**2)
 
@@ -103,11 +103,11 @@ def equivariant_kernel(r, radial_nn, input_order, output_order):
     theta_ij = _theta(r_vec)
 
     r_nn = radial_nn(r_ij)
-    new_shape = [tf.shape(r_nn)[0], 
-                             tf.shape(r_nn)[1], 
-                             tf.shape(r_nn)[2], 
-                             2*input_order+1,
-                             2*output_order+1]
+    new_shape = [tf.shape(r_nn)[0],
+                 tf.shape(r_nn)[1],
+                 tf.shape(r_nn)[2],
+                 2*input_order+1,
+                 2*output_order+1]
     r_nn = tf.reshape(r_nn, new_shape)
     r_nn = tf.dtypes.cast(r_nn, dtype=tf.complex64)
     euler_factor = euler(theta_ij, input_order, output_order)
@@ -122,8 +122,8 @@ def create_self_interaction_kernel(self_interaction, input_order,
     # Compute self interaction kernel
     return tf.linalg.diag(self_interaction,
                           k=output_order-input_order,
-                          num_rows=2*input_order+1,
-                          num_cols=2*output_order+1)
+                          num_rows=2*input_order + 1,
+                          num_cols=2*output_order + 1)
 
 
 def complex_relu(x):
@@ -301,7 +301,7 @@ class E2Attention(Layer):
                                                       self.output_order)
         query_kernel = tf.dtypes.cast(query_kernel, dtype='complex64')
         query = tf.einsum('mn,bimc->binc', query_kernel, x)
-        d = float((2*self.output_order+1)*self.x_shape[-1])
+        d = float((2*self.output_order + 1)*self.x_shape[-1])
         query = tf.multiply(query, 1.0 / math.sqrt(d))
 
         # Compute attention
