@@ -23,7 +23,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Upsampling layers"""
+"""Equivariant layers"""
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
@@ -126,13 +126,6 @@ def create_self_interaction_kernel(self_interaction, input_order,
                           num_cols=2*output_order + 1)
 
 
-def complex_relu(x):
-    x_ = tf.math.abs(x)
-    x_ = tf.math.divide(tf.nn.relu(x_), x_ + 1e-5)
-    x_ = tf.dtypes.cast(x_, dtype=tf.complex64)
-    return tf.math.multiply(x_, x)
-
-
 class E2Conv(Layer):
     def __init__(self,
                  n_filters=64,
@@ -146,6 +139,7 @@ class E2Conv(Layer):
     def build(self, input_shape):
         """
         inputs: (coords, features)
+        input coords have shape (batch, points, 2)
         input features have shape (batch, points, features)
         """
 
