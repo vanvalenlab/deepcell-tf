@@ -270,9 +270,9 @@ class Mesmer(Application):
             numpy.array: Instance segmentation mask.
         """
         default_kwargs_cell = {
-            'maxima_threshold': 0.1,
+            'maxima_threshold': 0.075,
             'maxima_smooth': 0,
-            'interior_threshold': 0.3,
+            'interior_threshold': 0.2,
             'interior_smooth': 2,
             'small_objects_threshold': 15,
             'fill_holes_threshold': 15,
@@ -282,7 +282,7 @@ class Mesmer(Application):
         default_kwargs_nuc = {
             'maxima_threshold': 0.1,
             'maxima_smooth': 0,
-            'interior_threshold': 0.3,
+            'interior_threshold': 0.2,
             'interior_smooth': 2,
             'small_objects_threshold': 15,
             'fill_holes_threshold': 15,
