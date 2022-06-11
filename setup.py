@@ -66,6 +66,7 @@ setup(
         'tensorflow_addons~=0.16.1',
         'spektral~=1.0.4',
         'jupyter>=1.0.0,<2',
+        'matplotlib',
         'opencv-python-headless<5',
         'deepcell-tracking~=0.6.1',
         'deepcell-toolbox~=0.11.2'
