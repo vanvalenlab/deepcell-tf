@@ -455,8 +455,8 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
             model.load_weights('model_weights.h5', by_name=True)
 
         layer_names = ['block1b_add', 'block2c_add',
-                    'block4a_expand_activation', 'block6a_expand_activation',
-                    'top_activation']
+                       'block4a_expand_activation', 'block6a_expand_activation',
+                       'top_activation']
         layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
     else:
