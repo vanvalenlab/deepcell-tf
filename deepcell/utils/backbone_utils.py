@@ -249,6 +249,15 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         'efficientnetb6': applications.efficientnet.EfficientNetB6,
         'efficientnetb7': applications.efficientnet.EfficientNetB7,
     }
+    efficientnet_v2_backbones = {
+        'efficientnetv2b0': applications.efficientnet_v2.EfficientNetV2B0,
+        'efficientnetv2b1': applications.efficientnet_v2.EfficientNetV2B1,
+        'efficientnetv2b2': applications.efficientnet_v2.EfficientNetV2B2,
+        'efficientnetv2b3': applications.efficientnet_v2.EfficientNetV2B3,
+        'efficientnetv2bl': applications.efficientnet_v2.EfficientNetV2L,
+        'efficientnetv2bm': applications.efficientnet_v2.EfficientNetV2M,
+        'efficientnetv2bs': applications.efficientnet_v2.EfficientNetV2S,
+    }
 
     # TODO: Check and make sure **kwargs is in the right format.
     # 'weights' flag should be None, and 'input_shape' must have size 3 on the channel axis
@@ -434,12 +443,29 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
                        'top_activation']
         layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
+    elif _backbone in efficientnet_v2_backbones:
+        model_cls = efficientnet_v2_backbones[_backbone]
+        kwargs['include_preprocessing'] = False
+        model = model_cls(input_tensor=img_input, **kwargs)
+
+        if use_imagenet:
+            kwargs_with_weights['include_preprocessing'] = False
+            model_with_weights = model_cls(**kwargs_with_weights)
+            model_with_weights.save_weights('model_weights.h5')
+            model.load_weights('model_weights.h5', by_name=True)
+
+        layer_names = ['block1b_add', 'block2c_add',
+                       'block4a_expand_activation', 'block6a_expand_activation',
+                       'top_activation']
+        layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
+
     else:
         join = lambda x: [v for y in x for v in list(y.keys())]
         backbones = join([featurenet_backbones, densenet_backbones,
                           resnet_backbones, resnet_v2_backbones,
                           vgg_backbones, nasnet_backbones,
-                          mobilenet_backbones, efficientnet_backbones])
+                          mobilenet_backbones, efficientnet_backbones,
+                          efficientnet_v2_backbones])
         raise ValueError('Invalid value for `backbone`. Must be one of: %s' %
                          ', '.join(backbones))
 
