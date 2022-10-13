@@ -47,6 +47,7 @@ from deepcell.layers.tensor_product import TensorProduct
 from deepcell.layers.padding import ReflectionPadding2D
 from deepcell.layers.padding import ReflectionPadding3D
 from deepcell.layers.upsample import UpsampleLike
+from deepcell.layers.equivariance import SE2SelfInteraction, SE2Conv, SE2Transformer
 
 del absolute_import
 del division

@@ -50,6 +50,7 @@ from spektral.layers import GCSConv, GCNConv, GATConv
 
 from deepcell.layers import ImageNormalization2D
 from deepcell.layers import Comparison, DeltaReshape, Unmerge, TemporalMerge
+from deepcell.layers import SE2SelfInteraction, SE2Conv, SE2Transformer
 
 
 def siamese_model(input_shape=None,
@@ -235,6 +236,12 @@ class GNNTrackingModel(object):
                  appearance_shape=(32, 32, 1),
                  norm_layer='batch'):
 
+        print()
+        print('no norm')
+        print('no norm')
+        print('no norm')
+        print()
+
         self.n_filters = n_filters
         self.encoder_dim = encoder_dim
         self.embedding_dim = embedding_dim
@@ -251,7 +258,7 @@ class GNNTrackingModel(object):
                              'and each side should be a power of 2.')
 
         graph_layer_name = str(graph_layer.split('-')[0]).lower()
-        if graph_layer_name not in {'gcn', 'gcs', 'gat'}:
+        if graph_layer_name not in {'gcn', 'gcs', 'gat', 'se2t', 'se2c'}:
             raise ValueError('Invalid graph_layer: {}'.format(graph_layer_name))
         self.graph_layer = graph_layer
 
@@ -385,11 +392,23 @@ class GNNTrackingModel(object):
         adj = adj_input
 
         # Concatenate features
-        node_features = Concatenate(axis=-1)([app_features, morph_features, centroid_features])
+        if self.graph_layer in ['se2t', 'se2c']:
+            node_features = Concatenate(axis=-1)([app_features, morph_features])
+        else:
+            node_features = Concatenate(axis=-1)([app_features, morph_features, centroid_features])
+
+        print('memory allocaiton neigh before networks')
+        print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+        print()
+
         node_features = Dense(self.n_filters, name='dense_ne0')(node_features)
         node_features = self.norm_layer(axis=-1, name='{}_ne0'.format(self.norm_layer_prefix)
                                         )(node_features)
         node_features = Activation('relu', name='relu_ne0')(node_features)
+
+        print('memory allocaiton neigh after node feat preproc')
+        print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+        print()
 
         # Apply graph convolution
         # Extract and define layer name
@@ -413,20 +432,75 @@ class GNNTrackingModel(object):
                 graph_layer = GCSConv(self.n_filters, activation=None, name=name, **layer_kwargs)
             elif graph_layer_name == 'gat':
                 graph_layer = GATConv(self.n_filters, activation=None, name=name, **layer_kwargs)
+            elif self.graph_layer == 'se2c':
+                node_features = Lambda(lambda t:tf.expand_dims(t, axis=2))(node_features)
+                node_features = SE2Conv(output_order=1)([centroid_input,
+                                                        node_features,
+                                                        adj])
+                node_features = SE2SelfInteraction(n_filters=64)([centroid_input,
+                                                                  node_features,
+                                                                  adj])
+                node_features = SE2Conv(output_order=0)([centroid_input,
+                                                         node_features,
+                                                         adj])
+                node_features = SE2SelfInteraction(n_filters=64)([centroid_input,
+                                                                  node_features,
+                                                                  adj])
+                node_features = Lambda(lambda t:tf.squeeze(t, axis=2))(node_features)
+                node_features = Lambda(lambda t: tf.dtypes.cast(t, dtype=tf.float32))(node_features)
+
+                print('memory allocaiton neigh after se2c')
+                print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+                print()
+            elif self.graph_layer == 'se2t':
+                node_features = Lambda(lambda t:tf.expand_dims(t, axis=2))(node_features)
+                node_features = SE2Transformer(output_order=1)([centroid_input,
+                                                                node_features,
+                                                                adj])
+                node_features = SE2SelfInteraction(n_filters=64)([centroid_input,
+                                                                  node_features,
+                                                                  adj])
+                node_features = SE2Transformer(output_order=0)([centroid_input,
+                                                                node_features,
+                                                                adj])
+                node_features = SE2SelfInteraction(n_filters=64)([centroid_input,
+                                                                  node_features,
+                                                                  adj])
+                node_features = Lambda(lambda t:tf.squeeze(t, axis=2))(node_features)
+                node_features = Lambda(lambda t: tf.dtypes.cast(t, dtype=tf.float32))(node_features)
+
+                print('memory allocaiton neigh after se2t')
+                print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+                print()
+
             else:
                 raise ValueError('Unexpected graph_layer: {}'.format(graph_layer_name))
 
-            node_features = graph_layer([node_features, adj])
-            node_features = self.norm_layer(axis=-1,
-                                            name='{}_ne{}'.format(self.norm_layer_prefix, i + 1)
-                                            )(node_features)
+            if self.graph_layer in ['gcn', 'gcs', 'gat']:
+                node_features = graph_layer([node_features, adj])
+                node_features = self.norm_layer(axis=-1,
+                                                name='{}_ne{}'.format(self.norm_layer_prefix, i + 1)
+                                                )(node_features)
+
+                print('memory allocaiton neigh after gcn/gcs/gat')
+                print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+                print()
+
             node_features = Activation('relu', name='relu_ne{}'.format(i + 1))(node_features)
+
+            print('memory allocaiton neigh after final node feat process')
+            print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+            print()
 
         concat = Concatenate(axis=-1)([app_features, morph_features, node_features])
         node_features = Dense(self.embedding_dim, name='dense_nef')(concat)
         node_features = self.norm_layer(axis=-1, name='{}_nef'.format(self.norm_layer_prefix)
                                         )(node_features)
         node_features = Activation('relu', name='relu_nef')(node_features)
+
+        print('memory allocaiton neigh after concat node app morph')
+        print(tf.config.experimental.get_memory_info('GPU:0')['current'])
+        print()
 
         inputs = [app_input, morph_input, centroid_input, adj_input]
         outputs = [node_features, centroid_input]
