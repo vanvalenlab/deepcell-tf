@@ -236,12 +236,6 @@ class GNNTrackingModel(object):
                  appearance_shape=(32, 32, 1),
                  norm_layer='batch'):
 
-        print()
-        print('no norm')
-        print('no norm')
-        print('no norm')
-        print()
-
         self.n_filters = n_filters
         self.encoder_dim = encoder_dim
         self.embedding_dim = embedding_dim
@@ -250,7 +244,7 @@ class GNNTrackingModel(object):
         self.track_length = track_length
 
         if len(appearance_shape) != 3:
-            raise ValueError('appearanace_shape should be a '
+            raise ValueError('appearance_shape should be a '
                              'tuple of length 3.')
         log2 = math.log(appearance_shape[0], 2)
         if appearance_shape[0] != appearance_shape[1] or int(log2) != log2:
@@ -262,7 +256,7 @@ class GNNTrackingModel(object):
             raise ValueError('Invalid graph_layer: {}'.format(graph_layer_name))
         self.graph_layer = graph_layer
 
-        norm_options = {'layer', 'batch'}
+        norm_options = {'layer', 'batch', 'no-norm'}
         if norm_layer not in norm_options:
             raise ValueError('Invalid normalization layer {}. Must be one of {}.'.format(
                 norm_layer, norm_options))
@@ -272,6 +266,9 @@ class GNNTrackingModel(object):
         elif norm_layer == 'batch':
             self.norm_layer = BatchNormalization
             self.norm_layer_prefix = 'bn'
+        elif norm_layer == 'no-norm':
+            self.norm_layer = Lambda(lambda t: t)
+            self.norm_layer_prefix = 'non'
 
         # Use inputs to build expected shapes
         base_shape = [self.track_length, self.max_cells]
