@@ -43,7 +43,7 @@ from tensorflow.keras.layers import Input, Concatenate, InputLayer
 from tensorflow.keras.layers import Add, Subtract, Dense, Reshape
 from tensorflow.keras.layers import MaxPool3D
 from tensorflow.keras.layers import Activation, Softmax
-from tensorflow.keras.layers import LayerNormalization, BatchNormalization, Lambda
+from tensorflow.keras.layers import LayerNormalization, BatchNormalization, Lambda, Layer
 from tensorflow.keras.regularizers import l2
 
 from spektral.layers import GCSConv, GCNConv, GATConv
@@ -209,6 +209,11 @@ def siamese_model(input_shape=None,
     return model
 
 
+class NoNorm(Layer):
+    def __init__(self, axis=None, name=''):
+        super(NoNorm, self).__init__()
+
+
 class GNNTrackingModel(object):
     """Creates a tracking model based on Graph Neural Networks(GNNs).
 
@@ -267,7 +272,7 @@ class GNNTrackingModel(object):
             self.norm_layer = BatchNormalization
             self.norm_layer_prefix = 'bn'
         elif norm_layer == 'no-norm':
-            self.norm_layer = Lambda(lambda t: t)
+            self.norm_layer = NoNorm
             self.norm_layer_prefix = 'non'
 
         # Use inputs to build expected shapes
