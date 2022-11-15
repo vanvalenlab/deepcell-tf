@@ -40,13 +40,13 @@ from deepcell.applications import Application
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/NuclearTrackingInf-6.tar.gz')
-MODEL_HASH = 'ac1323bfc331979464c8fbabaf6d55b2'
+              'saved-models/NuclearTrackingInf-7.tar.gz')
+MODEL_HASH = '46c5cbe0e362ed4ffdb54e11e3dbdc3e'
 
 
 ENCODER_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'saved-models/NuclearTrackingNE-6.tar.gz')
-ENCODER_HASH = '29f668823680d10ac0af5c559b5174f1'
+                'saved-models/NuclearTrackingNE-7.tar.gz')
+ENCODER_HASH = '7c30b39b2d2db0519f57d97194195504'
 
 
 class CellTracking(Application):
