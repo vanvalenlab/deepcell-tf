@@ -34,7 +34,6 @@ import os
 import tensorflow as tf
 
 import deepcell_tracking
-from deepcell_toolbox.processing import normalize
 
 from deepcell.applications import Application
 
@@ -151,10 +150,9 @@ class CellTracking(Application):
         Returns:
             dict: Tracked labels and lineage information.
         """
-        image_norm = normalize(image)
 
         cell_tracker = deepcell_tracking.CellTracker(
-            image_norm, labels, self.model,
+            image, labels, self.model,
             neighborhood_encoder=self.neighborhood_encoder,
             distance_threshold=self.distance_threshold,
             track_length=self.track_length,
