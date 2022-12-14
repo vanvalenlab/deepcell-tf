@@ -68,6 +68,9 @@ MODEL_METADATA = {
 }
 
 DISTANCE_THRESHOLD = 64
+APPEARANCE_DIM = 32
+CROP_MODE = 'resize'
+NORM = True
 BIRTH = 0.99
 DEATH = 0.99
 DIVISION = 0.01
@@ -102,18 +105,24 @@ class CellTracking(Application):
                  model=None,
                  neighborhood_encoder=None,
                  distance_threshold=DISTANCE_THRESHOLD,
+                 appearance_dim=APPEARANCE_DIM,
                  birth=BIRTH,
                  death=DEATH,
                  division=DIVISION,
                  track_length=TRACK_LENGTH,
-                 embedding_axis=0):
+                 embedding_axis=0,
+                 crop_mode=CROP_MODE,
+                 norm=NORM):
         self.neighborhood_encoder = neighborhood_encoder
         self.distance_threshold = distance_threshold
+        self.appearance_dim = appearance_dim
         self.birth = birth
         self.death = death
         self.division = division
         self.track_length = track_length
         self.embedding_axis = embedding_axis
+        self.crop_mode = crop_mode
+        self.norm = norm
 
         if self.neighborhood_encoder is None:
             archive_path = tf.keras.utils.get_file(
@@ -152,13 +161,19 @@ class CellTracking(Application):
         """
 
         cell_tracker = deepcell_tracking.CellTracker(
-            image, labels, self.model,
+            image,
+            labels,
+            self.model,
             neighborhood_encoder=self.neighborhood_encoder,
             distance_threshold=self.distance_threshold,
+            appearance_dim=self.appearance_dim,
             track_length=self.track_length,
             embedding_axis=self.embedding_axis,
-            birth=self.birth, death=self.death,
-            division=self.division)
+            birth=self.birth,
+            death=self.death,
+            division=self.division,
+            crop_mode=self.crop_mode,
+            norm=self.norm)
 
         cell_tracker.track_cells()
 
