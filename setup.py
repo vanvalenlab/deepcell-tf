@@ -57,7 +57,7 @@ setup(
     long_description=readme,
     long_description_content_type='text/markdown',
     install_requires=[
-        'numpy>=1.16.6',
+        'numpy>=1.16.6,<1.24',
         'pydot>=1.4.2,<2',
         'scipy>=1.2.3,<2',
         'scikit-image>=0.14.5',
@@ -69,7 +69,7 @@ setup(
         'matplotlib',
         'opencv-python-headless<5',
         'deepcell-tracking~=0.6.1',
-        'deepcell-toolbox~=0.11.2'
+        'deepcell-toolbox~=0.12.0'
     ],
     extras_require={
         'tests': [
