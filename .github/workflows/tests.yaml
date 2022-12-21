@@ -23,6 +23,16 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    # Check setting up a development environment from scratch. This step should
+    # catch inconsistencies in the reqiurements files
+    - name: Test development environment setup
+      run: |
+        python -m venv .dev
+        source .dev/bin/activate
+        python -m pip install --upgrade pip
+        python -m pip list
+        python -m pip install -r requirements.txt -r requirements-test.txt
+
     - name: Cache Python
       uses: actions/cache@v2
       with:
