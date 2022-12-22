@@ -1,6 +1,6 @@
 m2r2
 mock
-Sphinx
+Sphinx<6
 docutils
 ipython
 nbsphinx
