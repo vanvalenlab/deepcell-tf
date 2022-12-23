@@ -93,7 +93,7 @@ def rate_scheduler(lr=.001, decay=0.95):
         and returns a learning rate.
     """
     def output_fn(epoch):
-        epoch = np.int(epoch)
+        epoch = np.int_(epoch)
         new_lr = lr * (decay ** epoch)
         return new_lr
     return output_fn

@@ -103,7 +103,7 @@ def siamese_model(input_shape=None,
         if feature == 'appearance':
             # This should not stay: channels_first/last should be used to
             # dictate size (1 works for either right now)
-            N_layers = np.int(np.floor(np.log2(input_shape[1])))
+            N_layers = np.int_(np.floor(np.log2(input_shape[1])))
             feature_extractor = Sequential()
             feature_extractor.add(InputLayer(input_shape=shape))
             # feature_extractor.add(ImageNormalization2D('std', filter_size=32))
@@ -122,7 +122,7 @@ def siamese_model(input_shape=None,
         elif feature == 'distance':
             return None
         elif feature == 'neighborhood':
-            N_layers_og = np.int(np.floor(np.log2(2 * neighborhood_scale_size + 1)))
+            N_layers_og = np.int_(np.floor(np.log2(2 * neighborhood_scale_size + 1)))
             feature_extractor_neighborhood = Sequential()
             feature_extractor_neighborhood.add(
                 InputLayer(input_shape=shape)
