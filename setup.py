@@ -72,14 +72,10 @@ setup(
         'deepcell-toolbox~=0.12.0'
     ],
     extras_require={
-        'tests': [
-            'pytest<6',
-            'pytest-cov',
-            'pytest-pep8',
-        ],
+        'tests': ['pytest', 'pytest-cov'],
     },
     packages=find_packages(),
-    python_requires='>=3.7, <3.10',
+    python_requires='>=3.7, <3.11',
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
@@ -89,6 +85,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
