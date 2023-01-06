@@ -82,7 +82,7 @@ jobs:
 
       - name: Manually install dev version of tracking
         run: |
-          git clone https://github.com/vanvalenlabl/deepcell-tracking.git && cd deepcell-tracking
+          git clone https://github.com/vanvalenlab/deepcell-tracking.git && cd deepcell-tracking
           python -m pip uninstall DeepCell-Tracking -y
           python -m pip install .
 
