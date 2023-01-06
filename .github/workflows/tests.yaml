@@ -72,10 +72,10 @@ jobs:
           # Install deepcell-tf from source
           python -m pip install -r requirements.txt
           python -m pip install .
-          # Quick and dirty installation of deepcell-* dev libs
-          python -m pip install --upgrade git+https://github.com/vanvalenlab/deepcell-toolbox
-          python -m pip install --upgrade git+https://github.com/vanvalenlab/deepcell-tracking
           python -m pip install -r requirements-test.txt
+          # Quick and dirty installation of deepcell-* dev libs
+          python -m pip install --upgrade git+https://github.com/vanvalenlab/deepcell-toolbox@master
+          python -m pip install --upgrade git+https://github.com/vanvalenlab/deepcell-tracking@master
           # TODO: rm this extra when transitive dependency blocker is resolved
           python -m pip install --upgrade numpy
           python -m pip list
