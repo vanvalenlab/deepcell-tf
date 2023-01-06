@@ -9,4 +9,4 @@ spektral~=1.0.4
 jupyterlab
 matplotlib
 deepcell-tracking~=0.6.1
-deepcell-toolbox>=0.11
+deepcell-toolbox~=0.12.0
