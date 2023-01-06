@@ -1,6 +1,5 @@
 # Running tests
-pytest<6
+pytest
 pytest-cov
-pytest-pep8
 pytest-mock
 coveralls
