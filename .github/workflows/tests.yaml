@@ -66,19 +66,28 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      - name: Install deepcell-tf and dependencies
         run: |
           python -m pip install --upgrade pip wheel setuptools
           # Install deepcell-tf from source
           python -m pip install -r requirements.txt
           python -m pip install .
           python -m pip install -r requirements-test.txt
-          # Quick and dirty installation of deepcell-* dev libs
-          python -m pip install --upgrade git+https://github.com/vanvalenlab/deepcell-toolbox@master
-          python -m pip install --upgrade git+https://github.com/vanvalenlab/deepcell-tracking@master
-          # TODO: rm this extra when transitive dependency blocker is resolved
-          python -m pip install --upgrade numpy
-          python -m pip list
+
+      - name: Manually install dev version of toolbox
+        run: |
+          git clone https://github.com/vanvalenlab/deepcell-toolbox.git && cd deepcell-toolbox
+          python -m pip uninstall DeepCell-Toolbox -y
+          python -m pip install .
+
+      - name: Manually install dev version of tracking
+        run: |
+          git clone https://github.com/vanvalenlabl/deepcell-tracking.git && cd deepcell-tracking
+          python -m pip uninstall DeepCell-Tracking -y
+          python -m pip install .
+
+      - name: List dependencies
+        run: python -m pip list
       
       - name: Run tests
         run: |
