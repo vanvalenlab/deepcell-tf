@@ -76,6 +76,8 @@ jobs:
           python -m pip install --upgrade git+https://github.com/vanvalenlab/deepcell-toolbox
           python -m pip install --upgrade git+https://github.com/vanvalenlab/deepcell-tracking
           python -m pip install -r requirements-test.txt
+          # TODO: rm this extra when transitive dependency blocker is resolved
+          python -m pip install --upgrade numpy
           python -m pip list
       
       - name: Run tests
