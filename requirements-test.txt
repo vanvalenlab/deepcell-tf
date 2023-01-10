@@ -1,5 +1,6 @@
-# Running tests
+# Running tests/linting
 pytest
 pytest-cov
 pytest-mock
 coveralls
+ruff
