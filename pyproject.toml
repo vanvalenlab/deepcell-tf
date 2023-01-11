@@ -14,6 +14,7 @@ ignore = ["E731"]
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
+"docs/source/conf.py" = ["E402", "E501"]
 
 # Re-exports from deepcell-toolbox/deepcell-tracking: ignore unused import warnings
 "deepcell/metrics.py" = ["F401"]
