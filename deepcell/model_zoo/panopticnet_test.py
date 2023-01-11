@@ -389,7 +389,7 @@ class PanopticNetTest(keras_parameterized.TestCase):
             model1 = PanopticNet(num_semantic_classes=nsc1, **shared_kwargs)
 
             nsc2 = {'0': 2, '1': 3}
-            model2 = PanopticNet(num_semantic_classes=nsc1, **shared_kwargs)
+            model2 = PanopticNet(num_semantic_classes=nsc2, **shared_kwargs)
 
             for o1, o2 in zip(model1.outputs, model2.outputs):
                 self.assertEqual(o1.shape.as_list(), o2.shape.as_list())
