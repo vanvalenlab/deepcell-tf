@@ -193,43 +193,43 @@ class TestDataUtils(test.TestCase):
         y = np.zeros((2, 30, 30, 3))
         y[:, 0, 0, 0] = 1  # set value outside valid window range
         y[:, win_x + 1, win_y + 1, 0] = 1  # set value inside valid window range
-        r, c, b, l = data_utils.sample_label_matrix(
+        r, c, b, ll = data_utils.sample_label_matrix(
             y, window_size=(win_x, win_y),
             padding='valid', data_format='channels_last')
-        self.assertListEqual(list(map(len, [r, c, b, l])), [len(r)] * 4)
+        self.assertListEqual(list(map(len, [r, c, b, ll])), [len(r)] * 4)
         self.assertEqual(np.unique(b).size, 2)
         self.assertEqual([np.unique(r).size, np.unique(c).size], [1, 1])
-        self.assertEqual(np.unique(l).size, 1)
+        self.assertEqual(np.unique(ll).size, 1)
 
-        r, c, b, l = data_utils.sample_label_matrix(
+        r, c, b, ll = data_utils.sample_label_matrix(
             y, window_size=(win_x, win_y),
             max_training_examples=None,
             padding='same', data_format='channels_last')
-        self.assertListEqual(list(map(len, [r, c, b, l])), [len(r)] * 4)
+        self.assertListEqual(list(map(len, [r, c, b, ll])), [len(r)] * 4)
         self.assertEqual([np.unique(r).size, np.unique(c).size], [2, 2])
-        self.assertEqual(np.unique(l).size, 1)
+        self.assertEqual(np.unique(ll).size, 1)
 
         # test channels_first
         win_x, win_y = 10, 10
         y = np.zeros((2, 3, 30, 30))
         y[:, 0, 0, 0] = 1  # set value outside valid window range
         y[:, 0, win_x + 1, win_y + 1] = 1  # set value inside valid window range
-        r, c, b, l = data_utils.sample_label_matrix(
+        r, c, b, ll = data_utils.sample_label_matrix(
             y, window_size=(win_x, win_y),
             padding='valid', data_format='channels_first')
-        self.assertListEqual(list(map(len, [r, c, b, l])), [len(r)] * 4)
+        self.assertListEqual(list(map(len, [r, c, b, ll])), [len(r)] * 4)
         self.assertEqual(np.unique(b).size, 2)
         self.assertEqual([np.unique(r).size, np.unique(c).size], [1, 1])
-        self.assertEqual(np.unique(l).size, 1)
+        self.assertEqual(np.unique(ll).size, 1)
 
-        r, c, b, l = data_utils.sample_label_matrix(
+        r, c, b, ll = data_utils.sample_label_matrix(
             y, window_size=(win_x, win_y),
             max_training_examples=None,
             padding='same', data_format='channels_first')
-        self.assertListEqual(list(map(len, [r, c, b, l])), [len(r)] * 4)
+        self.assertListEqual(list(map(len, [r, c, b, ll])), [len(r)] * 4)
         self.assertEqual(np.unique(b).size, 2)
         self.assertEqual([np.unique(r).size, np.unique(c).size], [2, 2])
-        self.assertEqual(np.unique(l).size, 1)
+        self.assertEqual(np.unique(ll).size, 1)
 
     def test_sample_label_movie(self):
         win_x, win_y, win_z = 10, 10, 1
@@ -238,27 +238,27 @@ class TestDataUtils(test.TestCase):
         y[:, 0, 0, 0, 0] = 1
         # set value inside valid window range
         y[:, win_z + 1, win_x + 1, win_y + 1, 0] = 1
-        f, r, c, b, l = data_utils.sample_label_movie(
+        f, r, c, b, ll = data_utils.sample_label_movie(
             y, window_size=(win_x, win_y, win_z),
             padding='valid', data_format='channels_last')
-        self.assertListEqual(list(map(len, [r, c, b, l, f])), [len(r)] * 5)
+        self.assertListEqual(list(map(len, [r, c, b, ll, f])), [len(r)] * 5)
         self.assertEqual(np.unique(b).size, 2)
         self.assertEqual([np.unique(r).size,
                           np.unique(c).size,
                           np.unique(f).size],
                          [1, 1, 1])
-        self.assertEqual(np.unique(l).size, 1)
+        self.assertEqual(np.unique(ll).size, 1)
 
-        f, r, c, b, l = data_utils.sample_label_movie(
+        f, r, c, b, ll = data_utils.sample_label_movie(
             y, window_size=(win_x, win_y, win_z),
             max_training_examples=None,
             padding='same', data_format='channels_last')
-        self.assertListEqual(list(map(len, [r, c, b, l, f])), [len(r)] * 5)
+        self.assertListEqual(list(map(len, [r, c, b, ll, f])), [len(r)] * 5)
         self.assertEqual([np.unique(r).size,
                           np.unique(c).size,
                           np.unique(f).size],
                          [2, 2, 2])
-        self.assertEqual(np.unique(l).size, 1)
+        self.assertEqual(np.unique(ll).size, 1)
 
         # test channels_first
         win_x, win_y, win_z = 10, 10, 1
@@ -267,22 +267,22 @@ class TestDataUtils(test.TestCase):
         y[:, 0, 0, 0, 0] = 1
         # set value inside valid window range
         y[:, 0, win_z + 1, win_x + 1, win_y + 1] = 1
-        f, r, c, b, l = data_utils.sample_label_movie(
+        f, r, c, b, ll = data_utils.sample_label_movie(
             y, window_size=(win_x, win_y, win_z),
             padding='valid', data_format='channels_first')
-        self.assertListEqual(list(map(len, [r, c, b, l, f])), [len(r)] * 5)
+        self.assertListEqual(list(map(len, [r, c, b, ll, f])), [len(r)] * 5)
         self.assertEqual(np.unique(b).size, 2)
         self.assertEqual([np.unique(r).size, np.unique(c).size], [1, 1])
-        self.assertEqual(np.unique(l).size, 1)
+        self.assertEqual(np.unique(ll).size, 1)
 
-        f, r, c, b, l = data_utils.sample_label_movie(
+        f, r, c, b, ll = data_utils.sample_label_movie(
             y, window_size=(win_x, win_y, win_z),
             max_training_examples=None,
             padding='same', data_format='channels_first')
-        self.assertListEqual(list(map(len, [r, c, b, l, f])), [len(r)] * 5)
+        self.assertListEqual(list(map(len, [r, c, b, ll, f])), [len(r)] * 5)
         self.assertEqual(np.unique(b).size, 2)
         self.assertEqual([np.unique(r).size, np.unique(c).size], [2, 2])
-        self.assertEqual(np.unique(l).size, 1)
+        self.assertEqual(np.unique(ll).size, 1)
 
     def test_trim_padding(self):
         # test 2d image

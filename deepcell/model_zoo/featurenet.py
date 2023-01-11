@@ -176,8 +176,8 @@ def bn_feature_net_2D(receptive_field=61,
 
     if multires:
         c = []
-        for l in layers_to_concat:
-            output_shape = x[l].get_shape().as_list()
+        for lyr in layers_to_concat:
+            output_shape = x[lyr].get_shape().as_list()
             target_shape = x[-1].get_shape().as_list()
 
             row_crop = int(output_shape[row_axis] - target_shape[row_axis])
@@ -194,7 +194,7 @@ def bn_feature_net_2D(receptive_field=61,
 
             cropping = (row_crop, col_crop)
 
-            c.append(Cropping2D(cropping=cropping)(x[l]))
+            c.append(Cropping2D(cropping=cropping)(x[lyr]))
 
         if multires:
             x.append(Concatenate(axis=channel_axis)(c))
@@ -424,8 +424,8 @@ def bn_feature_net_3D(receptive_field=61,
 
     if multires:
         c = []
-        for l in layers_to_concat:
-            output_shape = x[l].get_shape().as_list()
+        for lyr in layers_to_concat:
+            output_shape = x[lyr].get_shape().as_list()
             target_shape = x[-1].get_shape().as_list()
             time_crop = (0, 0)
 
@@ -445,7 +445,7 @@ def bn_feature_net_3D(receptive_field=61,
 
             cropping = (time_crop, row_crop, col_crop)
 
-            c.append(Cropping3D(cropping=cropping)(x[l]))
+            c.append(Cropping3D(cropping=cropping)(x[lyr]))
         x.append(Concatenate(axis=channel_axis)(c))
 
     x.append(Conv3D(n_dense_filters, (1, rf_counter, rf_counter),
