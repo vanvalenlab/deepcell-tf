@@ -33,3 +33,5 @@ ignore = ["E731"]
 "deepcell/data/__init__.py" = ["E402"]
 # TODO: Remove once gh-643 is resolved
 "deepcell/model_zoo/panopticnet_test.py" = ["F841"]
+# TODO: Remove once gh-645 is resolved
+"deepcell/utils/export_utils.py" = ["F821"]
