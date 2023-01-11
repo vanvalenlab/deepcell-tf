@@ -30,6 +30,7 @@ from __future__ import division
 from __future__ import print_function
 
 import math
+import functools
 
 from scipy.spatial.distance import cdist
 
@@ -442,18 +443,18 @@ def prepare_dataset(track_info,
     dataset = dataset.shuffle(buffer_size, seed=seed).repeat()
 
     # randomly sample along the temporal axis
-    sample = lambda X, y: temporal_slice(X, y, track_length=track_length)
+    sample = functools.partial(temporal_slice, track_length=track_length)
     dataset = dataset.map(sample, num_parallel_calls=tf.data.AUTOTUNE)
 
     # split into train/val before doing any augmentation
     train_data, val_data, test_data = split_dataset(dataset, val_size, test_size)
 
     # randomly rotate
-    rotate = lambda X, y: random_rotate(X, y, rotation_range=rotation_range)
+    rotate = functools.partial(random_rotate, rotation_range=rotation_range)
     train_data = train_data.map(rotate, num_parallel_calls=tf.data.AUTOTUNE)
 
     # randomly translate centroids
-    translate = lambda X, y: random_translate(X, y, range=translation_range)
+    translate = functools.partial(random_translate, range=translation_range)
     train_data = train_data.map(translate, num_parallel_calls=tf.data.AUTOTUNE)
 
     # batch the data
