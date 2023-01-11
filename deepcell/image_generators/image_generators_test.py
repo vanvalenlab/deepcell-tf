@@ -124,7 +124,6 @@ class TestTransformMasks(test.TestCase):
         self.assertTrue(np.issubdtype(mask_transform.dtype, np.integer))
 
     def test_pixelwise_transform(self):
-        num_classes = 3
         # test 2D masks
         mask = np.random.randint(3, size=(5, 30, 30, 1))
         mask_transform = image_generators._transform_masks(
@@ -1409,7 +1408,6 @@ class TestScaleDataGenerator(test.TestCase):
 
             # Fit
             generator.fit(images, augment=True, seed=1)
-            y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=(images.shape[0], 1))
             for x, y in generator.flow(
@@ -2238,7 +2236,6 @@ class TestSemantic3DGenerator(test.TestCase):
             # Fit
             generator.fit(images, augment=True, seed=1)
 
-            batch_x_shape = tuple([frames_per_batch] + list(images.shape[2:]))
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
@@ -2309,7 +2306,6 @@ class TestSemantic3DGenerator(test.TestCase):
 
             # Fit
             generator.fit(images, augment=True, seed=1)
-            batch_x_shape = tuple([frames_per_batch] + list(images.shape[2:]))
             y_shape = tuple(list(images.shape)[:-1] + [1])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
@@ -2381,8 +2377,6 @@ class TestSemantic3DGenerator(test.TestCase):
 
             # Fit
             generator.fit(images, augment=True, seed=1)
-            batch_x_shape = tuple([images.shape[1], frames_per_batch] +
-                                  list(images.shape[3:]))
             y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)
@@ -2454,8 +2448,6 @@ class TestSemantic3DGenerator(test.TestCase):
 
             # Fit
             generator.fit(images, augment=True, seed=1)
-            batch_x_shape = tuple([images.shape[1], frames_per_batch] +
-                                  list(images.shape[3:]))
             y_shape = tuple([images.shape[0], 1] + list(images.shape)[2:])
             train_dict['X'] = images
             train_dict['y'] = np.random.randint(0, 9, size=y_shape)

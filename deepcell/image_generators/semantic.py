@@ -1272,7 +1272,6 @@ class Semantic3DIterator(Iterator):
             return np.stack(batch_list, axis=0).astype(dtype)
 
         if self.aug_3d and self.rotation_3d > 0:
-            scale = tuple([1 / self.z_scale, 1, 1])
             out_shape = tuple([self.output_frames, self.frame_shape[0], self.frame_shape[1]])
 
             batch_x = _resize_im(batch_x, out_shape, order=1)

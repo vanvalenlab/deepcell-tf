@@ -364,14 +364,12 @@ def bn_feature_net_3D(receptive_field=61,
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
-        time_axis = 2
         row_axis = 3
         col_axis = 4
         if not dilated:
             input_shape = (n_channels, n_frames, receptive_field, receptive_field)
     else:
         channel_axis = -1
-        time_axis = 1
         row_axis = 2
         col_axis = 3
         if not dilated:
