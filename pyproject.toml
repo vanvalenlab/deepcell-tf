@@ -31,3 +31,5 @@ ignore = ["E731"]
 "deepcell/model_zoo/tracking_test.py" = ["F401"]
 # TODO: Define split_datasets in module to fix circular import - see gh-642
 "deepcell/data/__init__.py" = ["E402"]
+# TODO: Remove once gh-643 is resolved
+"deepcell/model_zoo/panopticnet_test.py" = ["F841"]
