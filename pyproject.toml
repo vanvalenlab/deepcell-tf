@@ -13,4 +13,15 @@ ignore = []
 
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
+
+# Re-exports from deepcell-toolbox/deepcell-tracking: ignore unused import warnings
+"deepcell/metrics.py" = ["F401"]
+"deepcell/model_zoo/featurenet.py" = ["F401"]
+"deepcell/tracking.py" = ["F401"]
+"deepcell/utils/tracking_utils.py" = ["F401"]
+
 "deepcell/image_generators/__init__.py" = ["E402"]  # Ignore out-of-order import
+# TODO: Expire deprecation and remove this filter
+"deepcell/applications/multiplex_segmentation.py" = ["F401"]
+# TODO: Add tests or delete file, see gh-641
+"deepcell/model_zoo/tracking_test.py" = ["F401"]
