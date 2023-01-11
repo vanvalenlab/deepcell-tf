@@ -20,7 +20,10 @@ ignore = []
 "deepcell/tracking.py" = ["F401"]
 "deepcell/utils/tracking_utils.py" = ["F401"]
 
-"deepcell/image_generators/__init__.py" = ["E402"]  # Ignore out-of-order import
+# Out-of-order imports due to pkg-level definitions
+"deepcell/image_generators/__init__.py" = ["E402"]
+"deepcell/datasets/__init__.py" = ["E402"]
+
 # TODO: Expire deprecation and remove this filter
 "deepcell/applications/multiplex_segmentation.py" = ["F401"]
 # TODO: Add tests or delete file, see gh-641
