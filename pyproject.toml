@@ -25,3 +25,5 @@ ignore = []
 "deepcell/applications/multiplex_segmentation.py" = ["F401"]
 # TODO: Add tests or delete file, see gh-641
 "deepcell/model_zoo/tracking_test.py" = ["F401"]
+# TODO: Define split_datasets in module to fix circular import - see gh-642
+"deepcell/data/__init__.py" = ["E402"]
