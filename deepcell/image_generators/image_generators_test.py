@@ -35,7 +35,6 @@ import skimage as sk
 from PIL import Image
 
 from tensorflow.keras import backend as K
-from tensorflow.keras.preprocessing.image import array_to_img
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.python.platform import test
 

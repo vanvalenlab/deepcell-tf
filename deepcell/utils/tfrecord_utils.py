@@ -30,14 +30,11 @@ from __future__ import division
 from __future__ import print_function
 
 import csv
-import os
 
 import numpy as np
 import tensorflow as tf
 
-from tensorflow.data import Dataset
 from tensorflow.io import serialize_tensor
-from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.backend import is_sparse
 
 

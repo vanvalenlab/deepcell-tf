@@ -34,7 +34,6 @@ import sys
 import tensorflow as tf
 from keras import keras_parameterized
 from keras import testing_utils
-from tensorflow.python.framework import test_util as tf_test_util
 
 from deepcell import callbacks
 

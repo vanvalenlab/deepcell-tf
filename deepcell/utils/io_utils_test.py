@@ -29,7 +29,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import shutil
 
 import numpy as np
 from tensorflow.keras import backend as K

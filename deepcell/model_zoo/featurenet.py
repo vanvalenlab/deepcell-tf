@@ -29,13 +29,11 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import numpy as np
-
 from tensorflow.keras import backend as K
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Conv2D, Conv3D, LSTM, ConvLSTM2D
-from tensorflow.keras.layers import Input, Concatenate, InputLayer
-from tensorflow.keras.layers import Add, Flatten, Dense, Reshape
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Conv2D, Conv3D, ConvLSTM2D
+from tensorflow.keras.layers import Input, Concatenate
+from tensorflow.keras.layers import Add, Flatten
 from tensorflow.keras.layers import MaxPool2D, MaxPool3D
 from tensorflow.keras.layers import Cropping2D, Cropping3D
 from tensorflow.keras.layers import Activation, Softmax

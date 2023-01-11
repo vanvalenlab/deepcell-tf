@@ -31,7 +31,6 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 
-from tensorflow.test import assert_equal_graph_def
 from tensorflow.keras import backend as K
 from keras import keras_parameterized
 

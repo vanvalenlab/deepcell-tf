@@ -32,9 +32,6 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
-from absl.testing import parameterized
-
-import keras
 # from tensorflow.python.eager import context
 from keras import keras_parameterized
 from keras import testing_utils

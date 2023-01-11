@@ -33,7 +33,6 @@ from tensorflow.keras import backend as K
 from keras import keras_parameterized
 from keras import testing_utils
 from tensorflow.keras.utils import custom_object_scope
-from tensorflow.python.platform import test
 
 from deepcell import layers
 

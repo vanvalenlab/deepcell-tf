@@ -30,7 +30,6 @@ from __future__ import division
 from __future__ import print_function
 
 import math
-import os
 
 from scipy.spatial.distance import cdist
 
