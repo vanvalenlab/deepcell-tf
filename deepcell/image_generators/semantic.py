@@ -44,8 +44,6 @@ try:
     import scipy
     # scipy.linalg cannot be accessed until explicitly imported
     from scipy import linalg
-    # scipy.ndimage cannot be accessed until explicitly imported
-    from scipy import ndimage
 except ImportError:
     scipy = None
 
@@ -892,7 +890,7 @@ class SemanticMovieGenerator(ImageDataGenerator):
                 x, (x.shape[0],
                     x.shape[1] * x.shape[2] * x.shape[3] * x.shape[4]))
             sigma = np.dot(flat_x.T, flat_x) / flat_x.shape[0]
-            u, s, _ = scipy.linalg.svd(sigma)
+            u, s, _ = linalg.svd(sigma)
             s_inv = 1. / np.sqrt(s[np.newaxis] + self.zca_epsilon)
             self.principal_components = (u * s_inv).dot(u.T)
 
@@ -1274,7 +1272,6 @@ class Semantic3DIterator(Iterator):
             return np.stack(batch_list, axis=0).astype(dtype)
 
         if self.aug_3d and self.rotation_3d > 0:
-            scale = tuple([1 / self.z_scale, 1, 1])
             out_shape = tuple([self.output_frames, self.frame_shape[0], self.frame_shape[1]])
 
             batch_x = _resize_im(batch_x, out_shape, order=1)
@@ -1560,7 +1557,7 @@ class Semantic3DGenerator(ImageDataGenerator):
             shape = (x.shape[0], x.shape[1] * x.shape[2] * x.shape[3] * x.shape[4])
             flat_x = np.reshape(x, shape)
             sigma = np.dot(flat_x.T, flat_x) / flat_x.shape[0]
-            u, s, _ = scipy.linalg.svd(sigma)
+            u, s, _ = linalg.svd(sigma)
             s_inv = 1. / np.sqrt(s[np.newaxis] + self.zca_epsilon)
             self.principal_components = (u * s_inv).dot(u.T)
 

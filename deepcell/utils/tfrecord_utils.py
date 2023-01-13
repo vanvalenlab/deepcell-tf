@@ -30,14 +30,11 @@ from __future__ import division
 from __future__ import print_function
 
 import csv
-import os
 
 import numpy as np
 import tensorflow as tf
 
-from tensorflow.data import Dataset
 from tensorflow.io import serialize_tensor
-from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.backend import is_sparse
 
 
@@ -261,7 +258,6 @@ def create_sparse_tensor_features(sparse_tensor, name='adj'):
 
     val = sparse_tensor.values.numpy()
     ind = sparse_tensor.indices.numpy()
-    shape = sparse_tensor.dense_shape.numpy()
 
     feature_dict['{}_val'.format(name)] = tf.train.Feature(
         float_list=tf.train.FloatList(value=val))
@@ -414,7 +410,6 @@ def parse_tracking_example(example, dataset_ndims,
     """
 
     X_names = ['app', 'cent', 'morph', 'adj']
-    y_names = ['temp_adj']
 
     sparse_names = ['adj', 'temp_adj']
 
@@ -496,7 +491,6 @@ def get_dataset(filename, parse_fn=None, **kwargs):
 
     # Load the csv
     dataset_ndims = {}
-    shapes = {}
 
     with open(filename_csv) as f:
         reader = csv.reader(f)

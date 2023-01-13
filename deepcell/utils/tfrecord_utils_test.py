@@ -32,7 +32,6 @@ import numpy as np
 import tensorflow as tf
 
 import os
-import pytest
 
 from deepcell.utils import tfrecord_utils
 from deepcell.data.tracking import Track

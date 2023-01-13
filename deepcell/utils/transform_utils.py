@@ -34,7 +34,6 @@ from scipy import ndimage
 from skimage.measure import label
 from skimage.measure import regionprops
 from skimage.morphology import ball, disk
-from skimage.morphology import binary_erosion
 from skimage.morphology import binary_dilation
 from skimage.segmentation import find_boundaries
 from tensorflow.keras import backend as K

@@ -72,7 +72,7 @@ setup(
         'deepcell-toolbox~=0.12.0'
     ],
     extras_require={
-        'tests': ['pytest', 'pytest-cov'],
+        'tests': ['pytest', 'pytest-cov', 'ruff'],
     },
     packages=find_packages(),
     python_requires='>=3.7, <3.11',

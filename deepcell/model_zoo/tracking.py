@@ -38,9 +38,9 @@ import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras import Model
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import TimeDistributed, Conv2D, Conv3D, LSTM
+from tensorflow.keras.layers import TimeDistributed, Conv3D, LSTM
 from tensorflow.keras.layers import Input, Concatenate, InputLayer
-from tensorflow.keras.layers import Add, Subtract, Dense, Reshape
+from tensorflow.keras.layers import Subtract, Dense, Reshape
 from tensorflow.keras.layers import MaxPool3D
 from tensorflow.keras.layers import Activation, Softmax
 from tensorflow.keras.layers import LayerNormalization, BatchNormalization, Lambda

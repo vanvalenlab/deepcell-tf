@@ -723,7 +723,6 @@ class SiameseIterator(Iterator):
         return regionprop_1, regionprop_2
 
     def _compute_neighborhoods(self, track_1, frames_1, track_2, frames_2, transform):
-        track_2, frames_2 = None, None  # To guarantee we don't use these.
         neighborhood_1 = self._fetch_neighborhoods(track_1, frames_1)
         neighborhood_2 = self._fetch_future_areas(track_1, [frames_1[-1]])
 

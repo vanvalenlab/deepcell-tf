@@ -42,12 +42,8 @@ try:
     import scipy
     # scipy.linalg cannot be accessed until explicitly imported
     from scipy import linalg
-    # scipy.ndimage cannot be accessed until explicitly imported
-    from scipy import ndimage
 except ImportError:
     scipy = None
-
-from deepcell.image_generators import _transform_masks
 
 
 class CroppingIterator(SemanticIterator):

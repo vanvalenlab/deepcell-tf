@@ -31,7 +31,6 @@ from __future__ import division
 import numpy as np
 import tensorflow as tf
 
-import keras
 from keras import keras_parameterized
 from keras import testing_utils
 from tensorflow.python.platform import test
