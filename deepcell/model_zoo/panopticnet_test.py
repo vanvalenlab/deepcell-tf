@@ -407,7 +407,7 @@ class PanopticNetTest(keras_parameterized.TestCase):
         # non-square input
         input_shape = (256, 512, 1)
         with self.assertRaises(ValueError):
-            model = PanopticNet(
+            PanopticNet(
                 backbone=backbone,
                 input_shape=input_shape,
                 backbone_levels=['C3', 'C4', 'C5'],
@@ -421,7 +421,7 @@ class PanopticNetTest(keras_parameterized.TestCase):
         # non power of 2 input
         input_shape = (257, 257, 1)
         with self.assertRaises(ValueError):
-            model = PanopticNet(
+            PanopticNet(
                 backbone=backbone,
                 input_shape=input_shape,
                 backbone_levels=['C3', 'C4', 'C5'],
