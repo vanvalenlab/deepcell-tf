@@ -93,6 +93,17 @@ def export_model_to_tflite(model_file, export_path, calibration_images,
         file_name (str): File name for the exported model. Defaults to
             'model.tflite'
     """
+    import warnings
+
+    warnings.warn(
+        (
+            "\n\nexport_model_to_tflite is deprecated and will be removed.\n"
+            "Use tf.keras.models.save_model instead.\n"
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     # Define helper function - normalization
     def norm_images(images):
         mean = np.mean(images, axis=(1, 2), keepdims=True)
