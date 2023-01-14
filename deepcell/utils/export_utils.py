@@ -72,6 +72,11 @@ def export_model_to_tflite(model_file, export_path, calibration_images,
                            norm=True, location=True, file_name='model.tflite'):
     """Export a saved keras model to tensorflow-lite with int8 precision.
 
+    .. deprecated:: 0.12.4
+
+       The ``export_model_to_tflite`` function is deprecated and will be
+       removed in 0.13. Use ``tf.keras.models.save_model`` instead.
+
     This export function has only been tested with ``PanopticNet`` models.
     For the export to be successful, the ``PanopticNet`` model must have
     ``norm_method`` set to ``None``, ``location`` set to ``False``,
@@ -88,6 +93,17 @@ def export_model_to_tflite(model_file, export_path, calibration_images,
         file_name (str): File name for the exported model. Defaults to
             'model.tflite'
     """
+    import warnings
+
+    warnings.warn(
+        (
+            "\n\nexport_model_to_tflite is deprecated and will be removed.\n"
+            "Use tf.keras.models.save_model instead.\n"
+        ),
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     # Define helper function - normalization
     def norm_images(images):
         mean = np.mean(images, axis=(1, 2), keepdims=True)
