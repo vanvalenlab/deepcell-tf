@@ -29,26 +29,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
-def __getattr__(name):
-    if name in {"export_model", "export_utils"}:
-        import warnings
-        import importlib
-
-        warnings.warn(
-            f"\n\n{name} is deprecated, use tf.keras.models.save_model directly.\n",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        export_utils = importlib.import_module("deepcell.utils.export_utils")
-        if name == "export_model":
-            return getattr(export_utils, name)
-        if name == "export_utils":
-            return export_utils
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
 # compute_overlap has been moved to deepcell_toolbox
 # leaving here for backwards compatibility
 from deepcell_toolbox import compute_overlap
@@ -74,6 +54,25 @@ from deepcell.utils.transform_utils import inner_distance_transform_2d
 from deepcell.utils.transform_utils import inner_distance_transform_3d
 from deepcell.utils.transform_utils import inner_distance_transform_movie
 from deepcell.utils.transform_utils import pixelwise_transform
+
+
+def __getattr__(name):
+    if name in {"export_model", "export_utils"}:
+        import warnings
+        import importlib
+
+        warnings.warn(
+            f"\n\n{name} is deprecated, use tf.keras.models.save_model directly.\n",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        export_utils = importlib.import_module("deepcell.utils.export_utils")
+        if name == "export_model":
+            return getattr(export_utils, name)
+        if name == "export_utils":
+            return export_utils
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 del absolute_import
 del division
