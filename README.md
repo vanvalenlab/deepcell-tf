@@ -18,8 +18,6 @@ Read the documentation at [deepcell.readthedocs.io](https://deepcell.readthedocs
 
 For more information on deploying models in the cloud refer to the [the Kiosk documentation](https://deepcell-kiosk.readthedocs.io).
 
-For TensorFlow 1.X or Python 2.7 support, please use deepcell [0.7.0](https://github.com/vanvalenlab/deepcell-tf/tree/0.7.0) or earlier.
-
 ## Examples
 
 <table width="700" border="1" cellpadding="5">
