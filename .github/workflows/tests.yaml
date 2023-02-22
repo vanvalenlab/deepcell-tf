@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9']
+        python-version: ['3.7', '3.8', '3.9', '3.10']
 
     steps:
     - uses: actions/checkout@v2
@@ -39,7 +39,7 @@ jobs:
 
     - name: PyTest
       run: |
-        pytest --cov deepcell --pep8
+        pytest --cov deepcell
 
     - name: Coveralls
       if: env.COVERALLS_REPO_TOKEN != null
@@ -49,6 +49,53 @@ jobs:
         COVERALLS_PARALLEL: true
       run: |
         coveralls
+
+  # A job that runs the test suite using the development version of the
+  # deepcell dependencies: deepcell-tracking and deepcell-toolbox.
+  # This ensures consistency across unreleased versions of deepcell libraries
+  test-dev:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install deepcell-tf and dependencies
+        run: |
+          python -m pip install --upgrade pip wheel setuptools
+          # Install deepcell-tf from source
+          python -m pip install -r requirements.txt
+          python -m pip install .
+          python -m pip install -r requirements-test.txt
+
+      - name: Manually install dev version of toolbox
+        run: |
+          git clone https://github.com/vanvalenlab/deepcell-toolbox.git && cd deepcell-toolbox
+          python -m pip uninstall DeepCell-Toolbox -y
+          python -m pip install .
+
+      - name: Manually install dev version of tracking
+        run: |
+          git clone https://github.com/vanvalenlab/deepcell-tracking.git && cd deepcell-tracking
+          python -m pip uninstall DeepCell-Tracking -y
+          python -m pip install .
+
+      - name: List dependencies
+        run: |
+          # TODO: The numpy upgrade can be removed when transitive deps all
+          # support 1.24
+          python -m pip install --upgrade numpy
+          python -m pip list
+      
+      - name: Run tests
+        run: |
+          pytest --pyargs deepcell
 
   coveralls:
     name: Finish Coveralls

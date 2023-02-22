@@ -378,8 +378,8 @@ def reshape_matrix(X, y, reshape_size=256):
         raise ValueError('reshape_size must be an integer or an iterable containing 2 integers.')
 
     image_size_x, image_size_y = X.shape[2:] if is_channels_first else X.shape[1:3]
-    rep_number_x = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size_x)))
-    rep_number_y = np.int(np.ceil(np.float(image_size_y) / np.float(reshape_size_y)))
+    rep_number_x = np.int_(np.ceil(image_size_x / reshape_size_x))
+    rep_number_y = np.int_(np.ceil(image_size_y / reshape_size_y))
     new_batch_size = X.shape[0] * rep_number_x * rep_number_y
 
     if is_channels_first:
@@ -467,7 +467,7 @@ def reshape_movie(X, y, reshape_size=256):
     elif y.ndim != 5:
         raise ValueError('reshape_movie expects y dim to be 5, got {}'.format(y.ndim))
     image_size_x, image_size_y = X.shape[3:] if is_channels_first else X.shape[2:4]
-    rep_number = np.int(np.ceil(np.float(image_size_x) / np.float(reshape_size)))
+    rep_number = np.int_(np.ceil(image_size_x / reshape_size))
     new_batch_size = X.shape[0] * (rep_number) ** 2
 
     if is_channels_first:

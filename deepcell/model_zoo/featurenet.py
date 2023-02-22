@@ -29,13 +29,11 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import division
 
-import numpy as np
-
 from tensorflow.keras import backend as K
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import Conv2D, Conv3D, LSTM, ConvLSTM2D
-from tensorflow.keras.layers import Input, Concatenate, InputLayer
-from tensorflow.keras.layers import Add, Flatten, Dense, Reshape
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Conv2D, Conv3D, ConvLSTM2D
+from tensorflow.keras.layers import Input, Concatenate
+from tensorflow.keras.layers import Add, Flatten
 from tensorflow.keras.layers import MaxPool2D, MaxPool3D
 from tensorflow.keras.layers import Cropping2D, Cropping3D
 from tensorflow.keras.layers import Activation, Softmax
@@ -178,8 +176,8 @@ def bn_feature_net_2D(receptive_field=61,
 
     if multires:
         c = []
-        for l in layers_to_concat:
-            output_shape = x[l].get_shape().as_list()
+        for lyr in layers_to_concat:
+            output_shape = x[lyr].get_shape().as_list()
             target_shape = x[-1].get_shape().as_list()
 
             row_crop = int(output_shape[row_axis] - target_shape[row_axis])
@@ -196,7 +194,7 @@ def bn_feature_net_2D(receptive_field=61,
 
             cropping = (row_crop, col_crop)
 
-            c.append(Cropping2D(cropping=cropping)(x[l]))
+            c.append(Cropping2D(cropping=cropping)(x[lyr]))
 
         if multires:
             x.append(Concatenate(axis=channel_axis)(c))
@@ -366,14 +364,12 @@ def bn_feature_net_3D(receptive_field=61,
 
     if K.image_data_format() == 'channels_first':
         channel_axis = 1
-        time_axis = 2
         row_axis = 3
         col_axis = 4
         if not dilated:
             input_shape = (n_channels, n_frames, receptive_field, receptive_field)
     else:
         channel_axis = -1
-        time_axis = 1
         row_axis = 2
         col_axis = 3
         if not dilated:
@@ -428,8 +424,8 @@ def bn_feature_net_3D(receptive_field=61,
 
     if multires:
         c = []
-        for l in layers_to_concat:
-            output_shape = x[l].get_shape().as_list()
+        for lyr in layers_to_concat:
+            output_shape = x[lyr].get_shape().as_list()
             target_shape = x[-1].get_shape().as_list()
             time_crop = (0, 0)
 
@@ -449,7 +445,7 @@ def bn_feature_net_3D(receptive_field=61,
 
             cropping = (time_crop, row_crop, col_crop)
 
-            c.append(Cropping3D(cropping=cropping)(x[l]))
+            c.append(Cropping3D(cropping=cropping)(x[lyr]))
         x.append(Concatenate(axis=channel_axis)(c))
 
     x.append(Conv3D(n_dense_filters, (1, rf_counter, rf_counter),

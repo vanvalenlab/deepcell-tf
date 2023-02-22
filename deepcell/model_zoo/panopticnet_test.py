@@ -31,7 +31,6 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 
-from tensorflow.test import assert_equal_graph_def
 from tensorflow.keras import backend as K
 from keras import keras_parameterized
 
@@ -389,7 +388,7 @@ class PanopticNetTest(keras_parameterized.TestCase):
             model1 = PanopticNet(num_semantic_classes=nsc1, **shared_kwargs)
 
             nsc2 = {'0': 2, '1': 3}
-            model2 = PanopticNet(num_semantic_classes=nsc1, **shared_kwargs)
+            model2 = PanopticNet(num_semantic_classes=nsc2, **shared_kwargs)
 
             for o1, o2 in zip(model1.outputs, model2.outputs):
                 self.assertEqual(o1.shape.as_list(), o2.shape.as_list())
@@ -408,7 +407,7 @@ class PanopticNetTest(keras_parameterized.TestCase):
         # non-square input
         input_shape = (256, 512, 1)
         with self.assertRaises(ValueError):
-            model = PanopticNet(
+            PanopticNet(
                 backbone=backbone,
                 input_shape=input_shape,
                 backbone_levels=['C3', 'C4', 'C5'],
@@ -422,7 +421,7 @@ class PanopticNetTest(keras_parameterized.TestCase):
         # non power of 2 input
         input_shape = (257, 257, 1)
         with self.assertRaises(ValueError):
-            model = PanopticNet(
+            PanopticNet(
                 backbone=backbone,
                 input_shape=input_shape,
                 backbone_levels=['C3', 'C4', 'C5'],

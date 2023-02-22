@@ -29,12 +29,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import functools
+
 import numpy as np
 import tensorflow as tf
 
-from absl.testing import parameterized
-
-import keras
 # from tensorflow.python.eager import context
 from keras import keras_parameterized
 from keras import testing_utils
@@ -44,7 +43,7 @@ from deepcell import layers
 
 
 def _get_random_padding(dim):
-    R = lambda: np.random.randint(low=0, high=9)
+    R = functools.partial(np.random.randint, low=0, high=9)
     return tuple([(R(), R()) for _ in range(dim)])
 
 

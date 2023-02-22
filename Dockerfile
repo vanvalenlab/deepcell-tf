@@ -32,4 +32,4 @@ RUN pip install /opt/deepcell-tf
 # Copy over deepcell notebooks
 COPY notebooks/ /notebooks/
 
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--allow-root"]
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--allow-root"]

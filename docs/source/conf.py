@@ -20,8 +20,6 @@ from sphinx.builders.html import StandaloneHTMLBuilder
 sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
 
-# pylint: disable=line-too-long
-
 # -- Project information -----------------------------------------------------
 
 project = 'DeepCell'
@@ -30,10 +28,8 @@ copyright = ('2016-{currentyear}, Van Valen Lab at the '
                  currentyear=datetime.now().year)
 author = 'Van Valen Lab at Caltech'
 
-# The short X.Y version
-version = '0.6.0'
-# The full version, including alpha/beta/rc tags
-release = '0.6.0'
+# The short X.Y.Z version - overriden by rtd
+version = release = '0.12.4'
 
 import subprocess
 try:
@@ -105,7 +101,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -265,7 +261,7 @@ r"""
 # -- Options for intersphinx extension ---------------------------------------
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3.7', None),
+    'python': ('https://docs.python.org/3/', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'kiosk': ('https://deepcell-kiosk.readthedocs.io/en/{}/'.format(rtd_version), None),
     'kiosk-redis-consumer': (('https://deepcell-kiosk.readthedocs.io/'

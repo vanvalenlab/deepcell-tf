@@ -1,6 +1,6 @@
-# Running tests
-pytest<6
+# Running tests/linting
+pytest
 pytest-cov
-pytest-pep8
 pytest-mock
 coveralls
+ruff

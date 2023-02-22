@@ -32,7 +32,6 @@ from __future__ import division
 import re
 
 from tensorflow.keras import backend as K
-from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Conv2D, Conv3D, DepthwiseConv2D
 from tensorflow.keras.layers import Softmax
 from tensorflow.keras.layers import Add

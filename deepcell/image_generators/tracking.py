@@ -218,8 +218,8 @@ class SiameseIterator(Iterator):
         self.min_track_length = min_track_length
         self.features = sorted(features)
         self.sync_transform = sync_transform
-        self.neighborhood_scale_size = np.int(neighborhood_scale_size)
-        self.neighborhood_true_size = np.int(neighborhood_true_size)
+        self.neighborhood_scale_size = np.int_(neighborhood_scale_size)
+        self.neighborhood_true_size = np.int_(neighborhood_true_size)
         self.image_data_generator = image_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
@@ -372,7 +372,7 @@ class SiameseIterator(Iterator):
         y_padded = np.pad(y_frame, pads, mode='constant', constant_values=0)
         props = regionprops(np.squeeze(np.int32(y_padded == cell_label)))
         center_x, center_y = props[0].centroid
-        center_x, center_y = np.int(center_x), np.int(center_y)
+        center_x, center_y = np.int_(center_x), np.int_(center_y)
         X_reduced = X_padded[
             center_x - self.neighborhood_true_size:center_x + self.neighborhood_true_size,
             center_y - self.neighborhood_true_size:center_y + self.neighborhood_true_size,
@@ -723,7 +723,6 @@ class SiameseIterator(Iterator):
         return regionprop_1, regionprop_2
 
     def _compute_neighborhoods(self, track_1, frames_1, track_2, frames_2, transform):
-        track_2, frames_2 = None, None  # To guarantee we don't use these.
         neighborhood_1 = self._fetch_neighborhoods(track_1, frames_1)
         neighborhood_2 = self._fetch_future_areas(track_1, [frames_1[-1]])
 
@@ -904,7 +903,7 @@ class SiameseIterator(Iterator):
 
             if type_cell == 2:
                 # There should always be 2 daughters but not always a valid label
-                label_2 = np.int(np.random.choice(track_id['daughters']))
+                label_2 = np.int_(np.random.choice(track_id['daughters']))
                 daughter_track = self.reverse_track_ids[batch][label_2]
                 frame_2 = np.amin(self.track_ids[daughter_track]['frames'])
                 frames_2 = [frame_2]

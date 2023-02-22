@@ -34,7 +34,6 @@ import timeit
 import numpy as np
 
 import tensorflow as tf
-from tensorflow.keras import backend as K
 
 
 class InferenceTimer(tf.keras.callbacks.Callback):
