@@ -43,6 +43,27 @@ MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
               'saved-models/NuclearSegmentation-7.tar.gz')
 MODEL_HASH = '2550d8ba917cd714a04907f997028dd4'
 
+MODEL_METADATA = {
+    'crop_size': 256,
+    'min_objects': 1,
+    'zoom_min': 0.75,
+    'epochs': 16,
+    'batch_size': 16,
+    'backbone': 'efficientnetv2bl',
+    'lr': .0001,
+    'location': True,
+    'pyramid_levels': 'P1-P2-P3-P4-P5-P6-P7'
+}
+
+POSTPROCESS_KWARGS = {
+    'radius': 10,
+    'maxima_threshold': 0.1,
+    'interior_threshold': 0.01,
+    'exclude_border': False,
+    'small_objects_threshold': 0,
+    'min_distance': 10
+}
+MODEL_MPP = 0.65
 
 class NuclearSegmentation(Application):
     """Loads a :mod:`deepcell.model_zoo.panopticnet.PanopticNet` model
@@ -83,15 +104,7 @@ class NuclearSegmentation(Application):
     }
 
     #: Metadata for the model and training process
-    model_metadata = {
-        'batch_size': 64,
-        'lr': 1e-5,
-        'lr_decay': 0.99,
-        'training_seed': 0,
-        'n_epochs': 30,
-        'training_steps_per_epoch': 62556,
-        'validation_steps_per_epoch': 15627
-    }
+    model_metadata = MODEL_METADATA
 
     def __init__(self, model=None,
                  preprocessing_fn=histogram_normalization,
@@ -109,7 +122,7 @@ class NuclearSegmentation(Application):
         super(NuclearSegmentation, self).__init__(
             model,
             model_image_shape=model.input_shape[1:],
-            model_mpp=0.65,
+            model_mpp=MODEL_MPP,
             preprocessing_fn=preprocessing_fn,
             postprocessing_fn=postprocessing_fn,
             dataset_metadata=self.dataset_metadata,
@@ -155,13 +168,7 @@ class NuclearSegmentation(Application):
             preprocess_kwargs = {}
 
         if postprocess_kwargs is None:
-            postprocess_kwargs = {
-                'radius': 10,
-                'maxima_threshold': 0.1,
-                'interior_threshold': 0.01,
-                'exclude_border': False,
-                'small_objects_threshold': 0
-            }
+            postprocess_kwargs = POSTPROCESS_KWARGS
 
         return self._predict_segmentation(
             image,

@@ -34,7 +34,6 @@ import os
 import tensorflow as tf
 
 import deepcell_tracking
-from deepcell_toolbox.processing import normalize
 
 from deepcell.applications import Application
 
@@ -43,10 +42,40 @@ MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
               'saved-models/NuclearTrackingInf-7.tar.gz')
 MODEL_HASH = '46c5cbe0e362ed4ffdb54e11e3dbdc3e'
 
-
 ENCODER_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
                 'saved-models/NuclearTrackingNE-7.tar.gz')
 ENCODER_HASH = '7c30b39b2d2db0519f57d97194195504'
+
+MODEL_METADATA = {
+    'batch_size': 8,
+    'n_layers': 1,
+    'graph_layer': 'gat',
+    'epochs': 50,
+    'steps_per_epoch': 1000,
+    'validation_steps': 200,
+    'rotation_range': 180,
+    'translation_range': 512,
+    'buffer_size': 128,
+    'n_filters': 64,
+    'embedding_dim': 64,
+    'encoder_dim': 64,
+    'lr': .001,
+    'data_fraction': 1,
+    'norm_layer': 'batch',
+    'appearance_dim': 32,
+    'distance_threshold': 64,
+    'crop_mode': 'resize',
+}
+
+DISTANCE_THRESHOLD = 64
+APPEARANCE_DIM = 32
+CROP_MODE = 'resize'
+NORM = True
+BIRTH = 0.99
+DEATH = 0.99
+DIVISION = 0.01
+TRACK_LENGTH = 8
+MODEL_MPP = 0.65
 
 
 class CellTracking(Application):
@@ -70,35 +99,30 @@ class CellTracking(Application):
     }
 
     #: Metadata for the model and training process
-    model_metadata = {
-        'batch_size': 4,
-        'track_length': 8,
-        'lr': 1e-3,
-        'clipnorm': 0.001,
-        'n_epochs': 30,
-        'training_steps_per_epoch': 512,
-        'validation_steps': 100,
-        'min_lr': 1e-7,
-        'training_seed': None,
-        'crop_dim': 32
-    }
+    model_metadata = MODEL_METADATA
 
     def __init__(self,
                  model=None,
                  neighborhood_encoder=None,
-                 distance_threshold=64,
-                 birth=0.99,
-                 death=0.99,
-                 division=0.01,
-                 track_length=8,
-                 embedding_axis=0):
+                 distance_threshold=DISTANCE_THRESHOLD,
+                 appearance_dim=APPEARANCE_DIM,
+                 birth=BIRTH,
+                 death=DEATH,
+                 division=DIVISION,
+                 track_length=TRACK_LENGTH,
+                 embedding_axis=0,
+                 crop_mode=CROP_MODE,
+                 norm=NORM):
         self.neighborhood_encoder = neighborhood_encoder
         self.distance_threshold = distance_threshold
+        self.appearance_dim = appearance_dim
         self.birth = birth
         self.death = death
         self.division = division
         self.track_length = track_length
         self.embedding_axis = embedding_axis
+        self.crop_mode = crop_mode
+        self.norm = norm
 
         if self.neighborhood_encoder is None:
             archive_path = tf.keras.utils.get_file(
@@ -118,7 +142,7 @@ class CellTracking(Application):
 
         super(CellTracking, self).__init__(
             model,
-            model_mpp=0.65,
+            model_mpp=MODEL_MPP,
             preprocessing_fn=None,
             postprocessing_fn=None,
             dataset_metadata=self.dataset_metadata,
@@ -135,16 +159,21 @@ class CellTracking(Application):
         Returns:
             dict: Tracked labels and lineage information.
         """
-        image_norm = normalize(image)
 
         cell_tracker = deepcell_tracking.CellTracker(
-            image_norm, labels, self.model,
+            image,
+            labels,
+            self.model,
             neighborhood_encoder=self.neighborhood_encoder,
             distance_threshold=self.distance_threshold,
+            appearance_dim=self.appearance_dim,
             track_length=self.track_length,
             embedding_axis=self.embedding_axis,
-            birth=self.birth, death=self.death,
-            division=self.division)
+            birth=self.birth,
+            death=self.death,
+            division=self.division,
+            crop_mode=self.crop_mode,
+            norm=self.norm)
 
         cell_tracker.track_cells()
 
