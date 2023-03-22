@@ -58,7 +58,7 @@ setup(
     long_description_content_type='text/markdown',
     install_requires=[
         'numpy>=1.16.6',
-        'pydot>=1.4.2,<2',
+        'pydot>=1.4.2,<2',  # for keras.utils.plot_model
         'scipy>=1.2.3,<2',
         'scikit-image>=0.14.5,<0.20',
         'scikit-learn>=0.20.4',
