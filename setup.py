@@ -60,7 +60,7 @@ setup(
         'numpy>=1.16.6',
         'pydot>=1.4.2,<2',
         'scipy>=1.2.3,<2',
-        'scikit-image>=0.14.5',
+        'scikit-image>=0.14.5,<0.20',
         'scikit-learn>=0.20.4',
         'tensorflow~=2.8.0',
         'tensorflow_addons~=0.16.1',
