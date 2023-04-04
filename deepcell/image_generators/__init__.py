@@ -242,7 +242,6 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
 
 # Globally-importable utils.
-# pylint: disable=wrong-import-position
 from deepcell.image_generators.fully_convolutional import ImageFullyConvDataGenerator
 from deepcell.image_generators.fully_convolutional import ImageFullyConvIterator
 from deepcell.image_generators.fully_convolutional import MovieDataGenerator
@@ -269,7 +268,6 @@ from deepcell.image_generators.tracking import SiameseIterator
 
 from deepcell.image_generators.cropping import CroppingDataGenerator
 from deepcell.image_generators.cropping import CroppingIterator
-# pylint: enable=wrong-import-position
 
 
 __all__ = [

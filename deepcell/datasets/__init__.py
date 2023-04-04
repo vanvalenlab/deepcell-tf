@@ -33,7 +33,7 @@ from tensorflow.keras.utils import get_file
 from deepcell.utils.data_utils import get_data
 
 
-class Dataset:  # pylint: disable=useless-object-inheritance
+class Dataset:
 
     """General class for downloading datasets from S3.
 
@@ -115,8 +115,6 @@ class Dataset:  # pylint: disable=useless-object-inheritance
         path = path if path else self.path
         return self._load_data(path, 'siamese_daughters', test_size=test_size, seed=seed)
 
-# pylint: disable=line-too-long
-
 
 #:
 hek293 = Dataset(
@@ -166,8 +164,6 @@ multiplex_tissue = Dataset(
     metadata={}
 )
 
-# pylint: disable=wrong-import-position
 from deepcell.datasets import cytoplasm
 from deepcell.datasets import phase
 from deepcell.datasets import tracked
-# pylint: enable=wrong-import-position

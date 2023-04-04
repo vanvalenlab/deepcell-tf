@@ -47,7 +47,7 @@ from deepcell_tracking.utils import relabel_sequential_lineage
 from deepcell.data import split_dataset
 
 
-class Track:  # pylint: disable=useless-object-inheritance
+class Track:
 
     def __init__(self, path=None, tracked_data=None,
                  appearance_dim=32, distance_threshold=64,
