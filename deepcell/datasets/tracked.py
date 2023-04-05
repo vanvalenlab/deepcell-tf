@@ -26,9 +26,6 @@
 """Timelapse datasets of a nuclear label including the raw images and
 ground truth segmentation masks annotated to track cell lineages"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from deepcell.datasets import Dataset
 

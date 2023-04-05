@@ -25,9 +25,6 @@
 # ==============================================================================
 """Utilities plotting data"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import os
 
@@ -95,8 +92,8 @@ def cf(x_coord, y_coord, sample_image):
     row = int(y_coord + 0.5)
     if 0 <= col < numcols and 0 <= row < numrows:
         z_coord = sample_image[row, col]
-        return 'x=%1.4f, y=%1.4f, z=%1.4f' % (x_coord, y_coord, z_coord)
-    return 'x=%1.4f, y=%1.4f' % (x_coord, y_coord)
+        return f'x={x_coord:1.4f}, y={y_coord:1.4f}, z={z_coord:1.4f}'
+    return f'x={x_coord:1.4f}, y={y_coord:1.4f}'
 
 
 def plot_training_data_2d(X, y, max_plotted=5):
@@ -258,7 +255,7 @@ def make_outline_overlay(rgb_data, predictions):
         ValueError: If there is not matching RGB data for each prediction
     """
     if len(predictions.shape) != 4:
-        raise ValueError('Predictions must be 4D, got {}'.format(predictions.shape))
+        raise ValueError(f'Predictions must be 4D, got {predictions.shape}')
 
     if predictions.shape[0] > rgb_data.shape[0]:
         raise ValueError('Must supply an rgb image for each prediction')

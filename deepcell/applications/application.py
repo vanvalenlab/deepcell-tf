@@ -25,9 +25,6 @@
 # ==============================================================================
 """Base class for applications"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import logging
 import timeit
@@ -37,7 +34,7 @@ import numpy as np
 from deepcell_toolbox.utils import resize, tile_image, untile_image
 
 
-class Application(object):
+class Application:
     """Application object that takes a model with weights
     and manages predictions
 

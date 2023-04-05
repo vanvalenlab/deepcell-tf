@@ -25,9 +25,6 @@
 # ==============================================================================
 """Functions for reading and writing segmentation datasets as TF Records"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import csv
 
@@ -259,11 +256,11 @@ def create_sparse_tensor_features(sparse_tensor, name='adj'):
     val = sparse_tensor.values.numpy()
     ind = sparse_tensor.indices.numpy()
 
-    feature_dict['{}_val'.format(name)] = tf.train.Feature(
+    feature_dict[f'{name}_val'] = tf.train.Feature(
         float_list=tf.train.FloatList(value=val))
 
     for i in range(ind.shape[-1]):
-        feature_dict['{}_ind_{}'.format(name, i)] = tf.train.Feature(
+        feature_dict[f'{name}_ind_{i}'] = tf.train.Feature(
             int64_list=tf.train.Int64List(value=ind[:, i]))
     return feature_dict
 
@@ -290,7 +287,7 @@ def create_tracking_example(track_dict):
         shapes = track_dict[key].shape
 
         for i in range(len(shapes)):
-            shape_string = '{}_shape_{}'.format(key, i)
+            shape_string = f'{key}_shape_{i}'
             data[shape_string] = _int64_feature(shapes[i])
 
     # Create an Example, wrapping the single features
@@ -430,19 +427,19 @@ def parse_tracking_example(example, dataset_ndims,
             shapes_dict[new_key] = dataset_ndims[key]
 
     for key in shapes_dict:
-        dataset_ndims.pop('{}_shape'.format(key))
+        dataset_ndims.pop(f'{key}_shape')
 
     for key in dataset_ndims:
         if key in sparse_names:
-            data[key] = tf.io.SparseFeature(value_key='{}_val'.format(key),
-                                            index_key=['{}_ind_{}'.format(key, i)
+            data[key] = tf.io.SparseFeature(value_key=f'{key}_val',
+                                            index_key=[f'{key}_ind_{i}'
                                                        for i in range(dataset_ndims[key])],
                                             size=shapes_dict[key],
                                             dtype=tf.float32)
         else:
             data[key] = tf.io.FixedLenFeature([], tf.string)
 
-        shape_strings = ['{}_shape_{}'.format(key, i)
+        shape_strings = [f'{key}_shape_{i}'
                          for i in range(dataset_ndims[key])]
         shape_strings_dict[key] = shape_strings
 

@@ -25,9 +25,6 @@
 # ==============================================================================
 """Functions for creating model backbones"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import copy
 
@@ -323,7 +320,7 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
             model_with_weights.save_weights('model_weights.h5')
             model.load_weights('model_weights.h5', by_name=True)
 
-        layer_names = ['conv1/relu'] + ['conv{}_block{}_concat'.format(idx + 2, block_num)
+        layer_names = ['conv1/relu'] + [f'conv{idx + 2}_block{block_num}_concat'
                                         for idx, block_num in enumerate(blocks)]
         layer_outputs = [model.get_layer(name=ln).output for ln in layer_names]
 
@@ -473,8 +470,8 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
 
         time_distributed_outputs = []
         for i, out in enumerate(layer_outputs):
-            td_name = 'td_{}'.format(i)
-            model_name = 'model_{}'.format(i)
+            td_name = f'td_{i}'
+            model_name = f'model_{i}'
             time_distributed_outputs.append(
                 TimeDistributed(Model(model.input, out, name=model_name),
                                 name=td_name)(input_tensor))
@@ -482,5 +479,5 @@ def get_backbone(backbone, input_tensor=None, input_shape=None,
         if time_distributed_outputs:
             layer_outputs = time_distributed_outputs
 
-    output_dict = {'C{}'.format(i + 1): j for i, j in enumerate(layer_outputs)}
+    output_dict = {f'C{i + 1}': j for i, j in enumerate(layer_outputs)}
     return (model, output_dict) if return_dict else model

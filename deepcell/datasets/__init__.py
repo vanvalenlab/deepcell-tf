@@ -25,9 +25,6 @@
 # ==============================================================================
 """Builtin Datasets"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 
@@ -36,7 +33,7 @@ from tensorflow.keras.utils import get_file
 from deepcell.utils.data_utils import get_data
 
 
-class Dataset(object):  # pylint: disable=useless-object-inheritance
+class Dataset:  # pylint: disable=useless-object-inheritance
 
     """General class for downloading datasets from S3.
 
@@ -74,7 +71,7 @@ class Dataset(object):  # pylint: disable=useless-object-inheritance
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         elif not os.path.isdir(data_dir):
-            raise IOError('{} exists but is not a directory'.format(data_dir))
+            raise OSError(f'{data_dir} exists but is not a directory')
 
         path = get_file(path,
                         origin=self.url,
@@ -174,7 +171,3 @@ from deepcell.datasets import cytoplasm
 from deepcell.datasets import phase
 from deepcell.datasets import tracked
 # pylint: enable=wrong-import-position
-
-del absolute_import
-del division
-del print_function

@@ -25,9 +25,6 @@
 # ==============================================================================
 """Utilities for reading/writing files"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import os
 
@@ -75,7 +72,7 @@ def save_model_output(output,
                          'channels. Got ', channel)
 
     if not os.path.isdir(output_dir):
-        raise IOError('{} is not a valid output_dir'.format(
+        raise OSError('{} is not a valid output_dir'.format(
             output_dir))
 
     for b in range(output.shape[0]):
@@ -98,10 +95,10 @@ def save_model_output(output,
                     feature = output[b, f, :, :, c]
 
                 zpad = max(3, len(str(output.shape[z_axis])))
-                cnnout_name = 'feature_{}_frame_{}.tif'.format(c, str(f).zfill(zpad))
+                cnnout_name = f'feature_{c}_frame_{str(f).zfill(zpad)}.tif'
                 if feature_name:
-                    cnnout_name = '{}_{}'.format(feature_name, cnnout_name)
+                    cnnout_name = f'{feature_name}_{cnnout_name}'
 
                 out_file_path = os.path.join(output_dir, batch_dir, cnnout_name)
                 imsave(out_file_path, feature.astype('int32'), check_contrast=False)
-        print('Saved {} frames to {}'.format(output.shape[1], output_dir))
+        print(f'Saved {output.shape[1]} frames to {output_dir}')

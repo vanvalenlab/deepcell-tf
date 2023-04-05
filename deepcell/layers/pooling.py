@@ -25,9 +25,6 @@
 # ==============================================================================
 """Layers to encode location data"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
@@ -62,7 +59,7 @@ class DilatedMaxPool2D(Layer):
     """
     def __init__(self, pool_size=(2, 2), strides=None, dilation_rate=1,
                  padding='valid', data_format=None, **kwargs):
-        super(DilatedMaxPool2D, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         if strides is None or dilation_rate != 1 and dilation_rate != (1, 1):
             strides = (1, 1)
         self.pool_size = conv_utils.normalize_tuple(pool_size, 2, 'pool_size')
@@ -169,7 +166,7 @@ class DilatedMaxPool2D(Layer):
             'strides': self.strides,
             'data_format': self.data_format
         }
-        base_config = super(DilatedMaxPool2D, self).get_config()
+        base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
@@ -198,7 +195,7 @@ class DilatedMaxPool3D(Layer):
     """
     def __init__(self, pool_size=(1, 2, 2), strides=None, dilation_rate=1,
                  padding='valid', data_format=None, **kwargs):
-        super(DilatedMaxPool3D, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         data_format = conv_utils.normalize_data_format(data_format)
         if strides is None or dilation_rate != 1 and dilation_rate != (1, 1, 1):
             strides = (1, 1, 1)
@@ -322,5 +319,5 @@ class DilatedMaxPool3D(Layer):
             'strides': self.strides,
             'data_format': self.data_format
         }
-        base_config = super(DilatedMaxPool3D, self).get_config()
+        base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))

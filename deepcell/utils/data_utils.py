@@ -25,9 +25,6 @@
 # ==============================================================================
 """Functions for making training data"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -417,8 +414,8 @@ def reshape_matrix(X, y, reshape_size=256):
                 new_y[counter] = relabel_movie(new_y[counter])
                 counter += 1
 
-    print('Reshaped feature data from {} to {}'.format(y.shape, new_y.shape))
-    print('Reshaped training data from {} to {}'.format(X.shape, new_X.shape))
+    print(f'Reshaped feature data from {y.shape} to {new_y.shape}')
+    print(f'Reshaped training data from {X.shape} to {new_X.shape}')
     return new_X, new_y
 
 
@@ -463,9 +460,9 @@ def reshape_movie(X, y, reshape_size=256):
     """
     is_channels_first = K.image_data_format() == 'channels_first'
     if X.ndim != 5:
-        raise ValueError('reshape_movie expects X dim to be 5, got {}'.format(X.ndim))
+        raise ValueError(f'reshape_movie expects X dim to be 5, got {X.ndim}')
     elif y.ndim != 5:
-        raise ValueError('reshape_movie expects y dim to be 5, got {}'.format(y.ndim))
+        raise ValueError(f'reshape_movie expects y dim to be 5, got {y.ndim}')
     image_size_x, image_size_y = X.shape[3:] if is_channels_first else X.shape[2:4]
     rep_number = np.int_(np.ceil(image_size_x / reshape_size))
     new_batch_size = X.shape[0] * (rep_number) ** 2
@@ -504,6 +501,6 @@ def reshape_movie(X, y, reshape_size=256):
 
                 counter += 1
 
-    print('Reshaped feature data from {} to {}'.format(y.shape, new_y.shape))
-    print('Reshaped training data from {} to {}'.format(X.shape, new_X.shape))
+    print(f'Reshaped feature data from {y.shape} to {new_y.shape}')
+    print(f'Reshaped training data from {X.shape} to {new_X.shape}')
     return new_X, new_y

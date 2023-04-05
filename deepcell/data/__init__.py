@@ -25,9 +25,6 @@
 # ==============================================================================
 """Data utilities using ``tf.data``."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 
 def split_dataset(dataset, val_size, test_size=0):
@@ -77,8 +74,3 @@ def split_dataset(dataset, val_size, test_size=0):
 
 
 from deepcell.data import tracking
-
-
-del absolute_import
-del division
-del print_function

@@ -25,9 +25,6 @@
 # ==============================================================================
 """Dataset Builders"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import math
 import functools
@@ -50,7 +47,7 @@ from deepcell_tracking.utils import relabel_sequential_lineage
 from deepcell.data import split_dataset
 
 
-class Track(object):  # pylint: disable=useless-object-inheritance
+class Track:  # pylint: disable=useless-object-inheritance
 
     def __init__(self, path=None, tracked_data=None,
                  appearance_dim=32, distance_threshold=64,
@@ -289,9 +286,9 @@ def concat_tracks(tracks):
 
     # TODO: these keys must match the Track attributes.
     data_dict = {
-        'appearances': get_array_of_max_shape((t.appearances for t in tracks)),
-        'centroids': get_array_of_max_shape((t.centroids for t in tracks)),
-        'morphologies': get_array_of_max_shape((t.morphologies for t in tracks)),
+        'appearances': get_array_of_max_shape(t.appearances for t in tracks),
+        'centroids': get_array_of_max_shape(t.centroids for t in tracks),
+        'morphologies': get_array_of_max_shape(t.morphologies for t in tracks),
     }
 
     for track in tracks:

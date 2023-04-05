@@ -31,9 +31,6 @@ scale factor of data, which can be used to help normalize the zoom factor of
 new data.
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import os
 
@@ -101,7 +98,7 @@ class ScaleIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        super(ScaleIterator, self).__init__(
+        super().__init__(
             self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):

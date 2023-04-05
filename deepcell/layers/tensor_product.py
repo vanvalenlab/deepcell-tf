@@ -25,9 +25,6 @@
 # ==============================================================================
 """Layers to generate tensor products for 2D and 3D data"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
@@ -105,7 +102,7 @@ class TensorProduct(Layer):
         if 'input_shape' not in kwargs and 'input_dim' in kwargs:
             kwargs['input_shape'] = (kwargs.pop('input_dim'),)
 
-        super(TensorProduct, self).__init__(
+        super().__init__(
             activity_regularizer=tf.keras.regularizers.get(
                 activity_regularizer), **kwargs)
 
@@ -212,5 +209,5 @@ class TensorProduct(Layer):
             'bias_constraint': tf.keras.constraints.serialize(
                 self.bias_constraint)
         }
-        base_config = super(TensorProduct, self).get_config()
+        base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))

@@ -24,9 +24,6 @@
 # limitations under the License.
 # ==============================================================================
 """Tests for the upsampling layers"""
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import numpy as np
 from tensorflow.keras import backend as K

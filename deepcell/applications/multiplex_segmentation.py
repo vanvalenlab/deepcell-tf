@@ -28,8 +28,5 @@
 Deprecated in favor of ``deepcell.applications.Mesmer`` instead.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from deepcell.applications.mesmer import Mesmer as MultiplexSegmentation

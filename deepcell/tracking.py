@@ -25,14 +25,7 @@
 # ==============================================================================
 """A cell tracking class capable of extending labels across sequential frames."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 # pylint: disable=unused-import,reimported
 from deepcell_tracking import CellTracker
 from deepcell_tracking import CellTracker as cell_tracker
-
-del absolute_import
-del division
-del print_function

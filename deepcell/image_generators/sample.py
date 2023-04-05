@@ -30,9 +30,6 @@ the pixel of the center of the window using the data closest to it. These
 generators can be helpful when there is limited training data.
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import os
 
@@ -138,7 +135,7 @@ class ImageSampleArrayIterator(Iterator):
         self.class_balance(max_class_samples, balance_classes, seed=seed)
 
         self.y = to_categorical(self.y).astype('int32')
-        super(ImageSampleArrayIterator, self).__init__(
+        super().__init__(
             len(self.y), batch_size, shuffle, seed)
 
     def _sample_image(self, b, px, py):
@@ -465,7 +462,7 @@ class SampleMovieArrayIterator(Iterator):
         self.class_balance(max_class_samples, balance_classes, seed=seed)
 
         self.y = to_categorical(self.y).astype('int32')
-        super(SampleMovieArrayIterator, self).__init__(
+        super().__init__(
             len(self.y), batch_size, shuffle, seed)
 
     def _sample_image(self, b, pz, px, py):

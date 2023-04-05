@@ -25,9 +25,6 @@
 # ==============================================================================
 """Deepcell Model Zoo Module"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from deepcell.model_zoo.featurenet import bn_feature_net_2D
 from deepcell.model_zoo.featurenet import bn_feature_net_skip_2D
@@ -38,7 +35,3 @@ from deepcell.model_zoo.tracking import siamese_model
 from deepcell.model_zoo.tracking import GNNTrackingModel
 
 from deepcell.model_zoo.panopticnet import PanopticNet
-
-del absolute_import
-del division
-del print_function

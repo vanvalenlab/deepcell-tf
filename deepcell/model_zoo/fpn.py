@@ -25,9 +25,6 @@
 # ==============================================================================
 """Feature pyramid network utility functions"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import re
 
@@ -105,10 +102,10 @@ def create_pyramid_level(backbone_input,
                          'Choose from {}.'.format(
                              upsample_type, list(acceptable_upsample)))
 
-    reduced_name = 'C{}_reduced'.format(level)
-    upsample_name = 'P{}_upsampled'.format(level)
-    addition_name = 'P{}_merged'.format(level)
-    final_name = 'P{}'.format(level)
+    reduced_name = f'C{level}_reduced'
+    upsample_name = f'P{level}_upsampled'
+    addition_name = f'P{level}_merged'
+    final_name = f'P{level}'
 
     # Apply 1x1 conv to backbone layer
     if ndim == 2:
@@ -230,7 +227,7 @@ def __create_pyramid_features(backbone_dict,
 
     for i, N in enumerate(backbone_names):
         level = int(re.findall(r'\d+', N)[0])
-        pyramid_names.append('P{}'.format(level))
+        pyramid_names.append(f'P{level}')
 
         backbone_input = backbone_features[i]
 
@@ -271,7 +268,7 @@ def __create_pyramid_features(backbone_dict,
         N = backbone_names[0]
         F = backbone_features[0]
         level = int(re.findall(r'\d+', N)[0]) + 1
-        P_minus_2_name = 'P{}'.format(level)
+        P_minus_2_name = f'P{level}'
 
         if ndim == 2:
             P_minus_2 = Conv2D(feature_size, kernel_size=(3, 3),
@@ -288,8 +285,8 @@ def __create_pyramid_features(backbone_dict,
         # "Last pyramid layer is computed by applying ReLU
         # followed by a 3x3 stride-2 conv on second to last layer"
         level = int(re.findall(r'\d+', N)[0]) + 2
-        P_minus_1_name = 'P{}'.format(level)
-        P_minus_1 = Activation('relu', name='{}_relu'.format(N))(P_minus_2)
+        P_minus_1_name = f'P{level}'
+        P_minus_1 = Activation('relu', name=f'{N}_relu')(P_minus_2)
 
         if ndim == 2:
             P_minus_1 = Conv2D(feature_size, kernel_size=(3, 3),
@@ -397,7 +394,7 @@ def semantic_upsample(x,
                 x = upsampling(**upsampling_kwargs)(x)
     else:
         x = conv(n_filters, conv_kernel, strides=1, padding='same',
-                 name='conv_final_semantic_upsample_{}'.format(semantic_id))(x)
+                 name=f'conv_final_semantic_upsample_{semantic_id}')(x)
 
         if upsample_type == 'upsamplelike' and target is not None:
             upsample_name = 'upsampling_{}_semanticupsample_{}'.format(
@@ -526,22 +523,22 @@ def __create_semantic_head(pyramid_dict,
 
     # Apply conv in place of previous tensor product
     x = conv(n_dense, conv_kernel, strides=1, padding='same',
-             name='conv_0_semantic_{}'.format(semantic_id))(x)
+             name=f'conv_0_semantic_{semantic_id}')(x)
     x = BatchNormalization(axis=channel_axis,
-                           name='batch_normalization_0_semantic_{}'.format(semantic_id))(x)
-    x = Activation('relu', name='relu_0_semantic_{}'.format(semantic_id))(x)
+                           name=f'batch_normalization_0_semantic_{semantic_id}')(x)
+    x = Activation('relu', name=f'relu_0_semantic_{semantic_id}')(x)
 
     # Apply conv and softmax layer
     x = conv(n_classes, conv_kernel, strides=1,
-             padding='same', name='conv_1_semantic_{}'.format(semantic_id))(x)
+             padding='same', name=f'conv_1_semantic_{semantic_id}')(x)
 
     if include_top:
         x = Softmax(axis=channel_axis,
                     dtype=K.floatx(),
-                    name='semantic_{}'.format(semantic_id))(x)
+                    name=f'semantic_{semantic_id}')(x)
     else:
         x = Activation('relu',
                        dtype=K.floatx(),
-                       name='semantic_{}'.format(semantic_id))(x)
+                       name=f'semantic_{semantic_id}')(x)
 
     return x

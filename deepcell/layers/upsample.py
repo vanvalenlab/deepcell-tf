@@ -24,9 +24,6 @@
 # limitations under the License.
 # ==============================================================================
 """Upsampling layers"""
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
@@ -50,7 +47,7 @@ class UpsampleLike(Layer):
     """
 
     def __init__(self, data_format=None, **kwargs):
-        super(UpsampleLike, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.data_format = conv_utils.normalize_data_format(data_format)
 
     def _resize_drop_axis(self, image, size, axis):
@@ -135,10 +132,10 @@ class UpsampleLike(Layer):
         in_0 = tensor_shape.TensorShape(input_shape[0]).as_list()
         in_1 = tensor_shape.TensorShape(input_shape[1]).as_list()
         if self.data_format == 'channels_first':
-            return tensor_shape.TensorShape(([in_0[0], in_0[1]] + in_1[2:]))
-        return tensor_shape.TensorShape(([in_0[0]] + in_1[1:-1] + [in_0[-1]]))
+            return tensor_shape.TensorShape([in_0[0], in_0[1]] + in_1[2:])
+        return tensor_shape.TensorShape([in_0[0]] + in_1[1:-1] + [in_0[-1]])
 
     def get_config(self):
         config = {'data_format': self.data_format}
-        base_config = super(UpsampleLike, self).get_config()
+        base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))

@@ -25,9 +25,6 @@
 # ==============================================================================
 """Tests for tracking functions"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from absl.testing import parameterized
 
@@ -75,7 +72,7 @@ def get_dummy_data(num_labels=3, batches=2):
     return data
 
 
-class TestTrack(object):
+class TestTrack:
 
     def test_init(self, mocker):
         num_labels = 3
