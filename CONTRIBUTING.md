@@ -53,16 +53,15 @@ DeepCell coding style.
 
 Changes to DeepCell should conform to our style. As our library uses TensorFlow, we follow [Google's Python Style Guide](https://github.com/google/styleguide/blob/gh-pages/pyguide.md)
 
-Use `pylint` to check your Python changes. To install `pylint` and check a file
-with `pylint` against our custom style definition:
+Use `ruff` to check your Python changes. To install `ruff` and check a file
+with `ruff` against our custom style definition:
 
 ```bash
-pip install pylint
-pylint --rcfile=deepcell-tf/.pylintrc myfile.py
+python -m pip install ruff
+ruff .
 ```
 
-Note `pylint --rcfile=deepcell-tf/.pylintrc` should run from the
-top level directory.
+Note `ruff .` should run from the top level directory.
 
 #### Running tests
 

@@ -30,7 +30,6 @@ the raw images and ground truth segmentation masks"""
 from deepcell.datasets import Dataset
 
 
-# pylint: disable=line-too-long
 methods = {
     'Cell culture':
         'For our cytoplasmic data, NIH3t3 and Raw263.7 cell lines were '

@@ -3,7 +3,6 @@ lib_dormant
 app_dormant
 
 ### Development config files ###
-.pylintrc
 .editorconfig
 
 ### Docker ###

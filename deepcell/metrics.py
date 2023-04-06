@@ -25,7 +25,6 @@
 # ==============================================================================
 """Metrics have been moved to deepcell_toolbox.metrics."""
 
-# pylint: disable=unused-import
 from deepcell_toolbox.metrics import PixelMetrics
 from deepcell_toolbox.metrics import ObjectMetrics
 from deepcell_toolbox.metrics import Metrics

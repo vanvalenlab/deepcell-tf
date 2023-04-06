@@ -30,8 +30,6 @@ ground truth segmentation masks annotated to track cell lineages"""
 from deepcell.datasets import Dataset
 
 
-# pylint: disable=line-too-long
-
 #:
 nih_3t3 = Dataset(
     path='3T3_NIH.trks',
