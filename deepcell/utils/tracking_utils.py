@@ -25,9 +25,6 @@
 # ==============================================================================
 """Utilities for tracking cells"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 # pylint: disable=unused-import
 from deepcell_tracking.utils import clean_up_annotations
@@ -38,7 +35,3 @@ from deepcell_tracking.trk_io import trk_folder_to_trks
 from deepcell_tracking.trk_io import save_trks
 from deepcell_tracking.utils import trks_stats
 # pylint: enable=unused-import
-
-del absolute_import
-del print_function
-del division

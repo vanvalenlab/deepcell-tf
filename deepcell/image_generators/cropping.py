@@ -25,9 +25,6 @@
 # ==============================================================================
 """Semantic segmentation data generators with cropping."""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import os
 import warnings
@@ -88,7 +85,7 @@ class CroppingIterator(SemanticIterator):
                  save_format='png',
                  crop_size=None):
 
-        super(CroppingIterator, self).__init__(
+        super().__init__(
             train_dict=train_dict,
             image_data_generator=image_data_generator,
             batch_size=batch_size,
@@ -287,7 +284,7 @@ class CroppingDataGenerator(SemanticDataGenerator):
                  crop_size=None,
                  dtype='float32'):
 
-        super(CroppingDataGenerator, self).__init__(
+        super().__init__(
             featurewise_center=featurewise_center,
             samplewise_center=samplewise_center,
             featurewise_std_normalization=featurewise_std_normalization,
@@ -370,7 +367,7 @@ class CroppingDataGenerator(SemanticDataGenerator):
             crop_size=self.crop_size)
 
     def get_random_transform(self, img_shape, seed=None):
-        transform_parameters = super(CroppingDataGenerator, self).get_random_transform(
+        transform_parameters = super().get_random_transform(
             img_shape=img_shape, seed=seed)
 
         crop_indices = None
@@ -404,7 +401,7 @@ class CroppingDataGenerator(SemanticDataGenerator):
             else:
                 x = x[row_indices[0]:row_indices[1], col_indices[0]:col_indices[1], :]
 
-        x = super(CroppingDataGenerator, self).apply_transform(
+        x = super().apply_transform(
             x=x, transform_parameters=transform_parameters)
         return x
 

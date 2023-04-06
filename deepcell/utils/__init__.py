@@ -25,9 +25,6 @@
 # ==============================================================================
 """Deepcell Utilities Module"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 # compute_overlap has been moved to deepcell_toolbox
 # leaving here for backwards compatibility
@@ -73,7 +70,3 @@ def __getattr__(name):
         if name == "export_utils":
             return export_utils
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-del absolute_import
-del division
-del print_function

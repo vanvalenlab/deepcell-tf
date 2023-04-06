@@ -25,9 +25,6 @@
 # ==============================================================================
 """Semantic segmentation data generators."""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import os
 
@@ -139,7 +136,7 @@ class SemanticIterator(Iterator):
         self.x = np.delete(self.x, invalid_batches, axis=0)
         self.y = np.delete(self.y, invalid_batches, axis=0)
 
-        super(SemanticIterator, self).__init__(
+        super().__init__(
             self.x.shape[0], batch_size, shuffle, seed)
 
     def _transform_labels(self, y):
@@ -511,7 +508,7 @@ class SemanticMovieIterator(Iterator):
         self.x = np.delete(self.x, invalid_batches, axis=0)
         self.y = np.delete(self.y, invalid_batches, axis=0)
 
-        super(SemanticMovieIterator, self).__init__(
+        super().__init__(
             self.x.shape[0], batch_size, shuffle, seed)
 
     def _transform_labels(self, y):
@@ -705,7 +702,7 @@ class SemanticMovieGenerator(ImageDataGenerator):
             (strictly between 0 and 1).
     """
     def __init__(self, **kwargs):
-        super(SemanticMovieGenerator, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         # Change the axes for 5D data
         if self.data_format == 'channels_first':
             self.channel_axis = 1
@@ -1115,7 +1112,7 @@ class Semantic3DIterator(Iterator):
         self.x = np.delete(self.x, invalid_batches, axis=0)
         self.y = np.delete(self.y, invalid_batches, axis=0)
 
-        super(Semantic3DIterator, self).__init__(
+        super().__init__(
             self.x.shape[0], batch_size, shuffle, seed)
 
     def _transform_labels(self, y):
@@ -1367,7 +1364,7 @@ class Semantic3DGenerator(ImageDataGenerator):
             (strictly between 0 and 1).
     """
     def __init__(self, **kwargs):
-        super(Semantic3DGenerator, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         # Change the axes for 5D data
         if self.data_format == 'channels_first':
             self.channel_axis = 1

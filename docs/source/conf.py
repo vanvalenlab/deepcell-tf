@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -15,7 +14,7 @@
 import os
 import sys
 from datetime import datetime
-import mock
+from unittest import mock
 from sphinx.builders.html import StandaloneHTMLBuilder
 sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
@@ -263,7 +262,7 @@ r"""
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
-    'kiosk': ('https://deepcell-kiosk.readthedocs.io/en/{}/'.format(rtd_version), None),
+    'kiosk': (f'https://deepcell-kiosk.readthedocs.io/en/{rtd_version}/', None),
     'kiosk-redis-consumer': (('https://deepcell-kiosk.readthedocs.io/'
                               'projects/kiosk-redis-consumer/en/{}/').format(rtd_version), None),
 }

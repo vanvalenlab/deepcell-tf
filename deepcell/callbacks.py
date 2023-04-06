@@ -25,9 +25,6 @@
 # ==============================================================================
 """Custom Callbacks for DeepCell"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import timeit
 
@@ -40,7 +37,7 @@ class InferenceTimer(tf.keras.callbacks.Callback):
     """Callback to log inference speed per epoch."""
 
     def __init__(self, samples=100):
-        super(InferenceTimer, self).__init__()
+        super().__init__()
         self._samples = int(samples)
         self._batch_times = []
         self._samples_seen = []
@@ -70,8 +67,8 @@ class InferenceTimer(tf.keras.callbacks.Callback):
         avg = np.mean(per_sample)
         std = np.std(per_sample)
 
-        print('Average inference speed per sample for %s total samples: '
-              '%0.5fs ± %0.5fs.' % (total_samples, avg, std))
+        print('Average inference speed per sample for {} total samples: '
+              '{:0.5f}s ± {:0.5f}s.'.format(total_samples, avg, std))
 
     def on_epoch_end(self, epoch, logs=None):
         shape = tuple([self._samples] + list(self.model.input_shape[1:]))

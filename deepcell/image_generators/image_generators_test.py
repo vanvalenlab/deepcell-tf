@@ -25,9 +25,6 @@
 # ==============================================================================
 """Tests for custom image data generators"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import numpy as np
 import skimage as sk
@@ -1248,8 +1245,8 @@ class TestSiamsesDataGenerator(test.TestCase):
             for x, y in iterator:
                 assert y['classification'].shape[-1] == 3
                 for f in feats:
-                    f1 = x['{}_input1'.format(f)]
-                    f2 = x['{}_input2'.format(f)]
+                    f1 = x[f'{f}_input1']
+                    f2 = x[f'{f}_input2']
 
                     shape1, shape2 = iterator._compute_feature_shape(
                         f, [None] * y['classification'].shape[0])
@@ -1306,8 +1303,8 @@ class TestSiamsesDataGenerator(test.TestCase):
             for x, y in iterator:
                 assert y['classification'].shape[-1] == 3
                 for f in feats:
-                    f1 = x['{}_input1'.format(f)]
-                    f2 = x['{}_input2'.format(f)]
+                    f1 = x[f'{f}_input1']
+                    f2 = x[f'{f}_input2']
 
                     shape1, shape2 = iterator._compute_feature_shape(
                         f, [None] * y['classification'].shape[0])

@@ -25,9 +25,6 @@
 # ==============================================================================
 """Cytoplasmic segmentation application"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 
@@ -106,7 +103,7 @@ class CytoplasmSegmentation(Application):
             model_path = os.path.splitext(archive_path)[0]
             model = tf.keras.models.load_model(model_path)
 
-        super(CytoplasmSegmentation, self).__init__(
+        super().__init__(
             model,
             model_image_shape=model.input_shape[1:],
             model_mpp=0.65,

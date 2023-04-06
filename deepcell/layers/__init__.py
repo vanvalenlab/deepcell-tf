@@ -24,9 +24,6 @@
 # limitations under the License.
 # ==============================================================================
 """Custom Layers"""
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from deepcell.layers import location
 from deepcell.layers import normalization
@@ -47,7 +44,3 @@ from deepcell.layers.tensor_product import TensorProduct
 from deepcell.layers.padding import ReflectionPadding2D
 from deepcell.layers.padding import ReflectionPadding3D
 from deepcell.layers.upsample import UpsampleLike
-
-del absolute_import
-del division
-del print_function

@@ -29,9 +29,6 @@ These data generators allow for training on augmented label masks (y)
 instead of single label for the whole image.
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import os
 
@@ -113,7 +110,7 @@ class ImageFullyConvIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        super(ImageFullyConvIterator, self).__init__(
+        super().__init__(
             self.x.shape[0], batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
@@ -361,7 +358,7 @@ class MovieDataGenerator(ImageDataGenerator):
     """
 
     def __init__(self, **kwargs):
-        super(MovieDataGenerator, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         # Change the axes for 5D data
         if self.data_format == 'channels_first':
             self.channel_axis = 1
@@ -668,7 +665,7 @@ class MovieArrayIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        super(MovieArrayIterator, self).__init__(
+        super().__init__(
             len(self.y), batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):

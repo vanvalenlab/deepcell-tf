@@ -25,9 +25,6 @@
 # ==============================================================================
 """Functions for training convolutional neural networks"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import datetime
 import os
@@ -110,9 +107,9 @@ def train_model_sample(model,
     if model_name is None:
         todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
         data_name = os.path.splitext(os.path.basename(dataset))[0]
-        model_name = '{}_{}_{}'.format(todays_date, data_name, expt)
-    model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
-    loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
+        model_name = f'{todays_date}_{data_name}_{expt}'
+    model_path = os.path.join(model_dir, f'{model_name}.h5')
+    loss_path = os.path.join(model_dir, f'{model_name}.npz')
 
     train_dict, test_dict = get_data(dataset, test_size=test_size, seed=seed)
 
@@ -138,7 +135,7 @@ def train_model_sample(model,
     if num_gpus is None:
         num_gpus = train_utils.count_gpus()
 
-    print('Training on {} GPUs'.format(num_gpus))
+    print(f'Training on {num_gpus} GPUs')
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
@@ -266,9 +263,9 @@ def train_model_conv(model,
     if model_name is None:
         todays_date = datetime.datetime.now().strftime('%Y-%m-%d')
         data_name = os.path.splitext(os.path.basename(dataset))[0]
-        model_name = '{}_{}_{}'.format(todays_date, data_name, expt)
-    model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
-    loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
+        model_name = f'{todays_date}_{data_name}_{expt}'
+    model_path = os.path.join(model_dir, f'{model_name}.h5')
+    loss_path = os.path.join(model_dir, f'{model_name}.npz')
 
     train_dict, test_dict = get_data(dataset, test_size=test_size, seed=seed)
 
@@ -295,7 +292,7 @@ def train_model_conv(model,
     if num_gpus is None:
         num_gpus = train_utils.count_gpus()
 
-    print('Training on {} GPUs'.format(num_gpus))
+    print(f'Training on {num_gpus} GPUs')
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
@@ -434,8 +431,8 @@ def train_model_siamese_daughter(model,
         model_name = '{}_{}_[{}]_neighs={}_epochs={}_seed={}_{}'.format(
             todays_date, data_name, ','.join(f[0] for f in sorted(features)),
             neighborhood_scale_size, n_epoch, seed, expt)
-    model_path = os.path.join(model_dir, '{}.h5'.format(model_name))
-    loss_path = os.path.join(model_dir, '{}.npz'.format(model_name))
+    model_path = os.path.join(model_dir, f'{model_name}.h5')
+    loss_path = os.path.join(model_dir, f'{model_name}.npz')
 
     print('training on dataset:', dataset)
     print('saving model at:', model_path)
@@ -466,7 +463,7 @@ def train_model_siamese_daughter(model,
     if num_gpus is None:
         num_gpus = train_utils.count_gpus()
 
-    print('Training on {} GPUs'.format(num_gpus))
+    print(f'Training on {num_gpus} GPUs')
 
     model.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
@@ -522,8 +519,8 @@ def train_model_siamese_daughter(model,
     input_shape_dict = {}
     for feature in features:
 
-        feature_name1 = '{}_input1'.format(feature)
-        feature_name2 = '{}_input2'.format(feature)
+        feature_name1 = f'{feature}_input1'
+        feature_name2 = f'{feature}_input2'
 
         input_type_dict[feature_name1] = tf.float32
         input_type_dict[feature_name2] = tf.float32

@@ -24,9 +24,6 @@
 # limitations under the License.
 # ==============================================================================
 """Upsampling layers"""
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
@@ -63,7 +60,7 @@ class DeltaReshape(Layer):
 class Unmerge(Layer):
     """Unmerge temporal inputs"""
     def __init__(self, track_length, max_cells, embedding_dim, **kwargs):
-        super(Unmerge, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.track_length = track_length
         self.max_cells = max_cells
         self.embedding_dim = embedding_dim
@@ -79,7 +76,7 @@ class Unmerge(Layer):
             'max_cells': self.max_cells,
             'embedding_dim': self.embedding_dim
         }
-        base_config = super(Unmerge, self).get_config()
+        base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
@@ -90,12 +87,12 @@ class TemporalMerge(Layer):
         encoder_dim (int): desired encoder dimension.
     """
     def __init__(self, encoder_dim=64, **kwargs):
-        super(TemporalMerge, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.encoder_dim = encoder_dim
         self.lstm = tf.keras.layers.LSTM(
             self.encoder_dim,
             return_sequences=True,
-            name='{}_lstm'.format(self.name))
+            name=f'{self.name}_lstm')
 
     def call(self, inputs):
         input_shape = tf.shape(inputs)
@@ -110,5 +107,5 @@ class TemporalMerge(Layer):
         config = {
             'encoder_dim': self.encoder_dim,
         }
-        base_config = super(TemporalMerge, self).get_config()
+        base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))

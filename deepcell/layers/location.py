@@ -25,9 +25,6 @@
 # ==============================================================================
 """Layers to encode location data"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import tensorflow as tf
 from tensorflow.keras import backend as K
@@ -55,7 +52,7 @@ class Location2D(Layer):
         if in_shape is not None:
             logger.warn('in_shape (from deepcell.layerse.location) is '
                         'deprecated and will be removed in a future version.')
-        super(Location2D, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.data_format = conv_utils.normalize_data_format(data_format)
 
     def compute_output_shape(self, input_shape):
@@ -98,7 +95,7 @@ class Location2D(Layer):
         config = {
             'data_format': self.data_format
         }
-        base_config = super(Location2D, self).get_config()
+        base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
@@ -118,7 +115,7 @@ class Location3D(Layer):
         if in_shape is not None:
             logger.warn('in_shape (from deepcell.layerse.location) is '
                         'deprecated and will be removed in a future version.')
-        super(Location3D, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.data_format = conv_utils.normalize_data_format(data_format)
 
     def compute_output_shape(self, input_shape):
@@ -166,5 +163,5 @@ class Location3D(Layer):
         config = {
             'data_format': self.data_format
         }
-        base_config = super(Location3D, self).get_config()
+        base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))

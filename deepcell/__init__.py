@@ -25,9 +25,6 @@
 # ==============================================================================
 """Package for single cell image segmentation with convolutional neural networks"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 from deepcell._version import __version__
 
@@ -53,7 +50,3 @@ from deepcell.training import train_model_conv
 from deepcell.training import train_model_sample
 from deepcell.training import train_model_siamese_daughter
 from deepcell.utils import *
-
-del absolute_import
-del division
-del print_function

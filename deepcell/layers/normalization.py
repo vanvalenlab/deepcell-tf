@@ -25,9 +25,6 @@
 # ==============================================================================
 """Layers to noramlize input images for 2D and 3D images"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import tensorflow as tf
 from tensorflow.python.framework import tensor_shape
@@ -92,7 +89,7 @@ class ImageNormalization2D(Layer):
                                  norm_method, self.valid_modes))
         if 'trainable' not in kwargs:
             kwargs['trainable'] = False
-        super(ImageNormalization2D, self).__init__(
+        super().__init__(
             activity_regularizer=regularizers.get(activity_regularizer),
             **kwargs)
         self.activation = activations.get(activation)
@@ -219,7 +216,7 @@ class ImageNormalization2D(Layer):
             'kernel_constraint': constraints.serialize(self.kernel_constraint),
             'bias_constraint': constraints.serialize(self.bias_constraint)
         }
-        base_config = super(ImageNormalization2D, self).get_config()
+        base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
 
@@ -275,7 +272,7 @@ class ImageNormalization3D(Layer):
                                  norm_method, self.valid_modes))
         if 'trainable' not in kwargs:
             kwargs['trainable'] = False
-        super(ImageNormalization3D, self).__init__(
+        super().__init__(
             activity_regularizer=regularizers.get(activity_regularizer),
             **kwargs)
         self.activation = activations.get(activation)
@@ -408,5 +405,5 @@ class ImageNormalization3D(Layer):
             'kernel_constraint': constraints.serialize(self.kernel_constraint),
             'bias_constraint': constraints.serialize(self.bias_constraint)
         }
-        base_config = super(ImageNormalization3D, self).get_config()
+        base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))

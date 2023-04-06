@@ -25,9 +25,6 @@
 # ==============================================================================
 """A model that can detect whether 2 cells are same, different, or related."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 
@@ -140,7 +137,7 @@ class CellTracking(Application):
             model_path = os.path.splitext(archive_path)[0]
             model = tf.keras.models.load_model(model_path)
 
-        super(CellTracking, self).__init__(
+        super().__init__(
             model,
             model_mpp=MODEL_MPP,
             preprocessing_fn=None,

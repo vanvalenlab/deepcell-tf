@@ -25,9 +25,6 @@
 # ==============================================================================
 """Feature pyramid network utility functions"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import math
 import re
@@ -85,17 +82,17 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256,
                    (frames_per_batch, 3, 3),
                    strides=(1, 1, 1),
                    padding='same',
-                   name='conv3D_mtf_{}'.format(f_name),
+                   name=f'conv3D_mtf_{f_name}',
                    )(feature)
-        x = BatchNormalization(axis=-1, name='bnorm_mtf_{}'.format(f_name))(x)
-        x = Activation('relu', name='acti_mtf_{}'.format(f_name))(x)
+        x = BatchNormalization(axis=-1, name=f'bnorm_mtf_{f_name}')(x)
+        x = Activation('relu', name=f'acti_mtf_{f_name}')(x)
     elif mode == 'lstm':
         x = ConvLSTM2D(feature_size,
                        (3, 3),
                        padding='same',
                        activation='relu',
                        return_sequences=True,
-                       name='convLSTM_mtf_{}'.format(f_name))(feature)
+                       name=f'convLSTM_mtf_{f_name}')(feature)
     else:
         x = feature
 

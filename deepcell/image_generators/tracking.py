@@ -25,9 +25,6 @@
 # ==============================================================================
 """Tracking data generators."""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
 
 import numpy as np
 from skimage.measure import regionprops
@@ -240,7 +237,7 @@ class SiameseIterator(Iterator):
         self._create_track_ids()
         self._create_features()
 
-        super(SiameseIterator, self).__init__(
+        super().__init__(
             len(self.track_ids), batch_size, shuffle, seed)
 
     def _remove_bad_images(self):
@@ -945,8 +942,8 @@ class SiameseIterator(Iterator):
                 batch_feature_1 = np.squeeze(batch_feature_1, axis=axis)
                 batch_feature_2 = np.squeeze(batch_feature_2, axis=axis)
 
-            batch_inputs['{}_input1'.format(feature)] = batch_feature_1
-            batch_inputs['{}_input2'.format(feature)] = batch_feature_2
+            batch_inputs[f'{feature}_input1'] = batch_feature_1
+            batch_inputs[f'{feature}_input2'] = batch_feature_2
 
         # Dict to house training output (model target)
         batch_outputs = {'classification': batch_y}

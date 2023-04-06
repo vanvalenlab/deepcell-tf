@@ -29,9 +29,6 @@ data. These custom generators extend the keras.ImageDataGenerator, and allow
 for training with label masks, bounding boxes, and more customized annotations.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import warnings
 
@@ -96,7 +93,7 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
         transform = transform.lower()
 
     if transform not in valid_transforms and transform is not None:
-        raise ValueError('`{}` is not a valid transform'.format(transform))
+        raise ValueError(f'`{transform}` is not a valid transform')
 
     if transform in {'pixelwise', 'deepcell'}:
         if transform == 'deepcell':
@@ -273,10 +270,6 @@ from deepcell.image_generators.tracking import SiameseIterator
 from deepcell.image_generators.cropping import CroppingDataGenerator
 from deepcell.image_generators.cropping import CroppingIterator
 # pylint: enable=wrong-import-position
-
-del absolute_import
-del division
-del print_function
 
 
 __all__ = [

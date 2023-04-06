@@ -25,9 +25,6 @@
 # ==============================================================================
 """Mesmer application"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
 import os
 
@@ -58,7 +55,7 @@ def mesmer_preprocess(image, **kwargs):
     """
 
     if len(image.shape) != 4:
-        raise ValueError("Image data must be 4D, got image of shape {}".format(image.shape))
+        raise ValueError(f"Image data must be 4D, got image of shape {image.shape}")
 
     output = np.copy(image)
     threshold = kwargs.get('threshold', True)
@@ -221,7 +218,7 @@ class Mesmer(Application):
             model_path = os.path.splitext(archive_path)[0]
             model = tf.keras.models.load_model(model_path)
 
-        super(Mesmer, self).__init__(
+        super().__init__(
             model,
             model_image_shape=model.input_shape[1:],
             model_mpp=0.5,
