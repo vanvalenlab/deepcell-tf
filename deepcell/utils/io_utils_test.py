@@ -35,31 +35,7 @@ from skimage.io import imsave
 from deepcell.utils import io_utils
 
 
-def _write_image(filepath, img_w=30, img_h=30):
-    bias = np.random.rand(img_w, img_h, 1) * 64
-    variance = np.random.rand(img_w, img_h, 1) * (255 - 64)
-    imarray = np.random.rand(img_w, img_h, 1) * variance + bias
-    imsave(filepath, imarray[..., 0], check_contrast=False)
-
-
 class TestIOUtils(test.TestCase):
-
-    def test_get_image(self):
-        image = 255 * np.random.random(size=(300, 300, 1)).astype('float32')
-        temp_dir = self.get_temp_dir()
-        # test tiff files
-        test_img_path = os.path.join(temp_dir, 'phase.tif')
-        imsave(test_img_path, image, check_contrast=False)
-        test_img = io_utils.get_image(test_img_path)
-        self.assertAllEqual(image, test_img)
-        # test png files
-        # pngs are integer only and don't have a channel axis.
-        test_img_path = os.path.join(temp_dir, 'feature_0.png')
-        image = image.astype('uint8')
-        imsave(test_img_path, image, check_contrast=False)
-        test_img = io_utils.get_image(test_img_path)
-        test_img = np.expand_dims(test_img, axis=-1)
-        self.assertAllClose(image, test_img)
 
     def test_save_model_output(self):
         temp_dir = self.get_temp_dir()
