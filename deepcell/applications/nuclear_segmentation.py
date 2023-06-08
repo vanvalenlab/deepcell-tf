@@ -37,8 +37,8 @@ from deepcell.applications import Application
 
 
 MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/NuclearSegmentation-7.tar.gz')
-MODEL_HASH = '2550d8ba917cd714a04907f997028dd4'
+              'saved-models/NuclearSegmentation-75.tar.gz')
+MODEL_HASH = 'efc4881db5bac23219b62486a4d877b3'
 
 MODEL_METADATA = {
     'crop_size': 256,
