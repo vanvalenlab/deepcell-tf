@@ -36,7 +36,7 @@ from tensorflow.python.platform import test
 from deepcell.applications import Application
 
 
-class DummyModel():
+class DummyModel:
 
     def __init__(self, n_out=1):
         self.n_out = n_out
