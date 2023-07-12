@@ -238,9 +238,13 @@ class Application:
         # If padding was used, remove padding
         if tiles_info.get('padding', False):
             def _process(im, tiles_info):
-                x_pad, y_pad = tiles_info['x_pad'], tiles_info['y_pad']
-                out = im[:, x_pad[0]:-x_pad[1], y_pad[0]:-y_pad[1], :]
-                return out
+                ((xl, xh), (yl, yh)) = tiles_info['x_pad'], tiles_info['y_pad']
+                # Edge-case: upper-bound == 0 - this can occur when only one of
+                # either X or Y is smaller than model_img_shape while the other
+                # is equal to model_image_shape.
+                xh = -xh if xh != 0 else None
+                yh = -yh if yh != 0 else None
+                return im[:, xl:xh, yl:yh, :]
         # Otherwise untile
         else:
             def _process(im, tiles_info):
