@@ -28,7 +28,7 @@ copyright = ('2016-{currentyear}, Van Valen Lab at the '
 author = 'Van Valen Lab at Caltech'
 
 # The short X.Y.Z version - overriden by rtd
-version = release = '0.12.5'
+version = release = '0.12.6'
 
 import subprocess
 try:
