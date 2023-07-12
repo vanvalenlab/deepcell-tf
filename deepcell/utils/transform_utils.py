@@ -81,7 +81,7 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
         if dilation_radius:
             dil_strel = ball(dilation_radius) if mask.ndim > 2 else disk(dilation_radius)
             # Thicken cell edges to be more pronounced
-            edge = binary_dilation(edge, selem=dil_strel)
+            edge = binary_dilation(edge, footprint=dil_strel)
 
             # Thin the augmented edges by subtracting the interior features.
             edge = (edge - interior > 0).astype('int')
@@ -109,8 +109,8 @@ def pixelwise_transform(mask, dilation_radius=None, data_format=None,
     if dilation_radius:
         dil_strel = ball(dilation_radius) if mask.ndim > 2 else disk(dilation_radius)
         # Thicken cell edges to be more pronounced
-        interior_edge = binary_dilation(interior_edge, selem=dil_strel)
-        background_edge = binary_dilation(background_edge, selem=dil_strel)
+        interior_edge = binary_dilation(interior_edge, footprint=dil_strel)
+        background_edge = binary_dilation(background_edge, footprint=dil_strel)
 
         # Thin the augmented edges by subtracting the interior features.
         interior_edge = (interior_edge - interior > 0).astype('int')
