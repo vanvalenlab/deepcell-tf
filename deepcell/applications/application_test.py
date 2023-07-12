@@ -29,6 +29,7 @@
 from itertools import product
 from unittest.mock import Mock
 
+import pytest
 import numpy as np
 
 from tensorflow.python.platform import test
@@ -301,22 +302,27 @@ class TestApplication(test.TestCase):
         self.assertEqual(x.shape, y.shape)
 
 
-def test_untile_non_empty_slices():
+@pytest.mark.parametrize(
+    "orig_img_shape",
+    (
+        (1, 216, 256, 1),  # x < model_img_shape
+        (1, 256, 64, 1),  # y < model_img_shape
+    ),
+)
+def test_untile_non_empty_slices(orig_img_shape):
     """Test corner cases when tile_info["padding"] is True, but the padding in
     at least one of the dimensions is (0, 0). See gh-665."""
     # Padding is "activated" whenever either of the input image dimensions is
     # smaller than app.model_image_shape
     app = Application(DummyModel, model_image_shape=(256, 256, 1))
 
-    # Case 1: y-dim has zero padding
-    orig_img_shp = (1, 216, 256, 1)
-    img = np.ones(orig_img_shp)
+    img = np.ones(orig_img_shape)
     # Use _tile_input to generate a valid tile_info object
     tiles, tile_info = app._tile_input(img)
     # Input validation - tile_info should have a "padding" key and one of the
-    # two pads should be (0, 0)
+    # two pads should be (0, 0).
     assert tile_info.get("padding") and (
         tile_info["x_pad"] == (0, 0) or tile_info["y_pad"] == (0, 0)
     )
     untiled = app._untile_output(tiles, tile_info)
-    assert untiled.shape == orig_img_shp
+    assert untiled.shape == orig_img_shape
