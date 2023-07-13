@@ -194,8 +194,7 @@ def PanopticNet(backbone,
     # What are the requirements for 3D data?
     img_shape = input_shape[1:] if channel_axis == 1 else input_shape[:-1]
     if img_shape[0] != img_shape[1]:
-        raise ValueError('Input data must be square, got dimensions {}'.format(
-            img_shape))
+        raise ValueError(f'Input data must be square, got dimensions {img_shape}')
 
     if not math.log(img_shape[0], 2).is_integer():
         raise ValueError('Input data dimensions must be a power of 2, '

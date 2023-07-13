@@ -218,11 +218,7 @@ class ImageSampleArrayIterator(Iterator):
                 else:
                     img_x = np.expand_dims(batch_x[i, ..., 0], -1)
                 img = array_to_img(img_x, self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(
-                    prefix=self.save_prefix,
-                    index=j,
-                    hash=np.random.randint(1e4),
-                    format=self.save_format)
+                fname = f'{self.save_prefix}_{j}_{np.random.randint(1e4)}.{self.save_format}'
                 img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
@@ -550,11 +546,7 @@ class SampleMovieArrayIterator(Iterator):
                     else:
                         img = batch_x[i, frame]
                     img = array_to_img(img, self.data_format, scale=True)
-                    fname = '{prefix}_{index}_{hash}.{format}'.format(
-                        prefix=self.save_prefix,
-                        index=j,
-                        hash=np.random.randint(1e4),
-                        format=self.save_format)
+                    fname = f'{self.save_prefix}_{j}_{np.random.randint(1e4)}.{self.save_format}'
                     img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:

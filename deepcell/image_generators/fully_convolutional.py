@@ -140,11 +140,7 @@ class ImageFullyConvIterator(Iterator):
                 else:
                     img_x = np.expand_dims(batch_x[i, ..., 0], -1)
                 img = array_to_img(img_x, self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(
-                    prefix=self.save_prefix,
-                    index=j,
-                    hash=np.random.randint(1e4),
-                    format=self.save_format)
+                fname = f'{self.save_prefix}_{j}_{np.random.randint(1e4)}.{self.save_format}'
                 img.save(os.path.join(self.save_to_dir, fname))
 
                 if self.y is not None:
@@ -152,11 +148,7 @@ class ImageFullyConvIterator(Iterator):
                     img_y = np.argmax(batch_y[i], axis=self.channel_axis - 1)
                     img_y = np.expand_dims(img_y, axis=self.channel_axis - 1)
                     img = array_to_img(img_y, self.data_format, scale=True)
-                    fname = 'y_{prefix}_{index}_{hash}.{format}'.format(
-                        prefix=self.save_prefix,
-                        index=j,
-                        hash=np.random.randint(1e4),
-                        format=self.save_format)
+                    fname = f'y_{self.save_prefix}_{j}_{np.random.randint(1e4)}.{self.save_format}'
                     img.save(os.path.join(self.save_to_dir, fname))
 
         if self.y is None:
@@ -722,11 +714,7 @@ class MovieArrayIterator(Iterator):
                         img = array_to_img(batch_x[i, :, frame], self.data_format, scale=True)
                     else:
                         img = array_to_img(batch_x[i, frame], self.data_format, scale=True)
-                    fname = '{prefix}_{index}_{hash}.{format}'.format(
-                        prefix=self.save_prefix,
-                        index=j,
-                        hash=np.random.randint(1e4),
-                        format=self.save_format)
+                    fname = f'{self.save_prefix}_{j}_{np.random.randint(1e4)}.{self.save_format}'
                     img.save(os.path.join(self.save_to_dir, fname))
 
                     if self.y is not None:

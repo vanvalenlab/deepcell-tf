@@ -196,8 +196,7 @@ class ImageNormalization2D(Layer):
             outputs = outputs - self._average_filter(outputs)
 
         else:
-            raise NotImplementedError('"{}" is not a valid norm_method'.format(
-                self.norm_method))
+            raise NotImplementedError(f'"{self.norm_method}" is not a valid norm_method')
 
         return outputs
 
@@ -385,8 +384,7 @@ class ImageNormalization3D(Layer):
             outputs = outputs - self._average_filter(outputs)
 
         else:
-            raise NotImplementedError('"{}" is not a valid norm_method'.format(
-                self.norm_method))
+            raise NotImplementedError(f'"{self.norm_method}" is not a valid norm_method')
 
         return outputs
 

@@ -372,12 +372,10 @@ def semantic_upsample(x,
     if n_upsample > 0:
         for i in range(n_upsample):
             x = conv(n_filters, conv_kernel, strides=1, padding='same',
-                     name='conv_{}_semantic_upsample_{}'.format(
-                         i, semantic_id))(x)
+                     name=f'conv_{i}_semantic_upsample_{semantic_id}')(x)
 
             # Define kwargs for upsampling layer
-            upsample_name = 'upsampling_{}_semantic_upsample_{}'.format(
-                i, semantic_id)
+            upsample_name = f'upsampling_{i}_semantic_upsample_{semantic_id}'
 
             if upsample_type == 'upsamplelike':
                 if i == n_upsample - 1 and target is not None:
@@ -397,8 +395,7 @@ def semantic_upsample(x,
                  name=f'conv_final_semantic_upsample_{semantic_id}')(x)
 
         if upsample_type == 'upsamplelike' and target is not None:
-            upsample_name = 'upsampling_{}_semanticupsample_{}'.format(
-                0, semantic_id)
+            upsample_name = f'upsampling_{0}_semanticupsample_{semantic_id}'
             x = UpsampleLike(name=upsample_name)([x, target])
 
     return x
