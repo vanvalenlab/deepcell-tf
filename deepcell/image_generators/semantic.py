@@ -1040,14 +1040,14 @@ class Semantic3DIterator(Iterator):
                     rescaled = rescale(batch, scale,
                                        order=order,
                                        preserve_range=True,
-                                       multichannel=True)
+                                       channel_axis=-1)
                     rescaled = np.moveaxis(rescaled, -1, 0)
 
                 else:
                     rescaled = rescale(batch, scale,
                                        order=order,
                                        preserve_range=True,
-                                       multichannel=True)
+                                       channel_axis=-1)
 
                 batch_list.append(rescaled)
             return np.stack(batch_list, axis=0).astype(dtype)
