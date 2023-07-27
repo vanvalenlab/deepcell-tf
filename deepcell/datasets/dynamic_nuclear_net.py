@@ -49,3 +49,15 @@ DynamicNuclearNet_Tracking_v1_0 = TrackingDataset(
     file_hash='',
     secure=True
 )
+
+# Alternative approach
+
+class DynamicNuclearNet_Segmentation_v1_0(SegmentationDataset):
+    def __init__(self):
+        """Docstring content here"""
+        super().__init__(
+            url='',
+            path='dynamic_nuclear_net_seg_1_0',
+            file_hash='',
+            secure=True
+        )
