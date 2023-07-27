@@ -26,14 +26,17 @@
 """Builtin Datasets"""
 
 
+import abc
 import os
 
+import numpy as np
+import pandas as pd
 from tensorflow.keras.utils import get_file
 
-from deepcell.utils.data_utils import get_data
+from deepcell_tracking.trk_io import load_trks
 
 
-class Dataset:
+class Dataset(abc.ABC):
 
     """General class for downloading datasets from S3.
 
@@ -42,29 +45,20 @@ class Dataset:
             (relative to ~/.keras/datasets).
         url (str): URL of dataset in S3.
         file_hash (str): md5hash for checking validity of cached file.
-        metadata (dict): miscellaneous other data for dataset
+        secure (bool): True if the dataset requires a deepcell api key for download. Default False
     """
 
     def __init__(self,
                  path,
                  url,
                  file_hash,
-                 metadata):
+                 secure=False):
         self.path = path
         self.url = url
+        self.secure = secure
         self.file_hash = file_hash
-        self.metadata = metadata
 
-    def _load_data(self, path, mode, test_size=0.2, seed=0):
-        """Loads dataset.
-
-        Args:
-            test_size (float): fraction of data to reserve as test data
-            seed (int): the seed for randomly shuffling the dataset
-
-        Returns:
-            tuple: (x_train, y_train), (x_test, y_test).
-        """
+    def _get_data(self):
         basepath = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
         prefix = path.split(os.path.sep)[:-1]
         data_dir = os.path.join(basepath, *prefix) if prefix else basepath
@@ -73,97 +67,53 @@ class Dataset:
         elif not os.path.isdir(data_dir):
             raise OSError(f'{data_dir} exists but is not a directory')
 
-        path = get_file(path,
-                        origin=self.url,
-                        file_hash=self.file_hash)
+        if self.secure:
+            fetch_data()
+        else:
+            path = get_file(path, origin=self.url, file_hash=self.file_hash)
 
-        train_dict, test_dict = get_data(
-            path,
-            mode=mode,
-            test_size=test_size,
-            seed=seed)
-
-        x_train, y_train = train_dict['X'], train_dict['y']
-        x_test, y_test = test_dict['X'], test_dict['y']
-        return (x_train, y_train), (x_test, y_test)
-
-    def load_data(self, path=None, test_size=0.2, seed=0):
-        """Loads dataset.
+    @abc.abstractmethod
+    def load_data(self, split='val'):
+        """Load dataset from specified split
 
         Args:
-            path (str): filepath to save the data locally.
-            test_size (float): fraction of data to reserve as test data
-            seed (int): the seed for randomly shuffling the dataset
-
-        Returns:
-            tuple: (x_train, y_train), (x_test, y_test).
+            split (str, optional): Dataset split, one of 'train', 'test', 'val'. Defaults to 'val'.
         """
-        path = path if path else self.path
-        return self._load_data(path, 'sample', test_size=test_size, seed=seed)
-
-    def load_tracked_data(self, path=None, test_size=0.2, seed=0):
-        """Loads dataset using "siamese_daughters" mode.
-
-        Args:
-            path (str): filepath to save the data locally.
-            test_size (float): fraction of data to reserve as test data
-            seed (int): the seed for randomly shuffling the dataset
-
-        Returns:
-            tuple: (x_train, y_train), (x_test, y_test).
-        """
-        path = path if path else self.path
-        return self._load_data(path, 'siamese_daughters', test_size=test_size, seed=seed)
+        raise NotImplementedError
 
 
-#:
-hek293 = Dataset(
-    path='HEK293.npz',
-    url='https://deepcell-data.s3-us-west-1.amazonaws.com/nuclei/HEK293.npz',
-    file_hash='6221fa459350cd1e45ce6c9145264329',
-    metadata={}
-)
+class TrackingDataset(Dataset):
+    def load_data(self, split='val'):
+        data = load_trks(f'{self.path}_{split}.trks')
 
-#:
-nih_3t3 = Dataset(
-    path='3T3_NIH.npz',
-    url='https://deepcell-data.s3.amazonaws.com/nuclei/3T3_NIH.npz',
-    file_hash='f6520df218847fa56be2de0d3552c8a2',
-    metadata={}
-)
+        X = data['X']
+        y = data['y']
+        lineages = data['lineages']
 
-#:
-hela_s3 = Dataset(
-    path='HeLa_S3.npz',
-    url='https://deepcell-data.s3.amazonaws.com/nuclei/HeLa_S3.npz',
-    file_hash='759d28d87936fd59b250dea3b126b647',
-    metadata={}
-)
+        return X, y, lineages
 
-#:
-mibi = Dataset(
-    path='mibi_original.npz',
-    url='https://deepcell-data.s3.amazonaws.com/mibi/mibi_original.npz',
-    file_hash='8b09a6bb143deb1912ada65742dfc847',
-    metadata={}
-)
+    def load_source_metadata(self):
+        """Loads a pandas dataframe containing experimental metadata for each batch"""
+        data_source = np.load(f'{self.path}_data-source.npz', allow_pickle=True)
 
-#:
-mousebrain = Dataset(
-    path='mousebrain.npz',
-    url='https://deepcell-data.s3.amazonaws.com/nuclei/mousebrain.npz',
-    file_hash='9c91304f7da7cc5559f46b2c5fc2eace',
-    metadata={}
-)
+        columns = ['filename', 'experiment', 'pixel_size', 'screening_passed', 'time_step', 'specimen']
+        splits = list(data_source.keys())
 
-#:
-multiplex_tissue = Dataset(
-    path='20200810_tissue_dataset.npz',
-    url='https://deepcell-data.s3.amazonaws.com/multiplex/20200810_tissue_dataset.npz',
-    file_hash='1e573b72123fd86e45433402094bf0d0',
-    metadata={}
-)
+        df = pd.concat(
+            [pd.DataFrame(data_source[s], columns=columns) for s in splits],
+            keys=splits
+        )
+        df.reset_index(name='split')
 
-from deepcell.datasets import cytoplasm
-from deepcell.datasets import phase
-from deepcell.datasets import tracked
+        return df
+
+
+class SegmentationDataset(Dataset):
+    def load_data(self, split='val'):
+        data = np.load(f'{self.path}_{split}.npz', allow_pickle=True)
+
+        X = data['X']
+        y = data['y']
+        meta = data.get('meta')
+
+        return X, y, meta
