@@ -49,28 +49,26 @@ class Dataset(abc.ABC):
     """
 
     def __init__(self,
-                 path,
+                 basename,
                  url,
                  file_hash,
                  secure=False):
-        self.path = path
+        self.data_dir = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
+        self.path = os.path.join(self.data_dir, basename)
         self.url = url
         self.secure = secure
         self.file_hash = file_hash
 
     def _get_data(self):
-        basepath = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
-        prefix = path.split(os.path.sep)[:-1]
-        data_dir = os.path.join(basepath, *prefix) if prefix else basepath
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir)
-        elif not os.path.isdir(data_dir):
-            raise OSError(f'{data_dir} exists but is not a directory')
+        if not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
+        elif not os.path.isdir(self.data_dir):
+            raise OSError(f'{self.data_dir} exists but is not a directory')
 
         if self.secure:
             fetch_data()
         else:
-            path = get_file(path, origin=self.url, file_hash=self.file_hash)
+            path = get_file(self.path, origin=self.url, file_hash=self.file_hash)
 
     @abc.abstractmethod
     def load_data(self, split='val'):
@@ -80,6 +78,13 @@ class Dataset(abc.ABC):
             split (str, optional): Dataset split, one of 'train', 'test', 'val'. Defaults to 'val'.
         """
         raise NotImplementedError
+
+    def load_license(self):
+        """Load the contents of the LICENSE file if available"""
+        path = f'{self.path}_LICENSE'
+        if os.path.exists(path):
+            with open(path) as f:
+                return f.readlines()
 
 
 class TrackingDataset(Dataset):
