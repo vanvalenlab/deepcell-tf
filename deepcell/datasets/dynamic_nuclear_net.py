@@ -30,28 +30,24 @@ from deepcell.datasets import TrackingDataset, SegmentationDataset
 
 
 VERSIONS_SEG = {
-    '1.0': {
-        'url': '',
-        'file_hash': 'dcf84d150c071aedb6749084a51ddf58' # md5
-    }
+    "1.0": {"url": "", "file_hash": "dcf84d150c071aedb6749084a51ddf58"}  # md5
 }
 VERSIONS_TRK = {
-    '1.0': {
-        'url': '',
-        'file_hash': 'e13ffc07fdf71f7d327e35bbdfe9bf69' # md5
-    }
+    "1.0": {"url": "", "file_hash": "e13ffc07fdf71f7d327e35bbdfe9bf69"}  # md5
 }
 
 
 class DynamicNuclearNetSegmentation(SegmentationDataset):
-    def __init__(self, version='1.0'):
+    def __init__(self, version="1.0"):
         """This dataset contains the segmentation portion of the DynamicNuclearNet dataset
 
-        This dataset is licensed under a modified Apache license for non-commercial academic use only
+        This dataset is licensed under a modified Apache license for non-commercial academic
+        use only
         http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
 
         Change Log
-            - DynamicNuclearNet 1.0 (June 2023): The original dataset used for all experiments in Schwartz et al. 2023
+            - DynamicNuclearNet 1.0 (June 2023): The original dataset used for all experiments in
+              Schwartz et al. 2023
 
         Args:
             version (str, optional): Default 1.0
@@ -61,29 +57,35 @@ class DynamicNuclearNetSegmentation(SegmentationDataset):
             >>>X_val, y_val, meta_val = dnn_seg.load_data(split='val')
         """
         if version not in VERSIONS_SEG:
-            raise InputError(f'Requested version {version} is included in available versions {list(VERSIONS_SEG.keys())}')
+            raise InputError(
+                f"Requested version {version} is included in available versions {list(VERSIONS_SEG.keys())}"
+            )
 
         self.version = version
 
         super().__init__(
-            url=VERSIONS_SEG[version]['url'],
-            file_hash=VERSIONS_SEG[version]['file_hash'],
-            secure=True
+            url=VERSIONS_SEG[version]["url"],
+            file_hash=VERSIONS_SEG[version]["file_hash"],
+            secure=True,
         )
 
 
 class DynamicNuclearNetTracking(TrackingDataset):
-    def __init__(self, version='1.0'):
-        """This dataset contains the tracking portion of the DynamicNuclearNet dataset. Each batch of the dataset contains three components
+    def __init__(self, version="1.0"):
+        """This dataset contains the tracking portion of the DynamicNuclearNet dataset.
+        Each batch of the dataset contains three components
         - X: raw fluorescent nuclear data
         - y: nuclear segmentation masks
-        - lineages: lineage records including the cell id, frames present and division links from parent to daughter cells
+        - lineages: lineage records including the cell id, frames present and division
+          links from parent to daughter cells
 
-        This dataset is licensed under a modified Apache license for non-commercial academic use only
+        This dataset is licensed under a modified Apache license for non-commercial academic
+        use only
         http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
 
         Change Log
-            - DynamicNuclearNet 1.0 (June 2023): The original dataset used for all experiments in Schwartz et al. 2023
+            - DynamicNuclearNet 1.0 (June 2023): The original dataset used for all experiments in
+              Schwartz et al. 2023
 
         Args:
             version (str, optional): Default 1.0
@@ -94,12 +96,14 @@ class DynamicNuclearNetTracking(TrackingDataset):
             >>>data_source = dnn_seg.load_source_metadata()
         """
         if version not in VERSIONS_TRK:
-            raise InputError(f'Requested version {version} is included in available versions {list(VERSIONS_TRK.keys())}')
+            raise InputError(
+                f"Requested version {version} is included in available versions {list(VERSIONS_TRK.keys())}"
+            )
 
         self.version = version
 
         super().__init__(
-            url=VERSIONS_TRK[version]['url'],
-            file_hash=VERSIONS_TRK[version]['file_hash'],
-            secure=True
+            url=VERSIONS_TRK[version]["url"],
+            file_hash=VERSIONS_TRK[version]["file_hash"],
+            secure=True,
         )
