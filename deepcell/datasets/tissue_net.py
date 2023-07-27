@@ -39,3 +39,46 @@ TissueNet_v1_1 = SegmentationDataset(
     file_hash='',
     secure=True
 )
+
+
+class TissueNet(SegmentationDataset):
+    def __init__(self, version='1.1'):
+        """
+        The TissueNet dataset is composed of a train, val, and test split.
+            - The train split is composed of aproximately 2600 images, each of which are 512x512 pixels. During training, we select random crops of size 256x256 from each image as a form of data augmentation.
+            - The val split is composed of aproximately 300 images, each of which is originally of size 512x512. However, because we do not perform any augmentation on the validation dataset during training, we reshape these 512x512 images into 256x256 images so that no cropping is needed in order to pass them through the model. Finally, we make two copies of the val set at different image resolutions and concatenate them all together, resulting in a total of aproximately 3000 images of size 256x256,
+            - The test split is composed of aproximately 300 images, each of which is originally of size 512x512. However, because the model was trained on images that are size 256x256, we reshape these 512x512 images into 256x256 images, resulting in aproximately 1200 images.
+
+        Change Log
+            - TissueNet 1.0 (July 2021): The original dataset used for all experiments in Greenwald, Miller at al.
+            - TissueNet 1.1 (April 2022): This version of TissueNet has gone through an additional round of manual QC to ensure consistency in labeling across the entire dataset.
+
+        Args:
+            version (str, optional): Default 1.1
+
+        Example:
+            >>>tissuenet = TissueNet(version='1.1')
+            >>>X_val, y_val = tissuenet.load_data(split='val')
+        """
+        versions = {
+            '1.1': {
+                'path': '',
+                'url': '',
+                'file_hash': ''
+            },
+            '1.0': {
+                'path': '',
+                'url': '',
+                'file_hash': ''
+            }
+        }
+
+        if version not in versions:
+            raise InputError(f'Requested version {version} is included in available versions {list(versions.keys())}')
+
+        super().__init__(
+            path=versions[version]['path'],
+            url=versions[version]['url'],
+            file_hash=versions[version]['file_hash'],
+            secure=True
+        )
