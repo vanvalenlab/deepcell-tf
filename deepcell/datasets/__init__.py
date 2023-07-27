@@ -37,27 +37,25 @@ from deepcell_tracking.trk_io import load_trks
 
 
 class Dataset(abc.ABC):
-
-    """General class for downloading datasets from S3.
-
-    Args:
-        path (str): path where to cache the dataset locally
-            (relative to ~/.keras/datasets).
-        url (str): URL of dataset in S3.
-        file_hash (str): md5hash for checking validity of cached file.
-        secure (bool): True if the dataset requires a deepcell api key for download. Default False
-    """
-
     def __init__(self,
-                 basename,
                  url,
                  file_hash,
                  secure=False):
-        self.data_dir = os.path.expanduser(os.path.join('~', '.keras', 'datasets'))
-        self.path = os.path.join(self.data_dir, basename)
+        """General class for downloading datasets from S3.
+
+        Args:
+            url (str): URL of dataset in S3.
+            file_hash (str): md5hash for checking validity of cached file.
+            secure (bool): True if the dataset requires a deepcell api key for download. Default False
+        """
+        self.cache_dir = os.path.expanduser(os.path.join('~', '.deepcell'))
+        self.cache_subdir = 'datasets'
+        self.data_dir = os.path.join(self.cache_dir, self.cache_subdir)
         self.url = url
         self.secure = secure
         self.file_hash = file_hash
+
+        self._get_data()
 
     def _get_data(self):
         if not os.path.exists(self.data_dir):
@@ -65,10 +63,18 @@ class Dataset(abc.ABC):
         elif not os.path.isdir(self.data_dir):
             raise OSError(f'{self.data_dir} exists but is not a directory')
 
+        # Download data and set the path to the extracted dataset
         if self.secure:
-            fetch_data()
+            self.path = fetch_data()
         else:
-            path = get_file(self.path, origin=self.url, file_hash=self.file_hash)
+            path = get_file(
+                origin=self.url,
+                file_hash=self.file_hash,
+                extract=True,
+                cache_dir=self.cache_dir,
+                cache_subdir=self.cache_subdir)
+            # Strip archive extension
+            self.path = os.path.splitext(path)[0]
 
     @abc.abstractmethod
     def load_data(self, split='val'):
@@ -79,17 +85,10 @@ class Dataset(abc.ABC):
         """
         raise NotImplementedError
 
-    def load_license(self):
-        """Load the contents of the LICENSE file if available"""
-        path = f'{self.path}_LICENSE'
-        if os.path.exists(path):
-            with open(path) as f:
-                return f.readlines()
-
 
 class TrackingDataset(Dataset):
     def load_data(self, split='val'):
-        data = load_trks(f'{self.path}_{split}.trks')
+        data = load_trks(os.path.join(self.path, f'{split}.trks'))
 
         X = data['X']
         y = data['y']
@@ -99,7 +98,7 @@ class TrackingDataset(Dataset):
 
     def load_source_metadata(self):
         """Loads a pandas dataframe containing experimental metadata for each batch"""
-        data_source = np.load(f'{self.path}_data-source.npz', allow_pickle=True)
+        data_source = np.load(os.path.join(self.path, 'data-source.npz'), allow_pickle=True)
 
         columns = ['filename', 'experiment', 'pixel_size', 'screening_passed', 'time_step', 'specimen']
         splits = list(data_source.keys())
@@ -108,17 +107,20 @@ class TrackingDataset(Dataset):
             [pd.DataFrame(data_source[s], columns=columns) for s in splits],
             keys=splits
         )
-        df.reset_index(name='split')
+        df = df.reset_index(level=0, names='split')
 
         return df
 
 
 class SegmentationDataset(Dataset):
     def load_data(self, split='val'):
-        data = np.load(f'{self.path}_{split}.npz', allow_pickle=True)
+        data = np.load(os.path.join(self.path, f'{split}.npz'), allow_pickle=True)
 
         X = data['X']
         y = data['y']
         meta = data.get('meta')
+
+        if meta:
+            meta = pd.DataFrame(meta[1:], columns=meta[0])
 
         return X, y, meta

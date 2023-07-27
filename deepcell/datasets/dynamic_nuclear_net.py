@@ -29,35 +29,77 @@ ground truth segmentation masks annotated to track cell lineages"""
 from deepcell.datasets import TrackingDataset, SegmentationDataset
 
 
-# Notes on documentation
-# I think each dataset should include documentation similar to whats currently in the readme
-# that we package with datsets https://github.com/vanvalenlab/data-registry/blob/master/data/training/nuclear/README.md
-# And also some license information
-# TODO what's the easiest way to embed this information and get to appear in the documentation
+VERSIONS_SEG = {
+    '1.0': {
+        'url': '',
+        'file_hash': 'dcf84d150c071aedb6749084a51ddf58' # md5
+    }
+}
+VERSIONS_TRK = {
+    '1.0': {
+        'url': '',
+        'file_hash': 'e13ffc07fdf71f7d327e35bbdfe9bf69' # md5
+    }
+}
 
 
-DynamicNuclearNet_Segmentation_v1_0 = SegmentationDataset(
-    url='',
-    path='dynamic_nuclear_net_seg_1_0',
-    file_hash='',
-    secure=True
-)
+class DynamicNuclearNetSegmentation(SegmentationDataset):
+    def __init__(self, version='1.0'):
+        """This dataset contains the segmentation portion of the DynamicNuclearNet dataset
 
-DynamicNuclearNet_Tracking_v1_0 = TrackingDataset(
-    url='',
-    path='dynamic_nuclear_net_trk_1_0',
-    file_hash='',
-    secure=True
-)
+        This dataset is licensed under a modified Apache license for non-commercial academic use only
+        http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
 
-# Alternative approach
+        Change Log
+            - DynamicNuclearNet 1.0 (June 2023): The original dataset used for all experiments in Schwartz et al. 2023
 
-class DynamicNuclearNet_Segmentation_v1_0(SegmentationDataset):
-    def __init__(self):
-        """Docstring content here"""
+        Args:
+            version (str, optional): Default 1.0
+
+        Example:
+            >>>dnn_seg = DynamicNuclearNetSegmentation(version='1.1')
+            >>>X_val, y_val, meta_val = dnn_seg.load_data(split='val')
+        """
+        if version not in VERSIONS_SEG:
+            raise InputError(f'Requested version {version} is included in available versions {list(VERSIONS_SEG.keys())}')
+
+        self.version = version
+
         super().__init__(
-            url='',
-            path='dynamic_nuclear_net_seg_1_0',
-            file_hash='',
+            url=VERSIONS_SEG[version]['url'],
+            file_hash=VERSIONS_SEG[version]['file_hash'],
+            secure=True
+        )
+
+
+class DynamicNuclearNetTracking(TrackingDataset):
+    def __init__(self, version='1.0'):
+        """This dataset contains the tracking portion of the DynamicNuclearNet dataset. Each batch of the dataset contains three components
+        - X: raw fluorescent nuclear data
+        - y: nuclear segmentation masks
+        - lineages: lineage records including the cell id, frames present and division links from parent to daughter cells
+
+        This dataset is licensed under a modified Apache license for non-commercial academic use only
+        http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
+
+        Change Log
+            - DynamicNuclearNet 1.0 (June 2023): The original dataset used for all experiments in Schwartz et al. 2023
+
+        Args:
+            version (str, optional): Default 1.0
+
+        Example:
+            >>>dnn_trk = DynamicNuclearNetTracking(version='1.0')
+            >>>X_val, y_val, lineage_val = dnn_seg.load_data(split='val')
+            >>>data_source = dnn_seg.load_source_metadata()
+        """
+        if version not in VERSIONS_TRK:
+            raise InputError(f'Requested version {version} is included in available versions {list(VERSIONS_TRK.keys())}')
+
+        self.version = version
+
+        super().__init__(
+            url=VERSIONS_TRK[version]['url'],
+            file_hash=VERSIONS_TRK[version]['file_hash'],
             secure=True
         )

@@ -26,19 +26,18 @@
 
 from deepcell.datasets import SegmentationDataset
 
-TissueNet_v1_0 = SegmentationDataset(
-    path='tissuenet_v1_0',
-    url='',
-    file_hash='',
-    secure=True
-)
 
-TissueNet_v1_1 = SegmentationDataset(
-    path='tissuenet_v1_1',
-    url='',
-    file_hash='',
-    secure=True
-)
+VERSIONS = {
+    '1.1': {
+        'url': '',
+        'file_hash': 'cab3b8f242aaee02035557b93546d9dc'
+    },
+    '1.0': {
+        'path': '',
+        'url': '',
+        'file_hash': ''
+    }
+}
 
 
 class TissueNet(SegmentationDataset):
@@ -49,6 +48,9 @@ class TissueNet(SegmentationDataset):
             - The val split is composed of aproximately 300 images, each of which is originally of size 512x512. However, because we do not perform any augmentation on the validation dataset during training, we reshape these 512x512 images into 256x256 images so that no cropping is needed in order to pass them through the model. Finally, we make two copies of the val set at different image resolutions and concatenate them all together, resulting in a total of aproximately 3000 images of size 256x256,
             - The test split is composed of aproximately 300 images, each of which is originally of size 512x512. However, because the model was trained on images that are size 256x256, we reshape these 512x512 images into 256x256 images, resulting in aproximately 1200 images.
 
+        This dataset is licensed under a modified Apache license for non-commercial academic use only
+        http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
+
         Change Log
             - TissueNet 1.0 (July 2021): The original dataset used for all experiments in Greenwald, Miller at al.
             - TissueNet 1.1 (April 2022): This version of TissueNet has gone through an additional round of manual QC to ensure consistency in labeling across the entire dataset.
@@ -58,27 +60,15 @@ class TissueNet(SegmentationDataset):
 
         Example:
             >>>tissuenet = TissueNet(version='1.1')
-            >>>X_val, y_val = tissuenet.load_data(split='val')
+            >>>X_val, y_val, meta_val = tissuenet.load_data(split='val')
         """
-        versions = {
-            '1.1': {
-                'path': '',
-                'url': '',
-                'file_hash': ''
-            },
-            '1.0': {
-                'path': '',
-                'url': '',
-                'file_hash': ''
-            }
-        }
+        if version not in VERSIONS:
+            raise InputError(f'Requested version {version} is included in available versions {list(VERSIONS.keys())}')
 
-        if version not in versions:
-            raise InputError(f'Requested version {version} is included in available versions {list(versions.keys())}')
+        self.version = version
 
         super().__init__(
-            path=versions[version]['path'],
-            url=versions[version]['url'],
-            file_hash=versions[version]['file_hash'],
+            url=VERSIONS[version]['url'],
+            file_hash=VERSIONS[version]['file_hash'],
             secure=True
         )
