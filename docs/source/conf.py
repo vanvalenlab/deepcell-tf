@@ -13,6 +13,7 @@
 #
 import os
 import sys
+import warnings
 from datetime import datetime
 from unittest import mock
 from sphinx.builders.html import StandaloneHTMLBuilder
