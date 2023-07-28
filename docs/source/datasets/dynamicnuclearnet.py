@@ -16,25 +16,25 @@ TODO add api key info
 Tracking
 ^^^^^^^^
 Each batch of the dataset contains three components
-    - X: raw fluorescent nuclear data
-    - y: nuclear segmentation masks
-    - lineages: lineage records including the cell id, frames present and division
-      links from parent to daughter cells
+* X: raw fluorescent nuclear data
+* y: nuclear segmentation masks
+* lineages: lineage records including the cell id, frames present and division
+  links from parent to daughter cells
 """
 
 from deepcell.datasets.dynamic_nuclear_net import DynamicNuclearNetTracking
 
 dnn_trk = DynamicNuclearNetTracking(version='1.0')
-X_val, y_val, lineage_val = dnn_seg.load_data(split='val')
-data_source = dnn_seg.load_source_metadata()
+X_val, y_val, lineage_val = dnn_trk.load_data(split='val')
+data_source = dnn_trk.load_source_metadata()
 
 #%%
 # Segmentation
 # ^^^^^^^^^^^^
 # Each batch of the dataset includes three components
-#     - X: raw fluorescent nuclear data
-#     - y: nuclear segmentation masks
-#     - metadata: description of the source of each batch
+# * X: raw fluorescent nuclear data
+# * y: nuclear segmentation masks
+# * metadata: description of the source of each batch
 
 from deepcell.datasets.dynamic_nuclear_net import DynamicNuclearNetSegmentation
 

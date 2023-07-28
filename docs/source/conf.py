@@ -298,3 +298,6 @@ sphinx_gallery_conf = {
      'gallery_dirs': 'data-gallery',  # path to where to save gallery generated output
      'remove_config_comments': True,
 }
+
+# Suppress the warnings that show up as a result of sphinx gallery generating multiple files
+warnings.filterwarnings("default", module="sphinx")

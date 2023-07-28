@@ -100,8 +100,8 @@ class DynamicNuclearNetTracking(TrackingDataset):
 
         Example:
             >>>dnn_trk = DynamicNuclearNetTracking(version='1.0')
-            >>>X_val, y_val, lineage_val = dnn_seg.load_data(split='val')
-            >>>data_source = dnn_seg.load_source_metadata()
+            >>>X_val, y_val, lineage_val = dnn_trk.load_data(split='val')
+            >>>data_source = dnn_trk.load_source_metadata()
 
         Raises:
             ValueError: Requested version is not included in available versions
