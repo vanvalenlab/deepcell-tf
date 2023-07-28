@@ -30,10 +30,16 @@ from deepcell.datasets import TrackingDataset, SegmentationDataset
 
 
 VERSIONS_SEG = {
-    "1.0": {"url": "", "file_hash": "dcf84d150c071aedb6749084a51ddf58"}  # md5
+    "1.0": {
+        "url": "data/dynamic-nuclear-net/DynamicNuclearNet-segmentation-v1_0.zip",
+        "file_hash": "dcf84d150c071aedb6749084a51ddf58"  # md5
+    }
 }
 VERSIONS_TRK = {
-    "1.0": {"url": "", "file_hash": "e13ffc07fdf71f7d327e35bbdfe9bf69"}  # md5
+    "1.0": {
+        "url": "data/dynamic-nuclear-net/DynamicNuclearNet-tracking-v1_0.zip",
+        "file_hash": "e13ffc07fdf71f7d327e35bbdfe9bf69"  # md5
+    }
 }
 
 
@@ -53,13 +59,15 @@ class DynamicNuclearNetSegmentation(SegmentationDataset):
             version (str, optional): Default 1.0
 
         Example:
-            >>>dnn_seg = DynamicNuclearNetSegmentation(version='1.1')
+            >>>dnn_seg = DynamicNuclearNetSegmentation(version='1.0')
             >>>X_val, y_val, meta_val = dnn_seg.load_data(split='val')
+
+        Raises:
+            ValueError: Requested version is not included in available versions
         """
         if version not in VERSIONS_SEG:
-            raise InputError(
-                f"Requested version {version} is included in available versions {list(VERSIONS_SEG.keys())}"
-            )
+            raise ValueError(f"Requested version {version} is included in available "
+                             f"versions {list(VERSIONS_SEG.keys())}")
 
         self.version = version
 
@@ -94,11 +102,13 @@ class DynamicNuclearNetTracking(TrackingDataset):
             >>>dnn_trk = DynamicNuclearNetTracking(version='1.0')
             >>>X_val, y_val, lineage_val = dnn_seg.load_data(split='val')
             >>>data_source = dnn_seg.load_source_metadata()
+
+        Raises:
+            ValueError: Requested version is not included in available versions
         """
         if version not in VERSIONS_TRK:
-            raise InputError(
-                f"Requested version {version} is included in available versions {list(VERSIONS_TRK.keys())}"
-            )
+            raise ValueError(f"Requested version {version} is included in available "
+                             f"versions {list(VERSIONS_SEG.keys())}")
 
         self.version = version
 

@@ -41,9 +41,10 @@ class Dataset(abc.ABC):
         """General class for downloading datasets from S3.
 
         Args:
-            url (str): URL of dataset in S3.
+            url (str): URL of dataset in S3 or bucket path for secure data
             file_hash (str): md5hash for checking validity of cached file.
-            secure (bool): True if the dataset requires a deepcell api key for download. Default False
+            secure (bool): True if the dataset requires a deepcell api key for download.
+                Default False
         """
         self.cache_dir = os.path.expanduser(os.path.join("~", ".deepcell"))
         self.cache_subdir = "datasets"
@@ -75,17 +76,30 @@ class Dataset(abc.ABC):
             self.path = os.path.splitext(path)[0]
 
     @abc.abstractmethod
-    def load_data(self, split="val"):
-        """Load dataset from specified split
-
-        Args:
-            split (str, optional): Dataset split, one of 'train', 'test', 'val'. Defaults to 'val'.
+    def load_data(self):
+        """Loading function that should be implemented by the specific subclass
         """
         raise NotImplementedError
 
 
 class TrackingDataset(Dataset):
     def load_data(self, split="val"):
+        """Load the specified subset of the tracking dataset
+
+        Args:
+            split (str, optional): Data split to load from [train, test, val]. Default val.
+
+        Returns:
+            X: np.array of raw data
+            y: np. array of nuclear segmentation masks
+            lineages: list of lineage dictionaries
+
+        Raises:
+            ValueError: Split must be one of train, test, val
+        """
+        if split not in ['train', 'test', 'val']:
+            raise ValueError('Split must be one of train, test, val')
+
         data = load_trks(os.path.join(self.path, f"{split}.trks"))
 
         X = data["X"]
@@ -95,7 +109,11 @@ class TrackingDataset(Dataset):
         return X, y, lineages
 
     def load_source_metadata(self):
-        """Loads a pandas dataframe containing experimental metadata for each batch"""
+        """Loads a pandas dataframe containing experimental metadata for each batch
+
+        Returns:
+            pd.DataFrame
+        """
         data_source = np.load(
             os.path.join(self.path, "data-source.npz"), allow_pickle=True
         )
@@ -120,6 +138,22 @@ class TrackingDataset(Dataset):
 
 class SegmentationDataset(Dataset):
     def load_data(self, split="val"):
+        """Load the specified subset of the segmentation dataset
+
+        Args:
+            split (str, optional): Data split to load from [train, test, val]. Default val.
+
+        Returns:
+            X: np.array of raw data
+            y: np.array of segmentation masks
+            meta: np.array of metadata if available, default None
+
+        Raises:
+            ValueError: Split must be one of train, test, val
+        """
+        if split not in ['train', 'test', 'val']:
+            raise ValueError('Split must be one of train, test, val')
+
         data = np.load(os.path.join(self.path, f"{split}.npz"), allow_pickle=True)
 
         X = data["X"]

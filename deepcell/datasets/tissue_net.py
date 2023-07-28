@@ -28,8 +28,8 @@ from deepcell.datasets import SegmentationDataset
 
 
 VERSIONS = {
-    "1.1": {"url": "", "file_hash": "cab3b8f242aaee02035557b93546d9dc"},
-    "1.0": {"path": "", "url": "", "file_hash": ""},
+    "1.1": {"url": "data/tissuenet/tissuenet_1-1.zip", "file_hash": "cab3b8f242aaee02035557b93546d9dc"},
+    "1.0": {"url": "data/tissuenet/tissuenet_1-0.zip", "file_hash": "f080c7732dd6de71e8e72e95a314e904"},
 }
 
 
@@ -68,11 +68,13 @@ class TissueNet(SegmentationDataset):
         Example:
             >>>tissuenet = TissueNet(version='1.1')
             >>>X_val, y_val, meta_val = tissuenet.load_data(split='val')
+
+        Raises:
+            ValueError: Requested version is not included in available versions
         """
         if version not in VERSIONS:
-            raise InputError(
-                f"Requested version {version} is included in available versions {list(VERSIONS.keys())}"
-            )
+            raise ValueError(f"Requested version {version} is included in available "
+                             f"versions {list(VERSIONS.keys())}")
 
         self.version = version
 
