@@ -40,4 +40,4 @@ from deepcell.datasets.tissuenet import TissueNet
 tissuenet = TissueNet(version='1.1')
 X_val, y_val, meta_val = tissuenet.load_data(split='val')
 
-# sphinx_gallery_thumbnail_path = '../../images/multiplex_overlay.webp'
+# sphinx_gallery_thumbnail_path = '../../images/multiplex_overlay.png'

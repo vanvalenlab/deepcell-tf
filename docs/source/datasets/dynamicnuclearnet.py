@@ -41,4 +41,4 @@ from deepcell.datasets.dynamic_nuclear_net import DynamicNuclearNetSegmentation
 dnn_seg = DynamicNuclearNetSegmentation(version='1.0')
 X_val, y_val, meta_val = dnn_seg.load_data(split='val')
 
-# sphinx_gallery_thumbnail_path = '../../images/3t3_nuclear_outlines.webp'
+# sphinx_gallery_thumbnail_path = '../../images/3t3_nuclear_outlines.png'
