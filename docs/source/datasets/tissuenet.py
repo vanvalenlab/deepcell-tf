@@ -2,10 +2,15 @@
 TissueNet
 =========
 
+.. image:: ../../images/multiplex_overlay.png
+    :width: 200pt
+    :align: center
+
 TissueNet is a training dataset for nuclear and whole cell segmentation in tissues published in
 Greenwald, Miller et al. 2022.
 
 The TissueNet dataset is composed of a train, val, and test split.
+
 * The train split is composed of aproximately 2600 images, each of which are 512x512
   pixels. During training, we select random crops of size 256x256 from each image as
   a form of data augmentation.
@@ -35,7 +40,7 @@ The dataset can be accessed using `deepcell.datasets` with a DeepCell API key.
 TODO add api key info
 """
 
-from deepcell.datasets.tissuenet import TissueNet
+from deepcell.datasets.tissue_net import TissueNet
 
 tissuenet = TissueNet(version='1.1')
 X_val, y_val, meta_val = tissuenet.load_data(split='val')
