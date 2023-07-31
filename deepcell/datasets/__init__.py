@@ -160,7 +160,7 @@ class SegmentationDataset(Dataset):
         y = data["y"]
         meta = data.get("meta")
 
-        if meta:
+        if meta is not None:
             meta = pd.DataFrame(meta[1:], columns=meta[0])
 
         return X, y, meta
