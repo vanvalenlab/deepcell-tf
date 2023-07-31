@@ -53,7 +53,7 @@ class Dataset(abc.ABC):
         self.secure = secure
         self.file_hash = file_hash
 
-        self._get_data()
+        self.path = self._get_data()
 
     def _get_data(self):
         if not os.path.exists(self.data_dir):
@@ -63,7 +63,7 @@ class Dataset(abc.ABC):
 
         # Download data and set the path to the extracted dataset
         if self.secure:
-            self.path = fetch_data()
+            path = fetch_data()
         else:
             path = get_file(
                 origin=self.url,
@@ -73,7 +73,9 @@ class Dataset(abc.ABC):
                 cache_subdir=self.cache_subdir,
             )
             # Strip archive extension
-            self.path = os.path.splitext(path)[0]
+            path = os.path.splitext(path)[0]
+
+        return path
 
     @abc.abstractmethod
     def load_data(self):
