@@ -6,3 +6,5 @@ ipython
 nbsphinx
 nbsphinx-link
 sphinx-rtd-theme
+sphinx-gallery
+pillow

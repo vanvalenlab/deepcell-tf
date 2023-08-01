@@ -73,7 +73,8 @@ extensions = [
     'nbsphinx',
     'nbsphinx_link',
     'sphinx.ext.todo',
-    'sphinx.ext.autosectionlabel'
+    'sphinx.ext.autosectionlabel',
+    'sphinx_gallery.gen_gallery'
 ]
 
 napoleon_google_docstring = True
@@ -288,3 +289,12 @@ StandaloneHTMLBuilder.supported_image_types = [
     'image/png',
     'image/jpeg'
 ]
+
+# -- Sphinx Gallery -----------------------------------------------------------
+
+sphinx_gallery_conf = {
+     'examples_dirs': 'applications',   # path to your example scripts
+     'gallery_dirs': 'app-gallery',  # path to where to save gallery generated output
+     'remove_config_comments': True,
+}
+
