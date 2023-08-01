@@ -69,7 +69,7 @@ setup(
         'matplotlib',
         'opencv-python-headless<5',
         'deepcell-tracking~=0.6.1',
-        'deepcell-toolbox~=0.12.0'
+        'deepcell-toolbox>=0.12.1'
     ],
     extras_require={
         'tests': ['pytest', 'pytest-cov', 'ruff'],
