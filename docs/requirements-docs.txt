@@ -1,4 +1,5 @@
 m2r2<0.3.3 # Pinned to avoid docutils conflict with sphinx-rtd-theme
+docutils~=0.16
 mock
 Sphinx<6
 docutils
