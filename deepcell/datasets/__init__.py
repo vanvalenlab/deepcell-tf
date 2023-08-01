@@ -133,7 +133,7 @@ class TrackingDataset(Dataset):
         df = pd.concat(
             [pd.DataFrame(data_source[s], columns=columns) for s in splits], keys=splits
         )
-        df = df.reset_index(level=0, names="split")
+        df = df.reset_index(0).rename(columns={'level_0': 'split'})
 
         return df
 
