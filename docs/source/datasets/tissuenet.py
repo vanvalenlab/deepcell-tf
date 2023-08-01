@@ -27,6 +27,7 @@ The TissueNet dataset is composed of a train, val, and test split.
   aproximately 1200 images.
 
 Change Log
+
 * TissueNet 1.0 (July 2021): The original dataset used for all experiments in
   Greenwald, Miller at al.
 * TissueNet 1.1 (April 2022): This version of TissueNet has gone through an additional

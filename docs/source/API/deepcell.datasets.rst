@@ -16,7 +16,7 @@ deepcell.datasets.dynamic_nuclear_net
 deepcell.datasets.tissue_net
 ----------------------------
 
-.. automodule:: deepcell.datasets.tissuenet
+.. automodule:: deepcell.datasets.tissue_net
     :members:
     :undoc-members:
     :show-inheritance:
