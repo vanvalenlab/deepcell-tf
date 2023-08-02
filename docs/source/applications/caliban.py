@@ -19,7 +19,7 @@ import numpy as np
 
 from deepcell.applications import NuclearSegmentation, CellTracking
 from deepcell_tracking.trk_io import load_trks
-# sphinx_gallery_thumbnail_path = '../images/tracks.gif'
+# sphinx_gallery_thumbnail_path = '../images/caliban-tracks.gif'
 
 # %%
 def shuffle_colors(ymax, cmap):
@@ -147,7 +147,7 @@ def plot(x, y):
     return image
 
 imageio.mimsave(
-    './labeled.gif',
+    './caliban-labeled.gif',
     [plot(x[i,...,0], y_pred[i,...,0])
      for i in range(y_pred.shape[0])]
 )
@@ -158,7 +158,7 @@ imageio.mimsave(
 #
 # The `NuclearSegmentation` application was able to create a label mask for every cell in every frame!
 #
-# .. image:: ../../images/labeled.gif
+# .. image:: ../../images/caliban-labeled.gif
 #     :width: 500pt
 #     :align: center
 
@@ -212,7 +212,7 @@ def plot(x, y):
     return image
 
 imageio.mimsave(
-    './tracks.gif',
+    './caliban-tracks.gif',
     [plot(x[i,...,0], y_tracked[i,...,0])
      for i in range(y_tracked.shape[0])]
 )
@@ -223,6 +223,6 @@ imageio.mimsave(
 #
 # Now that we've finished using `CellTracker.track_cells`, not only do the annotations preserve label across frames, but the lineage information has been saved in `CellTracker.tracks`.
 #
-# .. image:: ../../images/tracks.gif
+# .. image:: ../../images/caliban-tracks.gif
 #     :width: 500pt
 #     :align: center
