@@ -42,6 +42,9 @@ VERSIONS_TRK = {
     }
 }
 
+SAMPLE_URL = "https://deepcell-data.s3.us-west-1.amazonaws.com/dynamic-nuclear-net-sample/sample-movie.npz"
+SAMPLE_HASH = "07d8128096a5185cfe5ab9e48f2819a9"
+
 
 class DynamicNuclearNetSegmentation(SegmentationDataset):
     def __init__(self, version="1.0"):
@@ -116,4 +119,19 @@ class DynamicNuclearNetTracking(TrackingDataset):
             url=VERSIONS_TRK[version]["url"],
             file_hash=VERSIONS_TRK[version]["file_hash"],
             secure=True,
+        )
+
+
+class DynamicNuclearNetSample(SegmentationDataset):
+    """A 10 frame movie from DynamicNuclearNet with the raw fluorescent data and nuclear
+    segmentation masks
+
+    This dataset is licensed under a modified Apache license for non-commercial academic
+    use only http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
+    """
+    def __init__(self):
+        super().__init__(
+            url=SAMPLE_URL,
+            file_hash=SAMPLE_HASH,
+            secure=False
         )
