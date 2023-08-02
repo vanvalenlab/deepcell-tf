@@ -36,7 +36,8 @@ def shuffle_colors(ymax, cmap):
 # Prepare nuclear data
 # --------------------
 #
-# TODO update data instructions Sample tracking data can be downloaded from https://datasets.deepcell.org/. Please adjust the path below to where your data is stored locally.
+# TODO update data instructions Sample tracking data can be downloaded from
+# https://datasets.deepcell.org/. Please adjust the path below to where your data is stored locally
 
 # %%
 data = load_trks('/notebooks/val.trks') # Change this path
@@ -97,7 +98,9 @@ imageio.mimsave('raw.gif', [plot(x[i, ..., 0]) for i in range(x.shape[0])])
 # Initialize nuclear model
 # ^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# The application will download pretrained weights for nuclear segmentation. For more information about application objects, please see our [documentation](https://deepcell.readthedocs.io/en/master/API/deepcell.applications.html).
+# The application will download pretrained weights for nuclear segmentation.
+# For more information about application objects, please see our
+# `documentation <https://deepcell.readthedocs.io/en/master/API/deepcell.applications.html>`_.
 
 # %%
 app = NuclearSegmentation()
@@ -106,13 +109,18 @@ app = NuclearSegmentation()
 # Use the application to generate labeled images
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# Typically, neural networks perform best on test data that is similar to the training data. In the realm of biological imaging, the most common difference between datasets is the resolution of the data measured in microns per pixel. The training resolution of the model can be identified using `app.model_mpp`.
+# Typically, neural networks perform best on test data that is similar to the training data.
+# In the realm of biological imaging, the most common difference between datasets is the resolution
+# of the data measured in microns per pixel. The training resolution of the model can be identified
+# using `app.model_mpp`.
 
 # %%
 print('Training Resolution:', app.model_mpp, 'microns per pixel')
 
 # %% [markdown] raw_mimetype="text/restructuredtext"
-# The resolution of the input data can be specified in `app.predict` using the `image_mpp` option. The `Application` will rescale the input data to match the training resolution and then rescale to the original size before returning the labeled image.
+# The resolution of the input data can be specified in `app.predict` using the `image_mpp` option.
+# The `Application` will rescale the input data to match the training resolution and then rescale
+# to the original size before returning the labeled image.
 
 # %%
 y_pred = app.predict(x, image_mpp=0.65)
@@ -156,7 +164,8 @@ imageio.mimsave(
 # View .GIF of segmented cells
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# The `NuclearSegmentation` application was able to create a label mask for every cell in every frame!
+# The `NuclearSegmentation` application was able to create a label mask for every cell in every
+# frame!
 #
 # .. image:: ../../images/caliban-labeled.gif
 #     :width: 500pt
@@ -166,7 +175,10 @@ imageio.mimsave(
 # Cell Tracking
 # -------------
 #
-# The `NuclearSegmentation` worked well, but the cell labels of the same cell are not preserved across frames. To resolve this problem, we can use the `CellTracker`! This object will use another `CellTrackingModel` to compare all cells and determine which cells are the same across frames, as well as if a cell split into daughter cells.
+# The `NuclearSegmentation` worked well, but the cell labels of the same cell are not preserved
+# across frames. To resolve this problem, we can use the `CellTracker`! This object will use
+# another `CellTrackingModel` to compare all cells and determine which cells are the same across
+# frames, as well as if a cell split into daughter cells.
 #
 # Initalize CellTracking application
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -221,7 +233,8 @@ imageio.mimsave(
 # View .GIF of tracked cells
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# Now that we've finished using `CellTracker.track_cells`, not only do the annotations preserve label across frames, but the lineage information has been saved in `CellTracker.tracks`.
+# Now that we've finished using `CellTracker.track_cells`, not only do the annotations preserve
+# label across frames, but the lineage information has been saved in `CellTracker.tracks`.
 #
 # .. image:: ../../images/caliban-tracks.gif
 #     :width: 500pt
