@@ -8,7 +8,7 @@ spektral~=1.0.4
 jupyterlab
 matplotlib
 deepcell-tracking~=0.6.1
-deepcell-toolbox~=0.12.0
+deepcell-toolbox>=0.12.1
 
 # Required for keras.utils.plot_model
 pydot>=1.4.2,<2
