@@ -57,6 +57,7 @@ setup(
     long_description=readme,
     long_description_content_type='text/markdown',
     install_requires=[
+        'tqdm',
         'numpy>=1.16.6',
         'pydot>=1.4.2,<2',  # for keras.utils.plot_model
         'scipy>=1.2.3,<2',
@@ -69,7 +70,7 @@ setup(
         'matplotlib',
         'opencv-python-headless<5',
         'deepcell-tracking~=0.6.1',
-        'deepcell-toolbox~=0.12.0'
+        'deepcell-toolbox>=0.12.1'
     ],
     extras_require={
         'tests': ['pytest', 'pytest-cov', 'ruff'],

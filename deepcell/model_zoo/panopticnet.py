@@ -72,8 +72,8 @@ def __merge_temporal_features(feature, mode='conv', feature_size=256,
     if mode is not None:
         mode = str(mode).lower()
         if mode not in acceptable_modes:
-            raise ValueError('Mode {} not supported. Please choose '
-                             'from {}.'.format(mode, str(acceptable_modes)))
+            raise ValueError(f'Mode {mode} not supported. Please choose '
+                             f'from {str(acceptable_modes)}.')
 
     f_name = str(feature.name)[:2]
 
@@ -187,8 +187,8 @@ def PanopticNet(backbone,
     if temporal_mode is not None:
         temporal_mode = str(temporal_mode).lower()
         if temporal_mode not in acceptable_modes:
-            raise ValueError('temporal_mode {} not supported. Please choose '
-                             'from {}.'.format(temporal_mode, acceptable_modes))
+            raise ValueError(f'temporal_mode {temporal_mode} not supported. Please choose '
+                             f'from {acceptable_modes}.')
 
     # TODO only works for 2D: do we check for 3D as well?
     # What are the requirements for 3D data?
@@ -198,14 +198,13 @@ def PanopticNet(backbone,
 
     if not math.log(img_shape[0], 2).is_integer():
         raise ValueError('Input data dimensions must be a power of 2, '
-                         'got {}'.format(img_shape[0]))
+                         f'got {img_shape[0]}')
 
     # Check input to interpolation
     acceptable_interpolation = {'bilinear', 'nearest'}
     if interpolation not in acceptable_interpolation:
-        raise ValueError('Interpolation mode "{}" not supported. '
-                         'Choose from {}.'.format(
-                             interpolation, list(acceptable_interpolation)))
+        raise ValueError(f'Interpolation mode "{interpolation}" not supported. '
+                         f'Choose from {list(acceptable_interpolation)}.')
 
     if inputs is None:
         if frames_per_batch > 1:

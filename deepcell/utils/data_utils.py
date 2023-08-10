@@ -332,7 +332,7 @@ def trim_padding(nparr, win_x, win_y, win_z=None):
                 trimmed = nparr[:, :, win_x:-win_x, win_y:-win_y, :]
     else:
         raise ValueError('Expected to trim numpy array of ndim 4 or 5, '
-                         'got "{}"'.format(nparr.ndim))
+                         f'got "{nparr.ndim}"')
     return trimmed
 
 

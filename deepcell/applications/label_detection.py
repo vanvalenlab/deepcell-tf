@@ -176,14 +176,12 @@ class LabelDetection(Application):
 
         # Check input size of image
         if len(image.shape) != self.required_rank:
-            raise ValueError('Input data must have {} dimensions. '
-                             'Input data only has {} dimensions'.format(
-                                 self.required_rank, len(image.shape)))
+            raise ValueError(f'Input data must have {self.required_rank} dimensions. '
+                             f'Input data only has {len(image.shape)} dimensions')
 
         if image.shape[-1] != self.required_channels:
-            raise ValueError('Input data must have {} channels. '
-                             'Input data only has {} channels'.format(
-                                 self.required_channels, image.shape[-1]))
+            raise ValueError(f'Input data must have {self.required_channels} channels. '
+                             f'Input data only has {image.shape[-1]} channels')
 
         # Resize image, returns unmodified if appropriate
         resized_image = self._resize_input(image, image_mpp)
