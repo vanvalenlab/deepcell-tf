@@ -25,11 +25,7 @@
 # ==============================================================================
 """Functions for making training data"""
 
-import hashlib
 import os
-import shutil
-import tarfile
-import zipfile
 
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -509,82 +505,3 @@ def reshape_movie(X, y, reshape_size=256):
     print(f'Reshaped feature data from {y.shape} to {new_y.shape}')
     print(f'Reshaped training data from {X.shape} to {new_X.shape}')
     return new_X, new_y
-
-
-def _hash_file(fpath, algorithm='sha256', chunk_size=65535):
-    """Calculates a file sha256 or md5 hash.
-    Args:
-        fpath: path to the file being validated
-        algorithm: hash algorithm, one of 'sha256', or 'md5'.
-        chunk_size: Bytes to read at a time, important for large files.
-
-    Returns:
-        The file hash
-    """
-
-    if (algorithm is 'sha256') or (algorithm is 'auto' and len(hash) is 64):
-        hasher = hashlib.sha256()
-    else:
-        hasher = hashlib.md5()
-
-    with open(fpath, 'rb') as fpath_file:
-        for chunk in iter(lambda: fpath_file.read(chunk_size), b''):
-            hasher.update(chunk)
-
-    return hasher.hexdigest()
-
-
-def _extract_archive(file_path, path=".", archive_format="auto"):
-    """Extracts an archive if it matches tar, tar.gz, tar.bz, or zip formats.
-
-    Borrowed from https://github.com/keras-team/keras/blob/master/keras/utils/data_utils.py
-
-    Args:
-        file_path: Path to the archive file.
-        path: Where to extract the archive file.
-        archive_format: Archive format to try for extracting the file.
-            Options are `'auto'`, `'tar'`, `'zip'`, and `None`.
-            `'tar'` includes tar, tar.gz, and tar.bz files.
-            The default 'auto' is `['tar', 'zip']`.
-            `None` or an empty list will return no matches found.
-
-    Returns:
-        True if a match was found and an archive extraction was completed,
-        False otherwise.
-    """
-    if archive_format is None:
-        return False
-    if archive_format == "auto":
-        archive_format = ["tar", "zip"]
-    if isinstance(archive_format, str):
-        archive_format = [archive_format]
-
-    file_path = os.fspath(file_path) if isinstance(file_path, os.Pathlike) else file_path
-    path = os.fspath(path) if isinstance(path, os.Pathlike) else path
-
-    for archive_type in archive_format:
-        if archive_type == "tar":
-            open_fn = tarfile.open
-            is_match_fn = tarfile.is_tarfile
-        if archive_type == "zip":
-            open_fn = zipfile.ZipFile
-            is_match_fn = zipfile.is_zipfile
-
-        if is_match_fn(file_path):
-            with open_fn(file_path) as archive:
-                try:
-                    if zipfile.is_zipfile(file_path):
-                        # Zip archive.
-                        archive.extractall(path)
-                    else:
-                        # Tar archive
-                        archive.extractall(path)
-                except (tarfile.TarError, RuntimeError, KeyboardInterrupt):
-                    if os.path.exists(path):
-                        if os.path.isfile(path):
-                            os.remove(path)
-                        else:
-                            shutil.rmtree(path)
-                    raise
-            return True
-    return False
