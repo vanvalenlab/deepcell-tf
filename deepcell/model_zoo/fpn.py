@@ -91,16 +91,14 @@ def create_pyramid_level(backbone_input,
     # Check input to interpolation
     acceptable_interpolation = {'bilinear', 'nearest'}
     if interpolation not in acceptable_interpolation:
-        raise ValueError('Interpolation mode "{}" not supported. '
-                         'Choose from {}.'.format(
-                             interpolation, list(acceptable_interpolation)))
+        raise ValueError(f'Interpolation mode "{interpolation}" not supported. '
+                         f'Choose from {list(acceptable_interpolation)}.')
 
     # Check input to upsample_type
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
-        raise ValueError('Upsample method "{}" not supported. '
-                         'Choose from {}.'.format(
-                             upsample_type, list(acceptable_upsample)))
+        raise ValueError(f'Upsample method "{upsample_type}" not supported. '
+                         f'Choose from {list(acceptable_upsample)}.')
 
     reduced_name = f'C{level}_reduced'
     upsample_name = f'P{level}_upsampled'
@@ -202,16 +200,14 @@ def __create_pyramid_features(backbone_dict,
     # Check input to interpolation
     acceptable_interpolation = {'bilinear', 'nearest'}
     if interpolation not in acceptable_interpolation:
-        raise ValueError('Interpolation mode "{}" not supported. '
-                         'Choose from {}.'.format(
-                             interpolation, list(acceptable_interpolation)))
+        raise ValueError(f'Interpolation mode "{interpolation}" not supported. '
+                         f'Choose from {list(acceptable_interpolation)}.')
 
     # Check input to upsample_type
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
-        raise ValueError('Upsample method "{}" not supported. '
-                         'Choose from {}.'.format(
-                             upsample_type, list(acceptable_upsample)))
+        raise ValueError(f'Upsample method "{upsample_type}" not supported. '
+                         f'Choose from {list(acceptable_upsample)}.')
 
     # Get names of the backbone levels and place in ascending order
     backbone_names = get_sorted_keys(backbone_dict)
@@ -349,16 +345,14 @@ def semantic_upsample(x,
     # Check input to interpolation
     acceptable_interpolation = {'bilinear', 'nearest'}
     if interpolation not in acceptable_interpolation:
-        raise ValueError('Interpolation mode "{}" not supported. '
-                         'Choose from {}.'.format(
-                             interpolation, list(acceptable_interpolation)))
+        raise ValueError(f'Interpolation mode "{interpolation}" not supported. '
+                         f'Choose from {list(acceptable_interpolation)}.')
 
     # Check input to upsample_type
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
-        raise ValueError('Upsample method "{}" not supported. '
-                         'Choose from {}.'.format(
-                             upsample_type, list(acceptable_upsample)))
+        raise ValueError(f'Upsample method "{upsample_type}" not supported. '
+                         f'Choose from {list(acceptable_upsample)}.')
 
     # Check that there is a target if upsamplelike is used
     if upsample_type == 'upsamplelike' and target is None:
@@ -444,21 +438,19 @@ def __create_semantic_head(pyramid_dict,
     # Check input to ndims
     if ndim not in {2, 3}:
         raise ValueError('ndim must be either 2 or 3. '
-                         'Received ndim = {}'.format(ndim))
+                         f'Received ndim = {ndim}')
 
     # Check input to interpolation
     acceptable_interpolation = {'bilinear', 'nearest'}
     if interpolation not in acceptable_interpolation:
-        raise ValueError('Interpolation mode "{}" not supported. '
-                         'Choose from {}.'.format(
-                             interpolation, list(acceptable_interpolation)))
+        raise ValueError(f'Interpolation mode "{interpolation}" not supported. '
+                         f'Choose from {list(acceptable_interpolation)}.')
 
     # Check input to upsample_type
     acceptable_upsample = {'upsamplelike', 'upsampling2d', 'upsampling3d'}
     if upsample_type not in acceptable_upsample:
-        raise ValueError('Upsample method "{}" not supported. '
-                         'Choose from {}.'.format(
-                             upsample_type, list(acceptable_upsample)))
+        raise ValueError(f'Upsample method "{upsample_type}" not supported. '
+                         f'Choose from {list(acceptable_upsample)}.')
 
     # Check that there is an input_target if upsamplelike is used
     if upsample_type == 'upsamplelike' and input_target is None:

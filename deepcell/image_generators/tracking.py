@@ -622,9 +622,9 @@ class SiameseIterator(Iterator):
         if division:
             # sanity check
             if self.x.shape[self.time_axis] - 1 in all_frames:
-                raise ValueError('Track {} is annotated incorrectly. '
+                raise ValueError(f'Track {track_id} is annotated incorrectly. '
                                  'No parent cell should be in the last frame '
-                                 'of any movie.'.format(track_id))
+                                 'of any movie.')
 
             candidate_interval = all_frames[-self.min_track_length:]
         else:
@@ -809,7 +809,7 @@ class SiameseIterator(Iterator):
             shape_2 = (len(index_array), 1, 3)
         else:
             raise ValueError('_compute_feature_shape: '
-                             'Unknown feature `{}`'.format(feature))
+                             f'Unknown feature `{feature}`')
 
         return shape_1, shape_2
 
@@ -824,7 +824,7 @@ class SiameseIterator(Iterator):
             return self._compute_regionprops(*args, **kwargs)
         else:
             raise ValueError('_compute_feature: '
-                             'Unknown feature `{}`'.format(feature))
+                             f'Unknown feature `{feature}`')
 
     def _get_batches_of_transformed_samples(self, index_array):
         # Initialize batch_x_1, batch_x_2, and batch_y, and cell distance

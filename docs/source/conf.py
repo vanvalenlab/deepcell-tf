@@ -22,9 +22,8 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'DeepCell'
-copyright = ('2016-{currentyear}, Van Valen Lab at the '
-             'California Institute of Technology (Caltech)').format(
-                 currentyear=datetime.now().year)
+copyright = (f'2016-{datetime.now().year}, Van Valen Lab at the '
+             'California Institute of Technology (Caltech)')
 author = 'Van Valen Lab at Caltech'
 
 # The short X.Y.Z version - overriden by rtd
@@ -264,7 +263,7 @@ intersphinx_mapping = {
     'numpy': ('https://numpy.org/doc/stable/', None),
     'kiosk': (f'https://deepcell-kiosk.readthedocs.io/en/{rtd_version}/', None),
     'kiosk-redis-consumer': (('https://deepcell-kiosk.readthedocs.io/'
-                              'projects/kiosk-redis-consumer/en/{}/').format(rtd_version), None),
+                              f'projects/kiosk-redis-consumer/en/{rtd_version}/'), None),
 }
 
 intersphinx_cache_limit = 0

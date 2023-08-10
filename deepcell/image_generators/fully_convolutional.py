@@ -93,8 +93,7 @@ class ImageFullyConvIterator(Iterator):
         X, y = train_dict['X'], train_dict['y']
         if X.shape[0] != y.shape[0]:
             raise ValueError('Training batches and labels should have the same'
-                             'length. Found X.shape: {} y.shape: {}'.format(
-                                 X.shape, y.shape))
+                             f'length. Found X.shape: {X.shape} y.shape: {y.shape}')
         self.x = np.asarray(X, dtype=K.floatx())
 
         if self.x.ndim != 4:
@@ -632,8 +631,7 @@ class MovieArrayIterator(Iterator):
         if y is not None and X.shape[0] != y.shape[0]:
             raise ValueError('`X` (movie data) and `y` (labels) '
                              'should have the same size. Found '
-                             'Found x.shape = {}, y.shape = {}'.format(
-                                 X.shape, y.shape))
+                             f'Found x.shape = {X.shape}, y.shape = {y.shape}')
 
         self.channel_axis = 4 if data_format == 'channels_last' else 1
         self.time_axis = 1 if data_format == 'channels_last' else 2
