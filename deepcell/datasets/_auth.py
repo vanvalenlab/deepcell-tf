@@ -32,6 +32,15 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None) -> None:
         :param asset_key: Key of the file to download.
         The list of available assets can be found on the deepcell-connect 
         homepage.
+
+        :param cache_subdir: `str` indicating directory relative to
+        `~/.deepcell` where downloaded data will be cached. The default is
+        `None`, which means cache the data in `~/.deepcell`.
+
+        :param file_hash: `str` represented the md5 checksum of datafile. The
+        checksum is used to perform data caching. If no checksum is provided or
+        the checksum differs from that found in the data cache, the data will
+        be (re)-downloaded.
     """
     logging.basicConfig(level=logging.INFO)
 
