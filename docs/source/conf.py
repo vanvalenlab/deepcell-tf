@@ -20,6 +20,9 @@ from sphinx.builders.html import StandaloneHTMLBuilder
 sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
 
+# Suppress the warnings that show up as a result of sphinx gallery generating multiple files
+warnings.filterwarnings("default", module="sphinx")
+
 # -- Project information -----------------------------------------------------
 
 project = 'DeepCell'
@@ -231,7 +234,8 @@ autodoc_mock_imports = [
     'cython',
     'deepcell_tracking',
     'deepcell_toolbox',
-    'matplotlib'
+    'matplotlib',
+    'tqdm'
 ]
 
 sys.modules['deepcell.utils.compute_overlap'] = mock.Mock()
@@ -298,6 +302,3 @@ sphinx_gallery_conf = {
      'gallery_dirs': 'data-gallery',  # path to where to save gallery generated output
      'remove_config_comments': True,
 }
-
-# Suppress the warnings that show up as a result of sphinx gallery generating multiple files
-warnings.filterwarnings("default", module="sphinx")

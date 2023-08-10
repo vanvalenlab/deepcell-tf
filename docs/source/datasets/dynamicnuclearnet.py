@@ -10,11 +10,13 @@ DynamicNuclearNet is a training dataset for nuclear segmentation and tracking pu
 Schwartz et al. 2023. The dataset is made up of two subsets, one for tracking and one for
 segmentation.
 
-This dataset is licensed under a `modified Apache license <http://www.github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE>`_ for non-commercial academic use only
+This dataset is licensed under a `modified Apache license
+<http://www.github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE>`_ for non-commercial
+academic use only
 
 The dataset can be accessed using `deepcell.datasets` with a DeepCell API key.
 
-TODO add api key info
+For more information about using a DeepCell API key, please see :doc:`/API-key`
 
 Tracking
 ^^^^^^^^
@@ -23,7 +25,8 @@ Each batch of the dataset contains three components
 
 * X: raw fluorescent nuclear data
 * y: nuclear segmentation masks
-* lineages: lineage records including the cell id, frames present and division links from parent to daughter cells
+* lineages: lineage records including the cell id, frames present and division links from
+  parent to daughter cells
 
 """
 
