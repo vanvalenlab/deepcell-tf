@@ -28,8 +28,14 @@ from deepcell.datasets import SegmentationDataset
 
 
 VERSIONS = {
-    "1.1": {"url": "data/tissuenet/tissuenet_v1-1.zip", "file_hash": "cab3b8f242aaee02035557b93546d9dc"},
-    "1.0": {"url": "data/tissuenet/tissuenet_1-0.zip", "file_hash": "f080c7732dd6de71e8e72e95a314e904"},
+    "1.1": {
+        "url": "data/tissuenet/tissuenet_v1-1.zip",
+        "file_hash": "cab3b8f242aaee02035557b93546d9dc"
+    },
+    "1.0": {
+        "url": "data/tissuenet/tissuenet_1-0.zip",
+        "file_hash": "f080c7732dd6de71e8e72e95a314e904"
+    },
 }
 SAMPLE_URL = "https://deepcell-data.s3.us-west-1.amazonaws.com/multiplex/tissuenet-sample.npz"
 SAMPLE_HASH = "de5b1e73373f7783fc6b11f4cb295638"

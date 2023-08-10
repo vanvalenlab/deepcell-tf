@@ -64,7 +64,12 @@ class Dataset(abc.ABC):
 
         # Download data and set the path to the extracted dataset
         if self.secure:
-            path = fetch_data()
+            path = fetch_data(
+                asset_key=self.url,
+                cache_subdir=self.cache_subdir,
+                file_hash=self.file_hash,
+                extract=True,
+            )
         else:
             path = get_file(
                 origin=self.url,
@@ -73,8 +78,8 @@ class Dataset(abc.ABC):
                 cache_dir=self.cache_dir,
                 cache_subdir=self.cache_subdir,
             )
-            # Strip archive extension
-            path = os.path.splitext(path)[0]
+        # Strip archive extension
+        path = os.path.splitext(path)[0]
 
         return path
 
