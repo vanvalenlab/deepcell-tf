@@ -45,14 +45,21 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None) -> None:
 
     # Check for cached data
     if file_hash is not None:
-        with open(fname, "rb") as fh:
-            hasher = md5(fh.read())
-        logging.info(f"Checking {fname} against provided file_hash...")
-        md5sum = hasher.hexdigest()
-        if md5sum == file_hash:
-            logging.info(f"{fname} with hash {file_hash} already available.")
-            return
-        logging.info(f"{fname} with hash {file_hash} not found in {download_location}")
+        try:
+            with open(fname, "rb") as fh:
+                hasher = md5(fh.read())
+            logging.info(f"Checking {fname} against provided file_hash...")
+            md5sum = hasher.hexdigest()
+            if md5sum == file_hash:
+                logging.info(
+                    f"{fname} with hash {file_hash} already available."
+                )
+                return
+            logging.info(
+                f"{fname} with hash {file_hash} not found in {download_location}"
+            )
+        except FileNotFoundError:
+            pass
 
     # Check for access token
     access_token = os.environ.get("DEEPCELL_ACCESS_TOKEN")
