@@ -8,6 +8,7 @@ import logging
 
 
 _api_endpoint = "https://users.deepcell.org/api/getData/"
+_asset_location = Path.home() / ".deepcell"
 
 
 # TODO s:
@@ -33,8 +34,7 @@ def fetch_data(asset_key: str) -> None:
     """
     logging.basicConfig(level=logging.INFO)
 
-    # Download location - TODO: do we instead want to 
-    download_location = Path.home() / ".deepcell"
+    download_location = _asset_location
     download_location.mkdir(exist_ok=True)
 
     # Check for access token
