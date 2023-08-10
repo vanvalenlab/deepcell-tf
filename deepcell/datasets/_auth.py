@@ -3,6 +3,7 @@
 import os
 import requests
 from pathlib import Path
+from hashlib import md5
 from tqdm import tqdm
 import logging
 
@@ -14,7 +15,7 @@ _asset_location = Path.home() / ".deepcell"
 # TODO s:
 #  - Add data caching + force option
 #  - Make download location a kwarg?
-def fetch_data(asset_key: str) -> None:
+def fetch_data(asset_key: str, cache_subdir=None, file_hash=None) -> None:
     """Fetch assets through deepcell-connect authentication system.
 
     Download assets from the deepcell suite of datasets and models which
@@ -35,7 +36,23 @@ def fetch_data(asset_key: str) -> None:
     logging.basicConfig(level=logging.INFO)
 
     download_location = _asset_location
+    if cache_subdir is not None:
+        download_location /= cache_subdir
     download_location.mkdir(exist_ok=True)
+
+    # Extract the filename from the asset_key, which can be a full path
+    fname = os.path.split(asset_key)[-1]
+
+    # Check for cached data
+    if file_hash is not None:
+        with open(fname, "rb") as fh:
+            hasher = md5(fh.read())
+        logging.info(f"Checking {fname} against provided file_hash...")
+        md5sum = hasher.hexdigest()
+        if md5sum == file_hash:
+            logging.info(f"{fname} with hash {file_hash} already available.")
+            return
+        logging.info(f"{fname} with hash {file_hash} not found in {download_location}")
 
     # Check for access token
     access_token = os.environ.get("DEEPCELL_ACCESS_TOKEN")
@@ -50,9 +67,6 @@ def fetch_data(asset_key: str) -> None:
                 "If you don't have a token, create one at deepcell-connect.",
             )
         )
-
-    # Extract the filename from the asset_key, which can be a full path
-    fname = os.path.split(asset_key)[-1]
 
     # Request download URL
     headers = {"X-Api-Key": access_token}
