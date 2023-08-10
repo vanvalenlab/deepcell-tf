@@ -36,6 +36,8 @@ from tensorflow.keras.utils import get_file
 from deepcell.utils.data_utils import get_data
 from deepcell.utils import fetch_data
 
+from deepcell_tracking.trk_io import load_trks
+
 
 class Dataset(abc.ABC):
     def __init__(self, url, file_hash, secure=False):

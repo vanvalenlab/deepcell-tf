@@ -44,12 +44,15 @@ class TestSegmentationDataset:
         # Create test data to load
         shape = (1, 10, 10, 1)
         split = 'test'
-        np.savez_compressed(os.path.join(str(tmpdir), f'{split}.npz'), X=np.zeros(shape), y=np.zeros(shape))
+        np.savez_compressed(
+            os.path.join(str(tmpdir), f'{split}.npz'),
+            X=np.zeros(shape),
+            y=np.zeros(shape))
 
         X, y, meta = dataset.load_data(split=split)
         assert X.shape == shape
         assert y.shape == shape
-        assert meta == None
+        assert meta is None
 
     def test_meta(self, tmpdir, mocker):
         def mock_get_data(self):

@@ -18,7 +18,12 @@ _asset_location = Path.home() / ".deepcell"
 # TODO s:
 #  - Add data caching + force option
 #  - Make download location a kwarg?
-def fetch_data(asset_key: str, cache_subdir=None, file_hash=None, extract=False, archive_format='auto'):
+def fetch_data(
+    asset_key: str,
+    cache_subdir=None,
+    file_hash=None,
+    extract=False,
+    archive_format='auto'):
     """Fetch assets through deepcell-connect authentication system.
 
     Download assets from the deepcell suite of datasets and models which
