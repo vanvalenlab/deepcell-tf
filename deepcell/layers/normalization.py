@@ -84,9 +84,8 @@ class ImageNormalization2D(Layer):
                  **kwargs):
         self.valid_modes = {'std', 'max', None, 'whole_image'}
         if norm_method not in self.valid_modes:
-            raise ValueError('Invalid `norm_method`: "{}". '
-                             'Use one of {}.'.format(
-                                 norm_method, self.valid_modes))
+            raise ValueError(f'Invalid `norm_method`: "{norm_method}". '
+                             f'Use one of {self.valid_modes}.')
         if 'trainable' not in kwargs:
             kwargs['trainable'] = False
         super().__init__(
@@ -266,9 +265,8 @@ class ImageNormalization3D(Layer):
                  **kwargs):
         self.valid_modes = {'std', 'max', None, 'whole_image'}
         if norm_method not in self.valid_modes:
-            raise ValueError('Invalid `norm_method`: "{}". '
-                             'Use one of {}.'.format(
-                                 norm_method, self.valid_modes))
+            raise ValueError(f'Invalid `norm_method`: "{norm_method}". '
+                             f'Use one of {self.valid_modes}.')
         if 'trainable' not in kwargs:
             kwargs['trainable'] = False
         super().__init__(

@@ -81,7 +81,7 @@ def siamese_model(input_shape=None,
             return (None, 3)
         else:
             raise ValueError('siamese_model.compute_input_shape: '
-                             'Unknown feature `{}`'.format(feature))
+                             f'Unknown feature `{feature}`')
 
     def compute_reshape(feature):
         if feature == 'appearance':
@@ -94,7 +94,7 @@ def siamese_model(input_shape=None,
             return (3,)
         else:
             raise ValueError('siamese_model.compute_output_shape: '
-                             'Unknown feature `{}`'.format(feature))
+                             f'Unknown feature `{feature}`')
 
     def compute_feature_extractor(feature, shape):
         if feature == 'appearance':
@@ -140,7 +140,7 @@ def siamese_model(input_shape=None,
             return None
         else:
             raise ValueError('siamese_model.compute_feature_extractor: '
-                             'Unknown feature `{}`'.format(feature))
+                             f'Unknown feature `{feature}`')
 
     if features is None:
         raise ValueError('siamese_model: No features specified.')
