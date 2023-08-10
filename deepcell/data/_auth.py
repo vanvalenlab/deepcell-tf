@@ -11,10 +11,6 @@ _api_endpoint = "https://users.deepcell.org/api/getData/"
 
 
 # TODO s:
-#  - Add instructions about how to create an account/access token to the
-#    docstring
-#  - Finalize name (i.e. references to `deepcell-connect` -> whatever the URL
-#    ends up being, e.g. users.deepcell.org
 #  - Add data caching + force option
 #  - Make download location a kwarg?
 def fetch_data(asset_key: str) -> None:
@@ -27,6 +23,8 @@ def fetch_data(asset_key: str) -> None:
 
        You must have a Deepcell Access Token set as an environment variable
        with the name ``DEEPCELL_ACCESS_TOKEN`` in order to access assets.
+
+       Access tokens can be created at <https://users.deepcell.org>_
 
     Args:
         :param asset_key: Key of the file to download.
