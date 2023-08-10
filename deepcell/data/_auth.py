@@ -7,8 +7,7 @@ from tqdm import tqdm
 import logging
 
 
-# TODO: Update when name is registered
-_api_endpoint = "http://52.8.155.84/api/getData/"
+_api_endpoint = "https://users.deepcell.org/api/getData/"
 
 
 # TODO s:
