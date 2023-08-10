@@ -31,8 +31,7 @@ import os
 from tensorflow.keras.utils import get_file
 
 from deepcell.utils.data_utils import get_data
-
-from ._auth import fetch_data
+from deepcell.utils import fetch_data
 
 
 class Dataset:
