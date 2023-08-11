@@ -98,7 +98,10 @@ class TissueNetSample(SegmentationDataset):
         """This is a single sample image from TissueNet"""
 
         super().__init__(
-                url=SAMPLE_URL,
-                file_hash=SAMPLE_HASH,
-                secure=False
-            )
+            url=SAMPLE_URL,
+            file_hash=SAMPLE_HASH,
+            secure=False
+        )
+
+    def load_data(self):
+        return self._load_data(self.path)

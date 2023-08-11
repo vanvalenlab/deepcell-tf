@@ -135,3 +135,7 @@ class DynamicNuclearNetSample(SegmentationDataset):
             file_hash=SAMPLE_HASH,
             secure=False
         )
+
+    def load_data(self):
+        return self._load_data(self.path)
+ 

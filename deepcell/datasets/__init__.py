@@ -81,7 +81,8 @@ class Dataset(abc.ABC):
                 cache_subdir=self.cache_subdir,
             )
         # Strip archive extension
-        path = os.path.splitext(path)[0]
+        if path.endswith('zip') or path.endswith('tar.gz'):
+            path = os.path.splitext(path)[0]
 
         return path
 
@@ -110,7 +111,10 @@ class TrackingDataset(Dataset):
         if split not in ['train', 'test', 'val']:
             raise ValueError('Split must be one of train, test, val')
 
-        data = load_trks(os.path.join(self.path, f"{split}.trks"))
+        return self._load_data(os.path.join(self.path, f"{split}.trks"))
+
+    def _load_data(self, fpath):
+        data = load_trks(fpath)
 
         X = data["X"]
         y = data["y"]
@@ -164,7 +168,12 @@ class SegmentationDataset(Dataset):
         if split not in ['train', 'test', 'val']:
             raise ValueError('Split must be one of train, test, val')
 
-        data = np.load(os.path.join(self.path, f"{split}.npz"), allow_pickle=True)
+        fpath = os.path.join(self.path, f"{split}.npz")
+
+        return self._load_data(fpath)
+
+    def _load_data(self, fpath):
+        data = np.load(fpath, allow_pickle=True)
 
         X = data["X"]
         y = data["y"]
