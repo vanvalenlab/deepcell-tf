@@ -30,7 +30,7 @@ Each batch of the dataset contains three components
 
 """
 
-from deepcell.datasets.dynamic_nuclear_net import DynamicNuclearNetTracking
+from deepcell.datasets import DynamicNuclearNetTracking
 # sphinx_gallery_thumbnail_path = '../images/tracked.gif'
 
 dnn_trk = DynamicNuclearNetTracking(version='1.0')
@@ -46,7 +46,7 @@ data_source = dnn_trk.load_source_metadata()
 # * y: nuclear segmentation masks
 # * metadata: description of the source of each batch
 
-from deepcell.datasets.dynamic_nuclear_net import DynamicNuclearNetSegmentation
+from deepcell.datasets import DynamicNuclearNetSegmentation
 
 dnn_seg = DynamicNuclearNetSegmentation(version='1.0')
 X_val, y_val, meta_val = dnn_seg.load_data(split='val')

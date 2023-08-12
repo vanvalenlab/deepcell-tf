@@ -42,7 +42,7 @@ The dataset can be accessed using `deepcell.datasets` with a DeepCell API key.
 For more information about using a DeepCell API key, please see :doc:`/API-key`
 """
 
-from deepcell.datasets.tissue_net import TissueNet
+from deepcell.datasets import TissueNet
 
 tissuenet = TissueNet(version='1.1')
 X_val, y_val, meta_val = tissuenet.load_data(split='val')
