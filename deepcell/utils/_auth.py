@@ -68,7 +68,7 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
                 logging.info(
                     f"{fname} with hash {file_hash} already available."
                 )
-                return
+                return fpath
             logging.info(
                 f"{fname} with hash {file_hash} not found in {download_location}"
             )
@@ -143,6 +143,8 @@ def extract_archive(file_path, path="."):
 
     file_path = os.fspath(file_path) if isinstance(file_path, os.PathLike) else file_path
     path = os.fspath(path) if isinstance(path, os.PathLike) else path
+
+    logging.info(f'Extracting {file_path}')
 
     status = False
 

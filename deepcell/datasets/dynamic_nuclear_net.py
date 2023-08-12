@@ -110,7 +110,7 @@ class DynamicNuclearNetTracking(TrackingDataset):
             ValueError: Requested version is not included in available versions
         """
         if version not in VERSIONS_TRK:
-            raise ValueError(f"Requested version {version} is included in available "
+            raise ValueError(f"Requested version {version} is not included in available "
                              f"versions {list(VERSIONS_SEG.keys())}")
 
         self.version = version

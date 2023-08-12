@@ -81,7 +81,7 @@ class TissueNet(SegmentationDataset):
             ValueError: Requested version is not included in available versions
         """
         if version not in VERSIONS:
-            raise ValueError(f"Requested version {version} is included in available "
+            raise ValueError(f"Requested version {version} is not included in available "
                              f"versions {list(VERSIONS.keys())}")
 
         self.version = version
