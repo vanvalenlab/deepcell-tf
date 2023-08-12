@@ -34,7 +34,7 @@ import pandas as pd
 from tensorflow.keras.utils import get_file
 
 from deepcell.utils.data_utils import get_data
-from deepcell.utils import fetch_data
+from deepcell.utils import fetch_data, extract_archive
 
 from deepcell_tracking.trk_io import load_trks
 
@@ -70,8 +70,9 @@ class Dataset(abc.ABC):
                 asset_key=self.url,
                 cache_subdir=self.cache_subdir,
                 file_hash=self.file_hash,
-                extract=True,
             )
+            # For some reason this function fails inside of fetch_data but works outside
+            extract_archive(path, self.data_dir)
         else:
             path = get_file(
                 origin=self.url,
@@ -80,6 +81,7 @@ class Dataset(abc.ABC):
                 cache_dir=self.cache_dir,
                 cache_subdir=self.cache_subdir,
             )
+
         # Strip archive extension
         if str(path).endswith('zip') or str(path).endswith('tar.gz'):
             path = os.path.splitext(path)[0]

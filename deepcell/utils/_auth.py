@@ -18,12 +18,7 @@ _asset_location = Path.home() / ".deepcell"
 # TODO s:
 #  - Add data caching + force option
 #  - Make download location a kwarg?
-def fetch_data(
-    asset_key: str,
-    cache_subdir=None,
-    file_hash=None,
-    extract=False,
-    archive_format='auto'):
+def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
     """Fetch assets through deepcell-connect authentication system.
 
     Download assets from the deepcell suite of datasets and models which
@@ -49,13 +44,6 @@ def fetch_data(
         checksum is used to perform data caching. If no checksum is provided or
         the checksum differs from that found in the data cache, the data will
         be (re)-downloaded.
-
-        :param extract: True tries extracting the file as an archive
-
-        :param archive_format: Archive format to try for extracting the file.
-        Options are 'auto', 'tar', 'zip', and None. 'tar' includes tar, tar.gz,
-        and tar.bz files. The default 'auto' corresponds to ['tar', 'zip'].
-        None or an empty list will return no matches found.
     """
     logging.basicConfig(level=logging.INFO)
 
@@ -66,11 +54,13 @@ def fetch_data(
 
     # Extract the filename from the asset_key, which can be a full path
     fname = os.path.split(asset_key)[-1]
+    fpath = download_location / fname
 
     # Check for cached data
     if file_hash is not None:
+        logging.info('Checking for cached data')
         try:
-            with open(fname, "rb") as fh:
+            with open(fpath, "rb") as fh:
                 hasher = md5(fh.read())
             logging.info(f"Checking {fname} against provided file_hash...")
             md5sum = hasher.hexdigest()
@@ -127,7 +117,6 @@ def fetch_data(
     data_req.raise_for_status()
 
     chunk_size = 4096
-    fpath = download_location / fname
     with tqdm.wrapattr(
         open(fpath, "wb"), "write", miniters=1, total=file_size_numerical
     ) as fh:
@@ -136,63 +125,37 @@ def fetch_data(
 
     logging.info(f"🎉 Successfully downloaded file to {fpath}")
 
-    if extract:
-        _extract_archive(fpath, download_location, archive_format)
-
     return fpath
 
 
-def _extract_archive(file_path, path=".", archive_format="auto"):
+def extract_archive(file_path, path="."):
     """Extracts an archive if it matches tar, tar.gz, tar.bz, or zip formats.
-
-    Borrowed from https://github.com/keras-team/keras/blob/master/keras/utils/data_utils.py
 
     Args:
         file_path: Path to the archive file.
         path: Where to extract the archive file.
-        archive_format: Archive format to try for extracting the file.
-            Options are `'auto'`, `'tar'`, `'zip'`, and `None`.
-            `'tar'` includes tar, tar.gz, and tar.bz files.
-            The default 'auto' is `['tar', 'zip']`.
-            `None` or an empty list will return no matches found.
 
     Returns:
         True if a match was found and an archive extraction was completed,
         False otherwise.
     """
-    if archive_format is None:
-        return False
-    if archive_format == "auto":
-        archive_format = ["tar", "zip"]
-    if isinstance(archive_format, str):
-        archive_format = [archive_format]
+    logging.basicConfig(level=logging.INFO)
 
-    file_path = os.fspath(file_path) if isinstance(file_path, os.Pathlike) else file_path
-    path = os.fspath(path) if isinstance(path, os.Pathlike) else path
+    file_path = os.fspath(file_path) if isinstance(file_path, os.PathLike) else file_path
+    path = os.fspath(path) if isinstance(path, os.PathLike) else path
 
-    for archive_type in archive_format:
-        if archive_type == "tar":
-            open_fn = tarfile.open
-            is_match_fn = tarfile.is_tarfile
-        if archive_type == "zip":
-            open_fn = zipfile.ZipFile
-            is_match_fn = zipfile.is_zipfile
+    status = False
 
-        if is_match_fn(file_path):
-            with open_fn(file_path) as archive:
-                try:
-                    if zipfile.is_zipfile(file_path):
-                        # Zip archive.
-                        archive.extractall(path)
-                    else:
-                        # Tar archive
-                        archive.extractall(path)
-                except (tarfile.TarError, RuntimeError, KeyboardInterrupt):
-                    if os.path.exists(path):
-                        if os.path.isfile(path):
-                            os.remove(path)
-                        else:
-                            shutil.rmtree(path)
-                    raise
-            return True
-    return False
+    if tarfile.is_tarfile(file_path):
+        with tarfile.open(file_path) as archive:
+            archive.extractall(path)
+        status = True
+    elif zipfile.is_zipfile(file_path):
+        with zipfile.ZipFile(file_path) as archive:
+            archive.extractall(path)
+        status = True
+
+    if status:
+        logging.info(f'Successfully extracted {file_path} into {path}')
+    else:
+        logging.info(f'Failed to extract {file_path} into {path}')

@@ -25,5 +25,9 @@
 # ==============================================================================
 """Builtin Datasets"""
 
-from .dynamic_nuclear_net import DynamicNuclearNetSample, DynamicNuclearNetSegmentation, DynamicNuclearNetTracking
+from .dynamic_nuclear_net import (
+    DynamicNuclearNetSample,
+    DynamicNuclearNetSegmentation,
+    DynamicNuclearNetTracking
+)
 from .tissue_net import TissueNet, TissueNetSample
