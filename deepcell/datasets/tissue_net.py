@@ -24,7 +24,7 @@
 # limitations under the License.
 # ==============================================================================
 
-from deepcell.datasets import SegmentationDataset
+from deepcell.datasets.dataset import SegmentationDataset
 
 
 VERSIONS = {

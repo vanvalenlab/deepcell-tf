@@ -26,7 +26,7 @@
 """Timelapse datasets of a nuclear label including the raw images and
 ground truth segmentation masks annotated to track cell lineages"""
 
-from deepcell.datasets import TrackingDataset, SegmentationDataset
+from deepcell.datasets.dataset import TrackingDataset, SegmentationDataset
 
 
 VERSIONS_SEG = {
@@ -138,4 +138,3 @@ class DynamicNuclearNetSample(SegmentationDataset):
 
     def load_data(self):
         return self._load_data(self.path)
- 

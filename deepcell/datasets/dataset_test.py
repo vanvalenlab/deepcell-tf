@@ -30,14 +30,14 @@ import pandas as pd
 
 from deepcell_tracking.trk_io import save_trks
 
-from deepcell.datasets import SegmentationDataset, TrackingDataset
+from deepcell.datasets.dataset import SegmentationDataset, TrackingDataset
 
 
 class TestSegmentationDataset:
     def test_no_meta(self, tmpdir, mocker):
         def mock_get_data(self):
             return str(tmpdir)
-        mocker.patch('deepcell.datasets.SegmentationDataset._get_data', mock_get_data)
+        mocker.patch('deepcell.datasets.dataset.SegmentationDataset._get_data', mock_get_data)
 
         dataset = SegmentationDataset('', '')
 
@@ -57,7 +57,7 @@ class TestSegmentationDataset:
     def test_meta(self, tmpdir, mocker):
         def mock_get_data(self):
             return str(tmpdir)
-        mocker.patch('deepcell.datasets.SegmentationDataset._get_data', mock_get_data)
+        mocker.patch('deepcell.datasets.dataset.SegmentationDataset._get_data', mock_get_data)
 
         dataset = SegmentationDataset('', '')
 
@@ -86,7 +86,7 @@ class TestTrackingDataset:
     def test_load_data(self, mocker, tmpdir):
         def mock_get_data(self):
             return str(tmpdir)
-        mocker.patch('deepcell.datasets.TrackingDataset._get_data', mock_get_data)
+        mocker.patch('deepcell.datasets.dataset.TrackingDataset._get_data', mock_get_data)
 
         dataset = TrackingDataset('', '')
 
@@ -109,7 +109,7 @@ class TestTrackingDataset:
     def test_load_source_metadata(self, mocker, tmpdir):
         def mock_get_data(self):
             return str(tmpdir)
-        mocker.patch('deepcell.datasets.TrackingDataset._get_data', mock_get_data)
+        mocker.patch('deepcell.datasets.dataset.TrackingDataset._get_data', mock_get_data)
 
         dataset = TrackingDataset('', '')
 
