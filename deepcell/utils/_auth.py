@@ -8,7 +8,6 @@ from tqdm import tqdm
 import logging
 import tarfile
 import zipfile
-import shutil
 
 
 _api_endpoint = "https://users.deepcell.org/api/getData/"
