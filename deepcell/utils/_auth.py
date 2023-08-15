@@ -14,9 +14,6 @@ _api_endpoint = "https://users.deepcell.org/api/getData/"
 _asset_location = Path.home() / ".deepcell"
 
 
-# TODO s:
-#  - Add data caching + force option
-#  - Make download location a kwarg?
 def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
     """Fetch assets through deepcell-connect authentication system.
 
