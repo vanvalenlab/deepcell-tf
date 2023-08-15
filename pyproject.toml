@@ -40,3 +40,4 @@ ignore = ["E731"]
 
 # Module level imports not at top of gallery files
 "docs/source/datasets/dynamicnuclearnet.py" = ["E402"]
+"docs/source/applications/mesmer.py" = ["E402"]

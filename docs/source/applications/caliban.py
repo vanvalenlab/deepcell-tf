@@ -5,14 +5,14 @@ Caliban: Nuclear Segmentation and Tracking
 
 Caliban is a pipeline for nuclear segmentation and tracking in live cell imaging datasets.
 
-The models associated with Caliban can be accessed using `deepcell.applications` with a DeepCell API key.
+The models associated with Caliban can be accessed using `deepcell.applications`
+with a DeepCell API key.
 
 For more information about using a DeepCell API key, please see :doc:`/API-key`.
 """
 
 # %%
 import copy
-import os
 
 import imageio
 import matplotlib as mpl

@@ -26,7 +26,6 @@
 """A model that can detect whether 2 cells are same, different, or related."""
 
 
-import os
 from pathlib import Path
 
 import tensorflow as tf

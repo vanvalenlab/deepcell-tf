@@ -231,10 +231,18 @@ fig.savefig('mesmer-maxima-threshold.png')
 # will universally apply an expansion after segmentation to each cell
 
 # %%
-# To demonstrate the effect of `pixel_expansion`, we'll compare the nuclear output with expanded output
-segmentation_predictions_expansion = app.predict(X, image_mpp=0.5, compartment='nuclear',
-                                                 postprocess_kwargs_nuclear={'pixel_expansion': 5})
-overlay_data_expansion = make_outline_overlay(rgb_data=rgb_images, predictions=segmentation_predictions_expansion)
+# To demonstrate the effect of `pixel_expansion`, we'll compare the nuclear output
+# with expanded output
+segmentation_predictions_expansion = app.predict(
+    X,
+    image_mpp=0.5,
+    compartment='nuclear',
+    postprocess_kwargs_nuclear={'pixel_expansion': 5}
+)
+overlay_data_expansion = make_outline_overlay(
+    rgb_data=rgb_images,
+    predictions=segmentation_predictions_expansion
+)
 
 
 # %%

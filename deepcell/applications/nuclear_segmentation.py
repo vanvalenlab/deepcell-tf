@@ -26,7 +26,6 @@
 """Nuclear segmentation application"""
 
 
-import os
 from pathlib import Path
 
 import tensorflow as tf
