@@ -1,8 +1,11 @@
-m2r2
+m2r2<0.3.3 # Pinned to avoid docutils conflict with sphinx-rtd-theme
+docutils~=0.16.0
 mock
 Sphinx<6
 docutils
 ipython
 nbsphinx
 nbsphinx-link
-sphinx-rtd-theme
+sphinx-rtd-theme>=0.5.2 # Pinned to fix list rendering issue
+sphinx-gallery
+pillow

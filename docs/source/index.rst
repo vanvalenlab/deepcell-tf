@@ -3,7 +3,6 @@
 .. toctree::
    :maxdepth: 1
    :hidden:
-   :caption: Start Here:
 
    notebooks/Training-Segmentation
    notebooks/Training-Tracking
@@ -11,9 +10,10 @@
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: Deepcell API:
 
    API/deepcell
+   API-key.rst
+   data-gallery/index.rst
 
 .. mdinclude:: ../../README.md
 

@@ -13,11 +13,15 @@
 #
 import os
 import sys
+import warnings
 from datetime import datetime
 from unittest import mock
 from sphinx.builders.html import StandaloneHTMLBuilder
 sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
+
+# Suppress the warnings that show up as a result of sphinx gallery generating multiple files
+warnings.filterwarnings("default", module="sphinx")
 
 # -- Project information -----------------------------------------------------
 
@@ -72,7 +76,8 @@ extensions = [
     'nbsphinx',
     'nbsphinx_link',
     'sphinx.ext.todo',
-    'sphinx.ext.autosectionlabel'
+    'sphinx.ext.autosectionlabel',
+    'sphinx_gallery.gen_gallery'
 ]
 
 napoleon_google_docstring = True
@@ -100,11 +105,6 @@ master_doc = 'index'
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
 language = "en"
-
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -229,7 +229,8 @@ autodoc_mock_imports = [
     'cython',
     'deepcell_tracking',
     'deepcell_toolbox',
-    'matplotlib'
+    'matplotlib',
+    'tqdm'
 ]
 
 sys.modules['deepcell.utils.compute_overlap'] = mock.Mock()
@@ -237,7 +238,13 @@ sys.modules['tensorflow.keras.layers.convolutional_recurrent.ConvRNN2D'] = mock.
 
 # Disable nbsphinx extension from running notebooks
 nbsphinx_execute = 'never'
-exclude_patterns = ['_build', '**.ipynb_checkpoints']
+exclude_patterns = [
+    '_build',
+    '**.ipynb_checkpoints',
+    "datasets/README.rst",  # For sphinx gallery only
+    "data-gallery/*.ipynb",
+    "data-gallery/*.py",
+]
 
 # TODO: fix relative URL for notebooks, using replace() is not perfect.
 nbsphinx_prolog = (
@@ -286,4 +293,13 @@ StandaloneHTMLBuilder.supported_image_types = [
     'image/gif',
     'image/png',
     'image/jpeg'
+    'image/webp'
 ]
+
+# -- Sphinx Gallery -----------------------------------------------------------
+
+sphinx_gallery_conf = {
+     'examples_dirs': 'datasets',   # path to your example scripts
+     'gallery_dirs': 'data-gallery',  # path to where to save gallery generated output
+     'remove_config_comments': True,
+}

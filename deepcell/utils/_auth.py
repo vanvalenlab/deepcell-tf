@@ -6,16 +6,15 @@ from pathlib import Path
 from hashlib import md5
 from tqdm import tqdm
 import logging
+import tarfile
+import zipfile
 
 
 _api_endpoint = "https://users.deepcell.org/api/getData/"
 _asset_location = Path.home() / ".deepcell"
 
 
-# TODO s:
-#  - Add data caching + force option
-#  - Make download location a kwarg?
-def fetch_data(asset_key: str, cache_subdir=None, file_hash=None) -> None:
+def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
     """Fetch assets through deepcell-connect authentication system.
 
     Download assets from the deepcell suite of datasets and models which
@@ -30,7 +29,7 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None) -> None:
 
     Args:
         :param asset_key: Key of the file to download.
-        The list of available assets can be found on the deepcell-connect 
+        The list of available assets can be found on the deepcell-connect
         homepage.
 
         :param cache_subdir: `str` indicating directory relative to
@@ -51,11 +50,13 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None) -> None:
 
     # Extract the filename from the asset_key, which can be a full path
     fname = os.path.split(asset_key)[-1]
+    fpath = download_location / fname
 
     # Check for cached data
     if file_hash is not None:
+        logging.info('Checking for cached data')
         try:
-            with open(fname, "rb") as fh:
+            with open(fpath, "rb") as fh:
                 hasher = md5(fh.read())
             logging.info(f"Checking {fname} against provided file_hash...")
             md5sum = hasher.hexdigest()
@@ -63,7 +64,7 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None) -> None:
                 logging.info(
                     f"{fname} with hash {file_hash} already available."
                 )
-                return
+                return fpath
             logging.info(
                 f"{fname} with hash {file_hash} not found in {download_location}"
             )
@@ -74,14 +75,12 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None) -> None:
     access_token = os.environ.get("DEEPCELL_ACCESS_TOKEN")
     if access_token is None:
         raise ValueError(
-            (
-                "DEEPCELL_ACCESS_TOKEN not found.\n",
-                "Please set your access token to the DEEPCELL_ACCESS_TOKEN\n",
-                "environment variable.\n",
-                "For example:\n\n",
-                "\texport DEEPCELL_ACCESS_TOKEN=<your-token>.\n\n",
-                "If you don't have a token, create one at deepcell-connect.",
-            )
+            "DEEPCELL_ACCESS_TOKEN not found.\n"
+            "Please set your access token to the DEEPCELL_ACCESS_TOKEN\n"
+            "environment variable.\n"
+            "For example:\n\n"
+            "\texport DEEPCELL_ACCESS_TOKEN=<your-token>.\n\n"
+            "If you don't have a token, create one at deepcell-connect."
         )
 
     # Request download URL
@@ -90,7 +89,12 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None) -> None:
     resp = requests.post(
         _api_endpoint, headers=headers, data={"s3_key": asset_key}
     )
-    resp.raise_for_status()  # Raise exception if not 200 status
+    # Raise informative exception for the specific case when the asset_key is
+    # not found in the bucket
+    if resp.status_code == 404 and resp.json().get("error") == "Key not found":
+        raise ValueError(f"Object {asset_key} not found.")
+    # Handle all other non-http-200 status
+    resp.raise_for_status()
 
     # Parse response
     response_data = resp.json()
@@ -112,11 +116,47 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None) -> None:
     data_req.raise_for_status()
 
     chunk_size = 4096
-    fpath = download_location / fname
     with tqdm.wrapattr(
         open(fpath, "wb"), "write", miniters=1, total=file_size_numerical
     ) as fh:
         for chunk in data_req.iter_content(chunk_size=chunk_size):
             fh.write(chunk)
-    
+
     logging.info(f"🎉 Successfully downloaded file to {fpath}")
+
+    return fpath
+
+
+def extract_archive(file_path, path="."):
+    """Extracts an archive if it matches tar, tar.gz, tar.bz, or zip formats.
+
+    Args:
+        file_path: Path to the archive file.
+        path: Where to extract the archive file.
+
+    Returns:
+        True if a match was found and an archive extraction was completed,
+        False otherwise.
+    """
+    logging.basicConfig(level=logging.INFO)
+
+    file_path = os.fspath(file_path) if isinstance(file_path, os.PathLike) else file_path
+    path = os.fspath(path) if isinstance(path, os.PathLike) else path
+
+    logging.info(f'Extracting {file_path}')
+
+    status = False
+
+    if tarfile.is_tarfile(file_path):
+        with tarfile.open(file_path) as archive:
+            archive.extractall(path)
+        status = True
+    elif zipfile.is_zipfile(file_path):
+        with zipfile.ZipFile(file_path) as archive:
+            archive.extractall(path)
+        status = True
+
+    if status:
+        logging.info(f'Successfully extracted {file_path} into {path}')
+    else:
+        logging.info(f'Failed to extract {file_path} into {path}')

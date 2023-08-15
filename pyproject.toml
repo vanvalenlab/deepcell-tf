@@ -37,3 +37,6 @@ ignore = ["E731"]
 "deepcell/data/__init__.py" = ["E402"]
 # TODO: Remove once gh-645 is resolved
 "deepcell/utils/export_utils.py" = ["F821"]
+
+# Module level imports not at top of gallery files
+"docs/source/datasets/dynamicnuclearnet.py" = ["E402"]
