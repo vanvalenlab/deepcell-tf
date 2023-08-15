@@ -1,35 +1,34 @@
+# %%
 """
 Mesmer: Tissue Segmentation
 ===========================
 
-TODO add api key info
+Mesmer can be accessed using `deepcell.applications` with a DeepCell API key.
 
-TODO update dataset info
+For more information about using a DeepCell API key, please see :doc:`/API-key`.
 """
-
-# %%
-
-# Download multiplex data
-from deepcell.datasets import multiplex_tissue
-((X_train, y_train),(X_test, y_test)) = multiplex_tissue.load_data()
-
-# %%
-from deepcell.utils.plot_utils import create_rgb_image
-
-# create rgb overlay of image data for visualization
-rgb_images = create_rgb_image(X_train, channel_colors=['green', 'blue'])
 
 # %%
 from matplotlib import pyplot as plt
 
-# select index for displaying
-idx = 3
+from deepcell.datasets import TissueNetSample
+from deepcell.utils.plot_utils import create_rgb_image, make_outline_overlay
 
+# %%
+
+# Download multiplex data
+X, y, _ = TissueNetSample().load_data()
+
+# %%
+# create rgb overlay of image data for visualization
+rgb_images = create_rgb_image(X, channel_colors=['green', 'blue'])
+
+# %%
 # plot the data
 fig, ax = plt.subplots(1, 3, figsize=(15, 5))
-ax[0].imshow(X_train[idx, ..., 0])
-ax[1].imshow(X_train[idx, ..., 1])
-ax[2].imshow(rgb_images[idx, ...])
+ax[0].imshow(X[0, ..., 0], cmap='Greys_r')
+ax[1].imshow(X[0, ..., 1], cmap='Greys_r')
+ax[2].imshow(rgb_images[0, ...])
 
 ax[0].set_title('Nuclear channel')
 ax[1].set_title('Membrane channel')
@@ -74,18 +73,15 @@ print('Training Resolution:', app.model_mpp, 'microns per pixel')
 # to the original size before returning the labeled image.
 
 # %%
-segmentation_predictions = app.predict(X_train, image_mpp=0.5)
+segmentation_predictions = app.predict(X, image_mpp=0.5)
 
 # %%
-
 # create overlay of predictions
-from deepcell.utils.plot_utils import make_outline_overlay
 overlay_data = make_outline_overlay(rgb_data=rgb_images, predictions=segmentation_predictions)
 
 # %%
-
 # select index for displaying
-idx = 3
+idx = 0
 
 # plot the data
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
@@ -114,7 +110,7 @@ fig.savefig('mesmer-wc.png')
 # predictions
 
 # %%
-segmentation_predictions_nuc = app.predict(X_train, image_mpp=0.5, compartment='nuclear')
+segmentation_predictions_nuc = app.predict(X, image_mpp=0.5, compartment='nuclear')
 
 # %%
 overlay_data_nuc = make_outline_overlay(
@@ -122,9 +118,8 @@ overlay_data_nuc = make_outline_overlay(
     predictions=segmentation_predictions_nuc)
 
 # %%
-
 # select index for displaying
-idx = 3
+idx = 0
 
 # plot the data
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
@@ -164,7 +159,7 @@ fig.savefig('mesmer-nuc.png')
 # To demonstrate the effect of `interior_threshold`, we'll compare the default  with a much more
 # stringent setting
 segmentation_predictions_interior = app.predict(
-    X_train,
+    X,
     image_mpp=0.5,
     postprocess_kwargs_whole_cell={'interior_threshold': 0.5})
 overlay_data_interior = make_outline_overlay(
@@ -173,9 +168,8 @@ overlay_data_interior = make_outline_overlay(
 
 
 # %%
-
 # select index for displaying
-idx = 3
+idx = 0
 
 # plot the data
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
@@ -196,11 +190,10 @@ fig.savefig('mesmer-interior-threshold.png')
 #     :align: center
 
 # %%
-
 # To demonstrate the effect of `maxima_threshold`, we'll compare the default with a much more
 # stringent setting
 segmentation_predictions_maxima = app.predict(
-    X_train,
+    X,
     image_mpp=0.5,
     postprocess_kwargs_whole_cell={'maxima_threshold': 0.8})
 overlay_data_maxima = make_outline_overlay(
@@ -209,9 +202,8 @@ overlay_data_maxima = make_outline_overlay(
 
 
 # %%
-
 # select index for displaying
-idx = 3
+idx = 0
 
 # plot the data
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
@@ -239,17 +231,15 @@ fig.savefig('mesmer-maxima-threshold.png')
 # will universally apply an expansion after segmentation to each cell
 
 # %%
-
 # To demonstrate the effect of `pixel_expansion`, we'll compare the nuclear output with expanded output
-segmentation_predictions_expansion = app.predict(X_train, image_mpp=0.5, compartment='nuclear',
-                                               postprocess_kwargs_nuclear={'pixel_expansion': 5})
+segmentation_predictions_expansion = app.predict(X, image_mpp=0.5, compartment='nuclear',
+                                                 postprocess_kwargs_nuclear={'pixel_expansion': 5})
 overlay_data_expansion = make_outline_overlay(rgb_data=rgb_images, predictions=segmentation_predictions_expansion)
 
 
 # %%
-
 # select index for displaying
-idx = 3
+idx = 0
 
 # plot the data
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
