@@ -13,22 +13,25 @@
 #
 import os
 import sys
+import warnings
 from datetime import datetime
 from unittest import mock
 from sphinx.builders.html import StandaloneHTMLBuilder
 sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
 
+# Suppress the warnings that show up as a result of sphinx gallery generating multiple files
+warnings.filterwarnings("default", module="sphinx")
+
 # -- Project information -----------------------------------------------------
 
 project = 'DeepCell'
-copyright = ('2016-{currentyear}, Van Valen Lab at the '
-             'California Institute of Technology (Caltech)').format(
-                 currentyear=datetime.now().year)
+copyright = (f'2016-{datetime.now().year}, Van Valen Lab at the '
+             'California Institute of Technology (Caltech)')
 author = 'Van Valen Lab at Caltech'
 
 # The short X.Y.Z version - overriden by rtd
-version = release = '0.12.6'
+version = release = '0.12.7'
 
 import subprocess
 try:
@@ -102,11 +105,6 @@ master_doc = 'index'
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
 language = "en"
-
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -231,7 +229,8 @@ autodoc_mock_imports = [
     'cython',
     'deepcell_tracking',
     'deepcell_toolbox',
-    'matplotlib'
+    'matplotlib',
+    'tqdm'
 ]
 
 sys.modules['deepcell.utils.compute_overlap'] = mock.Mock()
@@ -239,7 +238,13 @@ sys.modules['tensorflow.keras.layers.convolutional_recurrent.ConvRNN2D'] = mock.
 
 # Disable nbsphinx extension from running notebooks
 nbsphinx_execute = 'never'
-exclude_patterns = ['_build', '**.ipynb_checkpoints']
+exclude_patterns = [
+    '_build',
+    '**.ipynb_checkpoints',
+    "datasets/README.rst",  # For sphinx gallery only
+    "data-gallery/*.ipynb",
+    "data-gallery/*.py",
+]
 
 # TODO: fix relative URL for notebooks, using replace() is not perfect.
 nbsphinx_prolog = (
@@ -265,7 +270,7 @@ intersphinx_mapping = {
     'numpy': ('https://numpy.org/doc/stable/', None),
     'kiosk': (f'https://deepcell-kiosk.readthedocs.io/en/{rtd_version}/', None),
     'kiosk-redis-consumer': (('https://deepcell-kiosk.readthedocs.io/'
-                              'projects/kiosk-redis-consumer/en/{}/').format(rtd_version), None),
+                              f'projects/kiosk-redis-consumer/en/{rtd_version}/'), None),
 }
 
 intersphinx_cache_limit = 0
@@ -288,13 +293,14 @@ StandaloneHTMLBuilder.supported_image_types = [
     'image/gif',
     'image/png',
     'image/jpeg'
+    'image/webp'
 ]
 
 # -- Sphinx Gallery -----------------------------------------------------------
 
 sphinx_gallery_conf = {
-     'examples_dirs': 'applications',   # path to your example scripts
-     'gallery_dirs': 'app-gallery',  # path to where to save gallery generated output
+     'examples_dirs': ['datasets', 'applications'],   # path to your example scripts
+     'gallery_dirs': ['data-gallery', 'app-gallery'],  # path to where to save gallery generated output
      'remove_config_comments': True,
 }
 

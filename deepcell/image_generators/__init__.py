@@ -97,8 +97,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
     if transform in {'pixelwise', 'deepcell'}:
         if transform == 'deepcell':
-            warnings.warn('The `{}` transform is deprecated. Please use the '
-                          '`pixelwise` transform instead.'.format(transform),
+            warnings.warn(f'The `{transform}` transform is deprecated. Please use the '
+                          '`pixelwise` transform instead.',
                           DeprecationWarning)
         dilation_radius = kwargs.pop('dilation_radius', None)
         separate_edge_classes = kwargs.pop('separate_edge_classes', False)
@@ -126,8 +126,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
     elif transform in {'outer-distance', 'outer_distance',
                        'watershed', 'watershed-cont'}:
         if transform in {'watershed', 'watershed-cont'}:
-            warnings.warn('The `{}` transform is deprecated. Please use the '
-                          '`outer-distance` transform instead.'.format(transform),
+            warnings.warn(f'The `{transform}` transform is deprecated. Please use the '
+                          '`outer-distance` transform instead.',
                           DeprecationWarning)
 
         by_frame = kwargs.pop('by_frame', True)
@@ -174,8 +174,8 @@ def _transform_masks(y, transform, data_format=None, **kwargs):
 
     elif transform in {'inner-distance', 'inner_distance', 'centroid'}:
         if transform == 'centroid':
-            warnings.warn('The `{}` transform is deprecated. Please use the '
-                          '`inner-distance` transform instead.'.format(transform),
+            warnings.warn(f'The `{transform}` transform is deprecated. Please use the '
+                          '`inner-distance` transform instead.',
                           DeprecationWarning)
 
         by_frame = kwargs.pop('by_frame', True)

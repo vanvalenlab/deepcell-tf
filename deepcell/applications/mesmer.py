@@ -129,8 +129,8 @@ def mesmer_postprocess(model_output, compartment='whole-cell',
         nuclear_kwargs = {}
 
     if compartment not in valid_compartments:
-        raise ValueError('Invalid compartment supplied: {}. '
-                         'Must be one of {}'.format(compartment, valid_compartments))
+        raise ValueError(f'Invalid compartment supplied: {compartment}. '
+                         f'Must be one of {valid_compartments}')
 
     if compartment == 'whole-cell':
         label_images = deep_watershed(model_output['whole-cell'],
@@ -151,8 +151,8 @@ def mesmer_postprocess(model_output, compartment='whole-cell',
         ], axis=-1)
 
     else:
-        raise ValueError('Invalid compartment supplied: {}. '
-                         'Must be one of {}'.format(compartment, valid_compartments))
+        raise ValueError(f'Invalid compartment supplied: {compartment}. '
+                         f'Must be one of {valid_compartments}')
 
     return label_images
 

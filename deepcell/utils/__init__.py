@@ -42,6 +42,7 @@ from deepcell.utils import tfrecord_utils
 
 # Globally-importable utils.
 from deepcell.utils.data_utils import get_data
+from ._auth import fetch_data, extract_archive
 from deepcell.utils.misc_utils import sorted_nicely
 from deepcell.utils.train_utils import rate_scheduler
 from deepcell.utils.transform_utils import outer_distance_transform_2d
