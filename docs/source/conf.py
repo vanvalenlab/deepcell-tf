@@ -238,7 +238,13 @@ sys.modules['tensorflow.keras.layers.convolutional_recurrent.ConvRNN2D'] = mock.
 
 # Disable nbsphinx extension from running notebooks
 nbsphinx_execute = 'never'
-exclude_patterns = ['_build', '**.ipynb_checkpoints']
+exclude_patterns = [
+    '_build',
+    '**.ipynb_checkpoints',
+    "datasets/README.rst",  # For sphinx gallery only
+    "data-gallery/*.ipynb",
+    "data-gallery/*.py",
+]
 
 # TODO: fix relative URL for notebooks, using replace() is not perfect.
 nbsphinx_prolog = (
