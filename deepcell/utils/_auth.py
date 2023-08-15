@@ -15,7 +15,7 @@ _asset_location = Path.home() / ".deepcell"
 
 
 def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
-    """Fetch assets through deepcell-connect authentication system.
+    """Fetch assets through users.deepcell.org authentication system.
 
     Download assets from the deepcell suite of datasets and models which
     require user-authentication.
@@ -29,7 +29,7 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
 
     Args:
         :param asset_key: Key of the file to download.
-        The list of available assets can be found on the deepcell-connect
+        The list of available assets can be found on the users.deepcell.org
         homepage.
 
         :param cache_subdir: `str` indicating directory relative to
@@ -75,12 +75,13 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
     access_token = os.environ.get("DEEPCELL_ACCESS_TOKEN")
     if access_token is None:
         raise ValueError(
-            "DEEPCELL_ACCESS_TOKEN not found.\n"
+            "\nDEEPCELL_ACCESS_TOKEN not found.\n"
             "Please set your access token to the DEEPCELL_ACCESS_TOKEN\n"
             "environment variable.\n"
             "For example:\n\n"
             "\texport DEEPCELL_ACCESS_TOKEN=<your-token>.\n\n"
-            "If you don't have a token, create one at deepcell-connect."
+            "If you don't yet have a token, you can create one at\n"
+            "https://users.deepcell.org"
         )
 
     # Request download URL
