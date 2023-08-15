@@ -91,7 +91,12 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
     resp = requests.post(
         _api_endpoint, headers=headers, data={"s3_key": asset_key}
     )
-    resp.raise_for_status()  # Raise exception if not 200 status
+    # Raise informative exception for the specific case when the asset_key is
+    # not found in the bucket
+    if resp.status_code == 404 and resp.json().get("error") == "Key not found":
+        raise ValueError(f"Object {asset_key} not found.")
+    # Handle all other non-http-200 status
+    resp.raise_for_status()
 
     # Parse response
     response_data = resp.json()
