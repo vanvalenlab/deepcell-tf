@@ -94,6 +94,16 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
     # not found in the bucket
     if resp.status_code == 404 and resp.json().get("error") == "Key not found":
         raise ValueError(f"Object {asset_key} not found.")
+    # Raise informative exception for the specific case when an invalid
+    # API token is provided.
+    if resp.status_code == 403 and (
+       resp.json().get("detail") == "Authentication credentials were not provided."
+    ):
+        raise ValueError(
+            f"\n\nAPI token {access_token} is not valid.\n"
+            "The token may be expired - if so, create a new one at\n"
+            "https://users.deepcell.org"
+        )
     # Handle all other non-http-200 status
     resp.raise_for_status()
 
