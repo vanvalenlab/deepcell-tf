@@ -44,9 +44,6 @@ fig.savefig('mesmer-input.png')
 # .. image:: ../../images/mesmer-input.png
 #     :align: center
 #
-# Initialize Mesmer model
-# ^^^^^^^^^^^^^^^^^^^^^^^
-#
 # The application will download pretrained weights for tissue segmentation. For more information
 # about application objects, please see our
 # `documentation <https://deepcell.readthedocs.io/en/master/API/deepcell.applications.html>`_.
@@ -57,7 +54,7 @@ app = Mesmer()
 
 # %% [markdown] raw_mimetype="text/restructuredtext"
 # Whole Cell Segmentation
-# -----------------------
+# ^^^^^^^^^^^^^^^^^^^^^^^
 #
 # Typically, neural networks perform best on test data that is similar to the training data.
 # In the realm of biological imaging, the most common difference between datasets is the resolution
@@ -102,8 +99,8 @@ fig.savefig('mesmer-wc.png')
 #     :align: center
 
 # %% [markdown] raw_mimetype="text/restructuredtext"
-# Nuclear Cell Segmentation
-# -------------------------
+# Nuclear Segmentation
+# ^^^^^^^^^^^^^^^^^^^^
 
 # %% [markdown] raw_mimetype="text/restructuredtext"
 # In addition to predicting whole-cell segmentation, Mesmer can also be used for nuclear
@@ -141,11 +138,11 @@ fig.savefig('mesmer-nuc.png')
 
 # %% [markdown]
 # Fine-tuning the model output
-# ----------------------------
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # In most cases, we find that the default settings for the model work quite well across a range of
 # tissues. However, if you notice specific, consistent errors in your data, there are a few things
-#  you can change.
+# you can change.
 #
 # The first is the `interior_threshold` parameter. This controls how conservative the model is in
 # estimating what is a cell vs what is background. Lower values of `interior_threshold` will

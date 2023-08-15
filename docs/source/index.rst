@@ -14,12 +14,6 @@
    API/deepcell
    API-key.rst
    data-gallery/index.rst
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   :caption: Deepcell Applications
-
    app-gallery/index.rst
 
 .. mdinclude:: ../../README.md
