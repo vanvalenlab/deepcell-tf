@@ -79,12 +79,12 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
     if access_token is None:
         raise ValueError(
             (
-                "DEEPCELL_ACCESS_TOKEN not found.\n",
-                "Please set your access token to the DEEPCELL_ACCESS_TOKEN\n",
-                "environment variable.\n",
-                "For example:\n\n",
-                "\texport DEEPCELL_ACCESS_TOKEN=<your-token>.\n\n",
-                "If you don't have a token, create one at deepcell-connect.",
+                "DEEPCELL_ACCESS_TOKEN not found.\n"
+                "Please set your access token to the DEEPCELL_ACCESS_TOKEN\n"
+                "environment variable.\n"
+                "For example:\n\n"
+                "\texport DEEPCELL_ACCESS_TOKEN=<your-token>.\n\n"
+                "If you don't have a token, create one at deepcell-connect."
             )
         )
 
