@@ -82,7 +82,7 @@ class CellTracking(Application):
 
     Args:
         model (tf.keras.model): Tracking inference model, defaults to latest published model
-        neighborhood_encoder (tf.keras.moel): Tracking neighborhood encoder,
+        neighborhood_encoder (tf.keras.model): Tracking neighborhood encoder,
             defaults to latest published model
         distance_threshold (int): Maximum distance between two cells to be considered adjacent
         appearance_dim (int): Length of appearance dimension
