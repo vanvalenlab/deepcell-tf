@@ -1,10 +1,13 @@
+# %%
 """
 Caliban: Nuclear Segmentation and Tracking
 ==========================================
 
-TODO add api key info
+Caliban is a pipeline for nuclear segmentation and tracking in live cell imaging datasets.
 
+The models associated with Caliban can be accessed using `deepcell.applications` with a DeepCell API key.
 
+For more information about using a DeepCell API key, please see :doc:`/API-key`.
 """
 
 # %%
@@ -18,7 +21,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from deepcell.applications import NuclearSegmentation, CellTracking
-from deepcell_tracking.trk_io import load_trks
+from deepcell.datasets import DynamicNuclearNetSample
 # sphinx_gallery_thumbnail_path = '../images/caliban-tracks.gif'
 
 # %%
@@ -35,41 +38,15 @@ def shuffle_colors(ymax, cmap):
 # %% [markdown]
 # Prepare nuclear data
 # --------------------
-#
-# TODO update data instructions Sample tracking data can be downloaded from
-# https://datasets.deepcell.org/. Please adjust the path below to where your data is stored locally
 
 # %%
-data = load_trks('/notebooks/val.trks') # Change this path
-data['X'].shape
-
-# %%
-x = data['X'][0]
-y = data['y'][0]
-
-# Determine position of zero padding for removal
-# Calculate position of padding based on first frame
-# Assume that padding is in blocks on the edges of image
-good_rows = np.where(x[0].any(axis=0))[0]
-good_cols = np.where(x[0].any(axis=1))[0]
-slc = (
-    slice(None),
-    slice(good_cols[0], good_cols[-1] + 1),
-    slice(good_rows[0], good_rows[-1] + 1),
-    slice(None)
-)
-x = x[slc]
-
-# Determine which frames are zero padding
-frames = np.sum(y, axis=(1,2))
-good_frames = np.where(frames)[0] # True if image not blank
-x = x[:len(good_frames)]
+x, y, _ = DynamicNuclearNetSample().load_data()
 
 
 # %%
 def plot(im):
     fig, ax = plt.subplots(figsize=(6, 6))
-    ax.imshow(im, 'Greys_r')
+    ax.imshow(im, 'Greys_r', vmax=3000)
     plt.axis('off')
     plt.title('Raw Image Data')
 
@@ -81,13 +58,13 @@ def plot(im):
 
     return image
 
-imageio.mimsave('raw.gif', [plot(x[i, ..., 0]) for i in range(x.shape[0])])
+imageio.mimsave('caliban-raw.gif', [plot(x[i, ..., 0]) for i in range(x.shape[0])])
 
 # %% [markdown] jp-MarkdownHeadingCollapsed=true
 # View .GIF of raw cells
 # ^^^^^^^^^^^^^^^^^^^^^^
 #
-# .. image:: ../../images/raw.gif
+# .. image:: ../../images/caliban-raw.gif
 #     :width: 300pt
 #     :align: center
 
@@ -140,7 +117,7 @@ def plot(x, y):
     yy = np.ma.masked_equal(yy, 0)
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 6))
-    ax[0].imshow(x, cmap='Greys_r')
+    ax[0].imshow(x, cmap='Greys_r', vmax=3000)
     ax[0].axis('off')
     ax[0].set_title('Raw')
     ax[1].imshow(yy, cmap=cmap, vmax=ymax)
@@ -209,7 +186,7 @@ def plot(x, y):
     yy = np.ma.masked_equal(yy, 0)
 
     fig, ax = plt.subplots(1, 2, figsize=(12, 6))
-    ax[0].imshow(x, cmap='Greys_r')
+    ax[0].imshow(x, cmap='Greys_r', vmax=3000)
     ax[0].axis('off')
     ax[0].set_title('Raw')
     ax[1].imshow(yy, cmap=cmap, vmax=ymax)
