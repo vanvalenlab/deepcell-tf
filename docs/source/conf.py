@@ -244,6 +244,9 @@ exclude_patterns = [
     "datasets/README.rst",  # For sphinx gallery only
     "data-gallery/*.ipynb",
     "data-gallery/*.py",
+    "app-gallery/*.ipynb",
+    "app-gallery/*.py",
+    "applications/README.rst",  # For sphinx gallery only
 ]
 
 # TODO: fix relative URL for notebooks, using replace() is not perfect.
