@@ -43,7 +43,7 @@ VERSIONS_TRK = {
 }
 
 SAMPLE_URL = "https://deepcell-data.s3.us-west-1.amazonaws.com/dynamic-nuclear-net-sample/sample-movie.npz"
-SAMPLE_HASH = "07d8128096a5185cfe5ab9e48f2819a9"
+SAMPLE_HASH = "3dcb85144aa1151fefa1b69a7e9202c8"
 
 
 class DynamicNuclearNetSegmentation(SegmentationDataset):

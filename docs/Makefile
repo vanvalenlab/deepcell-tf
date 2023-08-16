@@ -21,3 +21,4 @@ help:
 clean:
 	rm -rf build
 	rm -rf source/data-gallery
+	rm -rf source/app-gallery

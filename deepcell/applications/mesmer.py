@@ -26,7 +26,7 @@
 """Mesmer application"""
 
 
-import os
+from pathlib import Path
 
 import numpy as np
 import tensorflow as tf
@@ -36,10 +36,11 @@ from deepcell_toolbox.processing import percentile_threshold
 from deepcell_toolbox.processing import histogram_normalization
 
 from deepcell.applications import Application
+from deepcell.utils import fetch_data, extract_archive
 
 
-MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/MultiplexSegmentation-9.tar.gz')
+MODEL_KEY = 'models/MultiplexSegmentation-9.tar.gz'
+MODEL_NAME = 'MultiplexSegmentation'
 MODEL_HASH = 'a1dfbce2594f927b9112f23a0a1739e0'
 
 
@@ -210,12 +211,15 @@ class Mesmer(Application):
     def __init__(self, model=None):
 
         if model is None:
-            archive_path = tf.keras.utils.get_file(
-                'MultiplexSegmentation.tgz', MODEL_PATH,
-                file_hash=MODEL_HASH,
-                extract=True, cache_subdir='models'
+            cache_subdir = "models"
+            model_dir = Path.home() / ".deepcell" / "models"
+            archive_path = fetch_data(
+                asset_key=MODEL_KEY,
+                cache_subdir=cache_subdir,
+                file_hash=MODEL_HASH
             )
-            model_path = os.path.splitext(archive_path)[0]
+            extract_archive(archive_path, model_dir)
+            model_path = model_dir / MODEL_NAME
             model = tf.keras.models.load_model(model_path)
 
         super().__init__(

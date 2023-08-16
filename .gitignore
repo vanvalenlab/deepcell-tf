@@ -66,6 +66,7 @@ instance/
 # Sphinx documentation
 docs/_build/
 docs/source/data-gallery
+docs/source/app-gallery
 
 # PyBuilder
 target/
@@ -120,3 +121,4 @@ Thumbs.db
 *.h5
 *.trk
 *.trks
+

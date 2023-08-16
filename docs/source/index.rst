@@ -14,6 +14,7 @@
    API/deepcell
    API-key.rst
    data-gallery/index.rst
+   app-gallery/index.rst
 
 .. mdinclude:: ../../README.md
 

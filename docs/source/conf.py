@@ -244,6 +244,9 @@ exclude_patterns = [
     "datasets/README.rst",  # For sphinx gallery only
     "data-gallery/*.ipynb",
     "data-gallery/*.py",
+    "app-gallery/*.ipynb",
+    "app-gallery/*.py",
+    "applications/README.rst",  # For sphinx gallery only
 ]
 
 # TODO: fix relative URL for notebooks, using replace() is not perfect.
@@ -299,7 +302,8 @@ StandaloneHTMLBuilder.supported_image_types = [
 # -- Sphinx Gallery -----------------------------------------------------------
 
 sphinx_gallery_conf = {
-     'examples_dirs': 'datasets',   # path to your example scripts
-     'gallery_dirs': 'data-gallery',  # path to where to save gallery generated output
+     'examples_dirs': ['datasets', 'applications'],   # path to your example scripts
+     'gallery_dirs': ['data-gallery', 'app-gallery'],  # path to where to save gallery generated output
      'remove_config_comments': True,
 }
+

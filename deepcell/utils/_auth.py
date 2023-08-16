@@ -15,7 +15,7 @@ _asset_location = Path.home() / ".deepcell"
 
 
 def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
-    """Fetch assets through deepcell-connect authentication system.
+    """Fetch assets through users.deepcell.org authentication system.
 
     Download assets from the deepcell suite of datasets and models which
     require user-authentication.
@@ -29,7 +29,7 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
 
     Args:
         :param asset_key: Key of the file to download.
-        The list of available assets can be found on the deepcell-connect
+        The list of available assets can be found on the users.deepcell.org
         homepage.
 
         :param cache_subdir: `str` indicating directory relative to
@@ -75,12 +75,13 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
     access_token = os.environ.get("DEEPCELL_ACCESS_TOKEN")
     if access_token is None:
         raise ValueError(
-            "DEEPCELL_ACCESS_TOKEN not found.\n"
+            "\nDEEPCELL_ACCESS_TOKEN not found.\n"
             "Please set your access token to the DEEPCELL_ACCESS_TOKEN\n"
             "environment variable.\n"
             "For example:\n\n"
             "\texport DEEPCELL_ACCESS_TOKEN=<your-token>.\n\n"
-            "If you don't have a token, create one at deepcell-connect."
+            "If you don't yet have a token, you can create one at\n"
+            "https://users.deepcell.org"
         )
 
     # Request download URL
@@ -93,6 +94,16 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
     # not found in the bucket
     if resp.status_code == 404 and resp.json().get("error") == "Key not found":
         raise ValueError(f"Object {asset_key} not found.")
+    # Raise informative exception for the specific case when an invalid
+    # API token is provided.
+    if resp.status_code == 403 and (
+       resp.json().get("detail") == "Authentication credentials were not provided."
+    ):
+        raise ValueError(
+            f"\n\nAPI token {access_token} is not valid.\n"
+            "The token may be expired - if so, create a new one at\n"
+            "https://users.deepcell.org"
+        )
     # Handle all other non-http-200 status
     resp.raise_for_status()
 
@@ -104,7 +115,7 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
     val, suff = file_size.split(" ")
     # TODO: Case statement would be awesome here, but need to support all the
     # way back to Python 3.8
-    suffix_mapping = {"kB": 1e3, "MB": 1e6, "B": 1, "GB": 1e9}
+    suffix_mapping = {"KB": 1e3, "MB": 1e6, "B": 1, "GB": 1e9}
     file_size_numerical = int(float(val) * suffix_mapping[suff])
 
     logging.info(

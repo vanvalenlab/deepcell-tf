@@ -26,7 +26,7 @@
 """Nuclear segmentation application"""
 
 
-import os
+from pathlib import Path
 
 import tensorflow as tf
 
@@ -34,10 +34,11 @@ from deepcell_toolbox.processing import histogram_normalization
 from deepcell_toolbox.deep_watershed import deep_watershed
 
 from deepcell.applications import Application
+from deepcell.utils import fetch_data, extract_archive
 
 
-MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/NuclearSegmentation-75.tar.gz')
+MODEL_KEY = 'models/NuclearSegmentation-75.tar.gz'
+MODEL_NAME = 'NuclearSegmentation'
 MODEL_HASH = 'efc4881db5bac23219b62486a4d877b3'
 
 MODEL_METADATA = {
@@ -108,12 +109,15 @@ class NuclearSegmentation(Application):
                  postprocessing_fn=deep_watershed):
 
         if model is None:
-            archive_path = tf.keras.utils.get_file(
-                'NuclearSegmentation.tgz', MODEL_PATH,
-                file_hash=MODEL_HASH,
-                extract=True, cache_subdir='models'
+            cache_subdir = 'models'
+            model_dir = Path.home() / ".deepcell" / "models"
+            archive_path = fetch_data(
+                asset_key=MODEL_KEY,
+                cache_subdir=cache_subdir,
+                file_hash=MODEL_HASH
             )
-            model_path = os.path.splitext(archive_path)[0]
+            extract_archive(archive_path, model_dir)
+            model_path = model_dir / MODEL_NAME
             model = tf.keras.models.load_model(model_path)
 
         super().__init__(

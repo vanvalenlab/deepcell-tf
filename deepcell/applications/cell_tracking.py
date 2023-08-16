@@ -26,21 +26,22 @@
 """A model that can detect whether 2 cells are same, different, or related."""
 
 
-import os
+from pathlib import Path
 
 import tensorflow as tf
 
 import deepcell_tracking
 
 from deepcell.applications import Application
+from deepcell.utils import fetch_data, extract_archive
 
 
-MODEL_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-              'saved-models/NuclearTrackingInf-75.tar.gz')
+MODEL_KEY = 'models/NuclearTrackingInf-75.tar.gz'
+MODEL_NAME = 'NuclearTrackingInf'
 MODEL_HASH = '5dbd8137be851a0c12557fcde5021444'
 
-ENCODER_PATH = ('https://deepcell-data.s3-us-west-1.amazonaws.com/'
-                'saved-models/NuclearTrackingNE-75.tar.gz')
+ENCODER_KEY = 'models/NuclearTrackingNE-75.tar.gz'
+ENCODER_NAME = 'NuclearTrackingNE'
 ENCODER_HASH = 'a466682c9d1d5e3672325bb8a13ab3e0'
 
 MODEL_METADATA = {
@@ -77,16 +78,20 @@ MODEL_MPP = 0.65
 
 class CellTracking(Application):
     """Loads a :mod:`deepcell.model_zoo.tracking.GNNTrackingModel` model for
-    object tracking with pretrained weights using a simple
-    ``predict`` interface.
+    object tracking with pretrained weights using a simple ``predict`` interface.
 
     Args:
-        use_pretrained_weights (bool): Whether to load pretrained weights.
-        model_image_shape (tuple): Shape of input data expected by model.
-        neighborhood_scale_size (int): Size of the area surrounding each cell.
+        model (tf.keras.model): Tracking inference model, defaults to latest published model
+        neighborhood_encoder (tf.keras.model): Tracking neighborhood encoder,
+            defaults to latest published model
+        distance_threshold (int): Maximum distance between two cells to be considered adjacent
+        appearance_dim (int): Length of appearance dimension
         birth (float): Cost of new cell in linear assignment matrix.
         death (float): Cost of cell death in linear assignment matrix.
         division (float): Cost of cell division in linear assignment matrix.
+        track_length (int): Number of frames per track
+        crop_mode (str): Type of cropping around each cell
+        norm (str): Type of normalization layer
     """
 
     #: Metadata for the dataset used to train the model
@@ -121,20 +126,27 @@ class CellTracking(Application):
         self.crop_mode = crop_mode
         self.norm = norm
 
+        cache_subdir = "models"
+        model_dir = Path.home() / ".deepcell" / "models"
+
         if self.neighborhood_encoder is None:
-            archive_path = tf.keras.utils.get_file(
-                'NuclearTrackingNE.tgz', ENCODER_PATH,
-                file_hash=ENCODER_HASH,
-                extract=True, cache_subdir='models')
-            model_path = os.path.splitext(archive_path)[0]
+            archive_path = fetch_data(
+                asset_key=ENCODER_KEY,
+                cache_subdir=cache_subdir,
+                file_hash=ENCODER_HASH
+            )
+            extract_archive(archive_path, model_dir)
+            model_path = model_dir / ENCODER_NAME
             self.neighborhood_encoder = tf.keras.models.load_model(model_path)
 
         if model is None:
-            archive_path = tf.keras.utils.get_file(
-                'NuclearTrackingInf.tgz', MODEL_PATH,
-                file_hash=MODEL_HASH,
-                extract=True, cache_subdir='models')
-            model_path = os.path.splitext(archive_path)[0]
+            archive_path = fetch_data(
+                asset_key=MODEL_KEY,
+                cache_subdir=cache_subdir,
+                file_hash=MODEL_HASH
+            )
+            extract_archive(archive_path, model_dir)
+            model_path = model_dir / MODEL_NAME
             model = tf.keras.models.load_model(model_path)
 
         super().__init__(
