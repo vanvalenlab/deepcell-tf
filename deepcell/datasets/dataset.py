@@ -184,3 +184,33 @@ class SegmentationDataset(Dataset):
             meta = pd.DataFrame(meta[1:], columns=meta[0])
 
         return X, y, meta
+    
+
+class SpotsDataset(Dataset):
+    def load_data(self, split="test"):
+        """Load the specified subset of the segmentation dataset
+
+        Args:
+            split (str, optional): Data split to load from [train, val, test]. Default test.
+
+        Returns:
+            X: np.array of raw data
+            y: np.array of segmentation masks
+
+        Raises:
+            ValueError: Split must be one of train, test, val
+        """
+        if split not in ['train', 'val', 'test']:
+            raise ValueError('Split must be one of train, val, test')
+
+        fpath = os.path.join(self.path, f"{split}.npz")
+
+        return self._load_data(fpath)
+    
+    def _load_data(self, fpath):
+        data = np.load(fpath, allow_pickle=True)
+
+        X = data["X"]
+        y = data["y"]
+
+        return X, y
