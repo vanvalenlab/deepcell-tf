@@ -24,7 +24,13 @@
 # limitations under the License.
 # ==============================================================================
 
-from deepcell.datasets.dataset import SpotsDataset
+import os
+
+import numpy as np
+import pandas as pd
+from PIL import Image
+
+from deepcell.datasets.dataset import SpotsDataset, Dataset
 
 
 VERSIONS = {
@@ -34,8 +40,8 @@ VERSIONS = {
     },
 }
 
-SAMPLE_URL = ""  # TODO: input info
-SAMPLE_HASH = ""
+SAMPLE_URL = "https://deepcell-data.s3.us-west-1.amazonaws.com/spot_detection/SpotNetExampleData-v1_0.zip"  # TODO: input info
+SAMPLE_HASH = "bb8675da94e34805a8853b029b74e61a"
 
 class SpotNet(SpotsDataset):
     def __init__(self, version="1.0"):
@@ -77,7 +83,7 @@ class SpotNet(SpotsDataset):
             secure=True,
         )
 
-class SpotNetSample(SpotsDataset): # does this make sense as sub class?
+class SpotNetExampleData(Dataset):
     def __init__(self):
         super().__init__(
             url=SAMPLE_URL,
@@ -85,5 +91,50 @@ class SpotNetSample(SpotsDataset): # does this make sense as sub class?
             secure=False
         )
 
-    def load_data(self):
-        return super().load_data(self.path)
+    def load_data(self, file='MERFISH_example'):
+        """Load the specified example file required for the Polaris example notebooks.
+
+        Args:
+            file (str, optional): Data split to load from `['seqFISH_example', 'MERFISH_example',
+                'MERFISH_output', 'MERFISH_codebook']`. Defaults to `'MERFISH_example'`.
+
+        Raises:
+            ValueError: Split must be one of `['seqFISH example', 'MERFISH example',
+                'MERFISH output', 'MERFISH codebook']`
+        """
+        if file not in ['seqFISH_example', 'MERFISH_example', 'MERFISH_output',
+                        'MERFISH_codebook']:
+            raise ValueError('Split must be one of seqFISH_example, MERFISH_example, '
+                             'MERFISH_output, MERFISH_codebook')
+
+        if file == 'seqFISH_example':
+            fpath = os.path.join(self.path, f"{file}.tif")
+            return self._load_tif(fpath)
+
+        if file == 'MERFISH_example':
+            fpath = os.path.join(self.path, f"{file}.npz")
+            return self._load_npz(fpath)
+
+        else:
+            fpath = os.path.join(self.path, f"{file}.csv")
+            return self._load_csv(fpath)
+        
+    def _load_tif(self, fpath):
+        data = Image.open(fpath)
+        data = np.array(data)
+        data = np.expand_dims(data, axis=[0,-1])
+
+        return data
+    
+    def _load_npz(self, fpath):
+        data = np.load(fpath)
+        
+        spots_image = data['spots_image']
+        segmentation_image = data['segmentation_image']
+
+        return spots_image, segmentation_image
+    
+    def _load_csv(self, fpath):
+        data = pd.read_csv(fpath, index_col=0)
+
+        return data
