@@ -22,6 +22,15 @@ deepcell.datasets.tissue_net
     :show-inheritance:
 
 
+deepcell.datasets.spot_net
+--------------------------
+
+.. automodule:: deepcell.datasets.spot_net
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 Module contents
 ---------------
 
