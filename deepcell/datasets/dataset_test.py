@@ -30,7 +30,7 @@ import pandas as pd
 
 from deepcell_tracking.trk_io import save_trks
 
-from deepcell.datasets.dataset import SegmentationDataset, TrackingDataset
+from deepcell.datasets.dataset import SegmentationDataset, TrackingDataset, SpotsDataset
 
 
 class TestSegmentationDataset:
@@ -123,3 +123,25 @@ class TestTrackingDataset:
         df = dataset.load_source_metadata()
         for split in ['train', 'test', 'val']:
             assert split in df['split'].unique()
+
+
+class TestSpotsDataset:
+    def test_load_data(self, mocker, tmpdir):
+        def mock_get_data(self):
+            return str(tmpdir)
+        mocker.patch('deepcell.datasets.dataset.SpotsDataset._get_data', mock_get_data)
+
+        dataset = SpotsDataset('', '')
+
+        # Create test data
+        X_shape = (1, 128, 128, 1)
+        y_shape = (1, 10, 2)
+        split = 'test'
+        np.savez_compressed(
+            os.path.join(str(tmpdir), f'{split}.npz'),
+            X=np.zeros(X_shape),
+            y=np.zeros(y_shape))
+
+        X, y = dataset.load_data(split=split)
+        assert X.shape == X_shape
+        assert y.shape == y_shape
