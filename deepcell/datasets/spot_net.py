@@ -40,7 +40,7 @@ VERSIONS = {
     },
 }
 
-SAMPLE_URL = "https://deepcell-data.s3.us-west-1.amazonaws.com/spot_detection/SpotNetExampleData-v1_0.zip"  # TODO: input info
+SAMPLE_URL = "https://deepcell-data.s3.us-west-1.amazonaws.com/spot_detection/SpotNetExampleData-v1_0.zip"
 SAMPLE_HASH = "bb8675da94e34805a8853b029b74e61a"
 
 class SpotNet(SpotsDataset):
