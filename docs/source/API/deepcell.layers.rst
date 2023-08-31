@@ -3,47 +3,56 @@ deepcell.layers
 
 .. automodule:: deepcell.layers
 
-.. contents:: Contents
-    :local:
+.. currentmodule:: deepcell.layers
 
 location
 --------
-.. automodule:: deepcell.layers.location
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. autosummary::
+   :toctree: _generated
+
+   Location2D
+   Location3D
 
 normalization
 -------------
-.. automodule:: deepcell.layers.normalization
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. autosummary::
+   :toctree: _generated
+
+   ImageNormalization2D
+   ImageNormalization3D
 
 padding
 -------
-.. automodule:: deepcell.layers.padding
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. autosummary::
+   :toctree: _generated
+
+   ReflectionPadding2D
+   ReflectionPadding3D
 
 pooling
 -------
-.. automodule:: deepcell.layers.pooling
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. autosummary::
+   :toctree: _generated
+
+   DilatedMaxPool2D
+   DilatedMaxPool3D
 
 tensor_product
 --------------
-.. automodule:: deepcell.layers.tensor_product
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. autosummary::
+   :toctree: _generated
+
+   TensorProduct
 
 upsample
 --------
-.. automodule:: deepcell.layers.upsample
-    :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. autosummary::
+   :toctree: _generated
+
+   UpsampleLike
