@@ -67,6 +67,7 @@ instance/
 docs/_build/
 docs/source/data-gallery
 docs/source/app-gallery
+docs/source/API/_generated
 
 # PyBuilder
 target/

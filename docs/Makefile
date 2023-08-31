@@ -22,3 +22,4 @@ clean:
 	rm -rf build
 	rm -rf source/data-gallery
 	rm -rf source/app-gallery
+	rm -rf source/API/_generated
