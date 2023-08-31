@@ -31,3 +31,7 @@ from .dynamic_nuclear_net import (
     DynamicNuclearNetTracking
 )
 from .tissue_net import TissueNet, TissueNetSample
+from .spot_net import (
+    SpotNet,
+    SpotNetExampleData
+)
