@@ -31,7 +31,7 @@ copyright = (f'2016-{datetime.now().year}, Van Valen Lab at the '
 author = 'Van Valen Lab at Caltech'
 
 # The short X.Y.Z version - overriden by rtd
-version = release = '0.12.7'
+version = release = '0.12.8'
 
 import subprocess
 try:
