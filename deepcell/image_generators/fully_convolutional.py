@@ -55,7 +55,7 @@ class ImageFullyConvIterator(Iterator):
 
     Args:
         train_dict (dict): Consists of numpy arrays for ``X`` and ``y``.
-        image_data_generator (tf.keras.preprocessing.image.ImageDataGenerator):
+        image_data_generator (``tf.keras.preprocessing.image.ImageDataGenerator``):
             For random transformations and normalization.
         batch_size (int): Size of a batch.
         skip (int): Number of skip connections to yield data.
