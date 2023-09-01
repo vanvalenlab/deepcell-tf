@@ -65,7 +65,8 @@ app = Mesmer()
 print('Training Resolution:', app.model_mpp, 'microns per pixel')
 
 # %% [markdown] raw_mimetype="text/restructuredtext"
-# The resolution of the input data can be specified in ``app.predict`` using the ``image_mpp`` option.
+# The resolution of the input data can be specified in ``app.predict`` using the
+# ``image_mpp`` option.
 # The ``Application`` will rescale the input data to match the training resolution and then rescale
 # to the original size before returning the labeled image.
 
