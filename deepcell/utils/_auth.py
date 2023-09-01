@@ -46,7 +46,7 @@ def fetch_data(asset_key: str, cache_subdir=None, file_hash=None):
     download_location = _asset_location
     if cache_subdir is not None:
         download_location /= cache_subdir
-    download_location.mkdir(exist_ok=True)
+    download_location.mkdir(exist_ok=True, parents=True)
 
     # Extract the filename from the asset_key, which can be a full path
     fname = os.path.split(asset_key)[-1]
