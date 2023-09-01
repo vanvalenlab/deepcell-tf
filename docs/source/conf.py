@@ -233,6 +233,10 @@ autodoc_mock_imports = [
     'tqdm'
 ]
 
+autodoc_default_options = {
+    "exclude-members": "call",
+}
+
 sys.modules['deepcell.utils.compute_overlap'] = mock.Mock()
 sys.modules['tensorflow.keras.layers.convolutional_recurrent.ConvRNN2D'] = mock.Mock()
 
