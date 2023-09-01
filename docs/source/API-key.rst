@@ -10,7 +10,7 @@ API Key Usage
 
 The token that is issued by users.deepcell.org should be added as an environment variable through one of the following methods:
 
-1. Save the token in your shell config script (e.g. `.bashrc`, `.zshrc`, `.bash_profile`, etc.)
+1. Save the token in your shell config script (e.g. ``.bashrc``, ``.zshrc``, ``.bash_profile``, etc.)
 
 .. code-block:: bash
 
