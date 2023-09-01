@@ -13,15 +13,11 @@
 #
 import os
 import sys
-import warnings
 from datetime import datetime
 from unittest import mock
 from sphinx.builders.html import StandaloneHTMLBuilder
 sys.path.insert(0, os.path.abspath('../..'))
 # sys.path.insert(0, os.path.abspath('.'))
-
-# Suppress the warnings that show up as a result of sphinx gallery generating multiple files
-warnings.filterwarnings("default", module="sphinx")
 
 # -- Project information -----------------------------------------------------
 
