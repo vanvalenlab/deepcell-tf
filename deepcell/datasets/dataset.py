@@ -99,7 +99,8 @@ class TrackingDataset(Dataset):
         """Load the specified subset of the tracking dataset
 
         Args:
-            split (str, optional): Data split to load from [train, test, val]. Default val.
+            split (str): Data split to load from [train, test, val].
+            Optional, default='val'.
 
         Returns:
             X: np.array of raw data
@@ -156,7 +157,8 @@ class SegmentationDataset(Dataset):
         """Load the specified subset of the segmentation dataset
 
         Args:
-            split (str, optional): Data split to load from [train, test, val]. Default val.
+            split (str): Data split to load from [train, test, val].
+            Optional, default='val'.
 
         Returns:
             X: np.array of raw data

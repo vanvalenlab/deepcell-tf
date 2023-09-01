@@ -62,7 +62,7 @@ class SpotNet(SpotsDataset):
               Laubscher et al. (2023)
 
         Args:
-            version (str, optional): Defaults to 1.0
+            version (str): Optional, defaults to 1.0
 
         Example:
             >>>spotnet = SpotNet(version='1.0')
@@ -95,12 +95,13 @@ class SpotNetExampleData(Dataset):
         """Load the specified example file required for the Polaris example notebooks.
 
         Args:
-            file (str, optional): Data split to load from `['seqFISH_example', 'MERFISH_example',
-                'MERFISH_output', 'MERFISH_codebook']`. Defaults to `'MERFISH_example'`.
+            file (str): Data split to load from ``['seqFISH_example', 'MERFISH_example',
+                'MERFISH_output', 'MERFISH_codebook']``.
+                Optional, defaults to ``'MERFISH_example'``.
 
         Raises:
-            ValueError: Split must be one of `['seqFISH example', 'MERFISH example',
-                'MERFISH output', 'MERFISH codebook']`
+            ValueError: Split must be one of ``['seqFISH example', 'MERFISH example',
+                'MERFISH output', 'MERFISH codebook']``
         """
         if file not in ['seqFISH_example', 'MERFISH_example', 'MERFISH_output',
                         'MERFISH_codebook']:
