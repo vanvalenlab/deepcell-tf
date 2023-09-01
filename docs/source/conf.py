@@ -77,6 +77,7 @@ extensions = [
 ]
 
 napoleon_google_docstring = True
+napoleon_use_rtype = False
 
 default_role = 'py:obj'
 
