@@ -27,7 +27,7 @@
 __title__ = 'DeepCell'
 __description__ = 'Deep learning for single cell image segmentation'
 __url__ = 'https://github.com/vanvalenlab/deepcell-tf'
-__version__ = '0.12.8'
+__version__ = '0.12.9'
 __download_url__ = f'{__url__}/tarball/{__version__}'
 __author__ = 'The Van Valen Lab'
 __author_email__ = 'vanvalen@caltech.edu'
