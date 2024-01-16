@@ -81,8 +81,8 @@ class CellTracking(Application):
     object tracking with pretrained weights using a simple ``predict`` interface.
 
     Args:
-        model (tf.keras.model): Tracking inference model, defaults to latest published model
-        neighborhood_encoder (tf.keras.model): Tracking neighborhood encoder,
+        model (``tf.keras.model``): Tracking inference model, defaults to latest published model
+        neighborhood_encoder (``tf.keras.model``): Tracking neighborhood encoder,
             defaults to latest published model
         distance_threshold (int): Maximum distance between two cells to be considered adjacent
         appearance_dim (int): Length of appearance dimension
