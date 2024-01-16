@@ -7,6 +7,13 @@ py:class tensor
 # Local classes
 py:class deepcell.layers.retinanet._RoiAlign
 
+# NOTE: Classes not explicitly added to the reference docs because
+# users are only ever expected to deal with instances
+py:class deepcell.datasets.dataset.SegmentationDataset
+py:class deepcell.datasets.dataset.TrackingDataset
+py:class deepcell.datasets.dataset.SpotsDataset
+py:class deepcell.datasets.dataset.Dataset
+
 # 3rd party classes
 
 # NumPy classes

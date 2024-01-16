@@ -71,7 +71,7 @@ class TissueNet(SegmentationDataset):
               round of manual QC to ensure consistency in labeling across the entire dataset.
 
         Args:
-            version (str, optional): Default 1.1
+            version (:obj:`str`, optional): Default 1.1
 
         Example:
             >>>tissuenet = TissueNet(version='1.1')

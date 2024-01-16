@@ -59,14 +59,15 @@ app = Mesmer()
 # Typically, neural networks perform best on test data that is similar to the training data.
 # In the realm of biological imaging, the most common difference between datasets is the resolution
 # of the data measured in microns per pixel. The training resolution of the model can be identified
-# using `app.model_mpp`.
+# using ``app.model_mpp``.
 
 # %%
 print('Training Resolution:', app.model_mpp, 'microns per pixel')
 
 # %% [markdown] raw_mimetype="text/restructuredtext"
-# The resolution of the input data can be specified in `app.predict` using the `image_mpp` option.
-# The `Application` will rescale the input data to match the training resolution and then rescale
+# The resolution of the input data can be specified in ``app.predict`` using the ``image_mpp``
+# option.
+# The ``Application`` will rescale the input data to match the training resolution and then rescale
 # to the original size before returning the labeled image.
 
 # %%
@@ -144,16 +145,16 @@ fig.savefig('mesmer-nuc.png')
 # tissues. However, if you notice specific, consistent errors in your data, there are a few things
 # you can change.
 #
-# The first is the `interior_threshold` parameter. This controls how conservative the model is in
-# estimating what is a cell vs what is background. Lower values of `interior_threshold` will
+# The first is the ``interior_threshold`` parameter. This controls how conservative the model is in
+# estimating what is a cell vs what is background. Lower values of ``interior_threshold`` will
 # result in larger cells, whereas higher values will result in smaller cells.
 #
-# The second is the `maxima_threshold` parameter. This controls what the model considers a unique
+# The second is the ``maxima_threshold`` parameter. This controls what the model considers a unique
 # cell. Lower values will result in more separate cells being predicted, whereas higher values
 # will result in fewer cells.
 
 # %%
-# To demonstrate the effect of `interior_threshold`, we'll compare the default  with a much more
+# To demonstrate the effect of ``interior_threshold``, we'll compare the default  with a much more
 # stringent setting
 segmentation_predictions_interior = app.predict(
     X,
@@ -187,7 +188,7 @@ fig.savefig('mesmer-interior-threshold.png')
 #     :align: center
 
 # %%
-# To demonstrate the effect of `maxima_threshold`, we'll compare the default with a much more
+# To demonstrate the effect of ``maxima_threshold``, we'll compare the default with a much more
 # stringent setting
 segmentation_predictions_maxima = app.predict(
     X,
@@ -224,11 +225,11 @@ fig.savefig('mesmer-maxima-threshold.png')
 # %% [markdown]
 # Finally, if your data doesn't include in a strong membrane marker, the model will default to just
 # predicting the nuclear segmentation, even for whole-cell mode. If you'd like to add a manual
-# pixel expansion after segmentation, you can do that using the `pixel_expansion` argument. This
+# pixel expansion after segmentation, you can do that using the ``pixel_expansion`` argument. This
 # will universally apply an expansion after segmentation to each cell
 
 # %%
-# To demonstrate the effect of `pixel_expansion`, we'll compare the nuclear output
+# To demonstrate the effect of ``pixel_expansion``, we'll compare the nuclear output
 # with expanded output
 segmentation_predictions_expansion = app.predict(
     X,

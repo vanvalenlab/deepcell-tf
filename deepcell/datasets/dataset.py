@@ -99,7 +99,7 @@ class TrackingDataset(Dataset):
         """Load the specified subset of the tracking dataset
 
         Args:
-            split (str, optional): Data split to load from [train, test, val]. Default val.
+            split (:obj:`str`, optional): Data split to load from [train, test, val]. Default val.
 
         Returns:
             X: np.array of raw data
@@ -156,12 +156,12 @@ class SegmentationDataset(Dataset):
         """Load the specified subset of the segmentation dataset
 
         Args:
-            split (str, optional): Data split to load from [train, test, val]. Default val.
+            split (:obj:`str`, optional): Data split to load from [train, test, val]. Default val.
 
         Returns:
-            X: np.array of raw data
-            y: np.array of segmentation masks
-            meta: np.array of metadata if available, default None
+            X - np.array of raw data
+            y - np.array of segmentation masks
+            meta - np.array of metadata if available, default None
 
         Raises:
             ValueError: Split must be one of train, test, val
@@ -191,7 +191,7 @@ class SpotsDataset(Dataset):
         """Load the specified subset of the segmentation dataset
 
         Args:
-            split (str, optional): Data split to load from [train, val, test]. Default test.
+            split (:obj:`str`, optional): Data split to load from [train, val, test]. Default test.
 
         Returns:
             X: np.array of raw data

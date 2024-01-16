@@ -89,14 +89,15 @@ app = NuclearSegmentation()
 # Typically, neural networks perform best on test data that is similar to the training data.
 # In the realm of biological imaging, the most common difference between datasets is the resolution
 # of the data measured in microns per pixel. The training resolution of the model can be identified
-# using `app.model_mpp`.
+# using ``app.model_mpp``.
 
 # %%
 print('Training Resolution:', app.model_mpp, 'microns per pixel')
 
 # %% [markdown] raw_mimetype="text/restructuredtext"
-# The resolution of the input data can be specified in `app.predict` using the `image_mpp` option.
-# The `Application` will rescale the input data to match the training resolution and then rescale
+# The resolution of the input data can be specified in ``app.predict`` using the ``image_mpp``
+# option.
+# The ``Application`` will rescale the input data to match the training resolution and then rescale
 # to the original size before returning the labeled image.
 
 # %%
@@ -141,7 +142,7 @@ imageio.mimsave(
 # View .GIF of segmented cells
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# The `NuclearSegmentation` application was able to create a label mask for every cell in every
+# The ``NuclearSegmentation`` application was able to create a label mask for every cell in every
 # frame!
 #
 # .. image:: ../../images/caliban-labeled.gif
@@ -152,15 +153,15 @@ imageio.mimsave(
 # Cell Tracking
 # -------------
 #
-# The `NuclearSegmentation` worked well, but the cell labels of the same cell are not preserved
-# across frames. To resolve this problem, we can use the `CellTracker`! This object will use
-# another `CellTrackingModel` to compare all cells and determine which cells are the same across
+# The ``NuclearSegmentation`` worked well, but the cell labels of the same cell are not preserved
+# across frames. To resolve this problem, we can use the ``CellTracker``! This object will use
+# another ``CellTrackingModel`` to compare all cells and determine which cells are the same across
 # frames, as well as if a cell split into daughter cells.
 #
 # Initalize CellTracking application
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# Create an instance of `deepcell.applications.CellTracking`.
+# Create an instance of ``deepcell.applications.CellTracking``.
 
 # %%
 tracker = CellTracking()
@@ -210,8 +211,8 @@ imageio.mimsave(
 # View .GIF of tracked cells
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# Now that we've finished using `CellTracker.track_cells`, not only do the annotations preserve
-# label across frames, but the lineage information has been saved in `CellTracker.tracks`.
+# Now that we've finished using ``CellTracker.track_cells``, not only do the annotations preserve
+# label across frames, but the lineage information has been saved in ``CellTracker.tracks``.
 #
 # .. image:: ../../images/caliban-tracks.gif
 #     :width: 500pt

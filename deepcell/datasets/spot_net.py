@@ -95,12 +95,13 @@ class SpotNetExampleData(Dataset):
         """Load the specified example file required for the Polaris example notebooks.
 
         Args:
-            file (str, optional): Data split to load from `['seqFISH_example', 'MERFISH_example',
-                'MERFISH_output', 'MERFISH_codebook']`. Defaults to `'MERFISH_example'`.
+            file (:obj:`str`, optional):
+                Data split to load from ``['seqFISH_example', 'MERFISH_example',
+                'MERFISH_output', 'MERFISH_codebook']``. Defaults to ``'MERFISH_example'``.
 
         Raises:
-            ValueError: Split must be one of `['seqFISH example', 'MERFISH example',
-                'MERFISH output', 'MERFISH codebook']`
+            ValueError: Split must be one of ``['seqFISH example', 'MERFISH example',
+                'MERFISH output', 'MERFISH codebook']``
         """
         if file not in ['seqFISH_example', 'MERFISH_example', 'MERFISH_output',
                         'MERFISH_codebook']:
