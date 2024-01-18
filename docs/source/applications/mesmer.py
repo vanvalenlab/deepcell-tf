@@ -13,6 +13,7 @@ from matplotlib import pyplot as plt
 
 from deepcell.datasets import TissueNetSample
 from deepcell.utils.plot_utils import create_rgb_image, make_outline_overlay
+# sphinx_gallery_thumbnail_path = '../images/mesmer-wc.png'
 
 # %%
 
