@@ -26,6 +26,6 @@ Each batch of the dataset contains two components:
 
 from deepcell.datasets import SpotNet
 
-spotnet = SpotNet(version='1.0')
+spotnet = SpotNet(version='1.1')
 X_val, y_val = spotnet.load_data(split='val')
 # sphinx_gallery_thumbnail_path = '../images/spots.png'
