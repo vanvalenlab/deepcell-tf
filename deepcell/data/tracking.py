@@ -408,7 +408,6 @@ def random_translate(X, y, range=512):
 def random_reflect(X, y):
     horizontal = tf.random.uniform([1], 0, 2, dtype=tf.int32)
     vertical = tf.random.uniform([1], 0, 2, dtype=tf.int32)
-    print(horizontal, vertical)
 
     appearances = X['appearances']
     centroids = X['centroids']
