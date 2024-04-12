@@ -309,8 +309,8 @@ class GNNTrackingModel:
         inputs = Input(shape=app_shape, name='encoder_app_input')
 
         x = inputs
-        x = TimeDistributed(ImageNormalization2D(norm_method='whole_image',
-                                                 name='imgnrm_ae'))(x)
+        # x = TimeDistributed(ImageNormalization2D(norm_method='whole_image',
+        #                                          name='imgnrm_ae'))(x)
 
         for i in range(int(math.log(app_shape[1], 2))):
             x = Conv3D(self.n_filters,

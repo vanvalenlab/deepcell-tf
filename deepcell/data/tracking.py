@@ -410,23 +410,23 @@ def random_reflect(X, y):
     vertical = tf.random.uniform([1], 0, 2, dtype=tf.int32)
 
     appearances = X['appearances']
-    centroids = X['centroids']
+    ycent, xcent = X['centroids'][:, :, 0], X['centroids'][:, :, 1]
 
     old_shape = tf.shape(appearances)
     new_shape = [-1, old_shape[2], old_shape[3], old_shape[4]]
     img = tf.reshape(appearances, new_shape)
 
     if horizontal == 1:
-        centroids[:, :, 1] = centroids[:, :, 1] * -1
+        xcent = xcent * -1
         img = tf.image.flip_left_right(img)
 
     if vertical == 1:
-        centroids[:, :, 0] = centroids[:, :, 0] * -1
+        ycent = ycent * -1
         img = tf.image.flip_up_down(img)
 
     img = tf.reshape(img, old_shape)
     X['appearances'] = img
-    X['centroids'] = centroids
+    X['centroids'] = tf.stack([ycent, xcent], axis=-1)
 
     return X, y
 
