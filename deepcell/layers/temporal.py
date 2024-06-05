@@ -97,7 +97,7 @@ class TemporalMerge(Layer):
     def call(self, inputs):
         input_shape = tf.shape(inputs)
         # reshape away the temporal axis
-        x = tf.reshape(inputs, [-1, input_shape[2], self.encoder_dim])
+        x = tf.reshape(inputs, [-1, input_shape[1], self.encoder_dim])
         x = self.lstm(x)
         output_shape = [-1, input_shape[1], input_shape[2], self.encoder_dim]
         x = tf.reshape(x, output_shape)
