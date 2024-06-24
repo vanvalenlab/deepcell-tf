@@ -45,8 +45,6 @@ from tensorflow.keras.regularizers import l2
 
 from spektral.layers import GCSConv, GCNConv, GATConv
 
-from deepcell_tracking import TrackingConfig
-
 from deepcell.layers import ImageNormalization2D
 from deepcell.layers import Comparison, DeltaReshape, Unmerge, TemporalMerge
 
