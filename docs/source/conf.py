@@ -94,7 +94,7 @@ source_suffix = ['.rst', '.md']
 # source_suffix = '.rst'
 
 # Ignore warning:
-suppress_warnings = ['autosectionlabel.*']
+suppress_warnings = ['autosectionlabel.*', "config.cache"]
 
 # The master toctree document.
 master_doc = 'index'
@@ -224,7 +224,6 @@ autodoc_mock_imports = [
     'keras',
     'spektral',
     'scipy',
-    'numpy',
     'sklearn',
     'skimage',
     'cython',

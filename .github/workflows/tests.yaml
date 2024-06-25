@@ -92,9 +92,7 @@ jobs:
 
       - name: List dependencies
         run: |
-          # TODO: The numpy upgrade can be removed when transitive deps all
-          # support 1.24
-          python -m pip install --upgrade numpy
+          python -m pip install --upgrade numpy\<2
           python -m pip list
       
       - name: Run tests
