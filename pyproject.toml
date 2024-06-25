@@ -15,6 +15,7 @@ target-version="py37"
 # Suppress ruff warnings
 lint.ignore = [
     "E731",  # Unbound lambda
+    "UP031",  # Use f-string instead of % formating
     "UP032",  # Use f-string instead of .format
 ]
 
