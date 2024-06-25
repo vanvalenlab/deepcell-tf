@@ -38,19 +38,23 @@ VERSIONS = {
         "url": "data/spotnet/SpotNet-v1_0.zip",
         "file_hash": "ad7ba11bffa242e36bd51b59f5f0abd3"
     },
+    "1.1": {
+        "url": "data/spotnet/SpotNet-v1_1.zip",
+        "file_hash": "43691bd2d19b49c7832edb198468a4ab"
+    }
 }
 
 SAMPLE_URL = "https://deepcell-data.s3.us-west-1.amazonaws.com/spot_detection/SpotNetExampleData-v1_0.zip"
 SAMPLE_HASH = "bb8675da94e34805a8853b029b74e61a"
 
 class SpotNet(SpotsDataset):
-    def __init__(self, version="1.0"):
+    def __init__(self, version="1.1"):
         """
         The SpotNet dataset is composed of a train, val, and test split of raw fluorescent
         spot images and coordinate spot annotations.
-            - The train split is composed of 838 images, each of which are 128x128 pixels.
-            - The val split is composed of 94 images, each of which are 128x128 pixels.
-            - The test split is composed of 100 images, each of which are 128x128 pixels.
+            - The train split is composed of 849 images, each of which are 128x128 pixels.
+            - The val split is composed of 95 images, each of which are 128x128 pixels.
+            - The test split is composed of 94 images, each of which are 128x128 pixels.
         See Laubscher et al. (2023) for details on image sources.
 
         This dataset is licensed under a modified Apache license for non-commercial academic
@@ -60,12 +64,14 @@ class SpotNet(SpotsDataset):
         Change Log
             - SpotNet 1.0 (Aug 2023): The original dataset used for all experiments in
               Laubscher et al. (2023)
+            - SpotNet 1.1 (Jan 2024): The updated dataset, now including Airlocalize
+              annotations to create consensus annotations
 
         Args:
-            version (str, optional): Defaults to 1.0
+            version (str, optional): Defaults to 1.1
 
         Example:
-            >>> spotnet = SpotNet(version='1.0')  # doctest: +SKIP
+            >>> spotnet = SpotNet(version='1.1')  # doctest: +SKIP
             >>> X_val, y_val = spotnet.load_data(split='val')  # doctest: +SKIP
 
         Raises:
