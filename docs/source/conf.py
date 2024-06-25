@@ -224,7 +224,6 @@ autodoc_mock_imports = [
     'keras',
     'spektral',
     'scipy',
-    'numpy',
     'sklearn',
     'skimage',
     'cython',
