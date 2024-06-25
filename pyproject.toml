@@ -7,15 +7,15 @@ requires = [
 ]
 
 [tool.ruff]
-select = ["E", "F", "UP"]
+lint.select = ["E", "F", "UP"]
 line-length = 99
 
 target-version="py37"
 
 # Suppress remaining bound lambda warnings
-ignore = ["E731"]
+lint.ignore = ["E731"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]
 "docs/source/conf.py" = ["E402", "E501"]
 
