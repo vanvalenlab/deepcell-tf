@@ -74,8 +74,8 @@ class TissueNet(SegmentationDataset):
             version (:obj:`str`, optional): Default 1.1
 
         Example:
-            >>>tissuenet = TissueNet(version='1.1')
-            >>>X_val, y_val, meta_val = tissuenet.load_data(split='val')
+            >>> tissuenet = TissueNet(version='1.1')  # doctest: +SKIP
+            >>> X_val, y_val, meta_val = tissuenet.load_data(split='val')  # doctest: +SKIP
 
         Raises:
             ValueError: Requested version is not included in available versions

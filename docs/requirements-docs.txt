@@ -6,6 +6,7 @@ docutils
 ipython
 nbsphinx
 nbsphinx-link
+lxml_html_clean  # Required for nbsphinx
 sphinx-rtd-theme>=0.5.2
 sphinx-gallery
 pillow
