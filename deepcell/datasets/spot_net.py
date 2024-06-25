@@ -65,8 +65,8 @@ class SpotNet(SpotsDataset):
             version (str, optional): Defaults to 1.0
 
         Example:
-            >>>spotnet = SpotNet(version='1.0')
-            >>>X_val, y_val = spotnet.load_data(split='val')
+            >>> spotnet = SpotNet(version='1.0')  # doctest: +SKIP
+            >>> X_val, y_val = spotnet.load_data(split='val')  # doctest: +SKIP
 
         Raises:
             ValueError: Requested version is not included in available versions

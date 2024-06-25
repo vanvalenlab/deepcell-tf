@@ -62,8 +62,8 @@ class DynamicNuclearNetSegmentation(SegmentationDataset):
             version (str, optional): Default 1.0
 
         Example:
-            >>>dnn_seg = DynamicNuclearNetSegmentation(version='1.0')
-            >>>X_val, y_val, meta_val = dnn_seg.load_data(split='val')
+            >>> dnn_seg = DynamicNuclearNetSegmentation(version='1.0')  # doctest: +SKIP
+            >>> X_val, y_val, meta_val = dnn_seg.load_data(split='val')  # doctest: +SKIP
 
         Raises:
             ValueError: Requested version is not included in available versions
@@ -102,9 +102,9 @@ class DynamicNuclearNetTracking(TrackingDataset):
             version (str, optional): Default 1.0
 
         Example:
-            >>>dnn_trk = DynamicNuclearNetTracking(version='1.0')
-            >>>X_val, y_val, lineage_val = dnn_trk.load_data(split='val')
-            >>>data_source = dnn_trk.load_source_metadata()
+            >>> dnn_trk = DynamicNuclearNetTracking(version='1.0')  # doctest: +SKIP
+            >>> X_val, y_val, lineage_val = dnn_trk.load_data(split='val')  # doctest: +SKIP
+            >>> data_source = dnn_trk.load_source_metadata()  # doctest: +SKIP
 
         Raises:
             ValueError: Requested version is not included in available versions
