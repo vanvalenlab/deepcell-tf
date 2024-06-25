@@ -220,7 +220,7 @@ class GNNTrackingModel:
             ``<layer name>-kwarg:value-kwarg:value``
         appearance_shape (tuple): shape of each object's appearance tensor
         norm_layer (str): Must be one of {'layer', 'batch'}
-        appearance_norm (bool): Whether to apply an input normalization layer to the apperance head
+        appearance_norm (bool): Whether to apply an input normalization layer to the appearance head
     """
     def __init__(self,
                  max_cells=39,
