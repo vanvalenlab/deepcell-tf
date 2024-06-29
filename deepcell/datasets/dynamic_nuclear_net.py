@@ -33,12 +33,20 @@ VERSIONS_SEG = {
     "1.0": {
         "url": "data/dynamic-nuclear-net/DynamicNuclearNet-segmentation-v1_0.zip",
         "file_hash": "dcf84d150c071aedb6749084a51ddf58"  # md5
+    },
+    "1.1": {
+        "url": "data/dynamic-nuclear-net/DynamicNuclearNet-segmentation_v1-1.zip",
+        "file_hash": "694a4d46a7d1228bd8b7ef86c1209efd"  # md5
     }
 }
 VERSIONS_TRK = {
     "1.0": {
         "url": "data/dynamic-nuclear-net/DynamicNuclearNet-tracking-v1_0.zip",
         "file_hash": "e13ffc07fdf71f7d327e35bbdfe9bf69"  # md5
+    },
+    "1.1": {
+        "url": "data/dynamic-nuclear-net/DynamicNuclearNet-tracking_v1-1.zip",
+        "file_hash": "305041d5d284ecb91749c70d54e0b4ae"  # md5
     }
 }
 
@@ -47,7 +55,7 @@ SAMPLE_HASH = "3dcb85144aa1151fefa1b69a7e9202c8"
 
 
 class DynamicNuclearNetSegmentation(SegmentationDataset):
-    def __init__(self, version="1.0"):
+    def __init__(self, version="1.1"):
         """This dataset contains the segmentation portion of the DynamicNuclearNet dataset
 
         This dataset is licensed under a modified Apache license for non-commercial academic
@@ -57,12 +65,15 @@ class DynamicNuclearNetSegmentation(SegmentationDataset):
         Change Log
             - DynamicNuclearNet 1.0 (June 2023): The original dataset used for all experiments in
               Schwartz et al. 2023
+            - DynamicNuclearNet 1.1 (July 2024): An update to include the two new movies from the
+              CTC training dataset Fluo-N2DL-HeLa updated with complete segmentation masks for
+              all frames.
 
         Args:
-            version (str, optional): Default 1.0
+            version (str, optional): Default 1.1
 
         Example:
-            >>> dnn_seg = DynamicNuclearNetSegmentation(version='1.0')  # doctest: +SKIP
+            >>> dnn_seg = DynamicNuclearNetSegmentation(version='1.1')  # doctest: +SKIP
             >>> X_val, y_val, meta_val = dnn_seg.load_data(split='val')  # doctest: +SKIP
 
         Raises:
@@ -82,7 +93,7 @@ class DynamicNuclearNetSegmentation(SegmentationDataset):
 
 
 class DynamicNuclearNetTracking(TrackingDataset):
-    def __init__(self, version="1.0"):
+    def __init__(self, version="1.1"):
         """This dataset contains the tracking portion of the DynamicNuclearNet dataset.
         Each batch of the dataset contains three components
         - X: raw fluorescent nuclear data
@@ -97,12 +108,15 @@ class DynamicNuclearNetTracking(TrackingDataset):
         Change Log
             - DynamicNuclearNet 1.0 (June 2023): The original dataset used for all experiments in
               Schwartz et al. 2023
+            - DynamicNuclearNet 1.1 (July 2024): An update to include the two new movies from the
+              CTC training dataset Fluo-N2DL-HeLa updated with complete segmentation masks for
+              all frames.
 
         Args:
-            version (str, optional): Default 1.0
+            version (str, optional): Default 1.1
 
         Example:
-            >>> dnn_trk = DynamicNuclearNetTracking(version='1.0')  # doctest: +SKIP
+            >>> dnn_trk = DynamicNuclearNetTracking(version='1.1')  # doctest: +SKIP
             >>> X_val, y_val, lineage_val = dnn_trk.load_data(split='val')  # doctest: +SKIP
             >>> data_source = dnn_trk.load_source_metadata()  # doctest: +SKIP
 
