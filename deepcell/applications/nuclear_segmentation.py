@@ -37,9 +37,9 @@ from deepcell.applications import Application
 from deepcell.utils import fetch_data, extract_archive
 
 
-MODEL_KEY = 'models/NuclearSegmentation-75.tar.gz'
+MODEL_KEY = 'models/NuclearSegmentation-8.tar.gz'
 MODEL_NAME = 'NuclearSegmentation'
-MODEL_HASH = 'efc4881db5bac23219b62486a4d877b3'
+MODEL_HASH = '507be21f0e34e59adae689f58cc03ccb'
 
 MODEL_METADATA = {
     'crop_size': 256,

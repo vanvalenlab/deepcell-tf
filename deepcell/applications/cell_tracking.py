@@ -36,13 +36,13 @@ from deepcell.applications import Application
 from deepcell.utils import fetch_data, extract_archive
 
 
-MODEL_KEY = 'models/NuclearTrackingInf-75.tar.gz'
+MODEL_KEY = 'models/NuclearTrackingInf-8.tar.gz'
 MODEL_NAME = 'NuclearTrackingInf'
-MODEL_HASH = '5dbd8137be851a0c12557fcde5021444'
+MODEL_HASH = 'ec07d8c0770453e738f8699ceede78e7'
 
-ENCODER_KEY = 'models/NuclearTrackingNE-75.tar.gz'
+ENCODER_KEY = 'models/NuclearTrackingNE-8.tar.gz'
 ENCODER_NAME = 'NuclearTrackingNE'
-ENCODER_HASH = 'a466682c9d1d5e3672325bb8a13ab3e0'
+ENCODER_HASH = '79188d7ae32b40b5bd0ad0f2ac2b53c4'
 
 MODEL_METADATA = {
     'batch_size': 8,
