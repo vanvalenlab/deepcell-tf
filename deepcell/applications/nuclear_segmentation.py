@@ -26,6 +26,7 @@
 """Nuclear segmentation application"""
 
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import tensorflow as tf
@@ -37,31 +38,43 @@ from deepcell.applications import Application
 from deepcell.utils import fetch_data, extract_archive
 
 
-MODEL_KEY = 'models/NuclearSegmentation-8.tar.gz'
-MODEL_NAME = 'NuclearSegmentation'
-MODEL_HASH = '507be21f0e34e59adae689f58cc03ccb'
+@dataclass
+class Config:
+    model_key: str
+    model_hash: str
+    radius: int
+    maxima_threshold: float
+    interior_threshold: float
+    exclude_border: bool
+    small_objects_threshold: float
+    min_distance: float
+    model_mpp: float
 
-MODEL_METADATA = {
-    'crop_size': 256,
-    'min_objects': 1,
-    'zoom_min': 0.75,
-    'epochs': 16,
-    'batch_size': 16,
-    'backbone': 'efficientnetv2bl',
-    'lr': .0001,
-    'location': True,
-    'pyramid_levels': 'P1-P2-P3-P4-P5-P6-P7'
-}
 
-POSTPROCESS_KWARGS = {
-    'radius': 10,
-    'maxima_threshold': 0.1,
-    'interior_threshold': 0.01,
-    'exclude_border': False,
-    'small_objects_threshold': 0,
-    'min_distance': 10
+CONFIGS = {
+    '1.1': Config(
+        model_key='models/NuclearSegmentation-8.tar.gz',
+        model_hash='507be21f0e34e59adae689f58cc03ccb',
+        radius=10,
+        maxima_threshold=0.1,
+        interior_threshold=0.01,
+        exclude_border=False,
+        small_objects_threshold=0,
+        min_distance=10,
+        model_mpp=0.65
+    ),
+    '1.0': Config(
+        model_key='models/NuclearSegmentation-75.tar.gz',
+        model_hash='efc4881db5bac23219b62486a4d877b3',
+        radius=10,
+        maxima_threshold=0.1,
+        interior_threshold=0.01,
+        exclude_border=False,
+        small_objects_threshold=0,
+        min_distance=10,
+        model_mpp=0.65
+    )
 }
-MODEL_MPP = 0.65
 
 class NuclearSegmentation(Application):
     """Loads a :mod:`deepcell.model_zoo.panopticnet.PanopticNet` model
@@ -94,40 +107,71 @@ class NuclearSegmentation(Application):
         model (tf.keras.Model): The model to load. If ``None``,
             a pre-trained model will be downloaded.
     """
+    def __init__(self,
+                 model,
+                 model_mpp=0.65,
+                 radius=10,
+                 maxima_threshold=0.1,
+                 interior_threshold=0.01,
+                 exclude_border=False,
+                 small_objects_threshold=0,
+                 min_distance=10
+                 ):
 
-    #: Metadata for the dataset used to train the model
-    dataset_metadata = {
-        'name': 'general_nuclear_train_large',
-        'other': 'Pooled nuclear data from HEK293, HeLa-S3, NIH-3T3, and RAW264.7 cells.'
-    }
-
-    #: Metadata for the model and training process
-    model_metadata = MODEL_METADATA
-
-    def __init__(self, model=None,
-                 preprocessing_fn=histogram_normalization,
-                 postprocessing_fn=deep_watershed):
-
-        if model is None:
-            cache_subdir = 'models'
-            model_dir = Path.home() / ".deepcell" / "models"
-            archive_path = fetch_data(
-                asset_key=MODEL_KEY,
-                cache_subdir=cache_subdir,
-                file_hash=MODEL_HASH
-            )
-            extract_archive(archive_path, model_dir)
-            model_path = model_dir / MODEL_NAME
-            model = tf.keras.models.load_model(model_path)
+        self.postprocess_kwargs = {
+            'radius': radius,
+            'maxima_threshold': maxima_threshold,
+            'interior_threshold': interior_threshold,
+            'exclude_border': exclude_border,
+            'small_objects_threshold': small_objects_threshold,
+            'min_distance': min_distance
+        }
 
         super().__init__(
             model,
             model_image_shape=model.input_shape[1:],
-            model_mpp=MODEL_MPP,
-            preprocessing_fn=preprocessing_fn,
-            postprocessing_fn=postprocessing_fn,
-            dataset_metadata=self.dataset_metadata,
-            model_metadata=self.model_metadata)
+            model_mpp=model_mpp,
+            preprocessing_fn=histogram_normalization,
+            postprocessing_fn=deep_watershed)
+
+    @classmethod
+    def from_verson(cls, version='1.1'):
+        """Load a specified version of the model
+
+        1.1: Updates to the nuclear segmentation model released in July 2024
+        1.0: Original nuclear segmentation model released with the September 2023 Caliban preprint
+
+        Args:
+            version (str, optional): Defaults to '1.1'.
+        """
+        if version not in CONFIGS:
+            raise ValueError(f'Selected version {version} is not available. '
+                             f'Choose from {CONFIGS.keys()}')
+
+        config = CONFIGS[version]
+
+        cache_subdir = 'models'
+        model_dir = Path.home() / ".deepcell" / "models"
+        archive_path = fetch_data(
+            asset_key=config.model_key,
+            cache_subdir=cache_subdir,
+            file_hash=config.model_hash
+        )
+        extract_archive(archive_path, model_dir)
+        model_path = model_dir / 'NuclearSegmentation'
+        model = tf.keras.models.load_model(model_path)
+
+        return cls(
+            model,
+            model_mpp=config.model_mpp,
+            radius=config.radius,
+            maxima_threshold=config.maxima_threshold,
+            interior_threshold=config.interior_threshold,
+            exclude_border=False,
+            small_objects_threshold=config.small_objects_threshold,
+            min_distance=config.min_distance
+        )
+
 
     def predict(self,
                 image,
@@ -169,7 +213,7 @@ class NuclearSegmentation(Application):
             preprocess_kwargs = {}
 
         if postprocess_kwargs is None:
-            postprocess_kwargs = POSTPROCESS_KWARGS
+            postprocess_kwargs = self.postprocess_kwargs
 
         return self._predict_segmentation(
             image,
