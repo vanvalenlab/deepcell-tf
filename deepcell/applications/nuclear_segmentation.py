@@ -135,7 +135,7 @@ class NuclearSegmentation(Application):
             postprocessing_fn=deep_watershed)
 
     @classmethod
-    def from_verson(cls, version='1.1'):
+    def from_version(cls, version='1.1'):
         """Load a specified version of the model
 
         1.1: Updates to the nuclear segmentation model released in July 2024
