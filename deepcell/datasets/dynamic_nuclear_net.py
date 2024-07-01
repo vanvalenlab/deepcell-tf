@@ -35,8 +35,8 @@ VERSIONS_SEG = {
         "file_hash": "dcf84d150c071aedb6749084a51ddf58"  # md5
     },
     "1.1": {
-        "url": "data/dynamic-nuclear-net/DynamicNuclearNet-segmentation_v1-1.zip",
-        "file_hash": "694a4d46a7d1228bd8b7ef86c1209efd"  # md5
+        "url": "data/dynamic-nuclear-net/DynamicNuclearNet-Segmentation-v1_1.zip",
+        "file_hash": "de84438c21d4f4a89022a7f7152d0a21"  # md5
     }
 }
 VERSIONS_TRK = {
@@ -45,8 +45,8 @@ VERSIONS_TRK = {
         "file_hash": "e13ffc07fdf71f7d327e35bbdfe9bf69"  # md5
     },
     "1.1": {
-        "url": "data/dynamic-nuclear-net/DynamicNuclearNet-tracking_v1-1.zip",
-        "file_hash": "305041d5d284ecb91749c70d54e0b4ae"  # md5
+        "url": "data/dynamic-nuclear-net/DynamicNuclearNet-tracking-v1_1.zip",
+        "file_hash": "4090ccd3b76c27f001f798c8187c5f3e"  # md5
     }
 }
 
