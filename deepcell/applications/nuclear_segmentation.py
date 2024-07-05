@@ -142,7 +142,7 @@ class NuclearSegmentation(Application):
         1.0: Original nuclear segmentation model released with the September 2023 Caliban preprint
 
         Args:
-            version (str, optional): Defaults to '1.1'.
+            version (:obj:`str`, optional): Defaults to '1.1'.
         """
         if version not in CONFIGS:
             raise ValueError(f'Selected version {version} is not available. '
