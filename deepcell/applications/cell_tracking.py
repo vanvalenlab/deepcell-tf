@@ -144,7 +144,7 @@ class CellTracking(Application):
         1.0: Original Caliban model released with the September 2023 preprint
 
         Args:
-            version (str, optional): Defaults to '1.1'.
+            version (:obj:`str`, optional): Defaults to '1.1'.
         """
         if version not in CONFIGS:
             raise ValueError(f'Selected version {version} is not available. '
