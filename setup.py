@@ -69,7 +69,7 @@ setup(
         'jupyter>=1.0.0,<2',
         'matplotlib',
         'opencv-python-headless<5',
-        'deepcell-tracking~=0.6.1',
+        'deepcell-tracking~=0.6.5',
         'deepcell-toolbox>=0.12.1'
     ],
     extras_require={
