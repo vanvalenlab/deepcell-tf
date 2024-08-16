@@ -80,7 +80,7 @@ imageio.mimsave('caliban-raw.gif', [plot(x[i, ..., 0]) for i in range(x.shape[0]
 # `documentation <https://deepcell.readthedocs.io/en/master/API/deepcell.applications.html>`_.
 
 # %%
-app = NuclearSegmentation()
+app = NuclearSegmentation.from_version("1.1")
 
 # %% [markdown] raw_mimetype="text/restructuredtext"
 # Use the application to generate labeled images
@@ -164,7 +164,7 @@ imageio.mimsave(
 # Create an instance of ``deepcell.applications.CellTracking``.
 
 # %%
-tracker = CellTracking()
+tracker = CellTracking.from_version("1.1")
 
 # %% [markdown]
 # Track the cells
