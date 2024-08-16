@@ -51,8 +51,8 @@ def plot(im):
     plt.title('Raw Image Data')
 
     fig.canvas.draw()  # draw the canvas, cache the renderer
-    image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
-    image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    image = np.frombuffer(fig.canvas.buffer_rgba(), dtype='uint8')
+    image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))
 
     plt.close(fig)
 
@@ -126,8 +126,8 @@ def plot(x, y):
     ax[1].axis('off')
 
     fig.canvas.draw()  # draw the canvas, cache the renderer
-    image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
-    image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    image = np.frombuffer(fig.canvas.buffer_rgba(), dtype='uint8')
+    image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))
     plt.close(fig)
 
     return image
@@ -195,8 +195,8 @@ def plot(x, y):
     ax[1].axis('off')
 
     fig.canvas.draw()  # draw the canvas, cache the renderer
-    image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
-    image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    image = np.frombuffer(fig.canvas.buffer_rgba(), dtype='uint8')
+    image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))
     plt.close(fig)
 
     return image
