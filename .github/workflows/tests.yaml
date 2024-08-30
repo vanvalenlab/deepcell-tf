@@ -119,6 +119,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Attempt to free up space in workflow container
+    - name: Delete tools folder
+      run: rm -rf /opt/hostedtoolcache
+
     - uses: actions/checkout@v4
 
     - name: Set up QEMU

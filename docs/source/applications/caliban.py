@@ -51,8 +51,8 @@ def plot(im):
     plt.title('Raw Image Data')
 
     fig.canvas.draw()  # draw the canvas, cache the renderer
-    image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
-    image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    image = np.frombuffer(fig.canvas.buffer_rgba(), dtype='uint8')
+    image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))
 
     plt.close(fig)
 
@@ -80,7 +80,7 @@ imageio.mimsave('caliban-raw.gif', [plot(x[i, ..., 0]) for i in range(x.shape[0]
 # `documentation <https://deepcell.readthedocs.io/en/master/API/deepcell.applications.html>`_.
 
 # %%
-app = NuclearSegmentation()
+app = NuclearSegmentation.from_version("1.1")
 
 # %% [markdown] raw_mimetype="text/restructuredtext"
 # Use the application to generate labeled images
@@ -126,8 +126,8 @@ def plot(x, y):
     ax[1].axis('off')
 
     fig.canvas.draw()  # draw the canvas, cache the renderer
-    image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
-    image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    image = np.frombuffer(fig.canvas.buffer_rgba(), dtype='uint8')
+    image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))
     plt.close(fig)
 
     return image
@@ -164,7 +164,7 @@ imageio.mimsave(
 # Create an instance of ``deepcell.applications.CellTracking``.
 
 # %%
-tracker = CellTracking()
+tracker = CellTracking.from_version("1.1")
 
 # %% [markdown]
 # Track the cells
@@ -195,8 +195,8 @@ def plot(x, y):
     ax[1].axis('off')
 
     fig.canvas.draw()  # draw the canvas, cache the renderer
-    image = np.frombuffer(fig.canvas.tostring_rgb(), dtype='uint8')
-    image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+    image = np.frombuffer(fig.canvas.buffer_rgba(), dtype='uint8')
+    image = image.reshape(fig.canvas.get_width_height()[::-1] + (4,))
     plt.close(fig)
 
     return image
