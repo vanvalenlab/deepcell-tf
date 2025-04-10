@@ -372,9 +372,20 @@ class Application:
         """
         # Preprocess image if function is defined
         image = self._preprocess(image, **preprocess_kwargs)
+        self.logger.debug("Preprocessing finished")
 
         # Tile images, raises error if the image is not 4d
         tiles, tiles_info = self._tile_input(image, pad_mode=pad_mode)
+        self.logger.debug("Tiling finished")
+
+        # Memory-map the tiles to save memory
+        tiles_mmap_path = "/tmp/tiles.dat"
+        tiles_memmap = np.memmap(
+            tiles_mmap_path, dtype=tiles.dtype, mode="w+", shape=tiles.shape
+        )
+        tiles_memmap[:] = tiles[:]
+        del tiles  # Free memory
+        self.logger.debug("Memory-mapped tiles")
 
         # Run images through model
         t = timeit.default_timer()
