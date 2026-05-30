@@ -1,5 +1,7 @@
-                            Modified Apache License
+
+                                 Apache License
                            Version 2.0, January 2004
+                        http://www.apache.org/licenses/
 
    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
@@ -63,19 +65,18 @@
       subsequently incorporated within the Work.
 
    2. Grant of Copyright License. Subject to the terms and conditions of
-      this License, each Contributor hereby grants to You a non-commercial,
-      academic perpetual, worldwide, non-exclusive, no-charge, royalty-free,
-      irrevocable copyright license to reproduce, prepare Derivative Works
-      of, publicly display, publicly perform, sublicense, and distribute the
-      Work and such Derivative Works in Source or Object form. For any other
-      use, including commercial use, please contact: vanvalenlab@gmail.com.
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
 
    3. Grant of Patent License. Subject to the terms and conditions of
-      this License, each Contributor hereby grants to You a non-commercial,
-      academic perpetual, worldwide, non-exclusive, no-charge, royalty-free,
-      irrevocable (except as stated in this section) patent license to make,
-      have made, use, offer to sell, sell, import, and otherwise transfer the
-      Work, where such license applies only to those patent claims licensable
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
       by such Contributor that are necessarily infringed by their
       Contribution(s) alone or by combination of their Contribution(s)
       with the Work to which such Contribution(s) was submitted. If You
@@ -173,10 +174,6 @@
       incurred by, or claims asserted against, such Contributor by reason
       of your accepting any such warranty or additional liability.
 
-  10. Neither the name of Caltech nor the names of its contributors may be
-      used to endorse or promote products derived from this software without
-      specific prior written permission.
-
    END OF TERMS AND CONDITIONS
 
    APPENDIX: How to apply the Apache License to your work.
@@ -190,7 +187,7 @@
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright [yyyy] [name of copyright owner]
+   Copyright 2026 Van Valen Lab, Caltech
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
