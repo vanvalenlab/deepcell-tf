@@ -33,8 +33,7 @@ Change Log
 * TissueNet 1.1 (April 2022): This version of TissueNet has gone through an additional
   round of manual QC to ensure consistency in labeling across the entire dataset.
 
-This dataset is licensed under a `modified Apache license
-<http://www.github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE>`_ for non-commercial
+This dataset is licensed under a modified Apache license for non-commercial
 academic use only
 
 The dataset can be accessed using `deepcell.datasets` with a DeepCell API key.

@@ -1,7 +1,7 @@
 DeepCell API Key
 ================
 
-DeepCell models and training datasets are licensed under a `modified Apache license <http://www.github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE>`_ for non-commercial academic use only. An API key for accessing datasets and models can be obtained at https://users.deepcell.org/login/.
+DeepCell models and training datasets are licensed under a modified Apache license for non-commercial academic use only. An API key for accessing datasets and models can be obtained at https://users.deepcell.org/login/.
 
 For more information about datasets published through DeepCell, please see :doc:`/data-gallery/index`.
 

@@ -9,8 +9,7 @@ SpotNet
 SpotNet is a training dataset for a deep learning model for spot detection published in
 Laubscher et al. 2023. 
 
-This dataset is licensed under a `modified Apache license
-<http://www.github.com/vanvalenlab/deepcell-tf/blob/master/LICENSE>`_ for non-commercial
+This dataset is licensed under a `modified Apache license for non-commercial
 academic use only.
 
 The dataset can be accessed using `deepcell.datasets` with a DeepCell API key.

@@ -1,28 +1,3 @@
-# Copyright 2016-2024 The Van Valen Lab at the California Institute of
-# Technology (Caltech), with support from the Paul Allen Family Foundation,
-# Google, & National Institutes of Health (NIH) under Grant U24CA224309-01.
-# All rights reserved.
-#
-# Licensed under a modified Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
-#
-# The Work provided may be used for non-commercial academic purposes only.
-# For any other use of the Work, including commercial use, please contact:
-# vanvalenlab@gmail.com
-#
-# Neither the name of Caltech nor the names of its contributors may be used
-# to endorse or promote products derived from this software without specific
-# prior written permission.
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
 """Timelapse datasets of a nuclear label including the raw images and
 ground truth segmentation masks annotated to track cell lineages"""
 
@@ -57,10 +32,6 @@ SAMPLE_HASH = "3dcb85144aa1151fefa1b69a7e9202c8"
 class DynamicNuclearNetSegmentation(SegmentationDataset):
     def __init__(self, version="1.1"):
         """This dataset contains the segmentation portion of the DynamicNuclearNet dataset
-
-        This dataset is licensed under a modified Apache license for non-commercial academic
-        use only
-        http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
 
         Change Log
             - DynamicNuclearNet 1.0 (June 2023): The original dataset used for all experiments in
@@ -101,10 +72,6 @@ class DynamicNuclearNetTracking(TrackingDataset):
         - lineages: lineage records including the cell id, frames present and division
           links from parent to daughter cells
 
-        This dataset is licensed under a modified Apache license for non-commercial academic
-        use only
-        http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
-
         Change Log
             - DynamicNuclearNet 1.0 (June 2023): The original dataset used for all experiments in
               Schwartz et al. 2023
@@ -139,9 +106,6 @@ class DynamicNuclearNetTracking(TrackingDataset):
 class DynamicNuclearNetSample(SegmentationDataset):
     """A 10 frame movie from DynamicNuclearNet with the raw fluorescent data and nuclear
     segmentation masks
-
-    This dataset is licensed under a modified Apache license for non-commercial academic
-    use only http://www.github.com/vanvalenlab/deepcell-tf/LICENSE
     """
     def __init__(self):
         super().__init__(
